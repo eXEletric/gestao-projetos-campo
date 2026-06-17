@@ -1,0 +1,57 @@
+{
+  "_descricao": "Catalogo de servicos extraido da aba DADOS da planilha base. horas_por_unidade = TEMPO MIN da planilha convertido para horas (min/60). Editavel: adicione novos servicos conforme a demanda.",
+  "_versao": "1.0",
+  "_unidades": ["UND", "M", "PONTO", "CONJ", "KIT", "TRECHO", "PC", "SIST", "SERV"],
+  "_categorias": ["SUPERVISORIO", "AR_CONDICIONADO", "SENSORES", "MEDIDORES", "ILUMINACAO", "INFRAESTRUTURA", "COMISSIONAMENTO"],
+  "servicos": [
+    { "id": "sup_conexao_infra_preexistente", "nome": "Conexao de infra pre-existente (alimentador)", "categoria": "SUPERVISORIO", "unidade": "M", "horas_por_unidade": 0.25, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "15 min/m" },
+    { "id": "sup_confeccao_infra_alimentador", "nome": "Confeccao de infra de interligacao c/ alimentador", "categoria": "SUPERVISORIO", "unidade": "M", "horas_por_unidade": 0.333, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "20 min/m" },
+    { "id": "sup_dj_alimentador_novo", "nome": "Instalacao do DJ alimentador novo", "categoria": "SUPERVISORIO", "unidade": "UND", "horas_por_unidade": 0.5, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "30 min" },
+    { "id": "sup_dj_alimentador_preexistente", "nome": "Instalacao do DJ alimentador pre-existente", "categoria": "SUPERVISORIO", "unidade": "UND", "horas_por_unidade": 0.083, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "5 min" },
+
+    { "id": "sensor_chiller_inst_completa", "nome": "Sensor temp. Chiller - instalacao completa", "categoria": "SENSORES", "unidade": "PONTO", "horas_por_unidade": 2.0, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "120 min/ponto" },
+    { "id": "sensor_chiller_troca", "nome": "Sensor temp. Chiller - troca", "categoria": "SENSORES", "unidade": "PONTO", "horas_por_unidade": 1.0, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "60 min/ponto" },
+    { "id": "sensor_fancoil_inst_completa", "nome": "Sensor temp. Fancoil - instalacao completa", "categoria": "SENSORES", "unidade": "PONTO", "horas_por_unidade": 6.0, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "360 min/ponto" },
+    { "id": "sensor_fancoil_troca", "nome": "Sensor temp. Fancoil - troca", "categoria": "SENSORES", "unidade": "PONTO", "horas_por_unidade": 1.0, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "60 min/ponto" },
+    { "id": "sensor_loja_inst_completa_m", "nome": "Sensor temp. loja - instalacao completa (por metro)", "categoria": "SENSORES", "unidade": "M", "horas_por_unidade": 0.0167, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "1 min/m" },
+    { "id": "sensor_loja_troca", "nome": "Sensor temp. loja - troca de sensor", "categoria": "SENSORES", "unidade": "PONTO", "horas_por_unidade": 1.0, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "60 min/ponto" },
+
+    { "id": "chicote_confeccao_nova", "nome": "Chicote - confeccao e ligacao nova no QA BRPROJ", "categoria": "INFRAESTRUTURA", "unidade": "PONTO", "horas_por_unidade": 0.417, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "25 min/ponto" },
+    { "id": "chicote_ligacao_existente", "nome": "Chicote existente - ligacao no QA BRPROJ", "categoria": "INFRAESTRUTURA", "unidade": "PONTO", "horas_por_unidade": 0.167, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "10 min/ponto" },
+    { "id": "chicote_ilum_cabo_controle", "nome": "Chicote QDL loja ao QA BRPROJ (cabo controle)", "categoria": "INFRAESTRUTURA", "unidade": "UND", "horas_por_unidade": 0.1, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "6 min" },
+    { "id": "chicote_ilum_fio_singelo", "nome": "Chicote QDL loja ao QA BRPROJ (fio singelo)", "categoria": "INFRAESTRUTURA", "unidade": "UND", "horas_por_unidade": 0.15, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "9 min" },
+
+    { "id": "cag_fancoil_manual_aut", "nome": "QD CAG Fancoil - fazer todo comando manual e aut.", "categoria": "AR_CONDICIONADO", "unidade": "UND", "horas_por_unidade": 1.0, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "60 min" },
+    { "id": "cag_fancoil_correcoes", "nome": "QD CAG Fancoil - adicao circuito aut. c/ correcoes no manual", "categoria": "AR_CONDICIONADO", "unidade": "UND", "horas_por_unidade": 0.667, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "40 min" },
+    { "id": "cag_fancoil_adicao_aut", "nome": "QD CAG Fancoil - adicao do circuito de automatico", "categoria": "AR_CONDICIONADO", "unidade": "UND", "horas_por_unidade": 0.5, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "30 min" },
+    { "id": "cag_fancoil_borne", "nome": "QD CAG Fancoil - disponivel em borne (validar)", "categoria": "AR_CONDICIONADO", "unidade": "UND", "horas_por_unidade": 0.167, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "10 min" },
+    { "id": "cag_bags_adicao_aut", "nome": "QD CAG B.A.G.s - adicao do circuito de automatico", "categoria": "AR_CONDICIONADO", "unidade": "UND", "horas_por_unidade": 0.5, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "30 min" },
+    { "id": "cag_bacs_adicao_aut", "nome": "QD CAG B.A.C.s - adicao do circuito de automatico", "categoria": "AR_CONDICIONADO", "unidade": "UND", "horas_por_unidade": 0.5, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "30 min" },
+    { "id": "cag_torre_adicao_aut", "nome": "QD CAG Torre - adicao do circuito de automatico", "categoria": "AR_CONDICIONADO", "unidade": "UND", "horas_por_unidade": 0.5, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "30 min" },
+    { "id": "cag_sistema_agua_adicao_aut", "nome": "QD CAG Sistema de Agua - adicao do circuito de automatico", "categoria": "AR_CONDICIONADO", "unidade": "UND", "horas_por_unidade": 1.0, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "60 min" },
+    { "id": "cag_emergencia_adicao_aut", "nome": "QD CAG Emergencia - adicao do circuito de automatico", "categoria": "AR_CONDICIONADO", "unidade": "UND", "horas_por_unidade": 0.5, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "30 min" },
+
+    { "id": "medidor_fancoil_inst", "nome": "Fancoil medidor energia - instalacao medidor, TP e TCs", "categoria": "MEDIDORES", "unidade": "CONJ", "horas_por_unidade": 2.0, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "120 min" },
+    { "id": "medidor_chiller_inst", "nome": "Chiller medidor energia - instalacao medidor, TP e TCs", "categoria": "MEDIDORES", "unidade": "CONJ", "horas_por_unidade": 2.0, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "120 min" },
+    { "id": "medidor_splitao_inst", "nome": "QDF Splitao medidor energia - instalacao medidor, TP e TCs", "categoria": "MEDIDORES", "unidade": "CONJ", "horas_por_unidade": 2.0, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "120 min" },
+    { "id": "medidor_qgbt_inst_completa", "nome": "Medidor energia QGBT - instalacao completa", "categoria": "MEDIDORES", "unidade": "UND", "horas_por_unidade": 0.5, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "30 min" },
+    { "id": "medidor_qgbt_troca", "nome": "Medidor energia QGBT - troca", "categoria": "MEDIDORES", "unidade": "UND", "horas_por_unidade": 0.167, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "10 min" },
+    { "id": "tcs_novos", "nome": "Instalacao de TCs novos", "categoria": "MEDIDORES", "unidade": "UND", "horas_por_unidade": 0.5, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "30 min" },
+    { "id": "tcs_preexistentes", "nome": "TCs pre-existentes utilizados (validar ligacao)", "categoria": "MEDIDORES", "unidade": "UND", "horas_por_unidade": 0.167, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "10 min" },
+    { "id": "tps_dj_novos", "nome": "Instalacao de TPs e disjuntores novos", "categoria": "MEDIDORES", "unidade": "UND", "horas_por_unidade": 0.5, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "30 min" },
+    { "id": "tps_dj_preexistentes", "nome": "TPs e disjuntores pre-existentes (validar ligacao)", "categoria": "MEDIDORES", "unidade": "UND", "horas_por_unidade": 0.167, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "10 min" },
+
+    { "id": "ilum_manual_100", "nome": "Fazer 100% do comando de manual", "categoria": "ILUMINACAO", "unidade": "UND", "horas_por_unidade": 0.25, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "15 min" },
+    { "id": "ilum_manual_adequar", "nome": "Adequar comando manual c/ cabos pre-existentes", "categoria": "ILUMINACAO", "unidade": "UND", "horas_por_unidade": 0.167, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "10 min" },
+    { "id": "ilum_auto_100", "nome": "Fazer 100% do comando de automatico ate os bornes", "categoria": "ILUMINACAO", "unidade": "UND", "horas_por_unidade": 0.25, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "15 min" },
+    { "id": "ilum_auto_adequar", "nome": "Adequar comando automatico c/ cabos e bornes", "categoria": "ILUMINACAO", "unidade": "UND", "horas_por_unidade": 0.167, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "10 min" },
+    { "id": "reles_circuito_c_bornes", "nome": "Instalacao circuito automatico dos reles (c/ bornes)", "categoria": "ILUMINACAO", "unidade": "UND", "horas_por_unidade": 0.167, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "10 min" },
+    { "id": "reles_circuito_sem_bornes", "nome": "Instalacao circuito automatico dos reles (sem bornes)", "categoria": "ILUMINACAO", "unidade": "UND", "horas_por_unidade": 0.083, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "5 min" },
+    { "id": "marchas_c_bornes", "nome": "Confirmacao de marchas contatoras (c/ bornes)", "categoria": "ILUMINACAO", "unidade": "UND", "horas_por_unidade": 0.167, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "10 min" },
+    { "id": "marchas_sem_bornes", "nome": "Confirmacao de marchas contatoras (sem bornes)", "categoria": "ILUMINACAO", "unidade": "UND", "horas_por_unidade": 0.083, "tipo_prof_ref": "TEC_AUTOMACAO", "obs": "5 min" },
+
+    { "id": "comissionamento_interno", "nome": "Comissionamento interno", "categoria": "COMISSIONAMENTO", "unidade": "SERV", "horas_por_unidade": 2.0, "tipo_prof_ref": "ENG_PROJETOS", "obs": "120 min" },
+    { "id": "validacao_fabricante", "nome": "Validacao com fabricante (Copeland)", "categoria": "COMISSIONAMENTO", "unidade": "SERV", "horas_por_unidade": 0.5, "tipo_prof_ref": "ENG_PROJETOS", "obs": "30 min" },
+    { "id": "deslig_trafo", "nome": "Programacao - necessario desligamento de trafo", "categoria": "COMISSIONAMENTO", "unidade": "UND", "horas_por_unidade": 1.0, "tipo_prof_ref": "ENG_PROJETOS", "obs": "60 min" }
+  ]
+}
