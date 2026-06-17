@@ -1,0 +1,18 @@
+{
+  "_descricao": "Categorias = tipos de atividade raiz. Lista CONFIGURAVEL (add/editar). Vincula servico do catalogo ao grupo raiz do cronograma: um servico de categoria X aparece nos grupos de categoria X. A mesma lista nomeia/classifica os grupos raiz.",
+  "_versao": "1.0",
+  "_regras": {
+    "vinculo": "catalogo-servicos.servicos[].categoria referencia o id daqui. Grupo raiz do cronograma tambem referencia este id. Por isso o filtro no cronograma e automatico.",
+    "configuravel": "Pode adicionar/editar categorias conforme novos tipos de atividade surgirem por projeto.",
+    "icone": "Opcional - nome de icone Tabler para exibicao."
+  },
+  "categorias": [
+    { "id": "SUPERVISORIO", "nome": "Supervisorio", "icone": "device-desktop-analytics", "ordem": 1 },
+    { "id": "AR_CONDICIONADO", "nome": "Ar Condicionado", "icone": "snowflake", "ordem": 2 },
+    { "id": "ILUMINACAO", "nome": "Iluminacao", "icone": "bulb", "ordem": 3 },
+    { "id": "MEDIDORES", "nome": "Medicao", "icone": "gauge", "ordem": 4 },
+    { "id": "INFRAESTRUTURA", "nome": "Infraestrutura", "icone": "plug", "ordem": 5 },
+    { "id": "SENSORES", "nome": "Sensores", "icone": "temperature", "ordem": 6 },
+    { "id": "COMISSIONAMENTO", "nome": "Comissionamento", "icone": "checklist", "ordem": 7 }
+  ]
+}
