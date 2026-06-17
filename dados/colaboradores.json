@@ -1,25 +1,27 @@
 {
-  "_descricao": "Banco de colaboradores. Extraido da aba DADOS da planilha base (COLABORADORES_ENVOLVIDOS). valor_hora_vigente esta null = pendente de preenchimento. NAO inventar valores; o gestor preenche.",
-  "_versao": "1.0",
+  "_descricao": "Banco de colaboradores - apenas dados de custo. Cada colaborador pode ter VARIAS funcoes; cada funcao tem nivel e valor/hora proprio. Ao alocar numa tarefa, escolhe-se a funcao aplicada e seu valor/hora e congelado na tarefa.",
+  "_versao": "3.0",
   "_regras": {
-    "valor_hora_vigente": "Valor atual usado como default para novas tarefas. Ao alocar em uma tarefa, o valor e congelado (snapshot) na propria tarefa como valor_hora_aplicado.",
-    "sem_custo": "Colaboradores com tipo CLIENTE ou PARCEIRO tem valor_hora 0 e nao entram no custo do projeto."
+    "minimo_custo": "Sem dados contratuais/pessoais. So o necessario para calcular custo.",
+    "funcoes": "Array. Cada item: { funcao (id de funcoes.json), nivel (JUNIOR|PLENO|SENIOR), valor_hora }. valor_hora null = pendente.",
+    "gera_custo": "false para CLIENTE/PARCEIRO - nao entram no custo e tem funcoes vazio.",
+    "alocacao": "Na tarefa: executor + funcao_aplicada -> valor_hora congelado como valor_hora_aplicado."
   },
   "colaboradores": [
-    { "id": "andre_camilo", "nome": "Andre Camilo", "tipo": "ENG_PROJETOS", "vinculo": "FUNCIONARIO", "valor_hora_vigente": null, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": null, "ativo": true, "observacoes": "Lider de projeto / engenharia" },
-    { "id": "joel", "nome": "Joel", "tipo": "TEC_AUTOMACAO", "vinculo": "FUNCIONARIO", "valor_hora_vigente": null, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": null, "ativo": true, "observacoes": "" },
-    { "id": "elvis", "nome": "Elvis", "tipo": "TEC_AUTOMACAO", "vinculo": "FUNCIONARIO", "valor_hora_vigente": null, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": null, "ativo": true, "observacoes": "" },
-    { "id": "ednael", "nome": "Ednael", "tipo": "AUX_TECNICO", "vinculo": "FUNCIONARIO", "valor_hora_vigente": null, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": null, "ativo": true, "observacoes": "" },
-    { "id": "lucimar", "nome": "Lucimar", "tipo": "AUX_TECNICO", "vinculo": null, "valor_hora_vigente": null, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": null, "ativo": true, "observacoes": "Tipo e vinculo a confirmar" },
-    { "id": "andre_nery", "nome": "Andre Nery", "tipo": "TEC_AUTOMACAO", "vinculo": null, "valor_hora_vigente": null, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": null, "ativo": true, "observacoes": "Tipo e vinculo a confirmar" },
-    { "id": "jonas_anapolis", "nome": "Jonas - Anapolis", "tipo": "TEC_AUTOMACAO", "vinculo": null, "valor_hora_vigente": null, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": "Anapolis - GO", "ativo": true, "observacoes": "Base regional Anapolis" },
-    { "id": "lucas_itabuna", "nome": "Lucas - Itabuna", "tipo": "TEC_AUTOMACAO", "vinculo": null, "valor_hora_vigente": null, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": "Itabuna - BA", "ativo": true, "observacoes": "Base regional Itabuna" },
-    { "id": "ajudante", "nome": "Ajudante", "tipo": "AUX_TECNICO", "vinculo": null, "valor_hora_vigente": null, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": null, "ativo": true, "observacoes": "Funcao generica - especificar nome real" },
-    { "id": "terc_comandos", "nome": "3 Comandos", "tipo": "SUB_ELETRICA", "vinculo": "SUBCONTRATADO", "valor_hora_vigente": null, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": null, "ativo": true, "observacoes": "Empresa subcontratada de comandos eletricos" },
-    { "id": "terc_eletricista", "nome": "3 Eletricista", "tipo": "SUB_ELETRICA", "vinculo": "SUBCONTRATADO", "valor_hora_vigente": null, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": null, "ativo": true, "observacoes": "Eletricista terceirizado" },
-    { "id": "terc_infra", "nome": "3 Infra", "tipo": "SUB_INFRA", "vinculo": "SUBCONTRATADO", "valor_hora_vigente": null, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": null, "ativo": true, "observacoes": "Infraestrutura terceirizada" },
-    { "id": "copeland", "nome": "Copeland", "tipo": "PARCEIRO", "vinculo": "PARCEIRO_EXTERNO", "valor_hora_vigente": 0, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": null, "ativo": true, "observacoes": "Fabricante / validacao - sem custo direto ao projeto" },
-    { "id": "atacadao_loja", "nome": "Atacadao Loja", "tipo": "CLIENTE", "vinculo": "CLIENTE", "valor_hora_vigente": 0, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": null, "ativo": true, "observacoes": "Contraparte na loja - sem custo direto" },
-    { "id": "atacadao_regional", "nome": "Atacadao Regional", "tipo": "CLIENTE", "vinculo": "CLIENTE", "valor_hora_vigente": 0, "cpf_cnpj": null, "telefone": null, "email": null, "cidade_base": null, "ativo": true, "observacoes": "Contraparte regional - sem custo direto" }
+    { "id": "andre_camilo", "nome": "Andre Camilo", "gera_custo": true, "ativo": true, "funcoes": [ { "funcao": "ENGENHEIRO", "nivel": null, "valor_hora": null } ], "observacoes": "Lider de projeto. Confirmar nivel e valor." },
+    { "id": "joel", "nome": "Joel", "gera_custo": true, "ativo": true, "funcoes": [ { "funcao": "TEC_AUTOMACAO", "nivel": null, "valor_hora": null } ], "observacoes": "Confirmar nivel e valor." },
+    { "id": "elvis", "nome": "Elvis", "gera_custo": true, "ativo": true, "funcoes": [ { "funcao": "TEC_AUTOMACAO", "nivel": null, "valor_hora": null } ], "observacoes": "Confirmar nivel e valor." },
+    { "id": "ednael", "nome": "Ednael", "gera_custo": true, "ativo": true, "funcoes": [ { "funcao": null, "nivel": null, "valor_hora": null } ], "observacoes": "Definir funcao, nivel e valor." },
+    { "id": "lucimar", "nome": "Lucimar", "gera_custo": true, "ativo": true, "funcoes": [ { "funcao": null, "nivel": null, "valor_hora": null } ], "observacoes": "Definir funcao, nivel e valor." },
+    { "id": "andre_nery", "nome": "Andre Nery", "gera_custo": true, "ativo": true, "funcoes": [ { "funcao": null, "nivel": null, "valor_hora": null } ], "observacoes": "Definir funcao, nivel e valor." },
+    { "id": "jonas_anapolis", "nome": "Jonas - Anapolis", "gera_custo": true, "ativo": true, "funcoes": [ { "funcao": null, "nivel": null, "valor_hora": null } ], "observacoes": "Base Anapolis. Definir funcao, nivel e valor." },
+    { "id": "lucas_itabuna", "nome": "Lucas - Itabuna", "gera_custo": true, "ativo": true, "funcoes": [ { "funcao": null, "nivel": null, "valor_hora": null } ], "observacoes": "Base Itabuna. Definir funcao, nivel e valor." },
+    { "id": "ajudante", "nome": "Ajudante", "gera_custo": true, "ativo": true, "funcoes": [ { "funcao": "AJUDANTE", "nivel": null, "valor_hora": null } ], "observacoes": "Papel generico - substituir pelo nome real." },
+    { "id": "terc_comandos", "nome": "3 Comandos", "gera_custo": true, "ativo": true, "funcoes": [ { "funcao": "ELETRICISTA", "nivel": null, "valor_hora": null } ], "observacoes": "Subcontratado. Definir custo hora vs empreitada na revisao." },
+    { "id": "terc_eletricista", "nome": "3 Eletricista", "gera_custo": true, "ativo": true, "funcoes": [ { "funcao": "ELETRICISTA", "nivel": null, "valor_hora": null } ], "observacoes": "Eletricista terceirizado." },
+    { "id": "terc_infra", "nome": "3 Infra", "gera_custo": true, "ativo": true, "funcoes": [ { "funcao": "MONTADOR", "nivel": null, "valor_hora": null } ], "observacoes": "Infra terceirizada. Confirmar funcao." },
+    { "id": "copeland", "nome": "Copeland", "gera_custo": false, "ativo": true, "funcoes": [], "observacoes": "Fabricante / validacao - sem custo." },
+    { "id": "atacadao_loja", "nome": "Atacadao Loja", "gera_custo": false, "ativo": true, "funcoes": [], "observacoes": "Cliente - sem custo." },
+    { "id": "atacadao_regional", "nome": "Atacadao Regional", "gera_custo": false, "ativo": true, "funcoes": [], "observacoes": "Cliente - sem custo." }
   ]
 }

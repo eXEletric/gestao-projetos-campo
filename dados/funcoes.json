@@ -1,0 +1,24 @@
+{
+  "_descricao": "Lista de funcoes (oficios) e niveis. NAO guarda valor/hora - o valor e digitado por colaborador, em cada funcao que ele exerce. Funcao e nivel servem para classificar.",
+  "_versao": "3.0",
+  "_regras": {
+    "valor_por_colaborador": "O valor/hora nao mora aqui. Cada colaborador define seu proprio valor por funcao no colaboradores.json.",
+    "niveis_livres": "Os 3 niveis estao disponiveis para qualquer funcao; o nivel e escolhido no cadastro do colaborador.",
+    "cadastro_livre": "Novas funcoes podem ser adicionadas a qualquer momento."
+  },
+  "niveis": [
+    { "id": "JUNIOR", "descricao": "Junior - em formacao" },
+    { "id": "PLENO", "descricao": "Pleno - autonomo" },
+    { "id": "SENIOR", "descricao": "Senior - referencia tecnica" }
+  ],
+  "funcoes": [
+    { "id": "TEC_AUTOMACAO", "nome": "Tecnico em Automacao" },
+    { "id": "ENGENHEIRO", "nome": "Engenheiro" },
+    { "id": "ELETROTECNICO", "nome": "Eletrotecnico" },
+    { "id": "ELETRICISTA", "nome": "Eletricista" },
+    { "id": "MONTADOR", "nome": "Montador" },
+    { "id": "MECANICO", "nome": "Mecanico" },
+    { "id": "REFRIGERISTA", "nome": "Refrigerista" },
+    { "id": "AJUDANTE", "nome": "Ajudante" }
+  ]
+}
