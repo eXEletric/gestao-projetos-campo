@@ -368,24 +368,35 @@ table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:
 <div class="modal-bg" id="modalM"><div class="modal">
   <div class="mh"><b id="m-mat-title">Material</b><button class="x" onclick="closeMat()">&times;</button></div>
   <div class="mb">
+    <div class="frow">
+      <div class="fg"><label class="fl">Grupo / Tipo</label>
+        <div style="display:flex;gap:6px"><select class="fi" id="mt-grupo" style="flex:1" onchange="gerarCodInterno()"></select><button class="btn" onclick="addGrupoMat()" title="cadastrar novo grupo">+</button></div>
+      </div>
+      <div class="fg"><label class="fl">Código interno <span style="color:var(--green)">(automático)</span></label><input class="fi" id="mt-ci" readonly style="background:var(--surf2)"></div>
+    </div>
     <div class="fg"><label class="fl">Código de barras (fabricante) <span style="color:var(--blue)">— chave</span></label>
       <div style="display:flex;gap:8px"><input class="fi" id="mt-cb" placeholder="escaneie ou digite" style="flex:1"><button class="btn" onclick="scanCodigo()" title="escanear com a câmera">📷</button></div>
     </div>
     <div class="fg"><label class="fl">Descrição padronizada (base)</label><input class="fi" id="mt-descp" placeholder="Como você chama internamente"></div>
     <div class="frow">
       <div class="fg"><label class="fl">Código fábrica</label><input class="fi" id="mt-cf"></div>
-      <div class="fg"><label class="fl">Código interno</label><input class="fi" id="mt-ci"></div>
+      <div class="fg"><label class="fl">Marca</label>
+        <div style="display:flex;gap:6px"><select class="fi" id="mt-marca" style="flex:1"></select><button class="btn" onclick="addMarca()" title="cadastrar nova marca">+</button></div>
+      </div>
     </div>
     <div class="fg"><label class="fl">Descrição do fabricante</label><input class="fi" id="mt-descf"></div>
-    <div class="frow3">
-      <div class="fg"><label class="fl">Material / Cor</label><input class="fi" id="mt-cor"></div>
-      <div class="fg"><label class="fl">Medida</label><input class="fi" id="mt-med"></div>
-      <div class="fg"><label class="fl">Unidade</label><input class="fi" id="mt-un" value="UND"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Material / Cor <span style="color:var(--tx3)">(opcional)</span></label>
+        <div style="display:flex;align-items:center;gap:7px"><input class="fi" id="mt-cor" style="flex:1"><label style="font-size:11px;color:var(--tx2);white-space:nowrap;display:flex;align-items:center;gap:4px"><input type="checkbox" id="mt-cor-na" onchange="toggleNA('mt-cor')"> N/A</label></div>
+      </div>
+      <div class="fg"><label class="fl">Medida <span style="color:var(--tx3)">(opcional)</span></label>
+        <div style="display:flex;align-items:center;gap:7px"><input class="fi" id="mt-med" style="flex:1"><label style="font-size:11px;color:var(--tx2);white-space:nowrap;display:flex;align-items:center;gap:4px"><input type="checkbox" id="mt-med-na" onchange="toggleNA('mt-med')"> N/A</label></div>
+      </div>
     </div>
     <div class="frow3">
       <div class="fg"><label class="fl">Modelo</label><input class="fi" id="mt-mod"></div>
-      <div class="fg"><label class="fl">Marca</label><input class="fi" id="mt-marca"></div>
-      <div class="fg"><label class="fl">Qtd padrão</label><input class="fi" id="mt-qtd" type="number" step="0.01" placeholder="opcional"></div>
+      <div class="fg"><label class="fl">Unidade</label><input class="fi" id="mt-un" value="UND"></div>
+      <div class="fg"><label class="fl">Qtd mínima estoque</label><input class="fi" id="mt-qtd" type="number" step="0.01" placeholder="0"></div>
     </div>
     <div class="fg"><label class="fl">Observações</label><input class="fi" id="mt-obs"></div>
     <div class="note" id="mt-fotos-nota">Fotos do item: ativaremos o envio ao ligar o armazenamento (Storage).</div>
@@ -961,25 +972,30 @@ function addCat(){const v=document.getElementById('new-cat').value.trim();if(v){
 function rmCat(i){S.categorias.splice(i,1);renderCfg();save();}
 
 /* ===== MATERIAIS (catálogo de tipos, na nuvem) ===== */
-let MATS=[]; let MEDIT=null;
+let MATS=[], GRUPOS_MAT=[], MARCAS=[]; let MEDIT=null, MSEQ=0;
+function grpMatNome(id){const g=GRUPOS_MAT.find(x=>x.id===id);return g?g.nome:'';}
 async function carregarMateriais(){
   if(!SB){ document.getElementById('mat-list').innerHTML='<div class="empty">Sem conexão com a nuvem.</div>'; return; }
   document.getElementById('mat-list').innerHTML='<div class="empty">Carregando materiais…</div>';
-  const r=await SB.from('materiais').select('*').is('deleted_at',null).order('descricao_padronizada');
+  const [r,g,mk]=await Promise.all([
+    SB.from('materiais').select('*').is('deleted_at',null).order('descricao_padronizada'),
+    SB.from('grupos_materiais').select('*').eq('ativo',true).order('ordem'),
+    SB.from('marcas').select('*').eq('ativo',true).order('nome')
+  ]);
   if(r.error){ document.getElementById('mat-list').innerHTML='<div class="empty">Erro: '+r.error.message+'</div>'; return; }
-  MATS=r.data||[];
+  MATS=r.data||[]; GRUPOS_MAT=g.data||[]; MARCAS=mk.data||[];
   renderMatList();
 }
 function renderMatList(){
   const q=(document.getElementById('mat-busca').value||'').toLowerCase().trim();
-  const lista=MATS.filter(m=>{ if(!q)return true; return [m.descricao_padronizada,m.descricao_fabricante,m.codigo_barras,m.codigo_interno,m.codigo_fabrica,m.marca,m.modelo].some(x=>(x||'').toLowerCase().indexOf(q)>=0); });
+  const lista=MATS.filter(m=>{ if(!q)return true; return [m.descricao_padronizada,m.descricao_fabricante,m.codigo_barras,m.codigo_interno,m.codigo_fabrica,m.marca,m.modelo,grpMatNome(m.grupo_material_id)].some(x=>(x||'').toLowerCase().indexOf(q)>=0); });
   document.getElementById('mat-count').textContent='· '+MATS.length+' cadastrados';
   document.getElementById('mat-list').innerHTML = lista.length ? lista.map(m=>`
     <div class="svccard">
       <div class="svchead">
         <div style="flex:1">
-          <div style="font-weight:600;font-size:14px">${m.descricao_padronizada||'(sem descrição)'}</div>
-          <div style="font-size:11px;color:var(--tx2)">${m.codigo_barras?'<b>'+m.codigo_barras+'</b> · ':''}${m.marca||''} ${m.modelo||''} ${m.medida?'· '+m.medida:''} ${m.material_cor?'· '+m.material_cor:''} · ${m.unidade||'UND'}${m.codigo_interno?' · int: '+m.codigo_interno:''}</div>
+          <div style="font-weight:600;font-size:14px">${m.codigo_interno?'<span style="font-family:ui-monospace,monospace;font-size:11px;color:var(--pri);background:var(--pri-bg);padding:1px 6px;border-radius:4px;margin-right:6px">'+m.codigo_interno+'</span>':''}${m.descricao_padronizada||'(sem descrição)'}</div>
+          <div style="font-size:11px;color:var(--tx2)">${grpMatNome(m.grupo_material_id)?'<b>'+grpMatNome(m.grupo_material_id)+'</b> · ':''}${m.codigo_barras?m.codigo_barras+' · ':''}${m.marca||''} ${m.modelo||''} ${(m.medida&&m.medida!=='N/A')?'· '+m.medida:''} ${(m.material_cor&&m.material_cor!=='N/A')?'· '+m.material_cor:''} · ${m.unidade||'UND'}${m.quantidade_minima!=null?' · mín: '+m.quantidade_minima:''}</div>
           ${m.descricao_fabricante?`<div style="font-size:11px;color:var(--tx3);margin-top:2px">${m.descricao_fabricante}</div>`:''}
         </div>
         <button class="ib" onclick="openMat('${m.id}')" title="editar">✎</button>
@@ -987,39 +1003,67 @@ function renderMatList(){
       </div>
     </div>`).join('') : '<div class="empty">'+(q?'Nenhum material encontrado.':'Nenhum material ainda. Clique em "+ Novo material" ou importe sua planilha no Supabase.')+'</div>';
 }
+function _matSelects(){
+  const gsel=document.getElementById('mt-grupo');
+  gsel.innerHTML='<option value="">— grupo —</option>'+GRUPOS_MAT.map(g=>`<option value="${g.id}" data-sigla="${g.sigla}">${g.nome} (${g.sigla})</option>`).join('');
+  const msel=document.getElementById('mt-marca');
+  msel.innerHTML='<option value="">—</option>'+MARCAS.map(mk=>`<option>${mk.nome}</option>`).join('');
+}
+function _setOpt(id,val){
+  const inp=document.getElementById(id), na=document.getElementById(id+'-na');
+  if(val==='N/A'){ na.checked=true; inp.value=''; inp.disabled=true; inp.style.opacity=.45; }
+  else { na.checked=false; inp.value=val||''; inp.disabled=false; inp.style.opacity=1; }
+}
+function toggleNA(id){ const inp=document.getElementById(id), na=document.getElementById(id+'-na'); if(na.checked){inp.value='';inp.disabled=true;inp.style.opacity=.45;} else {inp.disabled=false;inp.style.opacity=1;} }
 function openMat(id){
-  MEDIT = id?MATS.find(m=>m.id===id):null;
+  MEDIT = id?MATS.find(m=>m.id===id):null; MSEQ=0;
+  _matSelects();
   const v=(k)=>MEDIT?(MEDIT[k]!=null?MEDIT[k]:''):'';
   document.getElementById('m-mat-title').textContent=id?'Editar material':'Novo material';
+  document.getElementById('mt-grupo').value=v('grupo_material_id');
+  document.getElementById('mt-ci').value=v('codigo_interno');
   document.getElementById('mt-cb').value=v('codigo_barras');
   document.getElementById('mt-descp').value=v('descricao_padronizada');
   document.getElementById('mt-cf').value=v('codigo_fabrica');
-  document.getElementById('mt-ci').value=v('codigo_interno');
+  document.getElementById('mt-marca').value=v('marca');
   document.getElementById('mt-descf').value=v('descricao_fabricante');
-  document.getElementById('mt-cor').value=v('material_cor');
-  document.getElementById('mt-med').value=v('medida');
+  _setOpt('mt-cor', MEDIT?MEDIT.material_cor:'');
+  _setOpt('mt-med', MEDIT?MEDIT.medida:'');
   document.getElementById('mt-un').value=MEDIT?(MEDIT.unidade||'UND'):'UND';
   document.getElementById('mt-mod').value=v('modelo');
-  document.getElementById('mt-marca').value=v('marca');
-  document.getElementById('mt-qtd').value=v('qtd_padrao');
+  document.getElementById('mt-qtd').value=v('quantidade_minima');
   document.getElementById('mt-obs').value=v('obs');
   document.getElementById('modalM').classList.add('show');
+  if(!id) gerarCodInterno();
+}
+async function gerarCodInterno(){
+  if(MEDIT) return; // edição mantém o código existente
+  const gsel=document.getElementById('mt-grupo'); const opt=gsel.options[gsel.selectedIndex];
+  if(!gsel.value){ document.getElementById('mt-ci').value=''; MSEQ=0; return; }
+  const sigla=opt.getAttribute('data-sigla')||'MAT';
+  const r=await SB.from('materiais').select('seq_grupo').eq('grupo_material_id',gsel.value).not('seq_grupo','is',null).order('seq_grupo',{ascending:false}).limit(1);
+  let next=1; if(!r.error && r.data && r.data.length && r.data[0].seq_grupo) next=r.data[0].seq_grupo+1;
+  MSEQ=next;
+  document.getElementById('mt-ci').value=sigla+'/'+String(next).padStart(3,'0');
 }
 function closeMat(){document.getElementById('modalM').classList.remove('show');MEDIT=null;}
 async function saveMat(){
   const num=(x)=>{const n=parseFloat(x);return isNaN(n)?null:n;};
+  const corNA=document.getElementById('mt-cor-na').checked, medNA=document.getElementById('mt-med-na').checked;
   const row={
+    grupo_material_id:document.getElementById('mt-grupo').value||null,
+    codigo_interno:document.getElementById('mt-ci').value.trim()||null,
+    seq_grupo: MEDIT?MEDIT.seq_grupo:(MSEQ||null),
     codigo_barras:document.getElementById('mt-cb').value.trim()||null,
     descricao_padronizada:document.getElementById('mt-descp').value.trim()||null,
     codigo_fabrica:document.getElementById('mt-cf').value.trim()||null,
-    codigo_interno:document.getElementById('mt-ci').value.trim()||null,
     descricao_fabricante:document.getElementById('mt-descf').value.trim()||null,
-    material_cor:document.getElementById('mt-cor').value.trim()||null,
-    medida:document.getElementById('mt-med').value.trim()||null,
+    material_cor: corNA?'N/A':(document.getElementById('mt-cor').value.trim()||null),
+    medida: medNA?'N/A':(document.getElementById('mt-med').value.trim()||null),
     unidade:document.getElementById('mt-un').value.trim()||'UND',
     modelo:document.getElementById('mt-mod').value.trim()||null,
     marca:document.getElementById('mt-marca').value.trim()||null,
-    qtd_padrao:num(document.getElementById('mt-qtd').value),
+    quantidade_minima:num(document.getElementById('mt-qtd').value),
     obs:document.getElementById('mt-obs').value.trim()||null
   };
   if(!row.descricao_padronizada && !row.codigo_barras){ alert('Informe ao menos a descrição ou o código de barras.'); return; }
@@ -1034,6 +1078,21 @@ async function delMat(id){
   const r=await SB.from('materiais').update({deleted_at:new Date().toISOString()}).eq('id',id);
   if(r.error){ alert('Erro: '+r.error.message); return; }
   carregarMateriais();
+}
+async function addGrupoMat(){
+  const nome=prompt('Nome do grupo de material (ex: Cabos):'); if(!nome)return;
+  const sigla=((prompt('Sigla para o código interno (ex: CAB):','')||'').toUpperCase().trim()); if(!sigla){alert('Sigla obrigatória.');return;}
+  const r=await SB.from('grupos_materiais').insert({nome:nome.trim(),sigla,ordem:GRUPOS_MAT.length+1}).select().single();
+  if(r.error){alert('Erro: '+r.error.message);return;}
+  GRUPOS_MAT.push(r.data); _matSelects();
+  document.getElementById('mt-grupo').value=r.data.id; gerarCodInterno();
+}
+async function addMarca(){
+  const nome=prompt('Nome da marca:'); if(!nome)return;
+  const r=await SB.from('marcas').insert({nome:nome.trim()}).select().single();
+  if(r.error){alert('Erro: '+r.error.message);return;}
+  MARCAS.push(r.data); _matSelects();
+  document.getElementById('mt-marca').value=r.data.nome;
 }
 function scanCodigo(){ alert('Leitura por câmera: próxima etapa (funciona no celular). Por ora, digite o código.'); }
 
