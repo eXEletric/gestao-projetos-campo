@@ -7,6 +7,7 @@
 -- recria o que existia do esboço de materiais
 drop table if exists checklist_uso, checklist_itens, checklists cascade;
 drop table if exists materiais_uso, listas_padrao_itens, listas_padrao cascade;
+drop table if exists material_fotos cascade;
 drop table if exists tarefa_materiais cascade;     -- substituído por materiais_uso
 drop table if exists materiais cascade;            -- recriado com as colunas reais
 
@@ -35,6 +36,18 @@ create table materiais (
 create index on materiais (codigo_interno);
 create index on materiais (codigo_barras);
 create index on materiais (qr_code);
+
+-- ---------- FOTOS DO MATERIAL (várias por item) ----------
+create table material_fotos (
+  id          uuid primary key default gen_random_uuid(),
+  material_id uuid not null references materiais(id) on delete cascade,
+  url         text not null,          -- arquivo no Supabase Storage
+  descricao   text,
+  ordem       int not null default 0,
+  created_at  timestamptz not null default now(),
+  updated_at  timestamptz not null default now()
+);
+create index on material_fotos (material_id);
 
 -- ---------- BIBLIOTECA DE LISTAS PADRÃO (modelos reutilizáveis/duplicáveis) ----------
 create table listas_padrao (
@@ -126,14 +139,14 @@ create index on checklist_uso (projeto_id);
 
 -- ---------- gatilhos updated_at ----------
 do $$ declare t text; begin
-  foreach t in array array['materiais','listas_padrao','listas_padrao_itens','materiais_uso',
+  foreach t in array array['materiais','material_fotos','listas_padrao','listas_padrao_itens','materiais_uso',
     'checklists','checklist_itens','checklist_uso'] loop
     execute format('create trigger trg_%1$s_updated before update on %1$s for each row execute function set_updated_at();', t);
   end loop; end $$;
 
 -- ---------- RLS (libera a chave pública, igual ao acesso.sql) ----------
 do $$ declare t text; begin
-  foreach t in array array['materiais','listas_padrao','listas_padrao_itens','materiais_uso',
+  foreach t in array array['materiais','material_fotos','listas_padrao','listas_padrao_itens','materiais_uso',
     'checklists','checklist_itens','checklist_uso'] loop
     execute format('alter table %I enable row level security;', t);
     execute format('drop policy if exists acesso_app on %I;', t);
