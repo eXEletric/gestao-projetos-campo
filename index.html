@@ -232,6 +232,7 @@ table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:
       <button class="btn btn-p" onclick="openAdd()">+ Nova tarefa</button>
     </div>
     <div class="summ">
+      <div class="card"><div class="l">Executado</div><div class="v green" id="s-prog">0%</div></div>
       <div class="card"><div class="l">Horas previstas</div><div class="v blue" id="s-h">0h</div></div>
       <div class="card"><div class="l">Custo previsto</div><div class="v green" id="s-c">R$ 0,00</div></div>
       <div class="card"><div class="l">Tarefas</div><div class="v purple" id="s-t">0</div></div>
@@ -623,6 +624,9 @@ function render(){
       </div>
     </div>`;
   }).join('');
+  const _work=P().tarefas.filter(t=>!t.header);
+  const _prog=_work.length?Math.round(_work.reduce((a,t)=>a+(t.prog||0),0)/_work.length):0;
+  document.getElementById('s-prog').textContent=_prog+'%';
   document.getElementById('s-h').textContent=TH.toFixed(1)+'h';
   document.getElementById('s-c').textContent=fmt(TC);
   document.getElementById('s-t').textContent=TT;
