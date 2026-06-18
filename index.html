@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>eX Cronograma</title>
+<meta name="theme-color" content="#533ab7">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="eX Crono">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon.svg">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+:root{
+  --bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);
+  --tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--pri:#533ab7;--pri-bg:#eeedfe;
+  --blue:#185fa5;--green:#3b6d11;--amber:#ba7517;--red:#a32d2d;--teal:#0f6e56;
+  --cols:46px minmax(150px,1fr) 118px 140px 104px 72px 118px 112px 90px 148px;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45;padding:18px}
+.app{max-width:1180px;margin:0 auto}
+h1{font-size:20px;font-weight:600}
+.cloud-badge{font-size:11px;font-weight:600;padding:3px 10px;border-radius:11px;vertical-align:middle;margin-left:8px}
+.cloud-badge.ok{background:#eaf3de;color:#3b6d11}
+.cloud-badge.load{background:#faeeda;color:#633806}
+.cloud-badge.err{background:#fcebeb;color:#a32d2d}
+.sub{font-size:12px;color:var(--tx2);margin-bottom:14px}
+.tabbar{display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tab{font-size:13px;padding:8px 13px;border:none;background:none;color:var(--tx2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+.tab.active{color:var(--pri);border-bottom-color:var(--pri);font-weight:600}
+.view{display:none}.view.active{display:block}
+.topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.pn{font-family:ui-monospace,monospace;font-size:12px;background:var(--pri-bg);color:var(--pri);padding:4px 10px;border-radius:5px}
+.pname{font-size:16px;font-weight:600;flex:1;min-width:160px}
+.btn{font-size:13px;padding:7px 13px;border-radius:7px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer}
+.btn:hover{background:var(--surf2)}
+.btn-p{background:var(--pri);color:#fff;border-color:var(--pri)}
+.btn-s{font-size:12px;padding:5px 10px}
+.summ{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.card{background:var(--surf2);border-radius:9px;padding:11px 15px;flex:1;min-width:120px}
+.card .l{font-size:11px;color:var(--tx2)}
+.card .v{font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+.v.blue{color:var(--blue)}.v.green{color:var(--green)}.v.purple{color:var(--pri)}.v.amber{color:var(--amber)}.v.red{color:var(--red)}
+.note{font-size:11px;color:var(--tx3);margin:8px 0;display:flex;gap:6px;align-items:center}
+.sec{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin:18px 0 8px}
+
+/* CRONOGRAMA */
+.cwrap{overflow-x:auto}
+.cmin{min-width:1140px}
+.colh{display:grid;grid-template-columns:var(--cols);gap:0;padding:6px 0 6px 8px;border-bottom:1px solid var(--line2);font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3)}
+.colh span{padding:0 6px}.colh .r{text-align:right}
+.grp{margin-bottom:2px}
+.gh{display:grid;grid-template-columns:var(--cols);align-items:center;padding:8px 0;border-radius:6px;background:var(--surf2)}
+.gar{width:14px;text-align:center;color:var(--tx3);transition:transform .15s;flex-shrink:0}
+.gar.open{transform:rotate(90deg)}
+.gwbs{font-family:ui-monospace,monospace;font-size:13px;font-weight:600;color:var(--pri);padding:0 6px;display:flex;align-items:center;gap:5px;cursor:pointer}
+.gname{font-size:14px;font-weight:600;display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:0 6px;min-width:0;cursor:pointer}
+.gcat{font-size:10px;background:var(--surf);color:var(--tx2);padding:2px 8px;border-radius:9px;white-space:nowrap}
+.gsub{font-size:11px;color:var(--tx3)}.gsub b{color:var(--tx2)}
+.gstats{font-size:11px;color:var(--tx3);padding:0 6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.gstats b{color:var(--tx2)}
+.gtimecell{text-align:right;padding:0 6px;font-size:12px;color:var(--tx2);white-space:nowrap}.gtimecell b{color:var(--tx2)}
+.gprogcell{display:flex;justify-content:flex-end;padding:0 6px}
+.gcostcell{text-align:right;padding:0 6px;font-size:12px;font-weight:600;color:var(--tx2);white-space:nowrap}
+.gbtns{display:flex;gap:3px;justify-content:flex-end;padding:0 4px}
+.ib{width:24px;height:24px;border:1px solid var(--line);border-radius:5px;background:var(--surf);color:var(--tx3);cursor:pointer;font-size:12px;display:inline-flex;align-items:center;justify-content:center}
+.ib:hover{background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}
+.ib.del:hover{background:#fcebeb;border-color:var(--red);color:var(--red)}
+.trow{display:grid;grid-template-columns:var(--cols);gap:0;align-items:center;padding:5px 0 5px 8px;border-bottom:1px solid var(--line);font-size:12px}
+.trow:hover{background:var(--surf2)}
+.trow.header-row{background:#efeefb}
+.trow.header-row:hover{background:#e7e5f7}
+.trow.sub .twbs{padding-left:16px}
+.trow.sub .tnm{padding-left:14px;color:var(--tx2)}
+.twbs{font-family:ui-monospace,monospace;font-size:11px;color:var(--blue);padding:0 6px;font-variant-numeric:tabular-nums}
+.tname{padding:0 6px;min-width:0}
+.tnm{display:block;white-space:normal;overflow-wrap:anywhere;line-height:1.3}
+.tvr{font-size:10px;color:var(--amber)}
+.cell-in{width:100%;padding:5px 6px;border:1px solid var(--line);border-radius:5px;background:var(--surf);font-size:12px;color:var(--tx)}
+.cell-in:focus{outline:none;border-color:var(--pri)}
+.cell-num{text-align:right;font-variant-numeric:tabular-nums}
+.tempo-ed{border-color:var(--amber);background:#faeeda55}
+.qcell{display:flex;align-items:center;gap:6px;padding:0 6px}
+.qcell .cell-in{flex:1}
+.und2{font-size:10px;color:var(--tx3);min-width:40px;white-space:nowrap}
+.prevc{padding:0 6px;text-align:right;font-variant-numeric:tabular-nums;color:var(--tx3);white-space:nowrap}
+.atualc{display:flex;align-items:center;justify-content:flex-end;gap:5px;padding:0 6px}
+.atualc .cell-in{width:56px;flex-shrink:0}
+.devb{font-size:9px;padding:1px 5px;border-radius:3px;white-space:nowrap;min-width:36px;text-align:center}
+.devb.up{background:#fcebeb;color:var(--red)}
+.devb.dn{background:#eaf3de;color:var(--green)}
+.devb.ok{color:var(--tx3)}
+.progc{display:flex;align-items:center;justify-content:flex-end;gap:8px;padding:0 6px}
+.progc .cell-in{width:52px;flex-shrink:0}
+.mbar{width:40px;height:5px;background:var(--line);border-radius:3px;overflow:hidden;flex-shrink:0}
+.mfill{height:100%;border-radius:3px}
+.gprog{font-size:12px;font-weight:700;color:#fff;padding:2px 12px;border-radius:11px;margin-left:6px;letter-spacing:.02em}
+.pprog{display:flex;align-items:center;gap:12px;margin-top:12px}
+.pprog-bar{flex:1;height:12px;background:var(--surf2);border-radius:6px;overflow:hidden}
+.pprog-fill{height:100%;border-radius:6px;transition:width .3s}
+.pprog-val{font-size:18px;font-weight:700;min-width:54px;text-align:right}
+.pprog-lbl{font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.04em}
+.tnum{padding:0 6px;text-align:right;font-variant-numeric:tabular-nums;color:var(--tx2)}
+.tcost{padding:0 6px;text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--green)}
+.tcost.z{color:var(--tx3);font-weight:400}
+.tacts{display:flex;gap:2px;padding:0 4px;justify-content:flex-end}
+.subtot{display:grid;grid-template-columns:var(--cols);padding:5px 0 5px 8px;background:var(--surf2);font-size:11px;font-weight:600}
+.subtot .l{padding:0 6px;color:var(--tx3);grid-column:2/8}
+.subtot .h{padding:0 6px;text-align:right;color:var(--blue);grid-column:8/9}
+.subtot .c{padding:0 6px;text-align:right;color:var(--blue);grid-column:9/10}
+.addr{padding:7px 0 7px 28px;font-size:12px;color:var(--pri);cursor:pointer}
+.addr:hover{text-decoration:underline}
+.addg{margin-top:12px}
+
+/* TABELAS CONFIG */
+table.db{width:100%;border-collapse:collapse;font-size:12px}
+table.db th{text-align:left;padding:7px 10px;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);border-bottom:1px solid var(--line2)}
+table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.badge{font-size:10px;padding:2px 7px;border-radius:4px;background:var(--pri-bg);color:var(--pri)}
+.badge.g{background:#eaf3de;color:var(--green)}.badge.gray{background:var(--surf2);color:var(--tx2)}
+.tin{padding:5px 8px;border:1px solid var(--line);border-radius:5px;font-size:12px;background:var(--surf);color:var(--tx)}
+.tin:focus{outline:none;border-color:var(--pri)}
+.chiplist{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.cfgchip{font-size:12px;padding:5px 10px;border-radius:15px;background:var(--surf2);color:var(--tx);display:flex;align-items:center;gap:6px}
+.cfgchip .x{cursor:pointer;color:var(--tx3);font-weight:700}
+.cfgchip .x:hover{color:var(--red)}
+.addinline{display:flex;gap:6px;align-items:center;margin-top:8px}
+
+/* LINHAS FUNCAO DO COLABORADOR */
+.flines{display:flex;flex-direction:column;gap:6px}
+.fline{display:grid;grid-template-columns:1fr 100px 96px 30px;gap:6px;align-items:center}
+.fline select,.fline input{padding:5px 7px;border:1px solid var(--line);border-radius:5px;font-size:12px;background:var(--surf);color:var(--tx)}
+.addfline{font-size:11px;color:var(--pri);cursor:pointer;margin-top:4px}
+
+/* CATALOGO */
+.svccard{border:1px solid var(--line);border-radius:8px;padding:11px 13px;margin-bottom:8px}
+.svchead{display:flex;align-items:center;gap:8px;margin-bottom:8px}
+.svchead .nm{font-weight:600;font-size:13px;flex:1}
+.varrow{display:grid;grid-template-columns:1fr 78px 30px;gap:6px;align-items:center;margin-bottom:4px;padding-left:8px}
+.varrow input{padding:5px 7px;border:1px solid var(--line);border-radius:5px;font-size:12px;background:var(--surf);color:var(--tx)}
+
+/* GANTT */
+.gg{margin-bottom:14px}
+.gg-h{display:flex;align-items:center;gap:8px;padding:8px 10px;background:var(--surf2);border-radius:7px 7px 0 0;font-size:13px;font-weight:600}
+.gg-h .gp{margin-left:auto;font-size:11px;font-weight:400;color:var(--tx2)}
+.grow{display:grid;grid-template-columns:250px 1fr;border-bottom:1px solid var(--line);align-items:center}
+.grow:hover{background:var(--surf2)}
+.gleft{padding:6px 10px;display:flex;align-items:center;gap:8px;min-width:0}
+.gwbs2{font-family:ui-monospace,monospace;font-size:10px;color:var(--tx3)}
+.gnm{font-size:12px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.gst{width:9px;height:9px;border-radius:50%;flex-shrink:0}
+.st-done{background:var(--green)}.st-wip{background:var(--amber)}.st-ice{background:#85b7eb}.st-todo{background:#b4b2a9}.st-late{background:var(--red)}
+.gtl{position:relative;height:32px;border-left:1px solid var(--line)}
+.gweek{position:absolute;top:0;bottom:0;border-right:1px dashed var(--line);font-size:9px;color:var(--tx3);padding:2px 0 0 3px}
+.gbar{position:absolute;top:7px;height:18px;border-radius:4px;overflow:hidden}
+.gbar .fill{height:100%;border-radius:4px 0 0 4px}
+.gbar.b-done{background:#c0dd97}.gbar.b-done .fill{background:var(--green)}
+.gbar.b-wip{background:#fac775}.gbar.b-wip .fill{background:var(--amber)}
+.gbar.b-ice{background:#b5d4f4}.gbar.b-ice .fill{background:#85b7eb}
+.gbar.b-late{background:#f7c1c1}.gbar.b-late .fill{background:var(--red)}
+.gbar.b-todo{background:#d3d1c7}.gbar.b-todo .fill{background:#888780}
+.gbar .lb{position:absolute;right:5px;top:1px;font-size:9px;font-weight:600;color:#fff}
+.today{position:absolute;top:0;bottom:0;width:2px;background:var(--red);z-index:5}
+.legend2{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--tx2);margin-top:10px}
+.legend2 span{display:flex;align-items:center;gap:5px}.legend2 .d{width:9px;height:9px;border-radius:50%}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;padding:20px;z-index:50}
+.modal-bg.show{display:flex}
+.modal{background:var(--surf);border-radius:12px;width:560px;max-width:100%;max-height:88vh;display:flex;flex-direction:column;overflow:hidden}
+.mh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.mh b{font-size:15px;font-weight:600}.mh .x{cursor:pointer;font-size:20px;color:var(--tx3);background:none;border:none}
+.mb{padding:18px;overflow-y:auto}.mf{padding:13px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.fg{margin-bottom:14px}.fl{font-size:11px;font-weight:600;color:var(--tx2);margin-bottom:6px;display:block}
+.fl .amb{color:var(--amber)}
+.fi{width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)}
+.fi:focus{outline:none;border-color:var(--pri)}
+.chips{display:flex;flex-wrap:wrap;gap:7px}
+.chip{font-size:12px;padding:7px 12px;border-radius:17px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer;user-select:none}
+.chip:hover{border-color:var(--pri)}
+.chip.sel{background:var(--pri-bg);border-color:var(--pri);color:var(--pri);font-weight:600}
+.chip.amb.sel{background:#faeeda;border-color:#ef9f27;color:#633806}
+.chip .h{font-family:ui-monospace,monospace;font-size:10px;opacity:.8;margin-left:5px}
+.frow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.qbtns{display:flex;align-items:center;gap:6px}
+.qb{width:30px;height:34px;border:1px solid var(--line2);border-radius:6px;background:var(--surf);font-size:16px;cursor:pointer;color:var(--tx2)}
+.qb:hover{background:var(--surf2)}
+.qv{flex:1;text-align:center;font-size:14px;font-weight:600}
+.prev{background:var(--surf2);border-radius:8px;padding:11px 14px;margin-top:6px;display:flex;justify-content:space-between;font-size:13px}
+.prev .pc{font-weight:600;color:var(--green);font-size:16px;font-variant-numeric:tabular-nums}
+.empty{padding:30px;text-align:center;color:var(--tx3);font-size:13px}
+.reset{font-size:11px;color:var(--blue);cursor:pointer}
+</style>
+</head>
+<body>
+<div class="app">
+  <h1>eX Cronograma <span class="cloud-badge load" id="cloud-badge">iniciando…</span></h1>
+  <div class="sub">App fiel ao documento de definições · dados na nuvem (Supabase)</div>
+
+  <div class="tabbar">
+    <button class="tab active" onclick="tab('proj',this)">Projetos</button>
+    <button class="tab" onclick="tab('acomp',this)">Acompanhamento</button>
+    <button class="tab" onclick="tab('crono',this)">Cronograma</button>
+    <button class="tab" onclick="tab('colab',this)">Colaboradores</button>
+    <button class="tab" onclick="tab('cat',this)">Catálogo</button>
+    <button class="tab" onclick="tab('cfg',this)">Configurações</button>
+  </div>
+
+  <!-- PROJETOS -->
+  <div class="view active" id="v-proj">
+    <div class="topbar"><span class="pname">Projetos / Obras</span><button class="btn btn-s" onclick="migrarParaNuvem()" title="Sobe os dados atuais para a nuvem (uma vez)">☁ Migrar p/ nuvem</button><button class="btn btn-p btn-s" onclick="openProj(-1)">+ Novo projeto</button></div>
+    <div class="note">Selecione um projeto para abrir o cronograma dele. Cada projeto tem seus próprios grupos e tarefas; colaboradores e catálogo são compartilhados.</div>
+    <div id="proj-list"></div>
+  </div>
+
+  <!-- ACOMPANHAMENTO -->
+  <div class="view" id="v-acomp">
+    <div class="topbar"><span class="pn" id="ap-num"># —</span><span class="pname" id="ap-nome">—</span><span style="font-size:12px;color:var(--tx2)">Hoje: <b id="hoje"></b></span></div>
+    <div class="summ">
+      <div class="card"><div class="l">Executado (geral)</div><div class="v green" id="a-exec">0%</div></div>
+      <div class="card"><div class="l">Concluídas</div><div class="v blue" id="a-done">0</div></div>
+      <div class="card"><div class="l">Em andamento</div><div class="v amber" id="a-wip">0</div></div>
+      <div class="card"><div class="l">Em risco/atraso</div><div class="v red" id="a-risk">0</div></div>
+    </div>
+    <div id="gantt"></div>
+  </div>
+
+  <!-- CRONOGRAMA -->
+  <div class="view" id="v-crono">
+    <div class="topbar"><span class="pn" id="cp-num"># —</span><span class="pname" id="cp-nome">—</span>
+      <button class="btn" onclick="restaurar()">↺ Restaurar exemplo</button>
+      <button class="btn btn-p" onclick="openAdd()">+ Nova tarefa</button>
+    </div>
+    <div class="summ">
+      <div class="card"><div class="l">Horas previstas</div><div class="v blue" id="s-h">0h</div></div>
+      <div class="card"><div class="l">Custo previsto</div><div class="v green" id="s-c">R$ 0,00</div></div>
+      <div class="card"><div class="l">Tarefas</div><div class="v purple" id="s-t">0</div></div>
+      <div class="card"><div class="l">Grupos</div><div class="v amber" id="s-g">0</div></div>
+    </div>
+    <div class="note">↑↓ reordena · ← → promove/rebaixa nível (tarefa ↔ subtarefa) · qtd e tempo editáveis na linha</div>
+    <div class="cwrap"><div class="cmin">
+      <div class="colh"><span>WBS</span><span>Tarefa / variação</span><span>Executor</span><span>Função aplicada</span><span>Qtd · und</span><span class="r">Prev. 🔒</span><span>Atual / desvio</span><span>Progresso</span><span class="r">Custo</span><span></span></div>
+      <div id="board"></div>
+    </div></div>
+    <div class="addg"><button class="btn btn-s" onclick="openGroup(-1)">+ adicionar grupo (tarefa-pai)</button></div>
+  </div>
+
+  <!-- COLABORADORES -->
+  <div class="view" id="v-colab">
+    <div class="topbar"><span class="pname">Colaboradores</span><button class="btn btn-p btn-s" onclick="addColab()">+ Novo colaborador</button></div>
+    <div class="note">Cada linha = Função + Nível + Valor/hora. Um colaborador pode ter várias. Cliente/fabricante: desligue "gera custo".</div>
+    <div id="colab-list"></div>
+  </div>
+
+  <!-- CATALOGO -->
+  <div class="view" id="v-cat">
+    <div class="topbar"><span class="pname">Catálogo de serviços</span><button class="btn btn-p btn-s" onclick="addSvc()">+ Novo serviço</button></div>
+    <div class="note">Cada serviço tem variações (dificuldade) com tempo próprio. Adicione/edite/exclua em linha.</div>
+    <div id="cat-list"></div>
+  </div>
+
+  <!-- CONFIGURACOES -->
+  <div class="view" id="v-cfg">
+    <div class="sec">Funções (ofícios)</div>
+    <div class="chiplist" id="cfg-func"></div>
+    <div class="addinline"><input class="tin" id="new-func" placeholder="Nova função..."><button class="btn btn-s" onclick="addFunc()">+ adicionar</button></div>
+    <div class="sec">Níveis</div>
+    <div class="chiplist" id="cfg-niv"></div>
+    <div class="addinline"><input class="tin" id="new-niv" placeholder="Novo nível..."><button class="btn btn-s" onclick="addNiv()">+ adicionar</button></div>
+    <div class="sec">Categorias (vinculadas às atividades raiz)</div>
+    <div class="chiplist" id="cfg-cat"></div>
+    <div class="addinline"><input class="tin" id="new-cat" placeholder="Nova categoria..."><button class="btn btn-s" onclick="addCat()">+ adicionar</button></div>
+    <div class="note" style="margin-top:18px">Materiais por serviço: definição futura (base padrão + configuração por função).</div>
+  </div>
+</div>
+
+<!-- MODAL ADD TAREFA -->
+<div class="modal-bg" id="modal"><div class="modal">
+  <div class="mh"><b>Nova tarefa</b><button class="x" onclick="closeAdd()">&times;</button></div>
+  <div class="mb">
+    <div class="fg"><label class="fl">Grupo</label><select class="fi" id="m-grupo" onchange="loadSvc()"></select></div>
+    <div class="fg"><label class="fl">Serviço (categoria do grupo)</label><div class="chips" id="m-svc"></div></div>
+    <div class="fg"><label class="fl"><span class="amb">Variação — dificuldade</span></label><div class="chips" id="m-var"></div></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Executor</label><select class="fi" id="m-exec" onchange="loadLinha()"></select></div>
+      <div class="fg"><label class="fl">Função aplicada</label><select class="fi" id="m-linha" onchange="calcPrev()"></select></div>
+      <div class="fg"><label class="fl">Quantidade</label><div class="qbtns"><button class="qb" onclick="mq(-1)">−</button><span class="qv" id="m-qtd">1</span><button class="qb" onclick="mq(1)">+</button></div></div>
+    </div>
+    <div class="fg"><label class="fl">Tempo previsto (h/und) <span class="reset" id="m-reset" onclick="resetTempo()" style="display:none">↺ padrão do catálogo</span></label><input class="fi" id="m-tempo" type="number" step="0.05" oninput="markTempo()"></div>
+    <div class="prev"><span id="m-prev-l">—</span><span class="pc" id="m-prev-c">R$ 0,00</span></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeAdd()">Cancelar</button><button class="btn btn-p" onclick="saveTask()">Adicionar</button></div>
+</div></div>
+
+<!-- MODAL EDITAR TAREFA -->
+<div class="modal-bg" id="modalE"><div class="modal">
+  <div class="mh"><b>Editar tarefa</b><button class="x" onclick="closeEdit()">&times;</button></div>
+  <div class="mb">
+    <div class="fg"><label class="fl">Nome da tarefa <span id="e-tipo" style="color:var(--tx3);font-weight:400"></span></label><input class="fi" id="e-nome"></div>
+    <div class="fg" id="e-var-wrap"><label class="fl"><span class="amb">Variação — dificuldade</span></label><div class="chips" id="e-var"></div></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Progresso (%)</label><input class="fi" id="e-prog" type="number" min="0" max="100" step="5"></div>
+      <div class="fg"><label class="fl">Status</label><select class="fi" id="e-status">
+        <option value="todo">A fazer</option><option value="wip">Em andamento</option><option value="done">Concluída</option><option value="ice">Congelada</option>
+      </select></div>
+      <div class="fg" id="e-qtd-wrap"><label class="fl">Quantidade</label><input class="fi" id="e-qtd" type="number" min="0"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Início</label><input class="fi" id="e-ini" type="date"></div>
+      <div class="fg"><label class="fl">Término</label><input class="fi" id="e-fim" type="date"></div>
+      <div class="fg" id="e-tempo-wrap"><label class="fl">Tempo previsto (h/und) 🔒</label><input class="fi" id="e-tempo" type="number" step="0.05"></div>
+    </div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeEdit()">Cancelar</button><button class="btn btn-p" onclick="saveEdit()">Salvar</button></div>
+</div></div>
+
+<!-- MODAL GRUPO (tarefa-pai) -->
+<div class="modal-bg" id="modalG"><div class="modal" style="width:440px">
+  <div class="mh"><b id="g-title">Grupo</b><button class="x" onclick="closeGroup()">&times;</button></div>
+  <div class="mb">
+    <div class="fg"><label class="fl">Nome do grupo (tarefa-pai)</label><input class="fi" id="g-nome" placeholder="Ex: Supervisório X-Web"></div>
+    <div class="fg"><label class="fl">Categoria — define quais serviços aparecem dentro</label><select class="fi" id="g-cat"></select></div>
+    <div class="fg"><label class="fl">Responsável pelo grupo (sem custo)</label><select class="fi" id="g-resp"></select></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeGroup()">Cancelar</button><button class="btn btn-p" onclick="saveGroup()">Salvar</button></div>
+</div></div>
+
+<!-- MODAL PROJETO -->
+<div class="modal-bg" id="modalP"><div class="modal">
+  <div class="mh"><b id="p-title">Projeto</b><button class="x" onclick="closeProj()">&times;</button></div>
+  <div class="mb">
+    <div class="frow">
+      <div class="fg"><label class="fl">Nº externo</label><input class="fi" id="p-num" placeholder="Ex: 1321222594"></div>
+      <div class="fg" style="grid-column:span 2"><label class="fl">Nome do projeto</label><input class="fi" id="p-nome" placeholder="Ex: ATACADÃO 906 ILHÉUS BR"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Cliente contratante (contrata/paga)</label><input class="fi" id="p-contratante" placeholder="Ex: Copeland"></div>
+      <div class="fg" style="grid-column:span 2"><label class="fl">Cliente contemplado (onde o serviço é executado)</label><input class="fi" id="p-contemplado" placeholder="Ex: Atacadão nº 906 — Ilhéus"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Local (cidade/UF)</label><input class="fi" id="p-local" placeholder="Ilhéus — BA"></div>
+      <div class="fg"><label class="fl">Status</label><select class="fi" id="p-status"><option>Em andamento</option><option>Aguardando início</option><option>Concluído</option><option>Suspenso</option></select></div>
+      <div class="fg"><label class="fl">Líder</label><select class="fi" id="p-lider"></select></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Início</label><input class="fi" id="p-ini" type="date"></div>
+      <div class="fg"><label class="fl">Conclusão prevista</label><input class="fi" id="p-fim" type="date"></div>
+      <div class="fg"><label class="fl">Gestor da execução (loja)</label><input class="fi" id="p-gestor" placeholder="Quem acompanha a obra no local"></div>
+    </div>
+    <div class="fg"><label class="fl">Endereço completo da unidade</label><input class="fi" id="p-end" placeholder="Rua, nº, bairro, cidade/UF, CEP"></div>
+    <div class="fg"><label class="fl">Localização exata (coordenadas ou link do mapa)</label><input class="fi" id="p-loc" placeholder="Ex: -14.7935, -39.0463  ou  cole um link do Google Maps"></div>
+    <div class="fg"><label class="fl">Observações / escopo</label><input class="fi" id="p-obs"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeProj()">Cancelar</button><button class="btn btn-p" onclick="saveProj()">Salvar projeto</button></div>
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const STORE_KEY='ex_crono_v9';
+/* ===== NUVEM (Supabase) ===== */
+const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
+const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
+const SB = (window.supabase && SB_URL) ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+// mapas de status/prioridade entre app e banco
+const ST2DB={todo:'a_fazer',wip:'em_andamento',done:'concluida',ice:'congelada'};
+const ST2APP={a_fazer:'todo',em_andamento:'wip',concluida:'done',congelada:'ice'};
+const PRI2DB={'Alta':'alta','Média':'media','Baixa':'baixa'};
+const PRI2APP={alta:'Alta',media:'Média',baixa:'Baixa'};
+const PJ2DB={'Em andamento':'em_andamento','Aguardando início':'aguardando','Concluído':'concluido','Suspenso':'suspenso'};
+const PJ2APP={em_andamento:'Em andamento',aguardando:'Aguardando início',concluido:'Concluído',suspenso:'Suspenso'};
+function nuvemStatus(txt,cls){ const el=document.getElementById('cloud-badge'); if(el){ el.textContent=txt; el.className='cloud-badge '+(cls||''); } }
+function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : 'id'+Math.random().toString(36).slice(2,9)); }
+/* ===== GRAVAR NA NUVEM (write-through) ===== */
+function _cfId(t){ const c=colab(t.exec); return (c&&c.linhas[t.execLinha])?c.linhas[t.execLinha]._id:null; }
+function _varId(t){ const s=S.catalogo.find(x=>x.id===t.svc); if(s&&t.varNome){ const v=s.vars.find(x=>x[0]===t.varNome); if(v) return v[2]||null; } return null; }
+async function pushTarefa(t){ if(!SB||!t) return; const s=S.catalogo.find(x=>x.id===t.svc);
+  const row={id:t.id,projeto_id:S.ativo,grupo_id:t.grupo,nivel:t.nivel||1,is_header:!!t.header,servico_id:t.svc||null,variacao_id:_varId(t),nome:t.nome,quantidade:t.qtd||0,unidade:s?s.un:null,tempo_previsto:t.tempoPrev||0,tempo_atual:t.tempo||0,executor_id:t.exec||null,colaborador_funcao_id:_cfId(t),responsavel_id:t.resp||null,prioridade:PRI2DB[t.prioridade]||'media',progresso:t.prog||0,status:ST2DB[t.status]||'a_fazer',data_inicio:t.ini||null,data_fim_prevista:t.fim||null,data_fim_real:t.fimReal||null,notas:t.notas||null,ordem:P().tarefas.indexOf(t)};
+  const r=await SB.from('tarefas').upsert(row); if(r.error){ nuvemStatus('erro ao salvar','err'); console.error('pushTarefa',r.error);} else nuvemStatus('salvo ✓','ok'); }
+async function pushTarefasOrdem(){ if(!SB) return; for(const t of P().tarefas){ await pushTarefa(t); } }
+async function pushGrupo(g){ if(!SB||!g) return; const row={id:g.id,projeto_id:S.ativo,nome:g.nome,categoria_id:g.cat||null,responsavel_id:g.resp||null,ordem:P().grupos.indexOf(g),aberto:g.open!==false};
+  const r=await SB.from('grupos').upsert(row); if(r.error){nuvemStatus('erro ao salvar','err');console.error('pushGrupo',r.error);} else nuvemStatus('salvo ✓','ok'); }
+async function pushProjeto(p){ if(!SB||!p) return; const row={id:p.id,numero_externo:p.numero||null,nome:p.nome,contratante:p.contratante||null,contemplado:p.contemplado||null,local:p.local||null,endereco:p.endereco||null,localizacao:p.localizacao||null,lider_id:p.lider||null,gestor:p.gestor||null,data_inicio:p.dataIni||null,data_fim_prevista:p.dataFim||null,status:PJ2DB[p.status]||'aguardando',observacoes:p.obs||null};
+  const r=await SB.from('projetos').upsert(row); if(r.error){nuvemStatus('erro ao salvar','err');console.error('pushProjeto',r.error);} else nuvemStatus('salvo ✓','ok'); }
+async function delNuvem(tabela,id){ if(!SB||!id) return; const r=await SB.from(tabela).delete().eq('id',id); if(r.error)console.error('del '+tabela,r.error); }
+function fmt(n){return n>0?'R$ '+Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';}
+
+const CATALOGO_BASE=[
+  {id:"infra_alimentador",nome:"Infra de interligação (alimentador)",cat:"SUPERVISORIO",un:"M",vars:[["Conexão pré-existente",0.25],["Confecção nova",0.333]]},
+  {id:"dj_alimentador",nome:"DJ alimentador",cat:"SUPERVISORIO",un:"UND",vars:[["Novo",0.5],["Pré-existente",0.083]]},
+  {id:"sensor_chiller",nome:"Sensor temp. Chiller",cat:"SENSORES",un:"PONTO",vars:[["Troca",1.0],["Instalação completa",2.0]]},
+  {id:"sensor_loja",nome:"Sensor temp. Loja",cat:"SENSORES",un:"M",vars:[["Troca",1.0],["Instalação por metro",0.0167]]},
+  {id:"chicote_qa",nome:"Chicote no QA BRPROJ",cat:"INFRAESTRUTURA",un:"PONTO",vars:[["Confecção nova",0.417],["Ligação existente",0.167]]},
+  {id:"cag_fancoil",nome:"Comando QD CAG - Fancoil",cat:"AR_CONDICIONADO",un:"UND",vars:[["Manual + automático",1.0],["Auto c/ correções",0.667],["Adição automático",0.5],["Disponível em borne",0.167]]},
+  {id:"cag_torre",nome:"Comando QD CAG - Torre",cat:"AR_CONDICIONADO",un:"UND",vars:[["Manual + automático",1.0],["Adição automático",0.5],["Disponível em borne",0.167]]},
+  {id:"medidor_qgbt",nome:"Medidor de energia - QGBT",cat:"MEDIDORES",un:"UND",vars:[["Instalação completa",0.5],["Troca",0.167],["Atende padrão",0]]},
+  {id:"medidor_ar",nome:"Medidor de energia - Ar",cat:"MEDIDORES",un:"CONJ",vars:[["Instalação completa",2.0],["Checagem TP/TCs",0.667]]},
+  {id:"ilum_auto",nome:"Comando automático iluminação",cat:"ILUMINACAO",un:"UND",vars:[["Fazer 100% até bornes",0.25],["Adequar c/ bornes",0.167],["Disponível em borne",0]]},
+  {id:"comissionamento",nome:"Comissionamento interno",cat:"COMISSIONAMENTO",un:"SERV",vars:[["Padrão",2.0]]},
+  {id:"validacao",nome:"Validação com fabricante",cat:"COMISSIONAMENTO",un:"SERV",vars:[["Padrão",0.5]]}
+];
+
+let S=load();
+function load(){const s=localStorage.getItem(STORE_KEY);return s?JSON.parse(s):demo();}
+function save(){localStorage.setItem(STORE_KEY,JSON.stringify(S));}
+
+/* ===== CARREGAR DA NUVEM ===== */
+async function carregarDaNuvem(){
+  if(!SB) return null;
+  const [fR,nR,cR,coR,cfR,sR,svR,pR,gR,tR] = await Promise.all([
+    SB.from('funcoes').select('*').is('deleted_at',null).order('ordem'),
+    SB.from('niveis').select('*').is('deleted_at',null).order('ordem'),
+    SB.from('categorias').select('*').is('deleted_at',null).order('ordem'),
+    SB.from('colaboradores').select('*').is('deleted_at',null).order('created_at'),
+    SB.from('colaborador_funcoes').select('*'),
+    SB.from('servicos').select('*').is('deleted_at',null).order('created_at'),
+    SB.from('servico_variacoes').select('*').order('ordem'),
+    SB.from('projetos').select('*').is('deleted_at',null).order('created_at'),
+    SB.from('grupos').select('*').is('deleted_at',null).order('ordem'),
+    SB.from('tarefas').select('*').is('deleted_at',null).order('ordem')
+  ]);
+  for(const r of [fR,nR,cR,coR,cfR,sR,svR,pR,gR,tR]){ if(r.error) throw r.error; }
+  if(!pR.data.length && !coR.data.length) return null; // nuvem vazia
+  const funcById={}; fR.data.forEach(f=>funcById[f.id]=f.nome);
+  const nivById={}; nR.data.forEach(n=>nivById[n.id]=n.nome);
+  const varById={}; svR.data.forEach(v=>varById[v.id]=v.nome);
+  const colab = coR.data.map(c=>({
+    id:c.id, nome:c.nome, custo:c.gera_custo, ativo:c.ativo,
+    linhas: cfR.data.filter(cf=>cf.colaborador_id===c.id).map(cf=>({funcao:funcById[cf.funcao_id]||'',nivel:nivById[cf.nivel_id]||'',vh:cf.valor_hora,_id:cf.id}))
+  }));
+  const catalogo = sR.data.map(s=>({
+    id:s.id, nome:s.nome, cat:s.categoria_id, un:s.unidade,
+    vars: svR.data.filter(v=>v.servico_id===s.id).map(v=>[v.nome,Number(v.horas_por_unidade),v.id])
+  }));
+  const projetos = pR.data.map(p=>{
+    const grupos = gR.data.filter(g=>g.projeto_id===p.id).map(g=>({id:g.id,nome:g.nome,cat:g.categoria_id,resp:g.responsavel_id||'',open:g.aberto}));
+    const tarefas = tR.data.filter(t=>t.projeto_id===p.id).map(t=>{
+      const c=colab.find(x=>x.id===t.executor_id); let execLinha=0;
+      if(c && t.colaborador_funcao_id){ const i=c.linhas.findIndex(l=>l._id===t.colaborador_funcao_id); if(i>=0)execLinha=i; }
+      return {id:t.id,grupo:t.grupo_id,nivel:t.nivel,header:t.is_header,svc:t.servico_id,varNome:t.variacao_id?(varById[t.variacao_id]||''):'',nome:t.nome,qtd:Number(t.quantidade),tempo:Number(t.tempo_atual),tempoPrev:Number(t.tempo_previsto),exec:t.executor_id||'',execLinha:execLinha,resp:t.responsavel_id||'',prioridade:PRI2APP[t.prioridade]||'Média',prog:t.progresso,status:ST2APP[t.status]||'todo',ini:t.data_inicio||'',fim:t.data_fim_prevista||'',fimReal:t.data_fim_real||'',notas:t.notas||''};
+    });
+    return {id:p.id,numero:p.numero_externo||'',nome:p.nome,contratante:p.contratante||'',contemplado:p.contemplado||'',local:p.local||'',endereco:p.endereco||'',localizacao:p.localizacao||'',lider:p.lider_id||'',gestor:p.gestor||'',dataIni:p.data_inicio||'',dataFim:p.data_fim_prevista||'',status:PJ2APP[p.status]||'Em andamento',obs:p.observacoes||'',grupos:grupos,tarefas:tarefas};
+  });
+  return {funcoes:fR.data.map(f=>f.nome),niveis:nR.data.map(n=>n.nome),categorias:cR.data.map(c=>[c.id,c.nome]),catalogo,colab,projetos,ativo:projetos.length?projetos[0].id:null};
+}
+
+/* ===== MIGRAR (uma vez) — sobe o S atual para a nuvem ===== */
+async function migrarParaNuvem(){
+  if(!SB){ alert('Sem conexão com a nuvem.'); return; }
+  const chk = await SB.from('colaboradores').select('id',{count:'exact',head:true});
+  if((chk.count||0)>0){ if(!confirm('A nuvem já tem dados. Migrar de novo pode duplicar. Continuar?')) return; }
+  nuvemStatus('migrando…','load');
+  try{
+    const [fR,nR,cR]=await Promise.all([SB.from('funcoes').select('*'),SB.from('niveis').select('*'),SB.from('categorias').select('*')]);
+    const funcId={}; fR.data.forEach(f=>funcId[f.nome]=f.id);
+    const nivId={}; nR.data.forEach(n=>nivId[n.nome]=n.id);
+    const catByNome={}; cR.data.forEach(c=>catByNome[c.nome]=c.id);
+    const catCodeToId={}; S.categorias.forEach(cc=>{catCodeToId[cc[0]]=catByNome[cc[1]]||null;});
+    const colabMap={};
+    for(const c of S.colab){
+      const ins=await SB.from('colaboradores').insert({nome:c.nome,gera_custo:c.custo,ativo:c.ativo!==false}).select().single();
+      if(ins.error) throw ins.error; const linhaIds=[];
+      for(const l of (c.linhas||[])){
+        const li=await SB.from('colaborador_funcoes').insert({colaborador_id:ins.data.id,funcao_id:funcId[l.funcao]||null,nivel_id:nivId[l.nivel]||null,valor_hora:(l.vh===''||l.vh==null?null:l.vh)}).select().single();
+        if(li.error) throw li.error; linhaIds.push(li.data.id);
+      }
+      colabMap[c.id]={id:ins.data.id,linhaIds};
+    }
+    const svcMap={};
+    for(const s of S.catalogo){
+      const ins=await SB.from('servicos').insert({nome:s.nome,categoria_id:catCodeToId[s.cat]||null,unidade:s.un||'UND'}).select().single();
+      if(ins.error) throw ins.error; const varIdByName={}; let ord=0;
+      for(const v of (s.vars||[])){
+        const vi=await SB.from('servico_variacoes').insert({servico_id:ins.data.id,nome:v[0],horas_por_unidade:v[1]||0,ordem:ord++}).select().single();
+        if(vi.error) throw vi.error; varIdByName[v[0]]=vi.data.id;
+      }
+      svcMap[s.id]={id:ins.data.id,varIdByName};
+    }
+    for(const p of S.projetos){
+      const pi=await SB.from('projetos').insert({numero_externo:p.numero||null,nome:p.nome,contratante:p.contratante||null,contemplado:p.contemplado||null,local:p.local||null,endereco:p.endereco||null,localizacao:p.localizacao||null,lider_id:(p.lider&&colabMap[p.lider])?colabMap[p.lider].id:null,gestor:p.gestor||null,data_inicio:p.dataIni||null,data_fim_prevista:p.dataFim||null,status:PJ2DB[p.status]||'aguardando',observacoes:p.obs||null}).select().single();
+      if(pi.error) throw pi.error; const grpMap={}; let go=0;
+      for(const g of p.grupos){
+        const gi=await SB.from('grupos').insert({projeto_id:pi.data.id,nome:g.nome,categoria_id:catCodeToId[g.cat]||null,responsavel_id:(g.resp&&colabMap[g.resp])?colabMap[g.resp].id:null,ordem:go++,aberto:g.open!==false}).select().single();
+        if(gi.error) throw gi.error; grpMap[g.id]=gi.data.id;
+      }
+      let to=0;
+      for(const t of p.tarefas){
+        const sv=t.svc?svcMap[t.svc]:null;
+        const cfId=(t.exec&&colabMap[t.exec]&&colabMap[t.exec].linhaIds[t.execLinha||0])||null;
+        const row={projeto_id:pi.data.id,grupo_id:grpMap[t.grupo],nivel:t.nivel||1,is_header:!!t.header,servico_id:sv?sv.id:null,variacao_id:(sv&&t.varNome&&sv.varIdByName[t.varNome])?sv.varIdByName[t.varNome]:null,nome:t.nome,quantidade:t.qtd||0,unidade:(function(){const s=S.catalogo.find(x=>x.id===t.svc);return s?s.un:null;})(),tempo_previsto:t.tempoPrev||0,tempo_atual:t.tempo||0,executor_id:(t.exec&&colabMap[t.exec])?colabMap[t.exec].id:null,colaborador_funcao_id:cfId,responsavel_id:(t.resp&&colabMap[t.resp])?colabMap[t.resp].id:null,prioridade:PRI2DB[t.prioridade]||'media',progresso:t.prog||0,status:ST2DB[t.status]||'a_fazer',data_inicio:t.ini||null,data_fim_prevista:t.fim||null,data_fim_real:t.fimReal||null,notas:t.notas||null,ordem:to++};
+        const ti=await SB.from('tarefas').insert(row); if(ti.error) throw ti.error;
+      }
+    }
+    nuvemStatus('migrado ✓','ok');
+    alert('Migração concluída! O app vai recarregar a partir da nuvem.');
+    location.reload();
+  }catch(e){ nuvemStatus('erro','err'); alert('Erro na migração: '+(e.message||e)); console.error(e); }
+}
+function restaurar(){if(confirm('Restaurar exemplo? Apaga suas alterações.')){S=demo();save();renderAll();}}
+
+function P(){ return S.projetos.find(p=>p.id===S.ativo) || S.projetos[0]; }
+function demo(){
+  const g1=uid(),g2=uid(),g3=uid(),g4=uid(),pid=uid();
+  const T=(o)=>Object.assign({id:uid(),nivel:1,prog:0,status:'todo',ini:'2026-06-01',fim:'2026-06-05',execLinha:0,resp:'',prioridade:'Média',fimReal:'',notas:''},o);
+  return {
+    funcoes:["Téc. Automação","Engenheiro","Eletrotécnico","Eletricista","Montador","Mecânico","Refrigerista","Ajudante"],
+    niveis:["Júnior","Pleno","Sênior"],
+    categorias:[["SUPERVISORIO","Supervisório"],["AR_CONDICIONADO","Ar Condicionado"],["ILUMINACAO","Iluminação"],["MEDIDORES","Medição"],["INFRAESTRUTURA","Infraestrutura"],["SENSORES","Sensores"],["COMISSIONAMENTO","Comissionamento"]],
+    catalogo:JSON.parse(JSON.stringify(CATALOGO_BASE)),
+    colab:[
+      {id:"andre",nome:"André Camilo",custo:true,linhas:[{funcao:"Engenheiro",nivel:"Sênior",vh:85}]},
+      {id:"joel",nome:"Joel",custo:true,linhas:[{funcao:"Téc. Automação",nivel:"Pleno",vh:45}]},
+      {id:"elvis",nome:"Elvis",custo:true,linhas:[{funcao:"Téc. Automação",nivel:"Pleno",vh:45},{funcao:"Refrigerista",nivel:"Sênior",vh:58}]},
+      {id:"ednael",nome:"Ednael",custo:true,linhas:[{funcao:"Ajudante",nivel:"Júnior",vh:30}]},
+      {id:"comandos",nome:"3 Comandos",custo:true,linhas:[{funcao:"Eletricista",nivel:"Pleno",vh:60}]},
+      {id:"copeland",nome:"Copeland",custo:false,linhas:[]},
+      {id:"atacadao",nome:"Atacadão Loja",custo:false,linhas:[]}
+    ],
+    ativo:pid,
+    projetos:[{
+      id:pid, numero:"1321222594", nome:"ATACADÃO 906 ILHÉUS BR", contratante:"Copeland", contemplado:"Atacadão nº 906 — Ilhéus", local:"Ilhéus — BA",
+      lider:"andre", gestor:"Sr. Marcos (gerente Atacadão)", dataIni:"2026-05-31", dataFim:"2026-08-15", status:"Em andamento", obs:"",
+      endereco:"Av. Itabuna, 906 — Malhado, Ilhéus — BA, 45653-000", localizacao:"-14.7935, -39.0463",
+      grupos:[
+        {id:g1,nome:"Entrada na Unidade — Kick Off",cat:"SUPERVISORIO",resp:"andre",open:true},
+        {id:g2,nome:"Supervisório X-Web",cat:"SUPERVISORIO",resp:"elvis",open:true},
+        {id:g3,nome:"Ar Condicionado — Chiller",cat:"AR_CONDICIONADO",resp:"",open:false},
+        {id:g4,nome:"Medição Energia QGBT",cat:"MEDIDORES",resp:"elvis",open:true}
+      ],
+      tarefas:[
+        T({grupo:g1,svc:"infra_alimentador",nome:"Infra de interligação",varNome:"Confecção nova",tempo:0.333,tempoPrev:0.333,qtd:50,exec:"joel",resp:"andre",prog:100,status:"done",ini:"2026-05-31",fim:"2026-06-02"}),
+        T({grupo:g1,svc:"chicote_qa",nome:"Chicote no QA BRPROJ",varNome:"Confecção nova",tempo:0.417,tempoPrev:0.417,qtd:3,exec:"joel",resp:"andre",nivel:2,prog:100,status:"done",ini:"2026-05-31",fim:"2026-06-02"}),
+        T({grupo:g2,svc:"infra_alimentador",nome:"Infra c/ alimentador",varNome:"Confecção nova",tempo:0.333,tempoPrev:0.333,qtd:50,exec:"joel",resp:"andre",prog:100,status:"done",ini:"2026-06-01",fim:"2026-06-05"}),
+        T({grupo:g2,svc:"comissionamento",nome:"BUS — comissionamento",varNome:"Padrão",tempo:2.0,tempoPrev:2.0,qtd:1,exec:"elvis",resp:"andre",prog:100,status:"done",ini:"2026-06-04",fim:"2026-06-06"}),
+        T({grupo:g2,svc:"validacao",nome:"Comissionamento X-Web",varNome:"Padrão",tempo:0.5,tempoPrev:0.5,qtd:1,exec:"elvis",resp:"andre",prog:90,status:"wip",ini:"2026-06-06",fim:"2026-06-09"}),
+        T({grupo:g3,svc:"cag_fancoil",nome:"Comando QD CAG - Fancoil",varNome:"Adição automático",tempo:0.5,tempoPrev:0.5,qtd:7,exec:"",prog:0,status:"ice",ini:"2026-06-22",fim:"2026-06-26"}),
+        T({grupo:g4,svc:"medidor_qgbt",nome:"Medidor de energia - QGBT",varNome:"Troca",tempo:0.167,tempoPrev:0.167,qtd:1,exec:"elvis",resp:"andre",prog:100,status:"done",ini:"2026-06-01",fim:"2026-06-02"})
+      ]
+    }]
+  };
+}
+
+/* ===== CRONOGRAMA ===== */
+function colab(id){return S.colab.find(c=>c.id===id);}
+function catNome(id){const c=S.categorias.find(x=>x[0]===id);return c?c[1]:id;}
+function taskVh(t){const c=colab(t.exec);if(!c||!c.custo||!c.linhas.length)return 0;const li=c.linhas[t.execLinha||0];return li?(li.vh||0):0;}
+function grpTasks(gid){return P().tarefas.filter(t=>t.grupo===gid);}
+
+function render(){
+  const board=document.getElementById('board');
+  let TH=0,TC=0,TT=0;
+  board.innerHTML=P().grupos.map((gr,gi)=>{
+    const tasks=grpTasks(gr.id);
+    let H=0,C=0,c1=0,c2=0;
+    const rows=tasks.map((t,ti)=>{
+      let wbs;
+      if(t.nivel===2){c2++;wbs=`${gi+1}.${c1}.${c2}`;}else{c1++;c2=0;wbs=`${gi+1}.${c1}`;}
+      if(t.header){
+        // rollup dos filhos (subtarefas seguintes até a próxima tarefa nível 1)
+        let rh=0,rc=0;
+        for(let k=ti+1;k<tasks.length;k++){ if(tasks[k].nivel===1)break; const vk=taskVh(tasks[k]); rh+=tasks[k].tempo*tasks[k].qtd; rc+=tasks[k].tempo*tasks[k].qtd*vk; }
+        // rollup e so para exibir no pai; nao soma ao total (os filhos ja somam)
+        return `<div class="trow header-row">
+          <span class="twbs">${wbs}</span>
+          <span class="tname"><span class="tnm" style="font-weight:600">▾ ${t.nome}</span><span class="tvr">tarefa-pai · agrupa subtarefas</span></span>
+          <span class="tcell" style="grid-column:span 6;color:var(--tx3);font-size:11px;padding:0 6px">— agrupador · ${rh.toFixed(1)}h nos filhos —</span>
+          <span class="tcost ${rc>0?'':'z'}">${fmt(rc)}</span>
+          <span class="tacts">
+            <button class="ib" onclick="addSubUnder('${t.id}')" title="adicionar subtarefa aqui">+sub</button>
+            <button class="ib" onclick="openEdit('${t.id}')" title="editar (nome, status, datas)">✎</button>
+            <button class="ib" onclick="move('${t.id}',-1)">↑</button>
+            <button class="ib" onclick="move('${t.id}',1)">↓</button>
+            <button class="ib del" onclick="delTask('${t.id}')">×</button>
+          </span>
+        </div>`;
+      }
+      const c=colab(t.exec);const vh=taskVh(t);const h=t.tempo*t.qtd;const cost=h*vh;
+      H+=h;C+=cost;
+      const linhaOpts=c&&c.custo?c.linhas.map((li,k)=>`<option value="${k}" ${k===(t.execLinha||0)?'selected':''}>${li.funcao} · ${li.nivel}</option>`).join(''):'<option>—</option>';
+      const execOpts='<option value="">—</option>'+S.colab.map(cc=>`<option value="${cc.id}" ${cc.id===t.exec?'selected':''}>${cc.nome}</option>`).join('');
+      const un=taskUn(t);
+      const dev=+(t.tempo-(t.tempoPrev||0)).toFixed(2);
+      const devb=dev>0?`<span class="devb up">+${dev}h</span>`:dev<0?`<span class="devb dn">${dev}h</span>`:`<span class="devb ok">ok</span>`;
+      const subBtn=t.nivel===1?`<button class="ib" onclick="addSubUnder('${t.id}')" title="adicionar subtarefa">+sub</button>`:'';
+      return `<div class="trow ${t.nivel===2?'sub':''}">
+        <span class="twbs">${wbs}</span>
+        <span class="tname"><span class="tnm">${t.nome}</span><span class="tvr">${t.varNome}</span></span>
+        <span style="padding:0 6px"><select class="cell-in" onchange="setExec('${t.id}',this.value)">${execOpts}</select></span>
+        <span style="padding:0 6px"><select class="cell-in" onchange="setLinha('${t.id}',this.value)" ${!c||!c.custo?'disabled':''}>${linhaOpts}</select></span>
+        <div class="qcell"><input class="cell-in cell-num" type="number" min="0" value="${t.qtd}" onchange="setQtd('${t.id}',this.value)"><span class="und2">${un}</span></div>
+        <span class="prevc">${(t.tempoPrev||0).toFixed(2)}h 🔒</span>
+        <div class="atualc">${devb}<input class="cell-in cell-num ${dev!==0?'tempo-ed':''}" type="number" step="0.05" value="${t.tempo}" onchange="setTempo('${t.id}',this.value)"></div>
+        <div class="progc"><div class="mbar"><div class="mfill" style="width:${t.prog||0}%;background:${corProg(t.prog||0)}"></div></div><input class="cell-in cell-num" type="number" min="0" max="100" step="5" value="${t.prog||0}" onchange="setProg('${t.id}',this.value)"></div>
+        <span class="tcost ${cost>0?'':'z'}">${fmt(cost)}</span>
+        <span class="tacts">
+          ${subBtn}
+          <button class="ib" onclick="openEdit('${t.id}')" title="editar (previsto, status, datas)">✎</button>
+          <button class="ib" onclick="move('${t.id}',-1)" title="subir">↑</button>
+          <button class="ib" onclick="move('${t.id}',1)" title="descer">↓</button>
+          <button class="ib" onclick="lvl('${t.id}',-1)" title="promover">←</button>
+          <button class="ib" onclick="lvl('${t.id}',1)" title="rebaixar">→</button>
+          <button class="ib del" onclick="delTask('${t.id}')" title="excluir">×</button>
+        </span>
+      </div>`;
+    }).join('');
+    TH+=H;TC+=C;TT+=tasks.length;
+    const work=tasks.filter(t=>!t.header);
+    const gpAvg=work.length?Math.round(work.reduce((s,t)=>s+(t.prog||0),0)/work.length):0;
+    return `<div class="grp">
+      <div class="gh">
+        <span class="gwbs" onclick="tgGroup(${gi})"><span class="gar ${gr.open?'open':''}">›</span>${gi+1}</span>
+        <span class="gname" onclick="tgGroup(${gi})">${gr.nome}<span class="gcat">${catNome(gr.cat)}</span>${gr.resp?`<span class="gcat" title="responsável pelo grupo">resp: ${(colab(gr.resp)||{}).nome||'—'}</span>`:''}</span>
+        <span class="gstats" style="grid-column:3 / 7"><b>${work.length}</b> tarefas</span>
+        <span class="gtimecell"><b>${H.toFixed(1)}h</b></span>
+        <span class="gprogcell"><span class="gprog" title="progresso do grupo" style="background:${corProg(gpAvg)}">${gpAvg}%</span></span>
+        <span class="gcostcell">${fmt(C)}</span>
+        <span class="gbtns"><button class="ib" onclick="openGroup(${gi})" title="editar grupo (nome e categoria)">✎</button><button class="ib" onclick="moveGroup(${gi},-1)">↑</button><button class="ib" onclick="moveGroup(${gi},1)">↓</button><button class="ib del" onclick="delGroup(${gi})">×</button></span>
+      </div>
+      <div style="${gr.open?'':'display:none'}">
+        ${rows||'<div class="empty">Nenhuma tarefa neste grupo.</div>'}
+        ${tasks.length?`<div class="subtot"><span class="l">Subtotal</span><span class="h">${H.toFixed(2)}h</span><span class="c">${fmt(C)}</span></div>`:''}
+        <div class="addr" onclick="openAdd('${gr.id}')">+ adicionar tarefa (${catNome(gr.cat)})</div>
+        <div class="addr" onclick="addHeader('${gr.id}')" style="color:var(--tx2)">+ adicionar tarefa-pai (agrupador, sem serviço)</div>
+      </div>
+    </div>`;
+  }).join('');
+  document.getElementById('s-h').textContent=TH.toFixed(1)+'h';
+  document.getElementById('s-c').textContent=fmt(TC);
+  document.getElementById('s-t').textContent=TT;
+  document.getElementById('s-g').textContent=P().grupos.length;
+  save();
+}
+function tgGroup(i){P().grupos[i].open=!P().grupos[i].open;render();pushGrupo(P().grupos[i]);}
+function setExec(id,v){const t=P().tarefas.find(x=>x.id===id);t.exec=v;t.execLinha=0;render();pushTarefa(t);}
+function setLinha(id,v){const t=P().tarefas.find(x=>x.id===id);t.execLinha=parseInt(v)||0;render();pushTarefa(t);}
+function setQtd(id,v){const t=P().tarefas.find(x=>x.id===id);t.qtd=Math.max(0,parseFloat(v)||0);render();pushTarefa(t);}
+function setTempo(id,v){const t=P().tarefas.find(x=>x.id===id);t.tempo=parseFloat(v)||0;render();pushTarefa(t);}
+function setProg(id,v){const t=P().tarefas.find(x=>x.id===id);t.prog=Math.min(100,Math.max(0,parseFloat(v)||0));if(t.status!=='ice'){if(t.prog===100)t.status='done';else if(t.status==='done')t.status=t.prog>0?'wip':'todo';}render();pushTarefa(t);}
+function taskUn(t){const s=S.catalogo.find(x=>x.id===t.svc);return s?s.un:'';}
+function corProg(p){return p>=100?'#3b6d11':p>=50?'#ba7517':'#888780';}
+function delTask(id){
+  const t=P().tarefas.find(x=>x.id===id);
+  const arr=groupArr(t.grupo); const pos=arr.indexOf(t);
+  let filhos=[];
+  if(t.nivel===1){ for(let k=pos+1;k<arr.length && arr[k].nivel===2;k++) filhos.push(arr[k]); }
+  if(filhos.length){
+    const op=prompt('Esta tarefa-pai tem '+filhos.length+' subtarefa(s).\n\n1 = excluir TUDO (pai + filhos)\n2 = excluir só o pai (filhos viram tarefas)\n\n(vazio = cancelar)','2');
+    if(op==='1'){ const ids=[t.id].concat(filhos.map(f=>f.id)); P().tarefas=P().tarefas.filter(x=>ids.indexOf(x.id)<0); render(); ids.forEach(i=>delNuvem('tarefas',i)); }
+    else if(op==='2'){ filhos.forEach(f=>f.nivel=1); P().tarefas=P().tarefas.filter(x=>x.id!==t.id); render(); delNuvem('tarefas',t.id); filhos.forEach(f=>pushTarefa(f)); }
+    return;
+  }
+  if(confirm('Excluir tarefa?')){P().tarefas=P().tarefas.filter(x=>x.id!==id);render();delNuvem('tarefas',id);}
+}
+function groupArr(grupo){return P().tarefas.filter(t=>t.grupo===grupo);}
+function writeGroup(grupo,newArr){let k=0;P().tarefas=P().tarefas.map(t=>t.grupo===grupo?newArr[k++]:t);}
+function move(id,d){
+  const t=P().tarefas.find(x=>x.id===id);
+  let arr=groupArr(t.grupo);
+  const pos=arr.indexOf(t);
+  if(t.nivel===2){
+    if(d===-1){
+      if(pos===0 || arr[pos-1].nivel===1){ t.nivel=1; render(); pushTarefasOrdem(); return; } // sobe passando do pai -> vira tarefa principal
+      arr.splice(pos,1); arr.splice(pos-1,0,t);
+    } else {
+      if(pos===arr.length-1 || arr[pos+1].nivel===1) return; // ultima filha: nao empurra para fora do pai
+      arr.splice(pos,1); arr.splice(pos+1,0,t);
+    }
+    writeGroup(t.grupo,arr); render(); pushTarefasOrdem(); return;
+  }
+  // nivel 1: move o bloco (pai + suas subtarefas) junto
+  let end=pos; while(end+1<arr.length && arr[end+1].nivel===2) end++;
+  const bloco=arr.slice(pos,end+1);
+  if(d===-1){
+    if(pos===0) return;
+    let prevStart=pos-1; while(prevStart>0 && arr[prevStart].nivel===2) prevStart--;
+    arr.splice(pos,bloco.length); arr.splice(prevStart,0,...bloco);
+  } else {
+    if(end===arr.length-1) return;
+    let nextEnd=end+1; while(nextEnd+1<arr.length && arr[nextEnd+1].nivel===2) nextEnd++;
+    arr.splice(pos,bloco.length); arr.splice(nextEnd+1-bloco.length,0,...bloco);
+  }
+  writeGroup(t.grupo,arr); render(); pushTarefasOrdem();
+}
+function lvl(id,d){
+  const t=P().tarefas.find(x=>x.id===id);
+  const novo=Math.min(2,Math.max(1,t.nivel+d));
+  if(novo===2){
+    // so pode virar subtarefa se houver uma tarefa-pai (nivel 1) acima no mesmo grupo
+    const arr=P().tarefas.filter(x=>x.grupo===t.grupo);
+    const idx=arr.indexOf(t);
+    let temPai=false;
+    for(let i=idx-1;i>=0;i--){ if(arr[i].nivel===1){temPai=true;break;} }
+    if(!temPai){ alert('Não há tarefa principal acima para receber esta subtarefa. Promova ou reordene primeiro.'); return; }
+  }
+  t.nivel=novo;render();pushTarefa(t);
+}
+
+/* ===== EDITAR TAREFA ===== */
+let EID=null, EVAR=null;
+function openEdit(id){
+  const t=P().tarefas.find(x=>x.id===id); EID=id; EVAR=null;
+  document.getElementById('e-nome').value=t.nome;
+  document.getElementById('e-tipo').textContent=t.header?'(tarefa-pai / agrupador)':'(tarefa de serviço)';
+  // mostra/oculta campos de serviço para tarefa-pai
+  const isHdr=!!t.header;
+  document.getElementById('e-var-wrap').style.display=isHdr?'none':'';
+  document.getElementById('e-qtd-wrap').style.display=isHdr?'none':'';
+  document.getElementById('e-tempo-wrap').style.display=isHdr?'none':'';
+  const svc=S.catalogo.find(s=>s.id===t.svc);
+  const vbox=document.getElementById('e-var');
+  if(svc){
+    vbox.innerHTML=svc.vars.map((v,i)=>`<div class="chip amb ${v[0]===t.varNome?'sel':''}" data-v="${i}" onclick="pickEditVar('${t.svc}',${i})">${v[0]}<span class="h">${v[1]}h</span></div>`).join('');
+  } else if(!isHdr){ vbox.innerHTML='<span style="font-size:12px;color:var(--tx3)">Serviço sem catálogo vinculado.</span>'; }
+  document.getElementById('e-prog').value=t.prog||0;
+  document.getElementById('e-status').value=t.status||'todo';
+  document.getElementById('e-qtd').value=t.qtd;
+  document.getElementById('e-ini').value=t.ini||'';
+  document.getElementById('e-fim').value=t.fim||'';
+  document.getElementById('e-tempo').value=t.tempoPrev||0;
+  document.getElementById('modalE').classList.add('show');
+}
+function pickEditVar(svcId,i){
+  const svc=S.catalogo.find(s=>s.id===svcId); EVAR=svc.vars[i];
+  document.querySelectorAll('#e-var .chip').forEach(c=>c.classList.toggle('sel',+c.dataset.v===i));
+  document.getElementById('e-tempo').value=EVAR[1]; // tempo segue a variacao escolhida
+}
+function closeEdit(){document.getElementById('modalE').classList.remove('show');EID=null;}
+function saveEdit(){
+  const t=P().tarefas.find(x=>x.id===EID); if(!t)return;
+  const nome=document.getElementById('e-nome').value.trim(); if(nome)t.nome=nome;
+  if(!t.header){
+    if(EVAR){ t.varNome=EVAR[0]; t.tempo=EVAR[1]; t.tempoPrev=EVAR[1]; }
+    t.qtd=Math.max(0,parseFloat(document.getElementById('e-qtd').value)||0);
+    t.tempoPrev=parseFloat(document.getElementById('e-tempo').value)||t.tempoPrev;
+  }
+  t.prog=Math.min(100,Math.max(0,parseFloat(document.getElementById('e-prog').value)||0));
+  t.status=document.getElementById('e-status').value;
+  t.ini=document.getElementById('e-ini').value||t.ini;
+  t.fim=document.getElementById('e-fim').value||t.fim;
+  // status acompanha o progresso: 100=concluida; <100 deixa de ser concluida
+  if(t.status!=='ice'){
+    if(t.prog===100) t.status='done';
+    else if(t.status==='done') t.status = t.prog>0 ? 'wip' : 'todo';
+  }
+  closeEdit();render();renderAcomp();pushTarefa(t);
+}
+function moveGroup(i,d){const ni=i+d;if(ni<0||ni>=P().grupos.length)return;const tmp=P().grupos[i];P().grupos[i]=P().grupos[ni];P().grupos[ni]=tmp;render();pushGrupo(P().grupos[i]);pushGrupo(P().grupos[ni]);}
+function delGroup(i){if(confirm('Excluir grupo e tarefas?')){const id=P().grupos[i].id;P().tarefas=P().tarefas.filter(t=>t.grupo!==id);P().grupos.splice(i,1);render();delNuvem('grupos',id);}}
+let GIDX=-1;
+function openGroup(gi){
+  GIDX=gi;
+  const sel=document.getElementById('g-cat');
+  sel.innerHTML=S.categorias.map(c=>`<option value="${c[0]}">${c[1]}</option>`).join('');
+  const rsel=document.getElementById('g-resp');
+  rsel.innerHTML='<option value="">—</option>'+S.colab.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  if(gi>=0){ document.getElementById('g-title').textContent='Editar grupo'; document.getElementById('g-nome').value=P().grupos[gi].nome; sel.value=P().grupos[gi].cat; rsel.value=P().grupos[gi].resp||''; }
+  else { document.getElementById('g-title').textContent='Novo grupo (tarefa-pai)'; document.getElementById('g-nome').value=''; sel.selectedIndex=0; rsel.value=''; }
+  document.getElementById('modalG').classList.add('show');
+}
+function closeGroup(){document.getElementById('modalG').classList.remove('show');GIDX=-1;}
+function saveGroup(){
+  const nome=document.getElementById('g-nome').value.trim(); if(!nome){alert('Informe o nome do grupo.');return;}
+  const cat=document.getElementById('g-cat').value;
+  const resp=document.getElementById('g-resp').value;
+  let g;
+  if(GIDX>=0){ g=P().grupos[GIDX]; g.nome=nome; g.cat=cat; g.resp=resp; }
+  else { g={id:uid(),nome,cat,resp,open:true}; P().grupos.push(g); }
+  closeGroup();render();pushGrupo(g);
+}
+
+/* ===== MODAL ADD ===== */
+let M={};
+function openAdd(gid){
+  const sel=document.getElementById('m-grupo');
+  sel.innerHTML=P().grupos.map(gr=>`<option value="${gr.id}">${gr.nome}</option>`).join('');
+  if(gid)sel.value=gid;
+  M={svc:null,varIdx:0,qtd:1,tempo:0};
+  document.getElementById('m-qtd').textContent='1';
+  const ex=document.getElementById('m-exec');
+  ex.innerHTML='<option value="">— executor —</option>'+S.colab.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  loadSvc();loadLinha();
+  document.getElementById('modal').classList.add('show');
+}
+function closeAdd(){document.getElementById('modal').classList.remove('show');ADD_PARENT=null;}
+function loadSvc(){
+  const gr=P().grupos.find(x=>x.id===document.getElementById('m-grupo').value);
+  const svcs=S.catalogo.filter(s=>s.cat===gr.cat);
+  const box=document.getElementById('m-svc');
+  if(!svcs.length){box.innerHTML='<span style="font-size:12px;color:var(--tx3)">Sem serviços nesta categoria. Cadastre no Catálogo.</span>';document.getElementById('m-var').innerHTML='';M.svc=null;return;}
+  box.innerHTML=svcs.map(s=>`<div class="chip" data-s="${s.id}" onclick="pickSvc('${s.id}')">${s.nome}</div>`).join('');
+  pickSvc(svcs[0].id);
+}
+function pickSvc(id){
+  M.svc=S.catalogo.find(s=>s.id===id);M.varIdx=0;
+  document.querySelectorAll('#m-svc .chip').forEach(c=>c.classList.toggle('sel',c.dataset.s===id));
+  const vbox=document.getElementById('m-var');
+  if(!M.svc.vars.length){ vbox.innerHTML='<span style="font-size:12px;color:var(--red)">Este serviço não tem variações. Cadastre ao menos uma no Catálogo antes de usá-lo.</span>'; M.tempo=0; document.getElementById('m-tempo').value='0'; calcPrev(); return; }
+  vbox.innerHTML=M.svc.vars.map((v,i)=>`<div class="chip amb ${i===0?'sel':''}" data-v="${i}" onclick="pickVar(${i})">${v[0]}<span class="h">${v[1]}h</span></div>`).join('');
+  M.tempo=M.svc.vars[0][1];document.getElementById('m-tempo').value=M.tempo.toFixed(3);document.getElementById('m-reset').style.display='none';calcPrev();
+}
+function pickVar(i){M.varIdx=i;M.tempo=M.svc.vars[i][1];document.querySelectorAll('#m-var .chip').forEach(c=>c.classList.toggle('sel',+c.dataset.v===i));document.getElementById('m-tempo').value=M.tempo.toFixed(3);document.getElementById('m-reset').style.display='none';calcPrev();}
+function loadLinha(){
+  const c=colab(document.getElementById('m-exec').value);
+  const sel=document.getElementById('m-linha');
+  if(!c||!c.custo||!c.linhas.length){sel.innerHTML='<option value="0">— sem custo —</option>';calcPrev();return;}
+  sel.innerHTML=c.linhas.map((li,k)=>`<option value="${k}">${li.funcao} · ${li.nivel} (${fmt(li.vh)}/h)</option>`).join('');
+  calcPrev();
+}
+function mq(d){M.qtd=Math.max(1,M.qtd+d);document.getElementById('m-qtd').textContent=M.qtd;calcPrev();}
+function markTempo(){M.tempo=parseFloat(document.getElementById('m-tempo').value)||0;document.getElementById('m-reset').style.display=(M.svc&&M.tempo!==M.svc.vars[M.varIdx][1])?'inline':'none';calcPrev();}
+function resetTempo(){M.tempo=M.svc.vars[M.varIdx][1];document.getElementById('m-tempo').value=M.tempo.toFixed(3);document.getElementById('m-reset').style.display='none';calcPrev();}
+function calcPrev(){
+  const c=colab(document.getElementById('m-exec').value);
+  let vh=0;if(c&&c.custo&&c.linhas.length){const k=parseInt(document.getElementById('m-linha').value)||0;vh=(c.linhas[k]||{}).vh||0;}
+  const h=M.tempo*M.qtd;
+  document.getElementById('m-prev-l').textContent=`${h.toFixed(2)}h × ${vh?fmt(vh)+'/h':'(sem custo)'}`;
+  document.getElementById('m-prev-c').textContent=fmt(h*vh);
+}
+let ADD_PARENT=null;
+function saveTask(){
+  if(!M.svc){alert('Escolha um serviço.');return;}
+  if(!M.svc.vars.length){alert('Este serviço não tem variação. Cadastre uma no Catálogo.');return;}
+  const exec=document.getElementById('m-exec').value;
+  const linha=parseInt(document.getElementById('m-linha').value)||0;
+  const nt={id:uid(),grupo:document.getElementById('m-grupo').value,nivel:1,svc:M.svc.id,nome:M.svc.nome,varNome:M.svc.vars[M.varIdx][0],tempo:M.tempo,tempoPrev:M.tempo,qtd:M.qtd,exec,execLinha:linha,prog:0,status:'todo',ini:'2026-06-17',fim:'2026-06-20',resp:'',prioridade:'Média',fimReal:'',notas:''};
+  if(ADD_PARENT){
+    const pai=P().tarefas.find(x=>x.id===ADD_PARENT);
+    nt.nivel=2; nt.grupo=pai.grupo;
+    const pIdx=P().tarefas.indexOf(pai);
+    let ins=pIdx+1;
+    while(ins<P().tarefas.length && P().tarefas[ins].grupo===nt.grupo && P().tarefas[ins].nivel===2) ins++;
+    P().tarefas.splice(ins,0,nt);
+  } else { P().tarefas.push(nt); }
+  ADD_PARENT=null;
+  closeAdd();render();pushTarefasOrdem();
+}
+function addSubUnder(parentId){ ADD_PARENT=parentId; const p=P().tarefas.find(x=>x.id===parentId); openAdd(p.grupo); }
+function addHeader(grupoId){ const h={id:uid(),grupo:grupoId,nivel:1,header:true,svc:null,nome:'Nova tarefa-pai',varNome:'',tempo:0,tempoPrev:0,qtd:0,exec:'',execLinha:0,prog:0,status:'todo',ini:'2026-06-17',fim:'2026-06-20',resp:'',prioridade:'Média',fimReal:'',notas:''}; P().tarefas.push(h); render(); pushTarefa(h); }
+
+/* ===== COLABORADORES ===== */
+function renderColab(){
+  document.getElementById('colab-list').innerHTML=S.colab.map((c,ci)=>{
+    const funcOpts=(sel)=>S.funcoes.map(f=>`<option ${f===sel?'selected':''}>${f}</option>`).join('');
+    const nivOpts=(sel)=>S.niveis.map(n=>`<option ${n===sel?'selected':''}>${n}</option>`).join('');
+    const lines=c.custo?c.linhas.map((li,li2)=>`<div class="fline">
+      <select onchange="setLine(${ci},${li2},'funcao',this.value)">${funcOpts(li.funcao)}</select>
+      <select onchange="setLine(${ci},${li2},'nivel',this.value)">${nivOpts(li.nivel)}</select>
+      <input type="number" step="0.01" value="${li.vh!=null?li.vh:''}" placeholder="R$/h" onchange="setLine(${ci},${li2},'vh',this.value)">
+      <button class="ib del" onclick="delLine(${ci},${li2})">×</button>
+    </div>`).join(''):'<span class="badge gray">sem custo (cliente/fabricante)</span>';
+    return `<div class="svccard">
+      <div class="svchead">
+        <input class="tin" style="flex:1" value="${c.nome}" onchange="setColabNome(${ci},this.value)">
+        <label style="font-size:12px;color:var(--tx2);display:flex;align-items:center;gap:5px"><input type="checkbox" ${c.custo?'checked':''} onchange="toggleCusto(${ci},this.checked)"> gera custo</label>
+        <button class="ib del" onclick="delColab(${ci})">×</button>
+      </div>
+      <div class="flines">${lines}</div>
+      ${c.custo?`<div class="addfline" onclick="addLine(${ci})">+ adicionar função</div>`:''}
+    </div>`;
+  }).join('');
+}
+function setColabNome(ci,v){S.colab[ci].nome=v;save();}
+function toggleCusto(ci,v){S.colab[ci].custo=v;if(v&&!S.colab[ci].linhas.length)S.colab[ci].linhas.push({funcao:S.funcoes[0],nivel:S.niveis[0],vh:null});save();renderColab();}
+function setLine(ci,li,campo,v){S.colab[ci].linhas[li][campo]=(campo==='vh'?(parseFloat(v)||0):v);save();}
+function addLine(ci){S.colab[ci].linhas.push({funcao:S.funcoes[0],nivel:S.niveis[0],vh:null});renderColab();save();}
+function delLine(ci,li){S.colab[ci].linhas.splice(li,1);renderColab();save();}
+function addColab(){S.colab.push({id:uid(),nome:"Novo colaborador",custo:true,linhas:[{funcao:S.funcoes[0],nivel:S.niveis[0],vh:null}]});renderColab();save();}
+function delColab(ci){
+  const c=S.colab[ci];
+  const usadas=P().tarefas.filter(t=>t.exec===c.id);
+  let msg='Excluir colaborador?';
+  if(usadas.length){ msg=`Atenção: ${c.nome} está em ${usadas.length} tarefa(s). Ao excluir, essas tarefas ficarão SEM executor e o custo delas zera. Confirmar?`; }
+  if(confirm(msg)){
+    if(usadas.length){ usadas.forEach(t=>{t.exec='';t.execLinha=0;}); }
+    S.colab.splice(ci,1);renderColab();render();save();
+  }
+}
+
+/* ===== CATALOGO ===== */
+function renderCat(){
+  document.getElementById('cat-list').innerHTML=S.catalogo.map((s,si)=>{
+    const catOpts=S.categorias.map(c=>`<option value="${c[0]}" ${c[0]===s.cat?'selected':''}>${c[1]}</option>`).join('');
+    const vars=s.vars.map((v,vi)=>`<div class="varrow">
+      <input value="${v[0]}" onchange="setVar(${si},${vi},0,this.value)">
+      <input type="number" step="0.05" value="${v[1]}" onchange="setVar(${si},${vi},1,this.value)">
+      <button class="ib del" onclick="delVar(${si},${vi})">×</button>
+    </div>`).join('');
+    return `<div class="svccard">
+      <div class="svchead">
+        <input class="tin" style="flex:1" value="${s.nome}" onchange="setSvcNome(${si},this.value)">
+        <select class="tin" onchange="setSvcCat(${si},this.value)">${catOpts}</select>
+        <input class="tin" style="width:70px" value="${s.un}" onchange="setSvcUn(${si},this.value)" title="unidade">
+        <button class="ib del" onclick="delSvc2(${si})">×</button>
+      </div>
+      ${vars}
+      <div class="addfline" onclick="addVar2(${si})">+ adicionar variação</div>
+    </div>`;
+  }).join('');
+}
+function setSvcNome(si,v){S.catalogo[si].nome=v;save();}
+function setSvcCat(si,v){S.catalogo[si].cat=v;save();}
+function setSvcUn(si,v){S.catalogo[si].un=v;save();}
+function setVar(si,vi,idx,v){S.catalogo[si].vars[vi][idx]=(idx===1?(parseFloat(v)||0):v);save();}
+function delVar(si,vi){ if(S.catalogo[si].vars.length<=1){alert('O serviço precisa de ao menos uma variação.');return;} S.catalogo[si].vars.splice(vi,1);renderCat();save();}
+function addVar2(si){S.catalogo[si].vars.push(["Nova variação",0]);renderCat();save();}
+function addSvc(){S.catalogo.push({id:uid(),nome:"Novo serviço",cat:S.categorias[0][0],un:"UND",vars:[["Padrão",0]]});renderCat();save();}
+function delSvc2(si){if(confirm('Excluir serviço?')){S.catalogo.splice(si,1);renderCat();save();}}
+
+/* ===== CONFIG ===== */
+function renderCfg(){
+  document.getElementById('cfg-func').innerHTML=S.funcoes.map((f,i)=>`<span class="cfgchip">${f}<span class="x" onclick="rmFunc(${i})">×</span></span>`).join('');
+  document.getElementById('cfg-niv').innerHTML=S.niveis.map((n,i)=>`<span class="cfgchip">${n}<span class="x" onclick="rmNiv(${i})">×</span></span>`).join('');
+  document.getElementById('cfg-cat').innerHTML=S.categorias.map((c,i)=>`<span class="cfgchip">${c[1]}<span class="x" onclick="rmCat(${i})">×</span></span>`).join('');
+}
+function addFunc(){const v=document.getElementById('new-func').value.trim();if(v){S.funcoes.push(v);document.getElementById('new-func').value='';renderCfg();save();}}
+function rmFunc(i){S.funcoes.splice(i,1);renderCfg();save();}
+function addNiv(){const v=document.getElementById('new-niv').value.trim();if(v){S.niveis.push(v);document.getElementById('new-niv').value='';renderCfg();save();}}
+function rmNiv(i){S.niveis.splice(i,1);renderCfg();save();}
+function addCat(){const v=document.getElementById('new-cat').value.trim();if(v){S.categorias.push([v.toUpperCase().replace(/\s+/g,'_'),v]);document.getElementById('new-cat').value='';renderCfg();save();}}
+function rmCat(i){S.categorias.splice(i,1);renderCfg();save();}
+
+/* ===== ACOMPANHAMENTO ===== */
+const PROJ_INI=new Date('2026-05-31'),NUM_WEEKS=5,HOJE=new Date('2026-06-17');
+function dd(a,b){return Math.round((a-b)/86400000);}
+function statusInfo(t){const fim=new Date(t.fim);if(t.status!=='done'&&t.status!=='ice'&&fim<HOJE)return{cls:'late'};if(t.status==='done')return{cls:'done'};if(t.status==='wip')return{cls:'wip'};if(t.status==='ice')return{cls:'ice'};return{cls:'todo'};}
+function renderAcomp(){
+  document.getElementById('hoje').textContent=HOJE.toLocaleDateString('pt-BR');
+  const totalDays=NUM_WEEKS*7;let totP=0,n=0,done=0,wip=0,risk=0;
+  document.getElementById('gantt').innerHTML=P().grupos.map((gr,gi)=>{
+    const tasks=grpTasks(gr.id).filter(t=>!t.header);if(!tasks.length)return'';
+    let gp=0;
+    const rows=tasks.map((t,ti)=>{
+      const si=statusInfo(t);gp+=(t.prog||0);totP+=(t.prog||0);n++;
+      if(si.cls==='done')done++;else if(si.cls==='wip')wip++;if(si.cls==='late')risk++;
+      const ini=new Date(t.ini),fim=new Date(t.fim);
+      const left=Math.max(0,dd(ini,PROJ_INI))/totalDays*100,width=Math.max(1,dd(fim,ini)+1)/totalDays*100;
+      return `<div class="grow"><div class="gleft"><span class="gst st-${si.cls}"></span><span class="gwbs2">${gi+1}.${ti+1}</span><span class="gnm" title="${t.nome}">${t.nome}</span></div>
+      <div class="gtl"><div class="gbar b-${si.cls}" style="left:${left}%;width:${width}%"><div class="fill" style="width:${t.prog||0}%"></div><span class="lb">${t.prog||0}%</span></div></div></div>`;
+    }).join('');
+    return `<div class="gg"><div class="gg-h"><span>${gi+1}. ${gr.nome}</span><span class="gp">${Math.round(gp/tasks.length)}% · ${tasks.length} tar.</span></div>${rows}</div>`;
+  }).join('');
+  const todayPct=Math.min(100,Math.max(0,dd(HOJE,PROJ_INI)/totalDays*100));
+  document.querySelectorAll('.gtl').forEach(tl=>{
+    for(let w=0;w<NUM_WEEKS;w++){const d=new Date(PROJ_INI);d.setDate(d.getDate()+w*7);const wk=document.createElement('div');wk.className='gweek';wk.style.left=(w/NUM_WEEKS*100)+'%';wk.style.width=(100/NUM_WEEKS)+'%';wk.textContent=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});tl.insertBefore(wk,tl.firstChild);}
+    const td=document.createElement('div');td.className='today';td.style.left=todayPct+'%';tl.appendChild(td);
+  });
+  document.getElementById('gantt').insertAdjacentHTML('beforeend',`<div class="legend2"><span><span class="d st-done"></span>Concluída</span><span><span class="d st-wip"></span>Andamento</span><span><span class="d st-ice"></span>Congelada</span><span><span class="d st-late"></span>Atrasada</span><span style="margin-left:auto;color:var(--red)">▏hoje</span></div>`);
+  document.getElementById('a-exec').textContent=(n?Math.round(totP/n):0)+'%';
+  document.getElementById('a-done').textContent=done;document.getElementById('a-wip').textContent=wip;document.getElementById('a-risk').textContent=risk;
+}
+
+/* ===== PROJETOS ===== */
+function refreshHeaders(){
+  const p=P();
+  ['ap','cp'].forEach(pre=>{
+    const n=document.getElementById(pre+'-num'), nm=document.getElementById(pre+'-nome');
+    if(n)n.textContent='# '+(p.numero||'—'); if(nm)nm.textContent=p.nome||'—';
+  });
+}
+function mapsUrl(loc){ if(!loc)return null; loc=String(loc).trim(); if(!loc)return null; if(/^https?:\/\//i.test(loc))return loc; return 'https://www.google.com/maps?q='+encodeURIComponent(loc); }
+function renderProjetos(){
+  document.getElementById('proj-list').innerHTML=S.projetos.map((p,i)=>{
+    const ativo=p.id===S.ativo;
+    const lider=(S.colab.find(c=>c.id===p.lider)||{}).nome||'—';
+    const work=(p.tarefas||[]).filter(t=>!t.header);
+    const nt=work.length;
+    const pprog=nt?Math.round(work.reduce((s,t)=>s+(t.prog||0),0)/nt):0;
+    const mu=mapsUrl(p.localizacao);
+    const linhaEnd = p.endereco ? `<div style="font-size:11px;color:var(--tx2);margin-top:3px"><i style="font-style:normal">📍</i> ${p.endereco}${mu?` · <a href="${mu}" target="_blank" rel="noopener" style="color:var(--pri)">ver no mapa</a>`:''}</div>` : (mu?`<div style="font-size:11px;margin-top:3px"><a href="${mu}" target="_blank" rel="noopener" style="color:var(--pri)">📍 ver localização no mapa</a></div>`:'');
+    return `<div class="svccard" style="${ativo?'border-color:var(--pri);background:var(--pri-bg)':''}">
+      <div class="svchead">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">${p.nome} ${ativo?'<span class="badge">ativo</span>':''}</div>
+          <div style="font-size:11px;color:var(--tx2)">#${p.numero||'—'} · Contratante: <b>${p.contratante||'—'}</b> → Contemplado: <b>${p.contemplado||'—'}</b> · ${p.local||'—'} · ${p.status||'—'} · líder: ${lider}${p.gestor?' · gestor loja: '+p.gestor:''} · ${nt} tarefas</div>
+          ${linhaEnd}
+        </div>
+        <button class="btn btn-s ${ativo?'':'btn-p'}" onclick="abrirProj('${p.id}')">${ativo?'Aberto':'Abrir'}</button>
+        <button class="ib" onclick="openProj(${i})" title="editar">✎</button>
+        <button class="ib del" onclick="delProj(${i})" title="excluir">×</button>
+      </div>
+      <div class="pprog"><span class="pprog-lbl">execução</span><div class="pprog-bar"><div class="pprog-fill" style="width:${pprog}%;background:${corProg(pprog)}"></div></div><span class="pprog-val" style="color:${corProg(pprog)}">${pprog}%</span></div>
+    </div>`;
+  }).join('') || '<div class="empty">Nenhum projeto. Clique em "+ Novo projeto".</div>';
+}
+function abrirProj(id){ S.ativo=id; save(); refreshHeaders(); render(); renderAcomp(); renderProjetos(); document.querySelector('.tab:nth-child(2)').click(); }
+let PIDX=-1;
+function openProj(i){
+  PIDX=i;
+  const ld=document.getElementById('p-lider');
+  ld.innerHTML='<option value="">—</option>'+S.colab.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  if(i>=0){ const p=S.projetos[i]; document.getElementById('p-title').textContent='Editar projeto';
+    document.getElementById('p-num').value=p.numero||''; document.getElementById('p-nome').value=p.nome||'';
+    document.getElementById('p-contratante').value=p.contratante||''; document.getElementById('p-contemplado').value=p.contemplado||''; document.getElementById('p-local').value=p.local||'';
+    document.getElementById('p-status').value=p.status||'Em andamento'; ld.value=p.lider||'';
+    document.getElementById('p-ini').value=p.dataIni||''; document.getElementById('p-fim').value=p.dataFim||''; document.getElementById('p-obs').value=p.obs||'';
+    document.getElementById('p-end').value=p.endereco||''; document.getElementById('p-loc').value=p.localizacao||''; document.getElementById('p-gestor').value=p.gestor||'';
+  } else { document.getElementById('p-title').textContent='Novo projeto';
+    ['p-num','p-nome','p-contratante','p-contemplado','p-local','p-ini','p-fim','p-obs','p-end','p-loc','p-gestor'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('p-status').value='Aguardando início'; ld.value='';
+  }
+  document.getElementById('modalP').classList.add('show');
+}
+function closeProj(){document.getElementById('modalP').classList.remove('show');PIDX=-1;}
+function saveProj(){
+  const nome=document.getElementById('p-nome').value.trim(); if(!nome){alert('Informe o nome do projeto.');return;}
+  const dados={numero:document.getElementById('p-num').value.trim(),nome,contratante:document.getElementById('p-contratante').value.trim(),contemplado:document.getElementById('p-contemplado').value.trim(),local:document.getElementById('p-local').value.trim(),status:document.getElementById('p-status').value,lider:document.getElementById('p-lider').value,dataIni:document.getElementById('p-ini').value,dataFim:document.getElementById('p-fim').value,obs:document.getElementById('p-obs').value.trim(),endereco:document.getElementById('p-end').value.trim(),localizacao:document.getElementById('p-loc').value.trim(),gestor:document.getElementById('p-gestor').value.trim()};
+  let alvo;
+  if(PIDX>=0){ alvo=S.projetos[PIDX]; Object.assign(alvo,dados); }
+  else { alvo=Object.assign({id:uid(),grupos:[],tarefas:[]},dados); S.projetos.push(alvo); S.ativo=alvo.id; }
+  closeProj(); save(); refreshHeaders(); renderProjetos(); render(); renderAcomp(); pushProjeto(alvo);
+}
+function delProj(i){
+  if(S.projetos.length<=1){alert('Deve existir ao menos um projeto.');return;}
+  if(confirm('Excluir o projeto "'+S.projetos[i].nome+'" e todo o cronograma dele?')){
+    const era=S.projetos[i].id; S.projetos.splice(i,1);
+    if(S.ativo===era) S.ativo=S.projetos[0].id;
+    save(); refreshHeaders(); renderProjetos(); render(); renderAcomp(); delNuvem('projetos',era);
+  }
+}
+
+/* ===== TABS ===== */
+function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='cfg')renderCfg();}
+function renderAll(){refreshHeaders();render();renderAcomp();renderProjetos();}
+renderAll(); // render local primeiro (instantâneo)
+async function bootNuvem(){
+  if(!SB){ nuvemStatus('modo local','err'); return; }
+  nuvemStatus('conectando…','load');
+  try{
+    const dados = await carregarDaNuvem();
+    if(dados){ S=dados; if(!S.ativo && S.projetos.length) S.ativo=S.projetos[0].id; renderAll(); nuvemStatus('nuvem ✓','ok'); window._nuvemVazia=false; }
+    else { nuvemStatus('nuvem vazia — migrar','load'); window._nuvemVazia=true; renderProjetos(); }
+  }catch(e){ nuvemStatus('erro nuvem','err'); console.error(e); }
+}
+bootNuvem();
+</script>
+</body>
+</html>
