@@ -203,6 +203,7 @@ table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:
     <button class="tab" onclick="tab('crono',this)">Cronograma</button>
     <button class="tab" onclick="tab('colab',this)">Colaboradores</button>
     <button class="tab" onclick="tab('cat',this)">Catálogo</button>
+    <button class="tab" onclick="tab('mat',this)">Materiais</button>
     <button class="tab" onclick="tab('cfg',this)">Configurações</button>
   </div>
 
@@ -258,6 +259,14 @@ table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:
     <div class="topbar"><span class="pname">Catálogo de serviços</span><button class="btn btn-p btn-s" onclick="addSvc()">+ Novo serviço</button></div>
     <div class="note">Cada serviço tem variações (dificuldade) com tempo próprio. Adicione/edite/exclua em linha.</div>
     <div id="cat-list"></div>
+  </div>
+
+  <!-- MATERIAIS -->
+  <div class="view" id="v-mat">
+    <div class="topbar"><span class="pname">Materiais (catálogo de tipos)</span><button class="btn btn-p btn-s" onclick="openMat(null)">+ Novo material</button></div>
+    <div class="note">Cadastro de tipos de material (não é estoque). Identificado pelo código de barras do fabricante. <span id="mat-count"></span></div>
+    <input class="tin" id="mat-busca" placeholder="Buscar por descrição, código, marca…" style="width:100%;margin-bottom:12px" oninput="renderMatList()">
+    <div id="mat-list"><div class="empty">Carregando materiais…</div></div>
   </div>
 
   <!-- CONFIGURACOES -->
@@ -353,6 +362,35 @@ table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:
     <div class="fg"><label class="fl">Observações / escopo</label><input class="fi" id="p-obs"></div>
   </div>
   <div class="mf"><button class="btn" onclick="closeProj()">Cancelar</button><button class="btn btn-p" onclick="saveProj()">Salvar projeto</button></div>
+</div></div>
+
+<!-- MODAL MATERIAL -->
+<div class="modal-bg" id="modalM"><div class="modal">
+  <div class="mh"><b id="m-mat-title">Material</b><button class="x" onclick="closeMat()">&times;</button></div>
+  <div class="mb">
+    <div class="fg"><label class="fl">Código de barras (fabricante) <span style="color:var(--blue)">— chave</span></label>
+      <div style="display:flex;gap:8px"><input class="fi" id="mt-cb" placeholder="escaneie ou digite" style="flex:1"><button class="btn" onclick="scanCodigo()" title="escanear com a câmera">📷</button></div>
+    </div>
+    <div class="fg"><label class="fl">Descrição padronizada (base)</label><input class="fi" id="mt-descp" placeholder="Como você chama internamente"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Código fábrica</label><input class="fi" id="mt-cf"></div>
+      <div class="fg"><label class="fl">Código interno</label><input class="fi" id="mt-ci"></div>
+    </div>
+    <div class="fg"><label class="fl">Descrição do fabricante</label><input class="fi" id="mt-descf"></div>
+    <div class="frow3">
+      <div class="fg"><label class="fl">Material / Cor</label><input class="fi" id="mt-cor"></div>
+      <div class="fg"><label class="fl">Medida</label><input class="fi" id="mt-med"></div>
+      <div class="fg"><label class="fl">Unidade</label><input class="fi" id="mt-un" value="UND"></div>
+    </div>
+    <div class="frow3">
+      <div class="fg"><label class="fl">Modelo</label><input class="fi" id="mt-mod"></div>
+      <div class="fg"><label class="fl">Marca</label><input class="fi" id="mt-marca"></div>
+      <div class="fg"><label class="fl">Qtd padrão</label><input class="fi" id="mt-qtd" type="number" step="0.01" placeholder="opcional"></div>
+    </div>
+    <div class="fg"><label class="fl">Observações</label><input class="fi" id="mt-obs"></div>
+    <div class="note" id="mt-fotos-nota">Fotos do item: ativaremos o envio ao ligar o armazenamento (Storage).</div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeMat()">Cancelar</button><button class="btn btn-p" onclick="saveMat()">Salvar material</button></div>
 </div></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -922,6 +960,83 @@ function rmNiv(i){S.niveis.splice(i,1);renderCfg();save();}
 function addCat(){const v=document.getElementById('new-cat').value.trim();if(v){S.categorias.push([v.toUpperCase().replace(/\s+/g,'_'),v]);document.getElementById('new-cat').value='';renderCfg();save();}}
 function rmCat(i){S.categorias.splice(i,1);renderCfg();save();}
 
+/* ===== MATERIAIS (catálogo de tipos, na nuvem) ===== */
+let MATS=[]; let MEDIT=null;
+async function carregarMateriais(){
+  if(!SB){ document.getElementById('mat-list').innerHTML='<div class="empty">Sem conexão com a nuvem.</div>'; return; }
+  document.getElementById('mat-list').innerHTML='<div class="empty">Carregando materiais…</div>';
+  const r=await SB.from('materiais').select('*').is('deleted_at',null).order('descricao_padronizada');
+  if(r.error){ document.getElementById('mat-list').innerHTML='<div class="empty">Erro: '+r.error.message+'</div>'; return; }
+  MATS=r.data||[];
+  renderMatList();
+}
+function renderMatList(){
+  const q=(document.getElementById('mat-busca').value||'').toLowerCase().trim();
+  const lista=MATS.filter(m=>{ if(!q)return true; return [m.descricao_padronizada,m.descricao_fabricante,m.codigo_barras,m.codigo_interno,m.codigo_fabrica,m.marca,m.modelo].some(x=>(x||'').toLowerCase().indexOf(q)>=0); });
+  document.getElementById('mat-count').textContent='· '+MATS.length+' cadastrados';
+  document.getElementById('mat-list').innerHTML = lista.length ? lista.map(m=>`
+    <div class="svccard">
+      <div class="svchead">
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:14px">${m.descricao_padronizada||'(sem descrição)'}</div>
+          <div style="font-size:11px;color:var(--tx2)">${m.codigo_barras?'<b>'+m.codigo_barras+'</b> · ':''}${m.marca||''} ${m.modelo||''} ${m.medida?'· '+m.medida:''} ${m.material_cor?'· '+m.material_cor:''} · ${m.unidade||'UND'}${m.codigo_interno?' · int: '+m.codigo_interno:''}</div>
+          ${m.descricao_fabricante?`<div style="font-size:11px;color:var(--tx3);margin-top:2px">${m.descricao_fabricante}</div>`:''}
+        </div>
+        <button class="ib" onclick="openMat('${m.id}')" title="editar">✎</button>
+        <button class="ib del" onclick="delMat('${m.id}')" title="excluir">×</button>
+      </div>
+    </div>`).join('') : '<div class="empty">'+(q?'Nenhum material encontrado.':'Nenhum material ainda. Clique em "+ Novo material" ou importe sua planilha no Supabase.')+'</div>';
+}
+function openMat(id){
+  MEDIT = id?MATS.find(m=>m.id===id):null;
+  const v=(k)=>MEDIT?(MEDIT[k]!=null?MEDIT[k]:''):'';
+  document.getElementById('m-mat-title').textContent=id?'Editar material':'Novo material';
+  document.getElementById('mt-cb').value=v('codigo_barras');
+  document.getElementById('mt-descp').value=v('descricao_padronizada');
+  document.getElementById('mt-cf').value=v('codigo_fabrica');
+  document.getElementById('mt-ci').value=v('codigo_interno');
+  document.getElementById('mt-descf').value=v('descricao_fabricante');
+  document.getElementById('mt-cor').value=v('material_cor');
+  document.getElementById('mt-med').value=v('medida');
+  document.getElementById('mt-un').value=MEDIT?(MEDIT.unidade||'UND'):'UND';
+  document.getElementById('mt-mod').value=v('modelo');
+  document.getElementById('mt-marca').value=v('marca');
+  document.getElementById('mt-qtd').value=v('qtd_padrao');
+  document.getElementById('mt-obs').value=v('obs');
+  document.getElementById('modalM').classList.add('show');
+}
+function closeMat(){document.getElementById('modalM').classList.remove('show');MEDIT=null;}
+async function saveMat(){
+  const num=(x)=>{const n=parseFloat(x);return isNaN(n)?null:n;};
+  const row={
+    codigo_barras:document.getElementById('mt-cb').value.trim()||null,
+    descricao_padronizada:document.getElementById('mt-descp').value.trim()||null,
+    codigo_fabrica:document.getElementById('mt-cf').value.trim()||null,
+    codigo_interno:document.getElementById('mt-ci').value.trim()||null,
+    descricao_fabricante:document.getElementById('mt-descf').value.trim()||null,
+    material_cor:document.getElementById('mt-cor').value.trim()||null,
+    medida:document.getElementById('mt-med').value.trim()||null,
+    unidade:document.getElementById('mt-un').value.trim()||'UND',
+    modelo:document.getElementById('mt-mod').value.trim()||null,
+    marca:document.getElementById('mt-marca').value.trim()||null,
+    qtd_padrao:num(document.getElementById('mt-qtd').value),
+    obs:document.getElementById('mt-obs').value.trim()||null
+  };
+  if(!row.descricao_padronizada && !row.codigo_barras){ alert('Informe ao menos a descrição ou o código de barras.'); return; }
+  let r;
+  if(MEDIT){ r=await SB.from('materiais').update(row).eq('id',MEDIT.id); }
+  else { r=await SB.from('materiais').insert(row); }
+  if(r.error){ alert('Erro ao salvar: '+r.error.message); return; }
+  closeMat(); carregarMateriais();
+}
+async function delMat(id){
+  if(!confirm('Excluir este material?')) return;
+  const r=await SB.from('materiais').update({deleted_at:new Date().toISOString()}).eq('id',id);
+  if(r.error){ alert('Erro: '+r.error.message); return; }
+  carregarMateriais();
+}
+function scanCodigo(){ alert('Leitura por câmera: próxima etapa (funciona no celular). Por ora, digite o código.'); }
+
 /* ===== ACOMPANHAMENTO ===== */
 const PROJ_INI=new Date('2026-05-31'),NUM_WEEKS=5,HOJE=new Date('2026-06-17');
 function dd(a,b){return Math.round((a-b)/86400000);}
@@ -1022,7 +1137,7 @@ function delProj(i){
 }
 
 /* ===== TABS ===== */
-function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='cfg')renderCfg();}
+function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='cfg')renderCfg();}
 function renderAll(){refreshHeaders();render();renderAcomp();renderProjetos();}
 renderAll(); // render local primeiro (instantâneo)
 async function bootNuvem(){
