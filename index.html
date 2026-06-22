@@ -444,17 +444,16 @@ body.papel-tecnico .adm-only{display:none !important}
   <div class="mh"><b>Nova tarefa</b><button class="x" onclick="closeAdd()">&times;</button></div>
   <div class="mb">
     <div class="fg"><label class="fl">Atividade</label><select class="fi" id="m-grupo" onchange="loadSvc()"></select></div>
-    <div class="fg"><label class="fl">Serviço / tarefa</label>
-      <input class="fi" id="m-svc-q" placeholder="🔍 Buscar serviço pelo nome…" oninput="svcFilter()" autocomplete="off">
+    <div class="fg"><label class="fl">Tarefa — buscar existente ou digitar nova</label>
+      <input class="fi" id="m-svc-q" placeholder="🔍 Digite o nome da tarefa…" oninput="svcFilter()" autocomplete="off">
       <div class="svc-list" id="m-svc-list"></div>
-      <button class="btn btn-s" id="m-nova-btn" type="button" onclick="toggleNova(true)" style="margin-top:6px">+ Nova tarefa (não cadastrada)</button>
       <div id="m-nova" style="display:none;margin-top:8px;border-top:1px solid var(--bd);padding-top:8px">
-        <div class="frow" style="grid-template-columns:1fr 80px 110px">
-          <div class="fg"><label class="fl">Nome da nova tarefa</label><input class="fi" id="nt-nome"></div>
+        <div class="note" style="margin-bottom:6px">Nova tarefa: <b id="nt-nome-eco">—</b> — informe unidade e tempo:</div>
+        <div class="frow" style="grid-template-columns:120px 1fr">
           <div class="fg"><label class="fl">Unidade</label><input class="fi" id="nt-un" placeholder="UND"></div>
           <div class="fg"><label class="fl">Tempo padrão</label><div style="display:flex;gap:4px"><input class="fi" id="nt-tempo" type="number" step="0.05" value="0" style="flex:1"><select class="fi" id="nt-tempo-un" style="width:66px"><option value="h">h</option><option value="min">min</option></select></div></div>
         </div>
-        <div style="display:flex;gap:6px"><button class="btn btn-s btn-p" type="button" onclick="criarTarefaNova()">Criar tarefa</button><button class="btn btn-s" type="button" onclick="toggleNova(false)">cancelar</button></div>
+        <div style="display:flex;gap:6px"><button class="btn btn-s btn-p" type="button" onclick="criarTarefaNova()">Criar e adicionar</button><button class="btn btn-s" type="button" onclick="toggleNova(false)">cancelar</button></div>
       </div>
     </div>
     <div class="fg" id="fg-var"><label class="fl"><span class="amb">Variação — dificuldade</span></label><div class="chips" id="m-var"></div></div>
@@ -527,6 +526,7 @@ body.papel-tecnico .adm-only{display:none !important}
 .svc-row:last-child{border-bottom:none}
 .svc-row:hover{background:rgba(120,120,120,.07)}
 .svc-row.sel{background:var(--ac-bg,#e6f1fb);color:var(--ac,#185fa5);font-weight:500}
+.svc-row.svc-new{color:var(--pri,#534ab7);font-weight:500;background:var(--pri-bg,rgba(83,74,183,.06))}
 .svc-un{font-size:11px;color:var(--tx3)}
 .svc-row.sel .svc-un{color:var(--ac,#185fa5)}
 </style>
@@ -1150,23 +1150,27 @@ function loadSvc(){
   else { document.getElementById('m-var').innerHTML=''; M.svc=null; }
 }
 function renderSvcList(q){
-  q=(q||'').toLowerCase().trim();
+  q=(q||'').trim(); const ql=q.toLowerCase();
   const box=document.getElementById('m-svc-list'); if(!box) return;
-  let arr=S.catalogo;
-  if(q) arr=arr.filter(s=>s.nome.toLowerCase().includes(q));
-  if(!arr.length){ box.innerHTML='<div style="padding:9px;font-size:12px;color:var(--tx3)">Nenhum serviço encontrado. Use “+ Nova tarefa”.</div>'; return; }
-  box.innerHTML=arr.map(s=>`<div class="svc-row${M.svc&&M.svc.id===s.id?' sel':''}" data-s="${s.id}" onclick="pickSvc('${s.id}')"><span>${s.nome}${s.avulso?' <span class="svc-un">(avulsa)</span>':''}</span><span class="svc-un">${s.un||''}</span></div>`).join('');
+  const arr=S.catalogo.filter(s=>!ql || s.nome.toLowerCase().includes(ql));
+  const temExato=S.catalogo.some(s=>s.nome.toLowerCase()===ql);
+  let html='';
+  if(q && !temExato){ html+=`<div class="svc-row svc-new" onclick="abrirNova()"><span>➕ Criar “${q}” como nova tarefa</span><span class="svc-un">nova</span></div>`; }
+  if(arr.length){ html+=arr.map(s=>`<div class="svc-row${M.svc&&M.svc.id===s.id?' sel':''}" data-s="${s.id}" onclick="pickSvc('${s.id}')"><span>${s.nome}${s.avulso?' <span class="svc-un">(avulsa)</span>':''}</span><span class="svc-un">${s.un||''}</span></div>`).join(''); }
+  else if(!q){ html='<div style="padding:9px;font-size:12px;color:var(--tx3)">Digite o nome da tarefa para buscar ou criar.</div>'; }
+  box.innerHTML=html;
 }
-function svcFilter(){ renderSvcList(document.getElementById('m-svc-q').value); }
+function svcFilter(){ renderSvcList(document.getElementById('m-svc-q').value); const nova=document.getElementById('m-nova'); if(nova&&nova.style.display!=='none'){ const eco=document.getElementById('nt-nome-eco'); if(eco)eco.textContent=(document.getElementById('m-svc-q').value||'').trim()||'—'; } }
+function abrirNova(){ const q=(document.getElementById('m-svc-q').value||'').trim(); if(!q){ document.getElementById('m-svc-q').focus(); return; } toggleNova(true); }
 function toggleNova(on){
   const box=document.getElementById('m-nova'), btn=document.getElementById('m-nova-btn');
   if(!box) return;
   box.style.display=on?'block':'none'; if(btn)btn.style.display=on?'none':'inline-block';
   ['fg-var','fg-tempo','m-prev'].forEach(id=>{const el=document.getElementById(id); if(el)el.style.display=on?'none':'';}); // tempo único: ao criar nova, esconde tempo/variação do catálogo
-  if(on){ const q=(document.getElementById('m-svc-q').value||'').trim(); const nn=document.getElementById('nt-nome'); if(q&&!nn.value)nn.value=q; document.getElementById('nt-un').value='UND'; document.getElementById('nt-tempo').value='0'; const tu=document.getElementById('nt-tempo-un'); if(tu)tu.value='h'; nn.focus(); }
+  if(on){ const eco=document.getElementById('nt-nome-eco'); if(eco)eco.textContent=(document.getElementById('m-svc-q').value||'').trim()||'—'; document.getElementById('nt-un').value='UND'; document.getElementById('nt-tempo').value='0'; const tu=document.getElementById('nt-tempo-un'); if(tu)tu.value='h'; document.getElementById('nt-un').focus(); }
 }
 async function criarTarefaNova(){
-  const nome=document.getElementById('nt-nome').value.trim(); if(!nome){alert('Dê um nome à tarefa.');return;}
+  const nome=(document.getElementById('m-svc-q').value||'').trim(); if(!nome){alert('Digite o nome da tarefa no campo de busca.');return;}
   const un=(document.getElementById('nt-un').value.trim()||'UND').toUpperCase();
   const tempo=toH(document.getElementById('nt-tempo').value,(document.getElementById('nt-tempo-un')||{}).value||'h');
   const salvar=confirm('Guardar esta tarefa no catálogo para reutilizar em outras obras?\n\n[OK] Sim, guardar no catálogo\n[Cancelar] Só nesta obra (avulsa)');
