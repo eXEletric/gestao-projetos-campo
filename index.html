@@ -15,7 +15,7 @@
   --bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);
   --tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--pri:#533ab7;--pri-bg:#eeedfe;
   --blue:#185fa5;--green:#3b6d11;--amber:#ba7517;--red:#a32d2d;--teal:#0f6e56;
-  --cols:46px minmax(250px,1.5fr) 118px 140px 104px 72px 118px 112px 90px 148px;
+  --cols:46px minmax(190px,1.2fr) 104px 150px 220px 72px 118px 112px 90px 148px;
 }
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
 body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45;padding:18px}
@@ -84,6 +84,8 @@ h1{font-size:20px;font-weight:600}
 .trow.sub .tnm{padding-left:14px;color:var(--tx2)}
 .twbs{font-family:ui-monospace,monospace;font-size:11px;color:var(--blue);padding:0 6px;font-variant-numeric:tabular-nums}
 .tname{padding:0 6px;min-width:0;display:flex;flex-direction:column;gap:3px}
+.tdcell{padding:0 6px;min-width:0}
+.rfcell{padding:0 6px;display:flex;flex-direction:column;gap:3px;min-width:0}
 .tvar{font-size:11px;max-width:240px}
 .tdates{display:flex;flex-direction:column;gap:2px;margin-top:1px}
 .dl{display:flex;align-items:center;gap:4px}
@@ -386,7 +388,7 @@ body.papel-tecnico .adm-only{display:none !important}
     </div>
     <div class="note">↑↓ reordena · ← → promove/rebaixa nível (tarefa ↔ subtarefa) · qtd e tempo editáveis na linha</div>
     <div class="cwrap"><div class="cmin">
-      <div class="colh"><span>WBS</span><span>Tarefa / variação</span><span>Executor</span><span>Função aplicada</span><span>Qtd · und</span><span class="r">Prev. 🔒</span><span>Atual / desvio</span><span>Progresso</span><span class="r" id="colh-cost">Total</span><span></span></div>
+      <div class="colh"><span>WBS</span><span>Tarefa / variação</span><span>Qtd · und</span><span>Responsável / função</span><span>Datas (planej. / real)</span><span class="r">Prev. 🔒</span><span>Atual / desvio</span><span>Progresso</span><span class="r" id="colh-cost">Total</span><span></span></div>
       <div id="board"></div>
     </div></div>
     <div class="addg"><button class="btn btn-s" onclick="openGroup(-1)">+ adicionar atividade</button><button class="btn btn-s adm-only" onclick="openPad()" style="margin-left:8px">📚 Da biblioteca</button></div>
@@ -922,10 +924,10 @@ function render(){
       </div>`;
       return `<div class="trow ${isSub?'sub':''}">
         <span class="twbs">${wbs}</span>
-        <span class="tname"><span class="tnm">${t.nome}</span>${varSel}${dts}</span>
-        <span style="padding:0 6px"><select class="cell-in" onchange="setExec('${t.id}',this.value)">${execOpts}</select></span>
-        <span style="padding:0 6px"><select class="cell-in" onchange="setLinha('${t.id}',this.value)" ${!c||!c.custo?'disabled':''}>${linhaOpts}</select></span>
+        <span class="tname"><span class="tnm">${t.nome}</span>${varSel}</span>
         <div class="qcell">${isSub?'<span class="und2">—</span>':`<input class="cell-in cell-num" type="number" min="0" value="${t.qtd}" onchange="setQtd('${t.id}',this.value)"><span class="und2">${un}</span>`}</div>
+        <div class="rfcell"><select class="cell-in" onchange="setExec('${t.id}',this.value)">${execOpts}</select><select class="cell-in" onchange="setLinha('${t.id}',this.value)" ${!c||!c.custo?'disabled':''}>${linhaOpts}</select></div>
+        <div class="tdcell">${dts}</div>
         <span class="prevc">${isSub?'<span style="color:var(--tx3)">—</span>':(t.tempoPrev||0).toFixed(2)+'h 🔒'}</span>
         <div class="atualc">${isSub?'<span style="color:var(--tx3);font-size:11px">sem tempo</span>':`${devb}<input class="cell-in cell-num ${dev!==0?'tempo-ed':''}" type="number" step="0.05" value="${t.tempo}" onchange="setTempo('${t.id}',this.value)">`}</div>
         <div class="progc"><div class="mbar"><div class="mfill" style="width:${t.prog||0}%;background:${corProg(t.prog||0)}"></div></div><input class="cell-in cell-num" type="number" min="0" max="100" step="5" value="${t.prog||0}" onchange="setProg('${t.id}',this.value)"></div>
@@ -948,8 +950,9 @@ function render(){
     const gIni=_mn(work.map(x=>x.ini)),gFim=_mx(work.map(x=>x.fim)),gIniR=_mn(work.map(x=>x.iniReal)),gFimR=_mx(work.map(x=>x.fimReal));
     const _fd=s=>s?s.slice(8,10)+'/'+s.slice(5,7):'—';
     const gdates=(gIni||gFim||gIniR||gFimR)?`<span class="gdates"><span class="dtg p">planej</span>${_fd(gIni)}→${_fd(gFim)} <span class="dtg r">real</span>${_fd(gIniR)}→${_fd(gFimR)}</span>`:'';
-    return `<div class="grp">
-      <div class="gh">
+    const ac=ATCOR[gi%ATCOR.length];
+    return `<div class="grp" style="border-left:4px solid ${ac.b};border-radius:6px;overflow:hidden">
+      <div class="gh" style="background:${ac.bg}">
         <span class="gwbs" onclick="tgGroup(${gi})"><span class="gar ${gr.open?'open':''}">›</span>${gi+1}</span>
         <span class="gname" onclick="tgGroup(${gi})">${gr.nome}${catNome(gr.cat)?`<span class="gcat">${catNome(gr.cat)}</span>`:''}${gr.resp?`<span class="gcat" title="responsável pela atividade">resp: ${(colab(gr.resp)||{}).nome||'—'}</span>`:''}</span>
         <span class="gstats" style="grid-column:3 / 6"><b>${work.length}</b> tarefas ${gdates}</span>
@@ -991,6 +994,7 @@ function setVarTask(id,val){ const t=P().tarefas.find(x=>x.id===id); if(val==='_
 function addVarTask(id){ const t=P().tarefas.find(x=>x.id===id); const nome=(prompt('Nome da nova variação/dificuldade:')||'').trim(); if(!nome){render();return;} const h=toH(prompt('Tempo dessa variação (use vírgula p/ decimal):','0')||'0','h'); ensureVars(t); t.vars.push([nome,h]); t.varNome=nome; t.tempo=h; t.tempoPrev=h; render(); pushTarefa(t); }
 function setData(id,campo,v){ const t=P().tarefas.find(x=>x.id===id); t[campo]=v||''; render(); pushTarefa(t); }
 function corProg(p){return p>=100?'#3b6d11':p>=50?'#ba7517':'#888780';}
+const ATCOR=[{b:'#7F77DD',bg:'rgba(127,119,221,.08)'},{b:'#1D9E75',bg:'rgba(29,158,117,.08)'},{b:'#D85A30',bg:'rgba(216,90,48,.08)'},{b:'#378ADD',bg:'rgba(55,138,221,.08)'},{b:'#BA7517',bg:'rgba(186,117,23,.08)'},{b:'#D4537E',bg:'rgba(212,83,126,.08)'}];
 function delTask(id){
   const t=P().tarefas.find(x=>x.id===id);
   const arr=groupArr(t.grupo); const pos=arr.indexOf(t);
