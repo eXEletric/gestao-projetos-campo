@@ -15,7 +15,7 @@
   --bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);
   --tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--pri:#533ab7;--pri-bg:#eeedfe;
   --blue:#185fa5;--green:#3b6d11;--amber:#ba7517;--red:#a32d2d;--teal:#0f6e56;
-  --cols:46px minmax(150px,1fr) 118px 140px 104px 72px 118px 112px 90px 148px;
+  --cols:46px minmax(250px,1.5fr) 118px 140px 104px 72px 118px 112px 90px 148px;
 }
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
 body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45;padding:18px}
@@ -83,7 +83,16 @@ h1{font-size:20px;font-weight:600}
 .trow.sub .twbs{padding-left:16px}
 .trow.sub .tnm{padding-left:14px;color:var(--tx2)}
 .twbs{font-family:ui-monospace,monospace;font-size:11px;color:var(--blue);padding:0 6px;font-variant-numeric:tabular-nums}
-.tname{padding:0 6px;min-width:0}
+.tname{padding:0 6px;min-width:0;display:flex;flex-direction:column;gap:3px}
+.tvar{font-size:11px;max-width:240px}
+.tdates{display:flex;flex-direction:column;gap:2px;margin-top:1px}
+.dl{display:flex;align-items:center;gap:4px}
+.dtg{font-size:9px;padding:1px 4px;border-radius:4px;min-width:38px;text-align:center}
+.dtg.p{background:rgba(55,138,221,.16);color:#185fa5}
+.dtg.r{background:rgba(29,158,117,.16);color:#0f6e56}
+.din{font-size:10px;padding:1px 3px;border:1px solid var(--bd);border-radius:4px;background:var(--bg);color:var(--tx1);width:96px}
+.ar{font-size:10px;color:var(--tx3)}
+.gdates{font-size:10px;color:var(--tx2);display:inline-flex;gap:8px;align-items:center}
 .tnm{display:block;white-space:normal;overflow-wrap:anywhere;line-height:1.3}
 .tvr{font-size:10px;color:var(--amber)}
 .cell-in{width:100%;padding:5px 6px;border:1px solid var(--line);border-radius:5px;background:var(--surf);font-size:12px;color:var(--tx)}
@@ -371,13 +380,13 @@ body.papel-tecnico .adm-only{display:none !important}
     <div class="summ">
       <div class="card"><div class="l">Executado</div><div class="v green" id="s-prog">0%</div></div>
       <div class="card"><div class="l">Horas previstas</div><div class="v blue" id="s-h">0h</div></div>
-      <div class="card"><div class="l">Custo previsto</div><div class="v green" id="s-c">R$ 0,00</div></div>
+      <div class="card" id="card-custo"><div class="l">Custo previsto</div><div class="v green" id="s-c">R$ 0,00</div></div>
       <div class="card"><div class="l">Tarefas</div><div class="v purple" id="s-t">0</div></div>
       <div class="card"><div class="l">Atividades</div><div class="v amber" id="s-g">0</div></div>
     </div>
     <div class="note">↑↓ reordena · ← → promove/rebaixa nível (tarefa ↔ subtarefa) · qtd e tempo editáveis na linha</div>
     <div class="cwrap"><div class="cmin">
-      <div class="colh"><span>WBS</span><span>Tarefa / variação</span><span>Executor</span><span>Função aplicada</span><span>Qtd · und</span><span class="r">Prev. 🔒</span><span>Atual / desvio</span><span>Progresso</span><span class="r">Custo</span><span></span></div>
+      <div class="colh"><span>WBS</span><span>Tarefa / variação</span><span>Executor</span><span>Função aplicada</span><span>Qtd · und</span><span class="r">Prev. 🔒</span><span>Atual / desvio</span><span>Progresso</span><span class="r" id="colh-cost">Total</span><span></span></div>
       <div id="board"></div>
     </div></div>
     <div class="addg"><button class="btn btn-s" onclick="openGroup(-1)">+ adicionar atividade</button><button class="btn btn-s adm-only" onclick="openPad()" style="margin-left:8px">📚 Da biblioteca</button></div>
@@ -432,15 +441,29 @@ body.papel-tecnico .adm-only{display:none !important}
   <div class="mh"><b>Nova tarefa</b><button class="x" onclick="closeAdd()">&times;</button></div>
   <div class="mb">
     <div class="fg"><label class="fl">Atividade</label><select class="fi" id="m-grupo" onchange="loadSvc()"></select></div>
-    <div class="fg"><label class="fl">Serviço</label><div class="chips" id="m-svc"></div></div>
-    <div class="fg"><label class="fl"><span class="amb">Variação — dificuldade</span></label><div class="chips" id="m-var"></div></div>
+    <div class="fg"><label class="fl">Serviço / tarefa</label>
+      <input class="fi" id="m-svc-q" placeholder="🔍 Buscar serviço pelo nome…" oninput="svcFilter()" autocomplete="off">
+      <div class="svc-list" id="m-svc-list"></div>
+      <button class="btn btn-s" id="m-nova-btn" type="button" onclick="toggleNova(true)" style="margin-top:6px">+ Nova tarefa (não cadastrada)</button>
+      <div id="m-nova" style="display:none;margin-top:8px;border-top:1px solid var(--bd);padding-top:8px">
+        <div class="frow" style="grid-template-columns:1fr 80px 110px">
+          <div class="fg"><label class="fl">Nome da nova tarefa</label><input class="fi" id="nt-nome"></div>
+          <div class="fg"><label class="fl">Unidade</label><input class="fi" id="nt-un" placeholder="UND"></div>
+          <div class="fg"><label class="fl">Tempo padrão</label><div style="display:flex;gap:4px"><input class="fi" id="nt-tempo" type="number" step="0.05" value="0" style="flex:1"><select class="fi" id="nt-tempo-un" style="width:66px"><option value="h">h</option><option value="min">min</option></select></div></div>
+        </div>
+        <div style="display:flex;gap:6px"><button class="btn btn-s btn-p" type="button" onclick="criarTarefaNova()">Criar tarefa</button><button class="btn btn-s" type="button" onclick="toggleNova(false)">cancelar</button></div>
+      </div>
+    </div>
+    <div class="fg" id="fg-var"><label class="fl"><span class="amb">Variação — dificuldade</span></label><div class="chips" id="m-var"></div></div>
     <div class="frow">
       <div class="fg"><label class="fl">Executor</label><select class="fi" id="m-exec" onchange="loadLinha()"></select></div>
       <div class="fg"><label class="fl">Função aplicada</label><select class="fi" id="m-linha" onchange="calcPrev()"></select></div>
       <div class="fg"><label class="fl">Quantidade</label><div class="qbtns"><button class="qb" onclick="mq(-1)">−</button><span class="qv" id="m-qtd">1</span><button class="qb" onclick="mq(1)">+</button></div></div>
     </div>
-    <div class="fg"><label class="fl">Tempo previsto (h/und) <span class="reset" id="m-reset" onclick="resetTempo()" style="display:none">↺ padrão do catálogo</span></label><input class="fi" id="m-tempo" type="number" step="0.05" oninput="markTempo()"></div>
-    <div class="prev"><span id="m-prev-l">—</span><span class="pc" id="m-prev-c">R$ 0,00</span></div>
+    <div class="fg" id="fg-tempo"><label class="fl">Tempo previsto por unidade <span class="reset" id="m-reset" onclick="resetTempo()" style="display:none">↺ padrão do catálogo</span></label>
+      <div style="display:flex;gap:6px"><input class="fi" id="m-tempo" type="number" step="0.05" oninput="markTempo()" style="flex:1"><select class="fi" id="m-tempo-un" style="width:90px" onchange="mTempoUnitChange()"><option value="h">horas</option><option value="min">min</option></select></div>
+    </div>
+    <div class="prev" id="m-prev"><span id="m-prev-l">—</span><span class="pc" id="m-prev-c">R$ 0,00</span></div>
   </div>
   <div class="mf"><button class="btn" onclick="closeAdd()">Cancelar</button><button class="btn btn-p" onclick="saveTask()">Adicionar</button></div>
 </div></div>
@@ -496,6 +519,13 @@ body.papel-tecnico .adm-only{display:none !important}
 .padrow{display:flex;align-items:center;justify-content:space-between;padding:3px 4px;font-size:13px}
 .padrow:hover{background:rgba(120,120,120,.06)}
 .padvr{font-size:11px;color:var(--tx3)}
+.svc-list{max-height:200px;overflow:auto;border:1px solid var(--bd);border-radius:8px;margin-top:6px}
+.svc-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--bd)}
+.svc-row:last-child{border-bottom:none}
+.svc-row:hover{background:rgba(120,120,120,.07)}
+.svc-row.sel{background:var(--ac-bg,#e6f1fb);color:var(--ac,#185fa5);font-weight:500}
+.svc-un{font-size:11px;color:var(--tx3)}
+.svc-row.sel .svc-un{color:var(--ac,#185fa5)}
 </style>
 <div class="modal-bg" id="modalPad"><div class="modal">
   <div class="mh"><b>📚 Biblioteca de atividades-padrão</b><button class="x" onclick="closePad()">&times;</button></div>
@@ -634,7 +664,8 @@ function _cfId(t){ const c=colab(t.exec); return (c&&c.linhas[t.execLinha])?c.li
 function _varId(t){ const s=S.catalogo.find(x=>x.id===t.svc); if(s&&t.varNome){ const v=s.vars.find(x=>x[0]===t.varNome); if(v) return v[2]||null; } return null; }
 function _projOf(t){ return S.projetos.find(p=>p.tarefas.includes(t))||P(); }
 async function pushTarefa(t){ if(!SB||!t) return; const s=S.catalogo.find(x=>x.id===t.svc); const pj=_projOf(t);
-  const row={id:t.id,projeto_id:pj.id,grupo_id:t.grupo,nivel:t.nivel||1,is_header:!!t.header,servico_id:t.svc||null,variacao_id:_varId(t),nome:t.nome,quantidade:t.qtd||0,unidade:s?s.un:null,tempo_previsto:t.tempoPrev||0,tempo_atual:t.tempo||0,executor_id:t.exec||null,colaborador_funcao_id:_cfId(t),responsavel_id:t.resp||null,prioridade:PRI2DB[t.prioridade]||'media',progresso:t.prog||0,status:ST2DB[t.status]||'a_fazer',data_inicio:t.ini||null,data_fim_prevista:t.fim||null,data_fim_real:t.fimReal||null,notas:t.notas||null,ordem:pj.tarefas.indexOf(t)};
+  const svcOk=!!(s&&!s.avulso); // serviço avulso não existe na nuvem → manda nulo (evita violar a chave estrangeira)
+  const row={id:t.id,projeto_id:pj.id,grupo_id:t.grupo,nivel:t.nivel||1,is_header:!!t.header,servico_id:svcOk?t.svc:null,variacao_id:svcOk?_varId(t):null,nome:t.nome,quantidade:t.qtd||0,unidade:(s?s.un:(t.un||null)),tempo_previsto:t.tempoPrev||0,tempo_atual:t.tempo||0,executor_id:t.exec||null,colaborador_funcao_id:_cfId(t),responsavel_id:t.resp||null,prioridade:PRI2DB[t.prioridade]||'media',progresso:t.prog||0,status:ST2DB[t.status]||'a_fazer',data_inicio:t.ini||null,data_inicio_real:t.iniReal||null,data_fim_prevista:t.fim||null,data_fim_real:t.fimReal||null,variacoes:(t.vars&&t.vars.length?t.vars:null),notas:t.notas||null,ordem:pj.tarefas.indexOf(t)};
   const r=await SB.from('tarefas').upsert(row); if(r.error){ nuvemStatus('erro ao salvar','err'); console.error('pushTarefa',r.error);} else nuvemStatus('salvo ✓','ok'); }
 async function pushTarefasOrdem(){ if(!SB) return; for(const t of P().tarefas){ await pushTarefa(t); } }
 async function pushGrupo(g){ if(!SB||!g) return; const row={id:g.id,projeto_id:S.ativo,nome:g.nome,categoria_id:g.cat||null,responsavel_id:g.resp||null,detalhes:g.det||null,ordem:P().grupos.indexOf(g),aberto:g.open!==false};
@@ -664,7 +695,13 @@ async function pushPadrao(p){ if(!SB||!p) return; _pr(await SB.from('atividades_
 function fmt(n){return n>0?'R$ '+Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';}
 /* papel: técnico não vê custos nem telas de gestão */
 function podeVerCusto(){ return !(window._PERFIL && window._PERFIL.papel==='tecnico'); }
+/* por ora o custo em R$ fica OCULTO p/ todos; cálculo permanece no código p/ reativar depois */
+const MOSTRAR_CUSTO=false;
+function custoOn(){ return MOSTRAR_CUSTO && podeVerCusto(); }
 function fmtC(n){ return podeVerCusto()?fmt(n):'—'; }
+/* tempo em "3h30 / 45min / 2h"; entrada em horas (decimal) */
+function fmtH(h){ const tot=Math.round((Number(h)||0)*60); if(tot<=0) return '0h'; const hh=Math.floor(tot/60),mm=tot%60; if(hh===0)return mm+'min'; if(mm===0)return hh+'h'; return hh+'h'+(mm<10?'0':'')+mm; }
+function toH(val,unit){ val=parseFloat(val)||0; return unit==='min'?val/60:val; }
 function aplicarPapel(){ const tec=!!(window._PERFIL && window._PERFIL.papel==='tecnico'); document.body.classList.toggle('papel-tecnico',tec); }
 
 const CATALOGO_BASE=[
@@ -724,7 +761,11 @@ async function carregarDaNuvem(){
     const tarefas = tR.data.filter(t=>t.projeto_id===p.id).map(t=>{
       const c=colab.find(x=>x.id===t.executor_id); let execLinha=0;
       if(c && t.colaborador_funcao_id){ const i=c.linhas.findIndex(l=>l._id===t.colaborador_funcao_id); if(i>=0)execLinha=i; }
-      return {id:t.id,grupo:t.grupo_id,nivel:t.nivel,header:t.is_header,svc:t.servico_id,varNome:t.variacao_id?(varById[t.variacao_id]||''):'',nome:t.nome,qtd:Number(t.quantidade),tempo:Number(t.tempo_atual),tempoPrev:Number(t.tempo_previsto),exec:t.executor_id||'',execLinha:execLinha,resp:t.responsavel_id||'',prioridade:PRI2APP[t.prioridade]||'Média',prog:t.progresso,status:ST2APP[t.status]||'todo',ini:t.data_inicio||'',fim:t.data_fim_prevista||'',fimReal:t.data_fim_real||'',notas:t.notas||''};
+      const vNome=t.variacao_id?(varById[t.variacao_id]||''):'';
+      const sCat=S.catalogo.find(x=>x.id===t.servico_id);
+      let vars = Array.isArray(t.variacoes)&&t.variacoes.length ? t.variacoes.map(v=>[v[0],Number(v[1])]) : null; // variações próprias da tarefa
+      if(!vars){ vars = sCat&&sCat.vars.length ? sCat.vars.map(v=>[v[0],Number(v[1])]) : (vNome?[[vNome,Number(t.tempo_atual)]]:[['Padrão',Number(t.tempo_atual)]]); } // fallback p/ tarefas antigas
+      return {id:t.id,grupo:t.grupo_id,nivel:t.nivel,header:t.is_header,svc:t.servico_id,un:t.unidade||'',vars,varNome:vNome||(vars[0]&&vars[0][0])||'',nome:t.nome,qtd:Number(t.quantidade),tempo:Number(t.tempo_atual),tempoPrev:Number(t.tempo_previsto),exec:t.executor_id||'',execLinha:execLinha,resp:t.responsavel_id||'',prioridade:PRI2APP[t.prioridade]||'Média',prog:t.progresso,status:ST2APP[t.status]||'todo',ini:t.data_inicio||'',iniReal:t.data_inicio_real||'',fim:t.data_fim_prevista||'',fimReal:t.data_fim_real||'',notas:t.notas||''};
     });
     return {id:p.id,numero:p.numero_externo||'',nome:p.nome,contratante:p.contratante||'',contemplado:p.contemplado||'',local:p.local||'',cidade:p.cidade||'',uf:p.uf||'',endereco:p.endereco||'',localizacao:p.localizacao||'',lider:p.lider_id||'',gestor:p.gestor||'',dataIni:p.data_inicio||'',dataFim:p.data_fim_prevista||'',status:PJ2APP[p.status]||'Em andamento',prioridade:PRI2APP[p.prioridade]||'Média',obs:p.observacoes||'',modelo:!!p.modelo,grupos:grupos,tarefas:tarefas};
   });
@@ -854,7 +895,7 @@ function render(){
           <span class="twbs">${wbs}</span>
           <span class="tname"><span class="tnm" style="font-weight:600">▾ ${t.nome}</span><span class="tvr">tarefa · agrupa subtarefas</span></span>
           <span class="tcell" style="grid-column:span 6;color:var(--tx3);font-size:11px;padding:0 6px">— agrupa subtarefas · ${rh.toFixed(1)}h —</span>
-          <span class="tcost ${rc>0?'':'z'}">${fmtC(rc)}</span>
+          <span class="tcost ${(custoOn()?rc:rh)>0?'':'z'}">${custoOn()?fmtC(rc):fmtH(rh)}</span>
           <span class="tacts">
             <button class="ib" onclick="addSubUnder('${t.id}')" title="adicionar subtarefa aqui">+sub</button>
             <button class="ib" onclick="openEdit('${t.id}')" title="editar (nome, status, datas)">✎</button>
@@ -864,24 +905,31 @@ function render(){
           </span>
         </div>`;
       }
-      const c=colab(t.exec);const vh=taskVh(t);const h=t.tempo*t.qtd;const cost=h*vh;
-      H+=h;HP+=(t.tempoPrev||0)*t.qtd;C+=cost;
+      const isSub=t.nivel===2;
+      const c=colab(t.exec);const vh=taskVh(t);const h=isSub?0:t.tempo*t.qtd;const cost=h*vh;
+      if(!isSub){H+=h;HP+=(t.tempoPrev||0)*t.qtd;C+=cost;}
       const linhaOpts=c&&c.custo?c.linhas.map((li,k)=>`<option value="${k}" ${k===(t.execLinha||0)?'selected':''}>${li.funcao} · ${li.nivel}</option>`).join(''):'<option>—</option>';
       const execOpts='<option value="">—</option>'+S.colab.map(cc=>`<option value="${cc.id}" ${cc.id===t.exec?'selected':''}>${cc.nome}</option>`).join('');
       const un=taskUn(t);
       const dev=+(t.tempo-(t.tempoPrev||0)).toFixed(2);
       const devb=dev>0?`<span class="devb up">+${dev}h</span>`:dev<0?`<span class="devb dn">${dev}h</span>`:`<span class="devb ok">ok</span>`;
       const subBtn=t.nivel===1?`<button class="ib" onclick="addSubUnder('${t.id}')" title="adicionar subtarefa">+sub</button>`:'';
-      return `<div class="trow ${t.nivel===2?'sub':''}">
+      const varr=ensureVars(t);
+      const varSel=isSub?'':`<select class="cell-in tvar" onchange="setVarTask('${t.id}',this.value)">${varr.map((v,i)=>`<option value="${i}" ${v[0]===t.varNome?'selected':''}>${v[0]} · ${fmtH(v[1])}/${un||'un'}</option>`).join('')}<option value="__nova__">➕ nova variação…</option></select>`;
+      const dts=`<div class="tdates">
+        <div class="dl"><span class="dtg p">planej</span><input type="date" class="din" value="${t.ini||''}" onchange="setData('${t.id}','ini',this.value)"><span class="ar">→</span><input type="date" class="din" value="${t.fim||''}" onchange="setData('${t.id}','fim',this.value)"></div>
+        <div class="dl"><span class="dtg r">real</span><input type="date" class="din" value="${t.iniReal||''}" onchange="setData('${t.id}','iniReal',this.value)"><span class="ar">→</span><input type="date" class="din" value="${t.fimReal||''}" onchange="setData('${t.id}','fimReal',this.value)"></div>
+      </div>`;
+      return `<div class="trow ${isSub?'sub':''}">
         <span class="twbs">${wbs}</span>
-        <span class="tname"><span class="tnm">${t.nome}</span><span class="tvr">${t.varNome}</span></span>
+        <span class="tname"><span class="tnm">${t.nome}</span>${varSel}${dts}</span>
         <span style="padding:0 6px"><select class="cell-in" onchange="setExec('${t.id}',this.value)">${execOpts}</select></span>
         <span style="padding:0 6px"><select class="cell-in" onchange="setLinha('${t.id}',this.value)" ${!c||!c.custo?'disabled':''}>${linhaOpts}</select></span>
-        <div class="qcell"><input class="cell-in cell-num" type="number" min="0" value="${t.qtd}" onchange="setQtd('${t.id}',this.value)"><span class="und2">${un}</span></div>
-        <span class="prevc">${(t.tempoPrev||0).toFixed(2)}h 🔒</span>
-        <div class="atualc">${devb}<input class="cell-in cell-num ${dev!==0?'tempo-ed':''}" type="number" step="0.05" value="${t.tempo}" onchange="setTempo('${t.id}',this.value)"></div>
+        <div class="qcell">${isSub?'<span class="und2">—</span>':`<input class="cell-in cell-num" type="number" min="0" value="${t.qtd}" onchange="setQtd('${t.id}',this.value)"><span class="und2">${un}</span>`}</div>
+        <span class="prevc">${isSub?'<span style="color:var(--tx3)">—</span>':(t.tempoPrev||0).toFixed(2)+'h 🔒'}</span>
+        <div class="atualc">${isSub?'<span style="color:var(--tx3);font-size:11px">sem tempo</span>':`${devb}<input class="cell-in cell-num ${dev!==0?'tempo-ed':''}" type="number" step="0.05" value="${t.tempo}" onchange="setTempo('${t.id}',this.value)">`}</div>
         <div class="progc"><div class="mbar"><div class="mfill" style="width:${t.prog||0}%;background:${corProg(t.prog||0)}"></div></div><input class="cell-in cell-num" type="number" min="0" max="100" step="5" value="${t.prog||0}" onchange="setProg('${t.id}',this.value)"></div>
-        <span class="tcost ${cost>0?'':'z'}">${fmtC(cost)}</span>
+        <span class="tcost ${(custoOn()?cost:h)>0?'':'z'}">${custoOn()?fmtC(cost):fmtH(h)}</span>
         <span class="tacts">
           ${subBtn}
           <button class="ib" onclick="openEdit('${t.id}')" title="editar (previsto, status, datas)">✎</button>
@@ -896,20 +944,24 @@ function render(){
     TH+=H;TC+=C;TT+=tasks.length;
     const work=tasks.filter(t=>!t.header);
     const gpAvg=work.length?Math.round(work.reduce((s,t)=>s+(t.prog||0),0)/work.length):0;
+    const _mn=a=>a.filter(Boolean).sort()[0]||''; const _mx=a=>a.filter(Boolean).sort().slice(-1)[0]||'';
+    const gIni=_mn(work.map(x=>x.ini)),gFim=_mx(work.map(x=>x.fim)),gIniR=_mn(work.map(x=>x.iniReal)),gFimR=_mx(work.map(x=>x.fimReal));
+    const _fd=s=>s?s.slice(8,10)+'/'+s.slice(5,7):'—';
+    const gdates=(gIni||gFim||gIniR||gFimR)?`<span class="gdates"><span class="dtg p">planej</span>${_fd(gIni)}→${_fd(gFim)} <span class="dtg r">real</span>${_fd(gIniR)}→${_fd(gFimR)}</span>`:'';
     return `<div class="grp">
       <div class="gh">
         <span class="gwbs" onclick="tgGroup(${gi})"><span class="gar ${gr.open?'open':''}">›</span>${gi+1}</span>
         <span class="gname" onclick="tgGroup(${gi})">${gr.nome}${catNome(gr.cat)?`<span class="gcat">${catNome(gr.cat)}</span>`:''}${gr.resp?`<span class="gcat" title="responsável pela atividade">resp: ${(colab(gr.resp)||{}).nome||'—'}</span>`:''}</span>
-        <span class="gstats" style="grid-column:3 / 6"><b>${work.length}</b> tarefas</span>
+        <span class="gstats" style="grid-column:3 / 6"><b>${work.length}</b> tarefas ${gdates}</span>
         <span class="gtimecell" title="horas planejadas (soma)">${HP.toFixed(1)}h 🔒</span>
         <span class="gtimecell" title="horas atuais (soma)"><b>${H.toFixed(1)}h</b></span>
         <span class="gprogcell"><span class="gprog" title="progresso da atividade" style="background:${corProg(gpAvg)}">${gpAvg}%</span></span>
-        <span class="gcostcell">${fmtC(C)}</span>
-        <span class="gbtns"><button class="ib adm-only" onclick="salvarPadrao(${gi})" title="salvar como padrão reutilizável">📌</button><button class="ib" onclick="openGroup(${gi})" title="editar atividade (nome e categoria)">✎</button><button class="ib" onclick="moveGroup(${gi},-1)">↑</button><button class="ib" onclick="moveGroup(${gi},1)">↓</button><button class="ib del" onclick="delGroup(${gi})">×</button></span>
+        <span class="gcostcell">${custoOn()?fmtC(C):fmtH(H)}</span>
+        <span class="gbtns"><button class="ib adm-only" onclick="salvarPadrao(${gi})" title="${padraoDe(gr)?'padrão salvo — clique para atualizar':'salvar como padrão reutilizável'}" style="${padraoDe(gr)?'color:var(--green,#1d9e75)':''}">${padraoDe(gr)?'📍':'📌'}</button><button class="ib" onclick="openGroup(${gi})" title="editar atividade (nome e categoria)">✎</button><button class="ib" onclick="moveGroup(${gi},-1)">↑</button><button class="ib" onclick="moveGroup(${gi},1)">↓</button><button class="ib del" onclick="delGroup(${gi})">×</button></span>
       </div>
       <div style="${gr.open?'':'display:none'}">
         ${rows||'<div class="empty">Nenhuma tarefa nesta atividade.</div>'}
-        ${tasks.length?`<div class="subtot"><span class="l">Subtotal</span><span class="h">${H.toFixed(2)}h</span><span class="c">${fmtC(C)}</span></div>`:''}
+        ${tasks.length?`<div class="subtot"><span class="l">Subtotal</span><span class="h">${fmtH(H)}</span><span class="c">${custoOn()?fmtC(C):''}</span></div>`:''}
         <div class="addr" onclick="openAdd('${gr.id}')">+ adicionar tarefa${catNome(gr.cat)?` (${catNome(gr.cat)})`:''}</div>
         <div class="addr" onclick="addHeader('${gr.id}')" style="color:var(--tx2)">+ adicionar tarefa agrupadora (junta subtarefas, sem serviço)</div>
       </div>
@@ -918,8 +970,10 @@ function render(){
   const _work=P().tarefas.filter(t=>!t.header);
   const _prog=_work.length?Math.round(_work.reduce((a,t)=>a+(t.prog||0),0)/_work.length):0;
   document.getElementById('s-prog').textContent=_prog+'%';
-  document.getElementById('s-h').textContent=TH.toFixed(1)+'h';
+  document.getElementById('s-h').textContent=fmtH(TH);
   document.getElementById('s-c').textContent=fmtC(TC);
+  const cc=document.getElementById('card-custo'); if(cc)cc.style.display=custoOn()?'':'none';
+  const ch=document.getElementById('colh-cost'); if(ch)ch.textContent=custoOn()?'Custo':'Total (h)';
   document.getElementById('s-t').textContent=TT;
   document.getElementById('s-g').textContent=P().grupos.length;
   save();
@@ -930,7 +984,12 @@ function setLinha(id,v){const t=P().tarefas.find(x=>x.id===id);t.execLinha=parse
 function setQtd(id,v){const t=P().tarefas.find(x=>x.id===id);t.qtd=Math.max(0,parseFloat(v)||0);render();pushTarefa(t);}
 function setTempo(id,v){const t=P().tarefas.find(x=>x.id===id);t.tempo=parseFloat(v)||0;render();pushTarefa(t);}
 function setProg(id,v){const t=P().tarefas.find(x=>x.id===id);t.prog=Math.min(100,Math.max(0,parseFloat(v)||0));if(t.status!=='ice'){if(t.prog===100)t.status='done';else if(t.status==='done')t.status=t.prog>0?'wip':'todo';}render();pushTarefa(t);}
-function taskUn(t){const s=S.catalogo.find(x=>x.id===t.svc);return s?s.un:'';}
+function taskUn(t){const s=S.catalogo.find(x=>x.id===t.svc);return s?s.un:(t.un||'');}
+/* variações: cada tarefa tem as suas (copiadas do catálogo no fallback) */
+function ensureVars(t){ if(!Array.isArray(t.vars)||!t.vars.length){ const s=S.catalogo.find(x=>x.id===t.svc); t.vars = (s&&s.vars.length)? s.vars.map(v=>[v[0],Number(v[1])]) : [[t.varNome||'Padrão',Number(t.tempo)||0]]; } if(!t.varNome) t.varNome=t.vars[0][0]; return t.vars; }
+function setVarTask(id,val){ const t=P().tarefas.find(x=>x.id===id); if(val==='__nova__'){ addVarTask(id); return; } const i=parseInt(val)||0; const v=t.vars[i]; if(!v)return; t.varNome=v[0]; t.tempo=v[1]; t.tempoPrev=v[1]; render(); pushTarefa(t); }
+function addVarTask(id){ const t=P().tarefas.find(x=>x.id===id); const nome=(prompt('Nome da nova variação/dificuldade:')||'').trim(); if(!nome){render();return;} const h=toH(prompt('Tempo dessa variação (use vírgula p/ decimal):','0')||'0','h'); ensureVars(t); t.vars.push([nome,h]); t.varNome=nome; t.tempo=h; t.tempoPrev=h; render(); pushTarefa(t); }
+function setData(id,campo,v){ const t=P().tarefas.find(x=>x.id===id); t[campo]=v||''; render(); pushTarefa(t); }
 function corProg(p){return p>=100?'#3b6d11':p>=50?'#ba7517':'#888780';}
 function delTask(id){
   const t=P().tarefas.find(x=>x.id===id);
@@ -1078,21 +1137,52 @@ function openAdd(gid){
 }
 function closeAdd(){document.getElementById('modal').classList.remove('show');ADD_PARENT=null;}
 function loadSvc(){
-  const svcs=S.catalogo;
-  const box=document.getElementById('m-svc');
-  if(!svcs.length){box.innerHTML='<span style="font-size:12px;color:var(--tx3)">Nenhum serviço cadastrado. Cadastre no Catálogo.</span>';document.getElementById('m-var').innerHTML='';M.svc=null;return;}
-  box.innerHTML=svcs.map(s=>`<div class="chip" data-s="${s.id}" onclick="pickSvc('${s.id}')">${s.nome}</div>`).join('');
-  pickSvc(svcs[0].id);
+  toggleNova(false);
+  const tu=document.getElementById('m-tempo-un'); if(tu)tu.value='h';
+  const q=document.getElementById('m-svc-q'); if(q)q.value='';
+  renderSvcList('');
+  if(S.catalogo.length) pickSvc(S.catalogo[0].id);
+  else { document.getElementById('m-var').innerHTML=''; M.svc=null; }
+}
+function renderSvcList(q){
+  q=(q||'').toLowerCase().trim();
+  const box=document.getElementById('m-svc-list'); if(!box) return;
+  let arr=S.catalogo;
+  if(q) arr=arr.filter(s=>s.nome.toLowerCase().includes(q));
+  if(!arr.length){ box.innerHTML='<div style="padding:9px;font-size:12px;color:var(--tx3)">Nenhum serviço encontrado. Use “+ Nova tarefa”.</div>'; return; }
+  box.innerHTML=arr.map(s=>`<div class="svc-row${M.svc&&M.svc.id===s.id?' sel':''}" data-s="${s.id}" onclick="pickSvc('${s.id}')"><span>${s.nome}${s.avulso?' <span class="svc-un">(avulsa)</span>':''}</span><span class="svc-un">${s.un||''}</span></div>`).join('');
+}
+function svcFilter(){ renderSvcList(document.getElementById('m-svc-q').value); }
+function toggleNova(on){
+  const box=document.getElementById('m-nova'), btn=document.getElementById('m-nova-btn');
+  if(!box) return;
+  box.style.display=on?'block':'none'; if(btn)btn.style.display=on?'none':'inline-block';
+  ['fg-var','fg-tempo','m-prev'].forEach(id=>{const el=document.getElementById(id); if(el)el.style.display=on?'none':'';}); // tempo único: ao criar nova, esconde tempo/variação do catálogo
+  if(on){ const q=(document.getElementById('m-svc-q').value||'').trim(); const nn=document.getElementById('nt-nome'); if(q&&!nn.value)nn.value=q; document.getElementById('nt-un').value='UND'; document.getElementById('nt-tempo').value='0'; const tu=document.getElementById('nt-tempo-un'); if(tu)tu.value='h'; nn.focus(); }
+}
+async function criarTarefaNova(){
+  const nome=document.getElementById('nt-nome').value.trim(); if(!nome){alert('Dê um nome à tarefa.');return;}
+  const un=(document.getElementById('nt-un').value.trim()||'UND').toUpperCase();
+  const tempo=toH(document.getElementById('nt-tempo').value,(document.getElementById('nt-tempo-un')||{}).value||'h');
+  const salvar=confirm('Guardar esta tarefa no catálogo para reutilizar em outras obras?\n\n[OK] Sim, guardar no catálogo\n[Cancelar] Só nesta obra (avulsa)');
+  const vid=uid();
+  const svc={id:uid(),nome,cat:'',un,vars:[['Padrão',tempo,vid]],avulso:!salvar};
+  S.catalogo.push(svc); save();
+  if(salvar){ await pushServico(svc); await pushVar(svc,0); } // garante o serviço na nuvem ANTES da tarefa (chave estrangeira)
+  toggleNova(false);
+  document.getElementById('m-svc-q').value=''; renderSvcList(''); pickSvc(svc.id);
+  saveTask(); // já adiciona a tarefa ao cronograma (um passo só)
 }
 function pickSvc(id){
   M.svc=S.catalogo.find(s=>s.id===id);M.varIdx=0;
-  document.querySelectorAll('#m-svc .chip').forEach(c=>c.classList.toggle('sel',c.dataset.s===id));
+  if(!M.svc)return;
+  document.querySelectorAll('#m-svc-list .svc-row').forEach(c=>c.classList.toggle('sel',c.dataset.s===id));
   const vbox=document.getElementById('m-var');
   if(!M.svc.vars.length){ vbox.innerHTML='<span style="font-size:12px;color:var(--red)">Este serviço não tem variações. Cadastre ao menos uma no Catálogo antes de usá-lo.</span>'; M.tempo=0; document.getElementById('m-tempo').value='0'; calcPrev(); return; }
   vbox.innerHTML=M.svc.vars.map((v,i)=>`<div class="chip amb ${i===0?'sel':''}" data-v="${i}" onclick="pickVar(${i})">${v[0]}<span class="h">${v[1]}h</span></div>`).join('');
-  M.tempo=M.svc.vars[0][1];document.getElementById('m-tempo').value=M.tempo.toFixed(3);document.getElementById('m-reset').style.display='none';calcPrev();
+  M.tempo=M.svc.vars[0][1];setTempoField(M.tempo);document.getElementById('m-reset').style.display='none';calcPrev();
 }
-function pickVar(i){M.varIdx=i;M.tempo=M.svc.vars[i][1];document.querySelectorAll('#m-var .chip').forEach(c=>c.classList.toggle('sel',+c.dataset.v===i));document.getElementById('m-tempo').value=M.tempo.toFixed(3);document.getElementById('m-reset').style.display='none';calcPrev();}
+function pickVar(i){M.varIdx=i;M.tempo=M.svc.vars[i][1];document.querySelectorAll('#m-var .chip').forEach(c=>c.classList.toggle('sel',+c.dataset.v===i));setTempoField(M.tempo);document.getElementById('m-reset').style.display='none';calcPrev();}
 function loadLinha(){
   const c=colab(document.getElementById('m-exec').value);
   const sel=document.getElementById('m-linha');
@@ -1101,14 +1191,17 @@ function loadLinha(){
   calcPrev();
 }
 function mq(d){M.qtd=Math.max(1,M.qtd+d);document.getElementById('m-qtd').textContent=M.qtd;calcPrev();}
-function markTempo(){M.tempo=parseFloat(document.getElementById('m-tempo').value)||0;document.getElementById('m-reset').style.display=(M.svc&&M.tempo!==M.svc.vars[M.varIdx][1])?'inline':'none';calcPrev();}
-function resetTempo(){M.tempo=M.svc.vars[M.varIdx][1];document.getElementById('m-tempo').value=M.tempo.toFixed(3);document.getElementById('m-reset').style.display='none';calcPrev();}
+function tUnit(){ return (document.getElementById('m-tempo-un')||{}).value||'h'; }
+function setTempoField(h){ const u=tUnit(); document.getElementById('m-tempo').value = u==='min' ? Math.round(h*60) : +(+h).toFixed(3); }
+function markTempo(){M.tempo=toH(document.getElementById('m-tempo').value,tUnit());document.getElementById('m-reset').style.display=(M.svc&&Math.abs(M.tempo-M.svc.vars[M.varIdx][1])>1e-9)?'inline':'none';calcPrev();}
+function mTempoUnitChange(){ setTempoField(M.tempo); } // só re-exibe o número na nova unidade; M.tempo (horas) não muda
+function resetTempo(){M.tempo=M.svc.vars[M.varIdx][1];setTempoField(M.tempo);document.getElementById('m-reset').style.display='none';calcPrev();}
 function calcPrev(){
   const c=colab(document.getElementById('m-exec').value);
   let vh=0;if(c&&c.custo&&c.linhas.length){const k=parseInt(document.getElementById('m-linha').value)||0;vh=(c.linhas[k]||{}).vh||0;}
   const h=M.tempo*M.qtd;
-  document.getElementById('m-prev-l').textContent=`${h.toFixed(2)}h × ${vh?(podeVerCusto()?fmt(vh)+'/h':'•••'):'(sem custo)'}`;
-  document.getElementById('m-prev-c').textContent=fmtC(h*vh);
+  document.getElementById('m-prev-l').textContent=`Total: ${fmtH(h)}`+(custoOn()&&vh?` × ${fmt(vh)}/h`:'');
+  document.getElementById('m-prev-c').textContent=custoOn()?fmtC(h*vh):fmtH(h);
 }
 let ADD_PARENT=null;
 function saveTask(){
@@ -1116,7 +1209,7 @@ function saveTask(){
   if(!M.svc.vars.length){alert('Este serviço não tem variação. Cadastre uma no Catálogo.');return;}
   const exec=document.getElementById('m-exec').value;
   const linha=parseInt(document.getElementById('m-linha').value)||0;
-  const nt={id:uid(),grupo:document.getElementById('m-grupo').value,nivel:1,svc:M.svc.id,nome:M.svc.nome,varNome:M.svc.vars[M.varIdx][0],tempo:M.tempo,tempoPrev:M.tempo,qtd:M.qtd,exec,execLinha:linha,prog:0,status:'todo',ini:'2026-06-17',fim:'2026-06-20',resp:'',prioridade:'Média',fimReal:'',notas:''};
+  const nt={id:uid(),grupo:document.getElementById('m-grupo').value,nivel:1,svc:M.svc.id,nome:M.svc.nome,un:M.svc.un||'',vars:(M.svc.vars||[]).map(v=>[v[0],v[1]]),varNome:M.svc.vars[M.varIdx][0],tempo:M.tempo,tempoPrev:M.tempo,qtd:M.qtd,exec,execLinha:linha,prog:0,status:'todo',ini:'',iniReal:'',fim:'',fimReal:'',resp:'',prioridade:'Média',notas:''};
   if(ADD_PARENT){
     const pai=P().tarefas.find(x=>x.id===ADD_PARENT);
     nt.nivel=2; nt.grupo=pai.grupo;
@@ -1134,16 +1227,21 @@ function addHeader(grupoId){ const h={id:uid(),grupo:grupoId,nivel:1,header:true
 /* ===== E3 — BANCO DE ATIVIDADES-PADRÃO (reutilizáveis na empresa) ===== */
 /* monta a árvore (tarefas/subtarefas) de uma atividade, sem dados de projeto */
 function _treePad(gi){ const gr=P().grupos[gi]; return grpTasks(gr.id).map(t=>({nivel:t.nivel||1,header:!!t.header,svc:t.svc||null,nome:t.nome,varNome:t.varNome||'',tempo:t.tempo||0,tempoPrev:t.tempoPrev||0,qtd:t.qtd||0})); }
+function padraoDe(gr){ return gr && S.padroes.find(p=>p.nome===gr.nome); }
 function salvarPadrao(gi){
   const gr=P().grupos[gi]; if(!gr) return;
   const tree=_treePad(gi);
   if(!tree.length && !confirm('Esta atividade não tem tarefas. Salvar mesmo assim?')) return;
-  const nome=(prompt('Nome do padrão (como ficará no banco):',gr.nome)||'').trim(); if(!nome) return;
-  const tagsRaw=(prompt('Etiquetas (separe por vírgula — ex.: supervisório, comissionamento):','')||'').trim();
+  const existente=padraoDe(gr);
+  if(existente){
+    if(!confirm('Já existe o padrão "'+gr.nome+'". Atualizar com o conteúdo atual desta atividade?')) return;
+    existente.tarefas=tree; save(); pushPadrao(existente); render(); nuvemStatus('padrão atualizado ✓','ok'); return;
+  }
+  const tagsRaw=(prompt('Etiquetas para este padrão (separe por vírgula — opcional):','')||'').trim();
   const tags=tagsRaw?tagsRaw.split(',').map(s=>s.trim()).filter(Boolean):[];
-  const pad={id:uid(),nome,tags,tarefas:tree};
-  S.padroes.push(pad); save(); pushPadrao(pad);
-  alert('✓ Atividade salva como padrão: "'+nome+'"\nUse "📚 Da biblioteca" para reaproveitar em qualquer obra.');
+  const pad={id:uid(),nome:gr.nome,tags,tarefas:tree};
+  S.padroes.push(pad); save(); pushPadrao(pad); render();
+  nuvemStatus('padrão salvo ✓','ok');
 }
 /* cria uma tarefa real no projeto a partir de um item do padrão */
 function _clonePadTask(src,grupoId){ return {id:uid(),grupo:grupoId,nivel:src.nivel||1,header:!!src.header,svc:src.svc||null,nome:src.nome,varNome:src.varNome||'',tempo:src.tempo||0,tempoPrev:(src.tempoPrev!=null?src.tempoPrev:(src.tempo||0)),qtd:src.qtd||0,exec:'',execLinha:0,prog:0,status:'todo',ini:P().dataIni||'2026-06-17',fim:P().dataFim||'2026-06-20',resp:'',prioridade:'Média',fimReal:'',notas:''}; }
