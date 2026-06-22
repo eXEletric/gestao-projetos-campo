@@ -34,7 +34,8 @@ h1{font-size:20px;font-weight:600}
 .crumb-nome{font-size:14px;font-weight:600;color:var(--tx);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
 .crumb-div{border-left:1px solid var(--line2);height:18px;margin:0 4px}
 .tabdrop{position:relative;display:inline-block}
-.tabmenu{position:absolute;top:100%;left:0;background:var(--surf);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);padding:4px;display:none;z-index:50;min-width:175px}
+.tabmenu{position:absolute;top:100%;right:0;left:auto;background:var(--surf);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);padding:4px;display:none;z-index:50;min-width:175px}
+.tabmenu button{white-space:nowrap}
 .tabmenu.open{display:block}
 .tabmenu button{display:block;width:100%;text-align:left;font-size:13px;padding:8px 12px;border:none;background:none;color:var(--tx);cursor:pointer;border-radius:6px}
 .tabmenu button:hover{background:var(--surf2)}
@@ -335,7 +336,7 @@ body.papel-tecnico .adm-only{display:none !important}
         <button data-t="colab" onclick="cadGo('colab')">Colaboradores</button>
         <button data-t="cat" onclick="cadGo('cat')">Catálogo</button>
         <button data-t="mat" onclick="cadGo('mat')">Materiais</button>
-        <button data-t="acessos" onclick="cadGo('acessos')">Acessos (quem vê qual obra)</button>
+        <button data-t="acessos" onclick="cadGo('acessos')">Acessos (obras)</button>
         <button data-t="cfg" onclick="cadGo('cfg')">Configurações</button>
       </div>
     </div>
