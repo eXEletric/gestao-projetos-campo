@@ -661,6 +661,9 @@ const PRI2APP={alta:'Alta',media:'Média',baixa:'Baixa'};
 const PJ2DB={'Em andamento':'em_andamento','Aguardando início':'aguardando','Concluído':'concluido','Suspenso':'suspenso'};
 const PJ2APP={em_andamento:'Em andamento',aguardando:'Aguardando início',concluido:'Concluído',suspenso:'Suspenso'};
 function nuvemStatus(txt,cls){ const el=document.getElementById('cloud-badge'); if(el){ el.textContent=txt; el.className='cloud-badge '+(cls||''); } }
+/* mostra o erro REAL da nuvem na tela (1x por sessão) — evita "salva mas some" silencioso */
+let _erroMostrado=false;
+function _erroNuvem(tag,err){ nuvemStatus('erro ao salvar','err'); console.error(tag,err); const msg=(err&&(err.message||err.hint||err.details))||JSON.stringify(err); if(!_erroMostrado){ _erroMostrado=true; alert('⚠️ Erro ao salvar na nuvem ('+tag+'):\n\n'+msg+'\n\nGeralmente é uma coluna faltando no banco. Copie esta mensagem para correção.'); } }
 function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : 'id'+Math.random().toString(36).slice(2,9)); }
 /* ===== GRAVAR NA NUVEM (write-through) ===== */
 function _cfId(t){ const c=colab(t.exec); return (c&&c.linhas[t.execLinha])?c.linhas[t.execLinha]._id:null; }
@@ -669,15 +672,15 @@ function _projOf(t){ return S.projetos.find(p=>p.tarefas.includes(t))||P(); }
 async function pushTarefa(t){ if(!SB||!t) return; const s=S.catalogo.find(x=>x.id===t.svc); const pj=_projOf(t);
   const svcOk=!!(s&&!s.avulso); // serviço avulso não existe na nuvem → manda nulo (evita violar a chave estrangeira)
   const row={id:t.id,projeto_id:pj.id,grupo_id:t.grupo,nivel:t.nivel||1,is_header:!!t.header,servico_id:svcOk?t.svc:null,variacao_id:svcOk?_varId(t):null,nome:t.nome,quantidade:t.qtd||0,unidade:(s?s.un:(t.un||null)),tempo_previsto:t.tempoPrev||0,tempo_atual:t.tempo||0,executor_id:t.exec||null,colaborador_funcao_id:_cfId(t),responsavel_id:t.resp||null,prioridade:PRI2DB[t.prioridade]||'media',progresso:t.prog||0,status:ST2DB[t.status]||'a_fazer',data_inicio:t.ini||null,data_inicio_real:t.iniReal||null,data_fim_prevista:t.fim||null,data_fim_real:t.fimReal||null,variacoes:(t.vars&&t.vars.length?t.vars:null),notas:t.notas||null,ordem:pj.tarefas.indexOf(t)};
-  const r=await SB.from('tarefas').upsert(row); if(r.error){ nuvemStatus('erro ao salvar','err'); console.error('pushTarefa',r.error);} else nuvemStatus('salvo ✓','ok'); }
+  const r=await SB.from('tarefas').upsert(row); if(r.error){ _erroNuvem('pushTarefa',r.error);} else nuvemStatus('salvo ✓','ok'); }
 async function pushTarefasOrdem(){ if(!SB) return; for(const t of P().tarefas){ await pushTarefa(t); } }
 async function pushGrupo(g){ if(!SB||!g) return; const row={id:g.id,projeto_id:S.ativo,nome:g.nome,categoria_id:g.cat||null,responsavel_id:g.resp||null,detalhes:g.det||null,ordem:P().grupos.indexOf(g),aberto:g.open!==false};
-  const r=await SB.from('grupos').upsert(row); if(r.error){nuvemStatus('erro ao salvar','err');console.error('pushGrupo',r.error);} else nuvemStatus('salvo ✓','ok'); }
+  const r=await SB.from('grupos').upsert(row); if(r.error){_erroNuvem('pushGrupo',r.error);} else nuvemStatus('salvo ✓','ok'); }
 async function pushProjeto(p){ if(!SB||!p) return; const row={id:p.id,numero_externo:p.numero||null,nome:p.nome,contratante:p.contratante||null,contemplado:p.contemplado||null,local:p.local||null,cidade:p.cidade||null,uf:p.uf||null,endereco:p.endereco||null,localizacao:p.localizacao||null,lider_id:p.lider||null,gestor:p.gestor||null,data_inicio:p.dataIni||null,data_fim_prevista:p.dataFim||null,status:PJ2DB[p.status]||'aguardando',prioridade:PRI2DB[p.prioridade]||'media',observacoes:p.obs||null,modelo:!!p.modelo,empresa_id:_emp()};
   const r=await SB.from('projetos').upsert(row); if(r.error){nuvemStatus('erro ao salvar','err');console.error('pushProjeto',r.error);alert('Erro ao salvar o projeto na nuvem:\n'+(r.error.message||r.error));} else nuvemStatus('salvo ✓','ok'); }
 async function delNuvem(tabela,id){ if(!SB||!id) return; const r=await SB.from(tabela).delete().eq('id',id); if(r.error)console.error('del '+tabela,r.error); }
 async function softDel(tabela,id){ if(!SB||!id) return; const r=await SB.from(tabela).update({deleted_at:new Date().toISOString()}).eq('id',id); if(r.error){nuvemStatus('erro ao salvar','err');console.error('softDel '+tabela,r.error);} else nuvemStatus('salvo ✓','ok'); }
-function _pr(r,tag){ if(r.error){nuvemStatus('erro ao salvar','err');console.error(tag,r.error);return false;} nuvemStatus('salvo ✓','ok'); return true; }
+function _pr(r,tag){ if(r.error){_erroNuvem(tag,r.error);return false;} nuvemStatus('salvo ✓','ok'); return true; }
 /* empresa do usuário logado (multi-tenant); null antes do login */
 function _emp(){ return (window._PERFIL && window._PERFIL.empresa_id) || null; }
 /* --- write-through: colaboradores --- */
