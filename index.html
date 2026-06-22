@@ -29,6 +29,16 @@ h1{font-size:20px;font-weight:600}
 .tabbar{display:flex;gap:2px;margin-bottom:16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
 .tab{font-size:13px;padding:8px 13px;border:none;background:none;color:var(--tx2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
 .tab.active{color:var(--pri);border-bottom-color:var(--pri);font-weight:600}
+.crumb-back{color:var(--pri);font-weight:600;font-size:13px;cursor:pointer;padding:8px 4px;white-space:nowrap}
+.crumb-back:hover{text-decoration:underline}
+.crumb-nome{font-size:14px;font-weight:600;color:var(--tx);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0}
+.crumb-div{border-left:1px solid var(--line2);height:18px;margin:0 4px}
+.tabdrop{position:relative;display:inline-block}
+.tabmenu{position:absolute;top:100%;left:0;background:var(--surf);border:1px solid var(--line);border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.12);padding:4px;display:none;z-index:50;min-width:175px}
+.tabmenu.open{display:block}
+.tabmenu button{display:block;width:100%;text-align:left;font-size:13px;padding:8px 12px;border:none;background:none;color:var(--tx);cursor:pointer;border-radius:6px}
+.tabmenu button:hover{background:var(--surf2)}
+.tabmenu button.active{color:var(--pri);font-weight:600;background:var(--pri-bg)}
 .view{display:none}.view.active{display:block}
 .topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .pn{font-family:ui-monospace,monospace;font-size:12px;background:var(--pri-bg);color:var(--pri);padding:4px 10px;border-radius:5px}
@@ -128,7 +138,7 @@ table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:
 
 /* LINHAS FUNCAO DO COLABORADOR */
 .flines{display:flex;flex-direction:column;gap:6px}
-.fline{display:grid;grid-template-columns:1fr 100px 96px 30px;gap:6px;align-items:center}
+.fline{display:grid;grid-template-columns:1fr 88px 72px 78px 28px;gap:6px;align-items:center}
 .fline select,.fline input{padding:5px 7px;border:1px solid var(--line);border-radius:5px;font-size:12px;background:var(--surf);color:var(--tx)}
 .addfline{font-size:11px;color:var(--pri);cursor:pointer;margin-top:4px}
 
@@ -189,29 +199,155 @@ table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:
 .prev{background:var(--surf2);border-radius:8px;padding:11px 14px;margin-top:6px;display:flex;justify-content:space-between;font-size:13px}
 .prev .pc{font-weight:600;color:var(--green);font-size:16px;font-variant-numeric:tabular-nums}
 .empty{padding:30px;text-align:center;color:var(--tx3);font-size:13px}
+.mtbl-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+.mtbl{width:100%;border-collapse:collapse;font-size:12.5px;min-width:760px}
+.mtbl th{position:sticky;top:0;background:var(--surf2);text-align:left;font-weight:600;color:var(--tx2);padding:8px 10px;border-bottom:1px solid var(--line2);white-space:nowrap;font-size:11px;text-transform:uppercase;letter-spacing:.3px}
+.mtbl td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
+.mtbl tbody tr{cursor:pointer}
+.mtbl tbody tr:hover{background:var(--surf2)}
+.mtbl .cod{font-family:ui-monospace,monospace;font-size:11px;color:var(--pri);background:var(--pri-bg);padding:1px 6px;border-radius:4px;white-space:nowrap}
+.mtbl .desc{font-weight:600;color:var(--tx)}
+.mtbl .sub{font-size:11px;color:var(--tx3)}
+.mtbl .grp{font-weight:600;color:var(--tx2);white-space:nowrap}
+.mtbl .num{text-align:right;white-space:nowrap;color:var(--tx2)}
+.mtbl .acts{text-align:right;white-space:nowrap}
 .reset{font-size:11px;color:var(--blue);cursor:pointer}
+.projfilters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px}
+.projfilters input,.projfilters select{font-size:12px;padding:6px 8px;border:1px solid var(--line);border-radius:6px;background:var(--surf);color:var(--tx)}
+.projfilters .chk{font-size:12px;color:var(--tx2);display:flex;align-items:center;gap:5px}
+.projrow{display:flex;align-items:center;gap:10px;padding:8px 10px;border:1px solid var(--line);border-radius:7px;margin-bottom:5px}
+.projrow.ativo{border-color:var(--pri);background:var(--pri-bg)}
+.pr-bar{width:4px;align-self:stretch;border-radius:3px;min-height:32px}
+.pr-main{flex:1;min-width:0}
+.pr-nome{font-weight:600;font-size:13px;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.pr-sub{font-size:11px;color:var(--tx2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pr-pchip{font-size:10px;padding:1px 6px;border-radius:4px;font-weight:600}
+.pr-prog{display:flex;align-items:center;gap:6px;width:120px;flex-shrink:0}
+.pr-prog .bar{flex:1;height:6px;background:var(--surf2);border-radius:4px;overflow:hidden}
+.pr-prog .fill{height:100%}
+.loginbg{position:fixed;inset:0;background:var(--bg);z-index:1000;display:flex;align-items:center;justify-content:center;padding:20px}
+.logincard{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:30px 28px;width:100%;max-width:360px;box-shadow:0 10px 40px rgba(0,0,0,.10)}
+.logincard h2{margin:0 0 3px;font-size:19px;color:var(--tx)}
+.logincard .lsub{font-size:12px;color:var(--tx2);margin-bottom:20px}
+.logincard label{font-size:11px;font-weight:600;color:var(--tx2);display:block;margin:0 0 5px}
+.logincard input{width:100%;font-size:14px;padding:10px 11px;border:1px solid var(--line);border-radius:8px;margin-bottom:14px;background:var(--bg);color:var(--tx);box-sizing:border-box}
+.logincard .lerr{display:none;font-size:12px;color:#a32d2d;background:#e24b4a18;border-radius:6px;padding:8px 10px;margin-bottom:12px}
+.logincard .lbtn{width:100%;font-size:14px;font-weight:600;padding:11px;border:none;border-radius:8px;background:var(--pri);color:#fff;cursor:pointer}
+.logincard .lbtn:disabled{opacity:.6;cursor:default}
+#user-box{display:none;align-items:center;gap:8px;font-size:12px;font-weight:400;margin-left:14px;vertical-align:middle;position:relative}
+#topbar-emp{font-size:13px;font-weight:600;color:var(--tx2)}
+#avatar-btn{width:38px;height:38px;border-radius:50%;border:1px solid var(--line2);background:var(--pri);color:#fff;font-weight:600;font-size:13px;cursor:pointer;background-size:cover;background-position:center;padding:0;line-height:1;display:flex;align-items:center;justify-content:center}
+.usermenu{position:absolute;right:0;top:48px;width:286px;background:var(--surf);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.16);display:none;z-index:200;overflow:hidden}
+.usermenu.open{display:block}
+.um-head{padding:13px 15px;display:flex;gap:11px;align-items:center;border-bottom:1px solid var(--line)}
+.um-av{width:42px;height:42px;border-radius:50%;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:14px;background-size:cover;background-position:center;flex-shrink:0}
+.um-sec{padding:5px 6px}.um-sec+.um-sec{border-top:1px solid var(--line)}
+.um-item{display:flex;align-items:center;gap:10px;padding:9px 11px;border-radius:7px;font-size:13.5px;color:var(--tx);cursor:pointer}
+.um-item:hover{background:var(--surf2)}
+.um-item .ico{font-size:16px;width:20px;text-align:center}
+.um-item.soon{color:var(--tx3);cursor:default}
+.um-item.soon:hover{background:none}
+.um-badge{font-size:10px;background:var(--surf2);color:var(--tx3);padding:1px 6px;border-radius:4px;margin-left:auto}
+.um-sair{color:#a32d2d}
+.acc-chips{display:flex;flex-wrap:wrap;gap:7px}
+.acc-chip{display:inline-flex;align-items:center;gap:6px;font-size:12px;padding:5px 10px;border:1px solid var(--line);border-radius:7px;cursor:pointer;color:var(--tx2)}
+.acc-chip.on{border-color:var(--pri);background:var(--pri-bg);color:var(--pri);font-weight:600}
+.acc-tec{font-weight:600;font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:7px}
+.acc-sec{margin-top:10px;padding-top:10px;border-top:1px dashed var(--line)}
+.acc-sec-h{font-size:12px;font-weight:600;color:var(--tx2);margin-bottom:6px}
+.acc-hint{font-size:11px;color:var(--tx3)}
+.lnk{font-size:11px;color:var(--blue);cursor:pointer;font-weight:400;margin-left:6px}
+.acc-list{margin:0;padding-left:24px}
+.acc-list li{font-size:12.5px;padding:3px 0;color:var(--tx)}
+.acc-list li::marker{color:var(--tx3);font-size:11px}
+body.papel-tecnico .tabdrop{display:none}
+body.papel-tecnico .adm-only{display:none !important}
 </style>
 </head>
 <body>
+<div class="loginbg" id="loginbg">
+  <div class="logincard">
+    <img src="logo_ex.png" alt="eX Eletric" style="height:42px;border-radius:8px;margin-bottom:14px">
+    <h2>Entrar</h2>
+    <div class="lsub">eX Cronograma · acesso restrito</div>
+    <div class="lerr" id="login-erro"></div>
+    <label>E-mail</label>
+    <input id="login-email" type="email" autocomplete="username" placeholder="voce@exeletric.com" onkeydown="if(event.key==='Enter'){event.preventDefault();document.getElementById('login-senha').focus();}">
+    <label>Senha</label>
+    <input id="login-senha" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter'){event.preventDefault();fazerLogin();}">
+    <button class="lbtn" id="login-btn" onclick="fazerLogin()">Entrar</button>
+  </div>
+</div>
 <div class="app">
-  <h1><img src="logo_ex.png" alt="eX Eletric" style="height:36px;vertical-align:middle;border-radius:7px;margin-right:9px"> Cronograma <span class="cloud-badge load" id="cloud-badge">iniciando…</span></h1>
+  <h1><img src="logo_ex.png" alt="eX Eletric" style="height:36px;vertical-align:middle;border-radius:7px;margin-right:9px"> Cronograma <span class="cloud-badge load" id="cloud-badge">iniciando…</span><span id="user-box"><span id="topbar-emp"></span><button id="avatar-btn" onclick="toggleUserMenu(event)" title="Menu do usuário">eX</button>
+  <div id="user-menu" class="usermenu">
+    <div class="um-head">
+      <div class="um-av" id="um-av">eX</div>
+      <div style="min-width:0;flex:1">
+        <div id="um-nome" style="font-weight:600;font-size:13.5px;color:var(--tx)"></div>
+        <div id="um-email" style="font-size:12px;color:var(--tx2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></div>
+        <span id="um-papel" style="font-size:10px;font-weight:600;color:var(--pri);background:var(--pri-bg);padding:1px 7px;border-radius:5px;display:inline-block;margin-top:2px"></span>
+      </div>
+    </div>
+    <div class="um-sec">
+      <div class="um-item adm-only" onclick="umGo('empresa')"><span class="ico">🏢</span><span>Perfil da empresa</span></div>
+      <div class="um-item soon adm-only"><span class="ico">⚙</span><span>Configurações</span><span class="um-badge">futuro</span></div>
+      <div class="um-item soon"><span class="ico">👤</span><span>Meu perfil</span><span class="um-badge">futuro</span></div>
+      <div class="um-item soon"><span class="ico">📊</span><span>Relatórios / painel</span><span class="um-badge">futuro</span></div>
+      <div class="um-item soon"><span class="ico">✨</span><span>Assistentes de IA</span><span class="um-badge" style="background:#fae9c9;color:#854f0b">Beta</span></div>
+    </div>
+    <div class="um-sec">
+      <div class="um-item soon"><span class="ico">🔄</span><span>Trocar de empresa</span><span class="um-badge">futuro</span></div>
+      <div class="um-item um-sair" onclick="sair()"><span class="ico">⎋</span><span>Sair</span></div>
+    </div>
+  </div></span></h1>
   <div class="sub">App fiel ao documento de definições · dados na nuvem (Supabase)</div>
 
   <div class="tabbar">
-    <button class="tab active" onclick="tab('proj',this)">Projetos</button>
-    <button class="tab" onclick="tab('acomp',this)">Acompanhamento</button>
-    <button class="tab" onclick="tab('crono',this)">Cronograma</button>
-    <button class="tab" onclick="tab('colab',this)">Colaboradores</button>
-    <button class="tab" onclick="tab('cat',this)">Catálogo</button>
-    <button class="tab" onclick="tab('mat',this)">Materiais</button>
-    <button class="tab" onclick="tab('cfg',this)">Configurações</button>
+    <span id="nav-estado1" style="display:inline-flex;gap:2px">
+      <button class="tab active" id="nav-lista-lbl" onclick="irLista('proj')">Projetos</button>
+      <button class="tab adm-only" id="nav-modelos-lbl" onclick="irLista('modelos')">★ Modelos</button>
+    </span>
+    <span id="nav-crumb" style="display:none;align-items:center;gap:6px">
+      <span class="crumb-back" onclick="voltarProjetos()">← Projetos</span>
+      <span style="color:var(--tx3)">·</span>
+      <span class="crumb-nome" id="crumb-nome"></span>
+      <span class="crumb-div"></span>
+    </span>
+    <span id="nav-subabas" style="display:none;align-items:center;gap:2px">
+      <button class="tab" id="tab-acomp" onclick="tab('acomp',this)">Gantt</button>
+      <button class="tab" id="tab-crono" onclick="tab('crono',this)">Cronograma</button>
+    </span>
+    <div class="tabdrop" style="margin-left:auto">
+      <button class="tab" id="cad-btn" onclick="toggleCad(event)">Cadastros <span style="font-size:10px">▾</span></button>
+      <div class="tabmenu" id="cad-menu">
+        <button data-t="colab" onclick="cadGo('colab')">Colaboradores</button>
+        <button data-t="cat" onclick="cadGo('cat')">Catálogo</button>
+        <button data-t="mat" onclick="cadGo('mat')">Materiais</button>
+        <button data-t="acessos" onclick="cadGo('acessos')">Acessos (quem vê qual obra)</button>
+        <button data-t="cfg" onclick="cadGo('cfg')">Configurações</button>
+      </div>
+    </div>
   </div>
 
   <!-- PROJETOS -->
   <div class="view active" id="v-proj">
-    <div class="topbar"><span class="pname">Projetos / Obras</span><button class="btn btn-s" onclick="migrarParaNuvem()" title="Sobe os dados atuais para a nuvem (uma vez)">☁ Migrar p/ nuvem</button><button class="btn btn-p btn-s" onclick="openProj(-1)">+ Novo projeto</button></div>
-    <div class="note">Selecione um projeto para abrir o cronograma dele. Cada projeto tem seus próprios grupos e tarefas; colaboradores e catálogo são compartilhados.</div>
+    <div class="topbar"><span class="pname">Projetos / Obras</span><button class="btn btn-s adm-only" onclick="migrarParaNuvem()" title="Sobe os dados atuais para a nuvem (uma vez)">☁ Migrar p/ nuvem</button><button class="btn btn-p btn-s adm-only" onclick="openProj(-1)">+ Novo projeto</button></div>
+    <div class="note">Selecione um projeto para abrir o cronograma dele. Cada projeto tem suas próprias atividades e tarefas; colaboradores e catálogo são compartilhados.</div>
+    <div class="projfilters">
+      <input id="pf-busca" placeholder="🔎 buscar projeto…" oninput="renderProjetos()" style="flex:1;min-width:160px">
+      <select id="pf-status" onchange="renderProjetos()"><option value="">Todos os status</option><option>Em andamento</option><option>Aguardando início</option><option>Concluído</option><option>Suspenso</option></select>
+      <select id="pf-prio" onchange="renderProjetos()"><option value="">Todas as prioridades</option><option>Alta</option><option>Média</option><option>Baixa</option></select>
+      <label class="chk"><input type="checkbox" id="pf-sort" checked onchange="renderProjetos()"> ordenar por prioridade</label>
+    </div>
     <div id="proj-list"></div>
+  </div>
+
+  <!-- MODELOS -->
+  <div class="view" id="v-modelos">
+    <div class="topbar"><span class="pname">★ Projetos-modelo</span><button class="btn btn-p btn-s adm-only" onclick="openProj(-1,true)">+ Novo modelo</button></div>
+    <div class="note">Modelos são estruturas padrão (atividades + tarefas + tempos). Use <b>"Usar modelo"</b> para criar uma obra nova já montada, com o progresso zerado. Eles não aparecem na lista de obras ativas.</div>
+    <div id="modelos-list"></div>
   </div>
 
   <!-- ACOMPANHAMENTO -->
@@ -237,19 +373,19 @@ table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:
       <div class="card"><div class="l">Horas previstas</div><div class="v blue" id="s-h">0h</div></div>
       <div class="card"><div class="l">Custo previsto</div><div class="v green" id="s-c">R$ 0,00</div></div>
       <div class="card"><div class="l">Tarefas</div><div class="v purple" id="s-t">0</div></div>
-      <div class="card"><div class="l">Grupos</div><div class="v amber" id="s-g">0</div></div>
+      <div class="card"><div class="l">Atividades</div><div class="v amber" id="s-g">0</div></div>
     </div>
     <div class="note">↑↓ reordena · ← → promove/rebaixa nível (tarefa ↔ subtarefa) · qtd e tempo editáveis na linha</div>
     <div class="cwrap"><div class="cmin">
       <div class="colh"><span>WBS</span><span>Tarefa / variação</span><span>Executor</span><span>Função aplicada</span><span>Qtd · und</span><span class="r">Prev. 🔒</span><span>Atual / desvio</span><span>Progresso</span><span class="r">Custo</span><span></span></div>
       <div id="board"></div>
     </div></div>
-    <div class="addg"><button class="btn btn-s" onclick="openGroup(-1)">+ adicionar grupo (tarefa-pai)</button></div>
+    <div class="addg"><button class="btn btn-s" onclick="openGroup(-1)">+ adicionar atividade</button><button class="btn btn-s adm-only" onclick="openPad()" style="margin-left:8px">📚 Da biblioteca</button></div>
   </div>
 
   <!-- COLABORADORES -->
   <div class="view" id="v-colab">
-    <div class="topbar"><span class="pname">Colaboradores</span><button class="btn btn-p btn-s" onclick="addColab()">+ Novo colaborador</button></div>
+    <div class="topbar"><span class="pname">Colaboradores</span><button class="btn btn-p btn-s" onclick="novoColab()">+ Novo colaborador</button></div>
     <div class="note">Cada linha = Função + Nível + Valor/hora. Um colaborador pode ter várias. Cliente/fabricante: desligue "gera custo".</div>
     <div id="colab-list"></div>
   </div>
@@ -282,14 +418,21 @@ table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:
     <div class="addinline"><input class="tin" id="new-cat" placeholder="Nova categoria..."><button class="btn btn-s" onclick="addCat()">+ adicionar</button></div>
     <div class="note" style="margin-top:18px">Materiais por serviço: definição futura (base padrão + configuração por função).</div>
   </div>
+
+  <!-- ACESSOS -->
+  <div class="view" id="v-acessos">
+    <div class="topbar"><span class="pname">Acessos — quem vê qual obra</span></div>
+    <div class="note">Marque as obras que cada técnico pode ver e atualizar no app. Criar novos técnicos: por enquanto pelo painel; em breve direto aqui.</div>
+    <div id="acessos-list"></div>
+  </div>
 </div>
 
 <!-- MODAL ADD TAREFA -->
 <div class="modal-bg" id="modal"><div class="modal">
   <div class="mh"><b>Nova tarefa</b><button class="x" onclick="closeAdd()">&times;</button></div>
   <div class="mb">
-    <div class="fg"><label class="fl">Grupo</label><select class="fi" id="m-grupo" onchange="loadSvc()"></select></div>
-    <div class="fg"><label class="fl">Serviço (categoria do grupo)</label><div class="chips" id="m-svc"></div></div>
+    <div class="fg"><label class="fl">Atividade</label><select class="fi" id="m-grupo" onchange="loadSvc()"></select></div>
+    <div class="fg"><label class="fl">Serviço</label><div class="chips" id="m-svc"></div></div>
     <div class="fg"><label class="fl"><span class="amb">Variação — dificuldade</span></label><div class="chips" id="m-var"></div></div>
     <div class="frow">
       <div class="fg"><label class="fl">Executor</label><select class="fi" id="m-exec" onchange="loadLinha()"></select></div>
@@ -326,13 +469,42 @@ table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:
 
 <!-- MODAL GRUPO (tarefa-pai) -->
 <div class="modal-bg" id="modalG"><div class="modal" style="width:440px">
-  <div class="mh"><b id="g-title">Grupo</b><button class="x" onclick="closeGroup()">&times;</button></div>
+  <div class="mh"><b id="g-title">Atividade</b><button class="x" onclick="closeGroup()">&times;</button></div>
   <div class="mb">
-    <div class="fg"><label class="fl">Nome do grupo (tarefa-pai)</label><input class="fi" id="g-nome" placeholder="Ex: Supervisório X-Web"></div>
-    <div class="fg"><label class="fl">Categoria — define quais serviços aparecem dentro</label><select class="fi" id="g-cat"></select></div>
-    <div class="fg"><label class="fl">Responsável pelo grupo (sem custo)</label><select class="fi" id="g-resp"></select></div>
+    <div class="fg"><label class="fl">Nome da atividade</label><input class="fi" id="g-nome" placeholder="Ex: Supervisório X-Web"></div>
+    <div class="fg"><label class="fl">Responsável pela atividade (sem custo)</label><select class="fi" id="g-resp"></select></div>
+    <div class="fg"><label class="fl">Detalhes / notas</label><textarea class="fi" id="g-det" rows="3" placeholder="Escopo, observações, instruções… (opcional)"></textarea></div>
   </div>
   <div class="mf"><button class="btn" onclick="closeGroup()">Cancelar</button><button class="btn btn-p" onclick="saveGroup()">Salvar</button></div>
+</div></div>
+
+<!-- MODAL BIBLIOTECA DE ATIVIDADES-PADRÃO (E3) -->
+<style>
+#modalPad .modal{width:560px;max-width:94vw}
+.pad-search{position:relative;margin-bottom:10px}
+.pad-search input{width:100%;padding:9px 12px 9px 32px}
+.pad-search .mag{position:absolute;left:10px;top:9px;color:var(--tx3)}
+#pad-list{max-height:60vh;overflow:auto;display:flex;flex-direction:column;gap:10px}
+.padcard{border:1px solid var(--bd);border-radius:10px;padding:10px 12px;background:var(--bg)}
+.padhd{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.padhd b{font-size:14px}
+.padcnt{font-size:11px;color:var(--tx3)}
+.padtags{display:flex;flex-wrap:wrap;gap:5px;margin:6px 0}
+.padtag{font-size:11px;padding:2px 8px;border-radius:6px;background:var(--ac-bg,#e6f1fb);color:var(--ac,#185fa5)}
+.padtag.dim{background:transparent;border:1px dashed var(--bd);color:var(--tx3)}
+.padtree{border-top:1px solid var(--bd);padding-top:6px;margin-top:2px}
+.padrow{display:flex;align-items:center;justify-content:space-between;padding:3px 4px;font-size:13px}
+.padrow:hover{background:rgba(120,120,120,.06)}
+.padvr{font-size:11px;color:var(--tx3)}
+</style>
+<div class="modal-bg" id="modalPad"><div class="modal">
+  <div class="mh"><b>📚 Biblioteca de atividades-padrão</b><button class="x" onclick="closePad()">&times;</button></div>
+  <div class="mb">
+    <div class="note" style="margin-bottom:8px">Busque por nome ou etiqueta. <b>+ Adicionar inteira</b> traz a atividade com tudo; o <b>+</b> de cada linha puxa só aquele item (e o que estiver abaixo).</div>
+    <div class="pad-search"><span class="mag">🔍</span><input id="pad-q" placeholder="Buscar atividade ou etiqueta…" oninput="renderPadList()"></div>
+    <div id="pad-list"></div>
+  </div>
+  <div class="mf"><button class="btn btn-p" onclick="closePad()">Concluir</button></div>
 </div></div>
 
 <!-- MODAL PROJETO -->
@@ -347,21 +519,58 @@ table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:
       <div class="fg"><label class="fl">Cliente contratante (contrata/paga)</label><input class="fi" id="p-contratante" placeholder="Ex: Copeland"></div>
       <div class="fg" style="grid-column:span 2"><label class="fl">Cliente contemplado (onde o serviço é executado)</label><input class="fi" id="p-contemplado" placeholder="Ex: Atacadão nº 906 — Ilhéus"></div>
     </div>
+    <div class="frow" style="grid-template-columns:110px 1fr">
+      <div class="fg"><label class="fl">UF</label><select class="fi" id="p-uf" onchange="onUfChange()"></select></div>
+      <div class="fg"><label class="fl">Cidade</label><select class="fi" id="p-cidade"></select></div>
+    </div>
     <div class="frow">
-      <div class="fg"><label class="fl">Local (cidade/UF)</label><input class="fi" id="p-local" placeholder="Ilhéus — BA"></div>
       <div class="fg"><label class="fl">Status</label><select class="fi" id="p-status"><option>Em andamento</option><option>Aguardando início</option><option>Concluído</option><option>Suspenso</option></select></div>
-      <div class="fg"><label class="fl">Líder</label><select class="fi" id="p-lider"></select></div>
+      <div class="fg"><label class="fl">Prioridade</label><select class="fi" id="p-prio"><option>Alta</option><option>Média</option><option>Baixa</option></select></div>
+      <div class="fg"><label class="fl">Responsável pela execução (técnico)</label><select class="fi" id="p-lider"></select></div>
     </div>
     <div class="frow">
       <div class="fg"><label class="fl">Início</label><input class="fi" id="p-ini" type="date"></div>
       <div class="fg"><label class="fl">Conclusão prevista</label><input class="fi" id="p-fim" type="date"></div>
-      <div class="fg"><label class="fl">Gestor da execução (loja)</label><input class="fi" id="p-gestor" placeholder="Quem acompanha a obra no local"></div>
+      <div class="fg"><label class="fl">Gestor / gerência (eX)</label><select class="fi" id="p-gestor"></select></div>
     </div>
     <div class="fg"><label class="fl">Endereço completo da unidade</label><input class="fi" id="p-end" placeholder="Rua, nº, bairro, cidade/UF, CEP"></div>
     <div class="fg"><label class="fl">Localização exata (coordenadas ou link do mapa)</label><input class="fi" id="p-loc" placeholder="Ex: -14.7935, -39.0463  ou  cole um link do Google Maps"></div>
     <div class="fg"><label class="fl">Observações / escopo</label><input class="fi" id="p-obs"></div>
+    <div class="fg"><label class="fl" style="display:flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" id="p-modelo"> ★ É um modelo (template) — fica na aba "Modelos", não na lista de obras ativas</label></div>
+    <div class="fg" id="p-equipe-wrap"><label class="fl">Equipe da obra — técnicos com acesso</label><div id="p-equipe"></div></div>
   </div>
   <div class="mf"><button class="btn" onclick="closeProj()">Cancelar</button><button class="btn btn-p" onclick="saveProj()">Salvar projeto</button></div>
+</div></div>
+
+<!-- MODAL COLABORADOR -->
+<div class="modal-bg" id="modalC"><div class="modal">
+  <div class="mh"><b id="c-title">Colaborador</b><button class="x" onclick="closeColab()">&times;</button></div>
+  <div class="mb" id="c-body"></div>
+  <div class="mf"><button class="btn btn-p" onclick="closeColab()">Concluir</button></div>
+</div></div>
+
+<!-- MODAL CONFIGURAÇÕES DA EMPRESA -->
+<div class="modal-bg" id="modalEmp"><div class="modal">
+  <div class="mh"><b>🏢 Perfil da empresa</b><button class="x" onclick="closeEmpresa()">&times;</button></div>
+  <div class="mb">
+    <div class="frow">
+      <div class="fg" style="grid-column:span 2"><label class="fl">Nome fantasia</label><input class="fi" id="emp-nome"></div>
+      <div class="fg"><label class="fl">CNPJ</label><input class="fi" id="emp-cnpj" placeholder="00.000.000/0001-00"></div>
+    </div>
+    <div class="fg"><label class="fl">Razão social</label><input class="fi" id="emp-razao"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Telefone / WhatsApp</label><input class="fi" id="emp-tel" placeholder="(00) 00000-0000"></div>
+      <div class="fg" style="grid-column:span 2"><label class="fl">E-mail</label><input class="fi" id="emp-email" type="email"></div>
+    </div>
+    <div class="frow">
+      <div class="fg" style="grid-column:span 2"><label class="fl">Cidade padrão</label><input class="fi" id="emp-cidade" placeholder="Ilhéus"></div>
+      <div class="fg"><label class="fl">UF padrão</label><input class="fi" id="emp-uf" maxlength="2" placeholder="BA"></div>
+    </div>
+    <div class="fg"><label class="fl">Localização padrão (coordenadas ou link do mapa)</label><input class="fi" id="emp-loc"></div>
+    <div class="fg"><label class="fl">Logo da empresa (URL da imagem)</label><input class="fi" id="emp-logo" placeholder="https://… (link de uma imagem do logo)"></div>
+    <div class="note">Cidade/UF e localização padrão <b>pré-preenchem novas obras</b>. O logo aparece no menu/topo. <i>(Enviar arquivo direto virá com o Storage — por enquanto, cole o link de uma imagem.)</i></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeEmpresa()">Cancelar</button><button class="btn btn-p" onclick="saveEmpresa()">Salvar</button></div>
 </div></div>
 
 <!-- MODAL MATERIAL -->
@@ -423,16 +632,40 @@ function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : 'id'+Math.rand
 /* ===== GRAVAR NA NUVEM (write-through) ===== */
 function _cfId(t){ const c=colab(t.exec); return (c&&c.linhas[t.execLinha])?c.linhas[t.execLinha]._id:null; }
 function _varId(t){ const s=S.catalogo.find(x=>x.id===t.svc); if(s&&t.varNome){ const v=s.vars.find(x=>x[0]===t.varNome); if(v) return v[2]||null; } return null; }
-async function pushTarefa(t){ if(!SB||!t) return; const s=S.catalogo.find(x=>x.id===t.svc);
-  const row={id:t.id,projeto_id:S.ativo,grupo_id:t.grupo,nivel:t.nivel||1,is_header:!!t.header,servico_id:t.svc||null,variacao_id:_varId(t),nome:t.nome,quantidade:t.qtd||0,unidade:s?s.un:null,tempo_previsto:t.tempoPrev||0,tempo_atual:t.tempo||0,executor_id:t.exec||null,colaborador_funcao_id:_cfId(t),responsavel_id:t.resp||null,prioridade:PRI2DB[t.prioridade]||'media',progresso:t.prog||0,status:ST2DB[t.status]||'a_fazer',data_inicio:t.ini||null,data_fim_prevista:t.fim||null,data_fim_real:t.fimReal||null,notas:t.notas||null,ordem:P().tarefas.indexOf(t)};
+function _projOf(t){ return S.projetos.find(p=>p.tarefas.includes(t))||P(); }
+async function pushTarefa(t){ if(!SB||!t) return; const s=S.catalogo.find(x=>x.id===t.svc); const pj=_projOf(t);
+  const row={id:t.id,projeto_id:pj.id,grupo_id:t.grupo,nivel:t.nivel||1,is_header:!!t.header,servico_id:t.svc||null,variacao_id:_varId(t),nome:t.nome,quantidade:t.qtd||0,unidade:s?s.un:null,tempo_previsto:t.tempoPrev||0,tempo_atual:t.tempo||0,executor_id:t.exec||null,colaborador_funcao_id:_cfId(t),responsavel_id:t.resp||null,prioridade:PRI2DB[t.prioridade]||'media',progresso:t.prog||0,status:ST2DB[t.status]||'a_fazer',data_inicio:t.ini||null,data_fim_prevista:t.fim||null,data_fim_real:t.fimReal||null,notas:t.notas||null,ordem:pj.tarefas.indexOf(t)};
   const r=await SB.from('tarefas').upsert(row); if(r.error){ nuvemStatus('erro ao salvar','err'); console.error('pushTarefa',r.error);} else nuvemStatus('salvo ✓','ok'); }
 async function pushTarefasOrdem(){ if(!SB) return; for(const t of P().tarefas){ await pushTarefa(t); } }
-async function pushGrupo(g){ if(!SB||!g) return; const row={id:g.id,projeto_id:S.ativo,nome:g.nome,categoria_id:g.cat||null,responsavel_id:g.resp||null,ordem:P().grupos.indexOf(g),aberto:g.open!==false};
+async function pushGrupo(g){ if(!SB||!g) return; const row={id:g.id,projeto_id:S.ativo,nome:g.nome,categoria_id:g.cat||null,responsavel_id:g.resp||null,detalhes:g.det||null,ordem:P().grupos.indexOf(g),aberto:g.open!==false};
   const r=await SB.from('grupos').upsert(row); if(r.error){nuvemStatus('erro ao salvar','err');console.error('pushGrupo',r.error);} else nuvemStatus('salvo ✓','ok'); }
-async function pushProjeto(p){ if(!SB||!p) return; const row={id:p.id,numero_externo:p.numero||null,nome:p.nome,contratante:p.contratante||null,contemplado:p.contemplado||null,local:p.local||null,endereco:p.endereco||null,localizacao:p.localizacao||null,lider_id:p.lider||null,gestor:p.gestor||null,data_inicio:p.dataIni||null,data_fim_prevista:p.dataFim||null,status:PJ2DB[p.status]||'aguardando',observacoes:p.obs||null};
-  const r=await SB.from('projetos').upsert(row); if(r.error){nuvemStatus('erro ao salvar','err');console.error('pushProjeto',r.error);} else nuvemStatus('salvo ✓','ok'); }
+async function pushProjeto(p){ if(!SB||!p) return; const row={id:p.id,numero_externo:p.numero||null,nome:p.nome,contratante:p.contratante||null,contemplado:p.contemplado||null,local:p.local||null,cidade:p.cidade||null,uf:p.uf||null,endereco:p.endereco||null,localizacao:p.localizacao||null,lider_id:p.lider||null,gestor:p.gestor||null,data_inicio:p.dataIni||null,data_fim_prevista:p.dataFim||null,status:PJ2DB[p.status]||'aguardando',prioridade:PRI2DB[p.prioridade]||'media',observacoes:p.obs||null,modelo:!!p.modelo,empresa_id:_emp()};
+  const r=await SB.from('projetos').upsert(row); if(r.error){nuvemStatus('erro ao salvar','err');console.error('pushProjeto',r.error);alert('Erro ao salvar o projeto na nuvem:\n'+(r.error.message||r.error));} else nuvemStatus('salvo ✓','ok'); }
 async function delNuvem(tabela,id){ if(!SB||!id) return; const r=await SB.from(tabela).delete().eq('id',id); if(r.error)console.error('del '+tabela,r.error); }
+async function softDel(tabela,id){ if(!SB||!id) return; const r=await SB.from(tabela).update({deleted_at:new Date().toISOString()}).eq('id',id); if(r.error){nuvemStatus('erro ao salvar','err');console.error('softDel '+tabela,r.error);} else nuvemStatus('salvo ✓','ok'); }
+function _pr(r,tag){ if(r.error){nuvemStatus('erro ao salvar','err');console.error(tag,r.error);return false;} nuvemStatus('salvo ✓','ok'); return true; }
+/* empresa do usuário logado (multi-tenant); null antes do login */
+function _emp(){ return (window._PERFIL && window._PERFIL.empresa_id) || null; }
+/* --- write-through: colaboradores --- */
+async function pushColab(c){ if(!SB||!c) return; _pr(await SB.from('colaboradores').upsert({id:c.id,nome:c.nome,gera_custo:!!c.custo,ativo:c.ativo!==false,email:c.email||null,telefone:c.telefone||null,empresa_id:_emp()}),'pushColab'); }
+async function pushLinha(c,l){ if(!SB||!c||!l) return; if(!l._id)l._id=uid();
+  _pr(await SB.from('colaborador_funcoes').upsert({id:l._id,colaborador_id:c.id,funcao_id:window._FUNC_ID[l.funcao]||null,nivel_id:window._NIV_ID[l.nivel]||null,valor_hora:(l.vh===''||l.vh==null?null:l.vh),base:l.base||'hora'}),'pushLinha'); }
+/* --- write-through: catálogo (serviços + variações) --- */
+async function pushServico(s){ if(!SB||!s) return; _pr(await SB.from('servicos').upsert({id:s.id,nome:s.nome,categoria_id:s.cat||null,unidade:s.un||'UND',empresa_id:_emp()}),'pushServico'); }
+async function pushVar(s,vi){ if(!SB||!s) return; const v=s.vars[vi]; if(!v) return; if(!v[2])v[2]=uid();
+  _pr(await SB.from('servico_variacoes').upsert({id:v[2],servico_id:s.id,nome:v[0],horas_por_unidade:v[1]||0,ordem:vi}),'pushVar'); }
+async function pushVarsOrdem(s){ if(!SB||!s) return; for(let i=0;i<s.vars.length;i++){ await pushVar(s,i); } }
+/* --- write-through: configurações (funções / níveis / categorias) --- */
+async function pushFunc(nome,ordem){ if(!SB) return; const id=uid(); window._FUNC_ID[nome]=id; _pr(await SB.from('funcoes').upsert({id,nome,ordem,empresa_id:_emp()}),'pushFunc'); }
+async function pushNiv(nome,ordem){ if(!SB) return; const id=uid(); window._NIV_ID[nome]=id; _pr(await SB.from('niveis').upsert({id,nome,ordem,empresa_id:_emp()}),'pushNiv'); }
+async function pushCat(par){ if(!SB) return; _pr(await SB.from('categorias').upsert({id:par[0],nome:par[1],ordem:S.categorias.indexOf(par),empresa_id:_emp()}),'pushCat'); }
+/* --- write-through: atividades-padrão (banco reutilizável da empresa) --- */
+async function pushPadrao(p){ if(!SB||!p) return; _pr(await SB.from('atividades_padrao').upsert({id:p.id,nome:p.nome,tags:p.tags||[],dados:{tarefas:p.tarefas||[]},empresa_id:_emp()}),'pushPadrao'); }
 function fmt(n){return n>0?'R$ '+Number(n).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}):'—';}
+/* papel: técnico não vê custos nem telas de gestão */
+function podeVerCusto(){ return !(window._PERFIL && window._PERFIL.papel==='tecnico'); }
+function fmtC(n){ return podeVerCusto()?fmt(n):'—'; }
+function aplicarPapel(){ const tec=!!(window._PERFIL && window._PERFIL.papel==='tecnico'); document.body.classList.toggle('papel-tecnico',tec); }
 
 const CATALOGO_BASE=[
   {id:"infra_alimentador",nome:"Infra de interligação (alimentador)",cat:"SUPERVISORIO",un:"M",vars:[["Conexão pré-existente",0.25],["Confecção nova",0.333]]},
@@ -449,14 +682,15 @@ const CATALOGO_BASE=[
   {id:"validacao",nome:"Validação com fabricante",cat:"COMISSIONAMENTO",un:"SERV",vars:[["Padrão",0.5]]}
 ];
 
+window._FUNC_ID=window._FUNC_ID||{}; window._NIV_ID=window._NIV_ID||{};
 let S=load();
-function load(){const s=localStorage.getItem(STORE_KEY);return s?JSON.parse(s):demo();}
+function load(){const s=localStorage.getItem(STORE_KEY);const o=s?JSON.parse(s):demo();if(!o.padroes)o.padroes=[];return o;}
 function save(){localStorage.setItem(STORE_KEY,JSON.stringify(S));}
 
 /* ===== CARREGAR DA NUVEM ===== */
 async function carregarDaNuvem(){
   if(!SB) return null;
-  const [fR,nR,cR,coR,cfR,sR,svR,pR,gR,tR] = await Promise.all([
+  const [fR,nR,cR,coR,cfR,sR,svR,pR,gR,tR,paR] = await Promise.all([
     SB.from('funcoes').select('*').is('deleted_at',null).order('ordem'),
     SB.from('niveis').select('*').is('deleted_at',null).order('ordem'),
     SB.from('categorias').select('*').is('deleted_at',null).order('ordem'),
@@ -466,31 +700,35 @@ async function carregarDaNuvem(){
     SB.from('servico_variacoes').select('*').order('ordem'),
     SB.from('projetos').select('*').is('deleted_at',null).order('created_at'),
     SB.from('grupos').select('*').is('deleted_at',null).order('ordem'),
-    SB.from('tarefas').select('*').is('deleted_at',null).order('ordem')
+    SB.from('tarefas').select('*').is('deleted_at',null).order('ordem'),
+    SB.from('atividades_padrao').select('*').is('deleted_at',null).order('created_at')
   ]);
   for(const r of [fR,nR,cR,coR,cfR,sR,svR,pR,gR,tR]){ if(r.error) throw r.error; }
+  const padroes = (paR.error||!paR.data) ? [] : paR.data.map(p=>({id:p.id,nome:p.nome,tags:p.tags||[],tarefas:(p.dados&&p.dados.tarefas)||[]}));
   if(!pR.data.length && !coR.data.length) return null; // nuvem vazia
   const funcById={}; fR.data.forEach(f=>funcById[f.id]=f.nome);
   const nivById={}; nR.data.forEach(n=>nivById[n.id]=n.nome);
+  window._FUNC_ID={}; fR.data.forEach(f=>window._FUNC_ID[f.nome]=f.id);
+  window._NIV_ID={}; nR.data.forEach(n=>window._NIV_ID[n.nome]=n.id);
   const varById={}; svR.data.forEach(v=>varById[v.id]=v.nome);
   const colab = coR.data.map(c=>({
-    id:c.id, nome:c.nome, custo:c.gera_custo, ativo:c.ativo,
-    linhas: cfR.data.filter(cf=>cf.colaborador_id===c.id).map(cf=>({funcao:funcById[cf.funcao_id]||'',nivel:nivById[cf.nivel_id]||'',vh:cf.valor_hora,_id:cf.id}))
+    id:c.id, nome:c.nome, custo:c.gera_custo, ativo:c.ativo, email:c.email||'', telefone:c.telefone||'',
+    linhas: cfR.data.filter(cf=>cf.colaborador_id===c.id).map(cf=>({funcao:funcById[cf.funcao_id]||'',nivel:nivById[cf.nivel_id]||'',vh:cf.valor_hora,base:cf.base||'hora',_id:cf.id}))
   }));
   const catalogo = sR.data.map(s=>({
     id:s.id, nome:s.nome, cat:s.categoria_id, un:s.unidade,
     vars: svR.data.filter(v=>v.servico_id===s.id).map(v=>[v.nome,Number(v.horas_por_unidade),v.id])
   }));
   const projetos = pR.data.map(p=>{
-    const grupos = gR.data.filter(g=>g.projeto_id===p.id).map(g=>({id:g.id,nome:g.nome,cat:g.categoria_id,resp:g.responsavel_id||'',open:g.aberto}));
+    const grupos = gR.data.filter(g=>g.projeto_id===p.id).map(g=>({id:g.id,nome:g.nome,cat:g.categoria_id,resp:g.responsavel_id||'',det:g.detalhes||'',open:g.aberto}));
     const tarefas = tR.data.filter(t=>t.projeto_id===p.id).map(t=>{
       const c=colab.find(x=>x.id===t.executor_id); let execLinha=0;
       if(c && t.colaborador_funcao_id){ const i=c.linhas.findIndex(l=>l._id===t.colaborador_funcao_id); if(i>=0)execLinha=i; }
       return {id:t.id,grupo:t.grupo_id,nivel:t.nivel,header:t.is_header,svc:t.servico_id,varNome:t.variacao_id?(varById[t.variacao_id]||''):'',nome:t.nome,qtd:Number(t.quantidade),tempo:Number(t.tempo_atual),tempoPrev:Number(t.tempo_previsto),exec:t.executor_id||'',execLinha:execLinha,resp:t.responsavel_id||'',prioridade:PRI2APP[t.prioridade]||'Média',prog:t.progresso,status:ST2APP[t.status]||'todo',ini:t.data_inicio||'',fim:t.data_fim_prevista||'',fimReal:t.data_fim_real||'',notas:t.notas||''};
     });
-    return {id:p.id,numero:p.numero_externo||'',nome:p.nome,contratante:p.contratante||'',contemplado:p.contemplado||'',local:p.local||'',endereco:p.endereco||'',localizacao:p.localizacao||'',lider:p.lider_id||'',gestor:p.gestor||'',dataIni:p.data_inicio||'',dataFim:p.data_fim_prevista||'',status:PJ2APP[p.status]||'Em andamento',obs:p.observacoes||'',grupos:grupos,tarefas:tarefas};
+    return {id:p.id,numero:p.numero_externo||'',nome:p.nome,contratante:p.contratante||'',contemplado:p.contemplado||'',local:p.local||'',cidade:p.cidade||'',uf:p.uf||'',endereco:p.endereco||'',localizacao:p.localizacao||'',lider:p.lider_id||'',gestor:p.gestor||'',dataIni:p.data_inicio||'',dataFim:p.data_fim_prevista||'',status:PJ2APP[p.status]||'Em andamento',prioridade:PRI2APP[p.prioridade]||'Média',obs:p.observacoes||'',modelo:!!p.modelo,grupos:grupos,tarefas:tarefas};
   });
-  return {funcoes:fR.data.map(f=>f.nome),niveis:nR.data.map(n=>n.nome),categorias:cR.data.map(c=>[c.id,c.nome]),catalogo,colab,projetos,ativo:projetos.length?projetos[0].id:null};
+  return {funcoes:fR.data.map(f=>f.nome),niveis:nR.data.map(n=>n.nome),categorias:cR.data.map(c=>[c.id,c.nome]),catalogo,colab,projetos,padroes,ativo:projetos.length?projetos[0].id:null};
 }
 
 /* ===== MIGRAR (uma vez) — sobe o S atual para a nuvem ===== */
@@ -526,7 +764,7 @@ async function migrarParaNuvem(){
       svcMap[s.id]={id:ins.data.id,varIdByName};
     }
     for(const p of S.projetos){
-      const pi=await SB.from('projetos').insert({numero_externo:p.numero||null,nome:p.nome,contratante:p.contratante||null,contemplado:p.contemplado||null,local:p.local||null,endereco:p.endereco||null,localizacao:p.localizacao||null,lider_id:(p.lider&&colabMap[p.lider])?colabMap[p.lider].id:null,gestor:p.gestor||null,data_inicio:p.dataIni||null,data_fim_prevista:p.dataFim||null,status:PJ2DB[p.status]||'aguardando',observacoes:p.obs||null}).select().single();
+      const pi=await SB.from('projetos').insert({numero_externo:p.numero||null,nome:p.nome,contratante:p.contratante||null,contemplado:p.contemplado||null,local:p.local||null,endereco:p.endereco||null,localizacao:p.localizacao||null,lider_id:(p.lider&&colabMap[p.lider])?colabMap[p.lider].id:null,gestor:p.gestor||null,data_inicio:p.dataIni||null,data_fim_prevista:p.dataFim||null,status:PJ2DB[p.status]||'aguardando',prioridade:PRI2DB[p.prioridade]||'media',observacoes:p.obs||null}).select().single();
       if(pi.error) throw pi.error; const grpMap={}; let go=0;
       for(const g of p.grupos){
         const gi=await SB.from('grupos').insert({projeto_id:pi.data.id,nome:g.nome,categoria_id:catCodeToId[g.cat]||null,responsavel_id:(g.resp&&colabMap[g.resp])?colabMap[g.resp].id:null,ordem:go++,aberto:g.open!==false}).select().single();
@@ -555,6 +793,7 @@ function demo(){
     funcoes:["Téc. Automação","Engenheiro","Eletrotécnico","Eletricista","Montador","Mecânico","Refrigerista","Ajudante"],
     niveis:["Júnior","Pleno","Sênior"],
     categorias:[["SUPERVISORIO","Supervisório"],["AR_CONDICIONADO","Ar Condicionado"],["ILUMINACAO","Iluminação"],["MEDIDORES","Medição"],["INFRAESTRUTURA","Infraestrutura"],["SENSORES","Sensores"],["COMISSIONAMENTO","Comissionamento"]],
+    padroes:[],
     catalogo:JSON.parse(JSON.stringify(CATALOGO_BASE)),
     colab:[
       {id:"andre",nome:"André Camilo",custo:true,linhas:[{funcao:"Engenheiro",nivel:"Sênior",vh:85}]},
@@ -592,7 +831,9 @@ function demo(){
 /* ===== CRONOGRAMA ===== */
 function colab(id){return S.colab.find(c=>c.id===id);}
 function catNome(id){const c=S.categorias.find(x=>x[0]===id);return c?c[1]:id;}
-function taskVh(t){const c=colab(t.exec);if(!c||!c.custo||!c.linhas.length)return 0;const li=c.linhas[t.execLinha||0];return li?(li.vh||0):0;}
+function horasMes(){ const h=window._EMPRESA&&window._EMPRESA.horas_mes; return (h&&h>0)?h:220; } // carga horária mensal da empresa (fallback 220)
+function linhaVh(li){ if(!li) return 0; return li.base==='mes' ? ((li.vh||0)/horasMes()) : (li.vh||0); }
+function taskVh(t){const c=colab(t.exec);if(!c||!c.custo||!c.linhas.length)return 0;const li=c.linhas[t.execLinha||0];return linhaVh(li);}
 function grpTasks(gid){return P().tarefas.filter(t=>t.grupo===gid);}
 
 function render(){
@@ -600,7 +841,7 @@ function render(){
   let TH=0,TC=0,TT=0;
   board.innerHTML=P().grupos.map((gr,gi)=>{
     const tasks=grpTasks(gr.id);
-    let H=0,C=0,c1=0,c2=0;
+    let H=0,HP=0,C=0,c1=0,c2=0;
     const rows=tasks.map((t,ti)=>{
       let wbs;
       if(t.nivel===2){c2++;wbs=`${gi+1}.${c1}.${c2}`;}else{c1++;c2=0;wbs=`${gi+1}.${c1}`;}
@@ -611,9 +852,9 @@ function render(){
         // rollup e so para exibir no pai; nao soma ao total (os filhos ja somam)
         return `<div class="trow header-row">
           <span class="twbs">${wbs}</span>
-          <span class="tname"><span class="tnm" style="font-weight:600">▾ ${t.nome}</span><span class="tvr">tarefa-pai · agrupa subtarefas</span></span>
-          <span class="tcell" style="grid-column:span 6;color:var(--tx3);font-size:11px;padding:0 6px">— agrupador · ${rh.toFixed(1)}h nos filhos —</span>
-          <span class="tcost ${rc>0?'':'z'}">${fmt(rc)}</span>
+          <span class="tname"><span class="tnm" style="font-weight:600">▾ ${t.nome}</span><span class="tvr">tarefa · agrupa subtarefas</span></span>
+          <span class="tcell" style="grid-column:span 6;color:var(--tx3);font-size:11px;padding:0 6px">— agrupa subtarefas · ${rh.toFixed(1)}h —</span>
+          <span class="tcost ${rc>0?'':'z'}">${fmtC(rc)}</span>
           <span class="tacts">
             <button class="ib" onclick="addSubUnder('${t.id}')" title="adicionar subtarefa aqui">+sub</button>
             <button class="ib" onclick="openEdit('${t.id}')" title="editar (nome, status, datas)">✎</button>
@@ -624,7 +865,7 @@ function render(){
         </div>`;
       }
       const c=colab(t.exec);const vh=taskVh(t);const h=t.tempo*t.qtd;const cost=h*vh;
-      H+=h;C+=cost;
+      H+=h;HP+=(t.tempoPrev||0)*t.qtd;C+=cost;
       const linhaOpts=c&&c.custo?c.linhas.map((li,k)=>`<option value="${k}" ${k===(t.execLinha||0)?'selected':''}>${li.funcao} · ${li.nivel}</option>`).join(''):'<option>—</option>';
       const execOpts='<option value="">—</option>'+S.colab.map(cc=>`<option value="${cc.id}" ${cc.id===t.exec?'selected':''}>${cc.nome}</option>`).join('');
       const un=taskUn(t);
@@ -640,7 +881,7 @@ function render(){
         <span class="prevc">${(t.tempoPrev||0).toFixed(2)}h 🔒</span>
         <div class="atualc">${devb}<input class="cell-in cell-num ${dev!==0?'tempo-ed':''}" type="number" step="0.05" value="${t.tempo}" onchange="setTempo('${t.id}',this.value)"></div>
         <div class="progc"><div class="mbar"><div class="mfill" style="width:${t.prog||0}%;background:${corProg(t.prog||0)}"></div></div><input class="cell-in cell-num" type="number" min="0" max="100" step="5" value="${t.prog||0}" onchange="setProg('${t.id}',this.value)"></div>
-        <span class="tcost ${cost>0?'':'z'}">${fmt(cost)}</span>
+        <span class="tcost ${cost>0?'':'z'}">${fmtC(cost)}</span>
         <span class="tacts">
           ${subBtn}
           <button class="ib" onclick="openEdit('${t.id}')" title="editar (previsto, status, datas)">✎</button>
@@ -658,18 +899,19 @@ function render(){
     return `<div class="grp">
       <div class="gh">
         <span class="gwbs" onclick="tgGroup(${gi})"><span class="gar ${gr.open?'open':''}">›</span>${gi+1}</span>
-        <span class="gname" onclick="tgGroup(${gi})">${gr.nome}<span class="gcat">${catNome(gr.cat)}</span>${gr.resp?`<span class="gcat" title="responsável pelo grupo">resp: ${(colab(gr.resp)||{}).nome||'—'}</span>`:''}</span>
-        <span class="gstats" style="grid-column:3 / 7"><b>${work.length}</b> tarefas</span>
-        <span class="gtimecell"><b>${H.toFixed(1)}h</b></span>
-        <span class="gprogcell"><span class="gprog" title="progresso do grupo" style="background:${corProg(gpAvg)}">${gpAvg}%</span></span>
-        <span class="gcostcell">${fmt(C)}</span>
-        <span class="gbtns"><button class="ib" onclick="openGroup(${gi})" title="editar grupo (nome e categoria)">✎</button><button class="ib" onclick="moveGroup(${gi},-1)">↑</button><button class="ib" onclick="moveGroup(${gi},1)">↓</button><button class="ib del" onclick="delGroup(${gi})">×</button></span>
+        <span class="gname" onclick="tgGroup(${gi})">${gr.nome}${catNome(gr.cat)?`<span class="gcat">${catNome(gr.cat)}</span>`:''}${gr.resp?`<span class="gcat" title="responsável pela atividade">resp: ${(colab(gr.resp)||{}).nome||'—'}</span>`:''}</span>
+        <span class="gstats" style="grid-column:3 / 6"><b>${work.length}</b> tarefas</span>
+        <span class="gtimecell" title="horas planejadas (soma)">${HP.toFixed(1)}h 🔒</span>
+        <span class="gtimecell" title="horas atuais (soma)"><b>${H.toFixed(1)}h</b></span>
+        <span class="gprogcell"><span class="gprog" title="progresso da atividade" style="background:${corProg(gpAvg)}">${gpAvg}%</span></span>
+        <span class="gcostcell">${fmtC(C)}</span>
+        <span class="gbtns"><button class="ib adm-only" onclick="salvarPadrao(${gi})" title="salvar como padrão reutilizável">📌</button><button class="ib" onclick="openGroup(${gi})" title="editar atividade (nome e categoria)">✎</button><button class="ib" onclick="moveGroup(${gi},-1)">↑</button><button class="ib" onclick="moveGroup(${gi},1)">↓</button><button class="ib del" onclick="delGroup(${gi})">×</button></span>
       </div>
       <div style="${gr.open?'':'display:none'}">
-        ${rows||'<div class="empty">Nenhuma tarefa neste grupo.</div>'}
-        ${tasks.length?`<div class="subtot"><span class="l">Subtotal</span><span class="h">${H.toFixed(2)}h</span><span class="c">${fmt(C)}</span></div>`:''}
-        <div class="addr" onclick="openAdd('${gr.id}')">+ adicionar tarefa (${catNome(gr.cat)})</div>
-        <div class="addr" onclick="addHeader('${gr.id}')" style="color:var(--tx2)">+ adicionar tarefa-pai (agrupador, sem serviço)</div>
+        ${rows||'<div class="empty">Nenhuma tarefa nesta atividade.</div>'}
+        ${tasks.length?`<div class="subtot"><span class="l">Subtotal</span><span class="h">${H.toFixed(2)}h</span><span class="c">${fmtC(C)}</span></div>`:''}
+        <div class="addr" onclick="openAdd('${gr.id}')">+ adicionar tarefa${catNome(gr.cat)?` (${catNome(gr.cat)})`:''}</div>
+        <div class="addr" onclick="addHeader('${gr.id}')" style="color:var(--tx2)">+ adicionar tarefa agrupadora (junta subtarefas, sem serviço)</div>
       </div>
     </div>`;
   }).join('');
@@ -677,7 +919,7 @@ function render(){
   const _prog=_work.length?Math.round(_work.reduce((a,t)=>a+(t.prog||0),0)/_work.length):0;
   document.getElementById('s-prog').textContent=_prog+'%';
   document.getElementById('s-h').textContent=TH.toFixed(1)+'h';
-  document.getElementById('s-c').textContent=fmt(TC);
+  document.getElementById('s-c').textContent=fmtC(TC);
   document.getElementById('s-t').textContent=TT;
   document.getElementById('s-g').textContent=P().grupos.length;
   save();
@@ -696,7 +938,7 @@ function delTask(id){
   let filhos=[];
   if(t.nivel===1){ for(let k=pos+1;k<arr.length && arr[k].nivel===2;k++) filhos.push(arr[k]); }
   if(filhos.length){
-    const op=prompt('Esta tarefa-pai tem '+filhos.length+' subtarefa(s).\n\n1 = excluir TUDO (pai + filhos)\n2 = excluir só o pai (filhos viram tarefas)\n\n(vazio = cancelar)','2');
+    const op=prompt('Esta tarefa tem '+filhos.length+' subtarefa(s).\n\n1 = excluir TUDO (tarefa + subtarefas)\n2 = excluir só a tarefa (subtarefas viram tarefas)\n\n(vazio = cancelar)','2');
     if(op==='1'){ const ids=[t.id].concat(filhos.map(f=>f.id)); P().tarefas=P().tarefas.filter(x=>ids.indexOf(x.id)<0); render(); ids.forEach(i=>delNuvem('tarefas',i)); }
     else if(op==='2'){ filhos.forEach(f=>f.nivel=1); P().tarefas=P().tarefas.filter(x=>x.id!==t.id); render(); delNuvem('tarefas',t.id); filhos.forEach(f=>pushTarefa(f)); }
     return;
@@ -752,7 +994,7 @@ let EID=null, EVAR=null;
 function openEdit(id){
   const t=P().tarefas.find(x=>x.id===id); EID=id; EVAR=null;
   document.getElementById('e-nome').value=t.nome;
-  document.getElementById('e-tipo').textContent=t.header?'(tarefa-pai / agrupador)':'(tarefa de serviço)';
+  document.getElementById('e-tipo').textContent=t.header?'(tarefa agrupadora)':'(tarefa de serviço)';
   // mostra/oculta campos de serviço para tarefa-pai
   const isHdr=!!t.header;
   document.getElementById('e-var-wrap').style.display=isHdr?'none':'';
@@ -797,26 +1039,27 @@ function saveEdit(){
   closeEdit();render();renderAcomp();pushTarefa(t);
 }
 function moveGroup(i,d){const ni=i+d;if(ni<0||ni>=P().grupos.length)return;const tmp=P().grupos[i];P().grupos[i]=P().grupos[ni];P().grupos[ni]=tmp;render();pushGrupo(P().grupos[i]);pushGrupo(P().grupos[ni]);}
-function delGroup(i){if(confirm('Excluir grupo e tarefas?')){const id=P().grupos[i].id;P().tarefas=P().tarefas.filter(t=>t.grupo!==id);P().grupos.splice(i,1);render();delNuvem('grupos',id);}}
+function delGroup(i){if(confirm('Excluir atividade e tarefas?')){const id=P().grupos[i].id;P().tarefas=P().tarefas.filter(t=>t.grupo!==id);P().grupos.splice(i,1);render();delNuvem('grupos',id);}}
 let GIDX=-1;
 function openGroup(gi){
   GIDX=gi;
-  const sel=document.getElementById('g-cat');
-  sel.innerHTML=S.categorias.map(c=>`<option value="${c[0]}">${c[1]}</option>`).join('');
   const rsel=document.getElementById('g-resp');
   rsel.innerHTML='<option value="">—</option>'+S.colab.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
-  if(gi>=0){ document.getElementById('g-title').textContent='Editar grupo'; document.getElementById('g-nome').value=P().grupos[gi].nome; sel.value=P().grupos[gi].cat; rsel.value=P().grupos[gi].resp||''; }
-  else { document.getElementById('g-title').textContent='Novo grupo (tarefa-pai)'; document.getElementById('g-nome').value=''; sel.selectedIndex=0; rsel.value=''; }
+  if(gi>=0){ document.getElementById('g-title').textContent='Editar atividade'; document.getElementById('g-nome').value=P().grupos[gi].nome; rsel.value=P().grupos[gi].resp||''; document.getElementById('g-det').value=P().grupos[gi].det||''; }
+  else { document.getElementById('g-title').textContent='Nova atividade'; document.getElementById('g-nome').value=''; rsel.value=''; document.getElementById('g-det').value=''; }
   document.getElementById('modalG').classList.add('show');
 }
+function popGCat(selected){ const sel=document.getElementById('g-cat'); if(!sel) return; sel.innerHTML=S.categorias.map(c=>`<option value="${c[0]}" ${c[0]===selected?'selected':''}>${c[1]}</option>`).join('')+'<option value="__nova__">➕ Nova categoria…</option>'; }
+function addCatInline(){ const v=(prompt('Nome da nova categoria:')||'').trim(); if(!v) return null; const par=[SB?uid():v.toUpperCase().replace(/\s+/g,'_'),v]; S.categorias.push(par); save(); if(typeof renderCfg==='function')renderCfg(); pushCat(par); return par[0]; }
+function gCatChange(){ const sel=document.getElementById('g-cat'); if(sel.value==='__nova__'){ const id=addCatInline(); popGCat(id||(S.categorias[0]&&S.categorias[0][0])); } }
 function closeGroup(){document.getElementById('modalG').classList.remove('show');GIDX=-1;}
 function saveGroup(){
-  const nome=document.getElementById('g-nome').value.trim(); if(!nome){alert('Informe o nome do grupo.');return;}
-  const cat=document.getElementById('g-cat').value;
+  const nome=document.getElementById('g-nome').value.trim(); if(!nome){alert('Informe o nome da atividade.');return;}
   const resp=document.getElementById('g-resp').value;
+  const det=document.getElementById('g-det').value.trim();
   let g;
-  if(GIDX>=0){ g=P().grupos[GIDX]; g.nome=nome; g.cat=cat; g.resp=resp; }
-  else { g={id:uid(),nome,cat,resp,open:true}; P().grupos.push(g); }
+  if(GIDX>=0){ g=P().grupos[GIDX]; g.nome=nome; g.resp=resp; g.det=det; }
+  else { g={id:uid(),nome,cat:'',resp,det,open:true}; P().grupos.push(g); }
   closeGroup();render();pushGrupo(g);
 }
 
@@ -835,10 +1078,9 @@ function openAdd(gid){
 }
 function closeAdd(){document.getElementById('modal').classList.remove('show');ADD_PARENT=null;}
 function loadSvc(){
-  const gr=P().grupos.find(x=>x.id===document.getElementById('m-grupo').value);
-  const svcs=S.catalogo.filter(s=>s.cat===gr.cat);
+  const svcs=S.catalogo;
   const box=document.getElementById('m-svc');
-  if(!svcs.length){box.innerHTML='<span style="font-size:12px;color:var(--tx3)">Sem serviços nesta categoria. Cadastre no Catálogo.</span>';document.getElementById('m-var').innerHTML='';M.svc=null;return;}
+  if(!svcs.length){box.innerHTML='<span style="font-size:12px;color:var(--tx3)">Nenhum serviço cadastrado. Cadastre no Catálogo.</span>';document.getElementById('m-var').innerHTML='';M.svc=null;return;}
   box.innerHTML=svcs.map(s=>`<div class="chip" data-s="${s.id}" onclick="pickSvc('${s.id}')">${s.nome}</div>`).join('');
   pickSvc(svcs[0].id);
 }
@@ -865,8 +1107,8 @@ function calcPrev(){
   const c=colab(document.getElementById('m-exec').value);
   let vh=0;if(c&&c.custo&&c.linhas.length){const k=parseInt(document.getElementById('m-linha').value)||0;vh=(c.linhas[k]||{}).vh||0;}
   const h=M.tempo*M.qtd;
-  document.getElementById('m-prev-l').textContent=`${h.toFixed(2)}h × ${vh?fmt(vh)+'/h':'(sem custo)'}`;
-  document.getElementById('m-prev-c').textContent=fmt(h*vh);
+  document.getElementById('m-prev-l').textContent=`${h.toFixed(2)}h × ${vh?(podeVerCusto()?fmt(vh)+'/h':'•••'):'(sem custo)'}`;
+  document.getElementById('m-prev-c').textContent=fmtC(h*vh);
 }
 let ADD_PARENT=null;
 function saveTask(){
@@ -889,42 +1131,171 @@ function saveTask(){
 function addSubUnder(parentId){ ADD_PARENT=parentId; const p=P().tarefas.find(x=>x.id===parentId); openAdd(p.grupo); }
 function addHeader(grupoId){ const h={id:uid(),grupo:grupoId,nivel:1,header:true,svc:null,nome:'Nova tarefa-pai',varNome:'',tempo:0,tempoPrev:0,qtd:0,exec:'',execLinha:0,prog:0,status:'todo',ini:'2026-06-17',fim:'2026-06-20',resp:'',prioridade:'Média',fimReal:'',notas:''}; P().tarefas.push(h); render(); pushTarefa(h); }
 
-/* ===== COLABORADORES ===== */
-function renderColab(){
-  document.getElementById('colab-list').innerHTML=S.colab.map((c,ci)=>{
-    const funcOpts=(sel)=>S.funcoes.map(f=>`<option ${f===sel?'selected':''}>${f}</option>`).join('');
-    const nivOpts=(sel)=>S.niveis.map(n=>`<option ${n===sel?'selected':''}>${n}</option>`).join('');
-    const lines=c.custo?c.linhas.map((li,li2)=>`<div class="fline">
-      <select onchange="setLine(${ci},${li2},'funcao',this.value)">${funcOpts(li.funcao)}</select>
-      <select onchange="setLine(${ci},${li2},'nivel',this.value)">${nivOpts(li.nivel)}</select>
-      <input type="number" step="0.01" value="${li.vh!=null?li.vh:''}" placeholder="R$/h" onchange="setLine(${ci},${li2},'vh',this.value)">
-      <button class="ib del" onclick="delLine(${ci},${li2})">×</button>
-    </div>`).join(''):'<span class="badge gray">sem custo (cliente/fabricante)</span>';
-    return `<div class="svccard">
-      <div class="svchead">
-        <input class="tin" style="flex:1" value="${c.nome}" onchange="setColabNome(${ci},this.value)">
-        <label style="font-size:12px;color:var(--tx2);display:flex;align-items:center;gap:5px"><input type="checkbox" ${c.custo?'checked':''} onchange="toggleCusto(${ci},this.checked)"> gera custo</label>
-        <button class="ib del" onclick="delColab(${ci})">×</button>
-      </div>
-      <div class="flines">${lines}</div>
-      ${c.custo?`<div class="addfline" onclick="addLine(${ci})">+ adicionar função</div>`:''}
+/* ===== E3 — BANCO DE ATIVIDADES-PADRÃO (reutilizáveis na empresa) ===== */
+/* monta a árvore (tarefas/subtarefas) de uma atividade, sem dados de projeto */
+function _treePad(gi){ const gr=P().grupos[gi]; return grpTasks(gr.id).map(t=>({nivel:t.nivel||1,header:!!t.header,svc:t.svc||null,nome:t.nome,varNome:t.varNome||'',tempo:t.tempo||0,tempoPrev:t.tempoPrev||0,qtd:t.qtd||0})); }
+function salvarPadrao(gi){
+  const gr=P().grupos[gi]; if(!gr) return;
+  const tree=_treePad(gi);
+  if(!tree.length && !confirm('Esta atividade não tem tarefas. Salvar mesmo assim?')) return;
+  const nome=(prompt('Nome do padrão (como ficará no banco):',gr.nome)||'').trim(); if(!nome) return;
+  const tagsRaw=(prompt('Etiquetas (separe por vírgula — ex.: supervisório, comissionamento):','')||'').trim();
+  const tags=tagsRaw?tagsRaw.split(',').map(s=>s.trim()).filter(Boolean):[];
+  const pad={id:uid(),nome,tags,tarefas:tree};
+  S.padroes.push(pad); save(); pushPadrao(pad);
+  alert('✓ Atividade salva como padrão: "'+nome+'"\nUse "📚 Da biblioteca" para reaproveitar em qualquer obra.');
+}
+/* cria uma tarefa real no projeto a partir de um item do padrão */
+function _clonePadTask(src,grupoId){ return {id:uid(),grupo:grupoId,nivel:src.nivel||1,header:!!src.header,svc:src.svc||null,nome:src.nome,varNome:src.varNome||'',tempo:src.tempo||0,tempoPrev:(src.tempoPrev!=null?src.tempoPrev:(src.tempo||0)),qtd:src.qtd||0,exec:'',execLinha:0,prog:0,status:'todo',ini:P().dataIni||'2026-06-17',fim:P().dataFim||'2026-06-20',resp:'',prioridade:'Média',fimReal:'',notas:''}; }
+/* garante um grupo (atividade) no projeto para receber itens do padrão */
+let PAD_SESS={};
+function ensurePadGrupo(pad,forceNew){
+  let gid=PAD_SESS[pad.id];
+  if(forceNew || !gid || !P().grupos.find(g=>g.id===gid)){
+    const g={id:uid(),nome:pad.nome,cat:'',resp:'',det:'',open:true};
+    P().grupos.push(g); gid=g.id; PAD_SESS[pad.id]=gid; pushGrupo(g);
+  }
+  return gid;
+}
+function padAddInteira(pid){
+  const pad=S.padroes.find(p=>p.id===pid); if(!pad) return;
+  const gid=ensurePadGrupo(pad,true);
+  pad.tarefas.forEach(src=>P().tarefas.push(_clonePadTask(src,gid)));
+  render(); pushTarefasOrdem(); nuvemStatus('atividade adicionada ✓','ok');
+}
+/* o + por linha: puxa a linha + tudo abaixo dela (regra única) */
+function padAddItem(pid,idx){
+  const pad=S.padroes.find(p=>p.id===pid); if(!pad) return;
+  const gid=ensurePadGrupo(pad,false);
+  const src=pad.tarefas[idx]; if(!src) return;
+  const add=[src];
+  if((src.nivel||1)===1){ for(let k=idx+1;k<pad.tarefas.length;k++){ if((pad.tarefas[k].nivel||1)===1) break; add.push(pad.tarefas[k]); } }
+  add.forEach(s=>P().tarefas.push(_clonePadTask(s,gid)));
+  render(); pushTarefasOrdem(); nuvemStatus('adicionado ✓','ok');
+}
+function delPadrao(id){ if(!confirm('Excluir este padrão do banco da empresa?')) return; S.padroes=S.padroes.filter(p=>p.id!==id); save(); softDel('atividades_padrao',id); renderPadList(); }
+function openPad(){ PAD_SESS={}; const q=document.getElementById('pad-q'); if(q)q.value=''; renderPadList(); document.getElementById('modalPad').classList.add('show'); }
+function closePad(){ document.getElementById('modalPad').classList.remove('show'); render(); }
+function renderPadList(){
+  const box=document.getElementById('pad-list'); if(!box) return;
+  const q=((document.getElementById('pad-q')||{}).value||'').toLowerCase().trim();
+  let arr=S.padroes||[];
+  if(q) arr=arr.filter(p=> p.nome.toLowerCase().includes(q) || (p.tags||[]).some(t=>t.toLowerCase().includes(q)) );
+  if(!arr.length){ box.innerHTML='<div class="empty" style="padding:18px">Nenhum padrão encontrado. Numa atividade do cronograma, clique em 📌 para salvar como padrão.</div>'; return; }
+  box.innerHTML=arr.map(p=>{
+    const tags=(p.tags||[]).map(t=>`<span class="padtag">${t}</span>`).join('')||'<span class="padtag dim">sem etiqueta</span>';
+    const rows=(p.tarefas||[]).map((t,i)=>{
+      const ind=(t.nivel===2)?30:10; const ic=t.header?'▾':(t.nivel===2?'└─':'•');
+      return `<div class="padrow" style="padding-left:${ind}px"><span class="padnm">${ic} ${t.nome}${t.varNome?` <span class="padvr">${t.varNome}</span>`:''}</span><button class="ib" title="adicionar este item (e o que está abaixo)" onclick="padAddItem('${p.id}',${i})">+</button></div>`;
+    }).join('');
+    return `<div class="padcard">
+      <div class="padhd"><b>${p.nome}</b><span class="padcnt">${(p.tarefas||[]).length} itens</span>
+        <span style="flex:1"></span>
+        <button class="btn btn-p btn-s" onclick="padAddInteira('${p.id}')">+ Adicionar inteira</button>
+        <button class="ib del" title="excluir padrão" onclick="delPadrao('${p.id}')">×</button></div>
+      <div class="padtags">${tags}</div>
+      <div class="padtree">${rows||'<div class="empty">vazio</div>'}</div>
     </div>`;
   }).join('');
 }
-function setColabNome(ci,v){S.colab[ci].nome=v;save();}
-function toggleCusto(ci,v){S.colab[ci].custo=v;if(v&&!S.colab[ci].linhas.length)S.colab[ci].linhas.push({funcao:S.funcoes[0],nivel:S.niveis[0],vh:null});save();renderColab();}
-function setLine(ci,li,campo,v){S.colab[ci].linhas[li][campo]=(campo==='vh'?(parseFloat(v)||0):v);save();}
-function addLine(ci){S.colab[ci].linhas.push({funcao:S.funcoes[0],nivel:S.niveis[0],vh:null});renderColab();save();}
-function delLine(ci,li){S.colab[ci].linhas.splice(li,1);renderColab();save();}
-function addColab(){S.colab.push({id:uid(),nome:"Novo colaborador",custo:true,linhas:[{funcao:S.funcoes[0],nivel:S.niveis[0],vh:null}]});renderColab();save();}
+
+/* ===== COLABORADORES (lista + modal) ===== */
+function resumoFuncoes(c){ if(!c.custo) return '<span style="color:var(--tx3)">sem custo</span>'; if(!c.linhas||!c.linhas.length) return '—'; const f=c.linhas[0]; return `${f.funcao} · ${f.nivel}`+(c.linhas.length>1?` <span style="color:var(--tx3)">+${c.linhas.length-1}</span>`:''); }
+function renderColab(){
+  const cont=document.getElementById('colab-list'); if(!cont) return;
+  const showAcc=!!SB;
+  if(!S.colab.length){ cont.innerHTML='<div class="empty">Nenhum colaborador. Clique em "+ Novo colaborador".</div>'; return; }
+  const rows=S.colab.map((c,ci)=>`
+    <tr onclick="openColab(${ci})">
+      <td><div class="desc">${c.nome||'(sem nome)'}</div>${c.email?`<div class="sub">${c.email}</div>`:''}</td>
+      <td class="sub">${resumoFuncoes(c)}</td>
+      <td>${c.custo?'<span class="badge">gera custo</span>':'<span class="badge gray">sem custo</span>'}</td>
+      ${showAcc?`<td class="sub">${perfilDoColab(c.id)?'🔑 vinculado':'—'}</td>`:''}
+      <td class="acts"><button class="ib" onclick="event.stopPropagation();openColab(${ci})" title="editar">✎</button><button class="ib del" onclick="event.stopPropagation();delColab(${ci})" title="excluir">×</button></td>
+    </tr>`).join('');
+  cont.innerHTML=`<div class="mtbl-wrap"><table class="mtbl"><thead><tr><th>Nome</th><th>Funções</th><th>Custo</th>${showAcc?'<th>Acesso</th>':''}<th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+}
+let CIDX=-1;
+function modalCOpen(){ const m=document.getElementById('modalC'); return !!(m&&m.classList.contains('show')); }
+function novoColab(){ const c={id:uid(),nome:"Novo colaborador",email:"",custo:true,ativo:true,linhas:[{funcao:S.funcoes[0],nivel:S.niveis[0],vh:null}]}; S.colab.push(c); save(); renderColab(); if(SB){(async()=>{await pushColab(c);await pushLinha(c,c.linhas[0]);})();} openColab(S.colab.length-1); }
+function openColab(ci){ CIDX=ci; cModalRender(ci); document.getElementById('modalC').classList.add('show'); }
+function closeColab(){ document.getElementById('modalC').classList.remove('show'); CIDX=-1; }
+function cModalRender(ci){
+  const c=S.colab[ci];
+  document.getElementById('c-body').innerHTML=`
+    <div class="frow">
+      <div class="fg" style="grid-column:span 2"><label class="fl">Nome</label><input class="fi" value="${c.nome||''}" onchange="setColabNome(${ci},this.value)"></div>
+      <div class="fg"><label class="fl">Custo</label><label style="font-size:13px;color:var(--tx2);display:flex;align-items:center;gap:6px;height:38px"><input type="checkbox" ${c.custo?'checked':''} onchange="toggleCusto(${ci},this.checked)"> gera custo</label></div>
+    </div>
+    <div class="frow">
+      <div class="fg" style="grid-column:span 2"><label class="fl">E-mail (login / acesso ao app)</label><input class="fi" type="email" value="${c.email||''}" placeholder="✉ e-mail do colaborador" onchange="setColabEmail(${ci},this.value)"></div>
+      <div class="fg"><label class="fl">Telefone</label><input class="fi" value="${c.telefone||''}" placeholder="(00) 00000-0000" onchange="setColabTel(${ci},this.value)"></div>
+    </div>
+    <div class="fg" id="c-func-wrap"><label class="fl">Funções — função · nível · R$/h</label><div class="flines" id="c-flines"></div><div class="addfline" onclick="addLine(${ci})">+ adicionar função</div></div>
+    <div class="fg"><label class="fl">Acesso por obra</label><div id="c-acesso"></div></div>`;
+  cModalLines(ci); cModalAcesso(ci); cModalCustoVis(ci);
+}
+function cModalLines(ci){
+  const box=document.getElementById('c-flines'); if(!box) return; const c=S.colab[ci];
+  const fopt=(sel)=>S.funcoes.map(f=>`<option ${f===sel?'selected':''}>${f}</option>`).join('')+'<option value="__nova__">➕ Nova função…</option>';
+  const nopt=(sel)=>S.niveis.map(n=>`<option ${n===sel?'selected':''}>${n}</option>`).join('')+'<option value="__nova__">➕ Novo nível…</option>';
+  const header=`<div class="fline" style="margin-bottom:0"><span class="fl" style="margin:0">Função</span><span class="fl" style="margin:0">Nível</span><span class="fl" style="margin:0">Valor</span><span class="fl" style="margin:0">Unidade</span><span></span></div>`;
+  const rows=(c.custo?c.linhas:[]).map((li,i)=>`<div class="fline">
+    <select onchange="cSetFunc(${ci},${i},this.value)">${fopt(li.funcao)}</select>
+    <select onchange="cSetNiv(${ci},${i},this.value)">${nopt(li.nivel)}</select>
+    <input type="number" step="0.01" value="${li.vh!=null?li.vh:''}" placeholder="R$" onchange="setLine(${ci},${i},'vh',this.value)" title="${li.base==='mes'?'valor mensal':'valor por hora'}">
+    <select onchange="setLine(${ci},${i},'base',this.value)" title="unidade do valor"><option value="hora" ${li.base!=='mes'?'selected':''}>R$/h</option><option value="mes" ${li.base==='mes'?'selected':''}>R$/mês</option></select>
+    <button class="ib del" onclick="delLine(${ci},${i})">×</button>
+  </div>`).join('');
+  const temMes=(c.custo?c.linhas:[]).some(li=>li.base==='mes');
+  const hint=temMes?`<div class="acc-hint" style="margin-top:6px">💡 Valor mensal é convertido em R$/h dividindo por ${horasMes()}h/mês (config. da empresa) para o custo das tarefas.</div>`:'';
+  box.innerHTML=(c.custo&&c.linhas.length?header+rows+hint:'')||'<span class="badge gray">sem custo (cliente/fabricante)</span>';
+}
+function cModalAcesso(ci){ const box=document.getElementById('c-acesso'); if(box) box.innerHTML=colabAcessoHtml(S.colab[ci]); }
+function cModalCustoVis(ci){ const w=document.getElementById('c-func-wrap'); if(w) w.style.display=S.colab[ci].custo?'':'none'; }
+function colabAcessoHtml(c){
+  if(!SB) return '';
+  const pf=perfilDoColab(c.id);
+  if(pf){
+    const items=S.projetos.map(p=>{const on=temAcesso(pf.user_id,p.id);return `<li><label style="display:flex;align-items:center;gap:7px;cursor:pointer"><input type="checkbox" style="margin:0" ${on?'checked':''} onchange="toggleAcesso('${pf.user_id}','${p.id}',this.checked)"><span>${p.nome}</span></label></li>`;}).join('');
+    return `<div class="acc-sec"><div class="acc-sec-h">🔑 ${pf.email}<span class="lnk" onclick="vincularLogin('${pf.user_id}','')">desvincular</span></div><div style="font-size:11px;color:var(--tx2);margin-bottom:6px">Obras que ele acessa:</div><ol class="acc-list">${items||'<li class="acc-hint">Nenhuma obra cadastrada.</li>'}</ol></div>`;
+  }
+  const livres=loginsLivres();
+  const match=c.email?livres.find(p=>(p.email||'').toLowerCase()===c.email.toLowerCase()):null;
+  if(match){
+    return `<div class="acc-sec"><div class="acc-sec-h">🔑 Acesso ao app</div><div class="acc-hint" style="margin-bottom:6px">Há uma conta de login com este e-mail: <b>${match.email}</b></div><button class="btn btn-p btn-s" onclick="vincularLogin('${match.user_id}','${c.id}')">Vincular esta conta</button></div>`;
+  }
+  if(livres.length){
+    return `<div class="acc-sec"><div class="acc-sec-h">🔑 Acesso ao app</div><select class="tin" onchange="if(this.value)vincularLogin(this.value,'${c.id}')"><option value="">— vincular conta de login (técnico) —</option>${livres.map(p=>`<option value="${p.user_id}">${p.email}</option>`).join('')}</select></div>`;
+  }
+  return `<div class="acc-sec"><div class="acc-sec-h">🔑 Acesso ao app</div><span class="acc-hint">Nenhuma conta de login livre. Crie um técnico (por ora no painel) e ele aparecerá aqui para vincular.</span></div>`;
+}
+function setColabNome(ci,v){const c=S.colab[ci];c.nome=v;save();pushColab(c);renderColab();}
+function setColabEmail(ci,v){const c=S.colab[ci];c.email=(v||'').trim();save();pushColab(c);renderColab();if(modalCOpen())cModalAcesso(ci);}
+function setColabTel(ci,v){const c=S.colab[ci];c.telefone=(v||'').trim();save();pushColab(c);}
+function toggleCusto(ci,v){const c=S.colab[ci];c.custo=v;let nova=null;if(v&&!c.linhas.length){nova={funcao:S.funcoes[0],nivel:S.niveis[0],vh:null};c.linhas.push(nova);}save();pushColab(c);if(nova)pushLinha(c,nova);renderColab();if(modalCOpen()){cModalLines(ci);cModalCustoVis(ci);}}
+function setLine(ci,li,campo,v){const c=S.colab[ci];c.linhas[li][campo]=(campo==='vh'?(parseFloat(v)||0):v);save();pushLinha(c,c.linhas[li]);renderColab();if(modalCOpen()&&campo==='base')cModalLines(ci);}
+function addFuncInline(){const v=(prompt('Nome da nova função:')||'').trim();if(!v)return null;if(!S.funcoes.includes(v)){S.funcoes.push(v);save();if(typeof renderCfg==='function')renderCfg();pushFunc(v,S.funcoes.length-1);}return v;}
+function addNivInline(){const v=(prompt('Nome do novo nível:')||'').trim();if(!v)return null;if(!S.niveis.includes(v)){S.niveis.push(v);save();if(typeof renderCfg==='function')renderCfg();pushNiv(v,S.niveis.length-1);}return v;}
+function cSetFunc(ci,i,v){ if(v==='__nova__'){ const nv=addFuncInline(); if(nv)setLine(ci,i,'funcao',nv); cModalLines(ci); return; } setLine(ci,i,'funcao',v); }
+function cSetNiv(ci,i,v){ if(v==='__nova__'){ const nv=addNivInline(); if(nv)setLine(ci,i,'nivel',nv); cModalLines(ci); return; } setLine(ci,i,'nivel',v); }
+function addLine(ci){const c=S.colab[ci];const nova={funcao:S.funcoes[0],nivel:S.niveis[0],vh:null};c.linhas.push(nova);save();pushLinha(c,nova);renderColab();if(modalCOpen())cModalLines(ci);}
+function delLine(ci,li){const c=S.colab[ci];const gone=c.linhas[li];
+  S.projetos.forEach(p=>p.tarefas.forEach(t=>{if(t.exec===c.id){if(t.execLinha===li)t.execLinha=0;else if(t.execLinha>li)t.execLinha--;}}));
+  c.linhas.splice(li,1);save();render();renderColab();if(modalCOpen())cModalLines(ci);
+  if(SB){ const afet=[];S.projetos.forEach(p=>p.tarefas.forEach(t=>{if(t.exec===c.id)afet.push(t);}));
+    (async()=>{ for(const t of afet)await pushTarefa(t); if(gone&&gone._id)await delNuvem('colaborador_funcoes',gone._id); })(); }
+}
+function addColab(){const c={id:uid(),nome:"Novo colaborador",custo:true,linhas:[{funcao:S.funcoes[0],nivel:S.niveis[0],vh:null}]};S.colab.push(c);renderColab();save();(async()=>{await pushColab(c);await pushLinha(c,c.linhas[0]);})();}
 function delColab(ci){
   const c=S.colab[ci];
-  const usadas=P().tarefas.filter(t=>t.exec===c.id);
+  const usadas=[];S.projetos.forEach(p=>p.tarefas.forEach(t=>{if(t.exec===c.id)usadas.push(t);}));
   let msg='Excluir colaborador?';
   if(usadas.length){ msg=`Atenção: ${c.nome} está em ${usadas.length} tarefa(s). Ao excluir, essas tarefas ficarão SEM executor e o custo delas zera. Confirmar?`; }
   if(confirm(msg)){
     if(usadas.length){ usadas.forEach(t=>{t.exec='';t.execLinha=0;}); }
     S.colab.splice(ci,1);renderColab();render();save();
+    if(SB){ (async()=>{ for(const t of usadas)await pushTarefa(t); await softDel('colaboradores',c.id); })(); }
   }
 }
 
@@ -949,14 +1320,32 @@ function renderCat(){
     </div>`;
   }).join('');
 }
-function setSvcNome(si,v){S.catalogo[si].nome=v;save();}
-function setSvcCat(si,v){S.catalogo[si].cat=v;save();}
-function setSvcUn(si,v){S.catalogo[si].un=v;save();}
-function setVar(si,vi,idx,v){S.catalogo[si].vars[vi][idx]=(idx===1?(parseFloat(v)||0):v);save();}
-function delVar(si,vi){ if(S.catalogo[si].vars.length<=1){alert('O serviço precisa de ao menos uma variação.');return;} S.catalogo[si].vars.splice(vi,1);renderCat();save();}
-function addVar2(si){S.catalogo[si].vars.push(["Nova variação",0]);renderCat();save();}
-function addSvc(){S.catalogo.push({id:uid(),nome:"Novo serviço",cat:S.categorias[0][0],un:"UND",vars:[["Padrão",0]]});renderCat();save();}
-function delSvc2(si){if(confirm('Excluir serviço?')){S.catalogo.splice(si,1);renderCat();save();}}
+function setSvcNome(si,v){const s=S.catalogo[si];s.nome=v;save();pushServico(s);}
+function setSvcCat(si,v){const s=S.catalogo[si];s.cat=v;save();pushServico(s);}
+function setSvcUn(si,v){const s=S.catalogo[si];s.un=v;save();pushServico(s);}
+function setVar(si,vi,idx,v){const s=S.catalogo[si];const old=s.vars[vi][0];s.vars[vi][idx]=(idx===1?(parseFloat(v)||0):v);save();
+  if(idx===0){ S.projetos.forEach(p=>p.tarefas.forEach(t=>{if(t.svc===s.id&&t.varNome===old)t.varNome=v;})); }
+  pushVar(s,vi);
+}
+function delVar(si,vi){ const s=S.catalogo[si]; if(s.vars.length<=1){alert('O serviço precisa de ao menos uma variação.');return;}
+  const gone=s.vars[vi];
+  S.projetos.forEach(p=>p.tarefas.forEach(t=>{if(t.svc===s.id&&t.varNome===gone[0])t.varNome='';}));
+  s.vars.splice(vi,1);renderCat();render();save();
+  if(SB){ const afet=[];S.projetos.forEach(p=>p.tarefas.forEach(t=>{if(t.svc===s.id)afet.push(t);}));
+    (async()=>{ for(const t of afet)await pushTarefa(t); if(gone&&gone[2])await delNuvem('servico_variacoes',gone[2]); await pushVarsOrdem(s); })(); }
+}
+function addVar2(si){const s=S.catalogo[si];const nova=["Nova variação",0];s.vars.push(nova);renderCat();save();pushVar(s,s.vars.length-1);}
+function addSvc(){const s={id:uid(),nome:"Novo serviço",cat:S.categorias[0][0],un:"UND",vars:[["Padrão",0]]};S.catalogo.push(s);renderCat();save();(async()=>{await pushServico(s);await pushVar(s,0);})();}
+function delSvc2(si){const s=S.catalogo[si];
+  const usadas=[];S.projetos.forEach(p=>p.tarefas.forEach(t=>{if(t.svc===s.id)usadas.push(t);}));
+  let msg='Excluir serviço?';
+  if(usadas.length){ msg=`Atenção: "${s.nome}" está em ${usadas.length} tarefa(s). Ao excluir, essas tarefas ficarão sem serviço/variação. Confirmar?`; }
+  if(confirm(msg)){
+    usadas.forEach(t=>{t.svc='';t.varNome='';});
+    S.catalogo.splice(si,1);renderCat();render();save();
+    if(SB){ (async()=>{ for(const t of usadas)await pushTarefa(t); await delNuvem('servicos',s.id); })(); }
+  }
+}
 
 /* ===== CONFIG ===== */
 function renderCfg(){
@@ -964,12 +1353,12 @@ function renderCfg(){
   document.getElementById('cfg-niv').innerHTML=S.niveis.map((n,i)=>`<span class="cfgchip">${n}<span class="x" onclick="rmNiv(${i})">×</span></span>`).join('');
   document.getElementById('cfg-cat').innerHTML=S.categorias.map((c,i)=>`<span class="cfgchip">${c[1]}<span class="x" onclick="rmCat(${i})">×</span></span>`).join('');
 }
-function addFunc(){const v=document.getElementById('new-func').value.trim();if(v){S.funcoes.push(v);document.getElementById('new-func').value='';renderCfg();save();}}
-function rmFunc(i){S.funcoes.splice(i,1);renderCfg();save();}
-function addNiv(){const v=document.getElementById('new-niv').value.trim();if(v){S.niveis.push(v);document.getElementById('new-niv').value='';renderCfg();save();}}
-function rmNiv(i){S.niveis.splice(i,1);renderCfg();save();}
-function addCat(){const v=document.getElementById('new-cat').value.trim();if(v){S.categorias.push([v.toUpperCase().replace(/\s+/g,'_'),v]);document.getElementById('new-cat').value='';renderCfg();save();}}
-function rmCat(i){S.categorias.splice(i,1);renderCfg();save();}
+function addFunc(){const v=document.getElementById('new-func').value.trim();if(v){S.funcoes.push(v);document.getElementById('new-func').value='';renderCfg();save();pushFunc(v,S.funcoes.length-1);}}
+function rmFunc(i){const nome=S.funcoes[i];S.funcoes.splice(i,1);renderCfg();save();if(SB){const id=window._FUNC_ID[nome];if(id){softDel('funcoes',id);delete window._FUNC_ID[nome];}}}
+function addNiv(){const v=document.getElementById('new-niv').value.trim();if(v){S.niveis.push(v);document.getElementById('new-niv').value='';renderCfg();save();pushNiv(v,S.niveis.length-1);}}
+function rmNiv(i){const nome=S.niveis[i];S.niveis.splice(i,1);renderCfg();save();if(SB){const id=window._NIV_ID[nome];if(id){softDel('niveis',id);delete window._NIV_ID[nome];}}}
+function addCat(){const v=document.getElementById('new-cat').value.trim();if(v){const par=[SB?uid():v.toUpperCase().replace(/\s+/g,'_'),v];S.categorias.push(par);document.getElementById('new-cat').value='';renderCfg();save();pushCat(par);}}
+function rmCat(i){const par=S.categorias[i];S.categorias.splice(i,1);renderCfg();save();if(SB)softDel('categorias',par[0]);}
 
 /* ===== MATERIAIS (catálogo de tipos, na nuvem) ===== */
 let MATS=[], GRUPOS_MAT=[], MARCAS=[]; let MEDIT=null, MSEQ=0;
@@ -990,18 +1379,26 @@ function renderMatList(){
   const q=(document.getElementById('mat-busca').value||'').toLowerCase().trim();
   const lista=MATS.filter(m=>{ if(!q)return true; return [m.descricao_padronizada,m.descricao_fabricante,m.codigo_barras,m.codigo_interno,m.codigo_fabrica,m.marca,m.modelo,grpMatNome(m.grupo_material_id)].some(x=>(x||'').toLowerCase().indexOf(q)>=0); });
   document.getElementById('mat-count').textContent='· '+MATS.length+' cadastrados';
-  document.getElementById('mat-list').innerHTML = lista.length ? lista.map(m=>`
-    <div class="svccard">
-      <div class="svchead">
-        <div style="flex:1">
-          <div style="font-weight:600;font-size:14px">${m.codigo_interno?'<span style="font-family:ui-monospace,monospace;font-size:11px;color:var(--pri);background:var(--pri-bg);padding:1px 6px;border-radius:4px;margin-right:6px">'+m.codigo_interno+'</span>':''}${m.descricao_padronizada||'(sem descrição)'}</div>
-          <div style="font-size:11px;color:var(--tx2)">${grpMatNome(m.grupo_material_id)?'<b>'+grpMatNome(m.grupo_material_id)+'</b> · ':''}${m.codigo_barras?m.codigo_barras+' · ':''}${m.marca||''} ${m.modelo||''} ${(m.medida&&m.medida!=='N/A')?'· '+m.medida:''} ${(m.material_cor&&m.material_cor!=='N/A')?'· '+m.material_cor:''} · ${m.unidade||'UND'}${m.quantidade_minima!=null?' · mín: '+m.quantidade_minima:''}</div>
-          ${m.descricao_fabricante?`<div style="font-size:11px;color:var(--tx3);margin-top:2px">${m.descricao_fabricante}</div>`:''}
-        </div>
-        <button class="ib" onclick="openMat('${m.id}')" title="editar">✎</button>
-        <button class="ib del" onclick="delMat('${m.id}')" title="excluir">×</button>
-      </div>
-    </div>`).join('') : '<div class="empty">'+(q?'Nenhum material encontrado.':'Nenhum material ainda. Clique em "+ Novo material" ou importe sua planilha no Supabase.')+'</div>';
+  const esc=s=>(s||'').replace(/'/g,"\\'");
+  const dim=v=>(v&&v!=='N/A')?v:'';
+  document.getElementById('mat-list').innerHTML = lista.length ? `
+    <div class="mtbl-wrap"><table class="mtbl">
+      <thead><tr>
+        <th>Código</th><th>Descrição padronizada</th><th>Grupo</th><th>Marca / Modelo</th><th>Medida / Cor</th><th>Un</th><th>Mín</th><th>Cód. barras</th><th></th>
+      </tr></thead>
+      <tbody>${lista.map(m=>`
+        <tr onclick="openMat('${esc(m.id)}')">
+          <td>${m.codigo_interno?`<span class="cod">${m.codigo_interno}</span>`:''}</td>
+          <td><div class="desc">${m.descricao_padronizada||'(sem descrição)'}</div>${m.descricao_fabricante?`<div class="sub">${m.descricao_fabricante}</div>`:''}</td>
+          <td class="grp">${grpMatNome(m.grupo_material_id)||''}</td>
+          <td>${m.marca||''}${m.modelo?`<div class="sub">${m.modelo}</div>`:''}</td>
+          <td>${dim(m.medida)}${dim(m.material_cor)?`<div class="sub">${dim(m.material_cor)}</div>`:''}</td>
+          <td>${m.unidade||'UND'}</td>
+          <td class="num">${m.quantidade_minima!=null?m.quantidade_minima:''}</td>
+          <td class="sub">${m.codigo_barras||''}</td>
+          <td class="acts"><button class="ib" onclick="event.stopPropagation();openMat('${esc(m.id)}')" title="editar">✎</button><button class="ib del" onclick="event.stopPropagation();delMat('${esc(m.id)}')" title="excluir">×</button></td>
+        </tr>`).join('')}</tbody>
+    </table></div>` : '<div class="empty">'+(q?'Nenhum material encontrado.':'Nenhum material ainda. Clique em "+ Novo material" ou importe sua planilha no Supabase.')+'</div>';
 }
 function _matSelects(){
   const gsel=document.getElementById('mt-grupo');
@@ -1069,7 +1466,7 @@ async function saveMat(){
   if(!row.descricao_padronizada && !row.codigo_barras){ alert('Informe ao menos a descrição ou o código de barras.'); return; }
   let r;
   if(MEDIT){ r=await SB.from('materiais').update(row).eq('id',MEDIT.id); }
-  else { r=await SB.from('materiais').insert(row); }
+  else { r=await SB.from('materiais').insert({...row,empresa_id:_emp()}); }
   if(r.error){ alert('Erro ao salvar: '+r.error.message); return; }
   closeMat(); carregarMateriais();
 }
@@ -1082,14 +1479,14 @@ async function delMat(id){
 async function addGrupoMat(){
   const nome=prompt('Nome do grupo de material (ex: Cabos):'); if(!nome)return;
   const sigla=((prompt('Sigla para o código interno (ex: CAB):','')||'').toUpperCase().trim()); if(!sigla){alert('Sigla obrigatória.');return;}
-  const r=await SB.from('grupos_materiais').insert({nome:nome.trim(),sigla,ordem:GRUPOS_MAT.length+1}).select().single();
+  const r=await SB.from('grupos_materiais').insert({nome:nome.trim(),sigla,ordem:GRUPOS_MAT.length+1,empresa_id:_emp()}).select().single();
   if(r.error){alert('Erro: '+r.error.message);return;}
   GRUPOS_MAT.push(r.data); _matSelects();
   document.getElementById('mt-grupo').value=r.data.id; gerarCodInterno();
 }
 async function addMarca(){
   const nome=prompt('Nome da marca:'); if(!nome)return;
-  const r=await SB.from('marcas').insert({nome:nome.trim()}).select().single();
+  const r=await SB.from('marcas').insert({nome:nome.trim(),empresa_id:_emp()}).select().single();
   if(r.error){alert('Erro: '+r.error.message);return;}
   MARCAS.push(r.data); _matSelects();
   document.getElementById('mt-marca').value=r.data.nome;
@@ -1097,10 +1494,27 @@ async function addMarca(){
 function scanCodigo(){ alert('Leitura por câmera: próxima etapa (funciona no celular). Por ora, digite o código.'); }
 
 /* ===== ACOMPANHAMENTO ===== */
-const PROJ_INI=new Date('2026-05-31'),NUM_WEEKS=5,HOJE=new Date('2026-06-17');
+function hojeData(){const d=new Date();d.setHours(0,0,0,0);return d;}
+function parseDate(s){ if(!s)return null; const m=/^(\d{4})-(\d{2})-(\d{2})/.exec(String(s)); if(m)return new Date(+m[1],+m[2]-1,+m[3]); const d=new Date(s); return isNaN(d)?null:d; }
+function ganttRange(){
+  const p=P(); const tInis=[],tFims=[];
+  (p.tarefas||[]).filter(t=>!t.header).forEach(t=>{ const a=parseDate(t.ini),b=parseDate(t.fim); if(a)tInis.push(a); if(b)tFims.push(b); });
+  // INÍCIO: data de início da obra (cadastro). Fallback: 1ª tarefa.
+  let start = parseDate(p&&p.dataIni) || (tInis.length?new Date(Math.min(...tInis.map(d=>d.getTime()))):null);
+  // FIM: última tarefa. Fallback: data fim prevista da obra.
+  let end = tFims.length?new Date(Math.max(...tFims.map(d=>d.getTime()))) : parseDate(p&&p.dataFim);
+  if(!start&&end) start=new Date(end);
+  if(!end&&start) end=new Date(start);
+  if(!start){ const h=hojeData(); start=new Date(h); end=new Date(h); end.setDate(end.getDate()+27); }
+  if(start>end) end=new Date(start);
+  const ini=new Date(start); ini.setHours(0,0,0,0); // começa exatamente na data da obra
+  const weeks=Math.max(4, Math.ceil((Math.round((end-ini)/86400000)+1)/7));
+  return {ini, weeks};
+}
 function dd(a,b){return Math.round((a-b)/86400000);}
-function statusInfo(t){const fim=new Date(t.fim);if(t.status!=='done'&&t.status!=='ice'&&fim<HOJE)return{cls:'late'};if(t.status==='done')return{cls:'done'};if(t.status==='wip')return{cls:'wip'};if(t.status==='ice')return{cls:'ice'};return{cls:'todo'};}
+function statusInfo(t){const H=hojeData();const fim=parseDate(t.fim);if(t.status!=='done'&&t.status!=='ice'&&fim&&fim<H)return{cls:'late'};if(t.status==='done')return{cls:'done'};if(t.status==='wip')return{cls:'wip'};if(t.status==='ice')return{cls:'ice'};return{cls:'todo'};}
 function renderAcomp(){
+  const HOJE=hojeData(); const {ini:PROJ_INI,weeks:NUM_WEEKS}=ganttRange();
   document.getElementById('hoje').textContent=HOJE.toLocaleDateString('pt-BR');
   const totalDays=NUM_WEEKS*7;let totP=0,n=0,done=0,wip=0,risk=0;
   document.getElementById('gantt').innerHTML=P().grupos.map((gr,gi)=>{
@@ -1109,7 +1523,7 @@ function renderAcomp(){
     const rows=tasks.map((t,ti)=>{
       const si=statusInfo(t);gp+=(t.prog||0);totP+=(t.prog||0);n++;
       if(si.cls==='done')done++;else if(si.cls==='wip')wip++;if(si.cls==='late')risk++;
-      const ini=new Date(t.ini),fim=new Date(t.fim);
+      const ini=parseDate(t.ini)||PROJ_INI,fim=parseDate(t.fim)||ini;
       const left=Math.max(0,dd(ini,PROJ_INI))/totalDays*100,width=Math.max(1,dd(fim,ini)+1)/totalDays*100;
       return `<div class="grow"><div class="gleft"><span class="gst st-${si.cls}"></span><span class="gwbs2">${gi+1}.${ti+1}</span><span class="gnm" title="${t.nome}">${t.nome}</span></div>
       <div class="gtl"><div class="gbar b-${si.cls}" style="left:${left}%;width:${width}%"><div class="fill" style="width:${t.prog||0}%"></div><span class="lb">${t.prog||0}%</span></div></div></div>`;
@@ -1118,7 +1532,8 @@ function renderAcomp(){
   }).join('');
   const todayPct=Math.min(100,Math.max(0,dd(HOJE,PROJ_INI)/totalDays*100));
   document.querySelectorAll('.gtl').forEach(tl=>{
-    for(let w=0;w<NUM_WEEKS;w++){const d=new Date(PROJ_INI);d.setDate(d.getDate()+w*7);const wk=document.createElement('div');wk.className='gweek';wk.style.left=(w/NUM_WEEKS*100)+'%';wk.style.width=(100/NUM_WEEKS)+'%';wk.textContent=d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});tl.insertBefore(wk,tl.firstChild);}
+    const step=Math.max(1,Math.ceil(NUM_WEEKS/8));
+    for(let w=0;w<NUM_WEEKS;w++){const d=new Date(PROJ_INI);d.setDate(d.getDate()+w*7);const wk=document.createElement('div');wk.className='gweek';wk.style.left=(w/NUM_WEEKS*100)+'%';wk.style.width=(100/NUM_WEEKS)+'%';wk.textContent=(w%step===0)?d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'}):'';tl.insertBefore(wk,tl.firstChild);}
     const td=document.createElement('div');td.className='today';td.style.left=todayPct+'%';tl.appendChild(td);
   });
   document.getElementById('gantt').insertAdjacentHTML('beforeend',`<div class="legend2"><span><span class="d st-done"></span>Concluída</span><span><span class="d st-wip"></span>Andamento</span><span><span class="d st-ice"></span>Congelada</span><span><span class="d st-late"></span>Atrasada</span><span style="margin-left:auto;color:var(--red)">▏hoje</span></div>`);
@@ -1135,69 +1550,229 @@ function refreshHeaders(){
   });
 }
 function mapsUrl(loc){ if(!loc)return null; loc=String(loc).trim(); if(!loc)return null; if(/^https?:\/\//i.test(loc))return loc; return 'https://www.google.com/maps?q='+encodeURIComponent(loc); }
+function corPrioP(p){return p==='Alta'?'#e24b4a':(p==='Baixa'?'#888780':'#ba7517');}
+const PRIO_ORD={'Alta':0,'Média':1,'Baixa':2};
+function _gv(id){const e=document.getElementById(id);return e?e.value:'';}
 function renderProjetos(){
-  document.getElementById('proj-list').innerHTML=S.projetos.map((p,i)=>{
+  const q=(_gv('pf-busca')||'').toLowerCase().trim();
+  const fst=_gv('pf-status'); const fpr=_gv('pf-prio');
+  const sortEl=document.getElementById('pf-sort'); const ord=sortEl?sortEl.checked:true;
+  let arr=S.projetos.map((p,i)=>({p,i}));
+  arr=arr.filter(({p})=>{
+    if(p.modelo) return false;
+    const prio=p.prioridade||'Média';
+    if(fst&&(p.status||'')!==fst) return false;
+    if(fpr&&prio!==fpr) return false;
+    if(q){ const hay=[p.nome,p.numero,p.contratante,p.contemplado,p.local,p.status].map(x=>(x||'').toLowerCase()).join(' '); if(hay.indexOf(q)<0) return false; }
+    return true;
+  });
+  if(ord) arr.sort((a,b)=>(PRIO_ORD[a.p.prioridade||'Média']-PRIO_ORD[b.p.prioridade||'Média']));
+  document.getElementById('proj-list').innerHTML=arr.map(({p,i})=>{
     const ativo=p.id===S.ativo;
     const lider=(S.colab.find(c=>c.id===p.lider)||{}).nome||'—';
     const work=(p.tarefas||[]).filter(t=>!t.header);
     const nt=work.length;
     const pprog=nt?Math.round(work.reduce((s,t)=>s+(t.prog||0),0)/nt):0;
-    const mu=mapsUrl(p.localizacao);
-    const linhaEnd = p.endereco ? `<div style="font-size:11px;color:var(--tx2);margin-top:3px"><i style="font-style:normal">📍</i> ${p.endereco}${mu?` · <a href="${mu}" target="_blank" rel="noopener" style="color:var(--pri)">ver no mapa</a>`:''}</div>` : (mu?`<div style="font-size:11px;margin-top:3px"><a href="${mu}" target="_blank" rel="noopener" style="color:var(--pri)">📍 ver localização no mapa</a></div>`:'');
-    return `<div class="svccard" style="${ativo?'border-color:var(--pri);background:var(--pri-bg)':''}">
-      <div class="svchead">
-        <div style="flex:1">
-          <div style="font-weight:600;font-size:14px">${p.nome} ${ativo?'<span class="badge">ativo</span>':''}</div>
-          <div style="font-size:11px;color:var(--tx2)">#${p.numero||'—'} · Contratante: <b>${p.contratante||'—'}</b> → Contemplado: <b>${p.contemplado||'—'}</b> · ${p.local||'—'} · ${p.status||'—'} · líder: ${lider}${p.gestor?' · gestor loja: '+p.gestor:''} · ${nt} tarefas</div>
-          ${linhaEnd}
-        </div>
-        <button class="btn btn-s ${ativo?'':'btn-p'}" onclick="abrirProj('${p.id}')">${ativo?'Aberto':'Abrir'}</button>
-        <button class="ib" onclick="openProj(${i})" title="editar">✎</button>
-        <button class="ib del" onclick="delProj(${i})" title="excluir">×</button>
+    const prio=p.prioridade||'Média'; const cp=corPrioP(prio);
+    return `<div class="projrow ${ativo?'ativo':''}" style="cursor:pointer" onclick="abrirProj('${p.id}')">
+      <div class="pr-bar" style="background:${cp}" title="Prioridade ${prio}"></div>
+      <div class="pr-main">
+        <div class="pr-nome">${p.nome} ${ativo?'<span class="badge">ativo</span>':''} <span class="pr-pchip" style="background:${cp}22;color:${cp}">${prio}</span></div>
+        <div class="pr-sub">#${p.numero||'—'} · ${p.contratante||'—'} → ${p.contemplado||'—'} · ${p.local||'—'} · ${p.status||'—'} · resp.: ${lider} · ${nt} tarefas</div>
       </div>
-      <div class="pprog"><span class="pprog-lbl">execução</span><div class="pprog-bar"><div class="pprog-fill" style="width:${pprog}%;background:${corProg(pprog)}"></div></div><span class="pprog-val" style="color:${corProg(pprog)}">${pprog}%</span></div>
+      <div class="pr-prog"><div class="bar"><div class="fill" style="width:${pprog}%;background:${corProg(pprog)}"></div></div><span style="font-size:11px;color:${corProg(pprog)};font-weight:600;min-width:30px;text-align:right">${pprog}%</span></div>
+      <button class="btn btn-s ${ativo?'':'btn-p'}" onclick="event.stopPropagation();abrirProj('${p.id}')">${ativo?'Abrir':'Abrir'}</button>
+      <button class="ib adm-only" onclick="event.stopPropagation();duplicarObra(${i})" title="duplicar">⧉</button>
+      <button class="ib adm-only" onclick="event.stopPropagation();openProj(${i})" title="editar">✎</button>
+      <button class="ib del adm-only" onclick="event.stopPropagation();delProj(${i})" title="excluir">×</button>
     </div>`;
-  }).join('') || '<div class="empty">Nenhum projeto. Clique em "+ Novo projeto".</div>';
+  }).join('') || '<div class="empty">'+((q||fst||fpr)?'Nenhum projeto com esse filtro.':'Nenhum projeto. Clique em "+ Novo projeto".')+'</div>';
 }
-function abrirProj(id){ S.ativo=id; save(); refreshHeaders(); render(); renderAcomp(); renderProjetos(); document.querySelector('.tab:nth-child(2)').click(); }
+function renderModelos(){
+  const cont=document.getElementById('modelos-list'); if(!cont) return;
+  const mods=S.projetos.map((p,i)=>({p,i})).filter(({p})=>p.modelo);
+  if(!mods.length){ cont.innerHTML='<div class="empty">Nenhum modelo ainda. Crie um em "+ Novo modelo", ou marque uma obra como modelo no botão ✎.</div>'; return; }
+  cont.innerHTML=mods.map(({p,i})=>{
+    const ng=(p.grupos||[]).length; const nt=(p.tarefas||[]).filter(t=>!t.header).length;
+    return `<div class="projrow" style="cursor:pointer" onclick="abrirProj('${p.id}')">
+      <div class="pr-bar" style="background:#533ab7"></div>
+      <div class="pr-main"><div class="pr-nome">★ ${p.nome} <span class="pr-pchip" style="background:#eeedfe;color:#533ab7">MODELO</span></div>
+        <div class="pr-sub">${ng} grupo(s) · ${nt} tarefa(s) — estrutura padrão</div></div>
+      <button class="btn btn-p btn-s adm-only" onclick="event.stopPropagation();usarModelo(${i})" title="criar uma obra a partir deste modelo">Usar modelo</button>
+      <button class="ib adm-only" onclick="event.stopPropagation();duplicarObra(${i})" title="duplicar modelo">⧉</button>
+      <button class="ib adm-only" onclick="event.stopPropagation();openProj(${i})" title="editar">✎</button>
+      <button class="ib del adm-only" onclick="event.stopPropagation();delProj(${i})" title="excluir">×</button>
+    </div>`;
+  }).join('');
+}
+function clonarProjeto(orig, opts){
+  opts=opts||{};
+  const novo=JSON.parse(JSON.stringify(orig));
+  novo.id=uid(); novo.modelo=!!opts.modelo; if(opts.nome) novo.nome=opts.nome;
+  const grpMap={};
+  (novo.grupos||[]).forEach(g=>{ const nid=uid(); grpMap[g.id]=nid; g.id=nid; });
+  (novo.tarefas||[]).forEach(t=>{ t.id=uid(); if(grpMap[t.grupo]) t.grupo=grpMap[t.grupo];
+    if(opts.reset){ t.prog=0; t.status='todo'; t.fimReal=''; t.exec=''; t.execLinha=0; t.ini=''; t.fim=''; if(t.tempoPrev!=null) t.tempo=t.tempoPrev; }
+  });
+  S.projetos.push(novo); S.ativo=novo.id; S.emProjeto=true; save();
+  if(SB){ (async()=>{ await pushProjeto(novo); for(const g of (novo.grupos||[])) await pushGrupo(g); for(const t of (novo.tarefas||[])) await pushTarefa(t); })(); }
+  return novo;
+}
+function duplicarObra(i){
+  const orig=S.projetos[i]; if(!orig) return;
+  const novo=clonarProjeto(orig,{modelo:!!orig.modelo, reset:false, nome:'Cópia de '+orig.nome});
+  refreshHeaders(); renderProjetos(); renderModelos(); render(); renderAcomp();
+  if(orig.modelo){ aplicarModoNav(); tab('modelos',document.getElementById('nav-modelos-lbl')); }
+  else abrirProj(novo.id);
+}
+function usarModelo(i){
+  const mod=S.projetos[i]; if(!mod) return;
+  const nome=(prompt('Nome da nova obra (a partir do modelo "'+mod.nome+'"):','')||'').trim();
+  if(!nome) return;
+  const novo=clonarProjeto(mod,{modelo:false, reset:true, nome});
+  refreshHeaders(); renderProjetos(); abrirProj(novo.id);
+}
+function abrirProj(id){ S.ativo=id; S.emProjeto=true; save(); refreshHeaders(); render(); renderAcomp(); renderProjetos(); aplicarModoNav(); tab('acomp',document.getElementById('tab-acomp')); }
+const UFS=['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+async function carregarCidades(uf,selected){
+  const sel=document.getElementById('p-cidade'); if(!sel) return;
+  if(!uf){ sel.innerHTML='<option value="">— escolha a UF primeiro —</option>'; return; }
+  sel.innerHTML='<option value="">carregando…</option>';
+  try{
+    const res=await fetch(`https://servicodados.ibge.gov.br/api/v1/localidades/estados/${uf}/municipios?orderBy=nome`);
+    const cidades=await res.json();
+    sel.innerHTML='<option value="">— selecione —</option>'+cidades.map(c=>`<option>${c.nome}</option>`).join('');
+    if(selected){ if(![...sel.options].some(o=>o.text===selected)) sel.insertAdjacentHTML('beforeend',`<option>${selected}</option>`); sel.value=selected; }
+  }catch(e){
+    sel.innerHTML='<option value="">(sem internet — não foi possível carregar a lista)</option>';
+    if(selected){ sel.insertAdjacentHTML('beforeend',`<option>${selected}</option>`); sel.value=selected; }
+  }
+}
+function onUfChange(){ carregarCidades(document.getElementById('p-uf').value,''); }
 let PIDX=-1;
-function openProj(i){
+function openProj(i,comoModelo){
   PIDX=i;
   const ld=document.getElementById('p-lider');
   ld.innerHTML='<option value="">—</option>'+S.colab.map(c=>`<option value="${c.id}">${c.nome}</option>`).join('');
+  const gd=document.getElementById('p-gestor');
+  gd.innerHTML='<option value="">—</option>'+S.colab.map(c=>`<option>${c.nome}</option>`).join('');
+  const ud=document.getElementById('p-uf'); ud.innerHTML='<option value="">—</option>'+UFS.map(u=>`<option>${u}</option>`).join('');
   if(i>=0){ const p=S.projetos[i]; document.getElementById('p-title').textContent='Editar projeto';
+    if(p.gestor && !S.colab.some(c=>c.nome===p.gestor)) gd.insertAdjacentHTML('afterbegin',`<option>${p.gestor}</option>`);
     document.getElementById('p-num').value=p.numero||''; document.getElementById('p-nome').value=p.nome||'';
-    document.getElementById('p-contratante').value=p.contratante||''; document.getElementById('p-contemplado').value=p.contemplado||''; document.getElementById('p-local').value=p.local||'';
-    document.getElementById('p-status').value=p.status||'Em andamento'; ld.value=p.lider||'';
+    document.getElementById('p-contratante').value=p.contratante||''; document.getElementById('p-contemplado').value=p.contemplado||'';
+    ud.value=p.uf||''; carregarCidades(p.uf||'', p.cidade||'');
+    document.getElementById('p-status').value=p.status||'Em andamento'; document.getElementById('p-prio').value=p.prioridade||'Média'; ld.value=p.lider||'';
     document.getElementById('p-ini').value=p.dataIni||''; document.getElementById('p-fim').value=p.dataFim||''; document.getElementById('p-obs').value=p.obs||'';
     document.getElementById('p-end').value=p.endereco||''; document.getElementById('p-loc').value=p.localizacao||''; document.getElementById('p-gestor').value=p.gestor||'';
+    document.getElementById('p-modelo').checked=!!p.modelo;
   } else { document.getElementById('p-title').textContent='Novo projeto';
-    ['p-num','p-nome','p-contratante','p-contemplado','p-local','p-ini','p-fim','p-obs','p-end','p-loc','p-gestor'].forEach(id=>document.getElementById(id).value='');
-    document.getElementById('p-status').value='Aguardando início'; ld.value='';
+    ['p-num','p-nome','p-contratante','p-contemplado','p-ini','p-fim','p-obs','p-end','p-loc','p-gestor'].forEach(id=>document.getElementById(id).value='');
+    document.getElementById('p-status').value='Aguardando início'; document.getElementById('p-prio').value='Média'; ld.value=''; ud.value=''; carregarCidades('',''); document.getElementById('p-modelo').checked=!!comoModelo;
+    if(_EMPRESA){ const uf=(_EMPRESA.uf_padrao||'').toUpperCase(); if(uf){ ud.value=uf; carregarCidades(uf,_EMPRESA.cidade_padrao||''); } if(_EMPRESA.localizacao_padrao)document.getElementById('p-loc').value=_EMPRESA.localizacao_padrao; }
   }
+  renderEquipeObra();
   document.getElementById('modalP').classList.add('show');
+}
+function renderEquipeObra(){
+  const wrap=document.getElementById('p-equipe-wrap'), cont=document.getElementById('p-equipe');
+  if(!cont||!wrap) return;
+  if(PIDX<0){ wrap.style.display='none'; return; }
+  wrap.style.display='';
+  const pid=S.projetos[PIDX].id;
+  const tecs=(ACESSOS_TEC||[]).filter(p=>p.colaborador_id);
+  if(!tecs.length){ cont.innerHTML='<span class="acc-hint">Nenhum técnico vinculado a um colaborador ainda. Vincule em Cadastros → Colaboradores.</span>'; return; }
+  cont.innerHTML='<div class="acc-chips">'+tecs.map(p=>{const nome=(S.colab.find(c=>c.id===p.colaborador_id)||{}).nome||p.email;const on=temAcesso(p.user_id,pid);return `<label class="acc-chip ${on?'on':''}"><input type="checkbox" style="margin:0" ${on?'checked':''} onchange="toggleAcesso('${p.user_id}','${pid}',this.checked)">${nome}</label>`;}).join('')+'</div>';
 }
 function closeProj(){document.getElementById('modalP').classList.remove('show');PIDX=-1;}
 function saveProj(){
   const nome=document.getElementById('p-nome').value.trim(); if(!nome){alert('Informe o nome do projeto.');return;}
-  const dados={numero:document.getElementById('p-num').value.trim(),nome,contratante:document.getElementById('p-contratante').value.trim(),contemplado:document.getElementById('p-contemplado').value.trim(),local:document.getElementById('p-local').value.trim(),status:document.getElementById('p-status').value,lider:document.getElementById('p-lider').value,dataIni:document.getElementById('p-ini').value,dataFim:document.getElementById('p-fim').value,obs:document.getElementById('p-obs').value.trim(),endereco:document.getElementById('p-end').value.trim(),localizacao:document.getElementById('p-loc').value.trim(),gestor:document.getElementById('p-gestor').value.trim()};
+  const dados={numero:document.getElementById('p-num').value.trim(),nome,contratante:document.getElementById('p-contratante').value.trim(),contemplado:document.getElementById('p-contemplado').value.trim(),uf:document.getElementById('p-uf').value,cidade:document.getElementById('p-cidade').value,local:[document.getElementById('p-cidade').value,document.getElementById('p-uf').value].filter(Boolean).join(' — '),status:document.getElementById('p-status').value,prioridade:document.getElementById('p-prio').value,lider:document.getElementById('p-lider').value,dataIni:document.getElementById('p-ini').value,dataFim:document.getElementById('p-fim').value,obs:document.getElementById('p-obs').value.trim(),endereco:document.getElementById('p-end').value.trim(),localizacao:document.getElementById('p-loc').value.trim(),gestor:document.getElementById('p-gestor').value.trim(),modelo:document.getElementById('p-modelo').checked};
   let alvo;
+  const novo=(PIDX<0);
   if(PIDX>=0){ alvo=S.projetos[PIDX]; Object.assign(alvo,dados); }
-  else { alvo=Object.assign({id:uid(),grupos:[],tarefas:[]},dados); S.projetos.push(alvo); S.ativo=alvo.id; }
-  closeProj(); save(); refreshHeaders(); renderProjetos(); render(); renderAcomp(); pushProjeto(alvo);
+  else { alvo=Object.assign({id:uid(),grupos:[],tarefas:[]},dados); S.projetos.push(alvo); S.ativo=alvo.id; S.emProjeto=true; }
+  closeProj(); save(); refreshHeaders(); renderProjetos(); renderModelos(); render(); renderAcomp(); pushProjeto(alvo);
+  if(novo){ aplicarModoNav(); tab('acomp',document.getElementById('tab-acomp')); } else aplicarModoNav();
 }
 function delProj(i){
   if(S.projetos.length<=1){alert('Deve existir ao menos um projeto.');return;}
   if(confirm('Excluir o projeto "'+S.projetos[i].nome+'" e todo o cronograma dele?')){
     const era=S.projetos[i].id; S.projetos.splice(i,1);
-    if(S.ativo===era) S.ativo=S.projetos[0].id;
-    save(); refreshHeaders(); renderProjetos(); render(); renderAcomp(); delNuvem('projetos',era);
+    if(S.ativo===era){ S.ativo=S.projetos[0].id; S.emProjeto=false; }
+    save(); refreshHeaders(); renderProjetos(); renderModelos(); render(); renderAcomp(); aplicarModoNav(); delNuvem('projetos',era);
   }
 }
 
+/* ===== ACESSOS (quem vê qual obra) ===== */
+let ACESSOS_TEC=[], ACESSOS_PA=[];
+async function carregarVinculos(){
+  if(!SB) return;
+  const [t,pa]=await Promise.all([
+    SB.from('perfis').select('user_id,email,papel,colaborador_id').eq('papel','tecnico'),
+    SB.from('projeto_acesso').select('projeto_id,user_id')
+  ]);
+  ACESSOS_TEC = t.error?[]:(t.data||[]);
+  ACESSOS_PA = pa.error?[]:(pa.data||[]);
+}
+async function carregarAcessos(){
+  const cont=document.getElementById('acessos-list'); if(!cont) return;
+  if(!SB){ cont.innerHTML='<div class="empty">Sem conexão com a nuvem.</div>'; return; }
+  cont.innerHTML='<div class="empty">Carregando…</div>';
+  await carregarVinculos();
+  renderAcessos();
+}
+function temAcesso(uid,pid){ return ACESSOS_PA.some(a=>a.user_id===uid&&a.projeto_id===pid); }
+function perfilDoColab(cid){ return ACESSOS_TEC.find(p=>p.colaborador_id===cid); }
+function loginsLivres(){ return ACESSOS_TEC.filter(p=>!p.colaborador_id); }
+async function vincularLogin(userId,colabId){
+  if(!SB||!userId) return;
+  const r=await SB.from('perfis').update({colaborador_id:colabId||null}).eq('user_id',userId);
+  if(r.error){ alert('Erro ao vincular: '+r.error.message); return; }
+  const pf=ACESSOS_TEC.find(p=>p.user_id===userId); if(pf) pf.colaborador_id=colabId||null;
+  refreshAcessoUI();
+}
+function refreshAcessoUI(){
+  if(document.getElementById('v-acessos')&&document.getElementById('v-acessos').classList.contains('active')) renderAcessos();
+  if(document.getElementById('colab-list')) renderColab();
+  if(typeof modalCOpen==='function'&&modalCOpen()&&CIDX>=0) cModalAcesso(CIDX);
+  const mp=document.getElementById('modalP'); if(mp&&mp.classList.contains('show')) renderEquipeObra();
+}
+function renderAcessos(){
+  const cont=document.getElementById('acessos-list'); if(!cont) return;
+  if(!ACESSOS_TEC.length){ cont.innerHTML='<div class="empty">Nenhum técnico cadastrado ainda. (Por enquanto crie técnicos no painel do Supabase; a criação aqui dentro vem em breve.)</div>'; return; }
+  cont.innerHTML=ACESSOS_TEC.map(tc=>{
+    const chips=S.projetos.map(p=>{const on=temAcesso(tc.user_id,p.id);return `<label class="acc-chip ${on?'on':''}"><input type="checkbox" style="margin:0" ${on?'checked':''} onchange="toggleAcesso('${tc.user_id}','${p.id}',this.checked)">${p.nome}</label>`;}).join('');
+    return `<div class="svccard"><div class="acc-tec">👷 ${tc.email||tc.user_id}</div><div class="acc-chips">${chips||'<span class="empty">Nenhuma obra cadastrada.</span>'}</div></div>`;
+  }).join('');
+}
+async function toggleAcesso(uid,pid,on){
+  if(on){ const r=await SB.from('projeto_acesso').insert({user_id:uid,projeto_id:pid}); if(r.error){alert('Erro: '+r.error.message);refreshAcessoUI();return;} if(!temAcesso(uid,pid))ACESSOS_PA.push({user_id:uid,projeto_id:pid}); }
+  else { const r=await SB.from('projeto_acesso').delete().eq('user_id',uid).eq('projeto_id',pid); if(r.error){alert('Erro: '+r.error.message);refreshAcessoUI();return;} ACESSOS_PA=ACESSOS_PA.filter(a=>!(a.user_id===uid&&a.projeto_id===pid)); }
+  refreshAcessoUI();
+}
+
 /* ===== TABS ===== */
-function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='cfg')renderCfg();}
-function renderAll(){refreshHeaders();render();renderAcomp();renderProjetos();}
+function aplicarModoNav(){
+  const dentro=!!(S.emProjeto && P());
+  const crumb=document.getElementById('nav-crumb'),sub=document.getElementById('nav-subabas'),e1=document.getElementById('nav-estado1');
+  if(!crumb||!sub||!e1) return;
+  crumb.style.display=dentro?'inline-flex':'none';
+  sub.style.display=dentro?'inline-flex':'none';
+  e1.style.display=dentro?'none':'inline-flex';
+  if(dentro){const nm=document.getElementById('crumb-nome');if(nm)nm.textContent=P().nome||'(obra)';}
+}
+function irLista(t){ S.emProjeto=false; save(); aplicarModoNav(); tab(t,document.getElementById(t==='modelos'?'nav-modelos-lbl':'nav-lista-lbl')); }
+function voltarProjetos(){ irLista('proj'); }
+function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();
+  const cadBtn=document.getElementById('cad-btn');
+  if(cadBtn&&!['colab','cat','mat','acessos','cfg'].includes(t)){cadBtn.classList.remove('active');cadBtn.innerHTML='Cadastros <span style="font-size:10px">▾</span>';document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.remove('active'));}
+}
+const CAD_LABELS={colab:'Colaboradores',cat:'Catálogo',mat:'Materiais',acessos:'Acessos',cfg:'Configurações'};
+function toggleCad(e){e.stopPropagation();document.getElementById('cad-menu').classList.toggle('open');}
+function cadGo(t){const btn=document.getElementById('cad-btn');tab(t,btn);btn.classList.add('active');btn.innerHTML='Cadastros · '+CAD_LABELS[t]+' <span style="font-size:10px">▾</span>';document.getElementById('cad-menu').classList.remove('open');document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.toggle('active',b.getAttribute('data-t')===t));}
+document.addEventListener('click',e=>{const m=document.getElementById('cad-menu');if(m&&m.classList.contains('open')&&!e.target.closest('.tabdrop'))m.classList.remove('open');});
+function renderAll(){refreshHeaders();render();renderAcomp();renderProjetos();aplicarModoNav();}
 renderAll(); // render local primeiro (instantâneo)
 async function bootNuvem(){
   if(!SB){ nuvemStatus('modo local','err'); return; }
@@ -1208,7 +1783,94 @@ async function bootNuvem(){
     else { nuvemStatus('nuvem vazia — migrar','load'); window._nuvemVazia=true; renderProjetos(); }
   }catch(e){ nuvemStatus('erro nuvem','err'); console.error(e); }
 }
-bootNuvem();
+/* ===== LOGIN / SESSÃO (F1) ===== */
+let _USER=null,_PERFIL=null,_EMPRESA=null;
+function loginVisivel(v){ const el=document.getElementById('loginbg'); if(el) el.style.display=v?'flex':'none'; }
+function loginErro(msg){ const e=document.getElementById('login-erro'); if(e){ e.textContent=msg||''; e.style.display=msg?'block':'none'; } }
+const PAPEL_LBL={fundador:'Fundador',adm:'Admin',tecnico:'Técnico'};
+function pintarUsuario(){ const box=document.getElementById('user-box'); if(!box) return;
+  if(_USER){
+    box.style.display='inline-flex';
+    const empNome=window._EMPRESA_NOME||'';
+    const papel=_PERFIL?(PAPEL_LBL[_PERFIL.papel]||_PERFIL.papel):'';
+    const setT=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+    setT('topbar-emp',empNome); setT('um-nome',empNome||'(empresa)'); setT('um-email',_USER.email||'');
+    const pe=document.getElementById('um-papel'); if(pe){ pe.textContent=papel||''; pe.style.display=papel?'inline-block':'none'; }
+    const logo=window._EMPRESA&&window._EMPRESA.logo_url; const ini=(empNome||'eX').trim().slice(0,2)||'eX';
+    ['avatar-btn','um-av'].forEach(id=>{const el=document.getElementById(id);if(!el)return; if(logo){el.style.backgroundImage='url("'+logo+'")';el.textContent='';}else{el.style.backgroundImage='';el.textContent=ini;}});
+  } else box.style.display='none';
+  aplicarPapel(); }
+function toggleUserMenu(e){ if(e)e.stopPropagation(); const m=document.getElementById('user-menu'); if(m) m.classList.toggle('open'); }
+function umGo(t){ const m=document.getElementById('user-menu'); if(m)m.classList.remove('open'); if(t==='empresa') openEmpresa(); }
+document.addEventListener('click',e=>{ const m=document.getElementById('user-menu'); if(m&&m.classList.contains('open')&&!e.target.closest('#user-box')) m.classList.remove('open'); });
+async function fazerLogin(){
+  if(!SB){ loginErro('Sem conexão com a nuvem.'); return; }
+  const email=(document.getElementById('login-email').value||'').trim();
+  const senha=document.getElementById('login-senha').value||'';
+  if(!email||!senha){ loginErro('Preencha e-mail e senha.'); return; }
+  const btn=document.getElementById('login-btn'); btn.disabled=true; btn.textContent='Entrando…'; loginErro('');
+  const { error } = await SB.auth.signInWithPassword({ email, password: senha });
+  btn.disabled=false; btn.textContent='Entrar';
+  if(error){ loginErro('E-mail ou senha inválidos.'); console.warn('login:',error.message); }
+}
+async function sair(){ if(SB) await SB.auth.signOut(); }
+async function carregarPerfil(uid){
+  try{ const { data } = await SB.from('perfis').select('*').eq('user_id',uid).maybeSingle(); _PERFIL=data||null; }
+  catch(e){ _PERFIL=null; }
+  window._PERFIL=_PERFIL; window._EMPRESA_NOME=''; _EMPRESA=null; window._EMPRESA=null;
+  if(_PERFIL && _PERFIL.empresa_id){
+    try{ const { data:emp } = await SB.from('empresas').select('*').eq('id',_PERFIL.empresa_id).maybeSingle(); _EMPRESA=emp||null; window._EMPRESA=_EMPRESA; window._EMPRESA_NOME=emp?emp.nome:''; }catch(e){}
+  }
+}
+async function openEmpresa(){
+  if(!SB||!_USER||!_PERFIL||!_PERFIL.empresa_id){ alert('Faça login como Fundador/Admin e recarregue a página.'); return; }
+  if(!_EMPRESA){
+    try{
+      const r=await SB.from('empresas').select('*').eq('id',_PERFIL.empresa_id).maybeSingle();
+      if(r.error){ alert('Erro ao carregar a empresa: '+r.error.message); return; }
+      if(!r.data){ alert('Empresa não encontrada. Recarregue a página (Ctrl+Shift+R).'); return; }
+      _EMPRESA=r.data; window._EMPRESA=r.data; window._EMPRESA_NOME=r.data.nome; pintarUsuario();
+    }catch(e){ alert('Erro: '+(e.message||e)); return; }
+  }
+  const g=(id,v)=>{const e=document.getElementById(id);if(e)e.value=(v==null?'':v);};
+  g('emp-nome',_EMPRESA.nome); g('emp-cnpj',_EMPRESA.cnpj); g('emp-razao',_EMPRESA.razao_social);
+  g('emp-tel',_EMPRESA.telefone); g('emp-email',_EMPRESA.email);
+  g('emp-cidade',_EMPRESA.cidade_padrao); g('emp-uf',_EMPRESA.uf_padrao); g('emp-loc',_EMPRESA.localizacao_padrao);
+  g('emp-logo',_EMPRESA.logo_url);
+  document.getElementById('modalEmp').classList.add('show');
+}
+function closeEmpresa(){ document.getElementById('modalEmp').classList.remove('show'); }
+async function saveEmpresa(){
+  if(!SB||!_EMPRESA){ alert('Sem dados da empresa.'); return; }
+  const v=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
+  const row={ nome:v('emp-nome')||_EMPRESA.nome, cnpj:v('emp-cnpj')||null, razao_social:v('emp-razao')||null,
+    telefone:v('emp-tel')||null, email:v('emp-email')||null,
+    cidade_padrao:v('emp-cidade')||null, uf_padrao:(v('emp-uf')||'').toUpperCase()||null, localizacao_padrao:v('emp-loc')||null,
+    logo_url:v('emp-logo')||null };
+  const r=await SB.from('empresas').update(row).eq('id',_EMPRESA.id);
+  if(r.error){ alert('Erro ao salvar: '+r.error.message); return; }
+  Object.assign(_EMPRESA,row); window._EMPRESA=_EMPRESA; window._EMPRESA_NOME=_EMPRESA.nome;
+  pintarUsuario(); render(); renderAcomp(); closeEmpresa();
+}
+async function entrarApp(session){
+  _USER=session.user; loginVisivel(false); const sp=document.getElementById('login-senha'); if(sp) sp.value='';
+  await carregarPerfil(_USER.id); pintarUsuario();
+  await bootNuvem();
+  await carregarVinculos();
+  if(_PERFIL && _PERFIL.papel==='tecnico' && S.projetos.length===1){ S.ativo=S.projetos[0].id; S.emProjeto=true; aplicarModoNav(); tab('acomp',document.getElementById('tab-acomp')); }
+}
+function aoDeslogar(){ _USER=null;_PERFIL=null;window._PERFIL=null; pintarUsuario(); nuvemStatus('faça login','load'); loginVisivel(true); }
+async function init(){
+  if(!SB){ nuvemStatus('modo local','err'); loginVisivel(false); return; }
+  SB.auth.onAuthStateChange((event,session)=>{
+    if(session && session.user){ if(!_USER) entrarApp(session); }
+    else if(_USER){ aoDeslogar(); }
+  });
+  const { data:{ session } } = await SB.auth.getSession();
+  if(session && session.user){ if(!_USER) await entrarApp(session); }
+  else { loginVisivel(true); nuvemStatus('faça login','load'); }
+}
+init();
 </script>
 </body>
 </html>
