@@ -476,12 +476,14 @@ body.papel-tecnico .adm-only{display:none !important}
   <div class="mh"><b>Editar tarefa</b><button class="x" onclick="closeEdit()">&times;</button></div>
   <div class="mb">
     <div class="fg"><label class="fl">Nome da tarefa <span id="e-tipo" style="color:var(--tx3);font-weight:400"></span></label><input class="fi" id="e-nome"></div>
-    <div class="fg" id="e-var-wrap"><label class="fl">Variação / dificuldade</label>
-      <div style="display:flex;gap:6px;align-items:center">
-        <select class="fi" id="e-var-sel" style="flex:1" onchange="pickEditVar(this.value)"></select>
-        <button class="btn btn-s" type="button" onclick="addEditVar()">➕ Adicionar</button>
+    <div class="fg" id="e-var-wrap">
+      <label class="fl">Tipo de tempo</label>
+      <div class="seg" id="e-seg">
+        <button type="button" id="e-mode-unica" onclick="setEMode('unica')">Única</button>
+        <button type="button" id="e-mode-multi" onclick="setEMode('multi')">Com variações</button>
       </div>
-      <div class="note" style="margin-top:6px">A variação define o tempo-padrão da tarefa. Quantidade, datas, progresso e status são editados direto na linha do cronograma.</div>
+      <div id="e-var-body" style="margin-top:10px"></div>
+      <div class="note" style="margin-top:8px">Quantidade, datas, progresso e status são editados direto na linha do cronograma.</div>
     </div>
   </div>
   <div class="mf"><button class="btn" onclick="closeEdit()">Cancelar</button><button class="btn btn-p" onclick="saveEdit()">Salvar</button></div>
@@ -522,6 +524,12 @@ body.papel-tecnico .adm-only{display:none !important}
 .svc-row:hover{background:rgba(120,120,120,.07)}
 .svc-row.sel{background:var(--ac-bg,#e6f1fb);color:var(--ac,#185fa5);font-weight:500}
 .svc-row.svc-new{color:var(--pri,#534ab7);font-weight:500;background:var(--pri-bg,rgba(83,74,183,.06))}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{padding:6px 16px;font-size:12px;border:none;background:var(--surf);color:var(--tx2);cursor:pointer}
+.seg button.on{background:var(--pri-bg,#eeedfe);color:var(--pri,#534ab7);font-weight:600}
+.ev-row{display:grid;grid-template-columns:30px 1fr 72px 56px 26px;gap:5px;align-items:center;margin-bottom:5px}
+.ev-row .fi{padding:5px 7px;font-size:12px}
+.ev-rad{border:none;background:none;cursor:pointer;font-size:17px;color:var(--pri,#534ab7);padding:0}
 .svc-un{font-size:11px;color:var(--tx3)}
 .svc-row.sel .svc-un{color:var(--ac,#185fa5)}
 </style>
@@ -1052,34 +1060,62 @@ function lvl(id,d){
 }
 
 /* ===== EDITAR TAREFA ===== */
-let EID=null, EVAR=null;
+let EID=null, EMODE='unica';
 function openEdit(id){
-  const t=P().tarefas.find(x=>x.id===id); EID=id; EVAR=null;
+  const t=P().tarefas.find(x=>x.id===id); EID=id;
   document.getElementById('e-nome').value=t.nome;
   document.getElementById('e-tipo').textContent=t.header?'(tarefa agrupadora)':'(tarefa de serviço)';
   const isHdr=!!t.header;
   document.getElementById('e-var-wrap').style.display=isHdr?'none':'';
-  if(!isHdr) fillEditVars(t);
+  if(!isHdr){ ensureVars(t); EMODE = t.vars.length>1 ? 'multi' : 'unica'; renderEditVars(t); }
   document.getElementById('modalE').classList.add('show');
 }
-function fillEditVars(t){
-  const sel=document.getElementById('e-var-sel'); const varr=ensureVars(t);
-  const un=taskUn(t)||'un';
-  sel.innerHTML=varr.map((v,i)=>`<option value="${i}" ${v[0]===t.varNome?'selected':''}>${v[0]} · ${fmtH(v[1])}/${un}</option>`).join('');
-  const i=Math.max(0,varr.findIndex(v=>v[0]===t.varNome)); EVAR=varr[i];
+function _et(){ return P().tarefas.find(x=>x.id===EID); }
+function _unidadeUnit(h){ return (Number(h)||0)<1 ? 'min' : 'h'; }
+function _emUnidade(h,u){ return u==='min' ? Math.round((Number(h)||0)*60) : +(+h).toFixed(3); }
+function setEMode(m){ const t=_et(); if(!t)return; const varr=ensureVars(t);
+  if(m==='unica' && varr.length>1){ const act=varr.find(v=>v[0]===t.varNome)||varr[0]; t.vars=[[act[0],act[1]]]; t.varNome=act[0]; }
+  EMODE=m; renderEditVars(t);
 }
-function pickEditVar(idx){ const t=P().tarefas.find(x=>x.id===EID); EVAR=ensureVars(t)[parseInt(idx)||0]; }
-function addEditVar(){
-  const t=P().tarefas.find(x=>x.id===EID); if(!t)return;
-  const nome=(prompt('Nome da nova variação/dificuldade:')||'').trim(); if(!nome)return;
-  const h=toH(prompt('Tempo dessa variação (vírgula p/ decimal):','0')||'0','h');
-  ensureVars(t); t.vars.push([nome,h]); t.varNome=nome; EVAR=[nome,h]; fillEditVars(t);
+function renderEditVars(t){
+  const varr=ensureVars(t);
+  document.getElementById('e-mode-unica').classList.toggle('on',EMODE==='unica');
+  document.getElementById('e-mode-multi').classList.toggle('on',EMODE==='multi');
+  const body=document.getElementById('e-var-body');
+  if(EMODE==='unica'){
+    const v=varr.find(x=>x[0]===t.varNome)||varr[0]; const u=_unidadeUnit(v[1]);
+    body.innerHTML=`<label class="fl">Tempo da tarefa</label>
+      <div style="display:flex;gap:6px;margin-top:3px">
+        <input class="fi" id="eu-t" type="number" step="0.1" style="flex:1" value="${_emUnidade(v[1],u)}" oninput="evUnica()">
+        <select class="fi" id="eu-u" style="width:84px" onchange="evUnica()"><option value="min" ${u==='min'?'selected':''}>min</option><option value="h" ${u==='h'?'selected':''}>horas</option></select>
+      </div>`;
+  } else {
+    body.innerHTML=`<label class="fl">Variações / dificuldades — marque a ativa e edite o tempo</label>
+      <div id="ev-list" style="margin-top:4px">`+varr.map((v,i)=>evRow(v,i,t)).join('')+`</div>
+      <button class="btn btn-s" type="button" onclick="evAdd()" style="margin-top:6px">➕ Adicionar variação</button>`;
+  }
 }
+function evRow(v,i,t){
+  const u=_unidadeUnit(v[1]); const ativo=v[0]===t.varNome;
+  return `<div class="ev-row">
+    <button type="button" class="ev-rad" title="marcar como ativa" onclick="evActivate(${i})">${ativo?'●':'○'}</button>
+    <input class="fi" value="${(v[0]||'').replace(/"/g,'&quot;')}" oninput="evNome(${i},this.value)" placeholder="dificuldade">
+    <input class="fi" type="number" step="0.1" value="${_emUnidade(v[1],u)}" oninput="evTime(${i})" data-t="${i}">
+    <select class="fi" onchange="evTime(${i})" data-u="${i}"><option value="min" ${u==='min'?'selected':''}>min</option><option value="h" ${u==='h'?'selected':''}>h</option></select>
+    <button type="button" class="ib del" title="excluir variação" onclick="evDel(${i})">×</button>
+  </div>`;
+}
+function evUnica(){ const t=_et(); const h=toH(document.getElementById('eu-t').value,document.getElementById('eu-u').value); ensureVars(t); t.vars[0][1]=h; t.varNome=t.vars[0][0]; t.tempo=h; t.tempoPrev=h; }
+function evNome(i,val){ const t=_et(); const era=t.vars[i][0]===t.varNome; t.vars[i][0]=val; if(era)t.varNome=val; }
+function evTime(i){ const t=_et(); const inp=document.querySelector(`#ev-list [data-t="${i}"]`), selu=document.querySelector(`#ev-list [data-u="${i}"]`); const h=toH(inp.value,selu.value); t.vars[i][1]=h; if(t.vars[i][0]===t.varNome){ t.tempo=h; t.tempoPrev=h; } }
+function evActivate(i){ const t=_et(); t.varNome=t.vars[i][0]; t.tempo=t.vars[i][1]; t.tempoPrev=t.vars[i][1]; renderEditVars(t); }
+function evDel(i){ const t=_et(); if(t.vars.length<=1){ alert('Deixe ao menos uma variação. Para tempo único, use o modo "Única".'); return; } const eraAtiva=t.vars[i][0]===t.varNome; t.vars.splice(i,1); if(eraAtiva){ t.varNome=t.vars[0][0]; t.tempo=t.vars[0][1]; t.tempoPrev=t.vars[0][1]; } renderEditVars(t); }
+function evAdd(){ const t=_et(); ensureVars(t); t.vars.push(['Nova dificuldade',0]); renderEditVars(t); }
 function closeEdit(){document.getElementById('modalE').classList.remove('show');EID=null;}
 function saveEdit(){
-  const t=P().tarefas.find(x=>x.id===EID); if(!t)return;
+  const t=_et(); if(!t)return;
   const nome=document.getElementById('e-nome').value.trim(); if(nome)t.nome=nome;
-  if(!t.header && EVAR){ t.varNome=EVAR[0]; t.tempo=EVAR[1]; t.tempoPrev=EVAR[1]; }
+  if(!t.header){ const varr=ensureVars(t); const act=varr.find(v=>v[0]===t.varNome)||varr[0]; t.varNome=act[0]; t.tempo=act[1]; t.tempoPrev=act[1]; }
   closeEdit();render();renderAcomp();pushTarefa(t);
 }
 function moveGroup(i,d){const ni=i+d;if(ni<0||ni>=P().grupos.length)return;const tmp=P().grupos[i];P().grupos[i]=P().grupos[ni];P().grupos[ni]=tmp;render();pushGrupo(P().grupos[i]);pushGrupo(P().grupos[ni]);}
