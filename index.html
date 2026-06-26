@@ -459,7 +459,7 @@ body.papel-tecnico .adm-only{display:none !important}
         <div class="note" style="margin-bottom:8px">Nova tarefa: <b id="nt-nome-eco">—</b></div>
         <div class="frow" style="grid-template-columns:120px 1fr">
           <div class="fg"><label class="fl">Unidade</label><input class="fi" id="nt-un" placeholder="UND"></div>
-          <div class="fg"><label class="fl">Tipo de tempo</label><div class="seg" id="nt-seg"><button type="button" id="nt-mode-unica" onclick="setNMode('unica')">Única</button><button type="button" id="nt-mode-multi" onclick="setNMode('multi')">Com variações</button></div></div>
+          <div class="fg"><label class="fl">Tipo de tarefa</label><div class="seg" id="nt-seg"><button type="button" id="nt-mode-unica" onclick="setNMode('unica')">Tarefa única</button><button type="button" id="nt-mode-multi" onclick="setNMode('multi')">Com variações</button></div></div>
         </div>
         <div id="nt-var-body" style="margin-top:6px"></div>
         <label class="fl" style="display:flex;align-items:center;gap:7px;cursor:pointer;margin-top:10px;font-weight:400"><input type="checkbox" id="nt-cat" checked> Guardar no catálogo (reutilizar em outras obras)</label>
@@ -478,9 +478,9 @@ body.papel-tecnico .adm-only{display:none !important}
   <div class="mb">
     <div class="fg"><label class="fl">Nome da tarefa <span id="e-tipo" style="color:var(--tx3);font-weight:400"></span></label><input class="fi" id="e-nome"></div>
     <div class="fg" id="e-var-wrap">
-      <label class="fl">Tipo de tempo</label>
+      <label class="fl">Tipo de tarefa</label>
       <div class="seg" id="e-seg">
-        <button type="button" id="e-mode-unica" onclick="setEMode('unica')">Única</button>
+        <button type="button" id="e-mode-unica" onclick="setEMode('unica')">Tarefa única</button>
         <button type="button" id="e-mode-multi" onclick="setEMode('multi')">Com variações</button>
       </div>
       <div id="e-var-body" style="margin-top:10px"></div>
@@ -936,7 +936,7 @@ function render(){
       let varSel='';
       if(!isSub){
         if(varr.length>1){ varSel=`<select class="tvarsel" title="escolher dificuldade" onchange="setVarTask('${t.id}',this.value)">`+varr.map((v,i)=>`<option value="${i}" ${v[0]===t.varNome?'selected':''}>${_trim(v[0],16)} · ${fmtH(v[1])}</option>`).join('')+`</select>`; }
-        else if(t.varNome){ varSel=`<span class="tvr" title="tempo único — edite no ✎">tempo único · ${fmtH(t.tempo)}</span>`; }
+        else if(t.varNome){ varSel=`<span class="tvr" title="tarefa única — edite no ✎">tarefa única · ${fmtH(t.tempo)}</span>`; }
       }
       const dts=`<div class="tdates">
         <div class="dl"><span class="dtg p">planej</span><input type="date" class="din" value="${t.ini||''}" onchange="setData('${t.id}','ini',this.value)"><span class="ar">→</span><input type="date" class="din" value="${t.fim||''}" onchange="setData('${t.id}','fim',this.value)"></div>
@@ -1122,7 +1122,7 @@ function evUnica(){ const t=_et(); const h=toH(document.getElementById('eu-t').v
 function evNome(i,val){ const t=_et(); const era=t.vars[i][0]===t.varNome; t.vars[i][0]=val; if(era)t.varNome=val; }
 function evTime(i){ const t=_et(); const inp=document.querySelector(`#ev-list [data-t="${i}"]`), selu=document.querySelector(`#ev-list [data-u="${i}"]`); const h=toH(inp.value,selu.value); t.vars[i][1]=h; if(t.vars[i][0]===t.varNome){ t.tempo=h; t.tempoPrev=h; } }
 function evActivate(i){ const t=_et(); t.varNome=t.vars[i][0]; t.tempo=t.vars[i][1]; t.tempoPrev=t.vars[i][1]; renderEditVars(t); }
-function evDel(i){ const t=_et(); if(t.vars.length<=1){ alert('Deixe ao menos uma variação. Para tempo único, use o modo "Única".'); return; } const eraAtiva=t.vars[i][0]===t.varNome; t.vars.splice(i,1); if(eraAtiva){ t.varNome=t.vars[0][0]; t.tempo=t.vars[0][1]; t.tempoPrev=t.vars[0][1]; } renderEditVars(t); }
+function evDel(i){ const t=_et(); if(t.vars.length<=1){ alert('Deixe ao menos uma variação. Para um tempo só, use o modo "Tarefa única".'); return; } const eraAtiva=t.vars[i][0]===t.varNome; t.vars.splice(i,1); if(eraAtiva){ t.varNome=t.vars[0][0]; t.tempo=t.vars[0][1]; t.tempoPrev=t.vars[0][1]; } renderEditVars(t); }
 function evAdd(){ const t=_et(); ensureVars(t); t.vars.push(['Nova dificuldade',0]); renderEditVars(t); }
 function closeEdit(){document.getElementById('modalE').classList.remove('show');EID=null;}
 function saveEdit(){
