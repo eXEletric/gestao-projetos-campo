@@ -718,6 +718,7 @@ function fmtC(n){ return podeVerCusto()?fmt(n):'—'; }
 /* tempo em "3h30 / 45min / 2h"; entrada em horas (decimal) */
 function fmtH(h){ const tot=Math.round((Number(h)||0)*60); if(tot<=0) return '0h'; const hh=Math.floor(tot/60),mm=tot%60; if(hh===0)return mm+'min'; if(mm===0)return hh+'h'; return hh+'h'+(mm<10?'0':'')+mm; }
 function toH(val,unit){ val=parseFloat(val)||0; return unit==='min'?val/60:val; }
+function _trim(s,n){ s=String(s||''); return s.length>n ? s.slice(0,n-1).trim()+'…' : s; }
 function aplicarPapel(){ const tec=!!(window._PERFIL && window._PERFIL.papel==='tecnico'); document.body.classList.toggle('papel-tecnico',tec); }
 
 const CATALOGO_BASE=[
@@ -939,7 +940,7 @@ function render(){
       const varr=ensureVars(t);
       let varSel='';
       if(!isSub){
-        if(varr.length>1){ varSel=`<select class="tvarsel" title="escolher dificuldade" onchange="setVarTask('${t.id}',this.value)">`+varr.map((v,i)=>`<option value="${i}" ${v[0]===t.varNome?'selected':''}>${v[0]} · ${fmtH(v[1])}</option>`).join('')+`</select>`; }
+        if(varr.length>1){ varSel=`<select class="tvarsel" title="escolher dificuldade" onchange="setVarTask('${t.id}',this.value)">`+varr.map((v,i)=>`<option value="${i}" ${v[0]===t.varNome?'selected':''}>${_trim(v[0],16)} · ${fmtH(v[1])}</option>`).join('')+`</select>`; }
         else if(t.varNome){ varSel=`<span class="tvr" title="tempo único — edite no ✎">tempo único · ${fmtH(t.tempo)}</span>`; }
       }
       const dts=`<div class="tdates">
