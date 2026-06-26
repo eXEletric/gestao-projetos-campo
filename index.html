@@ -460,6 +460,8 @@ body.papel-tecnico .adm-only{display:none !important}
           <div class="fg"><label class="fl">Tipo de tempo</label><div class="seg" id="nt-seg"><button type="button" id="nt-mode-unica" onclick="setNMode('unica')">Única</button><button type="button" id="nt-mode-multi" onclick="setNMode('multi')">Com variações</button></div></div>
         </div>
         <div id="nt-var-body" style="margin-top:6px"></div>
+        <label class="fl" style="display:flex;align-items:center;gap:7px;cursor:pointer;margin-top:10px;font-weight:400"><input type="checkbox" id="nt-cat" checked> Guardar no catálogo (reutilizar em outras obras). Desmarque para usar só nesta obra.</label>
+        <div class="note" style="margin-top:8px"><b>Criar e adicionar</b> cria a tarefa e já a coloca no cronograma desta obra — não precisa de outro passo.</div>
         <div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-s btn-p" type="button" onclick="criarTarefaNova()">Criar e adicionar</button><button class="btn btn-s" type="button" onclick="toggleNova(false)">cancelar</button></div>
       </div>
     </div>
@@ -1201,7 +1203,7 @@ function abrirNova(){ const q=(document.getElementById('m-svc-q').value||'').tri
 function toggleNova(on){
   const box=document.getElementById('m-nova'); if(!box) return;
   box.style.display=on?'block':'none';
-  if(on){ showCatFields(false); const eco=document.getElementById('nt-nome-eco'); if(eco)eco.textContent=(document.getElementById('m-svc-q').value||'').trim()||'—'; document.getElementById('nt-un').value='UND'; NMODE='unica'; NVARS=[['Padrão',0]]; NACT=0; setNMode('unica'); }
+  if(on){ showCatFields(false); const eco=document.getElementById('nt-nome-eco'); if(eco)eco.textContent=(document.getElementById('m-svc-q').value||'').trim()||'—'; document.getElementById('nt-un').value='UND'; const cb=document.getElementById('nt-cat'); if(cb)cb.checked=true; NMODE='unica'; NVARS=[['Padrão',0]]; NACT=0; setNMode('unica'); }
   else { showCatFields(!!M.svc); }
 }
 /* editor de variação NA CRIAÇÃO (Única / Com variações) */
@@ -1232,7 +1234,7 @@ async function criarTarefaNova(){
   let vars, actIdx;
   if(NMODE==='unica'){ vars=[['Padrão',NVARS[0][1]||0]]; actIdx=0; }
   else { vars=NVARS.map(v=>[(v[0]||'Variação').trim()||'Variação',v[1]||0]); actIdx=Math.max(0,Math.min(NACT,vars.length-1)); }
-  const salvar=confirm('Guardar esta tarefa no catálogo para reutilizar em outras obras?\n\n[OK] Sim, guardar no catálogo\n[Cancelar] Só nesta obra (avulsa)');
+  const salvar=(document.getElementById('nt-cat')||{}).checked!==false; // escolha contextual na própria caixa (sem popup)
   const svc={id:uid(),nome,cat:'',un,vars:vars.map(v=>[v[0],v[1]]),avulso:!salvar};
   S.catalogo.push(svc); save();
   if(salvar){ await pushServico(svc); await pushVarsOrdem(svc); }
