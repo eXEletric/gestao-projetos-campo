@@ -133,6 +133,8 @@ h1{font-size:20px;font-weight:600}
 .subtot .l{padding:0 6px;color:var(--tx3);grid-column:2/8}
 .subtot .h{padding:0 6px;text-align:right;color:var(--blue);grid-column:8/9}
 .subtot .c{padding:0 6px;text-align:right;color:var(--blue);grid-column:9/10}
+.sechd{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx2);font-weight:600;margin:2px 0 8px;border-bottom:1px solid var(--line);padding-bottom:4px}
+.badge.warn{background:#faeeda;color:#854f0b}
 .addr-line{padding:7px 0 7px 28px}
 .addr{display:inline-block;font-size:12px;cursor:pointer;padding:2px 2px}
 .addr:hover{text-decoration:underline}
@@ -449,6 +451,7 @@ body.papel-tecnico .adm-only{display:none !important}
   <div class="mh"><b>Adicionar tarefa</b><button class="x" onclick="closeAdd()">&times;</button></div>
   <div class="mb">
     <div class="note" id="m-ctx" style="margin-bottom:10px"></div>
+    <div class="sechd">O que adicionar</div>
     <div class="fg"><label class="fl">Atividade (onde a tarefa entra)</label><select class="fi" id="m-grupo" onchange="loadSvc()"></select></div>
     <div class="fg"><label class="fl">Tarefa — escolha na lista ou digite para criar</label>
       <div class="combo">
@@ -485,6 +488,10 @@ body.papel-tecnico .adm-only{display:none !important}
       </div>
       <div id="e-var-body" style="margin-top:10px"></div>
       <div class="note" style="margin-top:8px">Quantidade, datas, progresso e status são editados direto na linha do cronograma.</div>
+    </div>
+    <div class="fg" id="e-avulsa-wrap" style="display:none;border-top:1px solid var(--line);padding-top:10px">
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="badge warn">avulsa</span><span class="note" style="margin:0">Esta tarefa não está no catálogo (não reaproveita em outras obras).</span></div>
+      <button class="btn btn-s btn-p" type="button" style="margin-top:8px" onclick="promoverAvulsa()">📥 Salvar no catálogo</button>
     </div>
   </div>
   <div class="mf"><button class="btn" onclick="closeEdit()">Cancelar</button><button class="btn btn-p" onclick="saveEdit()">Salvar</button></div>
@@ -938,13 +945,14 @@ function render(){
         if(varr.length>1){ varSel=`<select class="tvarsel" title="escolher dificuldade" onchange="setVarTask('${t.id}',this.value)">`+varr.map((v,i)=>`<option value="${i}" ${v[0]===t.varNome?'selected':''}>${_trim(v[0],16)} · ${fmtH(v[1])}</option>`).join('')+`</select>`; }
         else if(t.varNome){ varSel=`<span class="tvr" title="tarefa única — edite no ✎">tarefa única · ${fmtH(t.tempo)}</span>`; }
       }
+      const _sCat=S.catalogo.find(x=>x.id===t.svc); const avulsa=!isSub&&!t.header&&!!t.svc&&(!_sCat||_sCat.avulso);
       const dts=`<div class="tdates">
         <div class="dl"><span class="dtg p">planej</span><input type="date" class="din" value="${t.ini||''}" onchange="setData('${t.id}','ini',this.value)"><span class="ar">→</span><input type="date" class="din" value="${t.fim||''}" onchange="setData('${t.id}','fim',this.value)"></div>
         <div class="dl"><span class="dtg r">real</span><input type="date" class="din" value="${t.iniReal||''}" onchange="setData('${t.id}','iniReal',this.value)"><span class="ar">→</span><input type="date" class="din" value="${t.fimReal||''}" onchange="setData('${t.id}','fimReal',this.value)"></div>
       </div>`;
       return `<div class="trow ${isSub?'sub':''}">
         <span class="twbs">${wbs}</span>
-        <span class="tname"><span class="tnm">${t.nome}</span>${varSel}</span>
+        <span class="tname"><span class="tnm">${t.nome}${avulsa?' <span class="badge warn" style="font-size:9px" title="tarefa avulsa — não está no catálogo. Edite (✎) para salvar no catálogo.">avulsa</span>':''}</span>${varSel}</span>
         <div class="qcell">${isSub?'<span class="und2">—</span>':`<input class="cell-in cell-num" type="number" min="0" value="${t.qtd}" onchange="setQtd('${t.id}',this.value)"><span class="und2">${un}</span>`}</div>
         <div class="rfcell"><select class="cell-in" onchange="setExec('${t.id}',this.value)">${execOpts}</select><select class="cell-in" onchange="setLinha('${t.id}',this.value)" ${!c||!c.custo?'disabled':''}>${linhaOpts}</select></div>
         <div class="tdcell">${dts}</div>
@@ -1080,7 +1088,21 @@ function openEdit(id){
   const isHdr=!!t.header;
   document.getElementById('e-var-wrap').style.display=isHdr?'none':'';
   if(!isHdr){ ensureVars(t); EMODE = t.vars.length>1 ? 'multi' : 'unica'; renderEditVars(t); }
+  const sCat=S.catalogo.find(x=>x.id===t.svc); const avulsa=!isHdr&&!!t.svc&&(!sCat||sCat.avulso);
+  document.getElementById('e-avulsa-wrap').style.display=avulsa?'':'none';
   document.getElementById('modalE').classList.add('show');
+}
+function promoverAvulsa(){
+  const t=_et(); if(!t)return;
+  ensureVars(t);
+  const svc={id:uid(),nome:t.nome,cat:'',un:t.un||taskUn(t)||'UND',vars:t.vars.map(v=>[v[0],v[1]]),avulso:false};
+  // remove o serviço avulso antigo do catálogo local (se houver)
+  const old=S.catalogo.find(x=>x.id===t.svc); if(old&&old.avulso){ S.catalogo=S.catalogo.filter(x=>x!==old); }
+  S.catalogo.push(svc); t.svc=svc.id; save();
+  if(SB){ (async()=>{ await pushServico(svc); await pushVarsOrdem(svc); pushTarefa(t); })(); }
+  document.getElementById('e-avulsa-wrap').style.display='none';
+  render(); if(typeof renderCat==='function')renderCat();
+  alert('✓ Tarefa salva no catálogo: "'+t.nome+'". Agora pode ser reutilizada em outras obras.');
 }
 function _et(){ return P().tarefas.find(x=>x.id===EID); }
 function _unidadeUnit(h){ return (Number(h)||0)<1 ? 'min' : 'h'; }
