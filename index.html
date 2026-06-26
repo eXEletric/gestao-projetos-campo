@@ -88,6 +88,7 @@ h1{font-size:20px;font-weight:600}
 .tdcell{padding:0 6px;min-width:0}
 .rfcell{padding:0 6px;display:flex;flex-direction:column;gap:3px;min-width:0}
 .tvar{font-size:11px;max-width:240px}
+.tvarsel{font-size:11px;line-height:1.2;padding:1px 18px 1px 5px;height:auto;max-width:230px;border:1px solid var(--line);border-radius:5px;background:var(--surf);color:var(--amber);margin-top:2px}
 .tdates{display:flex;flex-direction:column;gap:2px;margin-top:1px}
 .dl{display:flex;align-items:center;gap:4px}
 .dtg{font-size:9px;padding:1px 4px;border-radius:4px;min-width:38px;text-align:center}
@@ -445,16 +446,19 @@ body.papel-tecnico .adm-only{display:none !important}
   <div class="mh"><b>Nova tarefa</b><button class="x" onclick="closeAdd()">&times;</button></div>
   <div class="mb">
     <div class="fg"><label class="fl">Atividade</label><select class="fi" id="m-grupo" onchange="loadSvc()"></select></div>
-    <div class="fg"><label class="fl">Tarefa — buscar existente ou digitar nova</label>
-      <input class="fi" id="m-svc-q" placeholder="🔍 Digite o nome da tarefa…" oninput="svcFilter()" autocomplete="off">
-      <div class="svc-list" id="m-svc-list"></div>
+    <div class="fg"><label class="fl">Tarefa — clique para ver ou digite para filtrar</label>
+      <div class="combo">
+        <input class="fi" id="m-svc-q" placeholder="🔍 Clique para ver as tarefas ou digite…" oninput="svcFilter()" onfocus="openSvcList()" autocomplete="off">
+        <div class="svc-list" id="m-svc-list" style="display:none"></div>
+      </div>
       <div id="m-nova" style="display:none;margin-top:8px;border-top:1px solid var(--bd);padding-top:8px">
-        <div class="note" style="margin-bottom:6px">Nova tarefa: <b id="nt-nome-eco">—</b> — informe unidade e tempo:</div>
+        <div class="note" style="margin-bottom:6px">Nova tarefa: <b id="nt-nome-eco">—</b></div>
         <div class="frow" style="grid-template-columns:120px 1fr">
           <div class="fg"><label class="fl">Unidade</label><input class="fi" id="nt-un" placeholder="UND"></div>
-          <div class="fg"><label class="fl">Tempo padrão</label><div style="display:flex;gap:4px"><input class="fi" id="nt-tempo" type="number" step="0.05" value="0" style="flex:1"><select class="fi" id="nt-tempo-un" style="width:66px"><option value="h">h</option><option value="min">min</option></select></div></div>
+          <div class="fg"><label class="fl">Tipo de tempo</label><div class="seg" id="nt-seg"><button type="button" id="nt-mode-unica" onclick="setNMode('unica')">Única</button><button type="button" id="nt-mode-multi" onclick="setNMode('multi')">Com variações</button></div></div>
         </div>
-        <div style="display:flex;gap:6px"><button class="btn btn-s btn-p" type="button" onclick="criarTarefaNova()">Criar e adicionar</button><button class="btn btn-s" type="button" onclick="toggleNova(false)">cancelar</button></div>
+        <div id="nt-var-body" style="margin-top:6px"></div>
+        <div style="display:flex;gap:6px;margin-top:8px"><button class="btn btn-s btn-p" type="button" onclick="criarTarefaNova()">Criar e adicionar</button><button class="btn btn-s" type="button" onclick="toggleNova(false)">cancelar</button></div>
       </div>
     </div>
     <div class="fg" id="fg-var"><label class="fl"><span class="amb">Variação — dificuldade</span></label><div class="chips" id="m-var"></div></div>
@@ -518,7 +522,8 @@ body.papel-tecnico .adm-only{display:none !important}
 .padrow{display:flex;align-items:center;justify-content:space-between;padding:3px 4px;font-size:13px}
 .padrow:hover{background:rgba(120,120,120,.06)}
 .padvr{font-size:11px;color:var(--tx3)}
-.svc-list{max-height:200px;overflow:auto;border:1px solid var(--bd);border-radius:8px;margin-top:6px}
+.combo{position:relative}
+.svc-list{position:absolute;left:0;right:0;top:calc(100% + 3px);z-index:60;max-height:230px;overflow:auto;border:1px solid var(--line2);border-radius:8px;background:var(--surf);box-shadow:0 8px 22px rgba(0,0,0,.14)}
 .svc-row{display:flex;align-items:center;justify-content:space-between;padding:7px 10px;font-size:13px;cursor:pointer;border-bottom:1px solid var(--bd)}
 .svc-row:last-child{border-bottom:none}
 .svc-row:hover{background:rgba(120,120,120,.07)}
@@ -923,8 +928,12 @@ function render(){
       const dev=+(t.tempo-(t.tempoPrev||0)).toFixed(2);
       const devb=dev>0?`<span class="devb up">+${dev}h</span>`:dev<0?`<span class="devb dn">${dev}h</span>`:`<span class="devb ok">ok</span>`;
       const subBtn=t.nivel===1?`<button class="ib" onclick="addSubUnder('${t.id}')" title="adicionar subtarefa">+sub</button>`:'';
-      ensureVars(t);
-      const varSel=(isSub||!t.varNome)?'':`<span class="tvr" title="variação/dificuldade — edite no ✎">${t.varNome} · ${fmtH(t.tempo)}/${un||'un'}</span>`;
+      const varr=ensureVars(t);
+      let varSel='';
+      if(!isSub){
+        if(varr.length>1){ varSel=`<select class="tvarsel" title="escolher dificuldade" onchange="setVarTask('${t.id}',this.value)">`+varr.map((v,i)=>`<option value="${i}" ${v[0]===t.varNome?'selected':''}>${v[0]} · ${fmtH(v[1])}</option>`).join('')+`</select>`; }
+        else if(t.varNome){ varSel=`<span class="tvr" title="tempo único — edite no ✎">tempo único · ${fmtH(t.tempo)}</span>`; }
+      }
       const dts=`<div class="tdates">
         <div class="dl"><span class="dtg p">planej</span><input type="date" class="din" value="${t.ini||''}" onchange="setData('${t.id}','ini',this.value)"><span class="ar">→</span><input type="date" class="din" value="${t.fim||''}" onchange="setData('${t.id}','fim',this.value)"></div>
         <div class="dl"><span class="dtg r">real</span><input type="date" class="din" value="${t.iniReal||''}" onchange="setData('${t.id}','iniReal',this.value)"><span class="ar">→</span><input type="date" class="din" value="${t.fimReal||''}" onchange="setData('${t.id}','fimReal',this.value)"></div>
@@ -1161,10 +1170,12 @@ function loadSvc(){
   toggleNova(false);
   const tu=document.getElementById('m-tempo-un'); if(tu)tu.value='h';
   const q=document.getElementById('m-svc-q'); if(q)q.value='';
-  renderSvcList('');
-  if(S.catalogo.length) pickSvc(S.catalogo[0].id);
-  else { document.getElementById('m-var').innerHTML=''; M.svc=null; }
+  M.svc=null; M.varIdx=0; document.getElementById('m-var').innerHTML='';
+  showCatFields(false); closeSvcList();
 }
+function showCatFields(on){ ['fg-var','fg-tempo','m-prev'].forEach(id=>{const el=document.getElementById(id); if(el)el.style.display=on?'':'none';}); }
+function openSvcList(){ const box=document.getElementById('m-svc-list'); if(box){ renderSvcList(document.getElementById('m-svc-q').value); box.style.display='block'; } }
+function closeSvcList(){ const box=document.getElementById('m-svc-list'); if(box) box.style.display='none'; }
 function renderSvcList(q){
   q=(q||'').trim(); const ql=q.toLowerCase();
   const box=document.getElementById('m-svc-list'); if(!box) return;
@@ -1173,34 +1184,59 @@ function renderSvcList(q){
   let html='';
   if(q && !temExato){ html+=`<div class="svc-row svc-new" onclick="abrirNova()"><span>➕ Criar “${q}” como nova tarefa</span><span class="svc-un">nova</span></div>`; }
   if(arr.length){ html+=arr.map(s=>`<div class="svc-row${M.svc&&M.svc.id===s.id?' sel':''}" data-s="${s.id}" onclick="pickSvc('${s.id}')"><span>${s.nome}${s.avulso?' <span class="svc-un">(avulsa)</span>':''}</span><span class="svc-un">${s.un||''}</span></div>`).join(''); }
-  else if(!q){ html='<div style="padding:9px;font-size:12px;color:var(--tx3)">Digite o nome da tarefa para buscar ou criar.</div>'; }
+  else if(!q){ html='<div style="padding:9px;font-size:12px;color:var(--tx3)">Nenhuma tarefa no catálogo. Digite para criar.</div>'; }
   box.innerHTML=html;
 }
-function svcFilter(){ renderSvcList(document.getElementById('m-svc-q').value); const nova=document.getElementById('m-nova'); if(nova&&nova.style.display!=='none'){ const eco=document.getElementById('nt-nome-eco'); if(eco)eco.textContent=(document.getElementById('m-svc-q').value||'').trim()||'—'; } }
-function abrirNova(){ const q=(document.getElementById('m-svc-q').value||'').trim(); if(!q){ document.getElementById('m-svc-q').focus(); return; } toggleNova(true); }
+function svcFilter(){ openSvcList(); const nova=document.getElementById('m-nova'); if(nova&&nova.style.display!=='none'){ const eco=document.getElementById('nt-nome-eco'); if(eco)eco.textContent=(document.getElementById('m-svc-q').value||'').trim()||'—'; } }
+function abrirNova(){ const q=(document.getElementById('m-svc-q').value||'').trim(); if(!q){ document.getElementById('m-svc-q').focus(); return; } closeSvcList(); toggleNova(true); }
 function toggleNova(on){
-  const box=document.getElementById('m-nova'), btn=document.getElementById('m-nova-btn');
-  if(!box) return;
-  box.style.display=on?'block':'none'; if(btn)btn.style.display=on?'none':'inline-block';
-  ['fg-var','fg-tempo','m-prev'].forEach(id=>{const el=document.getElementById(id); if(el)el.style.display=on?'none':'';}); // tempo único: ao criar nova, esconde tempo/variação do catálogo
-  if(on){ const eco=document.getElementById('nt-nome-eco'); if(eco)eco.textContent=(document.getElementById('m-svc-q').value||'').trim()||'—'; document.getElementById('nt-un').value='UND'; document.getElementById('nt-tempo').value='0'; const tu=document.getElementById('nt-tempo-un'); if(tu)tu.value='h'; document.getElementById('nt-un').focus(); }
+  const box=document.getElementById('m-nova'); if(!box) return;
+  box.style.display=on?'block':'none';
+  if(on){ showCatFields(false); const eco=document.getElementById('nt-nome-eco'); if(eco)eco.textContent=(document.getElementById('m-svc-q').value||'').trim()||'—'; document.getElementById('nt-un').value='UND'; NMODE='unica'; NVARS=[['Padrão',0]]; NACT=0; setNMode('unica'); }
+  else { showCatFields(!!M.svc); }
 }
+/* editor de variação NA CRIAÇÃO (Única / Com variações) */
+let NMODE='unica', NVARS=[['Padrão',0]], NACT=0;
+function setNMode(m){ if(m==='unica' && NVARS.length>1){ NVARS=[NVARS[NACT]]; NACT=0; } NMODE=m; ntRender(); }
+function ntRender(){
+  const bu=document.getElementById('nt-mode-unica'), bm=document.getElementById('nt-mode-multi'); if(bu)bu.classList.toggle('on',NMODE==='unica'); if(bm)bm.classList.toggle('on',NMODE==='multi');
+  const body=document.getElementById('nt-var-body'); if(!body)return;
+  if(NMODE==='unica'){
+    const v=NVARS[0]; const u=_unidadeUnit(v[1]);
+    body.innerHTML=`<label class="fl">Tempo da tarefa</label><div style="display:flex;gap:6px;margin-top:3px"><input class="fi" id="nt-ut" type="number" step="0.1" style="flex:1" value="${_emUnidade(v[1],u)}" oninput="ntUnica()"><select class="fi" id="nt-uu" style="width:84px" onchange="ntUnica()"><option value="min" ${u==='min'?'selected':''}>min</option><option value="h" ${u==='h'?'selected':''}>horas</option></select></div>`;
+  } else {
+    body.innerHTML=`<label class="fl">Dificuldades — marque a ativa</label><div id="nt-list" style="margin-top:4px">`+NVARS.map((v,i)=>ntRow(v,i)).join('')+`</div><button class="btn btn-s" type="button" onclick="ntAdd()" style="margin-top:6px">➕ Adicionar variação</button>`;
+  }
+}
+function ntRow(v,i){ const u=_unidadeUnit(v[1]); const ativo=(i===NACT);
+  return `<div class="ev-row"><button type="button" class="ev-rad" title="ativa" onclick="ntActivate(${i})">${ativo?'●':'○'}</button><input class="fi" value="${(v[0]||'').replace(/"/g,'&quot;')}" oninput="ntNome(${i},this.value)" placeholder="dificuldade"><input class="fi" type="number" step="0.1" value="${_emUnidade(v[1],u)}" oninput="ntTime(${i})" data-nt="${i}"><select class="fi" onchange="ntTime(${i})" data-nu="${i}"><option value="min" ${u==='min'?'selected':''}>min</option><option value="h" ${u==='h'?'selected':''}>h</option></select><button type="button" class="ib del" title="excluir" onclick="ntDel(${i})">×</button></div>`;
+}
+function ntUnica(){ NVARS[0][1]=toH(document.getElementById('nt-ut').value,document.getElementById('nt-uu').value); }
+function ntNome(i,val){ NVARS[i][0]=val; }
+function ntTime(i){ const inp=document.querySelector(`#nt-list [data-nt="${i}"]`), selu=document.querySelector(`#nt-list [data-nu="${i}"]`); if(inp&&selu) NVARS[i][1]=toH(inp.value,selu.value); }
+function ntActivate(i){ NACT=i; ntRender(); }
+function ntDel(i){ if(NVARS.length<=1){alert('Deixe ao menos uma variação. Use o modo "Única".');return;} NVARS.splice(i,1); if(NACT>=NVARS.length)NACT=NVARS.length-1; ntRender(); }
+function ntAdd(){ NVARS.push(['Nova dificuldade',0]); ntRender(); }
 async function criarTarefaNova(){
   const nome=(document.getElementById('m-svc-q').value||'').trim(); if(!nome){alert('Digite o nome da tarefa no campo de busca.');return;}
   const un=(document.getElementById('nt-un').value.trim()||'UND').toUpperCase();
-  const tempo=toH(document.getElementById('nt-tempo').value,(document.getElementById('nt-tempo-un')||{}).value||'h');
+  let vars, actIdx;
+  if(NMODE==='unica'){ vars=[['Padrão',NVARS[0][1]||0]]; actIdx=0; }
+  else { vars=NVARS.map(v=>[(v[0]||'Variação').trim()||'Variação',v[1]||0]); actIdx=Math.max(0,Math.min(NACT,vars.length-1)); }
   const salvar=confirm('Guardar esta tarefa no catálogo para reutilizar em outras obras?\n\n[OK] Sim, guardar no catálogo\n[Cancelar] Só nesta obra (avulsa)');
-  const vid=uid();
-  const svc={id:uid(),nome,cat:'',un,vars:[['Padrão',tempo,vid]],avulso:!salvar};
+  const svc={id:uid(),nome,cat:'',un,vars:vars.map(v=>[v[0],v[1]]),avulso:!salvar};
   S.catalogo.push(svc); save();
-  if(salvar){ await pushServico(svc); await pushVar(svc,0); } // garante o serviço na nuvem ANTES da tarefa (chave estrangeira)
+  if(salvar){ await pushServico(svc); await pushVarsOrdem(svc); }
   toggleNova(false);
-  document.getElementById('m-svc-q').value=''; renderSvcList(''); pickSvc(svc.id);
-  saveTask(); // já adiciona a tarefa ao cronograma (um passo só)
+  document.getElementById('m-svc-q').value=''; closeSvcList();
+  M.svc=svc; M.varIdx=actIdx; M.tempo=svc.vars[actIdx][1];
+  saveTask();
 }
 function pickSvc(id){
   M.svc=S.catalogo.find(s=>s.id===id);M.varIdx=0;
   if(!M.svc)return;
+  closeSvcList(); showCatFields(true);
+  const q=document.getElementById('m-svc-q'); if(q)q.value=M.svc.nome;
   document.querySelectorAll('#m-svc-list .svc-row').forEach(c=>c.classList.toggle('sel',c.dataset.s===id));
   const vbox=document.getElementById('m-var');
   if(!M.svc.vars.length){ vbox.innerHTML='<span style="font-size:12px;color:var(--red)">Este serviço não tem variações. Cadastre ao menos uma no Catálogo antes de usá-lo.</span>'; M.tempo=0; document.getElementById('m-tempo').value='0'; calcPrev(); return; }
@@ -1894,7 +1930,7 @@ function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remo
 const CAD_LABELS={colab:'Colaboradores',cat:'Catálogo',mat:'Materiais',acessos:'Acessos',cfg:'Configurações'};
 function toggleCad(e){e.stopPropagation();document.getElementById('cad-menu').classList.toggle('open');}
 function cadGo(t){const btn=document.getElementById('cad-btn');tab(t,btn);btn.classList.add('active');btn.innerHTML='Cadastros · '+CAD_LABELS[t]+' <span style="font-size:10px">▾</span>';document.getElementById('cad-menu').classList.remove('open');document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.toggle('active',b.getAttribute('data-t')===t));}
-document.addEventListener('click',e=>{const m=document.getElementById('cad-menu');if(m&&m.classList.contains('open')&&!e.target.closest('.tabdrop'))m.classList.remove('open');});
+document.addEventListener('click',e=>{const m=document.getElementById('cad-menu');if(m&&m.classList.contains('open')&&!e.target.closest('.tabdrop'))m.classList.remove('open'); if(!e.target.closest('.combo'))closeSvcList();});
 function renderAll(){refreshHeaders();render();renderAcomp();renderProjetos();aplicarModoNav();}
 renderAll(); // render local primeiro (instantâneo)
 async function bootNuvem(){
