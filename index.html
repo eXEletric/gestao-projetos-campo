@@ -466,6 +466,7 @@ body.papel-tecnico .adm-only{display:none !important}
         <div style="margin-top:8px"><span class="addr" style="color:var(--tx2)" onclick="toggleNova(false)">← voltar à busca</span></div>
       </div>
     </div>
+    <div class="fg" id="m-varpick" style="display:none"><label class="fl"><span class="amb">Variação / dificuldade</span> <span style="color:var(--tx3);font-weight:400">(escolha qual entra)</span></label><select class="fi" id="m-varsel" onchange="pickVar2(this.value)"></select></div>
     <div class="note" style="margin-top:4px">Executor, função, quantidade, datas e progresso são definidos depois, direto na linha do cronograma.</div>
   </div>
   <div class="mf"><button class="btn" onclick="closeAdd()">Cancelar</button><button class="btn btn-p" id="m-add-btn" onclick="confirmarAdd()">Adicionar ao cronograma</button></div>
@@ -1180,6 +1181,7 @@ function loadSvc(){
   toggleNova(false);
   const q=document.getElementById('m-svc-q'); if(q)q.value='';
   M.svc=null; M.varIdx=0;
+  const vp=document.getElementById('m-varpick'); if(vp)vp.style.display='none';
   closeSvcList();
 }
 function showCatFields(on){}
@@ -1202,6 +1204,7 @@ function toggleNova(on){
   const box=document.getElementById('m-nova'); if(!box) return;
   box.style.display=on?'block':'none';
   const ab=document.getElementById('m-add-btn');
+  const vp=document.getElementById('m-varpick'); if(vp&&on)vp.style.display='none';
   if(on){ const eco=document.getElementById('nt-nome-eco'); if(eco)eco.textContent=(document.getElementById('m-svc-q').value||'').trim()||'—'; document.getElementById('nt-un').value='UND'; const cb=document.getElementById('nt-cat'); if(cb)cb.checked=true; NMODE='unica'; NVARS=[['Padrão',0]]; NACT=0; setNMode('unica'); if(ab)ab.textContent='Criar e adicionar'; }
   else { if(ab)ab.textContent=M.svc?('Adicionar “'+_trim(M.svc.nome,22)+'”'):'Adicionar ao cronograma'; }
 }
@@ -1249,8 +1252,13 @@ function pickSvc(id){
   M.tempo=M.svc.vars[0][1];
   const q=document.getElementById('m-svc-q'); if(q)q.value=M.svc.nome;
   closeSvcList();
+  // seletor de variação só quando o serviço tem mais de uma
+  const vp=document.getElementById('m-varpick'), vs=document.getElementById('m-varsel'), un=M.svc.un||'un';
+  if(M.svc.vars.length>1){ vs.innerHTML=M.svc.vars.map((v,i)=>`<option value="${i}">${v[0]} · ${fmtH(v[1])}/${un}</option>`).join(''); vp.style.display=''; }
+  else { vp.style.display='none'; }
   const b=document.getElementById('m-add-btn'); if(b)b.textContent='Adicionar “'+_trim(M.svc.nome,22)+'”';
 }
+function pickVar2(i){ if(!M.svc)return; M.varIdx=parseInt(i)||0; M.tempo=M.svc.vars[M.varIdx][1]; }
 function loadLinha(){
   const c=colab(document.getElementById('m-exec').value);
   const sel=document.getElementById('m-linha');
