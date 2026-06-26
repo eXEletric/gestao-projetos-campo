@@ -987,7 +987,6 @@ function render(){
         ${rows||'<div class="empty">Nenhuma tarefa nesta atividade.</div>'}
         ${tasks.length?`<div class="subtot"><span class="l">Subtotal</span><span class="h">${fmtH(H)}</span><span class="c">${custoOn()?fmtC(C):''}</span></div>`:''}
         <div class="addr-line"><span class="addr" style="color:var(--pri)" onclick="openAdd('${gr.id}')">+ adicionar tarefa${catNome(gr.cat)?` (${catNome(gr.cat)})`:''}</span></div>
-        <div class="addr-line"><span class="addr" style="color:var(--tx2)" onclick="addHeader('${gr.id}')">+ adicionar tarefa agrupadora (junta subtarefas, sem serviço)</span></div>
       </div>
     </div>`;
   }).join('');
