@@ -144,6 +144,7 @@ table.db th{text-align:left;padding:7px 10px;font-size:10px;text-transform:upper
 table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:top}
 .badge{font-size:10px;padding:2px 7px;border-radius:4px;background:var(--pri-bg);color:var(--pri)}
 .badge.g{background:#eaf3de;color:var(--green)}.badge.gray{background:var(--surf2);color:var(--tx2)}
+.badge.green{background:#eaf3de;color:var(--green)}.badge.red{background:#fcebeb;color:var(--red)}
 .tin{padding:5px 8px;border:1px solid var(--line);border-radius:5px;font-size:12px;background:var(--surf);color:var(--tx)}
 .tin:focus{outline:none;border-color:var(--pri)}
 .chiplist{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
@@ -925,7 +926,7 @@ function render(){
         ? `<div class="progc"><div class="mbar"><div class="mfill" style="width:${ka}%;background:${corProg(ka)}"></div></div><span style="font-size:11px;color:var(--tx2)" title="média das subtarefas">${ka}%</span></div>`
         : `<div class="progc"><div class="mbar"><div class="mfill" style="width:${t.prog||0}%;background:${corProg(t.prog||0)}"></div></div><input class="cell-in cell-num" type="number" min="0" max="100" step="5" value="${t.prog||0}" onchange="setProg('${t.id}',this.value)"></div>`;
       const linhaOpts=c&&c.custo?c.linhas.map((li,k)=>`<option value="${k}" ${k===(t.execLinha||0)?'selected':''}>${li.funcao} · ${li.nivel}</option>`).join(''):'<option>—</option>';
-      const execOpts='<option value="">—</option>'+S.colab.map(cc=>`<option value="${cc.id}" ${cc.id===t.exec?'selected':''}>${cc.nome}</option>`).join('');
+      const execOpts='<option value="">—</option>'+S.colab.filter(cc=>cc.ativo!==false || cc.id===t.exec).map(cc=>`<option value="${cc.id}" ${cc.id===t.exec?'selected':''}>${cc.nome}${cc.ativo===false?' (desativado)':''}</option>`).join('');
       const un=taskUn(t);
       const dev=+(t.tempo-(t.tempoPrev||0)).toFixed(2);
       const devb=dev>0?`<span class="devb up">+${dev}h</span>`:dev<0?`<span class="devb dn">${dev}h</span>`:`<span class="devb ok">ok</span>`;
@@ -1368,19 +1369,26 @@ function renderColab(){
   const cont=document.getElementById('colab-list'); if(!cont) return;
   const showAcc=!!SB;
   if(!S.colab.length){ cont.innerHTML='<div class="empty">Nenhum colaborador. Clique em "+ Novo colaborador".</div>'; return; }
-  const rows=S.colab.map((c,ci)=>`
-    <tr onclick="openColab(${ci})">
+  const inativos=S.colab.filter(c=>c.ativo===false).length;
+  const lista=S.colab.map((c,ci)=>({c,ci})).filter(o=>colabVerInativos || o.c.ativo!==false);
+  const rows=lista.map(({c,ci})=>`
+    <tr onclick="openColab(${ci})" style="${c.ativo===false?'opacity:.55':''}">
       <td><div class="desc">${c.nome||'(sem nome)'}</div>${c.email?`<div class="sub">${c.email}</div>`:''}</td>
       <td class="sub">${resumoFuncoes(c)}</td>
+      <td>${c.ativo===false?'<span class="badge red">desativado</span>':'<span class="badge green">ativo</span>'}</td>
       <td>${c.custo?'<span class="badge">gera custo</span>':'<span class="badge gray">sem custo</span>'}</td>
       ${showAcc?`<td class="sub">${perfilDoColab(c.id)?'🔑 vinculado':'—'}</td>`:''}
-      <td class="acts"><button class="ib" onclick="event.stopPropagation();openColab(${ci})" title="editar">✎</button><button class="ib del" onclick="event.stopPropagation();delColab(${ci})" title="excluir">×</button></td>
+      <td class="acts"><button class="ib" onclick="event.stopPropagation();openColab(${ci})" title="editar">✎</button><button class="ib del" onclick="event.stopPropagation();delColab(${ci})" title="excluir do banco (destrutivo)">×</button></td>
     </tr>`).join('');
-  cont.innerHTML=`<div class="mtbl-wrap"><table class="mtbl"><thead><tr><th>Nome</th><th>Funções</th><th>Custo</th>${showAcc?'<th>Acesso</th>':''}<th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
+  const filtro=inativos?`<label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--tx2);margin:0 0 8px"><input type="checkbox" ${colabVerInativos?'checked':''} onchange="toggleVerInativos(this.checked)"> ver desativados (${inativos})</label>`:'';
+  cont.innerHTML=filtro+`<div class="mtbl-wrap"><table class="mtbl"><thead><tr><th>Nome</th><th>Funções</th><th>Status</th><th>Custo</th>${showAcc?'<th>Acesso</th>':''}<th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
 }
 let CIDX=-1;
 function modalCOpen(){ const m=document.getElementById('modalC'); return !!(m&&m.classList.contains('show')); }
 function novoColab(){ const c={id:uid(),nome:"Novo colaborador",email:"",custo:true,ativo:true,linhas:[{funcao:S.funcoes[0],nivel:S.niveis[0],vh:null}]}; S.colab.push(c); save(); renderColab(); if(SB){(async()=>{await pushColab(c);await pushLinha(c,c.linhas[0]);})();} openColab(S.colab.length-1); }
+let colabVerInativos=false;
+function setColabAtivo(ci,v){ const c=S.colab[ci]; c.ativo=v; save(); renderColab(); render(); pushColab(c); }
+function toggleVerInativos(v){ colabVerInativos=v; renderColab(); }
 function openColab(ci){ CIDX=ci; cModalRender(ci); document.getElementById('modalC').classList.add('show'); }
 function closeColab(){ document.getElementById('modalC').classList.remove('show'); CIDX=-1; }
 function cModalRender(ci){
@@ -1388,7 +1396,7 @@ function cModalRender(ci){
   document.getElementById('c-body').innerHTML=`
     <div class="frow">
       <div class="fg" style="grid-column:span 2"><label class="fl">Nome</label><input class="fi" value="${c.nome||''}" onchange="setColabNome(${ci},this.value)"></div>
-      <div class="fg"><label class="fl">Custo</label><label style="font-size:13px;color:var(--tx2);display:flex;align-items:center;gap:6px;height:38px"><input type="checkbox" ${c.custo?'checked':''} onchange="toggleCusto(${ci},this.checked)"> gera custo</label></div>
+      <div class="fg"><label class="fl">Status</label><div style="display:flex;flex-direction:column;gap:4px;padding-top:4px"><label style="font-size:13px;color:var(--tx2);display:flex;align-items:center;gap:6px"><input type="checkbox" ${c.custo?'checked':''} onchange="toggleCusto(${ci},this.checked)"> gera custo</label><label style="font-size:13px;color:var(--tx2);display:flex;align-items:center;gap:6px"><input type="checkbox" ${c.ativo!==false?'checked':''} onchange="setColabAtivo(${ci},this.checked)"> ativo</label></div></div>
     </div>
     <div class="frow">
       <div class="fg" style="grid-column:span 2"><label class="fl">E-mail (login / acesso ao app)</label><input class="fi" type="email" value="${c.email||''}" placeholder="✉ e-mail do colaborador" onchange="setColabEmail(${ci},this.value)"></div>
