@@ -891,26 +891,27 @@ function horasMes(){ const h=window._EMPRESA&&window._EMPRESA.horas_mes; return 
 function linhaVh(li){ if(!li) return 0; return li.base==='mes' ? ((li.vh||0)/horasMes()) : (li.vh||0); }
 function taskVh(t){const c=colab(t.exec);if(!c||!c.custo||!c.linhas.length)return 0;const li=c.linhas[t.execLinha||0];return linhaVh(li);}
 function grpTasks(gid){return P().tarefas.filter(t=>t.grupo===gid);}
+/* média de progresso das subtarefas (nível 2) logo abaixo de uma tarefa (nível 1) */
+function _kidsAvg(tasks,ti){ let s=0,n=0; for(let k=ti+1;k<tasks.length;k++){ if(tasks[k].nivel===1)break; s+=(tasks[k].prog||0); n++; } return n?Math.round(s/n):null; }
 
 function render(){
   const board=document.getElementById('board');
-  let TH=0,TC=0,TT=0;
+  let TH=0,TC=0,TT=0,G1=[];
   board.innerHTML=P().grupos.map((gr,gi)=>{
     const tasks=grpTasks(gr.id);
-    let H=0,HP=0,C=0,c1=0,c2=0;
+    let H=0,HP=0,C=0,c1=0,c2=0,g1prog=[];
     const rows=tasks.map((t,ti)=>{
       let wbs;
       if(t.nivel===2){c2++;wbs=`${gi+1}.${c1}.${c2}`;}else{c1++;c2=0;wbs=`${gi+1}.${c1}`;}
       if(t.header){
-        // rollup dos filhos (subtarefas seguintes até a próxima tarefa nível 1)
-        let rh=0,rc=0;
-        for(let k=ti+1;k<tasks.length;k++){ if(tasks[k].nivel===1)break; const vk=taskVh(tasks[k]); rh+=tasks[k].tempo*tasks[k].qtd; rc+=tasks[k].tempo*tasks[k].qtd*vk; }
-        // rollup e so para exibir no pai; nao soma ao total (os filhos ja somam)
+        const rp=_kidsAvg(tasks,ti)||0; // progresso = média das subtarefas
+        g1prog.push(rp);
         return `<div class="trow header-row">
           <span class="twbs">${wbs}</span>
-          <span class="tname"><span class="tnm" style="font-weight:600">▾ ${t.nome}</span><span class="tvr">tarefa · agrupa subtarefas</span></span>
-          <span class="tcell" style="grid-column:span 6;color:var(--tx3);font-size:11px;padding:0 6px">— agrupa subtarefas · ${rh.toFixed(1)}h —</span>
-          <span class="tcost ${(custoOn()?rc:rh)>0?'':'z'}">${custoOn()?fmtC(rc):fmtH(rh)}</span>
+          <span class="tname"><span class="tnm" style="font-weight:600">▾ ${t.nome}</span><span class="tvr">tarefa · consolida subtarefas</span></span>
+          <span class="tcell" style="grid-column:span 5;color:var(--tx3);font-size:11px;padding:0 6px">— média das subtarefas —</span>
+          <div class="progc"><div class="mbar"><div class="mfill" style="width:${rp}%;background:${corProg(rp)}"></div></div><span style="font-size:11px;color:var(--tx2)" title="média das subtarefas">${rp}%</span></div>
+          <span class="tcost z">—</span>
           <span class="tacts">
             <button class="ib" onclick="addSubUnder('${t.id}')" title="adicionar subtarefa aqui">+sub</button>
             <button class="ib" onclick="openEdit('${t.id}')" title="editar (nome, status, datas)">✎</button>
@@ -923,6 +924,11 @@ function render(){
       const isSub=t.nivel===2;
       const c=colab(t.exec);const vh=taskVh(t);const h=isSub?0:t.tempo*t.qtd;const cost=h*vh;
       if(!isSub){H+=h;HP+=(t.tempoPrev||0)*t.qtd;C+=cost;}
+      const ka = !isSub ? _kidsAvg(tasks,ti) : null; // se a tarefa tem subtarefas, % = média delas
+      if(!isSub) g1prog.push(ka!=null?ka:(t.prog||0));
+      const progCell = (ka!=null)
+        ? `<div class="progc"><div class="mbar"><div class="mfill" style="width:${ka}%;background:${corProg(ka)}"></div></div><span style="font-size:11px;color:var(--tx2)" title="média das subtarefas">${ka}%</span></div>`
+        : `<div class="progc"><div class="mbar"><div class="mfill" style="width:${t.prog||0}%;background:${corProg(t.prog||0)}"></div></div><input class="cell-in cell-num" type="number" min="0" max="100" step="5" value="${t.prog||0}" onchange="setProg('${t.id}',this.value)"></div>`;
       const linhaOpts=c&&c.custo?c.linhas.map((li,k)=>`<option value="${k}" ${k===(t.execLinha||0)?'selected':''}>${li.funcao} · ${li.nivel}</option>`).join(''):'<option>—</option>';
       const execOpts='<option value="">—</option>'+S.colab.map(cc=>`<option value="${cc.id}" ${cc.id===t.exec?'selected':''}>${cc.nome}</option>`).join('');
       const un=taskUn(t);
@@ -947,7 +953,7 @@ function render(){
         <div class="tdcell">${dts}</div>
         <span class="prevc">${isSub?'<span style="color:var(--tx3)">—</span>':(t.tempoPrev||0).toFixed(2)+'h 🔒'}</span>
         <div class="atualc">${isSub?'<span style="color:var(--tx3);font-size:11px">sem tempo</span>':`${devb}<input class="cell-in cell-num ${dev!==0?'tempo-ed':''}" type="number" step="0.05" value="${t.tempo}" onchange="setTempo('${t.id}',this.value)">`}</div>
-        <div class="progc"><div class="mbar"><div class="mfill" style="width:${t.prog||0}%;background:${corProg(t.prog||0)}"></div></div><input class="cell-in cell-num" type="number" min="0" max="100" step="5" value="${t.prog||0}" onchange="setProg('${t.id}',this.value)"></div>
+        ${progCell}
         <span class="tcost ${(custoOn()?cost:h)>0?'':'z'}">${custoOn()?fmtC(cost):fmtH(h)}</span>
         <span class="tacts">
           ${subBtn}
@@ -962,7 +968,8 @@ function render(){
     }).join('');
     TH+=H;TC+=C;TT+=tasks.length;
     const work=tasks.filter(t=>!t.header);
-    const gpAvg=work.length?Math.round(work.reduce((s,t)=>s+(t.prog||0),0)/work.length):0;
+    const gpAvg=g1prog.length?Math.round(g1prog.reduce((s,p)=>s+p,0)/g1prog.length):0; // média das TAREFAS (cada pai já consolida suas subtarefas)
+    G1.push(...g1prog);
     const _mn=a=>a.filter(Boolean).sort()[0]||''; const _mx=a=>a.filter(Boolean).sort().slice(-1)[0]||'';
     const gIni=_mn(work.map(x=>x.ini)),gFim=_mx(work.map(x=>x.fim)),gIniR=_mn(work.map(x=>x.iniReal)),gFimR=_mx(work.map(x=>x.fimReal));
     const _fd=s=>s?s.slice(8,10)+'/'+s.slice(5,7):'—';
@@ -987,8 +994,7 @@ function render(){
       </div>
     </div>`;
   }).join('');
-  const _work=P().tarefas.filter(t=>!t.header);
-  const _prog=_work.length?Math.round(_work.reduce((a,t)=>a+(t.prog||0),0)/_work.length):0;
+  const _prog=G1.length?Math.round(G1.reduce((a,p)=>a+p,0)/G1.length):0; // executado geral = média das tarefas (subtarefas já consolidadas no pai)
   document.getElementById('s-prog').textContent=_prog+'%';
   document.getElementById('s-h').textContent=fmtH(TH);
   document.getElementById('s-c').textContent=fmtC(TC);
