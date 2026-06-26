@@ -15,7 +15,7 @@
   --bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);
   --tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--pri:#533ab7;--pri-bg:#eeedfe;
   --blue:#185fa5;--green:#3b6d11;--amber:#ba7517;--red:#a32d2d;--teal:#0f6e56;
-  --cols:36px minmax(150px,1fr) 112px 124px 184px 74px 96px 96px 70px 118px;
+  --cols:36px minmax(150px,1fr) 112px 124px 252px 74px 96px 96px 70px 118px;
 }
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
 body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45;padding:18px}
@@ -133,7 +133,8 @@ h1{font-size:20px;font-weight:600}
 .subtot .l{padding:0 6px;color:var(--tx3);grid-column:2/8}
 .subtot .h{padding:0 6px;text-align:right;color:var(--blue);grid-column:8/9}
 .subtot .c{padding:0 6px;text-align:right;color:var(--blue);grid-column:9/10}
-.addr{padding:7px 0 7px 28px;font-size:12px;color:var(--pri);cursor:pointer}
+.addr-line{padding:7px 0 7px 28px}
+.addr{display:inline-block;font-size:12px;cursor:pointer;padding:2px 2px}
 .addr:hover{text-decoration:underline}
 .addg{margin-top:12px}
 
@@ -989,8 +990,8 @@ function render(){
       <div style="${gr.open?'':'display:none'}">
         ${rows||'<div class="empty">Nenhuma tarefa nesta atividade.</div>'}
         ${tasks.length?`<div class="subtot"><span class="l">Subtotal</span><span class="h">${fmtH(H)}</span><span class="c">${custoOn()?fmtC(C):''}</span></div>`:''}
-        <div class="addr" onclick="openAdd('${gr.id}')">+ adicionar tarefa${catNome(gr.cat)?` (${catNome(gr.cat)})`:''}</div>
-        <div class="addr" onclick="addHeader('${gr.id}')" style="color:var(--tx2)">+ adicionar tarefa agrupadora (junta subtarefas, sem serviço)</div>
+        <div class="addr-line"><span class="addr" style="color:var(--pri)" onclick="openAdd('${gr.id}')">+ adicionar tarefa${catNome(gr.cat)?` (${catNome(gr.cat)})`:''}</span></div>
+        <div class="addr-line"><span class="addr" style="color:var(--tx2)" onclick="addHeader('${gr.id}')">+ adicionar tarefa agrupadora (junta subtarefas, sem serviço)</span></div>
       </div>
     </div>`;
   }).join('');
