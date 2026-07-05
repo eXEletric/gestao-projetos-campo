@@ -48,6 +48,9 @@ create table if not exists public.cartao_config (
 
 -- Idempotente: garante a coluna 'tema' se a tabela já existia sem ela
 alter table public.cartao_etiquetas add column if not exists tema text default 'outros';
+-- Melhorias 05/07: classificação da etiqueta + nota na regra
+alter table public.cartao_etiquetas add column if not exists requisito text;   -- 'obrigatoria' | 'opcional' | null
+alter table public.cartao_regras   add column if not exists observacao text;
 
 -- ============================================================
 -- RLS — público lê (link de consulta / técnico); só adm/fundador edita.

@@ -43,6 +43,12 @@ button{font-family:inherit;font-size:14px;cursor:pointer}
 .pill.campo{background:var(--ok-bg);color:var(--ok)}
 .pill.adm{background:var(--warn-bg);color:var(--warn)}
 .pill.info{background:var(--info-bg);color:var(--info)}
+.pill.obrig{background:var(--err-bg);color:var(--err)}
+.pill.opc{background:var(--surf2);color:var(--tx2);border:0.5px solid var(--line)}
+.icongrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(42px,1fr));gap:6px;max-height:156px;overflow:auto;border:1px solid var(--line2);border-radius:var(--r);padding:8px;background:var(--surf2)}
+.iconopt{display:flex;align-items:center;justify-content:center;height:38px;border:1px solid transparent;border-radius:6px;background:var(--surf);cursor:pointer;font-size:19px;color:var(--tx2)}
+.iconopt:hover{background:var(--pri-bg)}
+.iconopt.sel{border-color:var(--pri);background:var(--pri-bg);color:var(--pri)}
 /* header do manual */
 .mhead{display:flex;align-items:center;gap:13px;background:var(--surf);border:1px solid var(--line);border-radius:var(--r2);padding:16px 18px;margin:16px 0}
 .mhead .ic{width:44px;height:44px;border-radius:10px;background:var(--info-bg);color:var(--info);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
@@ -185,9 +191,11 @@ textarea.fi{min-height:58px;resize:vertical}
 <div class="modal" id="modalEtiq"><div class="mbox">
   <div class="mh"><b id="me-titulo">Nova etiqueta</b><button class="mx" onclick="closeEtiq()">&times;</button></div>
   <div class="mb">
-    <div class="g2">
-      <div><label class="fl">Nome da etiqueta</label><input class="fi" id="me-nome" placeholder="Ex.: Combustível"></div>
-      <div><label class="fl">Ícone (Tabler)</label><input class="fi" id="me-icone" placeholder="ti-tag"></div>
+    <div><label class="fl">Nome da etiqueta</label><input class="fi" id="me-nome" placeholder="Ex.: Combustível"></div>
+    <div>
+      <label class="fl">Ícone — clique para escolher <span id="me-icone-atual" style="color:var(--tx3);font-weight:400"></span></label>
+      <input class="fi" id="me-icone-busca" placeholder="filtrar ícones… (ex.: carro, comida, casa, ferramenta)" oninput="filtrarIcones(this.value)" style="margin-bottom:8px">
+      <div class="icongrid" id="me-icone-grid"></div>
     </div>
     <div class="g2">
       <div><label class="fl">Tema</label>
@@ -202,6 +210,12 @@ textarea.fi{min-height:58px;resize:vertical}
           <button type="button" data-v="adm" onclick="setPerm('adm')"><i class="ti ti-user-check"></i> ADM</button>
         </div></div>
     </div>
+    <div><label class="fl">Classificação</label>
+      <div class="seg sm" id="me-req">
+        <button type="button" data-v="" class="on" onclick="setReq('')">— nenhuma</button>
+        <button type="button" data-v="obrigatoria" onclick="setReq('obrigatoria')">Obrigatória</button>
+        <button type="button" data-v="opcional" onclick="setReq('opcional')">Opcional</button>
+      </div></div>
     <div><label class="fl">Descrição</label><textarea class="fi" id="me-desc" placeholder="O que entra nesta etiqueta"></textarea></div>
     <div><label class="fl">Exemplos</label><input class="fi" id="me-ex" placeholder="Ex.: gasolina, etanol, diesel"></div>
     <div class="g2">
@@ -219,6 +233,7 @@ textarea.fi{min-height:58px;resize:vertical}
     <div class="g2">
       <div style="grid-column:1/-1"><label class="fl">Texto da regra</label><input class="fi" id="mr-texto" placeholder="Ex.: Sempre anexe a nota / cupom fiscal."></div>
     </div>
+    <div><label class="fl">Observação / nota (opcional)</label><textarea class="fi" id="mr-obs" placeholder="Detalhe, exceção ou nota da regra"></textarea></div>
     <div><label class="fl">Ícone (Tabler)</label><input class="fi" id="mr-icone" placeholder="ti-point"></div>
   </div>
   <div class="mf"><button class="btn" onclick="closeRegra()">Cancelar</button><button class="btn p" onclick="saveRegra()"><i class="ti ti-check"></i> Salvar</button></div>
@@ -316,7 +331,7 @@ function renderConsulta(){
   const av=document.getElementById('cfg-aviso'); if(cfg.observacao){ document.getElementById('cfg-aviso-tx').textContent=cfg.observacao; av.style.display='flex'; } else av.style.display='none';
   // regras
   const rb=document.getElementById('regras-box'), rl=document.getElementById('regras-list');
-  if(DATA.regras.length){ rb.style.display='block'; rl.innerHTML=DATA.regras.map(r=>'<div class="ri"><i class="ti '+esc(r.icone||'ti-point')+'"></i> '+esc(r.texto)+'</div>').join(''); }
+  if(DATA.regras.length){ rb.style.display='block'; rl.innerHTML=DATA.regras.map(r=>'<div class="ri"><i class="ti '+esc(r.icone||'ti-point')+'"></i> <span>'+esc(r.texto)+(r.observacao?'<span style="display:block;font-size:12px;color:var(--tx3);margin-top:2px">'+esc(r.observacao)+'</span>':'')+'</span></div>').join(''); }
   else rb.style.display='none';
   // chips
   renderChips();
@@ -335,11 +350,12 @@ function setTema(t){ temaAtivo=t; renderChips(); aplicarFiltro(); }
 function cardHTML(c){
   const perm=c.permissao==='adm'?'<span class="pill adm"><i class="ti ti-user-check"></i>ADM</span>':'<span class="pill campo"><i class="ti ti-user"></i>Campo</span>';
   const nova=c.destaque?'<span class="pill info">nova</span>':'';
+  const req=c.requisito==='obrigatoria'?'<span class="pill obrig">Obrigatória</span>':(c.requisito==='opcional'?'<span class="pill opc">Opcional</span>':'');
   const app=c.grafia_app?'<p class="app">no app aparece como "'+esc(c.grafia_app)+'"</p>':'';
   const ex=c.exemplos?'<p class="ex"><b>Ex.:</b> '+esc(c.exemplos)+'</p>':'';
   const key=(c.nome+' '+(c.exemplos||'')+' '+(c.grafia_app||'')).toLowerCase();
   return '<div class="card" data-k="'+esc(key)+'" data-t="'+esc(c.tema||'outros')+'">'
-    +'<div class="ch"><i class="ti '+esc(c.icone||'ti-tag')+'"></i><span class="nm">'+esc(c.nome)+nova+'</span>'+perm+'</div>'
+    +'<div class="ch"><i class="ti '+esc(c.icone||'ti-tag')+'"></i><span class="nm">'+esc(c.nome)+nova+req+'</span>'+perm+'</div>'
     +'<p class="d">'+esc(c.descricao||'')+'</p>'+ex+app+'</div>';
 }
 function aplicarFiltro(){
@@ -378,6 +394,30 @@ function renderAdmin(){
       +'<button class="iconbtn del" onclick="delRegra('+i+')"><i class="ti ti-trash"></i></button></div>').join('')||'<p class="vazio">Sem regras ainda.</p>';
 }
 
+/* ===== seletor de ícones ===== */
+const ICONS=[
+ {i:'ti-tag',k:'etiqueta geral'},{i:'ti-credit-card',k:'cartao credito pagamento'},{i:'ti-cash',k:'dinheiro caixa'},{i:'ti-wallet',k:'carteira dinheiro'},{i:'ti-receipt',k:'nota cupom recibo fiscal'},{i:'ti-file-invoice',k:'nota fiscal fatura'},
+ {i:'ti-shopping-cart',k:'mercado compras carrinho'},{i:'ti-shopping-bag',k:'compras sacola'},{i:'ti-building-store',k:'loja mercado comercio'},
+ {i:'ti-tools-kitchen-2',k:'comida refeicao almoco janta restaurante garfo'},{i:'ti-coffee',k:'cafe da manha bebida'},{i:'ti-cup',k:'copo bebida cafe'},{i:'ti-glass-full',k:'copo bebida'},{i:'ti-bottle',k:'garrafa bebida'},{i:'ti-droplet',k:'agua gota hidratacao'},{i:'ti-cookie',k:'lanche biscoito salgado'},{i:'ti-pizza',k:'comida pizza lanche'},{i:'ti-meat',k:'carne comida'},
+ {i:'ti-bed',k:'hotel alojamento dormir hospedagem cama'},{i:'ti-home',k:'casa alojamento'},{i:'ti-building',k:'predio empresa'},{i:'ti-building-warehouse',k:'obra galpao deposito'},{i:'ti-wash',k:'lavanderia lavar roupa'},
+ {i:'ti-gas-station',k:'combustivel gasolina posto abastecer'},{i:'ti-car',k:'carro veiculo transporte'},{i:'ti-truck',k:'caminhao frete carga transporte'},{i:'ti-bus',k:'onibus transporte passagem'},{i:'ti-plane',k:'aviao viagem passagem'},{i:'ti-ticket',k:'passagem ingresso bilhete'},{i:'ti-parking',k:'estacionamento pedagio vaga'},{i:'ti-road',k:'estrada rodovia pedagio'},{i:'ti-package',k:'frete pacote encomenda envio'},{i:'ti-map-pin',k:'local mapa endereco'},
+ {i:'ti-tools',k:'ferramenta maquina locacao obra'},{i:'ti-hammer',k:'martelo ferramenta obra'},{i:'ti-forklift',k:'empilhadeira maquina obra'},{i:'ti-bolt',k:'eletrico raio energia material'},{i:'ti-plug',k:'tomada eletrico plug'},{i:'ti-battery',k:'bateria energia'},{i:'ti-shirt',k:'uniforme roupa epi camisa'},{i:'ti-first-aid-kit',k:'epi seguranca saude kit'},{i:'ti-shield',k:'seguranca protecao epi'},
+ {i:'ti-device-laptop',k:'informatica notebook computador'},{i:'ti-device-mobile',k:'celular telefone app aplicativo'},{i:'ti-headphones',k:'fone de ouvido audio'},{i:'ti-mouse',k:'mouse informatica'},{i:'ti-wifi',k:'internet wifi comunicacao'},{i:'ti-phone',k:'telefone ligacao recarga'},
+ {i:'ti-speakerphone',k:'marketing publicidade divulgacao anuncio'},{i:'ti-ad',k:'anuncio publicidade marketing'},{i:'ti-briefcase',k:'servico trabalho maleta terceiro'},{i:'ti-user-cog',k:'servico mao de obra terceiro'},{i:'ti-book',k:'livro documento manual'},{i:'ti-clipboard',k:'prancheta lista documento'},{i:'ti-calendar',k:'calendario data'},
+];
+let _iconSel='ti-tag';
+function pickIcon(name){ _iconSel=name; const at=document.getElementById('me-icone-atual'); if(at) at.innerHTML='— <i class="ti '+name+'"></i> '+name; document.querySelectorAll('#me-icone-grid .iconopt').forEach(b=>b.classList.toggle('sel',b.dataset.i===_iconSel)); }
+function renderIconGrid(filter){
+  const g=document.getElementById('me-icone-grid'); if(!g)return;
+  const f=(filter||'').toLowerCase().trim();
+  let list=ICONS.filter(o=>!f||(o.i+' '+o.k).toLowerCase().includes(f));
+  if(_iconSel && !list.some(o=>o.i===_iconSel)) list=[{i:_iconSel,k:''}].concat(list);
+  g.innerHTML=list.map(o=>'<button type="button" class="iconopt'+(o.i===_iconSel?' sel':'')+'" data-i="'+o.i+'" title="'+o.i+'" onclick="pickIcon(\''+o.i+'\')"><i class="ti '+o.i+'"></i></button>').join('')||'<span style="font-size:12px;color:var(--tx3);grid-column:1/-1;padding:6px">nenhum ícone encontrado</span>';
+}
+function filtrarIcones(v){ renderIconGrid(v); }
+let _reqSel='';
+function setReq(v){ _reqSel=v; document.querySelectorAll('#me-req button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); }
+
 /* ===== CRUD etiqueta ===== */
 let _editEtiqIdx=-1,_permSel='campo';
 function setPerm(v){ _permSel=v; document.querySelectorAll('#me-perm button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); }
@@ -386,9 +426,10 @@ function editEtiq(i){
   _editEtiqIdx=i; const c=i>=0?DATA.etiq[i]:{};
   document.getElementById('me-titulo').textContent=i>=0?'Editar etiqueta':'Nova etiqueta';
   document.getElementById('me-nome').value=c.nome||'';
-  document.getElementById('me-icone').value=c.icone||'ti-tag';
+  document.getElementById('me-icone-busca').value=''; pickIcon(c.icone||'ti-tag'); renderIconGrid('');
   document.getElementById('me-tema').value=c.tema||'outros';
   setPerm(c.permissao||'campo');
+  setReq(c.requisito||'');
   document.getElementById('me-desc').value=c.descricao||'';
   document.getElementById('me-ex').value=c.exemplos||'';
   document.getElementById('me-app').value=c.grafia_app||'';
@@ -403,9 +444,10 @@ async function saveEtiq(){
   const base=isNew?{id:uid(),ordem:DATA.etiq.length}:DATA.etiq[_editEtiqIdx];
   const row={
     id:base.id, empresa_id:EMP, nome,
-    icone:document.getElementById('me-icone').value.trim()||'ti-tag',
+    icone:_iconSel||'ti-tag',
     tema:document.getElementById('me-tema').value,
     permissao:_permSel,
+    requisito:_reqSel||null,
     descricao:document.getElementById('me-desc').value.trim()||null,
     exemplos:document.getElementById('me-ex').value.trim()||null,
     grafia_app:document.getElementById('me-app').value.trim()||null,
@@ -439,12 +481,13 @@ let _editRegraIdx=-1;
 function editRegra(i){ if(!guardAdmin())return; _editRegraIdx=i; const r=i>=0?DATA.regras[i]:{};
   document.getElementById('mr-titulo').textContent=i>=0?'Editar regra':'Nova regra';
   document.getElementById('mr-texto').value=r.texto||''; document.getElementById('mr-icone').value=r.icone||'ti-point';
+  document.getElementById('mr-obs').value=r.observacao||'';
   document.getElementById('modalRegra').classList.add('show'); }
 function closeRegra(){ document.getElementById('modalRegra').classList.remove('show'); }
 async function saveRegra(){
   const texto=document.getElementById('mr-texto').value.trim(); if(!texto){ alert('Escreva a regra.'); return; }
   const isNew=_editRegraIdx<0; const base=isNew?{id:uid(),ordem:DATA.regras.length}:DATA.regras[_editRegraIdx];
-  const row={id:base.id,empresa_id:EMP,texto,icone:document.getElementById('mr-icone').value.trim()||'ti-point',ordem:base.ordem!=null?base.ordem:DATA.regras.length};
+  const row={id:base.id,empresa_id:EMP,texto,observacao:document.getElementById('mr-obs').value.trim()||null,icone:document.getElementById('mr-icone').value.trim()||'ti-point',ordem:base.ordem!=null?base.ordem:DATA.regras.length};
   const r=await SB.from('cartao_regras').upsert(row); if(r.error){ return erroNuvem('saveRegra',r.error); }
   if(isNew) DATA.regras.push(row); else DATA.regras[_editRegraIdx]=Object.assign(base,row);
   closeRegra(); renderAdmin(); cloud('salvo ✓','ok');
