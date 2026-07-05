@@ -227,7 +227,11 @@ textarea.fi{min-height:58px;resize:vertical}
       </div>
     </div>
     <div><label class="fl">Quais grupos podem usar <span style="color:var(--tx3);font-weight:400">(nenhum = todos)</span></label>
-      <div id="me-grupos" class="chipsel"></div>
+      <div><button type="button" class="iconbox" id="me-grupos-box" onclick="toggleGruposPanel()" style="width:100%"><i class="ti ti-users"></i><span id="me-grupos-resumo" style="flex:1;text-align:left;color:var(--tx)">Todos podem usar</span><i class="ti ti-chevron-down" style="font-size:14px;color:var(--tx3)"></i></button></div>
+      <div id="me-grupos-panel" style="display:none;margin-top:8px">
+        <input class="fi" id="me-grupos-busca" placeholder="filtrar grupos…" oninput="filtrarGrupos(this.value)" style="margin-bottom:8px">
+        <div id="me-grupos" class="chipsel" style="max-height:180px;overflow:auto"></div>
+      </div>
       <span class="hint" id="me-grupo-hint">Todos veem a etiqueta; quem não é dos grupos marcados a vê como "restrito".</span>
     </div>
     <div><label class="fl">Descrição</label><textarea class="fi" id="me-desc" placeholder="O que entra nesta etiqueta"></textarea></div>
@@ -398,8 +402,8 @@ function acessoDe(c){ const a=c.grupos_acesso; return Array.isArray(a)?a:[]; }  
 function grupoNomes(ids){ return (ids||[]).map(grupoNome).filter(Boolean); }
 function renderVerComo(){
   const el=document.getElementById('chips');
-  if(!CAP.grupos || !CAP.et_grupos_acesso || !DATA.grupos.length){ el.style.display='none'; el.innerHTML=''; return; }
-  let h='<span style="align-self:center;font-size:12px;color:var(--tx3);margin-right:2px">Ver como:</span>'
+  if(!ADMIN || !CAP.grupos || !CAP.et_grupos_acesso || !DATA.grupos.length){ el.style.display='none'; el.innerHTML=''; return; }
+  let h='<span style="align-self:center;font-size:12px;color:var(--tx3);margin-right:2px"><i class="ti ti-eye" style="font-size:14px;vertical-align:-2px"></i> Pré-visualizar acesso por grupo:</span>'
     +'<button class="chip'+(verComo==='todas'?' on':'')+'" onclick="setVerComo(\'todas\')">Todos</button>';
   DATA.grupos.forEach(g=>{ h+='<button class="chip'+(verComo===g.id?' on':'')+'" onclick="setVerComo(\''+g.id+'\')">'+esc(g.nome)+'</button>'; });
   el.innerHTML=h; el.style.display='flex';
@@ -529,22 +533,31 @@ function filtrarIcones(pre,v){ renderIconGrid(pre,v); }
 
 /* ===== CRUD etiqueta ===== */
 let _editEtiqIdx=-1;
-function renderGrupoChips(selArr){
-  _grupoAcesso=Array.isArray(selArr)?selArr.slice():[];
-  const box=document.getElementById('me-grupos'), hint=document.getElementById('me-grupo-hint'); if(!box)return;
-  if(!CAP.grupos||!CAP.et_grupos_acesso){ box.innerHTML='<span style="font-size:12.5px;color:var(--warn);background:var(--warn-bg);padding:6px 10px;border-radius:6px;display:inline-block">⚠️ Recurso ainda não ativado no banco — rode o comando indicado no aviso do topo do painel e recarregue (F5) para poder marcar os grupos.</span>'; if(hint)hint.textContent=''; return; }
-  if(!DATA.grupos.length){ box.innerHTML='<span class="hint">Cadastre grupos na aba "Grupos" primeiro.</span>'; if(hint)hint.textContent='Sem grupos = todos podem usar.'; return; }
-  if(hint)hint.textContent='Todos veem a etiqueta; quem não é dos grupos marcados a vê como "restrito".';
-  box.innerHTML=DATA.grupos.map(g=>{ const on=_grupoAcesso.includes(g.id); return '<button type="button" class="gchip'+(on?' on':'')+'" data-g="'+g.id+'" onclick="toggleGrupoChip(\''+g.id+'\')">'+(on?'<i class="ti ti-check"></i>':'')+esc(g.nome)+'</button>'; }).join('');
+function gruposResumo(){ if(!_grupoAcesso.length) return 'Todos podem usar'; const nomes=grupoNomes(_grupoAcesso); if(nomes.length<=2) return nomes.join(', '); return nomes.slice(0,2).join(', ')+' +'+(nomes.length-2); }
+function aplicarGruposBox(){
+  const box=document.getElementById('me-grupos-box'), resumo=document.getElementById('me-grupos-resumo'), hint=document.getElementById('me-grupo-hint');
+  if(!CAP.grupos||!CAP.et_grupos_acesso){ box.disabled=true; box.style.opacity='.6'; resumo.innerHTML='<span style="color:var(--warn)">Ative: rode 1 comando (aviso no topo) + F5</span>'; if(hint)hint.textContent=''; return; }
+  box.disabled=false; box.style.opacity='1';
+  if(!DATA.grupos.length){ resumo.textContent='Cadastre grupos na aba "Grupos"'; if(hint)hint.textContent='Sem grupos = todos podem usar.'; return; }
+  resumo.textContent=gruposResumo(); if(hint)hint.textContent='Marque quem pode usar. Todos veem a etiqueta; os não marcados a veem como "restrito".';
 }
-function toggleGrupoChip(id){ const i=_grupoAcesso.indexOf(id); if(i<0)_grupoAcesso.push(id); else _grupoAcesso.splice(i,1); renderGrupoChips(_grupoAcesso); }
+function toggleGruposPanel(){ if(!CAP.grupos||!CAP.et_grupos_acesso||!DATA.grupos.length) return; const p=document.getElementById('me-grupos-panel'); const open=p.style.display!=='none'; p.style.display=open?'none':'block'; if(!open){ const b=document.getElementById('me-grupos-busca'); b.value=''; renderGrupoChips(_grupoAcesso,''); b.focus(); } }
+function renderGrupoChips(selArr,filter){
+  if(Array.isArray(selArr)) _grupoAcesso=selArr.slice();
+  const box=document.getElementById('me-grupos'); if(!box)return;
+  const f=(filter||'').toLowerCase().trim();
+  const list=DATA.grupos.filter(g=>!f||(g.nome||'').toLowerCase().includes(f));
+  box.innerHTML=list.map(g=>{ const on=_grupoAcesso.includes(g.id); return '<button type="button" class="gchip'+(on?' on':'')+'" onclick="toggleGrupoChip(\''+g.id+'\')">'+(on?'<i class="ti ti-check"></i>':'')+esc(g.nome)+'</button>'; }).join('')||'<span class="hint">nenhum grupo encontrado</span>';
+}
+function filtrarGrupos(v){ renderGrupoChips(_grupoAcesso,v); }
+function toggleGrupoChip(id){ const i=_grupoAcesso.indexOf(id); if(i<0)_grupoAcesso.push(id); else _grupoAcesso.splice(i,1); const bq=document.getElementById('me-grupos-busca'); renderGrupoChips(_grupoAcesso, bq?bq.value:''); const r=document.getElementById('me-grupos-resumo'); if(r) r.textContent=gruposResumo(); }
 function editEtiq(i){
   if(!guardAdmin())return;
   _editEtiqIdx=i; const c=i>=0?DATA.etiq[i]:{};
   document.getElementById('me-titulo').textContent=i>=0?'Editar etiqueta':'Nova etiqueta';
   document.getElementById('me-nome').value=c.nome||'';
   document.getElementById('me-icone-panel').style.display='none'; pickIcon('me',c.icone||'ti-tag');
-  renderGrupoChips(acessoDe(c));
+  _grupoAcesso=acessoDe(c).slice(); document.getElementById('me-grupos-panel').style.display='none'; aplicarGruposBox();
   document.getElementById('me-desc').value=c.descricao||'';
   document.getElementById('me-ex').value=c.exemplos||'';
   document.getElementById('me-app').value=c.grafia_app||'';
