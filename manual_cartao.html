@@ -57,6 +57,21 @@ button{font-family:inherit;font-size:14px;cursor:pointer}
 .chipsel{display:flex;flex-wrap:wrap;gap:7px}
 .gchip{border:1px solid var(--line2);background:var(--surf);color:var(--tx2);padding:6px 12px;border-radius:20px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
 .gchip.on{background:var(--pri-bg);color:var(--pri);border-color:var(--pri);font-weight:500}
+/* ===== Componente-padrão eX: chave manual (liga/desliga) + sinaleira LED ===== */
+#me-grupos{display:block;max-height:200px;overflow:auto}
+#me-grupos .grow{display:flex;align-items:center;gap:11px;padding:9px 2px;border-bottom:0.5px solid var(--line)}
+#me-grupos .grow:last-child{border-bottom:none}
+#me-grupos .grow .gnm{flex:1;font-size:14px}
+.ex-led{width:15px;height:15px;border-radius:50%;flex-shrink:0;transition:.16s;background:radial-gradient(circle at 35% 30%,#ffffff,#eef1ef 72%);box-shadow:inset 0 1px 1px rgba(0,0,0,.12),0 1px 0 rgba(255,255,255,.6);border:1.5px solid #d9dcd9}
+.ex-led.on{background:radial-gradient(circle at 35% 30%,#c4ffdd,#22d27f 52%,#08a457);box-shadow:inset 0 1px 2px rgba(255,255,255,.6),0 0 8px rgba(34,210,127,.85),0 0 2px rgba(34,210,127,.95);border-color:#08a457}
+.ex-switch{position:relative;width:50px;height:25px;border-radius:13px;cursor:pointer;flex-shrink:0;background:linear-gradient(#bbbeb7,#9a9d95);box-shadow:inset 0 2px 4px rgba(0,0,0,.38),inset 0 -1px 1px rgba(255,255,255,.35);transition:.16s;font:800 8px ui-monospace,monospace;letter-spacing:.3px}
+.ex-switch.on{background:linear-gradient(#2fcf88,#0f8f5b);box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
+.ex-switch .lb{position:absolute;top:0;height:100%;display:flex;align-items:center;color:#fff}
+.ex-switch .lb.off{right:8px;color:#5a5a50}.ex-switch.on .lb.off{display:none}
+.ex-switch .lb.onx{left:8px;display:none}.ex-switch.on .lb.onx{display:flex}
+.ex-switch .kb{position:absolute;top:3px;left:3px;width:20px;height:19px;border-radius:10px;transition:.16s;background:linear-gradient(#ffffff,#d4d4cf);box-shadow:0 2px 2px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 2px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
+.ex-switch.on .kb{left:27px}
+.ex-switch .pin{width:3px;height:11px;border-radius:2px;background:linear-gradient(#9a9a92,#565650);box-shadow:0 1px 1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5)}
 .card.restrito{opacity:.5}
 .card .lock{display:none}
 .card.restrito .lock{display:inline-flex}
@@ -547,7 +562,10 @@ function renderGrupoChips(selArr,filter){
   const box=document.getElementById('me-grupos'); if(!box)return;
   const f=(filter||'').toLowerCase().trim();
   const list=DATA.grupos.filter(g=>!f||(g.nome||'').toLowerCase().includes(f));
-  box.innerHTML=list.map(g=>{ const on=_grupoAcesso.includes(g.id); return '<button type="button" class="gchip'+(on?' on':'')+'" onclick="toggleGrupoChip(\''+g.id+'\')">'+(on?'<i class="ti ti-check"></i>':'')+esc(g.nome)+'</button>'; }).join('')||'<span class="hint">nenhum grupo encontrado</span>';
+  box.innerHTML=list.map(g=>{ const on=_grupoAcesso.includes(g.id);
+    return '<div class="grow"><span class="ex-led'+(on?' on':'')+'"></span><span class="gnm">'+esc(g.nome)+'</span>'
+      +'<div class="ex-switch'+(on?' on':'')+'" onclick="toggleGrupoChip(\''+g.id+'\')"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="pin"></span></span></div></div>';
+  }).join('')||'<span class="hint" style="display:block;padding:8px 2px">nenhum grupo encontrado</span>';
 }
 function filtrarGrupos(v){ renderGrupoChips(_grupoAcesso,v); }
 function toggleGrupoChip(id){ const i=_grupoAcesso.indexOf(id); if(i<0)_grupoAcesso.push(id); else _grupoAcesso.splice(i,1); const bq=document.getElementById('me-grupos-busca'); renderGrupoChips(_grupoAcesso, bq?bq.value:''); const r=document.getElementById('me-grupos-resumo'); if(r) r.textContent=gruposResumo(); }
