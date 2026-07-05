@@ -53,6 +53,13 @@ button{font-family:inherit;font-size:14px;cursor:pointer}
 .iconbox:hover{background:var(--surf2)}
 .iconbox i:first-child{font-size:22px;color:var(--pri)}
 .pill.grp{background:var(--info-bg);color:var(--info)}
+.pill.lock{background:var(--surf2);color:var(--tx3);border:0.5px solid var(--line)}
+.chipsel{display:flex;flex-wrap:wrap;gap:7px}
+.gchip{border:1px solid var(--line2);background:var(--surf);color:var(--tx2);padding:6px 12px;border-radius:20px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.gchip.on{background:var(--pri-bg);color:var(--pri);border-color:var(--pri);font-weight:500}
+.card.restrito{opacity:.5}
+.card .lock{display:none}
+.card.restrito .lock{display:inline-flex}
 .pill.cls-obrigatorio{background:var(--err-bg);color:var(--err)}
 .pill.cls-necessario{background:var(--warn-bg);color:var(--warn)}
 .pill.cls-opcional{background:var(--surf2);color:var(--tx2);border:0.5px solid var(--line)}
@@ -219,9 +226,9 @@ textarea.fi{min-height:58px;resize:vertical}
         <div class="icongrid" id="me-icone-grid"></div>
       </div>
     </div>
-    <div><label class="fl">Grupo de usuário</label>
-      <select class="fi" id="me-grupo"></select>
-      <span class="hint" id="me-grupo-hint">Gerencie os grupos na aba "Grupos". Vazio = todos veem.</span>
+    <div><label class="fl">Quais grupos podem usar <span style="color:var(--tx3);font-weight:400">(nenhum = todos)</span></label>
+      <div id="me-grupos" class="chipsel"></div>
+      <span class="hint" id="me-grupo-hint">Todos veem a etiqueta; quem não é dos grupos marcados a vê como "restrito".</span>
     </div>
     <div><label class="fl">Descrição</label><textarea class="fi" id="me-desc" placeholder="O que entra nesta etiqueta"></textarea></div>
     <div><label class="fl">Exemplos</label><input class="fi" id="me-ex" placeholder="Ex.: gasolina, etanol, diesel"></div>
@@ -287,9 +294,10 @@ const PUBLIC_EMP=PARAMS.get('empresa')||null;   // link público pode fixar a em
 
 let _USER=null,_PERFIL=null,EMP=null,ADMIN=false,PAINEL=false;
 let DATA={etiq:[],regras:[],grupos:[],cfg:null};
-let grupoAtivo='todas';
+let verComo='todas';   // "ver como grupo X" na consulta (pré-visualização de permissão)
+let _grupoAcesso=[];   // grupos marcados no editor da etiqueta
 /* capacidades do banco (quais colunas/tabelas novas existem) — evita quebrar antes de rodar o SQL */
-let CAP={grupos:false,et_grupo_id:false,rg_class:false,rg_obs:false};
+let CAP={grupos:false,et_grupos_acesso:false,rg_class:false,rg_obs:false};
 
 /* ===== conteúdo sugerido (as 19 etiquetas + regras) ===== */
 const SEED_ETIQ=[
@@ -324,13 +332,13 @@ const SEED_REGRAS=[
 /* ===== capacidades ===== */
 async function detectCaps(){
   const p=async(t,c)=>{ try{ const r=await SB.from(t).select(c).limit(1); return !r.error; }catch(_){ return false; } };
-  const [a,b,c,d]=await Promise.all([p('cartao_grupos','id'),p('cartao_etiquetas','grupo_id'),p('cartao_regras','classificacao'),p('cartao_regras','observacao')]);
-  CAP={grupos:a,et_grupo_id:b,rg_class:c,rg_obs:d};
+  const [a,b,c,d]=await Promise.all([p('cartao_grupos','id'),p('cartao_etiquetas','grupos_acesso'),p('cartao_regras','classificacao'),p('cartao_regras','observacao')]);
+  CAP={grupos:a,et_grupos_acesso:b,rg_class:c,rg_obs:d};
 }
 function aplicarCaps(){
   const w=document.getElementById('cap-warn'); if(!w) return;
   const faltam=[];
-  if(!CAP.grupos||!CAP.et_grupo_id) faltam.push('Grupos de usuário');
+  if(!CAP.grupos||!CAP.et_grupos_acesso) faltam.push('Grupos de usuário');
   if(!CAP.rg_class) faltam.push('Classificação das regras');
   if(!CAP.rg_obs) faltam.push('Observação das regras');
   if(faltam.length){ w.style.display='block'; w.innerHTML='<b>⚠️ Recursos aguardando o SQL:</b> '+faltam.join(' · ')+'. O resto já funciona — rode o <b>SQL_manual_cartao.sql</b> no Supabase (uma vez) para liberar estes.'; }
@@ -375,9 +383,9 @@ function renderConsulta(){
   const rb=document.getElementById('regras-box'), rl=document.getElementById('regras-list');
   if(DATA.regras.length){ rb.style.display='block'; rl.innerHTML=DATA.regras.map(regraHTML).join(''); }
   else rb.style.display='none';
-  renderChips();
+  renderVerComo();
   document.getElementById('grade').innerHTML=DATA.etiq.map(cardHTML).join('');
-  aplicarFiltro();
+  aplicar();
 }
 const CLS_LBL={obrigatorio:'Obrigatório',necessario:'Necessário',opcional:'Opcional'};
 function regraHTML(r){
@@ -386,34 +394,40 @@ function regraHTML(r){
   return '<div class="ri"><i class="ti '+esc(r.icone||'ti-point')+'"></i> <span>'+cls+esc(r.texto)+obs+'</span></div>';
 }
 function grupoNome(id){ const g=DATA.grupos.find(x=>x.id===id); return g?g.nome:null; }
-function renderChips(){
-  const usados=DATA.grupos.filter(g=>DATA.etiq.some(e=>e.grupo_id===g.id));
-  let h='<button class="chip'+(grupoAtivo==='todas'?' on':'')+'" onclick="setGrupo(\'todas\')">Todas</button>';
-  usados.forEach(g=>{ h+='<button class="chip'+(grupoAtivo===g.id?' on':'')+'" onclick="setGrupo(\''+g.id+'\')">'+esc(g.nome)+'</button>'; });
-  const el=document.getElementById('chips'); el.innerHTML=h; el.style.display=usados.length?'flex':'none';
+function acessoDe(c){ const a=c.grupos_acesso; return Array.isArray(a)?a:[]; }        // grupos que podem usar; [] = todos
+function grupoNomes(ids){ return (ids||[]).map(grupoNome).filter(Boolean); }
+function renderVerComo(){
+  const el=document.getElementById('chips');
+  if(!CAP.grupos || !DATA.grupos.length){ el.style.display='none'; el.innerHTML=''; return; }
+  let h='<span style="align-self:center;font-size:12px;color:var(--tx3);margin-right:2px">Ver como:</span>'
+    +'<button class="chip'+(verComo==='todas'?' on':'')+'" onclick="setVerComo(\'todas\')">Todos</button>';
+  DATA.grupos.forEach(g=>{ h+='<button class="chip'+(verComo===g.id?' on':'')+'" onclick="setVerComo(\''+g.id+'\')">'+esc(g.nome)+'</button>'; });
+  el.innerHTML=h; el.style.display='flex';
 }
-function setGrupo(g){ grupoAtivo=g; renderChips(); aplicarFiltro(); }
+function setVerComo(g){ verComo=g; renderVerComo(); aplicar(); }
 function cardHTML(c){
-  const gn=grupoNome(c.grupo_id);
-  const grp=gn?'<span class="pill grp"><i class="ti ti-users"></i>'+esc(gn)+'</span>':'';
   const nova=c.destaque?'<span class="pill info">nova</span>':'';
+  const lock='<span class="pill lock" title="Restrito ao seu grupo — peça liberação ao ADM"><i class="ti ti-lock"></i>restrito</span>';
   const app=c.grafia_app?'<p class="app">no app aparece como "'+esc(c.grafia_app)+'"</p>':'';
   const ex=c.exemplos?'<p class="ex"><b>Ex.:</b> '+esc(c.exemplos)+'</p>':'';
   const key=(c.nome+' '+(c.exemplos||'')+' '+(c.grafia_app||'')).toLowerCase();
-  return '<div class="card" data-k="'+esc(key)+'" data-g="'+esc(c.grupo_id||'')+'">'
-    +'<div class="ch"><i class="ti '+esc(c.icone||'ti-tag')+'"></i><span class="nm">'+esc(c.nome)+nova+'</span>'+grp+'</div>'
+  return '<div class="card" data-k="'+esc(key)+'" data-ga="'+esc(acessoDe(c).join(','))+'">'
+    +'<div class="ch"><i class="ti '+esc(c.icone||'ti-tag')+'"></i><span class="nm">'+esc(c.nome)+nova+'</span>'+lock+'</div>'
     +'<p class="d">'+esc(c.descricao||'')+'</p>'+ex+app+'</div>';
 }
-function aplicarFiltro(){
+function aplicar(){
   const q=(document.getElementById('busca').value||'').toLowerCase().trim();
   let n=0;
   document.querySelectorAll('#grade .card').forEach(el=>{
-    const ok=(grupoAtivo==='todas'||el.dataset.g===grupoAtivo)&&el.dataset.k.includes(q);
-    el.style.display=ok?'':'none'; if(ok)n++;
+    const match=el.dataset.k.includes(q);
+    el.style.display=match?'':'none'; if(match)n++;
+    const ga=(el.dataset.ga||''); const lista=ga?ga.split(','):[];
+    const restrito=(verComo!=='todas') && lista.length>0 && !lista.includes(verComo);
+    el.classList.toggle('restrito',restrito);
   });
   document.getElementById('vazio').style.display=n===0?'block':'none';
 }
-document.getElementById('busca').addEventListener('input',aplicarFiltro);
+document.getElementById('busca').addEventListener('input',aplicar);
 
 /* ===== painel admin ===== */
 function togglePainel(){ PAINEL=!PAINEL; document.getElementById('view-consulta').style.display=PAINEL?'none':'block'; document.getElementById('view-admin').style.display=PAINEL?'block':'none'; document.getElementById('painel-lbl').textContent=PAINEL?'Ver manual':'Painel'; if(PAINEL) renderAdmin(); else renderConsulta(); }
@@ -422,8 +436,8 @@ function renderAdmin(){
   document.getElementById('etiq-count').textContent=DATA.etiq.length+' etiqueta'+(DATA.etiq.length===1?'':'s');
   const el=document.getElementById('admin-etiq');
   el.innerHTML=DATA.etiq.map((c,i)=>{
-    const gn=grupoNome(c.grupo_id);
-    const grp=gn?'<span class="pill grp">'+esc(gn)+'</span>':'';
+    const nomes=grupoNomes(acessoDe(c));
+    const grp=nomes.length?'<span class="pill grp" title="Grupos que podem usar"><i class="ti ti-users"></i>'+esc(nomes.join(', '))+'</span>':'<span class="pill lock" title="Todos podem usar">todos</span>';
     const nova=c.destaque?'<span class="pill info">nova</span>':'';
     return '<div class="rowit"><i class="ti ti-grip-vertical grip"></i><i class="ti '+esc(c.icone||'ti-tag')+' ic"></i>'
       +'<span class="nm">'+esc(c.nome)+nova+'</span>'+grp
@@ -515,16 +529,22 @@ function filtrarIcones(pre,v){ renderIconGrid(pre,v); }
 
 /* ===== CRUD etiqueta ===== */
 let _editEtiqIdx=-1;
-function fillGrupoSelect(sel){ const s=document.getElementById('me-grupo'); if(!s)return; s.innerHTML='<option value="">— sem grupo (todos veem)</option>'+DATA.grupos.map(g=>'<option value="'+g.id+'">'+esc(g.nome)+'</option>').join(''); s.value=sel||''; }
+function renderGrupoChips(selArr){
+  _grupoAcesso=Array.isArray(selArr)?selArr.slice():[];
+  const box=document.getElementById('me-grupos'), hint=document.getElementById('me-grupo-hint'); if(!box)return;
+  if(!CAP.grupos||!CAP.et_grupos_acesso){ box.innerHTML='<span class="hint">— indisponível até rodar o SQL do manual —</span>'; if(hint)hint.textContent='Rode o SQL do manual para ativar os grupos.'; return; }
+  if(!DATA.grupos.length){ box.innerHTML='<span class="hint">Cadastre grupos na aba "Grupos" primeiro.</span>'; if(hint)hint.textContent='Sem grupos = todos podem usar.'; return; }
+  if(hint)hint.textContent='Todos veem a etiqueta; quem não é dos grupos marcados a vê como "restrito".';
+  box.innerHTML=DATA.grupos.map(g=>{ const on=_grupoAcesso.includes(g.id); return '<button type="button" class="gchip'+(on?' on':'')+'" data-g="'+g.id+'" onclick="toggleGrupoChip(\''+g.id+'\')">'+(on?'<i class="ti ti-check"></i>':'')+esc(g.nome)+'</button>'; }).join('');
+}
+function toggleGrupoChip(id){ const i=_grupoAcesso.indexOf(id); if(i<0)_grupoAcesso.push(id); else _grupoAcesso.splice(i,1); renderGrupoChips(_grupoAcesso); }
 function editEtiq(i){
   if(!guardAdmin())return;
   _editEtiqIdx=i; const c=i>=0?DATA.etiq[i]:{};
   document.getElementById('me-titulo').textContent=i>=0?'Editar etiqueta':'Nova etiqueta';
   document.getElementById('me-nome').value=c.nome||'';
   document.getElementById('me-icone-panel').style.display='none'; pickIcon('me',c.icone||'ti-tag');
-  const gsel=document.getElementById('me-grupo'), ghint=document.getElementById('me-grupo-hint');
-  if(CAP.et_grupo_id){ gsel.disabled=false; fillGrupoSelect(c.grupo_id||''); ghint.textContent=CAP.grupos?'Gerencie os grupos na aba "Grupos". Vazio = todos veem.':'Ative os grupos rodando o SQL do manual.'; }
-  else { gsel.disabled=true; gsel.innerHTML='<option>— indisponível até rodar o SQL —</option>'; ghint.textContent='Rode o SQL do manual para ativar os grupos de usuário.'; }
+  renderGrupoChips(acessoDe(c));
   document.getElementById('me-desc').value=c.descricao||'';
   document.getElementById('me-ex').value=c.exemplos||'';
   document.getElementById('me-app').value=c.grafia_app||'';
@@ -546,7 +566,7 @@ async function saveEtiq(){
     destaque:document.getElementById('me-nova').checked,
     ordem:base.ordem!=null?base.ordem:DATA.etiq.length
   };
-  if(CAP.et_grupo_id) row.grupo_id=document.getElementById('me-grupo').value||null;
+  if(CAP.et_grupos_acesso) row.grupos_acesso=_grupoAcesso.slice();
   const r=await SB.from('cartao_etiquetas').upsert(row);
   if(r.error){ return erroNuvem('saveEtiq',r.error); }
   if(isNew) DATA.etiq.push(row); else DATA.etiq[_editEtiqIdx]=Object.assign(base,row);
@@ -612,14 +632,14 @@ async function carregarSugerido(){
   if(DATA.etiq.length && !confirm('Já existem etiquetas. Isso vai ADICIONAR as sugeridas por cima. Continuar?'))return;
   cloud('carregando conteúdo…','load');
   const mapaGrupo={};
-  if(CAP.grupos && CAP.et_grupo_id){
+  if(CAP.grupos && CAP.et_grupos_acesso){
     for(const nome of ['Campo','Administrativo']){
       let g=DATA.grupos.find(x=>(x.nome||'').toLowerCase()===nome.toLowerCase());
       if(!g){ g={id:uid(),empresa_id:EMP,nome,ordem:DATA.grupos.length}; const rg=await SB.from('cartao_grupos').upsert(g); if(rg.error){ return erroNuvem('seedGrupo',rg.error); } DATA.grupos.push(g); }
       mapaGrupo[nome]=g.id;
     }
   }
-  const etiq=SEED_ETIQ.map((s,k)=>{ const o={id:uid(),empresa_id:EMP,nome:s.n,icone:s.i,descricao:s.d,exemplos:s.e,grafia_app:s.app||null,destaque:!!s.nova,ordem:DATA.etiq.length+k}; if(CAP.et_grupo_id) o.grupo_id=(s.p==='adm'?mapaGrupo['Administrativo']:mapaGrupo['Campo'])||null; return o; });
+  const etiq=SEED_ETIQ.map((s,k)=>{ const o={id:uid(),empresa_id:EMP,nome:s.n,icone:s.i,descricao:s.d,exemplos:s.e,grafia_app:s.app||null,destaque:!!s.nova,ordem:DATA.etiq.length+k}; if(CAP.et_grupos_acesso){ const gid=(s.p==='adm'?mapaGrupo['Administrativo']:mapaGrupo['Campo']); o.grupos_acesso=gid?[gid]:[]; } return o; });
   const regras=SEED_REGRAS.map((s,k)=>({id:uid(),empresa_id:EMP,texto:s.t,icone:s.i,ordem:DATA.regras.length+k}));
   const re=await SB.from('cartao_etiquetas').insert(etiq);
   if(re.error){ return erroNuvem('seedEtiq',re.error); }

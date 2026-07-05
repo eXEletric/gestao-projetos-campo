@@ -59,7 +59,8 @@ create table if not exists public.cartao_grupos (
   deleted_at  timestamptz,
   created_at  timestamptz default now()
 );
-alter table public.cartao_etiquetas add column if not exists grupo_id uuid references public.cartao_grupos(id);
+alter table public.cartao_etiquetas add column if not exists grupo_id uuid references public.cartao_grupos(id);  -- (legado, não usado)
+alter table public.cartao_etiquetas add column if not exists grupos_acesso jsonb default '[]'::jsonb;  -- grupos que PODEM USAR a etiqueta (vazio = todos)
 alter table public.cartao_regras    add column if not exists classificacao text;  -- 'obrigatorio' | 'necessario' | 'opcional' | null
 
 alter table public.cartao_grupos enable row level security;
