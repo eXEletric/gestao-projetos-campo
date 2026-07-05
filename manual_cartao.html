@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Manual do Cartão — eX Eletric</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3/dist/tabler-icons.min.css">
+<style>
+:root{
+  --bg:#f4f4f1; --surf:#fff; --surf2:#faf9f6; --line:#e7e5de; --line2:#d7d5cc;
+  --tx:#1a1a18; --tx2:#6b6a64; --tx3:#9b998f;
+  --pri:#0f6e56; --pri-bg:#e1f5ee;
+  --ok:#3b6d11; --ok-bg:#eaf3de;
+  --warn:#854f0b; --warn-bg:#faeeda;
+  --info:#185fa5; --info-bg:#e6f1fb;
+  --err:#a32d2d; --err-bg:#fcebeb;
+  --r:8px; --r2:12px;
+}
+*{box-sizing:border-box}
+body{font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;margin:0;background:var(--bg);color:var(--tx);font-size:15px;line-height:1.5}
+.wrap{max-width:920px;margin:0 auto;padding:0 16px 60px}
+/* topbar */
+.top{position:sticky;top:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:10px 16px;display:flex;align-items:center;gap:12px}
+.top .brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px}
+.top .brand .lg{width:30px;height:30px;border-radius:7px;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700}
+.top .sp{flex:1}
+.cloud{font-size:11px;color:var(--tx3);padding:3px 8px;border-radius:6px;background:var(--surf2);border:1px solid var(--line)}
+.cloud.ok{color:var(--ok);background:var(--ok-bg);border-color:transparent}
+.cloud.err{color:var(--err);background:var(--err-bg);border-color:transparent}
+.cloud.load{color:var(--info);background:var(--info-bg);border-color:transparent}
+button{font-family:inherit;font-size:14px;cursor:pointer}
+.btn{border:1px solid var(--line2);background:var(--surf);color:var(--tx);padding:7px 13px;border-radius:var(--r);display:inline-flex;align-items:center;gap:6px;font-size:13.5px;transition:.12s}
+.btn:hover{background:var(--surf2)}
+.btn:active{transform:scale(.98)}
+.btn.p{background:var(--pri);color:#fff;border-color:var(--pri)}
+.btn.p:hover{filter:brightness(1.06)}
+.btn.s{padding:5px 10px;font-size:12.5px}
+.btn.info{background:var(--info-bg);color:var(--info);border-color:transparent}
+.btn.danger{color:var(--err)}
+.userchip{display:flex;align-items:center;gap:8px;font-size:13px}
+.userchip .av{width:28px;height:28px;border-radius:50%;background:var(--pri-bg);color:var(--pri);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700}
+.pill{display:inline-flex;align-items:center;gap:4px;padding:2px 8px;border-radius:6px;font-size:11px;font-weight:500}
+.pill.campo{background:var(--ok-bg);color:var(--ok)}
+.pill.adm{background:var(--warn-bg);color:var(--warn)}
+.pill.info{background:var(--info-bg);color:var(--info)}
+/* header do manual */
+.mhead{display:flex;align-items:center;gap:13px;background:var(--surf);border:1px solid var(--line);border-radius:var(--r2);padding:16px 18px;margin:16px 0}
+.mhead .ic{width:44px;height:44px;border-radius:10px;background:var(--info-bg);color:var(--info);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
+.mhead h1{margin:0;font-size:18px;font-weight:600}
+.mhead p{margin:2px 0 0;font-size:13px;color:var(--tx2)}
+.aviso{display:flex;gap:9px;background:var(--warn-bg);color:var(--warn);border-radius:var(--r);padding:10px 13px;font-size:13px;margin:0 0 16px}
+/* regras */
+.regras{background:var(--surf);border:1px solid var(--line);border-radius:var(--r2);padding:15px 18px;margin:0 0 16px}
+.regras h3{margin:0 0 11px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:7px}
+.regras .ri{display:flex;gap:9px;font-size:13.5px;color:var(--tx2);padding:4px 0}
+.regras .ri i{color:var(--pri);font-size:17px;flex-shrink:0}
+/* busca + chips */
+.search{position:relative;margin:0 0 11px}
+.search i{position:absolute;left:12px;top:50%;transform:translateY(-50%);font-size:18px;color:var(--tx3)}
+.search input{width:100%;padding:10px 12px 10px 38px;border:1px solid var(--line2);border-radius:var(--r);font-size:14px;background:var(--surf);color:var(--tx)}
+.search input:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-bg)}
+.chips{display:flex;flex-wrap:wrap;gap:7px;margin:0 0 16px}
+.chip{border:1px solid var(--line2);background:var(--surf);color:var(--tx2);padding:6px 13px;border-radius:20px;font-size:12.5px}
+.chip.on{background:var(--pri-bg);color:var(--pri);border-color:transparent;font-weight:500}
+/* grade de cards */
+.grade{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:12px}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:var(--r2);padding:14px 16px}
+.card .ch{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.card .ch i{font-size:20px;color:var(--tx2)}
+.card .ch .nm{font-size:15px;font-weight:600;flex:1;display:flex;align-items:center;gap:6px}
+.card .d{margin:0 0 8px;font-size:13.5px;color:var(--tx2);line-height:1.5}
+.card .ex{margin:0;font-size:12.5px;color:var(--tx3)}
+.card .ex b{color:var(--tx2);font-weight:600}
+.card .app{margin:6px 0 0;font-size:11.5px;color:var(--tx3);font-style:italic}
+.vazio{text-align:center;color:var(--tx3);font-size:14px;padding:26px 0}
+/* admin */
+.subtabs{display:flex;gap:7px;margin:16px 0 14px;flex-wrap:wrap}
+.subtab{border:1px solid var(--line2);background:var(--surf);color:var(--tx2);padding:7px 15px;border-radius:var(--r);font-size:13.5px}
+.subtab.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.adminbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:0 0 14px}
+.rowlist{display:flex;flex-direction:column;gap:6px}
+.rowit{display:flex;align-items:center;gap:9px;background:var(--surf);border:1px solid var(--line);border-radius:var(--r);padding:9px 12px}
+.rowit .grip{color:var(--tx3);font-size:16px}
+.rowit .ic{font-size:18px;color:var(--tx2)}
+.rowit .nm{font-size:14px;flex:1;display:flex;align-items:center;gap:6px}
+.iconbtn{border:none;background:none;font-size:18px;color:var(--tx2);padding:3px;border-radius:5px}
+.iconbtn:hover{background:var(--surf2)}
+.iconbtn.del{color:var(--err)}
+.iconbtn:disabled{opacity:.3;cursor:default}
+.txtcfg{display:grid;gap:14px;background:var(--surf);border:1px solid var(--line);border-radius:var(--r2);padding:18px;max-width:560px}
+label.fl{display:block;font-size:12px;color:var(--tx2);margin-bottom:5px;font-weight:500}
+input.fi,textarea.fi,select.fi{width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:var(--r);font-size:14px;font-family:inherit;background:var(--surf);color:var(--tx)}
+input.fi:focus,textarea.fi:focus,select.fi:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-bg)}
+textarea.fi{min-height:58px;resize:vertical}
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:100;display:none;align-items:flex-start;justify-content:center;padding:30px 16px;overflow:auto}
+.modal.show{display:flex}
+.mbox{background:var(--surf);border-radius:14px;width:100%;max-width:520px;padding:0;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.mbox .mh{display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid var(--line)}
+.mbox .mh b{font-size:15px}
+.mbox .mb{padding:18px 20px;display:grid;gap:13px}
+.mbox .mf{display:flex;justify-content:flex-end;gap:8px;padding:14px 20px;border-top:1px solid var(--line)}
+.mx{border:none;background:none;font-size:22px;color:var(--tx3);cursor:pointer;line-height:1}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:var(--r);overflow:hidden}
+.seg button{border:none;background:var(--surf);color:var(--tx2);padding:8px 15px;font-size:13px}
+.seg button.on{background:var(--pri-bg);color:var(--pri);font-weight:500}
+.seg.sm button{padding:6px 11px;font-size:12.5px}
+/* login */
+.logincard .lerr{display:none;font-size:12.5px;color:var(--err);background:var(--err-bg);border-radius:6px;padding:8px 10px}
+.hint{font-size:12px;color:var(--tx3)}
+@media(max-width:560px){.g2{grid-template-columns:1fr}.mhead{flex-direction:row}}
+</style>
+</head>
+<body>
+
+<div class="top">
+  <div class="brand"><span class="lg" id="brand-ini">eX</span> Manual do Cartão</div>
+  <div class="sp"></div>
+  <span class="cloud load" id="cloud">carregando…</span>
+  <span id="auth-out"><button class="btn s" onclick="openLogin()"><i class="ti ti-lock"></i> Entrar</button></span>
+  <span id="auth-in" style="display:none;align-items:center;gap:10px">
+    <button class="btn s info" id="btn-painel" style="display:none" onclick="togglePainel()"><i class="ti ti-settings"></i> <span id="painel-lbl">Painel</span></button>
+    <span class="userchip"><span class="av" id="u-av">?</span><span id="u-nome" class="hint"></span></span>
+    <button class="btn s" onclick="sair()" title="Sair"><i class="ti ti-logout"></i></button>
+  </span>
+</div>
+
+<div class="wrap">
+
+  <!-- ===== VIEW CONSULTA ===== -->
+  <div id="view-consulta">
+    <div class="mhead">
+      <div class="ic"><i class="ti ti-credit-card"></i></div>
+      <div><h1 id="cfg-titulo">Cartão Clara — guia de etiquetas</h1><p id="cfg-sub">Escolha a etiqueta certa ao lançar cada despesa</p></div>
+    </div>
+    <div class="aviso" id="cfg-aviso" style="display:none"><i class="ti ti-info-circle" style="font-size:17px;flex-shrink:0"></i> <span id="cfg-aviso-tx"></span></div>
+
+    <div class="regras" id="regras-box" style="display:none">
+      <h3><i class="ti ti-bookmark" style="color:var(--warn)"></i> Regras de ouro</h3>
+      <div id="regras-list"></div>
+    </div>
+
+    <div class="search"><i class="ti ti-search"></i><input id="busca" type="text" placeholder="Buscar (ex.: água, botina, frete, iFood…)" aria-label="Buscar etiqueta"></div>
+    <div class="chips" id="chips"></div>
+    <div class="grade" id="grade"></div>
+    <p class="vazio" id="vazio" style="display:none">Nenhuma etiqueta encontrada.</p>
+  </div>
+
+  <!-- ===== VIEW ADMIN ===== -->
+  <div id="view-admin" style="display:none">
+    <div class="subtabs">
+      <button class="subtab on" data-s="etiq" onclick="subtab('etiq')">Etiquetas</button>
+      <button class="subtab" data-s="regras" onclick="subtab('regras')">Regras de ouro</button>
+      <button class="subtab" data-s="textos" onclick="subtab('textos')">Textos</button>
+    </div>
+
+    <div id="s-etiq">
+      <div class="adminbar">
+        <button class="btn p s" onclick="editEtiq(-1)"><i class="ti ti-plus"></i> Nova etiqueta</button>
+        <button class="btn s" onclick="carregarSugerido()"><i class="ti ti-download"></i> Carregar conteúdo sugerido</button>
+        <span class="hint" id="etiq-count"></span>
+      </div>
+      <div class="rowlist" id="admin-etiq"></div>
+    </div>
+
+    <div id="s-regras" style="display:none">
+      <div class="adminbar"><button class="btn p s" onclick="editRegra(-1)"><i class="ti ti-plus"></i> Nova regra</button></div>
+      <div class="rowlist" id="admin-regras"></div>
+    </div>
+
+    <div id="s-textos" style="display:none">
+      <div class="txtcfg">
+        <div><label class="fl">Título</label><input class="fi" id="t-titulo"></div>
+        <div><label class="fl">Subtítulo</label><input class="fi" id="t-sub"></div>
+        <div><label class="fl">Aviso geral (ex.: grafias do app, limite de valor)</label><textarea class="fi" id="t-aviso" placeholder="Deixe vazio para não mostrar aviso"></textarea></div>
+        <div><button class="btn p" onclick="saveTextos()"><i class="ti ti-check"></i> Salvar textos</button></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- modal etiqueta -->
+<div class="modal" id="modalEtiq"><div class="mbox">
+  <div class="mh"><b id="me-titulo">Nova etiqueta</b><button class="mx" onclick="closeEtiq()">&times;</button></div>
+  <div class="mb">
+    <div class="g2">
+      <div><label class="fl">Nome da etiqueta</label><input class="fi" id="me-nome" placeholder="Ex.: Combustível"></div>
+      <div><label class="fl">Ícone (Tabler)</label><input class="fi" id="me-icone" placeholder="ti-tag"></div>
+    </div>
+    <div class="g2">
+      <div><label class="fl">Tema</label>
+        <select class="fi" id="me-tema">
+          <option value="alim">Alimentação</option><option value="desloc">Deslocamento</option>
+          <option value="obra">Obra & serviço</option><option value="estadia">Estadia</option>
+          <option value="adm">Administrativo</option><option value="outros">Outros</option>
+        </select></div>
+      <div><label class="fl">Quem pode usar</label>
+        <div class="seg" id="me-perm">
+          <button type="button" data-v="campo" class="on" onclick="setPerm('campo')"><i class="ti ti-user"></i> Campo</button>
+          <button type="button" data-v="adm" onclick="setPerm('adm')"><i class="ti ti-user-check"></i> ADM</button>
+        </div></div>
+    </div>
+    <div><label class="fl">Descrição</label><textarea class="fi" id="me-desc" placeholder="O que entra nesta etiqueta"></textarea></div>
+    <div><label class="fl">Exemplos</label><input class="fi" id="me-ex" placeholder="Ex.: gasolina, etanol, diesel"></div>
+    <div class="g2">
+      <div><label class="fl">Grafia no app da Clara (se diferente)</label><input class="fi" id="me-app" placeholder="deixe vazio se for igual"></div>
+      <div style="display:flex;align-items:flex-end"><label style="display:flex;align-items:center;gap:8px;font-size:13.5px;padding-bottom:9px"><input type="checkbox" id="me-nova"> Marcar como "nova"</label></div>
+    </div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeEtiq()">Cancelar</button><button class="btn p" onclick="saveEtiq()"><i class="ti ti-check"></i> Salvar</button></div>
+</div></div>
+
+<!-- modal regra -->
+<div class="modal" id="modalRegra"><div class="mbox">
+  <div class="mh"><b id="mr-titulo">Nova regra</b><button class="mx" onclick="closeRegra()">&times;</button></div>
+  <div class="mb">
+    <div class="g2">
+      <div style="grid-column:1/-1"><label class="fl">Texto da regra</label><input class="fi" id="mr-texto" placeholder="Ex.: Sempre anexe a nota / cupom fiscal."></div>
+    </div>
+    <div><label class="fl">Ícone (Tabler)</label><input class="fi" id="mr-icone" placeholder="ti-point"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeRegra()">Cancelar</button><button class="btn p" onclick="saveRegra()"><i class="ti ti-check"></i> Salvar</button></div>
+</div></div>
+
+<!-- modal login -->
+<div class="modal" id="modalLogin"><div class="mbox" style="max-width:380px">
+  <div class="mh"><b>Entrar como administrador</b><button class="mx" onclick="closeLogin()">&times;</button></div>
+  <div class="mb logincard">
+    <div class="lerr" id="login-erro"></div>
+    <div><label class="fl">E-mail</label><input class="fi" id="login-email" type="email" autocomplete="username" placeholder="voce@exeletric.com"></div>
+    <div><label class="fl">Senha</label><input class="fi" id="login-senha" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter')fazerLogin()"></div>
+    <p class="hint">Só para editar. A consulta é aberta para toda a equipe.</p>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeLogin()">Cancelar</button><button class="btn p" id="login-btn" onclick="fazerLogin()">Entrar</button></div>
+</div></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+/* ===== Supabase (mesmo projeto do eX Cronograma) ===== */
+const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
+const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
+const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
+function uid(){ return (crypto.randomUUID?crypto.randomUUID():'id'+Math.random().toString(36).slice(2,9)); }
+function cloud(txt,cls){ const e=document.getElementById('cloud'); if(e){e.textContent=txt;e.className='cloud '+(cls||'');} }
+function esc(s){ return String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+const TEMAS={alim:'Alimentação',desloc:'Deslocamento',obra:'Obra & serviço',estadia:'Estadia',adm:'Administrativo',outros:'Outros'};
+const PARAMS=new URLSearchParams(location.search);
+const PUBLIC_EMP=PARAMS.get('empresa')||null;   // link público pode fixar a empresa
+
+let _USER=null,_PERFIL=null,EMP=null,ADMIN=false,PAINEL=false;
+let DATA={etiq:[],regras:[],cfg:null};
+let temaAtivo='todas';
+
+/* ===== conteúdo sugerido (as 19 etiquetas + regras) ===== */
+const SEED_ETIQ=[
+ {n:"Água e Hidratação",i:"ti-droplet",t:"alim",p:"campo",nova:true,d:"Água e itens de hidratação da equipe em campo.",e:"Galão de água, água mineral, isotônico."},
+ {n:"Alojamento",i:"ti-bed",t:"estadia",p:"adm",d:"Hospedagem quando a equipe dorme fora por causa da obra. Sempre alinhar antes com o responsável.",e:"Diária de hotel, pousada, Airbnb."},
+ {n:"Almoço / Janta",i:"ti-tools-kitchen-2",t:"alim",p:"campo",app:"Amoço / Janta",d:"Refeições principais (almoço e jantar). Pode incluir pedido por app (iFood etc.).",e:"Restaurante, marmita, iFood, prato feito."},
+ {n:"Apps",i:"ti-device-mobile",t:"desloc",p:"adm",d:"Transporte por app e assinaturas de apps. Só administrativo ou casos pontuais liberados pelo ADM.",e:"Uber, 99, assinatura de app de trabalho."},
+ {n:"Café da Manhã",i:"ti-coffee",t:"alim",p:"campo",d:"Refeição da manhã durante viagem ou obra.",e:"Padaria, café do hotel, café da manhã."},
+ {n:"Combustível",i:"ti-gas-station",t:"desloc",p:"campo",app:"Combustivel",d:"Abastecimento de veículo usado a serviço.",e:"Gasolina, etanol, diesel, GNV."},
+ {n:"Compras de Mercado",i:"ti-shopping-cart",t:"alim",p:"campo",d:"Itens de supermercado para a obra ou alojamento.",e:"Café, material de limpeza, mantimentos."},
+ {n:"EPIs & Uniformes",i:"ti-shirt",t:"obra",p:"campo",d:"Equipamento de proteção individual e vestuário de trabalho.",e:"Capacete, luva, botina, óculos, protetor auricular, uniforme."},
+ {n:"Frete",i:"ti-package",t:"desloc",p:"campo",d:"Envio e transporte de carga/material da empresa.",e:"Transportadora, motoboy de carga, envio de material."},
+ {n:"Informática & Comunicação",i:"ti-device-laptop",t:"adm",p:"adm",app:"Informatica & Comunicação",d:"Equipamentos e acessórios de informática e telefonia, e comunicação.",e:"Fone, mouse, capa de notebook, recarga, internet, cabos."},
+ {n:"Lanche",i:"ti-cookie",t:"alim",p:"campo",nova:true,d:"Lanche rápido/avulso fora das refeições principais.",e:"Salgado, lanche da tarde, café rápido na estrada."},
+ {n:"Lavanderia",i:"ti-wash",t:"estadia",p:"campo",nova:true,d:"Lavagem de roupas/uniformes em viagem ou obra prolongada.",e:"Lavanderia, lavagem de uniforme."},
+ {n:"Locação de Maquinário",i:"ti-tools",t:"obra",p:"adm",app:"Locação de Maquinario",d:"Aluguel de máquinas, equipamentos e ferramentas para a obra.",e:"Furadeira, plataforma elevatória, gerador, betoneira."},
+ {n:"Locação de Veículos",i:"ti-car",t:"desloc",p:"adm",d:"Aluguel de veículo para deslocar ou transportar equipe/material.",e:"Carro, van, caminhão, guincho."},
+ {n:"Marketing e Publicidade",i:"ti-speakerphone",t:"adm",p:"adm",d:"Gastos com divulgação da empresa. Somente administrativo.",e:"Material gráfico, anúncios, brindes."},
+ {n:"Materiais Aplicados ao serviço",i:"ti-bolt",t:"obra",p:"campo",d:"Material e insumos elétricos que ficam na instalação do cliente.",e:"Cabos, disjuntores, conectores, eletrodutos."},
+ {n:"Pedágio & Estacionamento",i:"ti-parking",t:"desloc",p:"campo",d:"Pedágios na estrada e estacionamento do veículo.",e:"Praça de pedágio, zona azul, estacionamento da obra."},
+ {n:"Serviços",i:"ti-briefcase",t:"obra",p:"adm",d:"Mão de obra e serviços de terceiros contratados pontualmente.",e:"Mão de obra terceirizada, manutenção, conserto, cópias."},
+ {n:"Transportes",i:"ti-bus",t:"desloc",p:"campo",d:"Deslocamento de pessoas que não é por app nem carro próprio.",e:"Passagem de ônibus, avião, van fretada da equipe."},
+];
+const SEED_REGRAS=[
+ {t:"Sempre anexe a nota / cupom fiscal da compra.",i:"ti-receipt"},
+ {t:"Descreva o que foi comprado no lançamento.",i:"ti-pencil"},
+ {t:"Vincule a despesa à obra / cliente.",i:"ti-building-warehouse"},
+ {t:"Cartão só para gastos da empresa — nada pessoal.",i:"ti-shield-check"},
+ {t:"Na dúvida da etiqueta, pergunte ao ADM antes de lançar.",i:"ti-help-circle"},
+];
+
+/* ===== carregar do banco ===== */
+async function loadAll(){
+  if(!SB){ cloud('sem conexão','err'); return; }
+  cloud('carregando…','load');
+  try{
+    const emp = EMP || PUBLIC_EMP;
+    let qe = SB.from('cartao_etiquetas').select('*').is('deleted_at',null).order('ordem');
+    let qr = SB.from('cartao_regras').select('*').is('deleted_at',null).order('ordem');
+    if(emp){ qe=qe.eq('empresa_id',emp); qr=qr.eq('empresa_id',emp); }
+    const [re,rr]=await Promise.all([qe,qr]);
+    if(re.error) throw re.error;
+    DATA.etiq=re.data||[]; DATA.regras=rr.data||[];
+    let qc=SB.from('cartao_config').select('*');
+    if(emp) qc=qc.eq('empresa_id',emp);
+    const rc=await qc.limit(1).maybeSingle();
+    DATA.cfg=rc.data||null;
+    cloud('nuvem ✓','ok');
+  }catch(e){
+    cloud('erro nuvem','err'); console.error('loadAll',e);
+    if((e.message||'').match(/relation|does not exist|schema cache/i)) cloud('rodar o SQL','err');
+  }
+  renderConsulta(); if(PAINEL) renderAdmin();
+}
+
+/* ===== render consulta ===== */
+function renderConsulta(){
+  const cfg=DATA.cfg||{};
+  document.getElementById('cfg-titulo').textContent=cfg.titulo||'Cartão Clara — guia de etiquetas';
+  document.getElementById('cfg-sub').textContent=cfg.subtitulo||'Escolha a etiqueta certa ao lançar cada despesa';
+  const av=document.getElementById('cfg-aviso'); if(cfg.observacao){ document.getElementById('cfg-aviso-tx').textContent=cfg.observacao; av.style.display='flex'; } else av.style.display='none';
+  // regras
+  const rb=document.getElementById('regras-box'), rl=document.getElementById('regras-list');
+  if(DATA.regras.length){ rb.style.display='block'; rl.innerHTML=DATA.regras.map(r=>'<div class="ri"><i class="ti '+esc(r.icone||'ti-point')+'"></i> '+esc(r.texto)+'</div>').join(''); }
+  else rb.style.display='none';
+  // chips
+  renderChips();
+  // grade
+  const g=document.getElementById('grade');
+  g.innerHTML=DATA.etiq.map(cardHTML).join('');
+  aplicarFiltro();
+}
+function renderChips(){
+  const temasPresentes=[...new Set(DATA.etiq.map(e=>e.tema||'outros'))];
+  let h='<button class="chip'+(temaAtivo==='todas'?' on':'')+'" onclick="setTema(\'todas\')">Todas</button>';
+  for(const k in TEMAS){ if(temasPresentes.includes(k)) h+='<button class="chip'+(temaAtivo===k?' on':'')+'" onclick="setTema(\''+k+'\')">'+TEMAS[k]+'</button>'; }
+  document.getElementById('chips').innerHTML=h;
+}
+function setTema(t){ temaAtivo=t; renderChips(); aplicarFiltro(); }
+function cardHTML(c){
+  const perm=c.permissao==='adm'?'<span class="pill adm"><i class="ti ti-user-check"></i>ADM</span>':'<span class="pill campo"><i class="ti ti-user"></i>Campo</span>';
+  const nova=c.destaque?'<span class="pill info">nova</span>':'';
+  const app=c.grafia_app?'<p class="app">no app aparece como "'+esc(c.grafia_app)+'"</p>':'';
+  const ex=c.exemplos?'<p class="ex"><b>Ex.:</b> '+esc(c.exemplos)+'</p>':'';
+  const key=(c.nome+' '+(c.exemplos||'')+' '+(c.grafia_app||'')).toLowerCase();
+  return '<div class="card" data-k="'+esc(key)+'" data-t="'+esc(c.tema||'outros')+'">'
+    +'<div class="ch"><i class="ti '+esc(c.icone||'ti-tag')+'"></i><span class="nm">'+esc(c.nome)+nova+'</span>'+perm+'</div>'
+    +'<p class="d">'+esc(c.descricao||'')+'</p>'+ex+app+'</div>';
+}
+function aplicarFiltro(){
+  const q=(document.getElementById('busca').value||'').toLowerCase().trim();
+  let n=0;
+  document.querySelectorAll('#grade .card').forEach(el=>{
+    const ok=(temaAtivo==='todas'||el.dataset.t===temaAtivo)&&el.dataset.k.includes(q);
+    el.style.display=ok?'':'none'; if(ok)n++;
+  });
+  document.getElementById('vazio').style.display=n===0?'block':'none';
+}
+document.getElementById('busca').addEventListener('input',aplicarFiltro);
+
+/* ===== painel admin ===== */
+function togglePainel(){ PAINEL=!PAINEL; document.getElementById('view-consulta').style.display=PAINEL?'none':'block'; document.getElementById('view-admin').style.display=PAINEL?'block':'none'; document.getElementById('painel-lbl').textContent=PAINEL?'Ver manual':'Painel'; if(PAINEL) renderAdmin(); else renderConsulta(); }
+function subtab(s){ ['etiq','regras','textos'].forEach(x=>{document.getElementById('s-'+x).style.display=x===s?'block':'none';document.querySelector('.subtab[data-s="'+x+'"]').classList.toggle('on',x===s);}); if(s==='textos') fillTextos(); }
+function renderAdmin(){
+  document.getElementById('etiq-count').textContent=DATA.etiq.length+' etiqueta'+(DATA.etiq.length===1?'':'s');
+  const el=document.getElementById('admin-etiq');
+  el.innerHTML=DATA.etiq.map((c,i)=>{
+    const perm=c.permissao==='adm'?'<span class="pill adm">ADM</span>':'<span class="pill campo">Campo</span>';
+    const nova=c.destaque?'<span class="pill info">nova</span>':'';
+    return '<div class="rowit"><i class="ti ti-grip-vertical grip"></i><i class="ti '+esc(c.icone||'ti-tag')+' ic"></i>'
+      +'<span class="nm">'+esc(c.nome)+nova+'</span>'+perm
+      +'<button class="iconbtn" onclick="moveEtiq('+i+',-1)" '+(i===0?'disabled':'')+' title="subir"><i class="ti ti-chevron-up"></i></button>'
+      +'<button class="iconbtn" onclick="moveEtiq('+i+',1)" '+(i===DATA.etiq.length-1?'disabled':'')+' title="descer"><i class="ti ti-chevron-down"></i></button>'
+      +'<button class="iconbtn" onclick="editEtiq('+i+')" title="editar"><i class="ti ti-edit"></i></button>'
+      +'<button class="iconbtn del" onclick="delEtiq('+i+')" title="excluir"><i class="ti ti-trash"></i></button></div>';
+  }).join('')||'<p class="vazio">Sem etiquetas ainda. Use "Carregar conteúdo sugerido" ou "+ Nova etiqueta".</p>';
+  const rl=document.getElementById('admin-regras');
+  rl.innerHTML=DATA.regras.map((r,i)=>'<div class="rowit"><i class="ti ti-grip-vertical grip"></i><i class="ti '+esc(r.icone||'ti-point')+' ic"></i>'
+      +'<span class="nm">'+esc(r.texto)+'</span>'
+      +'<button class="iconbtn" onclick="moveRegra('+i+',-1)" '+(i===0?'disabled':'')+'><i class="ti ti-chevron-up"></i></button>'
+      +'<button class="iconbtn" onclick="moveRegra('+i+',1)" '+(i===DATA.regras.length-1?'disabled':'')+'><i class="ti ti-chevron-down"></i></button>'
+      +'<button class="iconbtn" onclick="editRegra('+i+')"><i class="ti ti-edit"></i></button>'
+      +'<button class="iconbtn del" onclick="delRegra('+i+')"><i class="ti ti-trash"></i></button></div>').join('')||'<p class="vazio">Sem regras ainda.</p>';
+}
+
+/* ===== CRUD etiqueta ===== */
+let _editEtiqIdx=-1,_permSel='campo';
+function setPerm(v){ _permSel=v; document.querySelectorAll('#me-perm button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); }
+function editEtiq(i){
+  if(!guardAdmin())return;
+  _editEtiqIdx=i; const c=i>=0?DATA.etiq[i]:{};
+  document.getElementById('me-titulo').textContent=i>=0?'Editar etiqueta':'Nova etiqueta';
+  document.getElementById('me-nome').value=c.nome||'';
+  document.getElementById('me-icone').value=c.icone||'ti-tag';
+  document.getElementById('me-tema').value=c.tema||'outros';
+  setPerm(c.permissao||'campo');
+  document.getElementById('me-desc').value=c.descricao||'';
+  document.getElementById('me-ex').value=c.exemplos||'';
+  document.getElementById('me-app').value=c.grafia_app||'';
+  document.getElementById('me-nova').checked=!!c.destaque;
+  document.getElementById('modalEtiq').classList.add('show');
+}
+function closeEtiq(){ document.getElementById('modalEtiq').classList.remove('show'); }
+async function saveEtiq(){
+  const nome=document.getElementById('me-nome').value.trim();
+  if(!nome){ alert('Dê um nome à etiqueta.'); return; }
+  const isNew=_editEtiqIdx<0;
+  const base=isNew?{id:uid(),ordem:DATA.etiq.length}:DATA.etiq[_editEtiqIdx];
+  const row={
+    id:base.id, empresa_id:EMP, nome,
+    icone:document.getElementById('me-icone').value.trim()||'ti-tag',
+    tema:document.getElementById('me-tema').value,
+    permissao:_permSel,
+    descricao:document.getElementById('me-desc').value.trim()||null,
+    exemplos:document.getElementById('me-ex').value.trim()||null,
+    grafia_app:document.getElementById('me-app').value.trim()||null,
+    destaque:document.getElementById('me-nova').checked,
+    ordem:base.ordem!=null?base.ordem:DATA.etiq.length
+  };
+  const r=await SB.from('cartao_etiquetas').upsert(row);
+  if(r.error){ return erroNuvem('saveEtiq',r.error); }
+  if(isNew) DATA.etiq.push(row); else DATA.etiq[_editEtiqIdx]=Object.assign(base,row);
+  closeEtiq(); renderAdmin(); cloud('salvo ✓','ok');
+}
+async function delEtiq(i){
+  if(!guardAdmin())return;
+  const c=DATA.etiq[i]; if(!confirm('Excluir a etiqueta "'+c.nome+'"?'))return;
+  const r=await SB.from('cartao_etiquetas').update({deleted_at:new Date().toISOString()}).eq('id',c.id);
+  if(r.error){ return erroNuvem('delEtiq',r.error); }
+  DATA.etiq.splice(i,1); renderAdmin(); cloud('salvo ✓','ok');
+}
+async function moveEtiq(i,dir){
+  const j=i+dir; if(j<0||j>=DATA.etiq.length)return;
+  const a=DATA.etiq[i],b=DATA.etiq[j]; DATA.etiq[i]=b; DATA.etiq[j]=a;
+  DATA.etiq.forEach((c,k)=>c.ordem=k); renderAdmin();
+  await Promise.all([
+    SB.from('cartao_etiquetas').update({ordem:a.ordem}).eq('id',a.id),
+    SB.from('cartao_etiquetas').update({ordem:b.ordem}).eq('id',b.id)
+  ]); cloud('salvo ✓','ok');
+}
+
+/* ===== CRUD regra ===== */
+let _editRegraIdx=-1;
+function editRegra(i){ if(!guardAdmin())return; _editRegraIdx=i; const r=i>=0?DATA.regras[i]:{};
+  document.getElementById('mr-titulo').textContent=i>=0?'Editar regra':'Nova regra';
+  document.getElementById('mr-texto').value=r.texto||''; document.getElementById('mr-icone').value=r.icone||'ti-point';
+  document.getElementById('modalRegra').classList.add('show'); }
+function closeRegra(){ document.getElementById('modalRegra').classList.remove('show'); }
+async function saveRegra(){
+  const texto=document.getElementById('mr-texto').value.trim(); if(!texto){ alert('Escreva a regra.'); return; }
+  const isNew=_editRegraIdx<0; const base=isNew?{id:uid(),ordem:DATA.regras.length}:DATA.regras[_editRegraIdx];
+  const row={id:base.id,empresa_id:EMP,texto,icone:document.getElementById('mr-icone').value.trim()||'ti-point',ordem:base.ordem!=null?base.ordem:DATA.regras.length};
+  const r=await SB.from('cartao_regras').upsert(row); if(r.error){ return erroNuvem('saveRegra',r.error); }
+  if(isNew) DATA.regras.push(row); else DATA.regras[_editRegraIdx]=Object.assign(base,row);
+  closeRegra(); renderAdmin(); cloud('salvo ✓','ok');
+}
+async function delRegra(i){ if(!guardAdmin())return; const r=DATA.regras[i]; if(!confirm('Excluir esta regra?'))return;
+  const rr=await SB.from('cartao_regras').update({deleted_at:new Date().toISOString()}).eq('id',r.id);
+  if(rr.error){ return erroNuvem('delRegra',rr.error); } DATA.regras.splice(i,1); renderAdmin(); cloud('salvo ✓','ok'); }
+async function moveRegra(i,dir){ const j=i+dir; if(j<0||j>=DATA.regras.length)return;
+  const a=DATA.regras[i],b=DATA.regras[j]; DATA.regras[i]=b; DATA.regras[j]=a; DATA.regras.forEach((r,k)=>r.ordem=k); renderAdmin();
+  await Promise.all([SB.from('cartao_regras').update({ordem:a.ordem}).eq('id',a.id),SB.from('cartao_regras').update({ordem:b.ordem}).eq('id',b.id)]); cloud('salvo ✓','ok'); }
+
+/* ===== textos (config) ===== */
+function fillTextos(){ const c=DATA.cfg||{}; document.getElementById('t-titulo').value=c.titulo||'Cartão Clara — guia de etiquetas'; document.getElementById('t-sub').value=c.subtitulo||'Escolha a etiqueta certa ao lançar cada despesa'; document.getElementById('t-aviso').value=c.observacao||''; }
+async function saveTextos(){
+  if(!guardAdmin())return;
+  const row={empresa_id:EMP,titulo:document.getElementById('t-titulo').value.trim()||null,subtitulo:document.getElementById('t-sub').value.trim()||null,observacao:document.getElementById('t-aviso').value.trim()||null,atualizado_em:new Date().toISOString()};
+  const r=await SB.from('cartao_config').upsert(row); if(r.error){ return erroNuvem('saveTextos',r.error); }
+  DATA.cfg=row; cloud('salvo ✓','ok'); alert('Textos salvos.');
+}
+
+/* ===== seed ===== */
+async function carregarSugerido(){
+  if(!guardAdmin())return;
+  if(DATA.etiq.length && !confirm('Já existem etiquetas. Isso vai ADICIONAR as sugeridas por cima. Continuar?'))return;
+  cloud('carregando conteúdo…','load');
+  const etiq=SEED_ETIQ.map((s,k)=>({id:uid(),empresa_id:EMP,nome:s.n,icone:s.i,tema:s.t,permissao:s.p,descricao:s.d,exemplos:s.e,grafia_app:s.app||null,destaque:!!s.nova,ordem:DATA.etiq.length+k}));
+  const regras=SEED_REGRAS.map((s,k)=>({id:uid(),empresa_id:EMP,texto:s.t,icone:s.i,ordem:DATA.regras.length+k}));
+  const re=await SB.from('cartao_etiquetas').insert(etiq);
+  if(re.error){ return erroNuvem('seedEtiq',re.error); }
+  const rr=await SB.from('cartao_regras').insert(regras);
+  if(rr.error){ return erroNuvem('seedRegras',rr.error); }
+  if(!DATA.cfg){ await SB.from('cartao_config').upsert({empresa_id:EMP,titulo:'Cartão Clara — guia de etiquetas',subtitulo:'Escolha a etiqueta certa ao lançar cada despesa',observacao:'As etiquetas no app da Clara podem aparecer com pequenos erros de digitação (ex.: "Amoço", "Combustivel") — é a mesma coisa.'}); }
+  await loadAll(); renderAdmin(); cloud('conteúdo carregado ✓','ok');
+}
+
+function guardAdmin(){ if(!ADMIN||!EMP){ alert('Você precisa entrar como administrador (Fundador/Admin) para editar.'); return false; } return true; }
+function erroNuvem(tag,err){ cloud('erro ao salvar','err'); console.error(tag,err); const msg=(err&&(err.message||err.hint||err.details))||JSON.stringify(err); alert('⚠️ Erro ao salvar ('+tag+'):\n\n'+msg+'\n\nSe fala de coluna/relation, provavelmente falta rodar o SQL_manual_cartao.sql.'); }
+
+/* ===== login / sessão ===== */
+function openLogin(){ document.getElementById('modalLogin').classList.add('show'); document.getElementById('login-email').focus(); }
+function closeLogin(){ document.getElementById('modalLogin').classList.remove('show'); }
+function loginErro(m){ const e=document.getElementById('login-erro'); e.textContent=m||''; e.style.display=m?'block':'none'; }
+async function fazerLogin(){
+  if(!SB){ loginErro('Sem conexão.'); return; }
+  const email=(document.getElementById('login-email').value||'').trim(), senha=document.getElementById('login-senha').value||'';
+  if(!email||!senha){ loginErro('Preencha e-mail e senha.'); return; }
+  const btn=document.getElementById('login-btn'); btn.disabled=true; btn.textContent='Entrando…'; loginErro('');
+  const {error}=await SB.auth.signInWithPassword({email,password:senha});
+  btn.disabled=false; btn.textContent='Entrar';
+  if(error){ loginErro('E-mail ou senha inválidos.'); return; }
+  closeLogin();
+}
+async function sair(){ if(SB) await SB.auth.signOut(); location.reload(); }
+async function carregarPerfil(id){
+  try{ const {data}=await SB.from('perfis').select('*').eq('user_id',id).maybeSingle(); _PERFIL=data||null; }catch(e){ _PERFIL=null; }
+  EMP=(_PERFIL&&_PERFIL.empresa_id)||null;
+  ADMIN=!!(_PERFIL&&(_PERFIL.papel==='adm'||_PERFIL.papel==='fundador'));
+}
+function pintarUsuario(){
+  const outEl=document.getElementById('auth-out'), inEl=document.getElementById('auth-in');
+  if(_USER){ outEl.style.display='none'; inEl.style.display='inline-flex';
+    document.getElementById('u-nome').textContent=_USER.email||'';
+    document.getElementById('u-av').textContent=(_USER.email||'?').slice(0,2).toUpperCase();
+    document.getElementById('btn-painel').style.display=ADMIN?'inline-flex':'none';
+  } else { outEl.style.display='inline-flex'; inEl.style.display='none'; }
+}
+async function entrar(session){ _USER=session.user; await carregarPerfil(_USER.id); pintarUsuario(); await loadAll(); }
+async function init(){
+  if(!SB){ cloud('sem conexão','err'); return; }
+  SB.auth.onAuthStateChange((ev,session)=>{ if(session&&session.user){ if(!_USER) entrar(session); } else if(_USER){ _USER=null;_PERFIL=null;EMP=null;ADMIN=false;PAINEL=false; pintarUsuario(); loadAll(); } });
+  const {data:{session}}=await SB.auth.getSession();
+  if(session&&session.user){ await entrar(session); }
+  else { pintarUsuario(); await loadAll(); }
+}
+init();
+</script>
+</body>
+</html>
