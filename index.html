@@ -280,6 +280,7 @@ table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:
 .acc-list li{font-size:12.5px;padding:3px 0;color:var(--tx)}
 .acc-list li::marker{color:var(--tx3);font-size:11px}
 body.papel-tecnico .tabdrop{display:none}
+body.papel-tecnico .fin-drop{display:inline-block !important}
 body.papel-tecnico .adm-only{display:none !important}
 </style>
 </head>
@@ -337,7 +338,13 @@ body.papel-tecnico .adm-only{display:none !important}
       <button class="tab" id="tab-acomp" onclick="tab('acomp',this)">Gantt</button>
       <button class="tab" id="tab-crono" onclick="tab('crono',this)">Cronograma</button>
     </span>
-    <div class="tabdrop" style="margin-left:auto">
+    <div class="tabdrop fin-drop" style="margin-left:auto">
+      <button class="tab" id="fin-btn" onclick="toggleFin(event)">Financeiro <span style="font-size:10px">▾</span></button>
+      <div class="tabmenu" id="fin-menu">
+        <button onclick="abrirManualCartao()">💳 Manual do Cartão</button>
+      </div>
+    </div>
+    <div class="tabdrop">
       <button class="tab" id="cad-btn" onclick="toggleCad(event)">Cadastros <span style="font-size:10px">▾</span></button>
       <div class="tabmenu" id="cad-menu">
         <button data-t="colab" onclick="cadGo('colab')">Colaboradores</button>
@@ -1969,9 +1976,12 @@ function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remo
   if(cadBtn&&!['colab','cat','mat','acessos','cfg'].includes(t)){cadBtn.classList.remove('active');cadBtn.innerHTML='Cadastros <span style="font-size:10px">▾</span>';document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.remove('active'));}
 }
 const CAD_LABELS={colab:'Colaboradores',cat:'Catálogo',mat:'Materiais',acessos:'Acessos',cfg:'Configurações'};
-function toggleCad(e){e.stopPropagation();document.getElementById('cad-menu').classList.toggle('open');}
+function toggleCad(e){e.stopPropagation();document.getElementById('cad-menu').classList.toggle('open');document.getElementById('fin-menu').classList.remove('open');}
+const MANUAL_CARTAO_URL='https://eXEletric.github.io/gestao-projetos-campo/manual_cartao.html';
+function toggleFin(e){e.stopPropagation();document.getElementById('fin-menu').classList.toggle('open');document.getElementById('cad-menu').classList.remove('open');}
+function abrirManualCartao(){document.getElementById('fin-menu').classList.remove('open');window.open(MANUAL_CARTAO_URL,'_blank');}
 function cadGo(t){const btn=document.getElementById('cad-btn');tab(t,btn);btn.classList.add('active');btn.innerHTML='Cadastros · '+CAD_LABELS[t]+' <span style="font-size:10px">▾</span>';document.getElementById('cad-menu').classList.remove('open');document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.toggle('active',b.getAttribute('data-t')===t));}
-document.addEventListener('click',e=>{const m=document.getElementById('cad-menu');if(m&&m.classList.contains('open')&&!e.target.closest('.tabdrop'))m.classList.remove('open'); if(!e.target.closest('.combo'))closeSvcList();});
+document.addEventListener('click',e=>{const m=document.getElementById('cad-menu');if(m&&m.classList.contains('open')&&!e.target.closest('.tabdrop'))m.classList.remove('open'); const fm=document.getElementById('fin-menu');if(fm&&fm.classList.contains('open')&&!e.target.closest('.tabdrop'))fm.classList.remove('open'); if(!e.target.closest('.combo'))closeSvcList();});
 function renderAll(){refreshHeaders();render();renderAcomp();renderProjetos();aplicarModoNav();}
 renderAll(); // render local primeiro (instantâneo)
 async function bootNuvem(){
