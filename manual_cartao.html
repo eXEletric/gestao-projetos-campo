@@ -54,6 +54,8 @@ button{font-family:inherit;font-size:14px;cursor:pointer}
 .iconbox i:first-child{font-size:22px;color:var(--pri)}
 .pill.grp{background:var(--info-bg);color:var(--info)}
 .pill.lock{background:var(--surf2);color:var(--tx3);border:0.5px solid var(--line)}
+.pill.st-todos{background:var(--surf2);color:var(--tx2);border:0.5px solid var(--line)}
+.pill.st-parcial{background:var(--warn-bg);color:var(--warn)}
 .chipsel{display:flex;flex-wrap:wrap;gap:7px}
 .gchip{border:1px solid var(--line2);background:var(--surf);color:var(--tx2);padding:6px 12px;border-radius:20px;font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
 .gchip.on{background:var(--pri-bg);color:var(--pri);border-color:var(--pri);font-weight:500}
@@ -455,8 +457,11 @@ function renderAdmin(){
   document.getElementById('etiq-count').textContent=DATA.etiq.length+' etiqueta'+(DATA.etiq.length===1?'':'s');
   const el=document.getElementById('admin-etiq');
   el.innerHTML=DATA.etiq.map((c,i)=>{
-    const nomes=grupoNomes(acessoDe(c));
-    const grp=nomes.length?'<span class="pill grp" title="Grupos que podem usar"><i class="ti ti-users"></i>'+esc(nomes.join(', '))+'</span>':'<span class="pill lock" title="Todos podem usar">todos</span>';
+    const total=DATA.grupos.length; const marc=acessoDe(c).filter(id=>DATA.grupos.some(g=>g.id===id)); const nomesAc=grupoNomes(marc);
+    const isTodos=total===0||marc.length===0||marc.length>=total;
+    const grp=isTodos
+      ?'<span class="pill st-todos" title="Todos os grupos podem usar"><i class="ti ti-users"></i> Todos'+(total?(' · '+total):'')+'</span>'
+      :'<span class="pill st-parcial" title="Podem usar: '+esc(nomesAc.join(', '))+'"><i class="ti ti-lock"></i> Parcial · '+marc.length+'</span>';
     const nova=c.destaque?'<span class="pill info">nova</span>':'';
     return '<div class="rowit"><i class="ti ti-grip-vertical grip"></i><i class="ti '+esc(c.icone||'ti-tag')+' ic"></i>'
       +'<span class="nm">'+esc(c.nome)+nova+'</span>'+grp
