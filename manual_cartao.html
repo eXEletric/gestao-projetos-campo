@@ -197,7 +197,6 @@ textarea.fi{min-height:58px;resize:vertical}
     <div id="s-etiq">
       <div class="adminbar">
         <button class="btn p s" onclick="editEtiq(-1)"><i class="ti ti-plus"></i> Nova etiqueta</button>
-        <button class="btn s" onclick="carregarSugerido()"><i class="ti ti-download"></i> Carregar conteúdo sugerido</button>
         <span class="hint" id="etiq-count"></span>
       </div>
       <div class="rowlist" id="admin-etiq"></div>
@@ -469,7 +468,7 @@ function renderAdmin(){
       +'<button class="iconbtn" onclick="moveEtiq('+i+',1)" '+(i===DATA.etiq.length-1?'disabled':'')+' title="descer"><i class="ti ti-chevron-down"></i></button>'
       +'<button class="iconbtn" onclick="editEtiq('+i+')" title="editar"><i class="ti ti-edit"></i></button>'
       +'<button class="iconbtn del" onclick="delEtiq('+i+')" title="excluir"><i class="ti ti-trash"></i></button></div>';
-  }).join('')||'<p class="vazio">Sem etiquetas ainda. Use "Carregar conteúdo sugerido" ou "+ Nova etiqueta".</p>';
+  }).join('')||'<p class="vazio">Sem etiquetas ainda. Use "+ Nova etiqueta" para começar.</p>';
   const rl=document.getElementById('admin-regras');
   rl.innerHTML=DATA.regras.map((r,i)=>{
     const cls=CLS_LBL[r.classificacao]?'<span class="pill cls-'+r.classificacao+'">'+CLS_LBL[r.classificacao]+'</span>':'';
