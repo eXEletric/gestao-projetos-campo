@@ -168,6 +168,7 @@ textarea.fi{min-height:58px;resize:vertical}
       <button class="subtab" data-s="regras" onclick="subtab('regras')">Regras de ouro</button>
       <button class="subtab" data-s="textos" onclick="subtab('textos')">Textos</button>
     </div>
+    <div id="cap-warn" style="display:none;background:var(--warn-bg);color:var(--warn);border-radius:var(--r);padding:10px 13px;font-size:13px;margin-bottom:12px"></div>
 
     <div id="s-etiq">
       <div class="adminbar">
@@ -220,7 +221,7 @@ textarea.fi{min-height:58px;resize:vertical}
     </div>
     <div><label class="fl">Grupo de usuário</label>
       <select class="fi" id="me-grupo"></select>
-      <span class="hint">Gerencie os grupos na aba "Grupos". Vazio = todos veem.</span>
+      <span class="hint" id="me-grupo-hint">Gerencie os grupos na aba "Grupos". Vazio = todos veem.</span>
     </div>
     <div><label class="fl">Descrição</label><textarea class="fi" id="me-desc" placeholder="O que entra nesta etiqueta"></textarea></div>
     <div><label class="fl">Exemplos</label><input class="fi" id="me-ex" placeholder="Ex.: gasolina, etanol, diesel"></div>
@@ -239,14 +240,14 @@ textarea.fi{min-height:58px;resize:vertical}
     <div class="g2">
       <div style="grid-column:1/-1"><label class="fl">Texto da regra</label><input class="fi" id="mr-texto" placeholder="Ex.: Sempre anexe a nota / cupom fiscal."></div>
     </div>
-    <div><label class="fl">Classificação</label>
+    <div id="mr-class-wrap"><label class="fl">Classificação</label>
       <select class="fi" id="mr-class">
         <option value="">Nenhum</option>
         <option value="obrigatorio">Obrigatório</option>
         <option value="necessario">Necessário</option>
         <option value="opcional">Opcional</option>
       </select></div>
-    <div><label class="fl">Observação / nota (opcional)</label><textarea class="fi" id="mr-obs" placeholder="Detalhe, exceção ou nota da regra"></textarea></div>
+    <div id="mr-obs-wrap"><label class="fl">Observação / nota (opcional)</label><textarea class="fi" id="mr-obs" placeholder="Detalhe, exceção ou nota da regra"></textarea></div>
     <div><label class="fl">Ícone (Tabler)</label><input class="fi" id="mr-icone" placeholder="ti-point"></div>
   </div>
   <div class="mf"><button class="btn" onclick="closeRegra()">Cancelar</button><button class="btn p" onclick="saveRegra()"><i class="ti ti-check"></i> Salvar</button></div>
@@ -281,6 +282,8 @@ const PUBLIC_EMP=PARAMS.get('empresa')||null;   // link público pode fixar a em
 let _USER=null,_PERFIL=null,EMP=null,ADMIN=false,PAINEL=false;
 let DATA={etiq:[],regras:[],grupos:[],cfg:null};
 let grupoAtivo='todas';
+/* capacidades do banco (quais colunas/tabelas novas existem) — evita quebrar antes de rodar o SQL */
+let CAP={grupos:false,et_grupo_id:false,rg_class:false,rg_obs:false};
 
 /* ===== conteúdo sugerido (as 19 etiquetas + regras) ===== */
 const SEED_ETIQ=[
@@ -312,10 +315,27 @@ const SEED_REGRAS=[
  {t:"Na dúvida da etiqueta, pergunte ao ADM antes de lançar.",i:"ti-help-circle"},
 ];
 
+/* ===== capacidades ===== */
+async function detectCaps(){
+  const p=async(t,c)=>{ try{ const r=await SB.from(t).select(c).limit(1); return !r.error; }catch(_){ return false; } };
+  const [a,b,c,d]=await Promise.all([p('cartao_grupos','id'),p('cartao_etiquetas','grupo_id'),p('cartao_regras','classificacao'),p('cartao_regras','observacao')]);
+  CAP={grupos:a,et_grupo_id:b,rg_class:c,rg_obs:d};
+}
+function aplicarCaps(){
+  const w=document.getElementById('cap-warn'); if(!w) return;
+  const faltam=[];
+  if(!CAP.grupos||!CAP.et_grupo_id) faltam.push('Grupos de usuário');
+  if(!CAP.rg_class) faltam.push('Classificação das regras');
+  if(!CAP.rg_obs) faltam.push('Observação das regras');
+  if(faltam.length){ w.style.display='block'; w.innerHTML='<b>⚠️ Recursos aguardando o SQL:</b> '+faltam.join(' · ')+'. O resto já funciona — rode o <b>SQL_manual_cartao.sql</b> no Supabase (uma vez) para liberar estes.'; }
+  else w.style.display='none';
+}
+
 /* ===== carregar do banco ===== */
 async function loadAll(){
   if(!SB){ cloud('sem conexão','err'); return; }
   cloud('carregando…','load');
+  await detectCaps();
   try{
     const emp = EMP || PUBLIC_EMP;
     let qe = SB.from('cartao_etiquetas').select('*').is('deleted_at',null).order('ordem');
@@ -335,6 +355,7 @@ async function loadAll(){
     cloud('erro nuvem','err'); console.error('loadAll',e);
     if((e.message||'').match(/relation|does not exist|schema cache/i)) cloud('rodar o SQL','err');
   }
+  aplicarCaps();
   renderConsulta(); if(PAINEL) renderAdmin();
 }
 
@@ -420,6 +441,7 @@ function renderAdmin(){
 /* ===== grupos de usuário ===== */
 function renderGrupos(){
   const el=document.getElementById('admin-grupos');
+  if(!CAP.grupos){ el.innerHTML='<p class="vazio">Grupos ainda não ativados. Rode o <b>SQL_manual_cartao.sql</b> no Supabase (cria a tabela <code>cartao_grupos</code>) para habilitar esta aba.</p>'; return; }
   el.innerHTML=DATA.grupos.map((g,i)=>'<div class="rowit"><i class="ti ti-users ic"></i>'
     +'<span class="nm">'+esc(g.nome)+'</span>'
     +'<button class="iconbtn" onclick="moveGrupo('+i+',-1)" '+(i===0?'disabled':'')+'><i class="ti ti-chevron-up"></i></button>'
@@ -430,6 +452,7 @@ function renderGrupos(){
 }
 async function addGrupo(){
   if(!guardAdmin())return;
+  if(!CAP.grupos){ alert('Rode o SQL do manual primeiro para ativar os grupos.'); return; }
   const inp=document.getElementById('novo-grupo'); const nome=(inp.value||'').trim(); if(!nome)return;
   const row={id:uid(),empresa_id:EMP,nome,ordem:DATA.grupos.length};
   const r=await SB.from('cartao_grupos').upsert(row); if(r.error){ return erroNuvem('addGrupo',r.error); }
@@ -452,6 +475,7 @@ async function moveGrupo(i,dir){ const j=i+dir; if(j<0||j>=DATA.grupos.length)re
   await Promise.all([SB.from('cartao_grupos').update({ordem:a.ordem}).eq('id',a.id),SB.from('cartao_grupos').update({ordem:b.ordem}).eq('id',b.id)]); cloud('salvo ✓','ok'); }
 async function sugerirGrupos(){
   if(!guardAdmin())return;
+  if(!CAP.grupos){ alert('Rode o SQL do manual primeiro para ativar os grupos.'); return; }
   const nomes=['Campo','Administrativo','Gerência'].filter(n=>!DATA.grupos.some(g=>(g.nome||'').toLowerCase()===n.toLowerCase()));
   if(!nomes.length){ alert('Os grupos sugeridos já existem.'); return; }
   const rows=nomes.map((n,k)=>({id:uid(),empresa_id:EMP,nome:n,ordem:DATA.grupos.length+k}));
@@ -491,7 +515,9 @@ function editEtiq(i){
   document.getElementById('me-titulo').textContent=i>=0?'Editar etiqueta':'Nova etiqueta';
   document.getElementById('me-nome').value=c.nome||'';
   document.getElementById('me-icone-panel').style.display='none'; pickIcon(c.icone||'ti-tag');
-  fillGrupoSelect(c.grupo_id||'');
+  const gsel=document.getElementById('me-grupo'), ghint=document.getElementById('me-grupo-hint');
+  if(CAP.et_grupo_id){ gsel.disabled=false; fillGrupoSelect(c.grupo_id||''); ghint.textContent=CAP.grupos?'Gerencie os grupos na aba "Grupos". Vazio = todos veem.':'Ative os grupos rodando o SQL do manual.'; }
+  else { gsel.disabled=true; gsel.innerHTML='<option>— indisponível até rodar o SQL —</option>'; ghint.textContent='Rode o SQL do manual para ativar os grupos de usuário.'; }
   document.getElementById('me-desc').value=c.descricao||'';
   document.getElementById('me-ex').value=c.exemplos||'';
   document.getElementById('me-app').value=c.grafia_app||'';
@@ -507,13 +533,13 @@ async function saveEtiq(){
   const row={
     id:base.id, empresa_id:EMP, nome,
     icone:_iconSel||'ti-tag',
-    grupo_id:document.getElementById('me-grupo').value||null,
     descricao:document.getElementById('me-desc').value.trim()||null,
     exemplos:document.getElementById('me-ex').value.trim()||null,
     grafia_app:document.getElementById('me-app').value.trim()||null,
     destaque:document.getElementById('me-nova').checked,
     ordem:base.ordem!=null?base.ordem:DATA.etiq.length
   };
+  if(CAP.et_grupo_id) row.grupo_id=document.getElementById('me-grupo').value||null;
   const r=await SB.from('cartao_etiquetas').upsert(row);
   if(r.error){ return erroNuvem('saveEtiq',r.error); }
   if(isNew) DATA.etiq.push(row); else DATA.etiq[_editEtiqIdx]=Object.assign(base,row);
@@ -543,12 +569,16 @@ function editRegra(i){ if(!guardAdmin())return; _editRegraIdx=i; const r=i>=0?DA
   document.getElementById('mr-texto').value=r.texto||''; document.getElementById('mr-icone').value=r.icone||'ti-point';
   document.getElementById('mr-obs').value=r.observacao||'';
   document.getElementById('mr-class').value=r.classificacao||'';
+  document.getElementById('mr-class-wrap').style.display=CAP.rg_class?'':'none';
+  document.getElementById('mr-obs-wrap').style.display=CAP.rg_obs?'':'none';
   document.getElementById('modalRegra').classList.add('show'); }
 function closeRegra(){ document.getElementById('modalRegra').classList.remove('show'); }
 async function saveRegra(){
   const texto=document.getElementById('mr-texto').value.trim(); if(!texto){ alert('Escreva a regra.'); return; }
   const isNew=_editRegraIdx<0; const base=isNew?{id:uid(),ordem:DATA.regras.length}:DATA.regras[_editRegraIdx];
-  const row={id:base.id,empresa_id:EMP,texto,classificacao:document.getElementById('mr-class').value||null,observacao:document.getElementById('mr-obs').value.trim()||null,icone:document.getElementById('mr-icone').value.trim()||'ti-point',ordem:base.ordem!=null?base.ordem:DATA.regras.length};
+  const row={id:base.id,empresa_id:EMP,texto,icone:document.getElementById('mr-icone').value.trim()||'ti-point',ordem:base.ordem!=null?base.ordem:DATA.regras.length};
+  if(CAP.rg_class) row.classificacao=document.getElementById('mr-class').value||null;
+  if(CAP.rg_obs) row.observacao=document.getElementById('mr-obs').value.trim()||null;
   const r=await SB.from('cartao_regras').upsert(row); if(r.error){ return erroNuvem('saveRegra',r.error); }
   if(isNew) DATA.regras.push(row); else DATA.regras[_editRegraIdx]=Object.assign(base,row);
   closeRegra(); renderAdmin(); cloud('salvo ✓','ok');
@@ -575,13 +605,14 @@ async function carregarSugerido(){
   if(DATA.etiq.length && !confirm('Já existem etiquetas. Isso vai ADICIONAR as sugeridas por cima. Continuar?'))return;
   cloud('carregando conteúdo…','load');
   const mapaGrupo={};
-  for(const nome of ['Campo','Administrativo']){
-    let g=DATA.grupos.find(x=>(x.nome||'').toLowerCase()===nome.toLowerCase());
-    if(!g){ g={id:uid(),empresa_id:EMP,nome,ordem:DATA.grupos.length}; const rg=await SB.from('cartao_grupos').upsert(g); if(rg.error){ return erroNuvem('seedGrupo',rg.error); } DATA.grupos.push(g); }
-    mapaGrupo[nome]=g.id;
+  if(CAP.grupos && CAP.et_grupo_id){
+    for(const nome of ['Campo','Administrativo']){
+      let g=DATA.grupos.find(x=>(x.nome||'').toLowerCase()===nome.toLowerCase());
+      if(!g){ g={id:uid(),empresa_id:EMP,nome,ordem:DATA.grupos.length}; const rg=await SB.from('cartao_grupos').upsert(g); if(rg.error){ return erroNuvem('seedGrupo',rg.error); } DATA.grupos.push(g); }
+      mapaGrupo[nome]=g.id;
+    }
   }
-  const gid=p=> p==='adm'?mapaGrupo['Administrativo']:mapaGrupo['Campo'];
-  const etiq=SEED_ETIQ.map((s,k)=>({id:uid(),empresa_id:EMP,nome:s.n,icone:s.i,grupo_id:gid(s.p),descricao:s.d,exemplos:s.e,grafia_app:s.app||null,destaque:!!s.nova,ordem:DATA.etiq.length+k}));
+  const etiq=SEED_ETIQ.map((s,k)=>{ const o={id:uid(),empresa_id:EMP,nome:s.n,icone:s.i,descricao:s.d,exemplos:s.e,grafia_app:s.app||null,destaque:!!s.nova,ordem:DATA.etiq.length+k}; if(CAP.et_grupo_id) o.grupo_id=(s.p==='adm'?mapaGrupo['Administrativo']:mapaGrupo['Campo'])||null; return o; });
   const regras=SEED_REGRAS.map((s,k)=>({id:uid(),empresa_id:EMP,texto:s.t,icone:s.i,ordem:DATA.regras.length+k}));
   const re=await SB.from('cartao_etiquetas').insert(etiq);
   if(re.error){ return erroNuvem('seedEtiq',re.error); }
