@@ -213,9 +213,9 @@ textarea.fi{min-height:58px;resize:vertical}
     <div><label class="fl">Nome da etiqueta</label><input class="fi" id="me-nome" placeholder="Ex.: Combustível"></div>
     <div>
       <label class="fl">Ícone</label>
-      <div><button type="button" class="iconbox" id="me-icone-box" onclick="toggleIconPanel()"><i class="ti ti-tag" id="me-icone-preview"></i><span id="me-icone-hint">ti-tag</span><i class="ti ti-chevron-down" style="font-size:14px;color:var(--tx3)"></i></button></div>
+      <div><button type="button" class="iconbox" id="me-icone-box" onclick="toggleIconPanel('me')"><i class="ti ti-tag" id="me-icone-preview"></i><span id="me-icone-hint">ti-tag</span><i class="ti ti-chevron-down" style="font-size:14px;color:var(--tx3)"></i></button></div>
       <div id="me-icone-panel" style="display:none;margin-top:8px">
-        <input class="fi" id="me-icone-busca" placeholder="filtrar… (ex.: carro, comida, casa, ferramenta)" oninput="filtrarIcones(this.value)" style="margin-bottom:8px">
+        <input class="fi" id="me-icone-busca" placeholder="filtrar… (ex.: carro, comida, casa, ferramenta)" oninput="filtrarIcones('me',this.value)" style="margin-bottom:8px">
         <div class="icongrid" id="me-icone-grid"></div>
       </div>
     </div>
@@ -248,7 +248,13 @@ textarea.fi{min-height:58px;resize:vertical}
         <option value="opcional">Opcional</option>
       </select></div>
     <div id="mr-obs-wrap"><label class="fl">Observação / nota (opcional)</label><textarea class="fi" id="mr-obs" placeholder="Detalhe, exceção ou nota da regra"></textarea></div>
-    <div><label class="fl">Ícone (Tabler)</label><input class="fi" id="mr-icone" placeholder="ti-point"></div>
+    <div><label class="fl">Ícone</label>
+      <div><button type="button" class="iconbox" id="mr-icone-box" onclick="toggleIconPanel('mr')"><i class="ti ti-point" id="mr-icone-preview"></i><span id="mr-icone-hint">ti-point</span><i class="ti ti-chevron-down" style="font-size:14px;color:var(--tx3)"></i></button></div>
+      <div id="mr-icone-panel" style="display:none;margin-top:8px">
+        <input class="fi" id="mr-icone-busca" placeholder="filtrar… (ex.: nota, cadeado, lápis, alerta)" oninput="filtrarIcones('mr',this.value)" style="margin-bottom:8px">
+        <div class="icongrid" id="mr-icone-grid"></div>
+      </div>
+    </div>
   </div>
   <div class="mf"><button class="btn" onclick="closeRegra()">Cancelar</button><button class="btn p" onclick="saveRegra()"><i class="ti ti-check"></i> Salvar</button></div>
 </div></div>
@@ -493,18 +499,19 @@ const ICONS=[
  {i:'ti-tools',k:'ferramenta maquina locacao obra'},{i:'ti-hammer',k:'martelo ferramenta obra'},{i:'ti-forklift',k:'empilhadeira maquina obra'},{i:'ti-bolt',k:'eletrico raio energia material'},{i:'ti-plug',k:'tomada eletrico plug'},{i:'ti-battery',k:'bateria energia'},{i:'ti-shirt',k:'uniforme roupa epi camisa'},{i:'ti-first-aid-kit',k:'epi seguranca saude kit'},{i:'ti-shield',k:'seguranca protecao epi'},
  {i:'ti-device-laptop',k:'informatica notebook computador'},{i:'ti-device-mobile',k:'celular telefone app aplicativo'},{i:'ti-headphones',k:'fone de ouvido audio'},{i:'ti-mouse',k:'mouse informatica'},{i:'ti-wifi',k:'internet wifi comunicacao'},{i:'ti-phone',k:'telefone ligacao recarga'},
  {i:'ti-speakerphone',k:'marketing publicidade divulgacao anuncio'},{i:'ti-ad',k:'anuncio publicidade marketing'},{i:'ti-briefcase',k:'servico trabalho maleta terceiro'},{i:'ti-user-cog',k:'servico mao de obra terceiro'},{i:'ti-book',k:'livro documento manual'},{i:'ti-clipboard',k:'prancheta lista documento'},{i:'ti-calendar',k:'calendario data'},
+ {i:'ti-point',k:'ponto marcador bullet regra'},{i:'ti-check',k:'certo confirmar ok regra'},{i:'ti-checkbox',k:'checar marcar caixa regra'},{i:'ti-pencil',k:'lapis escrever descrever regra'},{i:'ti-alert-triangle',k:'atencao alerta aviso cuidado'},{i:'ti-shield-check',k:'seguranca protecao regra confianca'},{i:'ti-help-circle',k:'ajuda duvida pergunta'},{i:'ti-info-circle',k:'informacao nota aviso'},{i:'ti-lock',k:'cadeado bloqueio seguranca'},{i:'ti-eye',k:'ver olho atencao'},{i:'ti-ban',k:'proibido nao bloqueado'},{i:'ti-thumb-up',k:'certo aprovado positivo'},{i:'ti-star',k:'estrela importante destaque'},
 ];
-let _iconSel='ti-tag';
-function toggleIconPanel(){ const p=document.getElementById('me-icone-panel'); const open=p.style.display!=='none'; p.style.display=open?'none':'block'; if(!open){ document.getElementById('me-icone-busca').value=''; renderIconGrid(''); document.getElementById('me-icone-busca').focus(); } }
-function pickIcon(name){ _iconSel=name; const pv=document.getElementById('me-icone-preview'); if(pv) pv.className='ti '+name; const h=document.getElementById('me-icone-hint'); if(h) h.textContent=name; document.querySelectorAll('#me-icone-grid .iconopt').forEach(b=>b.classList.toggle('sel',b.dataset.i===_iconSel)); const p=document.getElementById('me-icone-panel'); if(p) p.style.display='none'; }
-function renderIconGrid(filter){
-  const g=document.getElementById('me-icone-grid'); if(!g)return;
-  const f=(filter||'').toLowerCase().trim();
+const ICON_SEL={me:'ti-tag',mr:'ti-point'};
+function toggleIconPanel(pre){ const p=document.getElementById(pre+'-icone-panel'); const open=p.style.display!=='none'; p.style.display=open?'none':'block'; if(!open){ document.getElementById(pre+'-icone-busca').value=''; renderIconGrid(pre,''); document.getElementById(pre+'-icone-busca').focus(); } }
+function pickIcon(pre,name){ ICON_SEL[pre]=name; const pv=document.getElementById(pre+'-icone-preview'); if(pv) pv.className='ti '+name; const h=document.getElementById(pre+'-icone-hint'); if(h) h.textContent=name; document.querySelectorAll('#'+pre+'-icone-grid .iconopt').forEach(b=>b.classList.toggle('sel',b.dataset.i===name)); const p=document.getElementById(pre+'-icone-panel'); if(p) p.style.display='none'; }
+function renderIconGrid(pre,filter){
+  const g=document.getElementById(pre+'-icone-grid'); if(!g)return;
+  const f=(filter||'').toLowerCase().trim(); const sel=ICON_SEL[pre];
   let list=ICONS.filter(o=>!f||(o.i+' '+o.k).toLowerCase().includes(f));
-  if(_iconSel && !list.some(o=>o.i===_iconSel)) list=[{i:_iconSel,k:''}].concat(list);
-  g.innerHTML=list.map(o=>'<button type="button" class="iconopt'+(o.i===_iconSel?' sel':'')+'" data-i="'+o.i+'" title="'+o.i+'" onclick="pickIcon(\''+o.i+'\')"><i class="ti '+o.i+'"></i></button>').join('')||'<span style="font-size:12px;color:var(--tx3);grid-column:1/-1;padding:6px">nenhum ícone encontrado</span>';
+  if(sel && !list.some(o=>o.i===sel)) list=[{i:sel,k:''}].concat(list);
+  g.innerHTML=list.map(o=>'<button type="button" class="iconopt'+(o.i===sel?' sel':'')+'" data-i="'+o.i+'" title="'+o.i+'" onclick="pickIcon(\''+pre+'\',\''+o.i+'\')"><i class="ti '+o.i+'"></i></button>').join('')||'<span style="font-size:12px;color:var(--tx3);grid-column:1/-1;padding:6px">nenhum ícone encontrado</span>';
 }
-function filtrarIcones(v){ renderIconGrid(v); }
+function filtrarIcones(pre,v){ renderIconGrid(pre,v); }
 
 /* ===== CRUD etiqueta ===== */
 let _editEtiqIdx=-1;
@@ -514,7 +521,7 @@ function editEtiq(i){
   _editEtiqIdx=i; const c=i>=0?DATA.etiq[i]:{};
   document.getElementById('me-titulo').textContent=i>=0?'Editar etiqueta':'Nova etiqueta';
   document.getElementById('me-nome').value=c.nome||'';
-  document.getElementById('me-icone-panel').style.display='none'; pickIcon(c.icone||'ti-tag');
+  document.getElementById('me-icone-panel').style.display='none'; pickIcon('me',c.icone||'ti-tag');
   const gsel=document.getElementById('me-grupo'), ghint=document.getElementById('me-grupo-hint');
   if(CAP.et_grupo_id){ gsel.disabled=false; fillGrupoSelect(c.grupo_id||''); ghint.textContent=CAP.grupos?'Gerencie os grupos na aba "Grupos". Vazio = todos veem.':'Ative os grupos rodando o SQL do manual.'; }
   else { gsel.disabled=true; gsel.innerHTML='<option>— indisponível até rodar o SQL —</option>'; ghint.textContent='Rode o SQL do manual para ativar os grupos de usuário.'; }
@@ -532,7 +539,7 @@ async function saveEtiq(){
   const base=isNew?{id:uid(),ordem:DATA.etiq.length}:DATA.etiq[_editEtiqIdx];
   const row={
     id:base.id, empresa_id:EMP, nome,
-    icone:_iconSel||'ti-tag',
+    icone:ICON_SEL.me||'ti-tag',
     descricao:document.getElementById('me-desc').value.trim()||null,
     exemplos:document.getElementById('me-ex').value.trim()||null,
     grafia_app:document.getElementById('me-app').value.trim()||null,
@@ -566,7 +573,7 @@ async function moveEtiq(i,dir){
 let _editRegraIdx=-1;
 function editRegra(i){ if(!guardAdmin())return; _editRegraIdx=i; const r=i>=0?DATA.regras[i]:{};
   document.getElementById('mr-titulo').textContent=i>=0?'Editar regra':'Nova regra';
-  document.getElementById('mr-texto').value=r.texto||''; document.getElementById('mr-icone').value=r.icone||'ti-point';
+  document.getElementById('mr-texto').value=r.texto||''; document.getElementById('mr-icone-panel').style.display='none'; pickIcon('mr',r.icone||'ti-point');
   document.getElementById('mr-obs').value=r.observacao||'';
   document.getElementById('mr-class').value=r.classificacao||'';
   document.getElementById('mr-class-wrap').style.display=CAP.rg_class?'':'none';
@@ -576,7 +583,7 @@ function closeRegra(){ document.getElementById('modalRegra').classList.remove('s
 async function saveRegra(){
   const texto=document.getElementById('mr-texto').value.trim(); if(!texto){ alert('Escreva a regra.'); return; }
   const isNew=_editRegraIdx<0; const base=isNew?{id:uid(),ordem:DATA.regras.length}:DATA.regras[_editRegraIdx];
-  const row={id:base.id,empresa_id:EMP,texto,icone:document.getElementById('mr-icone').value.trim()||'ti-point',ordem:base.ordem!=null?base.ordem:DATA.regras.length};
+  const row={id:base.id,empresa_id:EMP,texto,icone:ICON_SEL.mr||'ti-point',ordem:base.ordem!=null?base.ordem:DATA.regras.length};
   if(CAP.rg_class) row.classificacao=document.getElementById('mr-class').value||null;
   if(CAP.rg_obs) row.observacao=document.getElementById('mr-obs').value.trim()||null;
   const r=await SB.from('cartao_regras').upsert(row); if(r.error){ return erroNuvem('saveRegra',r.error); }
