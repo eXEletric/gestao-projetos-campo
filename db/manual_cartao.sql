@@ -48,9 +48,35 @@ create table if not exists public.cartao_config (
 
 -- Idempotente: garante a coluna 'tema' se a tabela já existia sem ela
 alter table public.cartao_etiquetas add column if not exists tema text default 'outros';
--- Melhorias 05/07: classificação da etiqueta + nota na regra
-alter table public.cartao_etiquetas add column if not exists requisito text;   -- 'obrigatoria' | 'opcional' | null
+-- Melhorias 05/07: nota na regra
 alter table public.cartao_regras   add column if not exists observacao text;
+-- Melhorias 05/07 (v2): grupos de usuário, etiqueta atrelada a grupo, classificação na regra
+create table if not exists public.cartao_grupos (
+  id          uuid primary key default gen_random_uuid(),
+  empresa_id  uuid references public.empresas(id) on delete cascade,
+  nome        text not null,
+  ordem       int default 0,
+  deleted_at  timestamptz,
+  created_at  timestamptz default now()
+);
+alter table public.cartao_etiquetas add column if not exists grupo_id uuid references public.cartao_grupos(id);
+alter table public.cartao_regras    add column if not exists classificacao text;  -- 'obrigatorio' | 'necessario' | 'opcional' | null
+
+alter table public.cartao_grupos enable row level security;
+drop policy if exists cartao_grupos_sel on public.cartao_grupos;
+create policy cartao_grupos_sel on public.cartao_grupos
+  for select using (deleted_at is null);
+drop policy if exists cartao_grupos_wr on public.cartao_grupos;
+create policy cartao_grupos_wr on public.cartao_grupos
+  for all to authenticated
+  using (
+    empresa_id = (select empresa_id from public.perfis where user_id = auth.uid())
+    and (select papel from public.perfis where user_id = auth.uid()) in ('adm','fundador')
+  )
+  with check (
+    empresa_id = (select empresa_id from public.perfis where user_id = auth.uid())
+    and (select papel from public.perfis where user_id = auth.uid()) in ('adm','fundador')
+  );
 
 -- ============================================================
 -- RLS — público lê (link de consulta / técnico); só adm/fundador edita.

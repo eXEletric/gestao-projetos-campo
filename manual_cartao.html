@@ -49,6 +49,13 @@ button{font-family:inherit;font-size:14px;cursor:pointer}
 .iconopt{display:flex;align-items:center;justify-content:center;height:38px;border:1px solid transparent;border-radius:6px;background:var(--surf);cursor:pointer;font-size:19px;color:var(--tx2)}
 .iconopt:hover{background:var(--pri-bg)}
 .iconopt.sel{border-color:var(--pri);background:var(--pri-bg);color:var(--pri)}
+.iconbox{display:inline-flex;align-items:center;gap:10px;border:1px solid var(--line2);border-radius:var(--r);background:var(--surf);padding:8px 12px;cursor:pointer;font-size:13px;color:var(--tx2)}
+.iconbox:hover{background:var(--surf2)}
+.iconbox i:first-child{font-size:22px;color:var(--pri)}
+.pill.grp{background:var(--info-bg);color:var(--info)}
+.pill.cls-obrigatorio{background:var(--err-bg);color:var(--err)}
+.pill.cls-necessario{background:var(--warn-bg);color:var(--warn)}
+.pill.cls-opcional{background:var(--surf2);color:var(--tx2);border:0.5px solid var(--line)}
 /* header do manual */
 .mhead{display:flex;align-items:center;gap:13px;background:var(--surf);border:1px solid var(--line);border-radius:var(--r2);padding:16px 18px;margin:16px 0}
 .mhead .ic{width:44px;height:44px;border-radius:10px;background:var(--info-bg);color:var(--info);display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0}
@@ -157,6 +164,7 @@ textarea.fi{min-height:58px;resize:vertical}
   <div id="view-admin" style="display:none">
     <div class="subtabs">
       <button class="subtab on" data-s="etiq" onclick="subtab('etiq')">Etiquetas</button>
+      <button class="subtab" data-s="grupos" onclick="subtab('grupos')">Grupos</button>
       <button class="subtab" data-s="regras" onclick="subtab('regras')">Regras de ouro</button>
       <button class="subtab" data-s="textos" onclick="subtab('textos')">Textos</button>
     </div>
@@ -168,6 +176,16 @@ textarea.fi{min-height:58px;resize:vertical}
         <span class="hint" id="etiq-count"></span>
       </div>
       <div class="rowlist" id="admin-etiq"></div>
+    </div>
+
+    <div id="s-grupos" style="display:none">
+      <div class="adminbar">
+        <input id="novo-grupo" placeholder="Nome do grupo (ex.: Campo, Administrativo)" style="padding:8px 11px;border:1px solid var(--line2);border-radius:var(--r);font-size:14px;min-width:240px" onkeydown="if(event.key==='Enter')addGrupo()">
+        <button class="btn p s" onclick="addGrupo()"><i class="ti ti-plus"></i> Adicionar grupo</button>
+        <button class="btn s" onclick="sugerirGrupos()">Grupos sugeridos</button>
+      </div>
+      <p class="hint" style="margin:0 0 10px">Cada colaborador será vinculado a um grupo; a etiqueta atrelada a um grupo aparece para ele. (vínculo do colaborador: etapa futura)</p>
+      <div class="rowlist" id="admin-grupos"></div>
     </div>
 
     <div id="s-regras" style="display:none">
@@ -193,29 +211,17 @@ textarea.fi{min-height:58px;resize:vertical}
   <div class="mb">
     <div><label class="fl">Nome da etiqueta</label><input class="fi" id="me-nome" placeholder="Ex.: Combustível"></div>
     <div>
-      <label class="fl">Ícone — clique para escolher <span id="me-icone-atual" style="color:var(--tx3);font-weight:400"></span></label>
-      <input class="fi" id="me-icone-busca" placeholder="filtrar ícones… (ex.: carro, comida, casa, ferramenta)" oninput="filtrarIcones(this.value)" style="margin-bottom:8px">
-      <div class="icongrid" id="me-icone-grid"></div>
+      <label class="fl">Ícone</label>
+      <div><button type="button" class="iconbox" id="me-icone-box" onclick="toggleIconPanel()"><i class="ti ti-tag" id="me-icone-preview"></i><span id="me-icone-hint">ti-tag</span><i class="ti ti-chevron-down" style="font-size:14px;color:var(--tx3)"></i></button></div>
+      <div id="me-icone-panel" style="display:none;margin-top:8px">
+        <input class="fi" id="me-icone-busca" placeholder="filtrar… (ex.: carro, comida, casa, ferramenta)" oninput="filtrarIcones(this.value)" style="margin-bottom:8px">
+        <div class="icongrid" id="me-icone-grid"></div>
+      </div>
     </div>
-    <div class="g2">
-      <div><label class="fl">Tema</label>
-        <select class="fi" id="me-tema">
-          <option value="alim">Alimentação</option><option value="desloc">Deslocamento</option>
-          <option value="obra">Obra & serviço</option><option value="estadia">Estadia</option>
-          <option value="adm">Administrativo</option><option value="outros">Outros</option>
-        </select></div>
-      <div><label class="fl">Quem pode usar</label>
-        <div class="seg" id="me-perm">
-          <button type="button" data-v="campo" class="on" onclick="setPerm('campo')"><i class="ti ti-user"></i> Campo</button>
-          <button type="button" data-v="adm" onclick="setPerm('adm')"><i class="ti ti-user-check"></i> ADM</button>
-        </div></div>
+    <div><label class="fl">Grupo de usuário</label>
+      <select class="fi" id="me-grupo"></select>
+      <span class="hint">Gerencie os grupos na aba "Grupos". Vazio = todos veem.</span>
     </div>
-    <div><label class="fl">Classificação</label>
-      <div class="seg sm" id="me-req">
-        <button type="button" data-v="" class="on" onclick="setReq('')">— nenhuma</button>
-        <button type="button" data-v="obrigatoria" onclick="setReq('obrigatoria')">Obrigatória</button>
-        <button type="button" data-v="opcional" onclick="setReq('opcional')">Opcional</button>
-      </div></div>
     <div><label class="fl">Descrição</label><textarea class="fi" id="me-desc" placeholder="O que entra nesta etiqueta"></textarea></div>
     <div><label class="fl">Exemplos</label><input class="fi" id="me-ex" placeholder="Ex.: gasolina, etanol, diesel"></div>
     <div class="g2">
@@ -233,6 +239,13 @@ textarea.fi{min-height:58px;resize:vertical}
     <div class="g2">
       <div style="grid-column:1/-1"><label class="fl">Texto da regra</label><input class="fi" id="mr-texto" placeholder="Ex.: Sempre anexe a nota / cupom fiscal."></div>
     </div>
+    <div><label class="fl">Classificação</label>
+      <select class="fi" id="mr-class">
+        <option value="">Nenhum</option>
+        <option value="obrigatorio">Obrigatório</option>
+        <option value="necessario">Necessário</option>
+        <option value="opcional">Opcional</option>
+      </select></div>
     <div><label class="fl">Observação / nota (opcional)</label><textarea class="fi" id="mr-obs" placeholder="Detalhe, exceção ou nota da regra"></textarea></div>
     <div><label class="fl">Ícone (Tabler)</label><input class="fi" id="mr-icone" placeholder="ti-point"></div>
   </div>
@@ -266,8 +279,8 @@ const PARAMS=new URLSearchParams(location.search);
 const PUBLIC_EMP=PARAMS.get('empresa')||null;   // link público pode fixar a empresa
 
 let _USER=null,_PERFIL=null,EMP=null,ADMIN=false,PAINEL=false;
-let DATA={etiq:[],regras:[],cfg:null};
-let temaAtivo='todas';
+let DATA={etiq:[],regras:[],grupos:[],cfg:null};
+let grupoAtivo='todas';
 
 /* ===== conteúdo sugerido (as 19 etiquetas + regras) ===== */
 const SEED_ETIQ=[
@@ -307,10 +320,12 @@ async function loadAll(){
     const emp = EMP || PUBLIC_EMP;
     let qe = SB.from('cartao_etiquetas').select('*').is('deleted_at',null).order('ordem');
     let qr = SB.from('cartao_regras').select('*').is('deleted_at',null).order('ordem');
-    if(emp){ qe=qe.eq('empresa_id',emp); qr=qr.eq('empresa_id',emp); }
+    let qg = SB.from('cartao_grupos').select('*').is('deleted_at',null).order('ordem');
+    if(emp){ qe=qe.eq('empresa_id',emp); qr=qr.eq('empresa_id',emp); qg=qg.eq('empresa_id',emp); }
     const [re,rr]=await Promise.all([qe,qr]);
     if(re.error) throw re.error;
     DATA.etiq=re.data||[]; DATA.regras=rr.data||[];
+    try{ const rg=await qg; DATA.grupos=(rg&&!rg.error&&rg.data)?rg.data:[]; }catch(_){ DATA.grupos=[]; }
     let qc=SB.from('cartao_config').select('*');
     if(emp) qc=qc.eq('empresa_id',emp);
     const rc=await qc.limit(1).maybeSingle();
@@ -331,38 +346,42 @@ function renderConsulta(){
   const av=document.getElementById('cfg-aviso'); if(cfg.observacao){ document.getElementById('cfg-aviso-tx').textContent=cfg.observacao; av.style.display='flex'; } else av.style.display='none';
   // regras
   const rb=document.getElementById('regras-box'), rl=document.getElementById('regras-list');
-  if(DATA.regras.length){ rb.style.display='block'; rl.innerHTML=DATA.regras.map(r=>'<div class="ri"><i class="ti '+esc(r.icone||'ti-point')+'"></i> <span>'+esc(r.texto)+(r.observacao?'<span style="display:block;font-size:12px;color:var(--tx3);margin-top:2px">'+esc(r.observacao)+'</span>':'')+'</span></div>').join(''); }
+  if(DATA.regras.length){ rb.style.display='block'; rl.innerHTML=DATA.regras.map(regraHTML).join(''); }
   else rb.style.display='none';
-  // chips
   renderChips();
-  // grade
-  const g=document.getElementById('grade');
-  g.innerHTML=DATA.etiq.map(cardHTML).join('');
+  document.getElementById('grade').innerHTML=DATA.etiq.map(cardHTML).join('');
   aplicarFiltro();
 }
-function renderChips(){
-  const temasPresentes=[...new Set(DATA.etiq.map(e=>e.tema||'outros'))];
-  let h='<button class="chip'+(temaAtivo==='todas'?' on':'')+'" onclick="setTema(\'todas\')">Todas</button>';
-  for(const k in TEMAS){ if(temasPresentes.includes(k)) h+='<button class="chip'+(temaAtivo===k?' on':'')+'" onclick="setTema(\''+k+'\')">'+TEMAS[k]+'</button>'; }
-  document.getElementById('chips').innerHTML=h;
+const CLS_LBL={obrigatorio:'Obrigatório',necessario:'Necessário',opcional:'Opcional'};
+function regraHTML(r){
+  const cls=CLS_LBL[r.classificacao]?'<span class="pill cls-'+r.classificacao+'" style="margin-right:6px">'+CLS_LBL[r.classificacao]+'</span>':'';
+  const obs=r.observacao?'<span style="display:block;font-size:12px;color:var(--tx3);margin-top:2px">'+esc(r.observacao)+'</span>':'';
+  return '<div class="ri"><i class="ti '+esc(r.icone||'ti-point')+'"></i> <span>'+cls+esc(r.texto)+obs+'</span></div>';
 }
-function setTema(t){ temaAtivo=t; renderChips(); aplicarFiltro(); }
+function grupoNome(id){ const g=DATA.grupos.find(x=>x.id===id); return g?g.nome:null; }
+function renderChips(){
+  const usados=DATA.grupos.filter(g=>DATA.etiq.some(e=>e.grupo_id===g.id));
+  let h='<button class="chip'+(grupoAtivo==='todas'?' on':'')+'" onclick="setGrupo(\'todas\')">Todas</button>';
+  usados.forEach(g=>{ h+='<button class="chip'+(grupoAtivo===g.id?' on':'')+'" onclick="setGrupo(\''+g.id+'\')">'+esc(g.nome)+'</button>'; });
+  const el=document.getElementById('chips'); el.innerHTML=h; el.style.display=usados.length?'flex':'none';
+}
+function setGrupo(g){ grupoAtivo=g; renderChips(); aplicarFiltro(); }
 function cardHTML(c){
-  const perm=c.permissao==='adm'?'<span class="pill adm"><i class="ti ti-user-check"></i>ADM</span>':'<span class="pill campo"><i class="ti ti-user"></i>Campo</span>';
+  const gn=grupoNome(c.grupo_id);
+  const grp=gn?'<span class="pill grp"><i class="ti ti-users"></i>'+esc(gn)+'</span>':'';
   const nova=c.destaque?'<span class="pill info">nova</span>':'';
-  const req=c.requisito==='obrigatoria'?'<span class="pill obrig">Obrigatória</span>':(c.requisito==='opcional'?'<span class="pill opc">Opcional</span>':'');
   const app=c.grafia_app?'<p class="app">no app aparece como "'+esc(c.grafia_app)+'"</p>':'';
   const ex=c.exemplos?'<p class="ex"><b>Ex.:</b> '+esc(c.exemplos)+'</p>':'';
   const key=(c.nome+' '+(c.exemplos||'')+' '+(c.grafia_app||'')).toLowerCase();
-  return '<div class="card" data-k="'+esc(key)+'" data-t="'+esc(c.tema||'outros')+'">'
-    +'<div class="ch"><i class="ti '+esc(c.icone||'ti-tag')+'"></i><span class="nm">'+esc(c.nome)+nova+req+'</span>'+perm+'</div>'
+  return '<div class="card" data-k="'+esc(key)+'" data-g="'+esc(c.grupo_id||'')+'">'
+    +'<div class="ch"><i class="ti '+esc(c.icone||'ti-tag')+'"></i><span class="nm">'+esc(c.nome)+nova+'</span>'+grp+'</div>'
     +'<p class="d">'+esc(c.descricao||'')+'</p>'+ex+app+'</div>';
 }
 function aplicarFiltro(){
   const q=(document.getElementById('busca').value||'').toLowerCase().trim();
   let n=0;
   document.querySelectorAll('#grade .card').forEach(el=>{
-    const ok=(temaAtivo==='todas'||el.dataset.t===temaAtivo)&&el.dataset.k.includes(q);
+    const ok=(grupoAtivo==='todas'||el.dataset.g===grupoAtivo)&&el.dataset.k.includes(q);
     el.style.display=ok?'':'none'; if(ok)n++;
   });
   document.getElementById('vazio').style.display=n===0?'block':'none';
@@ -371,27 +390,73 @@ document.getElementById('busca').addEventListener('input',aplicarFiltro);
 
 /* ===== painel admin ===== */
 function togglePainel(){ PAINEL=!PAINEL; document.getElementById('view-consulta').style.display=PAINEL?'none':'block'; document.getElementById('view-admin').style.display=PAINEL?'block':'none'; document.getElementById('painel-lbl').textContent=PAINEL?'Ver manual':'Painel'; if(PAINEL) renderAdmin(); else renderConsulta(); }
-function subtab(s){ ['etiq','regras','textos'].forEach(x=>{document.getElementById('s-'+x).style.display=x===s?'block':'none';document.querySelector('.subtab[data-s="'+x+'"]').classList.toggle('on',x===s);}); if(s==='textos') fillTextos(); }
+function subtab(s){ ['etiq','grupos','regras','textos'].forEach(x=>{document.getElementById('s-'+x).style.display=x===s?'block':'none';document.querySelector('.subtab[data-s="'+x+'"]').classList.toggle('on',x===s);}); if(s==='textos') fillTextos(); if(s==='grupos') renderGrupos(); }
 function renderAdmin(){
   document.getElementById('etiq-count').textContent=DATA.etiq.length+' etiqueta'+(DATA.etiq.length===1?'':'s');
   const el=document.getElementById('admin-etiq');
   el.innerHTML=DATA.etiq.map((c,i)=>{
-    const perm=c.permissao==='adm'?'<span class="pill adm">ADM</span>':'<span class="pill campo">Campo</span>';
+    const gn=grupoNome(c.grupo_id);
+    const grp=gn?'<span class="pill grp">'+esc(gn)+'</span>':'';
     const nova=c.destaque?'<span class="pill info">nova</span>':'';
     return '<div class="rowit"><i class="ti ti-grip-vertical grip"></i><i class="ti '+esc(c.icone||'ti-tag')+' ic"></i>'
-      +'<span class="nm">'+esc(c.nome)+nova+'</span>'+perm
+      +'<span class="nm">'+esc(c.nome)+nova+'</span>'+grp
       +'<button class="iconbtn" onclick="moveEtiq('+i+',-1)" '+(i===0?'disabled':'')+' title="subir"><i class="ti ti-chevron-up"></i></button>'
       +'<button class="iconbtn" onclick="moveEtiq('+i+',1)" '+(i===DATA.etiq.length-1?'disabled':'')+' title="descer"><i class="ti ti-chevron-down"></i></button>'
       +'<button class="iconbtn" onclick="editEtiq('+i+')" title="editar"><i class="ti ti-edit"></i></button>'
       +'<button class="iconbtn del" onclick="delEtiq('+i+')" title="excluir"><i class="ti ti-trash"></i></button></div>';
   }).join('')||'<p class="vazio">Sem etiquetas ainda. Use "Carregar conteúdo sugerido" ou "+ Nova etiqueta".</p>';
   const rl=document.getElementById('admin-regras');
-  rl.innerHTML=DATA.regras.map((r,i)=>'<div class="rowit"><i class="ti ti-grip-vertical grip"></i><i class="ti '+esc(r.icone||'ti-point')+' ic"></i>'
-      +'<span class="nm">'+esc(r.texto)+'</span>'
+  rl.innerHTML=DATA.regras.map((r,i)=>{
+    const cls=CLS_LBL[r.classificacao]?'<span class="pill cls-'+r.classificacao+'">'+CLS_LBL[r.classificacao]+'</span>':'';
+    return '<div class="rowit"><i class="ti ti-grip-vertical grip"></i><i class="ti '+esc(r.icone||'ti-point')+' ic"></i>'
+      +'<span class="nm">'+esc(r.texto)+'</span>'+cls
       +'<button class="iconbtn" onclick="moveRegra('+i+',-1)" '+(i===0?'disabled':'')+'><i class="ti ti-chevron-up"></i></button>'
       +'<button class="iconbtn" onclick="moveRegra('+i+',1)" '+(i===DATA.regras.length-1?'disabled':'')+'><i class="ti ti-chevron-down"></i></button>'
       +'<button class="iconbtn" onclick="editRegra('+i+')"><i class="ti ti-edit"></i></button>'
-      +'<button class="iconbtn del" onclick="delRegra('+i+')"><i class="ti ti-trash"></i></button></div>').join('')||'<p class="vazio">Sem regras ainda.</p>';
+      +'<button class="iconbtn del" onclick="delRegra('+i+')"><i class="ti ti-trash"></i></button></div>';
+  }).join('')||'<p class="vazio">Sem regras ainda.</p>';
+}
+
+/* ===== grupos de usuário ===== */
+function renderGrupos(){
+  const el=document.getElementById('admin-grupos');
+  el.innerHTML=DATA.grupos.map((g,i)=>'<div class="rowit"><i class="ti ti-users ic"></i>'
+    +'<span class="nm">'+esc(g.nome)+'</span>'
+    +'<button class="iconbtn" onclick="moveGrupo('+i+',-1)" '+(i===0?'disabled':'')+'><i class="ti ti-chevron-up"></i></button>'
+    +'<button class="iconbtn" onclick="moveGrupo('+i+',1)" '+(i===DATA.grupos.length-1?'disabled':'')+'><i class="ti ti-chevron-down"></i></button>'
+    +'<button class="iconbtn" onclick="renomearGrupo('+i+')"><i class="ti ti-edit"></i></button>'
+    +'<button class="iconbtn del" onclick="delGrupo('+i+')"><i class="ti ti-trash"></i></button></div>').join('')
+    ||'<p class="vazio">Nenhum grupo ainda. Adicione acima ou use "Grupos sugeridos".</p>';
+}
+async function addGrupo(){
+  if(!guardAdmin())return;
+  const inp=document.getElementById('novo-grupo'); const nome=(inp.value||'').trim(); if(!nome)return;
+  const row={id:uid(),empresa_id:EMP,nome,ordem:DATA.grupos.length};
+  const r=await SB.from('cartao_grupos').upsert(row); if(r.error){ return erroNuvem('addGrupo',r.error); }
+  DATA.grupos.push(row); inp.value=''; renderGrupos(); cloud('salvo ✓','ok');
+}
+async function renomearGrupo(i){
+  if(!guardAdmin())return; const g=DATA.grupos[i]; const nome=prompt('Nome do grupo:',g.nome); if(nome==null)return;
+  const nn=nome.trim(); if(!nn)return;
+  const r=await SB.from('cartao_grupos').update({nome:nn}).eq('id',g.id); if(r.error){ return erroNuvem('renomearGrupo',r.error); }
+  g.nome=nn; renderGrupos(); cloud('salvo ✓','ok');
+}
+async function delGrupo(i){
+  if(!guardAdmin())return; const g=DATA.grupos[i];
+  if(!confirm('Excluir o grupo "'+g.nome+'"? As etiquetas dele ficarão sem grupo.'))return;
+  const r=await SB.from('cartao_grupos').update({deleted_at:new Date().toISOString()}).eq('id',g.id); if(r.error){ return erroNuvem('delGrupo',r.error); }
+  DATA.grupos.splice(i,1); renderGrupos(); cloud('salvo ✓','ok');
+}
+async function moveGrupo(i,dir){ const j=i+dir; if(j<0||j>=DATA.grupos.length)return;
+  const a=DATA.grupos[i],b=DATA.grupos[j]; DATA.grupos[i]=b; DATA.grupos[j]=a; DATA.grupos.forEach((g,k)=>g.ordem=k); renderGrupos();
+  await Promise.all([SB.from('cartao_grupos').update({ordem:a.ordem}).eq('id',a.id),SB.from('cartao_grupos').update({ordem:b.ordem}).eq('id',b.id)]); cloud('salvo ✓','ok'); }
+async function sugerirGrupos(){
+  if(!guardAdmin())return;
+  const nomes=['Campo','Administrativo','Gerência'].filter(n=>!DATA.grupos.some(g=>(g.nome||'').toLowerCase()===n.toLowerCase()));
+  if(!nomes.length){ alert('Os grupos sugeridos já existem.'); return; }
+  const rows=nomes.map((n,k)=>({id:uid(),empresa_id:EMP,nome:n,ordem:DATA.grupos.length+k}));
+  const r=await SB.from('cartao_grupos').insert(rows); if(r.error){ return erroNuvem('sugerirGrupos',r.error); }
+  DATA.grupos=DATA.grupos.concat(rows); renderGrupos(); cloud('salvo ✓','ok');
 }
 
 /* ===== seletor de ícones ===== */
@@ -406,7 +471,8 @@ const ICONS=[
  {i:'ti-speakerphone',k:'marketing publicidade divulgacao anuncio'},{i:'ti-ad',k:'anuncio publicidade marketing'},{i:'ti-briefcase',k:'servico trabalho maleta terceiro'},{i:'ti-user-cog',k:'servico mao de obra terceiro'},{i:'ti-book',k:'livro documento manual'},{i:'ti-clipboard',k:'prancheta lista documento'},{i:'ti-calendar',k:'calendario data'},
 ];
 let _iconSel='ti-tag';
-function pickIcon(name){ _iconSel=name; const at=document.getElementById('me-icone-atual'); if(at) at.innerHTML='— <i class="ti '+name+'"></i> '+name; document.querySelectorAll('#me-icone-grid .iconopt').forEach(b=>b.classList.toggle('sel',b.dataset.i===_iconSel)); }
+function toggleIconPanel(){ const p=document.getElementById('me-icone-panel'); const open=p.style.display!=='none'; p.style.display=open?'none':'block'; if(!open){ document.getElementById('me-icone-busca').value=''; renderIconGrid(''); document.getElementById('me-icone-busca').focus(); } }
+function pickIcon(name){ _iconSel=name; const pv=document.getElementById('me-icone-preview'); if(pv) pv.className='ti '+name; const h=document.getElementById('me-icone-hint'); if(h) h.textContent=name; document.querySelectorAll('#me-icone-grid .iconopt').forEach(b=>b.classList.toggle('sel',b.dataset.i===_iconSel)); const p=document.getElementById('me-icone-panel'); if(p) p.style.display='none'; }
 function renderIconGrid(filter){
   const g=document.getElementById('me-icone-grid'); if(!g)return;
   const f=(filter||'').toLowerCase().trim();
@@ -415,21 +481,17 @@ function renderIconGrid(filter){
   g.innerHTML=list.map(o=>'<button type="button" class="iconopt'+(o.i===_iconSel?' sel':'')+'" data-i="'+o.i+'" title="'+o.i+'" onclick="pickIcon(\''+o.i+'\')"><i class="ti '+o.i+'"></i></button>').join('')||'<span style="font-size:12px;color:var(--tx3);grid-column:1/-1;padding:6px">nenhum ícone encontrado</span>';
 }
 function filtrarIcones(v){ renderIconGrid(v); }
-let _reqSel='';
-function setReq(v){ _reqSel=v; document.querySelectorAll('#me-req button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); }
 
 /* ===== CRUD etiqueta ===== */
-let _editEtiqIdx=-1,_permSel='campo';
-function setPerm(v){ _permSel=v; document.querySelectorAll('#me-perm button').forEach(b=>b.classList.toggle('on',b.dataset.v===v)); }
+let _editEtiqIdx=-1;
+function fillGrupoSelect(sel){ const s=document.getElementById('me-grupo'); if(!s)return; s.innerHTML='<option value="">— sem grupo (todos veem)</option>'+DATA.grupos.map(g=>'<option value="'+g.id+'">'+esc(g.nome)+'</option>').join(''); s.value=sel||''; }
 function editEtiq(i){
   if(!guardAdmin())return;
   _editEtiqIdx=i; const c=i>=0?DATA.etiq[i]:{};
   document.getElementById('me-titulo').textContent=i>=0?'Editar etiqueta':'Nova etiqueta';
   document.getElementById('me-nome').value=c.nome||'';
-  document.getElementById('me-icone-busca').value=''; pickIcon(c.icone||'ti-tag'); renderIconGrid('');
-  document.getElementById('me-tema').value=c.tema||'outros';
-  setPerm(c.permissao||'campo');
-  setReq(c.requisito||'');
+  document.getElementById('me-icone-panel').style.display='none'; pickIcon(c.icone||'ti-tag');
+  fillGrupoSelect(c.grupo_id||'');
   document.getElementById('me-desc').value=c.descricao||'';
   document.getElementById('me-ex').value=c.exemplos||'';
   document.getElementById('me-app').value=c.grafia_app||'';
@@ -445,9 +507,7 @@ async function saveEtiq(){
   const row={
     id:base.id, empresa_id:EMP, nome,
     icone:_iconSel||'ti-tag',
-    tema:document.getElementById('me-tema').value,
-    permissao:_permSel,
-    requisito:_reqSel||null,
+    grupo_id:document.getElementById('me-grupo').value||null,
     descricao:document.getElementById('me-desc').value.trim()||null,
     exemplos:document.getElementById('me-ex').value.trim()||null,
     grafia_app:document.getElementById('me-app').value.trim()||null,
@@ -482,12 +542,13 @@ function editRegra(i){ if(!guardAdmin())return; _editRegraIdx=i; const r=i>=0?DA
   document.getElementById('mr-titulo').textContent=i>=0?'Editar regra':'Nova regra';
   document.getElementById('mr-texto').value=r.texto||''; document.getElementById('mr-icone').value=r.icone||'ti-point';
   document.getElementById('mr-obs').value=r.observacao||'';
+  document.getElementById('mr-class').value=r.classificacao||'';
   document.getElementById('modalRegra').classList.add('show'); }
 function closeRegra(){ document.getElementById('modalRegra').classList.remove('show'); }
 async function saveRegra(){
   const texto=document.getElementById('mr-texto').value.trim(); if(!texto){ alert('Escreva a regra.'); return; }
   const isNew=_editRegraIdx<0; const base=isNew?{id:uid(),ordem:DATA.regras.length}:DATA.regras[_editRegraIdx];
-  const row={id:base.id,empresa_id:EMP,texto,observacao:document.getElementById('mr-obs').value.trim()||null,icone:document.getElementById('mr-icone').value.trim()||'ti-point',ordem:base.ordem!=null?base.ordem:DATA.regras.length};
+  const row={id:base.id,empresa_id:EMP,texto,classificacao:document.getElementById('mr-class').value||null,observacao:document.getElementById('mr-obs').value.trim()||null,icone:document.getElementById('mr-icone').value.trim()||'ti-point',ordem:base.ordem!=null?base.ordem:DATA.regras.length};
   const r=await SB.from('cartao_regras').upsert(row); if(r.error){ return erroNuvem('saveRegra',r.error); }
   if(isNew) DATA.regras.push(row); else DATA.regras[_editRegraIdx]=Object.assign(base,row);
   closeRegra(); renderAdmin(); cloud('salvo ✓','ok');
@@ -513,7 +574,14 @@ async function carregarSugerido(){
   if(!guardAdmin())return;
   if(DATA.etiq.length && !confirm('Já existem etiquetas. Isso vai ADICIONAR as sugeridas por cima. Continuar?'))return;
   cloud('carregando conteúdo…','load');
-  const etiq=SEED_ETIQ.map((s,k)=>({id:uid(),empresa_id:EMP,nome:s.n,icone:s.i,tema:s.t,permissao:s.p,descricao:s.d,exemplos:s.e,grafia_app:s.app||null,destaque:!!s.nova,ordem:DATA.etiq.length+k}));
+  const mapaGrupo={};
+  for(const nome of ['Campo','Administrativo']){
+    let g=DATA.grupos.find(x=>(x.nome||'').toLowerCase()===nome.toLowerCase());
+    if(!g){ g={id:uid(),empresa_id:EMP,nome,ordem:DATA.grupos.length}; const rg=await SB.from('cartao_grupos').upsert(g); if(rg.error){ return erroNuvem('seedGrupo',rg.error); } DATA.grupos.push(g); }
+    mapaGrupo[nome]=g.id;
+  }
+  const gid=p=> p==='adm'?mapaGrupo['Administrativo']:mapaGrupo['Campo'];
+  const etiq=SEED_ETIQ.map((s,k)=>({id:uid(),empresa_id:EMP,nome:s.n,icone:s.i,grupo_id:gid(s.p),descricao:s.d,exemplos:s.e,grafia_app:s.app||null,destaque:!!s.nova,ordem:DATA.etiq.length+k}));
   const regras=SEED_REGRAS.map((s,k)=>({id:uid(),empresa_id:EMP,texto:s.t,icone:s.i,ordem:DATA.regras.length+k}));
   const re=await SB.from('cartao_etiquetas').insert(etiq);
   if(re.error){ return erroNuvem('seedEtiq',re.error); }
