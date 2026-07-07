@@ -10,6 +10,8 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="logo_icon.png">
 <link rel="icon" href="logo_icon.png" type="image/png">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0" rel="stylesheet">
 <style>
 :root{
   --bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);
@@ -330,6 +332,22 @@ body.papel-tecnico .adm-only{display:none !important}
 .soon-t{font-size:18px;font-weight:600;color:var(--tx);margin-bottom:6px}
 .soon-d{font-size:13px;max-width:440px;margin:0 auto;line-height:1.5}
 @media(max-width:820px){.app{flex-direction:column;gap:10px}.sidebar{width:auto}.sidebar.mini{width:auto}.sb-nav{display:flex;flex-direction:row;flex-wrap:nowrap}.sb-cap{display:none}.sb-i{width:auto;white-space:nowrap;border-left:none;border-bottom:3px solid transparent}.sb-i.on{border-left:none;border-bottom-color:#7d68e0}}
+/* ===== ÍCONES RELEVO + SALTO + GRUPOS (07/07) ===== */
+.sb-i .ic,.sb-grp .ic{width:24px;height:24px;display:flex;align-items:center;justify-content:center;flex-shrink:0;transform-origin:50% 60%;transition:transform .2s cubic-bezier(.34,1.56,.64,1),filter .2s;font-size:0}
+.msr{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;font-size:22px;line-height:1;letter-spacing:normal;white-space:nowrap;background:linear-gradient(180deg,#c6b8f7,#6a52c6);-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;color:transparent;font-variation-settings:'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 24}
+.sb-i.on .ic,.sb-grp.open .ic{transform:scale(1.2) translateY(-2.5px);filter:drop-shadow(0 0 7px rgba(255,255,255,.36))}
+@keyframes sbpop{0%{transform:scale(1)}45%{transform:scale(1.34) translateY(-4px)}100%{transform:scale(1.2) translateY(-2.5px)}}
+.ic.pop{animation:sbpop .4s cubic-bezier(.34,1.56,.64,1)}
+.sb-grp{display:flex;align-items:center;gap:11px;width:100%;height:38px;padding:0 15px;background:none;border:none;border-left:3px solid transparent;color:#9c93c4;cursor:pointer;font-size:13.5px;text-align:left;font-family:inherit}
+.sb-grp:hover{background:rgba(255,255,255,.05)}
+.sb-grp.open{color:#e7e3f6}
+.sb-grp .lb{flex:1;white-space:nowrap;overflow:hidden;font-weight:500}
+.sb-grp .gchev{font-size:12px;color:#6a5f95;transition:transform .2s}
+.sb-grp.open .gchev{transform:rotate(90deg)}
+.sb-sub{max-height:0;overflow:hidden;transition:max-height .28s ease}
+.sb-sub.show{max-height:560px}
+.sb-sub .sb-i{padding-left:18px;height:34px}
+.sidebar.mini .sb-grp .lb,.sidebar.mini .sb-grp .gchev,.sidebar.mini .sb-sub{display:none}
 </style>
 </head>
 <body>
@@ -350,33 +368,44 @@ body.papel-tecnico .adm-only{display:none !important}
   <aside class="sidebar" id="sidebar">
     <div class="sb-logo"><img src="logo_ex.png" class="sb-mark" alt="eX"><span class="sb-name">eX Cronograma</span><span class="sb-coll" onclick="toggleSidebar()" title="recolher">&#171;</span></div>
     <nav class="sb-nav">
-      <div class="sb-cap">Principal</div>
-      <button class="sb-i" onclick="navSoon('Painel Inicial',this)"><span class="ic">🏠</span><span class="lb">Painel Inicial</span><span class="br">em breve</span></button>
-      <div class="sb-cap">Operação</div>
-      <button class="sb-i on" onclick="navObras(this)"><span class="ic">🏗️</span><span class="lb">Obras</span></button>
-      <button class="sb-i fut" onclick="navSoon('Serviços',this)"><span class="ic">🔧</span><span class="lb">Serviços</span><span class="br">em breve</span></button>
-      <button class="sb-i fut" onclick="navSoon('Visitas',this)"><span class="ic">📍</span><span class="lb">Visitas</span><span class="br">em breve</span></button>
-      <button class="sb-i fut" onclick="navSoon('Tarefas',this)"><span class="ic">✅</span><span class="lb">Tarefas</span><span class="br">em breve</span></button>
-      <button class="sb-i fut" onclick="navSoon('Agenda',this)"><span class="ic">📅</span><span class="lb">Agenda</span><span class="br">em breve</span></button>
-      <div class="sb-cap">Comercial</div>
-      <button class="sb-i fut" onclick="navSoon('Propostas',this)"><span class="ic">📄</span><span class="lb">Propostas</span><span class="br">em breve</span></button>
-      <button class="sb-i fut" onclick="navSoon('Orçamentos',this)"><span class="ic">🧾</span><span class="lb">Orçamentos</span><span class="br">em breve</span></button>
-      <div class="sb-cap">Gestão</div>
-      <button class="sb-i" onclick="navView('colab',this)"><span class="ic">👥</span><span class="lb">Equipe</span></button>
-      <button class="sb-i fut" onclick="navSoon('Clientes',this)"><span class="ic">🤝</span><span class="lb">Clientes</span><span class="br">em breve</span></button>
-      <button class="sb-i fut" onclick="navSoon('Atividades',this)"><span class="ic">🕘</span><span class="lb">Atividades</span><span class="br">em breve</span></button>
-      <button class="sb-i fut" onclick="navSoon('Financeiro',this)"><span class="ic">💰</span><span class="lb">Financeiro</span><span class="br">em breve</span></button>
-      <button class="sb-i fut" onclick="navSoon('Frota',this)"><span class="ic">🚚</span><span class="lb">Frota</span><span class="br">em breve</span></button>
-      <button class="sb-i" onclick="navView('mat',this)"><span class="ic">📦</span><span class="lb">Estoque</span></button>
-      <div class="sb-cap">Configurações</div>
-      <button class="sb-i adm-only" onclick="navEmpresa(this)"><span class="ic">🏢</span><span class="lb">Perfil da empresa</span></button>
-      <button class="sb-i adm-only" onclick="navView('cat',this)"><span class="ic">📋</span><span class="lb">Catálogo de serviços</span></button>
-      <button class="sb-i adm-only" onclick="navView('cfg',this)"><span class="ic">🎚️</span><span class="lb">Parâmetros</span></button>
-      <button class="sb-i adm-only" onclick="navView('acessos',this)"><span class="ic">🔑</span><span class="lb">Acessos às obras</span></button>
-      <button class="sb-i adm-only" onclick="abrirManualCartao()"><span class="ic">💳</span><span class="lb">Manual do Cartão</span></button>
-      <button class="sb-i fut adm-only" onclick="navSoon('Política',this)"><span class="ic">📜</span><span class="lb">Política</span><span class="br">em breve</span></button>
-      <button class="sb-i fut adm-only" onclick="navSoon('Melhore seu plano',this)"><span class="ic">🚀</span><span class="lb">Melhore seu plano</span><span class="br">em breve</span></button>
-      <button class="sb-i fut adm-only" onclick="navSoon('Integrações',this)"><span class="ic">🔌</span><span class="lb">Integrações</span><span class="br">em breve</span></button>
+      <button class="sb-i" onclick="navSoon('Painel Inicial',this)"><span class="ic"><span class="msr">space_dashboard</span></span><span class="lb">Painel Inicial</span></button>
+
+      <div class="sb-grp open" onclick="toggleGrp(this)"><span class="ic"><span class="msr">construction</span></span><span class="lb">Operação</span><span class="gchev">▶</span></div>
+      <div class="sb-sub show">
+        <button class="sb-i on" onclick="navObras(this)"><span class="ic"><span class="msr">apartment</span></span><span class="lb">Obras</span></button>
+        <button class="sb-i fut" onclick="navSoon('Serviços',this)"><span class="ic"><span class="msr">handyman</span></span><span class="lb">Serviços</span><span class="br">em breve</span></button>
+        <button class="sb-i fut" onclick="navSoon('Visitas',this)"><span class="ic"><span class="msr">location_on</span></span><span class="lb">Visitas</span><span class="br">em breve</span></button>
+        <button class="sb-i fut" onclick="navSoon('Tarefas',this)"><span class="ic"><span class="msr">checklist</span></span><span class="lb">Tarefas</span><span class="br">em breve</span></button>
+        <button class="sb-i fut" onclick="navSoon('Agenda',this)"><span class="ic"><span class="msr">calendar_month</span></span><span class="lb">Agenda</span><span class="br">em breve</span></button>
+      </div>
+
+      <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">sell</span></span><span class="lb">Comercial</span><span class="gchev">▶</span></div>
+      <div class="sb-sub">
+        <button class="sb-i fut" onclick="navSoon('Propostas',this)"><span class="ic"><span class="msr">description</span></span><span class="lb">Propostas</span><span class="br">em breve</span></button>
+        <button class="sb-i fut" onclick="navSoon('Orçamentos',this)"><span class="ic"><span class="msr">request_quote</span></span><span class="lb">Orçamentos</span><span class="br">em breve</span></button>
+      </div>
+
+      <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">business_center</span></span><span class="lb">Gestão</span><span class="gchev">▶</span></div>
+      <div class="sb-sub">
+        <button class="sb-i" onclick="navView('colab',this)"><span class="ic"><span class="msr">groups</span></span><span class="lb">Equipe</span></button>
+        <button class="sb-i fut" onclick="navSoon('Clientes',this)"><span class="ic"><span class="msr">handshake</span></span><span class="lb">Clientes</span><span class="br">em breve</span></button>
+        <button class="sb-i fut" onclick="navSoon('Atividades',this)"><span class="ic"><span class="msr">history</span></span><span class="lb">Atividades</span><span class="br">em breve</span></button>
+        <button class="sb-i fut" onclick="navSoon('Financeiro',this)"><span class="ic"><span class="msr">monitoring</span></span><span class="lb">Financeiro</span><span class="br">em breve</span></button>
+        <button class="sb-i fut" onclick="navSoon('Frota',this)"><span class="ic"><span class="msr">local_shipping</span></span><span class="lb">Frota</span><span class="br">em breve</span></button>
+        <button class="sb-i" onclick="navView('mat',this)"><span class="ic"><span class="msr">inventory_2</span></span><span class="lb">Estoque</span></button>
+      </div>
+
+      <div class="sb-grp adm-only" onclick="toggleGrp(this)"><span class="ic"><span class="msr">settings</span></span><span class="lb">Configurações</span><span class="gchev">▶</span></div>
+      <div class="sb-sub adm-only">
+        <button class="sb-i" onclick="navEmpresa(this)"><span class="ic"><span class="msr">domain</span></span><span class="lb">Perfil da empresa</span></button>
+        <button class="sb-i" onclick="navView('cat',this)"><span class="ic"><span class="msr">list_alt</span></span><span class="lb">Catálogo de serviços</span></button>
+        <button class="sb-i" onclick="navView('cfg',this)"><span class="ic"><span class="msr">tune</span></span><span class="lb">Parâmetros</span></button>
+        <button class="sb-i" onclick="navView('acessos',this)"><span class="ic"><span class="msr">key</span></span><span class="lb">Acessos às obras</span></button>
+        <button class="sb-i" onclick="abrirManualCartao()"><span class="ic"><span class="msr">credit_card</span></span><span class="lb">Manual do Cartão</span></button>
+        <button class="sb-i fut" onclick="navSoon('Política',this)"><span class="ic"><span class="msr">policy</span></span><span class="lb">Política</span><span class="br">em breve</span></button>
+        <button class="sb-i fut" onclick="navSoon('Melhore seu plano',this)"><span class="ic"><span class="msr">rocket_launch</span></span><span class="lb">Melhore seu plano</span><span class="br">em breve</span></button>
+        <button class="sb-i fut" onclick="navSoon('Integrações',this)"><span class="ic"><span class="msr">extension</span></span><span class="lb">Integrações</span><span class="br">em breve</span></button>
+      </div>
     </nav>
   </aside>
   <div class="main">
@@ -2105,7 +2134,9 @@ function umGo(t){ const m=document.getElementById('user-menu'); if(m)m.classList
 function abrirDev(){ const m=document.getElementById('user-menu'); if(m)m.classList.remove('open'); const f=document.getElementById('dev-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Fluxo_Menu.html'); document.getElementById('dev-ov').classList.add('open'); }
 function devTool(tool,btn){ const f=document.getElementById('dev-frame'); if(f) f.setAttribute('src',tool); document.querySelectorAll('#dev-menu .dev-mi').forEach(function(b){b.classList.remove('on');}); if(btn&&btn.classList) btn.classList.add('on'); }
 function fecharDev(){ document.getElementById('dev-ov').classList.remove('open'); }
-function setSbActive(el){ document.querySelectorAll('.sb-i').forEach(function(b){b.classList.remove('on');}); if(el&&el.classList)el.classList.add('on'); }
+function _pop(host){ if(!host)return; var ic=host.querySelector('.ic'); if(ic){ic.classList.remove('pop');void ic.offsetWidth;ic.classList.add('pop');} }
+function setSbActive(el){ document.querySelectorAll('.sb-i').forEach(function(b){b.classList.remove('on');}); if(el&&el.classList){el.classList.add('on');_pop(el);} }
+function toggleGrp(el){ var op=el.classList.toggle('open'); var sub=el.nextElementSibling; if(sub&&sub.classList)sub.classList.toggle('show'); if(op)_pop(el); }
 function _obranav(show){ var ob=document.querySelector('.obranav'); if(ob)ob.style.display=show?'':'none'; }
 function navView(t,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; tab(t,null); }
 function navObras(el){ setSbActive(el); _obranav(true); irLista('proj'); }
