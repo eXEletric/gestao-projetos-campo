@@ -282,6 +282,23 @@ table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:
 body.papel-tecnico .tabdrop{display:none}
 body.papel-tecnico .fin-drop{display:inline-block !important}
 body.papel-tecnico .adm-only{display:none !important}
+.dev-ov{position:fixed;inset:0;background:var(--bg);z-index:1200;display:none;flex-direction:column}
+.dev-ov.open{display:flex}
+.dev-bar{display:flex;align-items:center;gap:12px;padding:10px 16px;border-bottom:1px solid var(--line);background:var(--surf)}
+.dev-title{font-weight:600;font-size:15px}
+.dev-x{margin-left:auto;font-size:13px;padding:7px 13px;border-radius:8px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer}
+.dev-x:hover{background:var(--surf2)}
+.dev-body{flex:1;display:flex;min-height:0}
+.dev-menu{width:212px;flex-shrink:0;background:var(--surf2);border-right:1px solid var(--line);padding:10px 8px;display:flex;flex-direction:column;gap:4px}
+.dev-mh{font-size:10px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;color:var(--tx3);padding:4px 11px 6px}
+.dev-mi{text-align:left;font-size:13.5px;padding:9px 11px;border:none;background:none;color:var(--tx);cursor:pointer;border-radius:8px;display:flex;gap:8px;align-items:center}
+.dev-mi:hover{background:var(--surf)}
+.dev-mi.on{background:var(--pri);color:#fff}
+.dev-soon{color:var(--tx3);cursor:default;font-size:13px}
+.dev-soon:hover{background:none}
+.dev-badge{margin-left:auto;font-size:10px;background:var(--surf);color:var(--tx3);padding:1px 6px;border-radius:5px}
+.dev-note{margin-top:auto;font-size:11px;color:var(--tx3);padding:8px 11px}
+.dev-frame{flex:1;border:none;width:100%;height:100%}
 </style>
 </head>
 <body>
@@ -311,6 +328,7 @@ body.papel-tecnico .adm-only{display:none !important}
     </div>
     <div class="um-sec">
       <div class="um-item adm-only" onclick="umGo('empresa')"><span class="ico">🏢</span><span>Perfil da empresa</span></div>
+      <div class="um-item adm-only" onclick="abrirDev()"><span class="ico">🧭</span><span>Desenvolvedor</span></div>
       <div class="um-item soon adm-only"><span class="ico">⚙</span><span>Configurações</span><span class="um-badge">futuro</span></div>
       <div class="um-item soon"><span class="ico">👤</span><span>Meu perfil</span><span class="um-badge">futuro</span></div>
       <div class="um-item soon"><span class="ico">📊</span><span>Relatórios / painel</span><span class="um-badge">futuro</span></div>
@@ -664,6 +682,24 @@ body.papel-tecnico .adm-only{display:none !important}
   </div>
   <div class="mf"><button class="btn" onclick="closeMat()">Cancelar</button><button class="btn btn-p" onclick="saveMat()">Salvar material</button></div>
 </div></div>
+
+<!-- ÁREA DO DESENVOLVEDOR (Master/Admin) -->
+<div class="dev-ov" id="dev-ov">
+  <div class="dev-bar">
+    <span class="dev-title">🧭 Desenvolvedor</span>
+    <button class="dev-x" onclick="fecharDev()">✕ Fechar</button>
+  </div>
+  <div class="dev-body">
+    <div class="dev-menu" id="dev-menu">
+      <div class="dev-mh">Ferramentas</div>
+      <button class="dev-mi on" onclick="devTool('eX_Fluxo_Menu.html',this)">🧩 Fluxo de blocos</button>
+      <button class="dev-mi" onclick="devTool('eX_Painel_Dev.html',this)">🧱 Construtor de menu</button>
+      <button class="dev-mi dev-soon">🗺 Mapa do sistema <span class="dev-badge">em breve</span></button>
+      <div class="dev-note">Área só para Master/Admin · o que você monta aqui vira a base do sistema.</div>
+    </div>
+    <iframe id="dev-frame" class="dev-frame" title="Ferramenta de desenvolvedor"></iframe>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
@@ -2012,6 +2048,9 @@ function pintarUsuario(){ const box=document.getElementById('user-box'); if(!box
   aplicarPapel(); }
 function toggleUserMenu(e){ if(e)e.stopPropagation(); const m=document.getElementById('user-menu'); if(m) m.classList.toggle('open'); }
 function umGo(t){ const m=document.getElementById('user-menu'); if(m)m.classList.remove('open'); if(t==='empresa') openEmpresa(); }
+function abrirDev(){ const m=document.getElementById('user-menu'); if(m)m.classList.remove('open'); const f=document.getElementById('dev-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Fluxo_Menu.html'); document.getElementById('dev-ov').classList.add('open'); }
+function devTool(tool,btn){ const f=document.getElementById('dev-frame'); if(f) f.setAttribute('src',tool); document.querySelectorAll('#dev-menu .dev-mi').forEach(function(b){b.classList.remove('on');}); if(btn&&btn.classList) btn.classList.add('on'); }
+function fecharDev(){ document.getElementById('dev-ov').classList.remove('open'); }
 document.addEventListener('click',e=>{ const m=document.getElementById('user-menu'); if(m&&m.classList.contains('open')&&!e.target.closest('#user-box')) m.classList.remove('open'); });
 async function fazerLogin(){
   if(!SB){ loginErro('Sem conexão com a nuvem.'); return; }
