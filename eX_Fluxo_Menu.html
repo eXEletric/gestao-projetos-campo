@@ -164,6 +164,7 @@
   </div>
 </div>
 
+<script src="eX_fluxo_seed.js"></script>
 <script>
 (function(){
   var NS='http://www.w3.org/2000/svg',KEY='ex_fluxo_menu',VER=3,SNAP=20;
@@ -198,7 +199,8 @@
     {f:'cfg',t:'eq'},{f:'cfg',t:'empr'},
     {f:'grp',t:'menu',d:1,label:'motor'}
   ];
-  var LAYOUT={};seedN.forEach(function(n){LAYOUT[n.id]={x:n.x,y:n.y};});
+  var SEED=(window.EX_MODEL&&window.EX_MODEL.nodes&&window.EX_MODEL.edges)?window.EX_MODEL:{nodes:seedN,edges:seedE};
+  var LAYOUT={};SEED.nodes.forEach(function(n){LAYOUT[n.id]={x:n.x,y:n.y};});
   var nodes,edges,elMap={},sel=null,drag=null,grab={x:0,y:0},link=null,tmp=null,hoverId=null,gridOn=false,moved=false,past=[];
   var cv=document.getElementById('cv'),board=document.getElementById('board'),svg=document.getElementById('edges'),savedEl=document.getElementById('saved');
   var cpop=document.createElement('div');cpop.className='cpop';board.appendChild(cpop);
@@ -224,7 +226,7 @@
   function ptr(e){var r=board.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
   var saveT;
   function save(){try{localStorage.setItem(KEY,JSON.stringify({v:VER,nodes:nodes,edges:edges}));}catch(err){if(err&&(err.name==='QuotaExceededError'||err.code===22||err.code===1014)){if(!quotaWarned){quotaWarned=true;alert('O espaço do navegador encheu (imagens ocupam bastante). A última imagem pode não ter sido salva — use imagens menores ou remova algumas. O restante do fluxo continua salvo.');}}}savedEl.classList.add('on');clearTimeout(saveT);saveT=setTimeout(function(){savedEl.classList.remove('on');},1200);}
-  function load(){try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&o.nodes&&o.edges){nodes=o.nodes;edges=o.edges;return;}}}catch(err){}nodes=clone(seedN);edges=clone(seedE);}
+  function load(){try{var raw=localStorage.getItem(KEY);if(raw){var o=JSON.parse(raw);if(o&&o.nodes&&o.edges){nodes=o.nodes;edges=o.edges;return;}}}catch(err){}nodes=clone(SEED.nodes);edges=clone(SEED.edges);}
   function snap(){past.push(JSON.stringify({nodes:nodes,edges:edges}));if(past.length>40)past.shift();}
   function undo(){if(!past.length)return;var o=JSON.parse(past.pop());nodes=o.nodes;edges=o.edges;sel=null;closePops();build();render();save();}
   function closePops(){cpop.classList.remove('on');linebar.classList.remove('on');nbar.classList.remove('on');npop.classList.remove('on');imgpop.classList.remove('on');htip.classList.remove('on');nodeSel=null;}
@@ -398,7 +400,7 @@
   var stage=document.getElementById('stage');
   document.getElementById('full').onclick=function(){if(!document.fullscreenElement){if(stage.requestFullscreen)stage.requestFullscreen();}else{if(document.exitFullscreen)document.exitFullscreen();}};
   document.addEventListener('fullscreenchange',function(){setTimeout(render,60);});
-  document.getElementById('reset').onclick=function(){if(confirm('Restaurar a estrutura padrão? Isto substitui suas alterações.')){snap();nodes=clone(seedN);edges=clone(seedE);sel=null;closePops();build();render();save();cv.scrollTo(0,0);}};
+  document.getElementById('reset').onclick=function(){if(confirm('Restaurar a estrutura padrão? Isto substitui suas alterações.')){snap();nodes=clone(SEED.nodes);edges=clone(SEED.edges);sel=null;closePops();build();render();save();cv.scrollTo(0,0);}};
   document.addEventListener('keydown',function(e){if((e.ctrlKey||e.metaKey)&&(e.key==='z'||e.key==='Z')){var ae=document.activeElement;if(ae&&ae.isContentEditable)return;e.preventDefault();undo();}});
   // Exportar / Importar
   var panel=document.getElementById('panel'),exp=document.getElementById('exp');
