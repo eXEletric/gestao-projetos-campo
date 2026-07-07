@@ -346,7 +346,10 @@ body.papel-tecnico .adm-only{display:none !important}
 .sb-grp.open .gchev{transform:rotate(90deg)}
 .sb-sub{max-height:0;overflow:hidden;transition:max-height .28s ease}
 .sb-sub.show{max-height:560px}
-.sb-sub .sb-i{padding-left:18px;height:34px}
+.sb-sub{position:relative}
+.sb-sub:before{content:'';position:absolute;left:27px;top:0;bottom:7px;width:1px;background:#342d5a}
+.sb-sub .sb-i{position:relative;padding-left:40px;height:34px}
+.sb-sub .sb-i:before{content:'';position:absolute;left:27px;top:17px;width:10px;height:1px;background:#342d5a}
 .sidebar.mini .sb-grp .lb,.sidebar.mini .sb-grp .gchev,.sidebar.mini .sb-sub{display:none}
 </style>
 </head>
