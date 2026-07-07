@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>eX · Área do Desenvolvedor — Construtor de Menu</title>
+<title>eX · Área do Desenvolvedor</title>
 <style>
   :root{
     --pri:#533ab7;--pri-bg:#eeedfe;--bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;
@@ -74,13 +74,30 @@
   .panel.on{display:block}
   .panel textarea{width:100%;height:130px;font-family:ui-monospace,monospace;font-size:12px;border:1px solid var(--line);border-radius:8px;padding:9px;color:var(--tx)}
   .panel .prow{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .tabs{display:flex;gap:6px;margin-bottom:14px;border-bottom:1px solid var(--line)}
+  .tab{border:none;background:none;padding:9px 14px;font-size:13.5px;color:var(--tx2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab:hover{color:var(--tx)}
+  .tab.on{color:var(--pri);border-bottom-color:var(--pri);font-weight:600}
+  .ftabs{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px}
+  .ftab{border:1px solid var(--line2);background:var(--surf);border-radius:8px;padding:7px 13px;font-size:13px;color:var(--tx2);cursor:pointer}
+  .ftab:hover{background:var(--surf2)}
+  .ftab.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+  .ftab.add{border-style:dashed;color:var(--pri)}
+  .fwrap{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surf)}
+  .fwrap iframe{width:100%;height:820px;border:0;display:block}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1><img src="logo_ex.png" alt="eX" onerror="this.style.display='none'"> Área do Desenvolvedor · Construtor de Menu</h1>
-  <div class="sub">A barra da esquerda é <b>gerada pela config</b>. Edite à direita e veja mudar ao vivo. Só o Master vê esta área. Salva sozinho.</div>
+  <h1><img src="logo_ex.png" alt="eX" onerror="this.style.display='none'"> Área do Desenvolvedor</h1>
+  <div class="sub">Área só do Master. Duas ferramentas: o construtor de menu e os fluxos de blocos das decisões. Salva sozinho.</div>
 
+  <div class="tabs">
+    <button class="tab on" data-p="menu">Construtor de menu</button>
+    <button class="tab" data-p="fluxos">Fluxos de blocos</button>
+  </div>
+
+  <div id="pane-menu">
   <div class="bar">
     <span style="font-size:12px;color:var(--tx2)">Ver como:</span>
     <div class="roles"><button class="on" data-r="adm">Administrador</button><button data-r="tecnico">Técnico</button></div>
@@ -111,6 +128,14 @@
       <button class="btn" id="download">Baixar .json</button>
       <button class="btn" id="closep">Fechar</button>
     </div>
+  </div>
+  </div><!-- /pane-menu -->
+
+  <div id="pane-fluxos" style="display:none">
+    <div class="cap">Fluxos de blocos — um por tomada de decisão</div>
+    <div class="ftabs" id="ftabs"></div>
+    <div class="fwrap"><iframe id="fframe" title="Fluxo de blocos" allowfullscreen loading="lazy"></iframe></div>
+    <div class="snote" id="fhint">Cada aba abre o editor de blocos daquela decisão. Para uma decisão nova, peça ao Claude para criar o fluxo — ele gera o arquivo e adiciona a aba aqui.</div>
   </div>
 </div>
 
@@ -212,6 +237,41 @@
   window.addEventListener('beforeunload',save);
 
   load();renderAll();
+})();
+</script>
+<script>
+(function(){
+  var FLOWS=[
+    {id:'menu',label:'Menu',src:'eX_Fluxo_Menu.html'},
+    {id:'estoque',label:'Estoque',src:'eX_Fluxo_Estoque.html'}
+  ];
+  var paneMenu=document.getElementById('pane-menu'),paneFlux=document.getElementById('pane-fluxos');
+  var frame=document.getElementById('fframe'),ftabs=document.getElementById('ftabs');
+  var loaded=false,curFlow=null;
+  function showPane(p){
+    var menu=(p==='menu');
+    paneMenu.style.display=menu?'':'none';
+    paneFlux.style.display=menu?'none':'';
+    document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('on',t.getAttribute('data-p')===p);});
+    if(!menu&&!loaded){buildFtabs();openFlow(FLOWS[0].id);loaded=true;}
+  }
+  function buildFtabs(){
+    ftabs.innerHTML='';
+    FLOWS.forEach(function(f){
+      var b=document.createElement('button');b.className='ftab';b.textContent=f.label;b.setAttribute('data-f',f.id);
+      b.onclick=function(){openFlow(f.id);};ftabs.appendChild(b);
+    });
+    var add=document.createElement('button');add.className='ftab add';add.textContent='＋ novo fluxo';
+    add.title='peça ao Claude para criar o fluxo de uma nova decisão';
+    add.onclick=function(){alert('Para criar o fluxo de uma nova decisão, peça ao Claude — ele gera o arquivo e adiciona a aba aqui.');};
+    ftabs.appendChild(add);
+  }
+  function openFlow(id){
+    var f=null;FLOWS.forEach(function(x){if(x.id===id)f=x;});if(!f)return;
+    if(curFlow!==id){frame.src=f.src;curFlow=id;}
+    document.querySelectorAll('.ftab').forEach(function(t){t.classList.toggle('on',t.getAttribute('data-f')===id);});
+  }
+  document.querySelectorAll('.tab').forEach(function(t){t.onclick=function(){showPane(t.getAttribute('data-p'));};});
 })();
 </script>
 </body>
