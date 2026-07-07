@@ -376,6 +376,23 @@ body.papel-tecnico .adm-only{display:none !important}
 .sb-sub-nest:before{left:43px}
 .sb-sub-nest .sb-i{padding-left:56px}
 .sb-sub-nest .sb-i:before{left:43px}
+/* Política v1 (regras da empresa) */
+.pol-rule{display:flex;align-items:center;gap:13px;padding:11px 13px;background:var(--surf);border:1px solid var(--line);border-radius:10px;margin-bottom:8px;max-width:660px}
+.pol-name{flex:1;outline:none;padding:2px 4px;border-radius:5px;color:var(--tx);font-size:14px}
+.pol-rule:not(.on) .pol-name{color:var(--tx3)}
+.pol-name:focus{background:var(--surf2)}
+.pol-del{color:var(--tx3);cursor:pointer;font-size:16px}
+.pol-del:hover{color:var(--red)}
+.ex-led{width:15px;height:15px;border-radius:50%;flex-shrink:0;transition:.16s;background:radial-gradient(circle at 35% 30%,#ffffff,#eef1ef 72%);box-shadow:inset 0 1px 1px rgba(0,0,0,.12),0 1px 0 rgba(255,255,255,.6);border:1.5px solid #d9dcd9}
+.ex-led.on{background:radial-gradient(circle at 35% 30%,#c4ffdd,#22d27f 52%,#08a457);box-shadow:inset 0 1px 2px rgba(255,255,255,.6),0 0 8px rgba(34,210,127,.85),0 0 2px rgba(34,210,127,.95);border-color:#08a457}
+.ex-switch{position:relative;width:50px;height:25px;border-radius:13px;cursor:pointer;flex-shrink:0;background:linear-gradient(#bbbeb7,#9a9d95);box-shadow:inset 0 2px 4px rgba(0,0,0,.38),inset 0 -1px 1px rgba(255,255,255,.35);transition:.16s;font:800 8px ui-monospace,monospace;letter-spacing:.3px}
+.ex-switch.on{background:linear-gradient(#2fcf88,#0f8f5b);box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
+.ex-switch .lb{position:absolute;top:0;height:100%;display:flex;align-items:center;color:#fff}
+.ex-switch .lb.off{right:8px;color:#5a5a50}.ex-switch.on .lb.off{display:none}
+.ex-switch .lb.onx{left:8px;display:none}.ex-switch.on .lb.onx{display:flex}
+.ex-switch .kb{position:absolute;top:3px;left:3px;width:20px;height:19px;border-radius:10px;transition:.16s;background:linear-gradient(#ffffff,#d4d4cf);box-shadow:0 2px 2px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 2px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
+.ex-switch.on .kb{left:27px}
+.ex-switch .pin{width:3px;height:11px;border-radius:2px;background:linear-gradient(#9a9a92,#565650);box-shadow:0 1px 1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5)}
 </style>
 </head>
 <body>
@@ -429,7 +446,7 @@ body.papel-tecnico .adm-only{display:none !important}
         <div class="sb-grp sb-grp-nest" onclick="toggleGrp(this)"><span class="ic"><span class="msr">policy</span></span><span class="lb">Política</span><span class="gchev">▶</span></div>
         <div class="sb-sub sb-sub-nest">
           <button class="sb-i" onclick="abrirManualCartao()"><span class="ic"><span class="msr">credit_card</span></span><span class="lb">Manual do Cartão</span></button>
-          <button class="sb-i fut" onclick="navSoon('Regras de ouro',this)"><span class="ic"><span class="msr">verified_user</span></span><span class="lb">Regras de ouro</span><span class="br">em breve</span></button>
+          <button class="sb-i" onclick="navPolitica(this)"><span class="ic"><span class="msr">rule</span></span><span class="lb">Regras da empresa</span></button>
         </div>
         <button class="sb-i fut" onclick="navSoon('Melhore seu plano',this)"><span class="ic"><span class="msr">rocket_launch</span></span><span class="lb">Melhore seu plano</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Integrações',this)"><span class="ic"><span class="msr">extension</span></span><span class="lb">Integrações</span><span class="br">em breve</span></button>
@@ -585,6 +602,12 @@ body.papel-tecnico .adm-only{display:none !important}
     <div class="topbar"><span class="pname">Acessos — quem vê qual obra</span></div>
     <div class="note">Marque as obras que cada técnico pode ver e atualizar no app. Criar novos técnicos: por enquanto pelo painel; em breve direto aqui.</div>
     <div id="acessos-list"></div>
+  </div>
+  <div class="view" id="v-politica">
+    <div class="topbar"><span class="pname">Política · Regras da empresa</span></div>
+    <div class="note">Biblioteca da empresa: todas as regras que <b>podem</b> acontecer. Ligada = disponível. Na obra você só <b>seleciona</b> quais valem. (v1 · salva neste navegador)</div>
+    <div id="pol-list"></div>
+    <button class="btn" style="margin-top:8px" onclick="polAdd()">＋ Nova regra</button>
   </div>
   <div class="view" id="v-soon"><div class="soon-wrap"><div class="soon-ic">🚧</div><div class="soon-t" id="soon-title">Em construção</div><div class="soon-d">Este módulo faz parte do roadmap do eX — já está aqui no menu pra lembrar que vamos construí-lo. 👷</div></div></div>
     </div>
@@ -2187,6 +2210,15 @@ function obraCfgGo(t){ var m=document.getElementById('obracfg-menu'); if(m)m.cla
 function toggleEquipeCfg(e){ if(e)e.stopPropagation(); var m=document.getElementById('equipecfg-menu'); if(m)m.classList.toggle('open'); }
 function equipeCfgGo(t){ var m=document.getElementById('equipecfg-menu'); if(m)m.classList.remove('open'); tab(t,null); }
 document.addEventListener('click',function(e){ if(!e.target.closest('.obracfg-wrap')) document.querySelectorAll('.obracfg-menu.open').forEach(function(m){m.classList.remove('open');}); });
+var POL_KEY='ex_politica_v1';
+var POL_DEF=[{t:'Exigir foto na conclusão da tarefa',on:true},{t:'Checklist de segurança (NR-10) obrigatório',on:true},{t:'Registrar material aplicado por tarefa',on:true},{t:'Aprovação do responsável antes de fechar a obra',on:true},{t:'Anexar nota fiscal em despesas',on:false},{t:'Comentário obrigatório em atrasos',on:false}];
+function polLoad(){ try{var r=localStorage.getItem(POL_KEY);if(r){var a=JSON.parse(r);if(Array.isArray(a))return a;}}catch(e){} return POL_DEF.map(function(x){return{t:x.t,on:x.on};}); }
+var POL=polLoad();
+function polSave(){ try{localStorage.setItem(POL_KEY,JSON.stringify(POL));}catch(e){} }
+function _polSw(on){ return '<div class="ex-switch'+(on?' on':'')+'"><span class="lb off">OFF</span><span class="lb onx">ON</span><div class="kb"><div class="pin"></div></div></div>'; }
+function renderPolitica(){ var L=document.getElementById('pol-list'); if(!L)return; L.innerHTML=''; POL.forEach(function(r,i){ var row=document.createElement('div'); row.className='pol-rule'+(r.on?' on':''); var led=document.createElement('span'); led.className='ex-led'+(r.on?' on':''); var nm=document.createElement('span'); nm.className='pol-name'; nm.contentEditable=true; nm.spellcheck=false; nm.textContent=r.t||''; nm.oninput=function(){ POL[i].t=nm.textContent; polSave(); }; var sw=document.createElement('div'); sw.innerHTML=_polSw(r.on); sw=sw.firstChild; sw.onclick=function(){ POL[i].on=!POL[i].on; polSave(); renderPolitica(); }; var del=document.createElement('span'); del.className='pol-del'; del.innerHTML='&times;'; del.title='remover'; del.onclick=function(){ POL.splice(i,1); polSave(); renderPolitica(); }; row.appendChild(led); row.appendChild(nm); row.appendChild(sw); row.appendChild(del); L.appendChild(row); }); }
+function polAdd(){ POL.push({t:'Nova regra',on:true}); polSave(); renderPolitica(); var L=document.getElementById('pol-list'); if(L&&L.lastChild)L.lastChild.querySelector('.pol-name').focus(); }
+function navPolitica(el){ setSbActive(el); _obranav(false); document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var v=document.getElementById('v-politica'); if(v)v.classList.add('active'); renderPolitica(); }
 document.addEventListener('click',e=>{ const m=document.getElementById('user-menu'); if(m&&m.classList.contains('open')&&!e.target.closest('#user-box')) m.classList.remove('open'); });
 async function fazerLogin(){
   if(!SB){ loginErro('Sem conexão com a nuvem.'); return; }
