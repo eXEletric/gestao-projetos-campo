@@ -359,6 +359,18 @@ body.papel-tecnico .adm-only{display:none !important}
 .um-ic{font-family:'Material Symbols Rounded';font-weight:normal;font-size:19px;line-height:1;color:var(--pri);width:20px;text-align:center;flex-shrink:0;font-variation-settings:'FILL' 1,'wght' 500}
 .um-item.soon .um-ic{color:var(--tx3)}
 .um-sair .um-ic{color:#a32d2d}
+/* ⚙ da Obra (config de contexto) */
+.obracfg-wrap{position:relative;margin-left:auto}
+.obracfg{background:none;border:1px solid var(--line2);border-radius:8px;width:32px;height:32px;cursor:pointer;color:var(--pri);display:none;align-items:center;justify-content:center;font-family:'Material Symbols Rounded';font-size:20px;line-height:1;font-variation-settings:'FILL' 1,'wght' 500}
+.obracfg:hover{background:var(--surf2)}
+.obracfg-menu{position:absolute;right:0;top:100%;margin-top:5px;background:var(--surf);border:1px solid var(--line);border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.14);padding:5px;display:none;z-index:60;min-width:216px}
+.obracfg-menu.open{display:block}
+.obracfg-menu .oh{font-size:11px;color:var(--tx3);padding:6px 10px 4px;text-transform:uppercase;letter-spacing:.04em}
+.obracfg-menu button{display:flex;align-items:center;gap:9px;width:100%;text-align:left;background:none;border:none;padding:8px 10px;border-radius:7px;font-size:13px;color:var(--tx);cursor:pointer}
+.obracfg-menu button:hover{background:var(--surf2)}
+.obracfg-menu button:disabled{color:var(--tx3);cursor:default}
+.obracfg-menu button:disabled:hover{background:none}
+.obracfg-menu .oic{font-family:'Material Symbols Rounded';font-size:18px;color:var(--pri);font-variation-settings:'FILL' 1}
 .sidebar.mini .sb-grp .lb,.sidebar.mini .sb-grp .gchev,.sidebar.mini .sb-sub{display:none}
 </style>
 </head>
@@ -410,7 +422,6 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="sb-grp adm-only" onclick="toggleGrp(this)"><span class="ic"><span class="msr">settings</span></span><span class="lb">Configurações</span><span class="gchev">▶</span></div>
       <div class="sb-sub adm-only">
         <button class="sb-i" onclick="navEmpresa(this)"><span class="ic"><span class="msr">domain</span></span><span class="lb">Perfil da empresa</span></button>
-        <button class="sb-i" onclick="navView('cat',this)"><span class="ic"><span class="msr">list_alt</span></span><span class="lb">Catálogo de serviços</span></button>
         <button class="sb-i" onclick="navView('cfg',this)"><span class="ic"><span class="msr">tune</span></span><span class="lb">Parâmetros</span></button>
         <button class="sb-i" onclick="navView('acessos',this)"><span class="ic"><span class="msr">key</span></span><span class="lb">Acessos às obras</span></button>
         <button class="sb-i" onclick="abrirManualCartao()"><span class="ic"><span class="msr">credit_card</span></span><span class="lb">Manual do Cartão</span></button>
@@ -464,6 +475,15 @@ body.papel-tecnico .adm-only{display:none !important}
           <button class="tab" id="tab-acomp" onclick="tab('acomp',this)">Gantt</button>
           <button class="tab" id="tab-crono" onclick="tab('crono',this)">Cronograma</button>
         </span>
+        <div class="obracfg-wrap">
+          <button class="obracfg adm-only" id="obracfg-btn" onclick="toggleObraCfg(event)" title="Configurações da obra">settings</button>
+          <div class="obracfg-menu" id="obracfg-menu">
+            <div class="oh">Configurações da obra</div>
+            <button onclick="obraCfgGo('cat')"><span class="oic">list_alt</span>Catálogo de serviços</button>
+            <button onclick="obraCfgGo('modelos')"><span class="oic">dashboard_customize</span>Modelos</button>
+            <button disabled><span class="oic" style="color:var(--tx3)">checklist</span>Listas <span style="margin-left:auto;font-size:10px;color:var(--tx3)">em breve</span></button>
+          </div>
+        </div>
       </div>
 
   <!-- PROJETOS -->
@@ -2099,6 +2119,7 @@ function aplicarModoNav(){
   sub.style.display=dentro?'inline-flex':'none';
   e1.style.display=dentro?'none':'inline-flex';
   if(dentro){const nm=document.getElementById('crumb-nome');if(nm)nm.textContent=P().nome||'(obra)';}
+  var oc=document.getElementById('obracfg-btn'); if(oc)oc.style.display=dentro?'inline-flex':'none';
 }
 function irLista(t){ S.emProjeto=false; save(); aplicarModoNav(); tab(t,document.getElementById(t==='modelos'?'nav-modelos-lbl':'nav-lista-lbl')); }
 function voltarProjetos(){ irLista('proj'); }
@@ -2156,6 +2177,9 @@ function navEmpresa(el){ setSbActive(el); _obranav(false); if(typeof openEmpresa
 function navSoon(name,el){ setSbActive(el); _obranav(false); document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var t=document.getElementById('soon-title'); if(t)t.textContent=name; var v=document.getElementById('v-soon'); if(v)v.classList.add('active'); }
 function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('mini'); }
 function trocarEmpresa(){ var m=document.getElementById('user-menu'); if(m)m.classList.remove('open'); if(confirm('Trocar de empresa faz um NOVO LOGIN: você sai desta e entra com a outra empresa (carregando os dados dela). Deseja continuar?')){ if(typeof sair==='function')sair(); } }
+function toggleObraCfg(e){ if(e)e.stopPropagation(); var m=document.getElementById('obracfg-menu'); if(m)m.classList.toggle('open'); }
+function obraCfgGo(t){ var m=document.getElementById('obracfg-menu'); if(m)m.classList.remove('open'); tab(t,null); }
+document.addEventListener('click',function(e){ var m=document.getElementById('obracfg-menu'); if(m&&m.classList.contains('open')&&!e.target.closest('.obracfg-wrap'))m.classList.remove('open'); });
 document.addEventListener('click',e=>{ const m=document.getElementById('user-menu'); if(m&&m.classList.contains('open')&&!e.target.closest('#user-box')) m.classList.remove('open'); });
 async function fazerLogin(){
   if(!SB){ loginErro('Sem conexão com a nuvem.'); return; }
