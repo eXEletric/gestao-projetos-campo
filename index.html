@@ -426,16 +426,12 @@ body.papel-tecnico .adm-only{display:none !important}
       </div>
     </div>
     <div class="um-sec">
-      <div class="um-item adm-only" onclick="umGo('empresa')"><span class="ico">🏢</span><span>Perfil da empresa</span></div>
-      <div class="um-item adm-only" onclick="abrirDev()"><span class="ico">🧭</span><span>Desenvolvedor</span></div>
-      <div class="um-item soon adm-only"><span class="ico">⚙</span><span>Configurações</span><span class="um-badge">futuro</span></div>
-      <div class="um-item soon"><span class="ico">👤</span><span>Meu perfil</span><span class="um-badge">futuro</span></div>
-      <div class="um-item soon"><span class="ico">📊</span><span>Relatórios / painel</span><span class="um-badge">futuro</span></div>
-      <div class="um-item soon"><span class="ico">✨</span><span>Assistentes de IA</span><span class="um-badge" style="background:#fae9c9;color:#854f0b">Beta</span></div>
+      <div class="um-item soon"><span class="ico">🔒</span><span>Segurança (2FA)</span><span class="um-badge">em breve</span></div>
+      <div class="um-item adm-only" onclick="abrirDev()"><span class="ico">🧭</span><span>Área do Desenvolvedor</span></div>
     </div>
     <div class="um-sec">
-      <div class="um-item soon"><span class="ico">🔄</span><span>Trocar de empresa</span><span class="um-badge">futuro</span></div>
-      <div class="um-item um-sair" onclick="sair()"><span class="ico">⎋</span><span>Sair</span></div>
+      <div class="um-item" onclick="trocarEmpresa()"><span class="ico">🔄</span><span>Trocar de empresa</span></div>
+      <div class="um-item um-sair" onclick="sair()"><span class="ico">⎋</span><span>Sair da conta</span></div>
     </div>
   </div></span></div>
     </div>
@@ -2146,6 +2142,7 @@ function navObras(el){ setSbActive(el); _obranav(true); irLista('proj'); }
 function navEmpresa(el){ setSbActive(el); _obranav(false); if(typeof openEmpresa==='function')openEmpresa(); }
 function navSoon(name,el){ setSbActive(el); _obranav(false); document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var t=document.getElementById('soon-title'); if(t)t.textContent=name; var v=document.getElementById('v-soon'); if(v)v.classList.add('active'); }
 function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('mini'); }
+function trocarEmpresa(){ var m=document.getElementById('user-menu'); if(m)m.classList.remove('open'); if(confirm('Trocar de empresa faz um NOVO LOGIN: você sai desta e entra com a outra empresa (carregando os dados dela). Deseja continuar?')){ if(typeof sair==='function')sair(); } }
 document.addEventListener('click',e=>{ const m=document.getElementById('user-menu'); if(m&&m.classList.contains('open')&&!e.target.closest('#user-box')) m.classList.remove('open'); });
 async function fazerLogin(){
   if(!SB){ loginErro('Sem conexão com a nuvem.'); return; }
