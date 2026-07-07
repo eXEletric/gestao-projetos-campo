@@ -422,8 +422,6 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="sb-grp adm-only" onclick="toggleGrp(this)"><span class="ic"><span class="msr">settings</span></span><span class="lb">Configurações</span><span class="gchev">▶</span></div>
       <div class="sb-sub adm-only">
         <button class="sb-i" onclick="navEmpresa(this)"><span class="ic"><span class="msr">domain</span></span><span class="lb">Perfil da empresa</span></button>
-        <button class="sb-i" onclick="navView('cfg',this)"><span class="ic"><span class="msr">tune</span></span><span class="lb">Parâmetros</span></button>
-        <button class="sb-i" onclick="navView('acessos',this)"><span class="ic"><span class="msr">key</span></span><span class="lb">Acessos às obras</span></button>
         <button class="sb-i" onclick="abrirManualCartao()"><span class="ic"><span class="msr">credit_card</span></span><span class="lb">Manual do Cartão</span></button>
         <button class="sb-i fut" onclick="navSoon('Política',this)"><span class="ic"><span class="msr">policy</span></span><span class="lb">Política</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Melhore seu plano',this)"><span class="ic"><span class="msr">rocket_launch</span></span><span class="lb">Melhore seu plano</span><span class="br">em breve</span></button>
@@ -541,7 +539,7 @@ body.papel-tecnico .adm-only{display:none !important}
 
   <!-- COLABORADORES -->
   <div class="view" id="v-colab">
-    <div class="topbar"><span class="pname">Colaboradores</span><button class="btn btn-p btn-s" onclick="novoColab()">+ Novo colaborador</button></div>
+    <div class="topbar"><span class="pname">Equipe · Colaboradores</span><button class="btn btn-p btn-s" onclick="novoColab()">+ Novo colaborador</button><div class="obracfg-wrap"><button class="obracfg" style="display:inline-flex" id="equipecfg-btn" onclick="toggleEquipeCfg(event)" title="Configurações da Equipe">settings</button><div class="obracfg-menu" id="equipecfg-menu"><div class="oh">Configurações da Equipe</div><button onclick="equipeCfgGo('cfg')"><span class="oic">tune</span>Parâmetros (funções, níveis)</button><button onclick="equipeCfgGo('acessos')"><span class="oic">key</span>Acessos às obras</button><button disabled><span class="oic" style="color:var(--tx3)">groups</span>Grupos <span style="margin-left:auto;font-size:10px;color:var(--tx3)">em breve</span></button><button disabled><span class="oic" style="color:var(--tx3)">place</span>Localizações <span style="margin-left:auto;font-size:10px;color:var(--tx3)">em breve</span></button></div></div></div>
     <div class="note">Cada linha = Função + Nível + Valor/hora. Um colaborador pode ter várias. Cliente/fabricante: desligue "gera custo".</div>
     <div id="colab-list"></div>
   </div>
@@ -2179,7 +2177,9 @@ function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('m
 function trocarEmpresa(){ var m=document.getElementById('user-menu'); if(m)m.classList.remove('open'); if(confirm('Trocar de empresa faz um NOVO LOGIN: você sai desta e entra com a outra empresa (carregando os dados dela). Deseja continuar?')){ if(typeof sair==='function')sair(); } }
 function toggleObraCfg(e){ if(e)e.stopPropagation(); var m=document.getElementById('obracfg-menu'); if(m)m.classList.toggle('open'); }
 function obraCfgGo(t){ var m=document.getElementById('obracfg-menu'); if(m)m.classList.remove('open'); tab(t,null); }
-document.addEventListener('click',function(e){ var m=document.getElementById('obracfg-menu'); if(m&&m.classList.contains('open')&&!e.target.closest('.obracfg-wrap'))m.classList.remove('open'); });
+function toggleEquipeCfg(e){ if(e)e.stopPropagation(); var m=document.getElementById('equipecfg-menu'); if(m)m.classList.toggle('open'); }
+function equipeCfgGo(t){ var m=document.getElementById('equipecfg-menu'); if(m)m.classList.remove('open'); tab(t,null); }
+document.addEventListener('click',function(e){ if(!e.target.closest('.obracfg-wrap')) document.querySelectorAll('.obracfg-menu.open').forEach(function(m){m.classList.remove('open');}); });
 document.addEventListener('click',e=>{ const m=document.getElementById('user-menu'); if(m&&m.classList.contains('open')&&!e.target.closest('#user-box')) m.classList.remove('open'); });
 async function fazerLogin(){
   if(!SB){ loginErro('Sem conexão com a nuvem.'); return; }
