@@ -372,6 +372,10 @@ body.papel-tecnico .adm-only{display:none !important}
 .obracfg-menu button:disabled:hover{background:none}
 .obracfg-menu .oic{font-family:'Material Symbols Rounded';font-size:18px;color:var(--pri);font-variation-settings:'FILL' 1}
 .sidebar.mini .sb-grp .lb,.sidebar.mini .sb-grp .gchev,.sidebar.mini .sb-sub{display:none}
+.sb-grp-nest{padding-left:40px;height:34px}
+.sb-sub-nest:before{left:43px}
+.sb-sub-nest .sb-i{padding-left:56px}
+.sb-sub-nest .sb-i:before{left:43px}
 </style>
 </head>
 <body>
@@ -422,8 +426,11 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="sb-grp adm-only" onclick="toggleGrp(this)"><span class="ic"><span class="msr">settings</span></span><span class="lb">Configurações</span><span class="gchev">▶</span></div>
       <div class="sb-sub adm-only">
         <button class="sb-i" onclick="navEmpresa(this)"><span class="ic"><span class="msr">domain</span></span><span class="lb">Perfil da empresa</span></button>
-        <button class="sb-i" onclick="abrirManualCartao()"><span class="ic"><span class="msr">credit_card</span></span><span class="lb">Manual do Cartão</span></button>
-        <button class="sb-i fut" onclick="navSoon('Política',this)"><span class="ic"><span class="msr">policy</span></span><span class="lb">Política</span><span class="br">em breve</span></button>
+        <div class="sb-grp sb-grp-nest" onclick="toggleGrp(this)"><span class="ic"><span class="msr">policy</span></span><span class="lb">Política</span><span class="gchev">▶</span></div>
+        <div class="sb-sub sb-sub-nest">
+          <button class="sb-i" onclick="abrirManualCartao()"><span class="ic"><span class="msr">credit_card</span></span><span class="lb">Manual do Cartão</span></button>
+          <button class="sb-i fut" onclick="navSoon('Regras de ouro',this)"><span class="ic"><span class="msr">verified_user</span></span><span class="lb">Regras de ouro</span><span class="br">em breve</span></button>
+        </div>
         <button class="sb-i fut" onclick="navSoon('Melhore seu plano',this)"><span class="ic"><span class="msr">rocket_launch</span></span><span class="lb">Melhore seu plano</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Integrações',this)"><span class="ic"><span class="msr">extension</span></span><span class="lb">Integrações</span><span class="br">em breve</span></button>
       </div>
