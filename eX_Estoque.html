@@ -154,10 +154,14 @@
     <div class="divl"></div>
     <div class="sec">Identificação — leitura por câmera</div>
     <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">
-      <div class="fld"><label>Código de barras</label><div class="scan"><input id="f-barras" placeholder="EAN / do fabricante"><button class="sbtn" onclick="lerScan()" type="button"><i class="ti ti-barcode"></i> ler</button></div></div>
-      <div class="fld"><label>QR code</label><div class="scan"><input id="f-qr" placeholder="QR do item"><button class="sbtn" onclick="lerScan()" type="button"><i class="ti ti-qrcode"></i> ler</button></div></div>
+      <div class="fld"><label>Código de barras</label><div class="scan"><input id="f-barras" placeholder="EAN / do fabricante" oninput="renderCodes()"><button class="sbtn" onclick="lerScan()" type="button"><i class="ti ti-barcode"></i> ler</button></div></div>
+      <div class="fld"><label>QR code</label><div class="scan"><input id="f-qr" placeholder="QR do item" oninput="renderCodes()"><button class="sbtn" onclick="lerScan()" type="button"><i class="ti ti-qrcode"></i> ler</button></div></div>
     </div>
-    <div class="hintx">sem código, a eX gera um QR interno automático (próximo passo).</div>
+    <div class="hintx">sem QR digitado, mostramos o QR interno gerado do código.</div>
+    <div style="display:flex;gap:22px;flex-wrap:wrap;margin-top:12px;align-items:flex-end">
+      <div style="text-align:center"><div id="qrbox" style="width:96px;height:96px;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:8px;display:flex;align-items:center;justify-content:center;padding:6px"></div><div id="qrcap" style="font-size:10px;color:var(--tx3);margin-top:4px">QR</div></div>
+      <div style="text-align:center"><svg id="barsvg" style="max-width:230px;height:60px;display:none"></svg><div id="barcap" style="font-size:10px;color:var(--tx3);margin-top:2px">código de barras</div></div>
+    </div>
 
     <div class="divl"></div>
     <div class="sec">Marcas (fabricante) — por preferência</div>
@@ -182,6 +186,8 @@
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jsbarcode/3.11.6/JsBarcode.all.min.js"></script>
 <script>
 const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
@@ -333,9 +339,18 @@ function montar(){
   $('pc-tipo').textContent = (g&&t)? (g+'.'+pad2(t)+'.xx.x') : '';
   $('pc-base').textContent = (g&&t&&tbNum!=null)? (g+'.'+pad2(t)+'.'+pad2(tbNum)+'.x') : ((g&&t)?(g+'.'+pad2(t)+'.xx.x'):'');
   $('f-cod-prefix').textContent=$('f-codigo').value.trim();
+  renderCodes();
 }
 function lerScan(){toast('Leitura pela câmera: em breve (no celular).');}
 function voltar(){if($('ov').classList.contains('on')){fechar();return;}location.href='index.html';}
+function renderCodes(){
+  var qb=$('qrbox');if(qb&&window.QRCode){var qv=($('f-qr').value.trim())||($('f-codigo').value.trim());qb.innerHTML='';
+    if(qv){try{new QRCode(qb,{text:qv,width:84,height:84,correctLevel:QRCode.CorrectLevel.M});}catch(e){}if($('qrcap'))$('qrcap').textContent=$('f-qr').value.trim()?'QR do item':'QR interno (do código)';}
+    else{qb.innerHTML='<span style="font-size:10px;color:var(--tx3)">sem dado</span>';if($('qrcap'))$('qrcap').textContent='QR';}}
+  var bs=$('barsvg');if(bs){var bv=$('f-barras').value.trim();
+    if(bv&&window.JsBarcode){try{JsBarcode(bs,bv,{format:'CODE128',height:42,fontSize:12,margin:4});bs.style.display='';}catch(e){bs.style.display='none';}}
+    else{while(bs.firstChild)bs.removeChild(bs.firstChild);bs.style.display='none';}}
+}
 
 function renderMarcas(){
   const box=$('marcas');box.innerHTML='';editing._marcas=editing._marcas||[{},{},{}];
