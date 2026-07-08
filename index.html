@@ -477,11 +477,13 @@ body.papel-tecnico .adm-only{display:none !important}
       </div>
     </div>
     <div class="um-prof">
+      <div class="um-line"><span class="um-ic">person</span><span id="um-nome" style="font-weight:600"></span></div>
       <div class="um-line"><span class="um-ic">badge</span><span id="um-papel" style="color:var(--pri);font-weight:600"></span></div>
       <div class="um-line"><span class="um-ic">mail</span><span id="um-email" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap"></span></div>
-      <div class="um-line"><span class="um-ic">call</span><span id="um-fone">—</span><span class="um-verif">Verificado</span></div>
+      <div class="um-line"><span class="um-ic">call</span><span id="um-fone">—</span></div>
     </div>
     <div class="um-sec">
+      <div class="um-item" onclick="openMeuPerfil()"><span class="um-ic">manage_accounts</span><span>Meu perfil</span></div>
       <div class="um-item soon"><span class="um-ic">lock</span><span>Segurança (2FA)</span><span class="um-badge">em breve</span></div>
       <div class="um-item adm-only" onclick="abrirDev()"><span class="um-ic">construction</span><span>Área do Desenvolvedor</span></div>
     </div>
@@ -794,6 +796,20 @@ body.papel-tecnico .adm-only{display:none !important}
     <div class="note">Cidade/UF e localização padrão <b>pré-preenchem novas obras</b>. O logo aparece no menu/topo. <i>(Enviar arquivo direto virá com o Storage — por enquanto, cole o link de uma imagem.)</i></div>
   </div>
   <div class="mf"><button class="btn" onclick="closeEmpresa()">Cancelar</button><button class="btn btn-p" onclick="saveEmpresa()">Salvar</button></div>
+</div></div>
+
+<div class="modal-bg" id="modalPerfil"><div class="modal">
+  <div class="mh"><b>👤 Meu perfil</b><button class="x" onclick="closeMeuPerfil()">&times;</button></div>
+  <div class="mb">
+    <div class="fg"><label class="fl">Seu nome</label><input class="fi" id="perf-nome" placeholder="Como você quer ser chamado"></div>
+    <div class="fg"><label class="fl">Telefone / WhatsApp</label><input class="fi" id="perf-fone" placeholder="(00) 00000-0000"></div>
+    <div class="frow">
+      <div class="fg" style="grid-column:span 2"><label class="fl">E-mail (login)</label><input class="fi" id="perf-email" type="email" disabled></div>
+      <div class="fg"><label class="fl">Papel</label><input class="fi" id="perf-papel" disabled></div>
+    </div>
+    <div class="note">E-mail e papel são definidos pelo sistema (não editáveis aqui). <i>Foto do perfil virá com o Storage.</i></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeMeuPerfil()">Cancelar</button><button class="btn btn-p" onclick="saveMeuPerfil()">Salvar</button></div>
 </div></div>
 
 <!-- MODAL MATERIAL -->
@@ -2195,6 +2211,7 @@ function pintarUsuario(){ const box=document.getElementById('user-box'); if(!box
     const papel=_PERFIL?(PAPEL_LBL[_PERFIL.papel]||_PERFIL.papel):'';
     const setT=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
     setT('topbar-emp',empNome||'eX Eletric'); setT('um-empresa',empNome||'eX Eletric'); setT('um-email',_USER.email||'');
+    setT('um-nome',(_PERFIL&&_PERFIL.nome)||'(defina seu nome)'); setT('um-fone',(_PERFIL&&_PERFIL.telefone)||'—');
     const pe=document.getElementById('um-papel'); if(pe){ pe.textContent=papel||''; pe.style.display=papel?'inline-block':'none'; }
     const logo=window._EMPRESA&&window._EMPRESA.logo_url; const ini=(empNome||'eX').trim().slice(0,2)||'eX';
     ['avatar-btn','um-av'].forEach(id=>{const el=document.getElementById(id);if(!el)return; if(logo){el.style.backgroundImage='url("'+logo+'")';el.textContent='';}else{el.style.backgroundImage='';el.textContent=ini;}});
@@ -2278,6 +2295,22 @@ async function saveEmpresa(){
   if(r.error){ alert('Erro ao salvar: '+r.error.message); return; }
   Object.assign(_EMPRESA,row); window._EMPRESA=_EMPRESA; window._EMPRESA_NOME=_EMPRESA.nome;
   pintarUsuario(); render(); renderAcomp(); closeEmpresa();
+}
+function openMeuPerfil(){ const m=document.getElementById('user-menu'); if(m)m.classList.remove('open');
+  if(!_USER||!_PERFIL){ alert('Faça login e recarregue a página.'); return; }
+  const g=(id,v)=>{const e=document.getElementById(id);if(e)e.value=(v==null?'':v);};
+  g('perf-nome',_PERFIL.nome); g('perf-fone',_PERFIL.telefone);
+  g('perf-email',_USER.email); g('perf-papel',PAPEL_LBL[_PERFIL.papel]||_PERFIL.papel||'');
+  document.getElementById('modalPerfil').classList.add('show');
+}
+function closeMeuPerfil(){ document.getElementById('modalPerfil').classList.remove('show'); }
+async function saveMeuPerfil(){
+  if(!SB||!_USER||!_PERFIL){ alert('Sem sessão.'); return; }
+  const v=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
+  const row={ nome:v('perf-nome')||null, telefone:v('perf-fone')||null };
+  const r=await SB.from('perfis').update(row).eq('user_id',_USER.id);
+  if(r.error){ alert('Erro ao salvar o perfil: '+r.error.message+'\n\n(Se falar de coluna faltando, rode db/perfil_editavel.sql no Supabase.)'); return; }
+  Object.assign(_PERFIL,row); window._PERFIL=_PERFIL; pintarUsuario(); closeMeuPerfil();
 }
 async function entrarApp(session){
   _USER=session.user; loginVisivel(false); const sp=document.getElementById('login-senha'); if(sp) sp.value='';
