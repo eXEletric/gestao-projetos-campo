@@ -102,7 +102,7 @@
 </head>
 <body>
 <div class="wrap">
-  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+  <div id="apphdr" style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
     <button onclick="voltar()" style="border:1px solid var(--line2);background:var(--surf);border-radius:9px;padding:7px 12px;font-size:13px;cursor:pointer;color:var(--tx2);display:inline-flex;align-items:center;gap:6px"><i class="ti ti-arrow-left"></i> Voltar</button>
     <h1 style="margin:0"><img src="logo_ex.png" alt="eX" onerror="this.style.display='none'"> Estoque</h1>
   </div>
@@ -436,6 +436,7 @@ async function excluir(){if(!editing||!editing.id)return;if(!confirm('Excluir es
 
 $('novo').onclick=novo;$('fechar').onclick=fechar;$('cancelar').onclick=fechar;$('salvar').onclick=salvar;$('excluir').onclick=excluir;
 $('busca').oninput=render;$('ov').onclick=e=>{if(e.target===$('ov'))fechar();};
+if(window.self!==window.top){var _h=document.getElementById('apphdr');if(_h)_h.style.display='none';document.body.style.padding='8px';}
 carregar();
 </script>
 </body>
