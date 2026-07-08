@@ -592,6 +592,13 @@ body.papel-tecnico .adm-only{display:none !important}
     <iframe id="mat-frame" title="Cadastro de Materiais / Estoque" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
   </div>
 
+  <!-- PERFIL DA EMPRESA (página, só leitura) -->
+  <div class="view" id="v-empresa">
+    <div class="topbar"><span class="pname">Perfil da empresa</span><button class="btn btn-p btn-s adm-only" onclick="openHub('empresa',false)">✎ Editar</button></div>
+    <div class="note">Visualização dos dados da empresa. Para alterar, clique em <b>Editar</b> (abre a ⚙ do topo direito).</div>
+    <div id="empresa-ver" style="max-width:660px;margin-top:8px"></div>
+  </div>
+
   <!-- CONFIGURACOES -->
   <div class="view" id="v-cfg">
     <div class="sec">Funções (ofícios)</div>
@@ -2230,7 +2237,13 @@ function toggleGrp(el){ var op=el.classList.toggle('open'); var sub=el.nextEleme
 function _obranav(show){ var ob=document.querySelector('.obranav'); if(ob)ob.style.display=show?'':'none'; }
 function navView(t,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; tab(t,null); }
 function navObras(el){ setSbActive(el); _obranav(true); irLista('proj'); }
-function navEmpresa(el){ setSbActive(el); _obranav(false); openHub('empresa',true); }
+async function navEmpresa(el){ navView('empresa',el); await _hubEnsureEmpresa(); renderEmpresaView(); }
+function renderEmpresaView(){
+  var e=_EMPRESA||{}; var box=document.getElementById('empresa-ver'); if(!box) return;
+  var esc=function(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;'); };
+  var row=function(l,v){ return '<div style="display:flex;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)"><span style="min-width:190px;color:var(--tx2);font-size:13px">'+l+'</span><span style="font-size:14px">'+(v?esc(v):'<span style="color:var(--tx3)">—</span>')+'</span></div>'; };
+  box.innerHTML = row('Nome fantasia',e.nome)+row('CNPJ',e.cnpj)+row('Razão social',e.razao_social)+row('Telefone / WhatsApp',e.telefone)+row('E-mail',e.email)+row('Cidade padrão',e.cidade_padrao)+row('UF padrão',e.uf_padrao)+row('Localização padrão',e.localizacao_padrao)+row('Logo (URL)',e.logo_url);
+}
 function navSoon(name,el){ setSbActive(el); _obranav(false); document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var t=document.getElementById('soon-title'); if(t)t.textContent=name; var v=document.getElementById('v-soon'); if(v)v.classList.add('active'); }
 function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('mini'); }
 function trocarEmpresa(){ var m=document.getElementById('user-menu'); if(m)m.classList.remove('open'); if(confirm('Trocar de empresa faz um NOVO LOGIN: você sai desta e entra com a outra empresa (carregando os dados dela). Deseja continuar?')){ if(typeof sair==='function')sair(); } }
