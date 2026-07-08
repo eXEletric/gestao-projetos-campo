@@ -133,10 +133,10 @@
   <div class="mb">
     <div class="sec">Classificação</div>
     <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-      <div class="fld"><label>Segmento <button type="button" class="lmbtn" onclick="gerenciarTax('segmento')" title="gerenciar segmentos"><i class="ti ti-settings"></i></button></label><select id="f-segmento" onchange="onSeg()"></select></div>
-      <div class="fld"><label>Grupo <span class="pc" id="pc-grupo"></span> <button type="button" class="lmbtn" onclick="gerenciarTax('grupo')" title="gerenciar grupos"><i class="ti ti-settings"></i></button></label><select id="f-grupo" onchange="onGrupo()"></select></div>
-      <div class="fld"><label>Tipo <span class="pc" id="pc-tipo"></span> <button type="button" class="lmbtn" onclick="gerenciarTax('tipo')" title="gerenciar tipos"><i class="ti ti-settings"></i></button></label><select id="f-tipoc" onchange="onTipoc()"></select></div>
-      <div class="fld"><label>Tipo base <span class="pc" id="pc-base"></span> <button type="button" class="lmbtn" onclick="gerenciarLista('tipo_base')" title="gerenciar lista"><i class="ti ti-settings"></i></button></label><input id="f-base" list="dl-base" autocomplete="off" oninput="montar()" placeholder="ex.: Abraçadeira"></div>
+      <div class="fld"><label><button type="button" class="lmbtn" onclick="gerenciarTax('segmento')" title="editar segmentos"><i class="ti ti-pencil"></i></button> Segmento</label><select id="f-segmento" onchange="onSeg()"></select></div>
+      <div class="fld"><label><button type="button" class="lmbtn" onclick="gerenciarTax('grupo')" title="editar grupos"><i class="ti ti-pencil"></i></button> Grupo <span class="pc" id="pc-grupo"></span></label><select id="f-grupo" onchange="onGrupo()"></select></div>
+      <div class="fld"><label><button type="button" class="lmbtn" onclick="gerenciarTax('tipo')" title="editar tipos"><i class="ti ti-pencil"></i></button> Tipo <span class="pc" id="pc-tipo"></span></label><select id="f-tipoc" onchange="onTipoc()"></select></div>
+      <div class="fld"><label><button type="button" class="lmbtn" onclick="gerenciarLista('tipo_base')" title="editar lista"><i class="ti ti-pencil"></i></button> Tipo base <span class="pc" id="pc-base"></span></label><input id="f-base" list="dl-base" autocomplete="off" oninput="montar()" placeholder="ex.: Abraçadeira"></div>
       <div class="fld"><label>Natureza</label><select id="f-tipo"><option value="material">Material</option><option value="consumivel">Consumível</option><option value="epi">EPI descartável</option></select></div>
       <div class="fld"><label>Código <span style="color:var(--tx3)">(automático)</span></label><input id="f-codigo" readonly style="background:var(--surf2);font-family:ui-monospace,monospace;color:var(--pri)"></div>
     </div>
@@ -144,10 +144,10 @@
     <div class="divl"></div>
     <div class="sec">Características</div>
     <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
-      <div class="fld"><label class="k">★ Material <button type="button" class="lmbtn" onclick="gerenciarLista('material')" title="gerenciar lista"><i class="ti ti-settings"></i></button></label><input id="f-material" list="dl-mat" autocomplete="off" oninput="montar()" placeholder="nylon, aço inox…" style="border-color:var(--mat-ln)"></div>
-      <div class="fld"><label>Cor <button type="button" class="lmbtn" onclick="gerenciarLista('cor')" title="gerenciar lista"><i class="ti ti-settings"></i></button></label><input id="f-cor" list="dl-cor" autocomplete="off" oninput="montar()"></div>
+      <div class="fld"><label class="k"><button type="button" class="lmbtn" onclick="gerenciarLista('material')" title="editar lista"><i class="ti ti-pencil"></i></button> ★ Material</label><input id="f-material" list="dl-mat" autocomplete="off" oninput="montar()" placeholder="nylon, aço inox…" style="border-color:var(--mat-ln)"></div>
+      <div class="fld"><label><button type="button" class="lmbtn" onclick="gerenciarLista('cor')" title="editar lista"><i class="ti ti-pencil"></i></button> Cor</label><input id="f-cor" list="dl-cor" autocomplete="off" oninput="montar()"></div>
       <div class="fld"><label>Medida <span style="color:var(--tx3);font-size:10px">(sugere)</span></label><input id="f-medida" list="dl-medida" autocomplete="off" oninput="montar()"></div>
-      <div class="fld"><label>Unidade <button type="button" class="lmbtn" onclick="gerenciarLista('unidade')" title="gerenciar lista"><i class="ti ti-settings"></i></button></label><input id="f-unidade" list="dl-un" autocomplete="off" placeholder="UND"></div>
+      <div class="fld"><label><button type="button" class="lmbtn" onclick="gerenciarLista('unidade')" title="editar lista"><i class="ti ti-pencil"></i></button> Unidade</label><input id="f-unidade" list="dl-un" autocomplete="off" placeholder="UND"></div>
     </div>
     <div class="descb"><span class="cod" id="f-cod-prefix"></span><span class="val" id="f-desc">—</span></div>
     <div class="hintx">a descrição monta dos campos; o código, dos números (numeração automática vem no próximo passo).</div>
