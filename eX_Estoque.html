@@ -61,7 +61,8 @@
   .mk{display:grid;grid-template-columns:64px 1fr 1fr 1fr;gap:7px;align-items:center}
   .mk input{border:1px solid var(--line);border-radius:7px;padding:7px 8px;font-size:12px;outline:none;background:var(--surf)}
   .mk input:focus{border-color:var(--pri)}
-  .ord{font-size:10.5px;text-align:center;border-radius:20px;padding:3px 0;border:1px solid var(--line);color:var(--tx2);background:var(--surf2)}
+  .ord{font-size:10.5px;text-align:center;border-radius:20px;padding:3px 0;border:1px solid var(--line);color:var(--tx2);background:var(--surf2);cursor:pointer;width:100%;font-family:inherit}
+  .ord .stx{color:#e0a800}
   .ord.pref{background:var(--pri-bg);color:var(--pri);border-color:transparent;display:flex;align-items:center;justify-content:center;gap:3px}
   .padrow{display:flex;align-items:center;gap:13px}
   /* chave estrela (padrao) */
@@ -98,7 +99,10 @@
 </head>
 <body>
 <div class="wrap">
-  <h1><img src="logo_ex.png" alt="eX" onerror="this.style.display='none'"> Estoque</h1>
+  <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+    <button onclick="voltar()" style="border:1px solid var(--line2);background:var(--surf);border-radius:9px;padding:7px 12px;font-size:13px;cursor:pointer;color:var(--tx2);display:inline-flex;align-items:center;gap:6px"><i class="ti ti-arrow-left"></i> Voltar</button>
+    <h1 style="margin:0"><img src="logo_ex.png" alt="eX" onerror="this.style.display='none'"> Estoque</h1>
+  </div>
   <div class="sub"><span class="cdot" id="conn"></span><span id="conntx">conectando…</span></div>
 
   <div class="tabs">
@@ -124,13 +128,6 @@
 <div class="ov" id="ov"><div class="modal">
   <div class="mh"><span id="mtitle">Novo item · material</span><button class="x" id="fechar">&times;</button></div>
   <div class="mb">
-    <div class="padrow">
-      <div class="ex-switch" id="sw-padrao" onclick="togPadrao()" title="item padrão do grupo"><span class="st o">★</span><span class="st i">★</span><span class="kb"><span class="pin"></span></span></div>
-      <span style="font-size:13px;font-weight:500">Item padrão do grupo</span>
-      <span style="font-size:10.5px;color:var(--tx3);margin-left:auto">liga a chave pra marcar como padrão</span>
-    </div>
-
-    <div class="divl"></div>
     <div class="sec">Classificação</div>
     <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
       <div class="fld"><label>Segmento</label><select id="f-segmento" onchange="onSeg()"></select></div>
@@ -164,11 +161,7 @@
     <div class="sec">Marcas (fabricante) — por preferência</div>
     <div class="mk" style="padding:0 2px 5px;font-size:10px;color:var(--tx3)"><span>pref.</span><span>marca</span><span>modelo</span><span>código</span></div>
     <div id="marcas"></div>
-    <div class="padrow" style="margin-top:11px">
-      <span class="ex-led" id="led-aberto"></span>
-      <span style="flex:1;font-size:12.5px;color:var(--tx2)">Em aberto — aceita qualquer marca equivalente</span>
-      <div class="ex-switch" id="sw-aberto" onclick="togAberto()"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="pin"></span></span></div>
-    </div>
+    <div class="hintx">clique na ★ para marcar a marca preferida (uma por vez).</div>
 
     <div class="divl"></div>
     <div class="sec">Mídia — a 1ª foto é a capa</div>
@@ -274,20 +267,20 @@ function montar(){
   $('pc-base').textContent = (g&&t&&tbNum!=null)? (g+'.'+pad2(t)+'.'+pad2(tbNum)+'.x') : ((g&&t)?(g+'.'+pad2(t)+'.xx.x'):'');
   $('f-cod-prefix').textContent=$('f-codigo').value.trim();
 }
-function togPadrao(){editing._padrao=!editing._padrao;$('sw-padrao').classList.toggle('on',editing._padrao);}
-function togAberto(){editing._aberto=!editing._aberto;$('sw-aberto').classList.toggle('on',editing._aberto);$('led-aberto').classList.toggle('on',editing._aberto);}
 function lerScan(){toast('Leitura pela câmera: em breve (no celular).');}
+function voltar(){if($('ov').classList.contains('on')){fechar();return;}if(history.length>1)history.back();else location.href='index.html';}
 
 function renderMarcas(){
   const box=$('marcas');box.innerHTML='';editing._marcas=editing._marcas||[{},{},{}];
-  const rot=['1',' 2',' 3'];
-  for(let i=0;i<3;i++){const f=editing._marcas[i]||{};const row=document.createElement('div');row.className='mk';row.style.marginBottom='7px';
-    row.innerHTML='<span class="ord'+(i===0?' pref':'')+'">'+(i===0?'★1':rot[i])+'</span>'+
+  if(editing._prefIdx==null)editing._prefIdx=0;
+  for(let i=0;i<3;i++){const f=editing._marcas[i]||{};const pref=(editing._prefIdx===i);const row=document.createElement('div');row.className='mk';row.style.marginBottom='7px';
+    row.innerHTML='<button type="button" class="ord'+(pref?' pref':'')+'" data-star="'+i+'" title="marcar como preferida"><span class="stx">'+(pref?'★':'☆')+'</span> '+(i+1)+'</button>'+
       '<input placeholder="marca" value="'+esc(f.marca||'')+'" data-i="'+i+'" data-k="marca">'+
       '<input placeholder="modelo" value="'+esc(f.modelo||'')+'" data-i="'+i+'" data-k="modelo">'+
       '<input placeholder="código" value="'+esc(f.codigo_fabrica||'')+'" data-i="'+i+'" data-k="codigo_fabrica">';
     box.appendChild(row);}
   box.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{const i=+inp.dataset.i;editing._marcas[i]=editing._marcas[i]||{};editing._marcas[i][inp.dataset.k]=inp.value;});
+  box.querySelectorAll('[data-star]').forEach(b=>b.onclick=()=>{editing._prefIdx=+b.dataset.star;renderMarcas();});
 }
 function renderFotos(){
   const box=$('fotos');box.innerHTML='';editing._fotos=editing._fotos||[];
@@ -306,7 +299,7 @@ function addFotos(files){[...files].forEach(f=>{if(!f.type||f.type.indexOf('imag
 function abrir(){$('ov').classList.add('on');}
 function fechar(){$('ov').classList.remove('on');editing=null;}
 function setv(id,v){$(id).value=v==null?'':v;}
-function updSwitches(){$('sw-padrao').classList.toggle('on',!!editing._padrao);$('sw-aberto').classList.toggle('on',!!editing._aberto);$('led-aberto').classList.toggle('on',!!editing._aberto);}
+function updSwitches(){}
 
 function novo(){editing={id:null,_isNew:true,_marcas:[{},{},{}],_fotos:[],_padrao:false,_aberto:false};
   $('mtitle').textContent='Novo item · material';$('excluir').style.display='none';
