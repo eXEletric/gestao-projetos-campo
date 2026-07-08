@@ -137,7 +137,7 @@
       <div class="fld"><label>Grupo <span class="pc" id="pc-grupo"></span> <button type="button" class="lmbtn" onclick="gerenciarTax('grupo')" title="gerenciar grupos"><i class="ti ti-settings"></i></button></label><select id="f-grupo" onchange="onGrupo()"></select></div>
       <div class="fld"><label>Tipo <span class="pc" id="pc-tipo"></span> <button type="button" class="lmbtn" onclick="gerenciarTax('tipo')" title="gerenciar tipos"><i class="ti ti-settings"></i></button></label><select id="f-tipoc" onchange="onTipoc()"></select></div>
       <div class="fld"><label>Tipo base <span class="pc" id="pc-base"></span> <button type="button" class="lmbtn" onclick="gerenciarLista('tipo_base')" title="gerenciar lista"><i class="ti ti-settings"></i></button></label><input id="f-base" list="dl-base" autocomplete="off" oninput="montar()" placeholder="ex.: Abraçadeira"></div>
-      <div class="fld"><label>Natureza</label><select id="f-tipo"><option value="material">Material</option><option value="consumivel">Consumível</option></select></div>
+      <div class="fld"><label>Natureza</label><select id="f-tipo"><option value="material">Material</option><option value="consumivel">Consumível</option><option value="epi">EPI descartável</option></select></div>
       <div class="fld"><label>Código <span style="color:var(--tx3)">(automático)</span></label><input id="f-codigo" readonly style="background:var(--surf2);font-family:ui-monospace,monospace;color:var(--pri)"></div>
     </div>
 
@@ -280,7 +280,7 @@ async function carregar(){
   await carregarTaxonomia();await carregarListas();
   const {data,error}=await SB.from('itens')
     .select('id,tipo,descricao,codigo_interno,codigo_barras,qr_code,unidade,padrao,segmento_numero,grupo_numero,tipo_numero,item_seq,material_detalhe(*),item_fotos(id,url,ordem),item_fabricantes(id,ordem,marca,modelo,codigo_fabrica)')
-    .in('tipo',['material','consumivel']).is('deleted_at',null).order('codigo_interno');
+    .in('tipo',['material','consumivel','epi']).is('deleted_at',null).order('codigo_interno');
   if(error){setConn(false,'erro: '+error.message);toast('Erro ao carregar: '+error.message);return;}
   ITENS=data||[];setConn(true,'nuvem ✓ · '+ITENS.length+' itens');render();atualizarListas();
 }
@@ -292,7 +292,7 @@ function render(){
   tb.innerHTML='';
   rows.forEach(it=>{const d=md(it),foto=fotosOf(it)[0];const tr=document.createElement('tr');tr.onclick=()=>editar(it);
     tr.innerHTML='<td>'+(foto?'<img class="thumb" src="'+foto.url+'">':'<div class="thumb ph">▦</div>')+'</td>'+
-      '<td>'+(it.padrao?'<span class="star-i">★</span> ':'')+esc(it.descricao||'')+(it.tipo==='consumivel'?' <span class="pill">consumível</span>':'')+'</td>'+
+      '<td>'+(it.padrao?'<span class="star-i">★</span> ':'')+esc(it.descricao||'')+(it.tipo==='consumivel'?' <span class="pill">consumível</span>':(it.tipo==='epi'?' <span class="pill">EPI descart.</span>':''))+'</td>'+
       '<td>'+esc(it.codigo_interno||'—')+'</td><td>'+esc(d.categoria||'—')+'</td><td>'+esc(it.unidade||'')+'</td>'+
       '<td>'+(marcaPref(it)?'<span class="pill mk">'+esc(marcaPref(it))+'</span>':'—')+'</td>';
     tb.appendChild(tr);});
