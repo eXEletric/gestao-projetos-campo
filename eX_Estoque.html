@@ -132,9 +132,9 @@
   <div class="mb">
     <div class="sec">Classificação</div>
     <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-      <div class="fld"><label>Segmento</label><select id="f-segmento" onchange="onSeg()"></select></div>
-      <div class="fld"><label>Grupo <span class="pc" id="pc-grupo"></span></label><select id="f-grupo" onchange="onGrupo()"></select></div>
-      <div class="fld"><label>Tipo <span class="pc" id="pc-tipo"></span></label><select id="f-tipoc" onchange="onTipoc()"></select></div>
+      <div class="fld"><label>Segmento <button type="button" class="lmbtn" onclick="gerenciarTax('segmento')" title="gerenciar segmentos"><i class="ti ti-settings"></i></button></label><select id="f-segmento" onchange="onSeg()"></select></div>
+      <div class="fld"><label>Grupo <span class="pc" id="pc-grupo"></span> <button type="button" class="lmbtn" onclick="gerenciarTax('grupo')" title="gerenciar grupos"><i class="ti ti-settings"></i></button></label><select id="f-grupo" onchange="onGrupo()"></select></div>
+      <div class="fld"><label>Tipo <span class="pc" id="pc-tipo"></span> <button type="button" class="lmbtn" onclick="gerenciarTax('tipo')" title="gerenciar tipos"><i class="ti ti-settings"></i></button></label><select id="f-tipoc" onchange="onTipoc()"></select></div>
       <div class="fld"><label>Tipo base <span class="pc" id="pc-base"></span> <button type="button" class="lmbtn" onclick="gerenciarLista('tipo_base')" title="gerenciar lista"><i class="ti ti-settings"></i></button></label><input id="f-base" list="dl-base" autocomplete="off" oninput="montar()" placeholder="ex.: Abraçadeira"></div>
       <div class="fld"><label>Natureza</label><select id="f-tipo"><option value="material">Material</option><option value="consumivel">Consumível</option></select></div>
       <div class="fld"><label>Código <span style="color:var(--tx3)">(automático)</span></label><input id="f-codigo" readonly style="background:var(--surf2);font-family:ui-monospace,monospace;color:var(--pri)"></div>
@@ -145,7 +145,7 @@
     <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
       <div class="fld"><label class="k">★ Material <button type="button" class="lmbtn" onclick="gerenciarLista('material')" title="gerenciar lista"><i class="ti ti-settings"></i></button></label><input id="f-material" list="dl-mat" autocomplete="off" oninput="montar()" placeholder="nylon, aço inox…" style="border-color:var(--mat-ln)"></div>
       <div class="fld"><label>Cor <button type="button" class="lmbtn" onclick="gerenciarLista('cor')" title="gerenciar lista"><i class="ti ti-settings"></i></button></label><input id="f-cor" list="dl-cor" autocomplete="off" oninput="montar()"></div>
-      <div class="fld"><label>Medida</label><input id="f-medida" autocomplete="off" oninput="montar()"></div>
+      <div class="fld"><label>Medida <span style="color:var(--tx3);font-size:10px">(sugere)</span></label><input id="f-medida" list="dl-medida" autocomplete="off" oninput="montar()"></div>
       <div class="fld"><label>Unidade <button type="button" class="lmbtn" onclick="gerenciarLista('unidade')" title="gerenciar lista"><i class="ti ti-settings"></i></button></label><input id="f-unidade" list="dl-un" autocomplete="off" placeholder="UND"></div>
     </div>
     <div class="descb"><span class="cod" id="f-cod-prefix"></span><span class="val" id="f-desc">—</span></div>
@@ -178,7 +178,7 @@
 </div></div>
 
 <datalist id="dl-seg"></datalist><datalist id="dl-cat"></datalist>
-<datalist id="dl-base"></datalist><datalist id="dl-mat"></datalist><datalist id="dl-un"></datalist><datalist id="dl-cor"></datalist>
+<datalist id="dl-base"></datalist><datalist id="dl-mat"></datalist><datalist id="dl-un"></datalist><datalist id="dl-cor"></datalist><datalist id="dl-medida"></datalist>
 <div class="toast" id="toast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -198,9 +198,9 @@ function marcaPref(it){const f=(it.item_fabricantes||[]).slice().sort((a,b)=>a.o
 async function carregarTaxonomia(){
   if(!SB)return;
   const [s,g,t]=await Promise.all([
-    SB.from('estoque_segmentos').select('numero,nome').order('numero'),
-    SB.from('estoque_grupos').select('segmento_numero,numero,nome').order('numero'),
-    SB.from('estoque_tipos').select('segmento_numero,grupo_numero,numero,nome').order('grupo_numero').order('numero')
+    SB.from('estoque_segmentos').select('id,numero,nome').order('numero'),
+    SB.from('estoque_grupos').select('id,segmento_numero,numero,nome').order('numero'),
+    SB.from('estoque_tipos').select('id,segmento_numero,grupo_numero,numero,nome').order('grupo_numero').order('numero')
   ]);
   SEGS=(s&&s.data)||[]; GRUPOS=(g&&g.data)||[]; TIPOS=(t&&t.data)||[];
 }
@@ -217,13 +217,12 @@ function fillListDatalists(){
   fill('dl-un',(LISTAS.unidade||[]).map(x=>x.valor));
 }
 function nomeCampo(c){return {tipo_base:'Tipo base',material:'Material',cor:'Cor',unidade:'Unidade'}[c]||c;}
-function gerenciarLista(campo){
-  let ov=$('lm-ov');
+function ensureLM(){let ov=$('lm-ov');
   if(!ov){ov=document.createElement('div');ov.id='lm-ov';ov.className='ov';
-    ov.innerHTML='<div class="modal" style="max-width:420px"><div class="mh"><span id="lm-h"></span><button class="x" onclick="document.getElementById(\'lm-ov\').classList.remove(\'on\')">&times;</button></div><div class="mb" id="lm-b"></div><div class="mf"><button class="btn" style="margin-left:auto" onclick="document.getElementById(\'lm-ov\').classList.remove(\'on\')">Fechar</button></div></div>';
+    ov.innerHTML='<div class="modal" style="max-width:440px"><div class="mh"><span id="lm-h"></span><button class="x" onclick="document.getElementById(\'lm-ov\').classList.remove(\'on\')">&times;</button></div><div class="mb" id="lm-b"></div><div class="mf"><button class="btn" style="margin-left:auto" onclick="document.getElementById(\'lm-ov\').classList.remove(\'on\')">Fechar</button></div></div>';
     document.body.appendChild(ov);ov.onclick=function(e){if(e.target===ov)ov.classList.remove('on');};}
-  $('lm-h').textContent='Lista: '+nomeCampo(campo);renderLM(campo);ov.classList.add('on');
-}
+  return ov;}
+function gerenciarLista(campo){const ov=ensureLM();$('lm-h').textContent='Lista: '+nomeCampo(campo);renderLM(campo);ov.classList.add('on');}
 function renderLM(campo){
   const b=$('lm-b');b.innerHTML='';
   const add=document.createElement('div');add.style.cssText='display:flex;gap:7px;margin-bottom:12px';
@@ -241,6 +240,34 @@ async function lmAdd(campo,v){const ord=(LISTAS[campo]||[]).length+1;const r=awa
 async function lmRename(campo,id,v){const r=await SB.from('estoque_listas').update({valor:v}).eq('id',id);if(r.error){toast('Erro: '+r.error.message);return;}toast('Salvo ✓');await carregarListas();updBaseList();renderLM(campo);}
 async function lmDel(campo,id){const r=await SB.from('estoque_listas').delete().eq('id',id);if(r.error){toast('Erro: '+r.error.message);return;}toast('Deletado');await carregarListas();updBaseList();renderLM(campo);}
 async function ensureList(campo,valor){valor=(valor||'').trim();if(!valor)return;if((LISTAS[campo]||[]).some(x=>(x.valor||'').toLowerCase()===valor.toLowerCase()))return;try{await SB.from('estoque_listas').insert({campo:campo,valor:valor,ordem:(LISTAS[campo]||[]).length+1});}catch(e){}}
+function taxTbl(n){return {segmento:'estoque_segmentos',grupo:'estoque_grupos',tipo:'estoque_tipos'}[n];}
+function taxRows(n){const s=+$('f-segmento').value,g=+$('f-grupo').value;
+  if(n==='segmento')return SEGS.slice();
+  if(n==='grupo')return GRUPOS.filter(x=>x.segmento_numero===s);
+  return TIPOS.filter(x=>x.segmento_numero===s&&x.grupo_numero===g);}
+function gerenciarTax(n){const s=+$('f-segmento').value,g=+$('f-grupo').value;
+  if(n==='grupo'&&!s){toast('Escolha o segmento primeiro.');return;}
+  if(n==='tipo'&&(!s||!g)){toast('Escolha o grupo primeiro.');return;}
+  const ov=ensureLM();$('lm-h').textContent='Gerenciar: '+({segmento:'Segmentos',grupo:'Grupos',tipo:'Tipos'}[n]);renderTax(n);ov.classList.add('on');}
+function renderTax(n){const b=$('lm-b');b.innerHTML='';
+  const add=document.createElement('div');add.style.cssText='display:flex;gap:7px;margin-bottom:12px';
+  add.innerHTML='<input id="lm-new" placeholder="nome do novo…" style="flex:1;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;outline:none"><button class="btn mat" type="button">＋ Novo</button>';
+  add.querySelector('button').onclick=function(){const v=$('lm-new').value.trim();if(v)taxAdd(n,v);};b.appendChild(add);
+  taxRows(n).forEach(function(item){const row=document.createElement('div');row.style.cssText='display:flex;gap:6px;align-items:center;margin-bottom:6px';
+    const num=document.createElement('span');num.textContent=(n==='segmento'?item.numero:pad2(item.numero));num.style.cssText='font-family:ui-monospace,monospace;font-size:11px;color:var(--pri);min-width:26px;text-align:center';
+    const inp=document.createElement('input');inp.value=item.nome;inp.style.cssText='flex:1;border:1px solid var(--line);border-radius:7px;padding:7px 9px;font-size:12.5px;outline:none';
+    const sv=document.createElement('button');sv.className='sbtn';sv.type='button';sv.innerHTML='<i class="ti ti-check"></i>';sv.onclick=function(){const nv=inp.value.trim();if(nv&&nv!==item.nome)taxRename(n,item.id,nv);};
+    const dl=document.createElement('button');dl.className='sbtn';dl.type='button';dl.style.color='var(--red)';dl.innerHTML='<i class="ti ti-trash"></i>';dl.onclick=function(){if(confirm('Deletar "'+item.nome+'"?'))taxDel(n,item.id);};
+    row.appendChild(num);row.appendChild(inp);row.appendChild(sv);row.appendChild(dl);b.appendChild(row);});}
+async function reloadTax(n){const cs=$('f-segmento').value,cg=$('f-grupo').value,ct=$('f-tipoc').value;
+  await carregarTaxonomia();fillSeg(cs?+cs:null);fillGrupos(cg?+cg:null);fillTipos(ct?+ct:null);renderTax(n);montar();}
+async function taxAdd(n,nome){const s=+$('f-segmento').value,g=+$('f-grupo').value;let p;
+  if(n==='segmento'){const mx=SEGS.reduce((a,x)=>Math.max(a,x.numero),0);p={numero:mx+1,nome:nome};}
+  else if(n==='grupo'){const mx=GRUPOS.filter(x=>x.segmento_numero===s).reduce((a,x)=>Math.max(a,x.numero),0);p={segmento_numero:s,numero:mx+1,nome:nome};}
+  else{const mx=TIPOS.filter(x=>x.segmento_numero===s&&x.grupo_numero===g).reduce((a,x)=>Math.max(a,x.numero),0);p={segmento_numero:s,grupo_numero:g,numero:mx+1,nome:nome};}
+  const r=await SB.from(taxTbl(n)).insert(p);if(r.error){toast('Erro: '+r.error.message);return;}toast('Criado ✓');await reloadTax(n);}
+async function taxRename(n,id,nome){const r=await SB.from(taxTbl(n)).update({nome:nome}).eq('id',id);if(r.error){toast('Erro: '+r.error.message);return;}toast('Salvo ✓');await reloadTax(n);}
+async function taxDel(n,id){const r=await SB.from(taxTbl(n)).delete().eq('id',id);if(r.error){toast('Erro: '+r.error.message);return;}toast('Deletado');await reloadTax(n);}
 async function carregar(){
   if(!SB){setConn(false,'supabase não carregou');return;}
   await carregarTaxonomia();await carregarListas();
@@ -263,7 +290,7 @@ function render(){
       '<td>'+(marcaPref(it)?'<span class="pill mk">'+esc(marcaPref(it))+'</span>':'—')+'</td>';
     tb.appendChild(tr);});
 }
-function atualizarListas(){updBaseList();}
+function atualizarListas(){updBaseList();fill('dl-medida',[...new Set(ITENS.map(it=>md(it).medida).filter(Boolean))].sort());}
 function fill(id,arr){$(id).innerHTML=arr.map(v=>'<option value="'+esc(v)+'">').join('');}
 function pad2(n){n=n||0;return (n<10?'0':'')+n;}
 function updBaseList(){const g=+$('f-grupo').value,t=+$('f-tipoc').value;
