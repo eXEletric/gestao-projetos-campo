@@ -773,8 +773,23 @@ body.papel-tecnico .adm-only{display:none !important}
 
 <!-- MODAL CONFIGURAÇÕES DA EMPRESA -->
 <div class="modal-bg" id="modalEmp"><div class="modal">
-  <div class="mh"><b>🏢 Perfil da empresa</b><button class="x" onclick="closeEmpresa()">&times;</button></div>
+  <div class="mh"><b>⚙ Editar</b><button class="x" onclick="closeHub()">&times;</button></div>
+  <div style="display:flex;gap:2px;border-bottom:1px solid var(--line);padding:0 14px">
+    <button class="tab active" id="hub-t-perfil" onclick="hubTab('perfil')">👤 Meu Perfil</button>
+    <button class="tab" id="hub-t-empresa" onclick="hubTab('empresa')">🏢 Empresa</button>
+  </div>
   <div class="mb">
+    <div id="hub-ro" class="note" style="display:none;background:var(--surf2);padding:8px 11px;border-radius:8px;margin-bottom:10px">👁 Só visualização. Para editar, abra pela ⚙ no canto superior direito.</div>
+    <div id="hub-pane-perfil">
+      <div class="fg"><label class="fl">Seu nome</label><input class="fi" id="perf-nome" placeholder="Como você quer ser chamado"></div>
+      <div class="fg"><label class="fl">Telefone / WhatsApp</label><input class="fi" id="perf-fone" placeholder="(00) 00000-0000"></div>
+      <div class="frow">
+        <div class="fg" style="grid-column:span 2"><label class="fl">E-mail (login)</label><input class="fi" id="perf-email" type="email" disabled></div>
+        <div class="fg"><label class="fl">Papel</label><input class="fi" id="perf-papel" disabled></div>
+      </div>
+      <div class="note">E-mail e papel são definidos pelo sistema. <i>Foto do perfil virá com o Storage.</i></div>
+    </div>
+    <div id="hub-pane-empresa" style="display:none">
     <div class="frow">
       <div class="fg" style="grid-column:span 2"><label class="fl">Nome fantasia</label><input class="fi" id="emp-nome"></div>
       <div class="fg"><label class="fl">CNPJ</label><input class="fi" id="emp-cnpj" placeholder="00.000.000/0001-00"></div>
@@ -791,23 +806,12 @@ body.papel-tecnico .adm-only{display:none !important}
     <div class="fg"><label class="fl">Localização padrão (coordenadas ou link do mapa)</label><input class="fi" id="emp-loc"></div>
     <div class="fg"><label class="fl">Logo da empresa (URL da imagem)</label><input class="fi" id="emp-logo" placeholder="https://… (link de uma imagem do logo)"></div>
     <div class="note">Cidade/UF e localização padrão <b>pré-preenchem novas obras</b>. O logo aparece no menu/topo. <i>(Enviar arquivo direto virá com o Storage — por enquanto, cole o link de uma imagem.)</i></div>
+    </div>
   </div>
-  <div class="mf"><button class="btn" onclick="closeEmpresa()">Cancelar</button><button class="btn btn-p" onclick="saveEmpresa()">Salvar</button></div>
+  <div class="mf" id="hub-foot"><button class="btn" onclick="closeHub()">Fechar</button><button class="btn btn-p" id="hub-save" onclick="hubSave()">Salvar</button></div>
 </div></div>
 
-<div class="modal-bg" id="modalPerfil"><div class="modal">
-  <div class="mh"><b>👤 Meu perfil</b><button class="x" onclick="closeMeuPerfil()">&times;</button></div>
-  <div class="mb">
-    <div class="fg"><label class="fl">Seu nome</label><input class="fi" id="perf-nome" placeholder="Como você quer ser chamado"></div>
-    <div class="fg"><label class="fl">Telefone / WhatsApp</label><input class="fi" id="perf-fone" placeholder="(00) 00000-0000"></div>
-    <div class="frow">
-      <div class="fg" style="grid-column:span 2"><label class="fl">E-mail (login)</label><input class="fi" id="perf-email" type="email" disabled></div>
-      <div class="fg"><label class="fl">Papel</label><input class="fi" id="perf-papel" disabled></div>
-    </div>
-    <div class="note">E-mail e papel são definidos pelo sistema (não editáveis aqui). <i>Foto do perfil virá com o Storage.</i></div>
-  </div>
-  <div class="mf"><button class="btn" onclick="closeMeuPerfil()">Cancelar</button><button class="btn btn-p" onclick="saveMeuPerfil()">Salvar</button></div>
-</div></div>
+<!-- Meu Perfil + Empresa agora vivem no hub (#modalEmp) com abas -->
 
 <!-- MODAL MATERIAL -->
 <div class="modal-bg" id="modalM"><div class="modal">
@@ -2226,7 +2230,7 @@ function toggleGrp(el){ var op=el.classList.toggle('open'); var sub=el.nextEleme
 function _obranav(show){ var ob=document.querySelector('.obranav'); if(ob)ob.style.display=show?'':'none'; }
 function navView(t,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; tab(t,null); }
 function navObras(el){ setSbActive(el); _obranav(true); irLista('proj'); }
-function navEmpresa(el){ setSbActive(el); _obranav(false); if(typeof openEmpresa==='function')openEmpresa(); }
+function navEmpresa(el){ setSbActive(el); _obranav(false); openHub('empresa',true); }
 function navSoon(name,el){ setSbActive(el); _obranav(false); document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var t=document.getElementById('soon-title'); if(t)t.textContent=name; var v=document.getElementById('v-soon'); if(v)v.classList.add('active'); }
 function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('mini'); }
 function trocarEmpresa(){ var m=document.getElementById('user-menu'); if(m)m.classList.remove('open'); if(confirm('Trocar de empresa faz um NOVO LOGIN: você sai desta e entra com a outra empresa (carregando os dados dela). Deseja continuar?')){ if(typeof sair==='function')sair(); } }
@@ -2264,24 +2268,52 @@ async function carregarPerfil(uid){
     try{ const { data:emp } = await SB.from('empresas').select('*').eq('id',_PERFIL.empresa_id).maybeSingle(); _EMPRESA=emp||null; window._EMPRESA=_EMPRESA; window._EMPRESA_NOME=emp?emp.nome:''; }catch(e){}
   }
 }
-async function openEmpresa(){
-  if(!SB||!_USER||!_PERFIL||!_PERFIL.empresa_id){ alert('Faça login como Fundador/Admin e recarregue a página.'); return; }
-  if(!_EMPRESA){
-    try{
-      const r=await SB.from('empresas').select('*').eq('id',_PERFIL.empresa_id).maybeSingle();
-      if(r.error){ alert('Erro ao carregar a empresa: '+r.error.message); return; }
-      if(!r.data){ alert('Empresa não encontrada. Recarregue a página (Ctrl+Shift+R).'); return; }
-      _EMPRESA=r.data; window._EMPRESA=r.data; window._EMPRESA_NOME=r.data.nome; pintarUsuario();
-    }catch(e){ alert('Erro: '+(e.message||e)); return; }
+// ===== HUB de edição (Meu Perfil + Empresa) — N7 Opção A =====
+var _HUB_TAB='perfil';
+function closeHub(){ document.getElementById('modalEmp').classList.remove('show'); }
+function closeEmpresa(){ closeHub(); }
+function closeMeuPerfil(){ closeHub(); }
+function hubTab(t){ _HUB_TAB=t;
+  var pp=document.getElementById('hub-pane-perfil'), pe=document.getElementById('hub-pane-empresa');
+  if(pp)pp.style.display=(t==='perfil')?'':'none'; if(pe)pe.style.display=(t==='empresa')?'':'none';
+  var tp=document.getElementById('hub-t-perfil'), te=document.getElementById('hub-t-empresa');
+  if(tp)tp.classList.toggle('active',t==='perfil'); if(te)te.classList.toggle('active',t==='empresa');
+}
+var _HUB_EMP_FIELDS=['emp-nome','emp-cnpj','emp-razao','emp-tel','emp-email','emp-cidade','emp-uf','emp-loc','emp-logo'];
+function hubSetMode(ro){
+  _HUB_EMP_FIELDS.concat(['perf-nome','perf-fone']).forEach(function(id){ var e=document.getElementById(id); if(e)e.disabled=!!ro; });
+  var note=document.getElementById('hub-ro'); if(note)note.style.display=ro?'block':'none';
+  var save=document.getElementById('hub-save'); if(save)save.style.display=ro?'none':'';
+}
+async function _hubEnsureEmpresa(){
+  if(_EMPRESA) return true;
+  if(!SB||!_PERFIL||!_PERFIL.empresa_id) return false;
+  try{
+    var r=await SB.from('empresas').select('*').eq('id',_PERFIL.empresa_id).maybeSingle();
+    if(r.error||!r.data) return false;
+    _EMPRESA=r.data; window._EMPRESA=r.data; window._EMPRESA_NOME=r.data.nome; pintarUsuario();
+  }catch(e){ return false; }
+  return true;
+}
+async function openHub(tab, ro){
+  if(!_USER||!_PERFIL){ alert('Faça login e recarregue a página.'); return; }
+  var m=document.getElementById('user-menu'); if(m)m.classList.remove('open');
+  var g=function(id,v){ var e=document.getElementById(id); if(e)e.value=(v==null?'':v); };
+  g('perf-nome',_PERFIL.nome); g('perf-fone',_PERFIL.telefone);
+  g('perf-email',_USER.email); g('perf-papel',PAPEL_LBL[_PERFIL.papel]||_PERFIL.papel||'');
+  await _hubEnsureEmpresa();
+  if(_EMPRESA){
+    g('emp-nome',_EMPRESA.nome); g('emp-cnpj',_EMPRESA.cnpj); g('emp-razao',_EMPRESA.razao_social);
+    g('emp-tel',_EMPRESA.telefone); g('emp-email',_EMPRESA.email);
+    g('emp-cidade',_EMPRESA.cidade_padrao); g('emp-uf',_EMPRESA.uf_padrao); g('emp-loc',_EMPRESA.localizacao_padrao);
+    g('emp-logo',_EMPRESA.logo_url);
   }
-  const g=(id,v)=>{const e=document.getElementById(id);if(e)e.value=(v==null?'':v);};
-  g('emp-nome',_EMPRESA.nome); g('emp-cnpj',_EMPRESA.cnpj); g('emp-razao',_EMPRESA.razao_social);
-  g('emp-tel',_EMPRESA.telefone); g('emp-email',_EMPRESA.email);
-  g('emp-cidade',_EMPRESA.cidade_padrao); g('emp-uf',_EMPRESA.uf_padrao); g('emp-loc',_EMPRESA.localizacao_padrao);
-  g('emp-logo',_EMPRESA.logo_url);
+  hubSetMode(!!ro); hubTab(tab||'perfil');
   document.getElementById('modalEmp').classList.add('show');
 }
-function closeEmpresa(){ document.getElementById('modalEmp').classList.remove('show'); }
+function openMeuPerfil(){ openHub('perfil', false); }
+function openEmpresa(){ openHub('empresa', false); }
+function hubSave(){ if(_HUB_TAB==='empresa') saveEmpresa(); else saveMeuPerfil(); }
 async function saveEmpresa(){
   if(!SB||!_EMPRESA){ alert('Sem dados da empresa.'); return; }
   const v=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
@@ -2292,23 +2324,15 @@ async function saveEmpresa(){
   const r=await SB.from('empresas').update(row).eq('id',_EMPRESA.id);
   if(r.error){ alert('Erro ao salvar: '+r.error.message); return; }
   Object.assign(_EMPRESA,row); window._EMPRESA=_EMPRESA; window._EMPRESA_NOME=_EMPRESA.nome;
-  pintarUsuario(); render(); renderAcomp(); closeEmpresa();
+  pintarUsuario(); render(); renderAcomp(); closeHub();
 }
-function openMeuPerfil(){ const m=document.getElementById('user-menu'); if(m)m.classList.remove('open');
-  if(!_USER||!_PERFIL){ alert('Faça login e recarregue a página.'); return; }
-  const g=(id,v)=>{const e=document.getElementById(id);if(e)e.value=(v==null?'':v);};
-  g('perf-nome',_PERFIL.nome); g('perf-fone',_PERFIL.telefone);
-  g('perf-email',_USER.email); g('perf-papel',PAPEL_LBL[_PERFIL.papel]||_PERFIL.papel||'');
-  document.getElementById('modalPerfil').classList.add('show');
-}
-function closeMeuPerfil(){ document.getElementById('modalPerfil').classList.remove('show'); }
 async function saveMeuPerfil(){
   if(!SB||!_USER||!_PERFIL){ alert('Sem sessão.'); return; }
   const v=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
   const row={ nome:v('perf-nome')||null, telefone:v('perf-fone')||null };
   const r=await SB.from('perfis').update(row).eq('user_id',_USER.id);
   if(r.error){ alert('Erro ao salvar o perfil: '+r.error.message+'\n\n(Se falar de coluna faltando, rode db/perfil_editavel.sql no Supabase.)'); return; }
-  Object.assign(_PERFIL,row); window._PERFIL=_PERFIL; pintarUsuario(); closeMeuPerfil();
+  Object.assign(_PERFIL,row); window._PERFIL=_PERFIL; pintarUsuario(); closeHub();
 }
 async function entrarApp(session){
   _USER=session.user; loginVisivel(false); const sp=document.getElementById('login-senha'); if(sp) sp.value='';
