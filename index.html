@@ -414,14 +414,14 @@ body.papel-tecnico .adm-only{display:none !important}
     <div class="sb-logo"><img src="logo_ex.png" class="sb-mark" alt="eX"><span class="sb-name">eX Cronograma</span><span class="sb-coll" onclick="toggleSidebar()" title="recolher">&#171;</span></div>
     <nav class="sb-nav">
       <button class="sb-i" onclick="navSoon('Painel Inicial',this)"><span class="ic"><span class="msr">space_dashboard</span></span><span class="lb">Painel Inicial</span></button>
+      <button class="sb-i fut" onclick="navSoon('Tarefas',this)"><span class="ic"><span class="msr">checklist</span></span><span class="lb">Tarefas</span><span class="br">em breve</span></button>
+      <button class="sb-i fut" onclick="navSoon('Agenda',this)"><span class="ic"><span class="msr">calendar_month</span></span><span class="lb">Agenda</span><span class="br">em breve</span></button>
 
       <div class="sb-grp open" onclick="toggleGrp(this)"><span class="ic"><span class="msr">construction</span></span><span class="lb">Operação</span><span class="gchev">▶</span></div>
       <div class="sb-sub show">
         <button class="sb-i on" onclick="navObras(this)"><span class="ic"><span class="msr">apartment</span></span><span class="lb">Obras</span></button>
         <button class="sb-i fut" onclick="navSoon('Serviços',this)"><span class="ic"><span class="msr">handyman</span></span><span class="lb">Serviços</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Visitas',this)"><span class="ic"><span class="msr">location_on</span></span><span class="lb">Visitas</span><span class="br">em breve</span></button>
-        <button class="sb-i fut" onclick="navSoon('Tarefas',this)"><span class="ic"><span class="msr">checklist</span></span><span class="lb">Tarefas</span><span class="br">em breve</span></button>
-        <button class="sb-i fut" onclick="navSoon('Agenda',this)"><span class="ic"><span class="msr">calendar_month</span></span><span class="lb">Agenda</span><span class="br">em breve</span></button>
       </div>
 
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">sell</span></span><span class="lb">Comercial</span><span class="gchev">▶</span></div>
@@ -2147,7 +2147,7 @@ function aplicarModoNav(){
   sub.style.display=dentro?'inline-flex':'none';
   e1.style.display=dentro?'none':'inline-flex';
   if(dentro){const nm=document.getElementById('crumb-nome');if(nm)nm.textContent=P().nome||'(obra)';}
-  var oc=document.getElementById('obracfg-btn'); if(oc)oc.style.display=dentro?'inline-flex':'none';
+  var oc=document.getElementById('obracfg-btn'); if(oc)oc.style.display='inline-flex'; /* ⚙ biblioteca: visível também na lista de Obras, não só dentro da obra */
 }
 function irLista(t){ S.emProjeto=false; save(); aplicarModoNav(); tab(t,document.getElementById(t==='modelos'?'nav-modelos-lbl':'nav-lista-lbl')); }
 function voltarProjetos(){ irLista('proj'); }
