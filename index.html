@@ -589,10 +589,7 @@ body.papel-tecnico .adm-only{display:none !important}
 
   <!-- MATERIAIS -->
   <div class="view" id="v-mat">
-    <div class="topbar"><span class="pname">Materiais (catálogo de tipos)</span><button class="btn btn-p btn-s" onclick="openMat(null)">+ Novo material</button></div>
-    <div class="note">Cadastro de tipos de material (não é estoque). Identificado pelo código de barras do fabricante. <span id="mat-count"></span></div>
-    <input class="tin" id="mat-busca" placeholder="Buscar por descrição, código, marca…" style="width:100%;margin-bottom:12px" oninput="renderMatList()">
-    <div id="mat-list"><div class="empty">Carregando materiais…</div></div>
+    <iframe id="mat-frame" title="Cadastro de Materiais / Estoque" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
   </div>
 
   <!-- CONFIGURACOES -->
@@ -1776,6 +1773,7 @@ function rmCat(i){const par=S.categorias[i];S.categorias.splice(i,1);renderCfg()
 let MATS=[], GRUPOS_MAT=[], MARCAS=[]; let MEDIT=null, MSEQ=0;
 function grpMatNome(id){const g=GRUPOS_MAT.find(x=>x.id===id);return g?g.nome:'';}
 async function carregarMateriais(){
+  const _mf=document.getElementById('mat-frame'); if(_mf){ if(!_mf.getAttribute('src')) _mf.setAttribute('src','eX_Estoque.html'); return; }
   if(!SB){ document.getElementById('mat-list').innerHTML='<div class="empty">Sem conexão com a nuvem.</div>'; return; }
   document.getElementById('mat-list').innerHTML='<div class="empty">Carregando materiais…</div>';
   const [r,g,mk]=await Promise.all([
