@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eX · Estoque</title>
+<style>
+  :root{--pri:#533ab7;--pri-bg:#eeedfe;--bg:#faf9f5;--surf:#fff;--surf2:#f6f5f0;
+    --line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#8a8980;
+    --mat:#854f0b;--mat-bg:#faeeda;--mat-ln:#f0c86b;--ok:#0f6e56;--red:#a32d2d}
+  *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+  body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45;padding:18px}
+  .wrap{max-width:1120px;margin:0 auto}
+  h1{font-size:20px;font-weight:600;display:flex;align-items:center;gap:9px}
+  h1 img{height:30px;border-radius:7px}
+  .sub{font-size:12px;color:var(--tx2);margin:3px 0 14px;display:flex;align-items:center;gap:8px}
+  .cdot{width:8px;height:8px;border-radius:50%;background:var(--tx3)}
+  .cdot.on{background:#22b07d;box-shadow:0 0 5px rgba(34,176,125,.7)}
+  .tabs{display:flex;gap:6px;border-bottom:1px solid var(--line);margin-bottom:14px;flex-wrap:wrap}
+  .tab{border:none;background:none;padding:9px 14px;font-size:13.5px;color:var(--tx2);cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;align-items:center;gap:6px}
+  .tab.on{color:var(--mat);border-bottom-color:var(--mat);font-weight:600}
+  .tab.soon{color:var(--tx3);cursor:default}
+  .tab .bd{font-size:9px;background:var(--surf2);border:1px solid var(--line);color:var(--tx3);border-radius:8px;padding:0 5px}
+  .toolbar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+  .search{flex:1;min-width:180px;display:flex;align-items:center;gap:7px;border:1px solid var(--line);border-radius:9px;padding:8px 11px;background:var(--surf)}
+  .search input{border:none;outline:none;flex:1;font-size:13px;background:none;color:var(--tx)}
+  .btn{background:var(--surf);border:1px solid var(--line2);padding:8px 13px;border-radius:9px;font-size:13px;cursor:pointer;color:var(--tx2);display:inline-flex;align-items:center;gap:6px}
+  .btn:hover{background:var(--surf2)}
+  .btn.mat{background:var(--mat);color:#fff;border-color:var(--mat)}
+  table{width:100%;border-collapse:collapse;font-size:12.5px;background:var(--surf);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  thead th{text-align:left;font-weight:600;color:var(--tx2);padding:10px 12px;background:var(--surf2);border-bottom:1px solid var(--line);font-size:11.5px}
+  tbody td{padding:9px 12px;border-top:1px solid var(--line)}
+  tbody tr{cursor:pointer}tbody tr:hover{background:var(--surf2)}
+  .thumb{width:34px;height:34px;border-radius:6px;object-fit:cover;border:1px solid var(--line);background:var(--surf2)}
+  .thumb.ph{display:flex;align-items:center;justify-content:center;color:var(--tx3);font-size:15px}
+  .star-i{color:#e0a800;font-size:13px}
+  .pill{font-size:11px;border-radius:10px;padding:1px 8px;background:var(--surf2);color:var(--tx2);border:1px solid var(--line)}
+  .pill.mk{background:var(--pri-bg);color:var(--pri);border-color:transparent}
+  .empty{padding:34px;text-align:center;color:var(--tx3);font-size:13px}
+  /* modal */
+  .ov{position:fixed;inset:0;background:rgba(20,15,35,.5);display:none;align-items:flex-start;justify-content:center;padding:24px 14px;overflow:auto;z-index:50}
+  .ov.on{display:flex}
+  .modal{background:var(--surf);border-radius:14px;width:100%;max-width:680px;box-shadow:0 18px 50px rgba(0,0,0,.28)}
+  .mh{background:var(--mat-bg);padding:12px 16px;border-radius:14px 14px 0 0;display:flex;align-items:center;gap:9px;color:var(--mat);font-weight:600;font-size:14px}
+  .mh .x{margin-left:auto;cursor:pointer;color:var(--mat);font-size:20px;line-height:1;background:none;border:none}
+  .mb{padding:16px}
+  .sec{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin:0 0 9px}
+  .divl{height:1px;background:var(--line);margin:15px 0}
+  .g{display:grid;gap:10px 12px}
+  .fld label{display:block;font-size:11px;color:var(--tx2);margin-bottom:4px}
+  .fld label.k{color:var(--mat);font-weight:600}
+  .fld input,.fld select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;color:var(--tx);outline:none;background:var(--surf)}
+  .fld input:focus,.fld select:focus{border-color:var(--pri)}
+  .scan{display:flex;gap:7px}.scan input{flex:1}
+  .sbtn{flex-shrink:0;border:1px solid var(--line);border-radius:8px;background:var(--surf2);color:var(--tx2);padding:0 11px;display:flex;align-items:center;gap:5px;font-size:11.5px;cursor:pointer}
+  .descb{margin-top:11px;display:flex;align-items:baseline;gap:9px;background:var(--pri-bg);border-radius:9px;padding:10px 13px}
+  .descb .cod{font-family:ui-monospace,monospace;font-size:12px;color:var(--pri);font-weight:600;flex-shrink:0}
+  .descb .val{font-size:13.5px;font-weight:500}
+  .mk{display:grid;grid-template-columns:64px 1fr 1fr 1fr;gap:7px;align-items:center}
+  .mk input{border:1px solid var(--line);border-radius:7px;padding:7px 8px;font-size:12px;outline:none;background:var(--surf)}
+  .mk input:focus{border-color:var(--pri)}
+  .ord{font-size:10.5px;text-align:center;border-radius:20px;padding:3px 0;border:1px solid var(--line);color:var(--tx2);background:var(--surf2)}
+  .ord.pref{background:var(--pri-bg);color:var(--pri);border-color:transparent;display:flex;align-items:center;justify-content:center;gap:3px}
+  .padrow{display:flex;align-items:center;gap:13px}
+  /* chave estrela (padrao) */
+  .ex-switch{position:relative;width:44px;height:23px;border-radius:12px;cursor:pointer;flex-shrink:0;background:linear-gradient(#bbbeb7,#9a9d95);box-shadow:inset 0 2px 4px rgba(0,0,0,.4);font:800 8px ui-monospace,monospace}
+  .ex-switch.on{background:linear-gradient(#2fcf88,#0f8f5b)}
+  .ex-switch .st{position:absolute;top:0;height:100%;width:24px;display:flex;align-items:center;justify-content:center;font-size:18px;line-height:1;transition:.16s}
+  .ex-switch .st.o{right:0;color:#7b7b72}
+  .ex-switch.on .st.o{display:none}
+  .ex-switch .st.i{left:0;display:none;color:#ffe071;text-shadow:0 0 6px rgba(255,214,90,1),0 0 2px rgba(255,236,160,1)}
+  .ex-switch.on .st.i{display:flex}
+  .ex-switch .lb{position:absolute;top:0;height:100%;display:flex;align-items:center;color:#fff}
+  .ex-switch .lb.off{right:7px;color:#5a5a50}.ex-switch.on .lb.off{display:none}
+  .ex-switch .lb.onx{left:7px;display:none}.ex-switch.on .lb.onx{display:flex}
+  .ex-switch .kb{position:absolute;top:3px;left:3px;width:17px;height:17px;border-radius:50%;background:linear-gradient(#fff,#d9d7d1);box-shadow:0 2px 3px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.9);display:flex;align-items:center;justify-content:center;transition:.16s;z-index:2}
+  .ex-switch.on .kb{left:24px}
+  .ex-switch .pin{width:3px;height:9px;border-radius:2px;background:linear-gradient(#9a9a92,#565650)}
+  .ex-led{width:15px;height:15px;border-radius:50%;flex-shrink:0;background:radial-gradient(circle at 35% 30%,#fff,#eef1ef 72%);box-shadow:inset 0 1px 1px rgba(0,0,0,.12);border:1.5px solid #d9dcd9}
+  .ex-led.on{background:radial-gradient(circle at 35% 30%,#c4ffdd,#22d27f 52%,#08a457);box-shadow:0 0 8px rgba(34,210,127,.85);border-color:#08a457}
+  /* fotos */
+  .fotos{display:flex;gap:9px;flex-wrap:wrap;align-items:center;margin-top:8px}
+  .foto{position:relative;width:74px;height:74px;border-radius:8px;overflow:hidden;border:1px solid var(--line)}
+  .foto img{width:100%;height:100%;object-fit:cover}
+  .foto .cap{position:absolute;top:3px;left:3px;background:rgba(0,0,0,.6);color:#ffe071;border-radius:6px;font-size:9px;padding:1px 6px;display:flex;align-items:center;gap:3px}
+  .foto .setcap{position:absolute;top:3px;left:3px;color:#fff;background:rgba(0,0,0,.4);border-radius:50%;width:20px;height:20px;display:flex;align-items:center;justify-content:center;font-size:11px;border:none;cursor:pointer}
+  .foto .rm{position:absolute;top:3px;right:3px;width:19px;height:19px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;border:none;cursor:pointer;font-size:12px;line-height:1}
+  .addf{width:74px;height:74px;border:1px dashed var(--line2);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;color:var(--pri);cursor:pointer;font-size:10.5px;background:var(--pri-bg)}
+  .soonf{width:74px;height:74px;border:1px dashed var(--line);border-radius:8px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;color:var(--tx3);font-size:9.5px;opacity:.7}
+  .mf{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center}
+  .mf .del{color:var(--red);border:none;background:none;cursor:pointer;font-size:12.5px}
+  .toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#241c40;color:#fff;padding:10px 18px;border-radius:10px;font-size:13px;opacity:0;transition:opacity .25s;pointer-events:none;z-index:60}
+  .toast.on{opacity:1}
+  .hintx{font-size:10px;color:var(--tx3);margin-top:5px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1><img src="logo_ex.png" alt="eX" onerror="this.style.display='none'"> Estoque</h1>
+  <div class="sub"><span class="cdot" id="conn"></span><span id="conntx">conectando…</span></div>
+
+  <div class="tabs">
+    <button class="tab on"><i class="ti"></i>Materiais e consumíveis</button>
+    <button class="tab soon">Ferramentas <span class="bd">em breve</span></button>
+    <button class="tab soon">EPIs e uniformes <span class="bd">em breve</span></button>
+  </div>
+
+  <div class="toolbar">
+    <div class="search"><span>🔎</span><input id="busca" placeholder="buscar por descrição, código, marca…"></div>
+    <button class="btn mat" id="novo">＋ Novo item</button>
+  </div>
+
+  <table>
+    <thead><tr>
+      <th style="width:44px"></th><th>Descrição</th><th style="width:100px">Código</th>
+      <th style="width:150px">Categoria</th><th style="width:56px">Un</th><th style="width:130px">Marca</th>
+    </tr></thead>
+    <tbody id="lista"><tr><td colspan="6" class="empty">carregando…</td></tr></tbody>
+  </table>
+</div>
+
+<div class="ov" id="ov"><div class="modal">
+  <div class="mh"><span id="mtitle">Novo item · material</span><button class="x" id="fechar">&times;</button></div>
+  <div class="mb">
+    <div class="padrow">
+      <div class="ex-switch" id="sw-padrao" onclick="togPadrao()" title="item padrão do grupo"><span class="st o">★</span><span class="st i">★</span><span class="kb"><span class="pin"></span></span></div>
+      <span style="font-size:13px;font-weight:500">Item padrão do grupo</span>
+      <span style="font-size:10.5px;color:var(--tx3);margin-left:auto">liga a chave pra marcar como padrão</span>
+    </div>
+
+    <div class="divl"></div>
+    <div class="sec">Classificação</div>
+    <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
+      <div class="fld"><label>Tipo</label><select id="f-tipo"><option value="material">Material</option><option value="consumivel">Consumível</option></select></div>
+      <div class="fld"><label>Segmento</label><input id="f-segmento" list="dl-seg" autocomplete="off"></div>
+      <div class="fld"><label>Categoria</label><input id="f-categoria" list="dl-cat" autocomplete="off"></div>
+      <div class="fld"><label>Tipo base</label><input id="f-base" list="dl-base" autocomplete="off" oninput="montar()"></div>
+      <div class="fld"><label>Código</label><input id="f-codigo" autocomplete="off" placeholder="ex.: 7.10.03.2" oninput="montar()"></div>
+    </div>
+
+    <div class="divl"></div>
+    <div class="sec">Características</div>
+    <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(140px,1fr))">
+      <div class="fld"><label class="k">★ Material</label><input id="f-material" list="dl-mat" autocomplete="off" oninput="montar()" placeholder="nylon, aço inox…" style="border-color:var(--mat-ln)"></div>
+      <div class="fld"><label>Cor</label><input id="f-cor" autocomplete="off" oninput="montar()"></div>
+      <div class="fld"><label>Medida</label><input id="f-medida" autocomplete="off" oninput="montar()"></div>
+      <div class="fld"><label>Unidade</label><input id="f-unidade" list="dl-un" autocomplete="off" placeholder="UND"></div>
+    </div>
+    <div class="descb"><span class="cod" id="f-cod-prefix"></span><span class="val" id="f-desc">—</span></div>
+    <div class="hintx">a descrição monta dos campos; o código, dos números (numeração automática vem no próximo passo).</div>
+
+    <div class="divl"></div>
+    <div class="sec">Identificação — leitura por câmera</div>
+    <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(210px,1fr))">
+      <div class="fld"><label>Código de barras</label><div class="scan"><input id="f-barras" placeholder="EAN / do fabricante"><button class="sbtn" onclick="lerScan()" type="button"><i class="ti ti-barcode"></i> ler</button></div></div>
+      <div class="fld"><label>QR code</label><div class="scan"><input id="f-qr" placeholder="QR do item"><button class="sbtn" onclick="lerScan()" type="button"><i class="ti ti-qrcode"></i> ler</button></div></div>
+    </div>
+    <div class="hintx">sem código, a eX gera um QR interno automático (próximo passo).</div>
+
+    <div class="divl"></div>
+    <div class="sec">Marcas (fabricante) — por preferência</div>
+    <div class="mk" style="padding:0 2px 5px;font-size:10px;color:var(--tx3)"><span>pref.</span><span>marca</span><span>modelo</span><span>código</span></div>
+    <div id="marcas"></div>
+    <div class="padrow" style="margin-top:11px">
+      <span class="ex-led" id="led-aberto"></span>
+      <span style="flex:1;font-size:12.5px;color:var(--tx2)">Em aberto — aceita qualquer marca equivalente</span>
+      <div class="ex-switch" id="sw-aberto" onclick="togAberto()"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="pin"></span></span></div>
+    </div>
+
+    <div class="divl"></div>
+    <div class="sec">Mídia — a 1ª foto é a capa</div>
+    <div class="fotos" id="fotos"></div>
+    <input type="file" id="fileFoto" accept="image/*" multiple style="display:none">
+  </div>
+  <div class="mf">
+    <button class="del" id="excluir" style="display:none">Excluir item</button>
+    <button class="btn mat" id="salvar" style="margin-left:auto">Salvar item</button>
+    <button class="btn" id="cancelar">Cancelar</button>
+  </div>
+</div></div>
+
+<datalist id="dl-seg"></datalist><datalist id="dl-cat"></datalist>
+<datalist id="dl-base"></datalist><datalist id="dl-mat"></datalist><datalist id="dl-un"></datalist>
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
+const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
+const SB=(window.supabase)?window.supabase.createClient(SB_URL,SB_KEY):null;
+let ITENS=[], editing=null;
+const $=id=>document.getElementById(id);
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2600);}
+function setConn(ok,txt){$('conn').classList.toggle('on',ok);$('conntx').textContent=txt;}
+function esc(t){return (t+'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+function md(it){var m=it.material_detalhe;return Array.isArray(m)?(m[0]||{}):(m||{});}
+function fotosOf(it){return (it.item_fotos||[]).slice().sort((a,b)=>(a.ordem||0)-(b.ordem||0));}
+function marcaPref(it){const f=(it.item_fabricantes||[]).slice().sort((a,b)=>a.ordem-b.ordem)[0];return f?f.marca:'';}
+
+async function carregar(){
+  if(!SB){setConn(false,'supabase não carregou');return;}
+  const {data,error}=await SB.from('itens')
+    .select('id,tipo,descricao,codigo_interno,codigo_barras,qr_code,unidade,padrao,material_detalhe(*),item_fotos(id,url,ordem),item_fabricantes(id,ordem,marca,modelo,codigo_fabrica)')
+    .in('tipo',['material','consumivel']).is('deleted_at',null).order('descricao');
+  if(error){setConn(false,'erro: '+error.message);toast('Erro ao carregar: '+error.message);return;}
+  ITENS=data||[];setConn(true,'nuvem ✓ · '+ITENS.length+' itens');render();atualizarListas();
+}
+function render(){
+  const q=($('busca').value||'').toLowerCase().trim();
+  const rows=ITENS.filter(it=>{if(!q)return true;return [it.descricao,it.codigo_interno,marcaPref(it),md(it).categoria,md(it).material].join(' ').toLowerCase().includes(q);});
+  const tb=$('lista');
+  if(!rows.length){tb.innerHTML='<tr><td colspan="6" class="empty">'+(ITENS.length?'nenhum item encontrado':'nenhum material ainda — clique em “＋ Novo item”')+'</td></tr>';return;}
+  tb.innerHTML='';
+  rows.forEach(it=>{const d=md(it),foto=fotosOf(it)[0];const tr=document.createElement('tr');tr.onclick=()=>editar(it);
+    tr.innerHTML='<td>'+(foto?'<img class="thumb" src="'+foto.url+'">':'<div class="thumb ph">▦</div>')+'</td>'+
+      '<td>'+(it.padrao?'<span class="star-i">★</span> ':'')+esc(it.descricao||'')+(it.tipo==='consumivel'?' <span class="pill">consumível</span>':'')+'</td>'+
+      '<td>'+esc(it.codigo_interno||'—')+'</td><td>'+esc(d.categoria||'—')+'</td><td>'+esc(it.unidade||'')+'</td>'+
+      '<td>'+(marcaPref(it)?'<span class="pill mk">'+esc(marcaPref(it))+'</span>':'—')+'</td>';
+    tb.appendChild(tr);});
+}
+function atualizarListas(){const gather=fn=>[...new Set(ITENS.map(fn).filter(Boolean))].sort();
+  fill('dl-seg',gather(it=>md(it).segmento));fill('dl-cat',gather(it=>md(it).categoria));
+  fill('dl-base',gather(it=>md(it).tipo_base));fill('dl-mat',gather(it=>md(it).material));fill('dl-un',gather(it=>it.unidade));}
+function fill(id,arr){$(id).innerHTML=arr.map(v=>'<option value="'+esc(v)+'">').join('');}
+
+function montar(){
+  const b=$('f-base').value.trim(),m=$('f-material').value.trim(),c=$('f-cor').value.trim(),me=$('f-medida').value.trim();
+  const p=[];if(b)p.push(b);if(m)p.push('de '+m);if(c)p.push(c);if(me)p.push(me);
+  $('f-desc').textContent=p.join(' ')||'—';
+  $('f-cod-prefix').textContent=$('f-codigo').value.trim();
+}
+function togPadrao(){editing._padrao=!editing._padrao;$('sw-padrao').classList.toggle('on',editing._padrao);}
+function togAberto(){editing._aberto=!editing._aberto;$('sw-aberto').classList.toggle('on',editing._aberto);$('led-aberto').classList.toggle('on',editing._aberto);}
+function lerScan(){toast('Leitura pela câmera: em breve (no celular).');}
+
+function renderMarcas(){
+  const box=$('marcas');box.innerHTML='';editing._marcas=editing._marcas||[{},{},{}];
+  const rot=['1',' 2',' 3'];
+  for(let i=0;i<3;i++){const f=editing._marcas[i]||{};const row=document.createElement('div');row.className='mk';row.style.marginBottom='7px';
+    row.innerHTML='<span class="ord'+(i===0?' pref':'')+'">'+(i===0?'★1':rot[i])+'</span>'+
+      '<input placeholder="marca" value="'+esc(f.marca||'')+'" data-i="'+i+'" data-k="marca">'+
+      '<input placeholder="modelo" value="'+esc(f.modelo||'')+'" data-i="'+i+'" data-k="modelo">'+
+      '<input placeholder="código" value="'+esc(f.codigo_fabrica||'')+'" data-i="'+i+'" data-k="codigo_fabrica">';
+    box.appendChild(row);}
+  box.querySelectorAll('input').forEach(inp=>inp.oninput=()=>{const i=+inp.dataset.i;editing._marcas[i]=editing._marcas[i]||{};editing._marcas[i][inp.dataset.k]=inp.value;});
+}
+function renderFotos(){
+  const box=$('fotos');box.innerHTML='';editing._fotos=editing._fotos||[];
+  editing._fotos.forEach((f,idx)=>{const d=document.createElement('div');d.className='foto';
+    d.innerHTML='<img src="'+f.url+'">'+(idx===0?'<span class="cap">★ capa</span>':'<button class="setcap" title="definir como capa">★</button>')+'<button class="rm" title="remover">&times;</button>';
+    if(idx>0)d.querySelector('.setcap').onclick=()=>{editing._fotos.unshift(editing._fotos.splice(idx,1)[0]);renderFotos();};
+    d.querySelector('.rm').onclick=()=>{editing._fotos.splice(idx,1);renderFotos();};box.appendChild(d);});
+  const add=document.createElement('div');add.className='addf';add.innerHTML='<span style="font-size:18px">＋</span>foto';add.onclick=()=>$('fileFoto').click();box.appendChild(add);
+  ['vídeo','animada'].forEach(t=>{const s=document.createElement('div');s.className='soonf';s.innerHTML='<i class="ti ti-'+(t==='vídeo'?'video':'gif')+'" style="font-size:17px"></i>'+t+'<span style="font-size:8px">em breve</span>';box.appendChild(s);});
+}
+$('fileFoto').onchange=e=>{addFotos(e.target.files);e.target.value='';};
+function addFotos(files){[...files].forEach(f=>{if(!f.type||f.type.indexOf('image')<0)return;const rd=new FileReader();
+  rd.onload=()=>{const im=new Image();im.onload=()=>{let mx=1200,w=im.width,h=im.height;if(w>mx||h>mx){const s=Math.min(mx/w,mx/h);w=Math.round(w*s);h=Math.round(h*s);}
+    const cv=document.createElement('canvas');cv.width=w;cv.height=h;cv.getContext('2d').drawImage(im,0,0,w,h);editing._fotos=editing._fotos||[];editing._fotos.push({url:cv.toDataURL('image/jpeg',0.7)});renderFotos();};im.src=rd.result;};rd.readAsDataURL(f);});}
+
+function abrir(){$('ov').classList.add('on');}
+function fechar(){$('ov').classList.remove('on');editing=null;}
+function setv(id,v){$(id).value=v==null?'':v;}
+function updSwitches(){$('sw-padrao').classList.toggle('on',!!editing._padrao);$('sw-aberto').classList.toggle('on',!!editing._aberto);$('led-aberto').classList.toggle('on',!!editing._aberto);}
+
+function novo(){editing={id:null,_marcas:[{},{},{}],_fotos:[],_padrao:false,_aberto:false};
+  $('mtitle').textContent='Novo item · material';$('excluir').style.display='none';
+  ['f-segmento','f-categoria','f-base','f-codigo','f-material','f-cor','f-medida','f-barras','f-qr'].forEach(i=>setv(i,''));
+  setv('f-tipo','material');setv('f-unidade','UND');
+  montar();renderMarcas();renderFotos();updSwitches();abrir();}
+function editar(it){const d=md(it);
+  editing={id:it.id,_marcas:[{},{},{}],_fotos:fotosOf(it).map(f=>({url:f.url})),_padrao:!!it.padrao,_aberto:!!d.fabricante_aberto};
+  (it.item_fabricantes||[]).forEach(f=>{if(f.ordem>=1&&f.ordem<=3)editing._marcas[f.ordem-1]={marca:f.marca,modelo:f.modelo,codigo_fabrica:f.codigo_fabrica};});
+  $('mtitle').textContent='Editar item · material';$('excluir').style.display='';
+  setv('f-tipo',it.tipo);setv('f-segmento',d.segmento);setv('f-categoria',d.categoria);setv('f-base',d.tipo_base);setv('f-codigo',it.codigo_interno);
+  setv('f-material',d.material);setv('f-cor',d.cor);setv('f-medida',d.medida);setv('f-unidade',it.unidade);setv('f-barras',it.codigo_barras);setv('f-qr',it.qr_code);
+  montar();renderMarcas();renderFotos();updSwitches();abrir();}
+
+async function salvar(){montar();const desc=$('f-desc').textContent.trim();
+  if(desc==='—'||!$('f-base').value.trim()){toast('Preencha ao menos o tipo base.');return;}
+  $('salvar').textContent='Salvando…';
+  try{
+    const itemPayload={tipo:$('f-tipo').value,descricao:desc,codigo_interno:$('f-codigo').value.trim()||null,
+      codigo_barras:$('f-barras').value.trim()||null,qr_code:$('f-qr').value.trim()||null,unidade:$('f-unidade').value.trim()||'UND',padrao:!!editing._padrao};
+    let id=editing.id;
+    if(id){const {error}=await SB.from('itens').update(itemPayload).eq('id',id);if(error)throw error;}
+    else{const {data,error}=await SB.from('itens').insert(itemPayload).select('id').single();if(error)throw error;id=data.id;}
+    const detPayload={item_id:id,material:$('f-material').value.trim()||null,tipo_base:$('f-base').value.trim()||null,
+      segmento:$('f-segmento').value.trim()||null,categoria:$('f-categoria').value.trim()||null,
+      cor:$('f-cor').value.trim()||null,medida:$('f-medida').value.trim()||null,fabricante_aberto:!!editing._aberto};
+    let r=await SB.from('material_detalhe').upsert(detPayload,{onConflict:'item_id'});if(r.error)throw r.error;
+    await SB.from('item_fabricantes').delete().eq('item_id',id);
+    const marcas=(editing._marcas||[]).map((m,i)=>({item_id:id,ordem:i+1,marca:(m.marca||'').trim()||null,modelo:(m.modelo||'').trim()||null,codigo_fabrica:(m.codigo_fabrica||'').trim()||null}))
+      .filter(m=>m.marca||m.modelo||m.codigo_fabrica);
+    if(marcas.length){r=await SB.from('item_fabricantes').insert(marcas);if(r.error)throw r.error;}
+    await SB.from('item_fotos').delete().eq('item_id',id);
+    const fotos=(editing._fotos||[]).map((f,i)=>({item_id:id,url:f.url,ordem:i}));
+    if(fotos.length){r=await SB.from('item_fotos').insert(fotos);if(r.error)throw r.error;}
+    toast('Item salvo ✓');fechar();await carregar();
+  }catch(e){toast('Erro ao salvar: '+(e.message||e));}
+  $('salvar').textContent='Salvar item';}
+
+async function excluir(){if(!editing||!editing.id)return;if(!confirm('Excluir este item?'))return;
+  const {error}=await SB.from('itens').update({deleted_at:new Date().toISOString()}).eq('id',editing.id);
+  if(error){toast('Erro: '+error.message);return;}toast('Item excluído');fechar();await carregar();}
+
+$('novo').onclick=novo;$('fechar').onclick=fechar;$('cancelar').onclick=fechar;$('salvar').onclick=salvar;$('excluir').onclick=excluir;
+$('busca').oninput=render;$('ov').onclick=e=>{if(e.target===$('ov'))fechar();};
+carregar();
+</script>
+</body>
+</html>
