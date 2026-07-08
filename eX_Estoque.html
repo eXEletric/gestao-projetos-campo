@@ -268,13 +268,13 @@ function montar(){
   $('f-cod-prefix').textContent=$('f-codigo').value.trim();
 }
 function lerScan(){toast('Leitura pela câmera: em breve (no celular).');}
-function voltar(){if($('ov').classList.contains('on')){fechar();return;}if(history.length>1)history.back();else location.href='index.html';}
+function voltar(){if($('ov').classList.contains('on')){fechar();return;}location.href='index.html';}
 
 function renderMarcas(){
   const box=$('marcas');box.innerHTML='';editing._marcas=editing._marcas||[{},{},{}];
   if(editing._prefIdx==null)editing._prefIdx=0;
   for(let i=0;i<3;i++){const f=editing._marcas[i]||{};const pref=(editing._prefIdx===i);const row=document.createElement('div');row.className='mk';row.style.marginBottom='7px';
-    row.innerHTML='<button type="button" class="ord'+(pref?' pref':'')+'" data-star="'+i+'" title="marcar como preferida"><span class="stx">'+(pref?'★':'☆')+'</span> '+(i+1)+'</button>'+
+    row.innerHTML='<div class="ex-switch'+(pref?' on':'')+'" data-star="'+i+'" title="marca preferida — liga uma, desliga as outras"><span class="st o" style="font-size:12px;font-weight:700">'+(i+1)+'</span><span class="st i">★</span><span class="kb"><span class="pin"></span></span></div>'+
       '<input placeholder="marca" value="'+esc(f.marca||'')+'" data-i="'+i+'" data-k="marca">'+
       '<input placeholder="modelo" value="'+esc(f.modelo||'')+'" data-i="'+i+'" data-k="modelo">'+
       '<input placeholder="código" value="'+esc(f.codigo_fabrica||'')+'" data-i="'+i+'" data-k="codigo_fabrica">';
