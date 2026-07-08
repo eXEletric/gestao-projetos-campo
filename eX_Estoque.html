@@ -49,6 +49,8 @@
   .g{display:grid;gap:10px 12px}
   .fld label{display:block;font-size:11px;color:var(--tx2);margin-bottom:4px}
   .fld label.k{color:var(--mat);font-weight:600}
+  .fld label{display:flex;align-items:baseline;gap:6px}
+  .fld .pc{font-family:ui-monospace,monospace;font-size:10px;color:var(--pri);letter-spacing:.3px;font-weight:600}
   .fld input,.fld select{width:100%;border:1px solid var(--line);border-radius:8px;padding:8px 10px;font-size:12.5px;color:var(--tx);outline:none;background:var(--surf)}
   .fld input:focus,.fld select:focus{border-color:var(--pri)}
   .scan{display:flex;gap:7px}.scan input{flex:1}
@@ -132,9 +134,9 @@
     <div class="sec">Classificação</div>
     <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
       <div class="fld"><label>Segmento</label><select id="f-segmento" onchange="onSeg()"></select></div>
-      <div class="fld"><label>Grupo</label><select id="f-grupo" onchange="onGrupo()"></select></div>
-      <div class="fld"><label>Tipo</label><select id="f-tipoc" onchange="onTipoc()"></select></div>
-      <div class="fld"><label>Tipo base <span style="color:var(--tx3)">(nome padrão)</span></label><input id="f-base" list="dl-base" autocomplete="off" oninput="montar()" placeholder="ex.: Abraçadeira"></div>
+      <div class="fld"><label>Grupo <span class="pc" id="pc-grupo"></span></label><select id="f-grupo" onchange="onGrupo()"></select></div>
+      <div class="fld"><label>Tipo <span class="pc" id="pc-tipo"></span></label><select id="f-tipoc" onchange="onTipoc()"></select></div>
+      <div class="fld"><label>Tipo base <span class="pc" id="pc-base"></span></label><input id="f-base" list="dl-base" autocomplete="off" oninput="montar()" placeholder="ex.: Abraçadeira"></div>
       <div class="fld"><label>Natureza</label><select id="f-tipo"><option value="material">Material</option><option value="consumivel">Consumível</option></select></div>
       <div class="fld"><label>Código <span style="color:var(--tx3)">(automático)</span></label><input id="f-codigo" readonly style="background:var(--surf2);font-family:ui-monospace,monospace;color:var(--pri)"></div>
     </div>
@@ -264,7 +266,12 @@ function montar(){
   const b=$('f-base').value.trim(),m=$('f-material').value.trim(),c=$('f-cor').value.trim(),me=$('f-medida').value.trim();
   const p=[];if(b)p.push(b);if(m)p.push('de '+m);if(c)p.push(c);if(me)p.push(me);
   $('f-desc').textContent=p.join(' ')||'—';
-  if(editing&&editing._isNew){const r=calcCodigo();editing._codigo=r.codigo;editing._tbNum=r.tbNum;editing._itemSeq=r.itemSeq;$('f-codigo').value=r.codigo;}
+  const g=+$('f-grupo').value,t=+$('f-tipoc').value;let tbNum=null;
+  if(editing&&editing._isNew){const r=calcCodigo();editing._codigo=r.codigo;editing._tbNum=r.tbNum;editing._itemSeq=r.itemSeq;tbNum=r.tbNum;$('f-codigo').value=r.codigo;}
+  else if(editing){const p2=(editing._codigo||'').split('.');if(p2.length>=3)tbNum=+p2[2];}
+  $('pc-grupo').textContent = g? (g+'.xx.xx.x') : '';
+  $('pc-tipo').textContent = (g&&t)? (g+'.'+pad2(t)+'.xx.x') : '';
+  $('pc-base').textContent = (g&&t&&tbNum!=null)? (g+'.'+pad2(t)+'.'+pad2(tbNum)+'.x') : ((g&&t)?(g+'.'+pad2(t)+'.xx.x'):'');
   $('f-cod-prefix').textContent=$('f-codigo').value.trim();
 }
 function togPadrao(){editing._padrao=!editing._padrao;$('sw-padrao').classList.toggle('on',editing._padrao);}
