@@ -131,11 +131,12 @@
     <div class="divl"></div>
     <div class="sec">Classificação</div>
     <div class="g" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">
-      <div class="fld"><label>Tipo</label><select id="f-tipo"><option value="material">Material</option><option value="consumivel">Consumível</option></select></div>
-      <div class="fld"><label>Segmento</label><input id="f-segmento" list="dl-seg" autocomplete="off"></div>
-      <div class="fld"><label>Categoria</label><input id="f-categoria" list="dl-cat" autocomplete="off"></div>
-      <div class="fld"><label>Tipo base</label><input id="f-base" list="dl-base" autocomplete="off" oninput="montar()"></div>
-      <div class="fld"><label>Código</label><input id="f-codigo" autocomplete="off" placeholder="ex.: 7.10.03.2" oninput="montar()"></div>
+      <div class="fld"><label>Segmento</label><select id="f-segmento" onchange="onSeg()"></select></div>
+      <div class="fld"><label>Grupo</label><select id="f-grupo" onchange="onGrupo()"></select></div>
+      <div class="fld"><label>Tipo</label><select id="f-tipoc" onchange="onTipoc()"></select></div>
+      <div class="fld"><label>Tipo base <span style="color:var(--tx3)">(nome padrão)</span></label><input id="f-base" list="dl-base" autocomplete="off" oninput="montar()" placeholder="ex.: Abraçadeira"></div>
+      <div class="fld"><label>Natureza</label><select id="f-tipo"><option value="material">Material</option><option value="consumivel">Consumível</option></select></div>
+      <div class="fld"><label>Código <span style="color:var(--tx3)">(automático)</span></label><input id="f-codigo" readonly style="background:var(--surf2);font-family:ui-monospace,monospace;color:var(--pri)"></div>
     </div>
 
     <div class="divl"></div>
@@ -188,7 +189,7 @@
 const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
 const SB=(window.supabase)?window.supabase.createClient(SB_URL,SB_KEY):null;
-let ITENS=[], editing=null;
+let ITENS=[], editing=null, SEGS=[], GRUPOS=[], TIPOS=[];
 const $=id=>document.getElementById(id);
 function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2600);}
 function setConn(ok,txt){$('conn').classList.toggle('on',ok);$('conntx').textContent=txt;}
@@ -197,11 +198,21 @@ function md(it){var m=it.material_detalhe;return Array.isArray(m)?(m[0]||{}):(m|
 function fotosOf(it){return (it.item_fotos||[]).slice().sort((a,b)=>(a.ordem||0)-(b.ordem||0));}
 function marcaPref(it){const f=(it.item_fabricantes||[]).slice().sort((a,b)=>a.ordem-b.ordem)[0];return f?f.marca:'';}
 
+async function carregarTaxonomia(){
+  if(!SB)return;
+  const [s,g,t]=await Promise.all([
+    SB.from('estoque_segmentos').select('numero,nome').order('numero'),
+    SB.from('estoque_grupos').select('segmento_numero,numero,nome').order('numero'),
+    SB.from('estoque_tipos').select('segmento_numero,grupo_numero,numero,nome').order('grupo_numero').order('numero')
+  ]);
+  SEGS=(s&&s.data)||[]; GRUPOS=(g&&g.data)||[]; TIPOS=(t&&t.data)||[];
+}
 async function carregar(){
   if(!SB){setConn(false,'supabase não carregou');return;}
+  await carregarTaxonomia();
   const {data,error}=await SB.from('itens')
-    .select('id,tipo,descricao,codigo_interno,codigo_barras,qr_code,unidade,padrao,material_detalhe(*),item_fotos(id,url,ordem),item_fabricantes(id,ordem,marca,modelo,codigo_fabrica)')
-    .in('tipo',['material','consumivel']).is('deleted_at',null).order('descricao');
+    .select('id,tipo,descricao,codigo_interno,codigo_barras,qr_code,unidade,padrao,segmento_numero,grupo_numero,tipo_numero,item_seq,material_detalhe(*),item_fotos(id,url,ordem),item_fabricantes(id,ordem,marca,modelo,codigo_fabrica)')
+    .in('tipo',['material','consumivel']).is('deleted_at',null).order('codigo_interno');
   if(error){setConn(false,'erro: '+error.message);toast('Erro ao carregar: '+error.message);return;}
   ITENS=data||[];setConn(true,'nuvem ✓ · '+ITENS.length+' itens');render();atualizarListas();
 }
@@ -219,14 +230,41 @@ function render(){
     tb.appendChild(tr);});
 }
 function atualizarListas(){const gather=fn=>[...new Set(ITENS.map(fn).filter(Boolean))].sort();
-  fill('dl-seg',gather(it=>md(it).segmento));fill('dl-cat',gather(it=>md(it).categoria));
-  fill('dl-base',gather(it=>md(it).tipo_base));fill('dl-mat',gather(it=>md(it).material));fill('dl-un',gather(it=>it.unidade));}
+  fill('dl-mat',gather(it=>md(it).material));fill('dl-un',gather(it=>it.unidade));updBaseList();}
 function fill(id,arr){$(id).innerHTML=arr.map(v=>'<option value="'+esc(v)+'">').join('');}
+function pad2(n){n=n||0;return (n<10?'0':'')+n;}
+function updBaseList(){const g=+$('f-grupo').value,t=+$('f-tipoc').value;
+  const names=[...new Set(ITENS.filter(it=>it.grupo_numero===g&&it.tipo_numero===t).map(it=>md(it).tipo_base).filter(Boolean))].sort();
+  fill('dl-base',names);}
+function fillSeg(sel){$('f-segmento').innerHTML=SEGS.map(s=>'<option value="'+s.numero+'">'+s.numero+' · '+esc(s.nome)+'</option>').join('');
+  $('f-segmento').value=(sel!=null?sel:(SEGS[0]?SEGS[0].numero:''));}
+function fillGrupos(sel){const s=+$('f-segmento').value;const gs=GRUPOS.filter(g=>g.segmento_numero===s);
+  $('f-grupo').innerHTML='<option value="">—</option>'+gs.map(g=>'<option value="'+g.numero+'">'+g.numero+' · '+esc(g.nome)+'</option>').join('');
+  if(sel!=null)$('f-grupo').value=sel;}
+function fillTipos(sel){const s=+$('f-segmento').value,g=+$('f-grupo').value;const ts=TIPOS.filter(x=>x.segmento_numero===s&&x.grupo_numero===g);
+  $('f-tipoc').innerHTML='<option value="">—</option>'+ts.map(x=>'<option value="'+x.numero+'">'+pad2(x.numero)+' · '+esc(x.nome)+'</option>').join('');
+  if(sel!=null)$('f-tipoc').value=sel;}
+function onSeg(){fillGrupos();fillTipos();updBaseList();montar();}
+function onGrupo(){fillTipos();updBaseList();montar();}
+function onTipoc(){updBaseList();montar();}
+function calcCodigo(){
+  const s=+$('f-segmento').value,g=+$('f-grupo').value,t=+$('f-tipoc').value,base=($('f-base').value||'').trim().toLowerCase();
+  if(!g||!t)return {codigo:'',tbNum:null,itemSeq:null};
+  const scope=ITENS.filter(it=>it.segmento_numero===s&&it.grupo_numero===g&&it.tipo_numero===t&&it.id!==(editing&&editing.id));
+  const tbMap={};let maxTb=0;
+  scope.forEach(it=>{const p=(it.codigo_interno||'').split('.');if(p.length>=4){const tb=+p[2];const nm=(md(it).tipo_base||'').trim().toLowerCase();if(nm)tbMap[nm]=tb;if(tb>maxTb)maxTb=tb;}});
+  let tbNum= base? (tbMap[base]||(maxTb+1)) : null;
+  let maxItem=0;if(tbNum!=null)scope.forEach(it=>{const p=(it.codigo_interno||'').split('.');if(p.length>=4&&+p[2]===tbNum){const i=+p[3];if(i>maxItem)maxItem=i;}});
+  const itemSeq= tbNum!=null? maxItem+1 : null;
+  const codigo= (tbNum!=null)? (g+'.'+pad2(t)+'.'+pad2(tbNum)+'.'+pad2(itemSeq)) : '';
+  return {codigo,tbNum,itemSeq};
+}
 
 function montar(){
   const b=$('f-base').value.trim(),m=$('f-material').value.trim(),c=$('f-cor').value.trim(),me=$('f-medida').value.trim();
   const p=[];if(b)p.push(b);if(m)p.push('de '+m);if(c)p.push(c);if(me)p.push(me);
   $('f-desc').textContent=p.join(' ')||'—';
+  if(editing&&editing._isNew){const r=calcCodigo();editing._codigo=r.codigo;editing._tbNum=r.tbNum;editing._itemSeq=r.itemSeq;$('f-codigo').value=r.codigo;}
   $('f-cod-prefix').textContent=$('f-codigo').value.trim();
 }
 function togPadrao(){editing._padrao=!editing._padrao;$('sw-padrao').classList.toggle('on',editing._padrao);}
@@ -263,30 +301,38 @@ function fechar(){$('ov').classList.remove('on');editing=null;}
 function setv(id,v){$(id).value=v==null?'':v;}
 function updSwitches(){$('sw-padrao').classList.toggle('on',!!editing._padrao);$('sw-aberto').classList.toggle('on',!!editing._aberto);$('led-aberto').classList.toggle('on',!!editing._aberto);}
 
-function novo(){editing={id:null,_marcas:[{},{},{}],_fotos:[],_padrao:false,_aberto:false};
+function novo(){editing={id:null,_isNew:true,_marcas:[{},{},{}],_fotos:[],_padrao:false,_aberto:false};
   $('mtitle').textContent='Novo item · material';$('excluir').style.display='none';
-  ['f-segmento','f-categoria','f-base','f-codigo','f-material','f-cor','f-medida','f-barras','f-qr'].forEach(i=>setv(i,''));
+  ['f-base','f-codigo','f-material','f-cor','f-medida','f-barras','f-qr'].forEach(i=>setv(i,''));
   setv('f-tipo','material');setv('f-unidade','UND');
+  fillSeg();fillGrupos();fillTipos();updBaseList();
   montar();renderMarcas();renderFotos();updSwitches();abrir();}
 function editar(it){const d=md(it);
-  editing={id:it.id,_marcas:[{},{},{}],_fotos:fotosOf(it).map(f=>({url:f.url})),_padrao:!!it.padrao,_aberto:!!d.fabricante_aberto};
+  editing={id:it.id,_isNew:false,_codigo:it.codigo_interno,_itemSeq:it.item_seq,_marcas:[{},{},{}],_fotos:fotosOf(it).map(f=>({url:f.url})),_padrao:!!it.padrao,_aberto:!!d.fabricante_aberto};
   (it.item_fabricantes||[]).forEach(f=>{if(f.ordem>=1&&f.ordem<=3)editing._marcas[f.ordem-1]={marca:f.marca,modelo:f.modelo,codigo_fabrica:f.codigo_fabrica};});
   $('mtitle').textContent='Editar item · material';$('excluir').style.display='';
-  setv('f-tipo',it.tipo);setv('f-segmento',d.segmento);setv('f-categoria',d.categoria);setv('f-base',d.tipo_base);setv('f-codigo',it.codigo_interno);
+  setv('f-tipo',it.tipo);fillSeg(it.segmento_numero);fillGrupos(it.grupo_numero);fillTipos(it.tipo_numero);updBaseList();
+  setv('f-base',d.tipo_base);setv('f-codigo',it.codigo_interno||'');
   setv('f-material',d.material);setv('f-cor',d.cor);setv('f-medida',d.medida);setv('f-unidade',it.unidade);setv('f-barras',it.codigo_barras);setv('f-qr',it.qr_code);
   montar();renderMarcas();renderFotos();updSwitches();abrir();}
 
 async function salvar(){montar();const desc=$('f-desc').textContent.trim();
-  if(desc==='—'||!$('f-base').value.trim()){toast('Preencha ao menos o tipo base.');return;}
+  const segN=+$('f-segmento').value,grpN=+$('f-grupo').value,tipN=+$('f-tipoc').value;
+  if(!grpN||!tipN){toast('Escolha o grupo e o tipo.');return;}
+  if(!$('f-base').value.trim()){toast('Preencha o tipo base.');return;}
+  const grpNome=(GRUPOS.find(g=>g.segmento_numero===segN&&g.numero===grpN)||{}).nome||null;
+  const tipNome=(TIPOS.find(x=>x.segmento_numero===segN&&x.grupo_numero===grpN&&x.numero===tipN)||{}).nome||null;
+  const codigo=editing._codigo||null, itemSeq=editing._itemSeq||null;
   $('salvar').textContent='Salvando…';
   try{
-    const itemPayload={tipo:$('f-tipo').value,descricao:desc,codigo_interno:$('f-codigo').value.trim()||null,
+    const itemPayload={tipo:$('f-tipo').value,descricao:desc,codigo_interno:codigo,
+      segmento_numero:segN,grupo_numero:grpN,tipo_numero:tipN,item_seq:itemSeq,
       codigo_barras:$('f-barras').value.trim()||null,qr_code:$('f-qr').value.trim()||null,unidade:$('f-unidade').value.trim()||'UND',padrao:!!editing._padrao};
     let id=editing.id;
     if(id){const {error}=await SB.from('itens').update(itemPayload).eq('id',id);if(error)throw error;}
     else{const {data,error}=await SB.from('itens').insert(itemPayload).select('id').single();if(error)throw error;id=data.id;}
     const detPayload={item_id:id,material:$('f-material').value.trim()||null,tipo_base:$('f-base').value.trim()||null,
-      segmento:$('f-segmento').value.trim()||null,categoria:$('f-categoria').value.trim()||null,
+      segmento:grpNome,categoria:tipNome,
       cor:$('f-cor').value.trim()||null,medida:$('f-medida').value.trim()||null,fabricante_aberto:!!editing._aberto};
     let r=await SB.from('material_detalhe').upsert(detPayload,{onConflict:'item_id'});if(r.error)throw r.error;
     await SB.from('item_fabricantes').delete().eq('item_id',id);
