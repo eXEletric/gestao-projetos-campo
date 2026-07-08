@@ -310,7 +310,8 @@ body.papel-tecnico .adm-only{display:none !important}
 .sb-name{color:#e7e3f6;font-weight:600;font-size:15px;flex:1;white-space:nowrap;overflow:hidden}
 .sb-coll{color:#6a5f95;cursor:pointer;font-size:16px;padding:4px}
 .sidebar.mini .sb-name,.sidebar.mini .lb,.sidebar.mini .br,.sidebar.mini .sb-cap{display:none}
-.sb-nav{flex:1;overflow:auto;padding:6px 0}
+.sb-nav{flex:1;overflow:auto;padding:6px 0;display:flex;flex-direction:column}
+.sb-foot{margin-top:auto}
 .sb-cap{font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:#5b5183;padding:9px 16px 3px}
 .sb-i{display:flex;align-items:center;gap:11px;width:100%;height:37px;padding:0 15px;background:none;border:none;border-left:3px solid transparent;color:#9c93c4;cursor:pointer;font-size:13.5px;text-align:left;font-family:inherit}
 .sb-i:hover{background:rgba(255,255,255,.05)}
@@ -433,13 +434,21 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">business_center</span></span><span class="lb">Gestão</span><span class="gchev">▶</span></div>
       <div class="sb-sub">
         <button class="sb-i" onclick="navView('colab',this)"><span class="ic"><span class="msr">groups</span></span><span class="lb">Equipe</span></button>
+        <button class="sb-i fut" onclick="navSoon('SST',this)" title="Segurança do Trabalho"><span class="ic"><span class="msr">health_and_safety</span></span><span class="lb">SST</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Clientes',this)"><span class="ic"><span class="msr">handshake</span></span><span class="lb">Clientes</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Atividades',this)"><span class="ic"><span class="msr">history</span></span><span class="lb">Atividades</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Financeiro',this)"><span class="ic"><span class="msr">monitoring</span></span><span class="lb">Financeiro</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Frota',this)"><span class="ic"><span class="msr">local_shipping</span></span><span class="lb">Frota</span><span class="br">em breve</span></button>
-        <button class="sb-i" onclick="navView('mat',this)"><span class="ic"><span class="msr">inventory_2</span></span><span class="lb">Estoque</span></button>
+        <div class="sb-grp sb-grp-nest" onclick="toggleGrp(this)"><span class="ic"><span class="msr">inventory_2</span></span><span class="lb">Estoque</span><span class="gchev">▶</span></div>
+        <div class="sb-sub sb-sub-nest">
+          <button class="sb-i" onclick="navView('mat',this)"><span class="ic"><span class="msr">category</span></span><span class="lb">Materiais</span></button>
+          <button class="sb-i fut" onclick="navSoon('Ferramentas',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Ferramentas</span><span class="br">em breve</span></button>
+          <button class="sb-i fut" onclick="navSoon('EPIs',this)"><span class="ic"><span class="msr">masks</span></span><span class="lb">EPIs</span><span class="br">em breve</span></button>
+          <button class="sb-i fut" onclick="navSoon('Uniformes',this)"><span class="ic"><span class="msr">checkroom</span></span><span class="lb">Uniformes</span><span class="br">em breve</span></button>
+        </div>
       </div>
 
+      <div class="sb-foot">
       <div class="sb-grp adm-only" onclick="toggleGrp(this)"><span class="ic"><span class="msr">settings</span></span><span class="lb">Configurações</span><span class="gchev">▶</span></div>
       <div class="sb-sub adm-only">
         <button class="sb-i" onclick="navEmpresa(this)"><span class="ic"><span class="msr">domain</span></span><span class="lb">Perfil da empresa</span></button>
@@ -450,6 +459,7 @@ body.papel-tecnico .adm-only{display:none !important}
         </div>
         <button class="sb-i fut" onclick="navSoon('Melhore seu plano',this)"><span class="ic"><span class="msr">rocket_launch</span></span><span class="lb">Melhore seu plano</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Integrações',this)"><span class="ic"><span class="msr">extension</span></span><span class="lb">Integrações</span><span class="br">em breve</span></button>
+      </div>
       </div>
     </nav>
   </aside>
