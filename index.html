@@ -2296,7 +2296,7 @@ function devTool(tool,btn){ const f=document.getElementById('dev-frame'); if(f) 
 function fecharDev(){ document.getElementById('dev-ov').classList.remove('open'); }
 function _pop(host){ if(!host)return; var ic=host.querySelector('.ic'); if(ic){ic.classList.remove('pop');void ic.offsetWidth;ic.classList.add('pop');} }
 function setSbActive(el){ document.querySelectorAll('.sb-i').forEach(function(b){b.classList.remove('on');}); if(el&&el.classList){el.classList.add('on');_pop(el);} }
-function toggleGrp(el){ var op=el.classList.toggle('open'); var sub=el.nextElementSibling; if(sub&&sub.classList)sub.classList.toggle('show'); if(op)_pop(el); }
+function toggleGrp(el){ if(!el.classList.contains('open')){ var sibs=el.parentNode?el.parentNode.children:[]; for(var i=0;i<sibs.length;i++){ var s=sibs[i]; if(s!==el&&s.classList&&s.classList.contains('sb-grp')&&s.classList.contains('open')){ s.classList.remove('open'); var ss=s.nextElementSibling; if(ss&&ss.classList)ss.classList.remove('show'); } } } var op=el.classList.toggle('open'); var sub=el.nextElementSibling; if(sub&&sub.classList)sub.classList.toggle('show'); if(op)_pop(el); }
 function _obranav(show){ var ob=document.querySelector('.obranav'); if(ob)ob.style.display=show?'':'none'; }
 function navView(t,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; tab(t,null); }
 function navObras(el){ setSbActive(el); _obranav(true); irLista('proj'); }
