@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eX · Colaborador — ver & ficha de preenchimento (mockup de decisão)</title>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);
+  --tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--pri:#533ab7;--pri-bg:#eeedfe;
+  --blue:#185fa5;--green:#3b6d11;--amber:#ba7517;--red:#a32d2d;--teal:#0f6e56;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45;padding:18px}
+.wrap{max-width:1200px;margin:0 auto}
+.msr{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;line-height:1;white-space:nowrap;
+  background:linear-gradient(180deg,#c6b8f7,#6a52c6);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;font-variation-settings:'FILL' 1,'wght' 500,'GRAD' 0,'opsz' 24;vertical-align:middle}
+
+h1{font-size:20px;font-weight:600;display:flex;align-items:center;gap:9px}
+.sub{font-size:12px;color:var(--tx2);margin:3px 0 16px}
+.sub b{color:var(--tx2)}
+
+/* toggle ver/editar (padrão eX: engrenagem no canto) */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+.toggle{display:inline-flex;background:var(--surf2);border-radius:9px;padding:3px;gap:2px}
+.toggle button{font-size:13px;padding:7px 15px;border:none;background:none;color:var(--tx2);cursor:pointer;border-radius:7px;display:inline-flex;align-items:center;gap:6px;font-weight:500}
+.toggle button.on{background:var(--surf);color:var(--pri);font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.toggle button .msr{font-size:17px}
+.view{display:none}.view.on{display:block}
+
+/* ---- barra de nome (decisão) ---- */
+.namebar{background:var(--surf);border:1px solid var(--line);border-radius:11px;padding:12px 15px;margin-bottom:18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.namebar .q{font-size:12px;color:var(--tx3);font-weight:600;text-transform:uppercase;letter-spacing:.04em}
+.nameopt{font-size:13px;padding:6px 13px;border:1px solid var(--line2);border-radius:20px;background:var(--surf);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.nameopt:hover{background:var(--surf2)}
+.nameopt.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.nameopt .tag{font-size:10px;background:#eaf3de;color:var(--green);padding:1px 6px;border-radius:8px}
+.nameopt.on .tag{background:rgba(255,255,255,.25);color:#fff}
+
+/* ---- topo: pivô (colaborador) ---- */
+.hero{display:grid;grid-template-columns:auto 1fr auto;gap:18px;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-bottom:8px}
+.avatar{width:74px;height:74px;border-radius:16px;background:linear-gradient(135deg,#6a52c6,#533ab7);color:#fff;font-size:26px;font-weight:600;display:flex;align-items:center;justify-content:center;letter-spacing:.02em}
+.hname{font-size:20px;font-weight:600;display:flex;align-items:center;gap:10px}
+.htags{display:flex;gap:7px;flex-wrap:wrap;margin-top:6px}
+.pill{font-size:11px;padding:3px 10px;border-radius:20px;background:var(--surf2);color:var(--tx2);display:inline-flex;align-items:center;gap:5px}
+.pill .msr{font-size:15px}
+.pill.pri{background:var(--pri-bg);color:var(--pri)}
+.hmeta{font-size:12px;color:var(--tx3);margin-top:8px}
+.hmeta b{color:var(--tx2)}
+.led{width:11px;height:11px;border-radius:50%;display:inline-block;box-shadow:0 0 0 2px rgba(0,0,0,.05)}
+.led.g{background:#3fbb52;box-shadow:0 0 7px #3fbb52aa,0 0 0 2px rgba(0,0,0,.05)}
+.led.a{background:#eab308;box-shadow:0 0 7px #eab30899,0 0 0 2px rgba(0,0,0,.05)}
+.led.r{background:#e0483d;box-shadow:0 0 7px #e0483daa,0 0 0 2px rgba(0,0,0,.05)}
+.statechip{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;padding:5px 12px;border-radius:20px;background:var(--surf2)}
+.statechip.bad{color:var(--red)}
+
+.hublabel{text-align:center;font-size:10px;color:var(--tx3);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 10px;display:flex;align-items:center;gap:10px;justify-content:center}
+.hublabel::before,.hublabel::after{content:'';height:1px;flex:1;background:var(--line);max-width:180px}
+.hublabel .cw{color:var(--pri);font-weight:700}
+
+/* ---- grade de vínculos ---- */
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));gap:12px}
+.vc{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:14px 15px;position:relative;cursor:pointer;transition:.12s;border-left:3px solid var(--pri)}
+.vc:hover{box-shadow:0 4px 16px rgba(83,58,183,.1);transform:translateY(-1px);border-color:var(--line2)}
+.vc.warn{border-left-color:var(--amber)}
+.vc.bad{border-left-color:var(--red)}
+.vc.soft{border-left-color:var(--tx3);background:#fbfaf7}
+.vc-h{display:flex;align-items:center;gap:9px;margin-bottom:9px}
+.vc-ic{width:34px;height:34px;border-radius:9px;background:var(--pri-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.vc-ic .msr{font-size:20px}
+.vc-t{font-size:14px;font-weight:600;flex:1;min-width:0}
+.vc-cnt{font-size:11px;color:var(--tx3);background:var(--surf2);padding:2px 8px;border-radius:9px;white-space:nowrap}
+.vc-body{font-size:12px;color:var(--tx2);line-height:1.5}
+.vc-body .row{display:flex;align-items:center;gap:6px;margin:3px 0}
+.vc-body .row .msr{font-size:15px;background:none;-webkit-text-fill-color:currentColor;color:var(--tx3)}
+.vc-body b{color:var(--tx);font-weight:600}
+.vencido{color:var(--red);font-weight:600}
+.vc-foot{display:flex;align-items:center;justify-content:space-between;margin-top:11px;padding-top:10px;border-top:1px dashed var(--line)}
+.recip{font-size:10.5px;color:var(--tx3);display:flex;align-items:center;gap:4px}
+.recip .msr{font-size:13px;background:none;-webkit-text-fill-color:currentColor;color:var(--tx3)}
+.open{font-size:12px;color:var(--pri);font-weight:600;display:inline-flex;align-items:center;gap:3px}
+.open .msr{font-size:16px;background:none;-webkit-text-fill-color:currentColor;color:var(--pri)}
+
+/* ---- explicador ---- */
+.explain{margin-top:22px;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:16px 18px}
+.explain h3{font-size:13px;font-weight:600;display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.explain h3 .msr{font-size:19px}
+.explain p{font-size:13px;color:var(--tx2);line-height:1.6}
+.explain .cw{font-weight:600;color:var(--pri)}
+.explain ul{margin:8px 0 0 2px;list-style:none;font-size:12.5px;color:var(--tx2)}
+.explain li{display:flex;gap:8px;margin:5px 0;align-items:flex-start}
+.explain li .msr{font-size:16px;color:var(--pri);background:none;-webkit-text-fill-color:var(--pri);flex-shrink:0;margin-top:1px}
+.foot{font-size:11px;color:var(--tx3);margin-top:16px;text-align:center}
+
+/* ================= FICHA DE PREENCHIMENTO (EDITAR) ================= */
+.formhead{display:flex;align-items:center;gap:12px;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:14px 18px;margin-bottom:16px}
+.formhead .ava{width:52px;height:52px;border-radius:12px;background:linear-gradient(135deg,#6a52c6,#533ab7);color:#fff;font-size:19px;font-weight:600;display:flex;align-items:center;justify-content:center}
+.formhead .ft{font-size:16px;font-weight:600}
+.formhead .fs{font-size:12px;color:var(--tx3)}
+.formhead .cfg{margin-left:auto;font-size:11px;color:var(--amber);background:#faeeda;padding:4px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;font-weight:600}
+.formhead .cfg .msr{font-size:15px;background:none;-webkit-text-fill-color:var(--amber);color:var(--amber)}
+
+.fsec{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:14px}
+.fsec-h{display:flex;align-items:center;gap:9px;font-size:13px;font-weight:600;margin-bottom:14px;color:var(--tx)}
+.fsec-h .ic{width:30px;height:30px;border-radius:8px;background:var(--pri-bg);display:flex;align-items:center;justify-content:center}
+.fsec-h .ic .msr{font-size:18px}
+.fsec-h .cnt{margin-left:auto;font-size:11px;color:var(--tx3);font-weight:400}
+.fgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px 16px}
+.f{display:flex;flex-direction:column;gap:5px}
+.f.wide{grid-column:1/-1}
+.f label{font-size:11px;color:var(--tx2);font-weight:600;display:flex;align-items:center;gap:5px}
+.f label .req{color:var(--red)}
+.f label .hint{color:var(--tx3);font-weight:400;font-size:10px}
+.f input,.f select{padding:8px 10px;border:1px solid var(--line2);border-radius:8px;font-size:13px;background:var(--surf);color:var(--tx);width:100%}
+.f input:focus,.f select:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 3px var(--pri-bg)}
+.f input::placeholder{color:var(--tx3)}
+.f .up{border:1px dashed var(--line2);border-radius:8px;padding:9px 11px;font-size:12px;color:var(--pri);background:var(--pri-bg);cursor:pointer;display:flex;align-items:center;gap:7px}
+.f .up .msr{font-size:17px;background:none;-webkit-text-fill-color:var(--pri);color:var(--pri)}
+.sizes{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px}
+
+/* seção vínculos dentro da ficha */
+.linkinfo{font-size:12px;color:var(--tx2);background:var(--pri-bg);border-radius:9px;padding:10px 13px;margin-bottom:14px;display:flex;gap:9px;align-items:flex-start;line-height:1.5}
+.linkinfo .msr{font-size:18px;flex-shrink:0;margin-top:1px}
+.linkchips{display:flex;flex-wrap:wrap;gap:9px}
+.lchip{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:10px;padding:9px 12px;background:var(--surf);min-width:200px;flex:1 1 220px;cursor:pointer;transition:.12s}
+.lchip:hover{border-color:var(--pri);background:var(--pri-bg)}
+.lchip .li{width:30px;height:30px;border-radius:8px;background:var(--surf2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.lchip:hover .li{background:var(--surf)}
+.lchip .li .msr{font-size:17px}
+.lchip .lt{font-size:12.5px;font-weight:600;flex:1;min-width:0}
+.lchip .lc{font-size:11px;color:var(--tx3);display:block;font-weight:400;margin-top:1px}
+.lchip .act{font-size:11px;color:var(--pri);font-weight:600;display:inline-flex;align-items:center;gap:3px;white-space:nowrap}
+.lchip .act .msr{font-size:15px;background:none;-webkit-text-fill-color:var(--pri);color:var(--pri)}
+.lchip.has .act{color:var(--green)}
+.lchip.has .act .msr{-webkit-text-fill-color:var(--green);color:var(--green)}
+
+.formbar{display:flex;gap:10px;justify-content:flex-end;margin-top:6px;position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 40%);padding:14px 0 4px}
+.btn{font-size:13px;padding:9px 18px;border-radius:9px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer;font-weight:600}
+.btn:hover{background:var(--surf2)}
+.btn.p{background:var(--pri);color:#fff;border-color:var(--pri)}
+.btn.p:hover{background:#472fa3}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <h1><span class="msr" style="font-size:26px">badge</span> Colaborador — visão &amp; ficha de preenchimento</h1>
+  <div class="sub">Mockup de decisão · dado real do <b>André</b> (planilha 09/07) · o colaborador é o <b>pivô</b>; tudo que se atrela a ele vira link nos dois sentidos (estilo Pipefy)</div>
+
+  <div class="topbar">
+    <div class="toggle">
+      <button class="on" id="tVer" onclick="showView('ver')"><span class="msr">visibility</span> Ver</button>
+      <button id="tEdit" onclick="showView('edit')"><span class="msr">settings</span> Editar ficha</button>
+    </div>
+    <span style="font-size:11px;color:var(--tx3)">padrão eX: ver é aberto · <b>editar</b> fica atrás da engrenagem ⚙</span>
+  </div>
+
+  <!-- =============== VISÃO (VER) =============== -->
+  <div class="view on" id="view-ver">
+
+    <div class="namebar">
+      <span class="q">Nome dessa função de link:</span>
+      <button class="nameopt on" data-w="Vínculo" data-p="Vínculos" onclick="setName(this)">Vínculos <span class="tag">sugerido</span></button>
+      <button class="nameopt" data-w="Ligação" data-p="Ligações" onclick="setName(this)">Ligações</button>
+      <button class="nameopt" data-w="Elo" data-p="Elos" onclick="setName(this)">Elos</button>
+      <button class="nameopt" data-w="Conexão" data-p="Conexões" onclick="setName(this)">Conexões</button>
+    </div>
+
+    <div class="hero">
+      <div class="avatar">AC</div>
+      <div>
+        <div class="hname">André Oliveira Camilo <span class="led g" title="Ativo"></span></div>
+        <div class="htags">
+          <span class="pill pri"><span class="msr">handshake</span> Sócio</span>
+          <span class="pill"><span class="msr">engineering</span> Eletrotécnico</span>
+          <span class="pill"><span class="msr">apartment</span> Pro-W Energia (PW)</span>
+          <span class="pill"><span class="msr">badge</span> Cód. 610994134</span>
+        </div>
+        <div class="hmeta">Admissão <b>17/09/2024</b> · CPF <b>886.830.791-04</b> · <b>+55 62 98122-2739</b> · Depto: Diretoria / Engenharia / Obras</div>
+      </div>
+      <div class="statechip bad"><span class="led r"></span> 1 pendência</div>
+    </div>
+
+    <div class="hublabel">os <span class="cw">vínculos</span> deste colaborador</div>
+
+    <div class="grid">
+
+      <div class="vc">
+        <div class="vc-h"><div class="vc-ic"><span class="msr">folder_shared</span></div><div class="vc-t">Documentos pessoais</div><div class="vc-cnt">6 arquivos</div></div>
+        <div class="vc-body">
+          <div class="row"><span class="msr">badge</span> RG 41572208 · CNH cat. <b>D</b></div>
+          <div class="row"><span class="msr">event</span> CNH vence <b>11/08/2035</b> <span class="led g"></span></div>
+          <div class="row"><span class="msr">description</span> Contrato, certificados, comprovante end.</div>
+        </div>
+        <div class="vc-foot"><span class="recip"><span class="msr">sync_alt</span> Módulo Documentação</span><span class="open">abrir <span class="msr">arrow_forward</span></span></div>
+      </div>
+
+      <div class="vc bad">
+        <div class="vc-h"><div class="vc-ic"><span class="msr">health_and_safety</span></div><div class="vc-t">Segurança do Trabalho</div><div class="vc-cnt">portão de aptidão</div></div>
+        <div class="vc-body">
+          <div class="row"><span class="msr">verified_user</span> ASO vigente até <b>03/06/2027</b> <span class="led g"></span></div>
+          <div class="row"><span class="msr">shield</span> NR-10 · NR-12 · NR-35 em dia <span class="led g"></span></div>
+          <div class="row"><span class="msr">error</span> <span class="vencido">PGR venceu 01/05/2026</span> <span class="led r"></span></div>
+        </div>
+        <div class="vc-foot"><span class="recip"><span class="msr">sync_alt</span> Módulo SST · Aptidão</span><span class="open">abrir <span class="msr">arrow_forward</span></span></div>
+      </div>
+
+      <div class="vc warn">
+        <div class="vc-h"><div class="vc-ic"><span class="msr">masks</span></div><div class="vc-t">EPI · Ficha NR-6</div><div class="vc-cnt">ficha ativa</div></div>
+        <div class="vc-body">
+          <div class="row"><span class="msr">assignment_turned_in</span> Ficha de EPI assinada <span class="led g"></span></div>
+          <div class="row"><span class="msr">event_repeat</span> Verif. semestral: <b>01/01/2026</b> <span class="led a"></span></div>
+          <div class="row"><span class="msr">straighten</span> Tamanhos: <b>a cadastrar</b></div>
+        </div>
+        <div class="vc-foot"><span class="recip"><span class="msr">sync_alt</span> Documentação · Estoque</span><span class="open">abrir <span class="msr">arrow_forward</span></span></div>
+      </div>
+
+      <div class="vc">
+        <div class="vc-h"><div class="vc-ic"><span class="msr">inventory_2</span></div><div class="vc-t">Ferramentas &amp; Uniformes</div><div class="vc-cnt">sob responsa.</div></div>
+        <div class="vc-body">
+          <div class="row"><span class="msr">handyman</span> Relação de ferramentas (PDF)</div>
+          <div class="row"><span class="msr">checkroom</span> Relação de uniformes</div>
+          <div class="row"><span class="msr">qr_code_2</span> Itens com QR atribuídos a ele</div>
+        </div>
+        <div class="vc-foot"><span class="recip"><span class="msr">sync_alt</span> Módulo Estoque (3 gavetas)</span><span class="open">abrir <span class="msr">arrow_forward</span></span></div>
+      </div>
+
+      <!-- NOVO: VEÍCULOS -->
+      <div class="vc">
+        <div class="vc-h"><div class="vc-ic"><span class="msr">local_shipping</span></div><div class="vc-t">Veículos</div><div class="vc-cnt">frota</div></div>
+        <div class="vc-body">
+          <div class="row"><span class="msr">directions_car</span> Veículo(s) atribuído(s)</div>
+          <div class="row"><span class="msr">badge</span> Habilitação: CNH cat. <b>D</b> <span class="led g"></span></div>
+          <div class="row"><span class="msr">build</span> Manutenção · abastecimento</div>
+        </div>
+        <div class="vc-foot"><span class="recip"><span class="msr">sync_alt</span> Módulo Frota</span><span class="open">abrir <span class="msr">arrow_forward</span></span></div>
+      </div>
+
+      <!-- NOVO: CONTRATOS -->
+      <div class="vc">
+        <div class="vc-h"><div class="vc-ic"><span class="msr">contract</span></div><div class="vc-t">Contratos</div><div class="vc-cnt">jurídico</div></div>
+        <div class="vc-body">
+          <div class="row"><span class="msr">assignment</span> Registro de empregado / PJ</div>
+          <div class="row"><span class="msr">gavel</span> Aditivos · termos assinados</div>
+          <div class="row"><span class="msr">event</span> Vigência e vencimentos</div>
+        </div>
+        <div class="vc-foot"><span class="recip"><span class="msr">sync_alt</span> Documentação · Hierarquia comercial</span><span class="open">abrir <span class="msr">arrow_forward</span></span></div>
+      </div>
+
+      <div class="vc">
+        <div class="vc-h"><div class="vc-ic"><span class="msr">apartment</span></div><div class="vc-t">Obras &amp; Alocação</div><div class="vc-cnt">onde ele atua</div></div>
+        <div class="vc-body">
+          <div class="row"><span class="msr">location_on</span> Frentes de serviço ativas</div>
+          <div class="row"><span class="msr">groups</span> Equipes que compõe</div>
+          <div class="row"><span class="msr">history</span> Histórico de obras</div>
+        </div>
+        <div class="vc-foot"><span class="recip"><span class="msr">sync_alt</span> Operação · Obras/Serviços</span><span class="open">abrir <span class="msr">arrow_forward</span></span></div>
+      </div>
+
+      <div class="vc">
+        <div class="vc-h"><div class="vc-ic"><span class="msr">payments</span></div><div class="vc-t">Financeiro</div><div class="vc-cnt">sensível</div></div>
+        <div class="vc-body">
+          <div class="row"><span class="msr">account_balance</span> Meio de pagamento: <b>NF</b></div>
+          <div class="row"><span class="msr">credit_card</span> Dados de conta / PIX</div>
+          <div class="row"><span class="msr">badge</span> Beneficiado</div>
+        </div>
+        <div class="vc-foot"><span class="recip"><span class="msr">sync_alt</span> Financeiro · Cartão Clara</span><span class="open">abrir <span class="msr">arrow_forward</span></span></div>
+      </div>
+
+      <div class="vc soft">
+        <div class="vc-h"><div class="vc-ic"><span class="msr">domain</span></div><div class="vc-t">Empresa / PJ vinculada</div><div class="vc-cnt">dado da empresa</div></div>
+        <div class="vc-body">
+          <div class="row"><span class="msr">business</span> EX Eletric · CNPJ 47.706.509/0001-18</div>
+          <div class="row"><span class="msr">description</span> Contrato social</div>
+          <div class="row" style="color:var(--tx3)"><span class="msr">info</span> mora na Empresa, não na pessoa</div>
+        </div>
+        <div class="vc-foot"><span class="recip"><span class="msr">sync_alt</span> Multi-empresa · Hierarquia</span><span class="open">abrir <span class="msr">arrow_forward</span></span></div>
+      </div>
+
+      <div class="vc soft">
+        <div class="vc-h"><div class="vc-ic"><span class="msr">key</span></div><div class="vc-t">Acesso ao sistema</div><div class="vc-cnt">a definir</div></div>
+        <div class="vc-body">
+          <div class="row"><span class="msr">group</span> Grupo de acesso (motor de permissões)</div>
+          <div class="row"><span class="msr">shield_person</span> Perfil: fundador / admin / técnico</div>
+          <div class="row" style="color:var(--tx3)"><span class="msr">info</span> depende da reestruturação de acesso</div>
+        </div>
+        <div class="vc-foot"><span class="recip"><span class="msr">sync_alt</span> Gestão · Grupos</span><span class="open">abrir <span class="msr">arrow_forward</span></span></div>
+      </div>
+
+      <div class="vc">
+        <div class="vc-h"><div class="vc-ic"><span class="msr">emergency</span></div><div class="vc-t">Emergência &amp; Ocorrências</div><div class="vc-cnt">RH</div></div>
+        <div class="vc-body">
+          <div class="row"><span class="msr">contact_phone</span> Contato de emergência + telefone</div>
+          <div class="row"><span class="msr">report</span> Intercorrências com o colaborador</div>
+          <div class="row"><span class="msr">sticky_note_2</span> Observações importantes</div>
+        </div>
+        <div class="vc-foot"><span class="recip"><span class="msr">sync_alt</span> Ficha · Ocorrências</span><span class="open">abrir <span class="msr">arrow_forward</span></span></div>
+      </div>
+
+    </div>
+
+    <div class="explain">
+      <h3><span class="msr">hub</span> A ideia do <span class="cw" id="cw1">vínculo</span></h3>
+      <p>O que era um formulário gigante vira uma <b>capa de identidade</b> (o topo) rodeada de <span class="cw" id="cw2">vínculos</span>. Cada card é uma ponte para o módulo dono do dado — e <b>funciona nos dois sentidos</b>, igual ao Pipefy:</p>
+      <ul>
+        <li><span class="msr">arrow_forward</span> Da ficha do André eu clico e chego no PGR / no veículo / no contrato / na obra.</li>
+        <li><span class="msr">arrow_back</span> De dentro do SST, da Frota ou da Obra eu clico e volto pro André.</li>
+        <li><span class="msr">bolt</span> O status sobe sozinho pela cadeia: PGR vencido → LED vermelho no SST → "1 pendência" na capa.</li>
+        <li><span class="msr">content_copy</span> O dado é digitado <b>uma vez só</b>, no módulo dele. A ficha só <b>aponta</b> — nunca duplica.</li>
+      </ul>
+      <p style="margin-top:10px;font-size:12px;color:var(--tx3)">Troque o nome lá em cima e veja como fica em toda a tela antes de decidir.</p>
+    </div>
+  </div>
+
+  <!-- =============== FICHA (EDITAR) =============== -->
+  <div class="view" id="view-edit">
+
+    <div class="formhead">
+      <div class="ava">AC</div>
+      <div>
+        <div class="ft">André Oliveira Camilo</div>
+        <div class="fs">Editando ficha · cód. 610994134</div>
+      </div>
+      <span class="cfg"><span class="msr">settings</span> modo edição ⚙</span>
+    </div>
+
+    <!-- IDENTIDADE -->
+    <div class="fsec">
+      <div class="fsec-h"><span class="ic"><span class="msr">person</span></span> Identidade <span class="cnt">o núcleo — digitado aqui</span></div>
+      <div class="fgrid">
+        <div class="f wide"><label>Nome completo <span class="req">*</span></label><input value="André Oliveira Camilo"></div>
+        <div class="f"><label>Tipo de contratação <span class="req">*</span></label>
+          <select><option>Sócio</option><option>CLT</option><option>PJ / MEI</option><option>Terceiro</option><option>Estágio</option></select></div>
+        <div class="f"><label>Data de admissão <span class="req">*</span></label><input type="date" value="2024-09-17"></div>
+        <div class="f"><label>Data de nascimento</label><input type="date" value="1980-02-09"></div>
+        <div class="f"><label>CPF <span class="req">*</span></label><input value="886.830.791-04"></div>
+        <div class="f"><label>RG + órgão emissor</label><input value="41572208 DGPC GO"></div>
+        <div class="f"><label>Telefone pessoal <span class="req">*</span></label><input value="+55 62 98122-2739"></div>
+        <div class="f"><label>E-mail pessoal</label><input value="aocinnet@gmail.com"></div>
+        <div class="f"><label>CNH <span class="hint">nº / categoria</span></label><input value="cat. D"></div>
+        <div class="f"><label>Vencimento CNH</label><input type="date" value="2035-08-11"></div>
+        <div class="f wide"><label>Endereço</label><input value="Tv. Marcílio Dias, nº 40, Centro"></div>
+        <div class="f"><label>Foto crachá / perfil</label><div class="up"><span class="msr">add_a_photo</span> Enviar foto</div></div>
+        <div class="f"><label>Comprovante de endereço</label><div class="up"><span class="msr">upload_file</span> Anexar PDF</div></div>
+      </div>
+    </div>
+
+    <!-- CARGO & ALOCAÇÃO -->
+    <div class="fsec">
+      <div class="fsec-h"><span class="ic"><span class="msr">engineering</span></span> Cargo &amp; alocação <span class="cnt">define o que o SST cobra e o que o EPI entrega</span></div>
+      <div class="fgrid">
+        <div class="f"><label>Função / cargo <span class="req">*</span></label><input value="Eletrotécnico" placeholder="ex.: Eletricista, Ajudante..."></div>
+        <div class="f"><label>Departamento</label><input value="Diretoria / Engenharia / Obras"></div>
+        <div class="f"><label>Empresa vinculada <span class="req">*</span></label>
+          <select><option>Pro-W Energia Eficiente (PW)</option><option>eX Automação e Controle (eX)</option><option>DIEL Service</option></select></div>
+        <div class="f"><label>Grupo de acesso <span class="hint">motor de permissões</span></label>
+          <select><option>Fundador</option><option>Admin</option><option>Técnico de campo</option><option>— definir depois —</option></select></div>
+      </div>
+    </div>
+
+    <!-- MEDIDAS -->
+    <div class="fsec">
+      <div class="fsec-h"><span class="ic"><span class="msr">straighten</span></span> Medidas de EPI &amp; uniforme <span class="cnt">faltava na ficha antiga</span></div>
+      <div class="sizes">
+        <div class="f"><label>Camisa</label><select><option>P</option><option>M</option><option>G</option><option selected>GG</option><option>XG</option></select></div>
+        <div class="f"><label>Calça</label><input value="42" placeholder="nº"></div>
+        <div class="f"><label>Botina</label><input value="41" placeholder="nº"></div>
+        <div class="f"><label>Luva</label><select><option>7</option><option>8</option><option selected>9</option><option>10</option></select></div>
+        <div class="f"><label>Capacete</label><input placeholder="ajuste"></div>
+      </div>
+    </div>
+
+    <!-- EMERGÊNCIA & OBS -->
+    <div class="fsec">
+      <div class="fsec-h"><span class="ic"><span class="msr">emergency</span></span> Emergência &amp; observações</div>
+      <div class="fgrid">
+        <div class="f"><label>Contato de emergência</label><input placeholder="nome"></div>
+        <div class="f"><label>Telefone do contato</label><input placeholder="+55 ..."></div>
+        <div class="f wide"><label>Observações importantes / intercorrências</label><input placeholder="anotações de RH"></div>
+      </div>
+    </div>
+
+    <!-- FINANCEIRO -->
+    <div class="fsec">
+      <div class="fsec-h"><span class="ic"><span class="msr">payments</span></span> Financeiro <span class="cnt">bloco sensível — separado da identidade</span></div>
+      <div class="fgrid">
+        <div class="f"><label>Meio de pagamento</label><select><option>NF</option><option>PIX</option><option>TED</option></select></div>
+        <div class="f"><label>Instituição</label><input placeholder="banco"></div>
+        <div class="f"><label>Código / chave</label><input placeholder="conta ou PIX"></div>
+        <div class="f"><label>Beneficiado</label><input value="André Oliveira Camilo"></div>
+      </div>
+    </div>
+
+    <!-- VÍNCULOS -->
+    <div class="fsec">
+      <div class="fsec-h"><span class="ic"><span class="msr">hub</span></span> <span id="cw3">Vínculos</span> <span class="cnt">aqui você conecta — não redigita</span></div>
+      <div class="linkinfo">
+        <span class="msr">lightbulb</span>
+        <div>Estes dados <b>não se digitam nesta ficha</b>. Cada botão abre o módulo dono, você registra lá e o <span class="cw" id="cw4">vínculo</span> volta preenchido — com status e vencimento subindo sozinhos para a capa.</div>
+      </div>
+      <div class="linkchips">
+        <div class="lchip has"><span class="li"><span class="msr">health_and_safety</span></span><span class="lt">SST · NRs, ASO, PGR<span class="lc">4 documentos ligados</span></span><span class="act"><span class="msr">check_circle</span> ligado</span></div>
+        <div class="lchip has"><span class="li"><span class="msr">folder_shared</span></span><span class="lt">Documentos<span class="lc">6 arquivos ligados</span></span><span class="act"><span class="msr">check_circle</span> ligado</span></div>
+        <div class="lchip has"><span class="li"><span class="msr">masks</span></span><span class="lt">Ficha de EPI (NR-6)<span class="lc">ativa</span></span><span class="act"><span class="msr">check_circle</span> ligado</span></div>
+        <div class="lchip"><span class="li"><span class="msr">inventory_2</span></span><span class="lt">Ferramentas &amp; uniformes<span class="lc">nada ligado</span></span><span class="act"><span class="msr">add_link</span> vincular</span></div>
+        <div class="lchip"><span class="li"><span class="msr">local_shipping</span></span><span class="lt">Veículos<span class="lc">nada ligado</span></span><span class="act"><span class="msr">add_link</span> vincular</span></div>
+        <div class="lchip has"><span class="li"><span class="msr">contract</span></span><span class="lt">Contratos<span class="lc">1 registro ligado</span></span><span class="act"><span class="msr">check_circle</span> ligado</span></div>
+        <div class="lchip"><span class="li"><span class="msr">apartment</span></span><span class="lt">Obras / alocação<span class="lc">nada ligado</span></span><span class="act"><span class="msr">add_link</span> vincular</span></div>
+        <div class="lchip has"><span class="li"><span class="msr">domain</span></span><span class="lt">Empresa / PJ<span class="lc">EX Eletric</span></span><span class="act"><span class="msr">check_circle</span> ligado</span></div>
+      </div>
+    </div>
+
+    <div class="formbar">
+      <button class="btn" onclick="showView('ver')">Cancelar</button>
+      <button class="btn p"><span class="msr" style="font-size:16px;-webkit-text-fill-color:#fff;color:#fff;vertical-align:-3px">save</span> Salvar ficha</button>
+    </div>
+  </div>
+
+  <div class="foot">eX · mockup para decisão — não é o app final · ícones Material Symbols reais</div>
+
+</div>
+
+<script>
+function showView(v){
+  document.getElementById('view-ver').classList.toggle('on', v==='ver');
+  document.getElementById('view-edit').classList.toggle('on', v==='edit');
+  document.getElementById('tVer').classList.toggle('on', v==='ver');
+  document.getElementById('tEdit').classList.toggle('on', v==='edit');
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function setName(btn){
+  document.querySelectorAll('.nameopt').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  var w=btn.dataset.w, p=btn.dataset.p;
+  document.getElementById('cw1').textContent=w.toLowerCase();
+  document.getElementById('cw2').textContent=p.toLowerCase();
+  document.getElementById('cw3').textContent=p;
+  document.getElementById('cw4').textContent=w.toLowerCase();
+  document.querySelector('.hublabel .cw').textContent=p.toLowerCase();
+}
+</script>
+</body>
+</html>
