@@ -425,6 +425,17 @@ body.papel-tecnico .adm-only{display:none !important}
         <button class="sb-i fut" onclick="navSoon('Visitas',this)"><span class="ic"><span class="msr">location_on</span></span><span class="lb">Visitas</span><span class="br">em breve</span></button>
       </div>
 
+      <div class="sb-grp" onclick="toggleGrp(this)" title="Segurança do Trabalho"><span class="ic"><span class="msr">health_and_safety</span></span><span class="lb">Segurança do Trabalho</span><span class="gchev">▶</span></div>
+      <div class="sb-sub">
+        <button class="sb-i" onclick="navSST('painel',this)"><span class="ic"><span class="msr">speed</span></span><span class="lb">Painel SST</span></button>
+        <button class="sb-i" onclick="navSST('risco',this)"><span class="ic"><span class="msr">shield</span></span><span class="lb">Risco &amp; conformidade</span></button>
+        <button class="sb-i" onclick="navSST('aptidao',this)"><span class="ic"><span class="msr">verified_user</span></span><span class="lb">Aptidão da equipe</span></button>
+        <button class="sb-i" onclick="navSST('frente',this)"><span class="ic"><span class="msr">engineering</span></span><span class="lb">Frente de serviço</span></button>
+        <button class="sb-i" onclick="navSST('ocorrencias',this)"><span class="ic"><span class="msr">report</span></span><span class="lb">Ocorrências</span></button>
+        <button class="sb-i" onclick="navSST('entrega',this)"><span class="ic"><span class="msr">forward_to_inbox</span></span><span class="lb">Entrega ao cliente</span></button>
+        <button class="sb-i" onclick="navSST('rt',this)"><span class="ic"><span class="msr">badge</span></span><span class="lb">Responsável técnico</span></button>
+      </div>
+
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">sell</span></span><span class="lb">Comercial</span><span class="gchev">▶</span></div>
       <div class="sb-sub">
         <button class="sb-i fut" onclick="navSoon('Propostas',this)"><span class="ic"><span class="msr">description</span></span><span class="lb">Propostas</span><span class="br">em breve</span></button>
@@ -434,16 +445,6 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">business_center</span></span><span class="lb">Gestão</span><span class="gchev">▶</span></div>
       <div class="sb-sub">
         <button class="sb-i" onclick="navView('colab',this)"><span class="ic"><span class="msr">groups</span></span><span class="lb">Equipe</span></button>
-        <div class="sb-grp sb-grp-nest" onclick="toggleGrp(this)" title="Segurança do Trabalho"><span class="ic"><span class="msr">health_and_safety</span></span><span class="lb">SST</span><span class="gchev">▶</span></div>
-        <div class="sb-sub sb-sub-nest">
-          <button class="sb-i" onclick="navSST('painel',this)"><span class="ic"><span class="msr">speed</span></span><span class="lb">Painel SST</span></button>
-          <button class="sb-i" onclick="navSST('risco',this)"><span class="ic"><span class="msr">shield</span></span><span class="lb">Risco &amp; conformidade</span></button>
-          <button class="sb-i" onclick="navSST('aptidao',this)"><span class="ic"><span class="msr">verified_user</span></span><span class="lb">Aptidão da equipe</span></button>
-          <button class="sb-i" onclick="navSST('frente',this)"><span class="ic"><span class="msr">engineering</span></span><span class="lb">Frente de serviço</span></button>
-          <button class="sb-i" onclick="navSST('ocorrencias',this)"><span class="ic"><span class="msr">report</span></span><span class="lb">Ocorrências</span></button>
-          <button class="sb-i" onclick="navSST('entrega',this)"><span class="ic"><span class="msr">forward_to_inbox</span></span><span class="lb">Entrega ao cliente</span></button>
-          <button class="sb-i" onclick="navSST('rt',this)"><span class="ic"><span class="msr">badge</span></span><span class="lb">Responsável técnico</span></button>
-        </div>
         <button class="sb-i fut" onclick="navSoon('Clientes',this)"><span class="ic"><span class="msr">handshake</span></span><span class="lb">Clientes</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Atividades',this)"><span class="ic"><span class="msr">history</span></span><span class="lb">Atividades</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Financeiro',this)"><span class="ic"><span class="msr">monitoring</span></span><span class="lb">Financeiro</span><span class="br">em breve</span></button>
