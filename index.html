@@ -698,6 +698,40 @@ body.papel-tecnico .adm-only{display:none !important}
   <div class="mf"><button class="btn" onclick="closeRT()">Cancelar</button><button class="btn btn-p" onclick="saveRT()">Salvar responsável</button></div>
 </div></div>
 
+<!-- MODAL APTIDÃO (SST Fase 2) -->
+<div class="modal-bg" id="modalApt"><div class="modal">
+  <div class="mh"><b id="apt-title">Aptidão</b><button class="x" onclick="closeApt()">&times;</button></div>
+  <div class="mb">
+    <div id="apt-itens" style="margin-bottom:8px"></div>
+    <div class="sec" style="margin-top:2px">Adicionar / editar documento</div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Tipo</label>
+        <select class="fi" id="apt-tipo">
+          <option>ASO</option>
+          <option>NR-10</option>
+          <option>NR-10 SEP</option>
+          <option>NR-35</option>
+          <option>NR-18</option>
+          <option>NR-33</option>
+          <option>NR-12</option>
+          <option>NR-11</option>
+          <option>Ficha de EPI (NR-6)</option>
+          <option>Outro</option>
+        </select>
+      </div>
+      <div class="fg"><label class="fl">Detalhe (opcional)</label><input class="fi" id="apt-desc" placeholder="ex.: periódico, reciclagem, SEP"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Emissão</label><input class="fi" id="apt-emissao" type="date"></div>
+      <div class="fg"><label class="fl">Validade <span style="color:var(--tx3)">(vazio = não expira)</span></label><input class="fi" id="apt-validade" type="date"></div>
+    </div>
+    <div class="fg"><label class="fl">Documento (link)</label><input class="fi" id="apt-anexo" placeholder="https://… (anexo direto virá com o Storage)"></div>
+    <div class="fg"><label class="fl">Observações</label><input class="fi" id="apt-obs"></div>
+    <div style="display:flex;justify-content:flex-end;gap:8px;margin-top:10px"><button class="btn" onclick="aptResetForm()">Limpar</button><button class="btn btn-p" id="apt-add-btn" onclick="aptSaveItem()">Adicionar documento</button></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeApt()">Fechar</button></div>
+</div></div>
+
 <!-- MODAL ADD TAREFA -->
 <div class="modal-bg" id="modal"><div class="modal">
   <div class="mh"><b>Adicionar tarefa</b><button class="x" onclick="closeAdd()">&times;</button></div>
@@ -741,6 +775,57 @@ body.papel-tecnico .adm-only{display:none !important}
       <div id="e-var-body" style="margin-top:10px"></div>
       <div class="note" style="margin-top:8px">Quantidade, datas, progresso e status são editados direto na linha do cronograma.</div>
     </div>
+    <div class="fg req-box" id="e-req-wrap">
+      <div class="req-hd"><span class="rq-ic">photo_camera</span> Requisitos para concluir <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--tx3)">— o diário obriga no campo</span></div>
+      <div class="req-sub">O que o técnico terá de anexar para dar esta tarefa como concluída.</div>
+
+      <div class="req-rule">
+        <span class="ex-led" id="rq-led-foto"></span>
+        <div class="rtxt"><div class="rt"><span class="rq-ic">photo_camera</span> Foto do serviço <span class="req-nucleo">núcleo</span></div><div class="rd">Sem foto, a tarefa não fecha. Prova de execução.</div></div>
+        <div class="ex-switch" id="rq-sw-foto" onclick="toggleReq('foto')"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="pin"></span></span></div>
+      </div>
+      <div class="req-rule">
+        <span class="ex-led" id="rq-led-ad"></span>
+        <div class="rtxt"><div class="rt"><span class="rq-ic">compare</span> Foto antes e depois</div><div class="rd">Estado inicial + resultado. "Antes" pode vir do levantamento.</div></div>
+        <div class="ex-switch" id="rq-sw-ad" onclick="toggleReq('ad')"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="pin"></span></span></div>
+      </div>
+      <div class="req-rule">
+        <span class="ex-led" id="rq-led-carimbo"></span>
+        <div class="rtxt"><div class="rt"><span class="rq-ic">verified</span> Carimbo na foto</div><div class="rd">Data, hora e local — anti-fraude.</div></div>
+        <div class="ex-switch" id="rq-sw-carimbo" onclick="toggleReq('carimbo')"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="pin"></span></span></div>
+      </div>
+      <div class="req-rule">
+        <span class="ex-led" id="rq-led-arquivo"></span>
+        <div class="rtxt"><div class="rt"><span class="rq-ic">attach_file</span> Arquivo / documento obrigatório</div><div class="rd">Ex.: ART, medição, laudo, NF. Não fecha sem anexar.</div></div>
+        <div class="ex-switch" id="rq-sw-arquivo" onclick="toggleReq('arquivo')"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="pin"></span></span></div>
+      </div>
+      <div class="req-rule">
+        <span class="ex-led" id="rq-led-assin"></span>
+        <div class="rtxt"><div class="rt"><span class="rq-ic">draw</span> Assinatura no encerramento</div><div class="rd">Alguém atesta a entrega ali, no local.</div></div>
+        <div class="ex-switch" id="rq-sw-assin" onclick="toggleReq('assin')"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="pin"></span></span></div>
+      </div>
+
+      <div class="req-subcfg" id="rq-sub-assin">
+        <div class="req-sublbl">Quem assina</div>
+        <div class="req-seg" id="rq-seg-quem">
+          <button type="button" data-q="tec" onclick="setReqSub('quem','tec')"><span class="rq-ic">engineering</span>Técnico</button>
+          <button type="button" data-q="resp" onclick="setReqSub('quem','resp')"><span class="rq-ic">badge</span>Responsável no local</button>
+        </div>
+        <div class="req-sublbl">Como assina</div>
+        <div class="req-seg" id="rq-seg-met">
+          <button type="button" data-m="tela" onclick="setReqSub('met','tela')"><span class="rq-ic">draw</span>Na tela</button>
+          <button type="button" data-m="dig" onclick="setReqSub('met','dig')"><span class="rq-ic">how_to_reg</span>Aceite digital</button>
+        </div>
+      </div>
+
+      <div class="req-sublbl" style="margin-top:12px">Fase da tarefa</div>
+      <div class="req-seg" id="rq-seg-fase">
+        <button type="button" data-f="lev" onclick="setReqFase('lev')"><span class="rq-ic">frame_inspect</span>Levantamento</button>
+        <button type="button" data-f="exe" onclick="setReqFase('exe')"><span class="rq-ic">construction</span>Execução</button>
+      </div>
+      <div class="req-fasenote" id="rq-fasenote"><span class="rq-ic">link</span><span>Fotos do <b>levantamento</b> viram o <b>"antes"</b> da execução — o campo não refotografa o estado inicial.</span></div>
+    </div>
+
     <div class="fg" id="e-avulsa-wrap" style="display:none;border-top:1px solid var(--line);padding-top:10px">
       <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="badge warn">avulsa</span><span class="note" style="margin:0">Esta tarefa não está no catálogo (não reaproveita em outras obras).</span></div>
       <button class="btn btn-s btn-p" type="button" style="margin-top:8px" onclick="promoverAvulsa()">📥 Salvar no catálogo</button>
@@ -793,6 +878,45 @@ body.papel-tecnico .adm-only{display:none !important}
 .ev-rad{border:none;background:none;cursor:pointer;font-size:17px;color:var(--pri,#534ab7);padding:0}
 .svc-un{font-size:11px;color:var(--tx3)}
 .svc-row.sel .svc-un{color:var(--ac,#185fa5)}
+
+/* ===== REQUISITOS DE CAMPO (Diário) — chave+LED oficial eX + selinhos ===== */
+.rq-ic{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;line-height:1;font-variation-settings:'FILL' 1,'wght' 500,'opsz' 24;display:inline-block;vertical-align:middle}
+.req-box{border-top:1px solid var(--line);padding-top:12px;margin-top:4px}
+.req-hd{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);display:flex;align-items:center;gap:6px;margin-bottom:2px}
+.req-hd .rq-ic{font-size:16px;color:var(--pri)}
+.req-sub{font-size:11px;color:var(--tx3);margin-bottom:8px}
+.req-rule{display:flex;align-items:center;gap:11px;padding:9px 0;border-bottom:1px solid var(--line)}
+.req-rule:last-child{border-bottom:none}
+.req-rule .rtxt{flex:1;min-width:0}
+.req-rule .rt{font-size:13px;font-weight:500;display:flex;align-items:center;gap:6px}
+.req-rule .rt .rq-ic{font-size:16px;color:var(--tx2)}
+.req-rule .rd{font-size:10.5px;color:var(--tx3);margin-top:1px}
+.req-nucleo{font-size:9px;color:var(--pri);background:var(--pri-bg);border-radius:8px;padding:1px 6px;font-weight:600;white-space:nowrap}
+.ex-led{width:15px;height:15px;border-radius:50%;flex-shrink:0;transition:.16s;background:radial-gradient(circle at 35% 30%,#ffffff,#eef1ef 72%);box-shadow:inset 0 1px 1px rgba(0,0,0,.12),0 1px 0 rgba(255,255,255,.6);border:1.5px solid #d9dcd9}
+.ex-led.on{background:radial-gradient(circle at 35% 30%,#c4ffdd,#22d27f 52%,#08a457);box-shadow:inset 0 1px 2px rgba(255,255,255,.6),0 0 8px rgba(34,210,127,.85),0 0 2px rgba(34,210,127,.95);border-color:#08a457}
+.ex-switch{position:relative;width:50px;height:25px;border-radius:13px;cursor:pointer;flex-shrink:0;background:linear-gradient(#bbbeb7,#9a9d95);box-shadow:inset 0 2px 4px rgba(0,0,0,.38),inset 0 -1px 1px rgba(255,255,255,.35);transition:.16s;font:800 8px ui-monospace,monospace;letter-spacing:.3px}
+.ex-switch.on{background:linear-gradient(#2fcf88,#0f8f5b);box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
+.ex-switch .lb{position:absolute;top:0;height:100%;display:flex;align-items:center;color:#fff}
+.ex-switch .lb.off{right:8px;color:#5a5a50}.ex-switch.on .lb.off{display:none}
+.ex-switch .lb.onx{left:8px;display:none}.ex-switch.on .lb.onx{display:flex}
+.ex-switch .kb{position:absolute;top:3px;left:3px;width:20px;height:19px;border-radius:10px;transition:.16s;background:linear-gradient(#ffffff,#d4d4cf);box-shadow:0 2px 2px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 2px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
+.ex-switch.on .kb{left:27px}
+.ex-switch .pin{width:3px;height:11px;border-radius:2px;background:linear-gradient(#9a9a92,#565650);box-shadow:0 1px 1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5)}
+.req-subcfg{display:none;padding:4px 0 10px 0;border-bottom:1px solid var(--line)}
+.req-subcfg.show{display:block}
+.req-sublbl{font-size:10.5px;font-weight:600;color:var(--tx2);margin:8px 0 5px}
+.req-seg{display:flex;gap:6px;flex-wrap:wrap}
+.req-seg button{flex:1;min-width:96px;border:1px solid var(--line2);background:var(--surf);border-radius:8px;padding:7px 6px;font-size:11.5px;font-weight:600;color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.req-seg button .rq-ic{font-size:16px}
+.req-seg button.on{border-color:var(--pri);background:var(--pri-bg);color:var(--pri)}
+.req-fasenote{font-size:10.5px;color:var(--blue);background:#eef3fb;border-radius:7px;padding:7px 9px;margin-top:7px;display:none;gap:6px;line-height:1.35}
+.req-fasenote.show{display:flex}
+.req-fasenote .rq-ic{font-size:14px;flex-shrink:0;margin-top:1px}
+/* selinhos na linha do cronograma */
+.reqmini{display:inline-flex;align-items:center;gap:3px;margin-left:7px;vertical-align:middle}
+.reqmini .rq-ic{font-size:13px;color:var(--tx3)}
+.reqmini .rq-ic.req{color:var(--pri)}
+.reqmini .rq-ic.on{color:var(--green)}
 </style>
 <div class="modal-bg" id="modalPad"><div class="modal">
   <div class="mh"><b>📚 Biblioteca de atividades-padrão</b><button class="x" onclick="closePad()">&times;</button></div>
@@ -948,7 +1072,7 @@ body.papel-tecnico .adm-only{display:none !important}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const STORE_KEY='ex_crono_v9';
+const STORE_KEY='ex_crono_v10';
 /* ===== NUVEM (Supabase) ===== */
 const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
@@ -1240,7 +1364,7 @@ function render(){
       </div>`;
       return `<div class="trow ${isSub?'sub':''}">
         <span class="twbs">${wbs}</span>
-        <span class="tname"><span class="tnm">${t.nome}${avulsa?' <span class="badge warn" style="font-size:9px" title="tarefa avulsa — não está no catálogo. Edite (✎) para salvar no catálogo.">avulsa</span>':''}</span>${varSel}</span>
+        <span class="tname"><span class="tnm">${t.nome}${avulsa?' <span class="badge warn" style="font-size:9px" title="tarefa avulsa — não está no catálogo. Edite (✎) para salvar no catálogo.">avulsa</span>':''}${reqMini(t)}</span>${varSel}</span>
         <div class="qcell">${isSub?'<span class="und2">—</span>':`<input class="cell-in cell-num" type="number" min="0" value="${t.qtd}" onchange="setQtd('${t.id}',this.value)"><span class="und2">${un}</span>`}</div>
         <div class="rfcell"><select class="cell-in" onchange="setExec('${t.id}',this.value)">${execOpts}</select><select class="cell-in" onchange="setLinha('${t.id}',this.value)" ${!c||!c.custo?'disabled':''}>${linhaOpts}</select></div>
         <div class="tdcell">${dts}</div>
@@ -1375,7 +1499,8 @@ function openEdit(id){
   document.getElementById('e-tipo').textContent=t.header?'(tarefa agrupadora)':'(tarefa de serviço)';
   const isHdr=!!t.header;
   document.getElementById('e-var-wrap').style.display=isHdr?'none':'';
-  if(!isHdr){ ensureVars(t); EMODE = t.vars.length>1 ? 'multi' : 'unica'; renderEditVars(t); }
+  document.getElementById('e-req-wrap').style.display=isHdr?'none':'';
+  if(!isHdr){ ensureVars(t); EMODE = t.vars.length>1 ? 'multi' : 'unica'; renderEditVars(t); renderEditReq(t); }
   const sCat=S.catalogo.find(x=>x.id===t.svc); const avulsa=!isHdr&&!!t.svc&&(!sCat||sCat.avulso);
   document.getElementById('e-avulsa-wrap').style.display=avulsa?'':'none';
   document.getElementById('modalE').classList.add('show');
@@ -1393,6 +1518,34 @@ function promoverAvulsa(){
   alert('✓ Tarefa salva no catálogo: "'+t.nome+'". Agora pode ser reutilizada em outras obras.');
 }
 function _et(){ return P().tarefas.find(x=>x.id===EID); }
+/* ===== Requisitos de campo (Diário) — regras por tarefa, lidas depois pelo diário ===== */
+function ensureReq(t){ if(!t.req) t.req={foto:true,ad:false,carimbo:false,arquivo:false,assin:false,quem:'resp',met:'tela'}; if(!t.fase) t.fase='exe'; return t.req; }
+function renderEditReq(t){
+  const r=ensureReq(t);
+  ['foto','ad','carimbo','arquivo','assin'].forEach(k=>{
+    document.getElementById('rq-led-'+k).classList.toggle('on',!!r[k]);
+    document.getElementById('rq-sw-'+k).classList.toggle('on',!!r[k]);
+  });
+  document.getElementById('rq-sub-assin').classList.toggle('show',!!r.assin);
+  document.querySelectorAll('#rq-seg-quem button').forEach(b=>b.classList.toggle('on',b.dataset.q===r.quem));
+  document.querySelectorAll('#rq-seg-met button').forEach(b=>b.classList.toggle('on',b.dataset.m===r.met));
+  document.querySelectorAll('#rq-seg-fase button').forEach(b=>b.classList.toggle('on',b.dataset.f===t.fase));
+  document.getElementById('rq-fasenote').classList.toggle('show',t.fase==='lev');
+}
+function toggleReq(k){ const t=_et(); if(!t)return; const r=ensureReq(t); r[k]=!r[k]; renderEditReq(t); save(); render(); pushTarefa(t); }
+function setReqSub(field,val){ const t=_et(); if(!t)return; ensureReq(t); t.req[field]=val; renderEditReq(t); save(); pushTarefa(t); }
+function setReqFase(f){ const t=_et(); if(!t)return; ensureReq(t); t.fase=f; renderEditReq(t); save(); render(); pushTarefa(t); }
+function reqMini(t){
+  if(t.header) return '';
+  const r=ensureReq(t); let ic='';
+  if(r.foto) ic+='<span class="rq-ic req" title="foto para concluir">photo_camera</span>';
+  if(r.ad) ic+='<span class="rq-ic on" title="antes e depois">compare</span>';
+  if(r.carimbo) ic+='<span class="rq-ic on" title="carimbo na foto">verified</span>';
+  if(r.arquivo) ic+='<span class="rq-ic on" title="arquivo obrigatório">attach_file</span>';
+  if(r.assin) ic+='<span class="rq-ic on" title="assinatura">draw</span>';
+  if(t.fase==='lev') ic+='<span class="rq-ic" title="fase de levantamento" style="color:var(--blue)">frame_inspect</span>';
+  return ic?`<span class="reqmini">${ic}</span>`:'';
+}
 function _unidadeUnit(h){ return (Number(h)||0)<1 ? 'min' : 'h'; }
 function _emUnidade(h,u){ return u==='min' ? Math.round((Number(h)||0)*60) : +(+h).toFixed(3); }
 function setEMode(m){ const t=_et(); if(!t)return; const varr=ensureVars(t);
@@ -2357,7 +2510,7 @@ const SST_BLOCKS={
     itens:[['person','Interno — nome, registro MTE, contato'],['apartment','Terceirizado — empresa, CNPJ, contrato']],
     nota:'Cadastro. Aparece como signatário na APR, na PT e nas investigações de ocorrência.'}
 };
-function navSST(key,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var v=document.getElementById('v-sst'); if(v)v.classList.add('active'); if(key==='rt'){ renderRT(); } else { renderSST(key); } }
+function navSST(key,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var v=document.getElementById('v-sst'); if(v)v.classList.add('active'); if(key==='rt'){ renderRT(); } else if(key==='aptidao'){ renderAptidao(); } else { renderSST(key); } }
 
 /* ----- SST Fase 1: Responsável técnico (SESMT) ----- */
 let RT_LIST=[], RT_EDIT=null;
@@ -2466,6 +2619,142 @@ async function delRT(id){
   var r=await SB.from('sst_responsaveis').update({deleted_at:new Date().toISOString(),principal:false}).eq('id',id);
   if(r.error){ alert('Erro ao excluir: '+r.error.message); return; }
   nuvemStatus('salvo ✓','ok'); renderRT();
+}
+
+/* ----- SST Fase 2: Aptidão da equipe ----- */
+let APT_COLABS=[], APT_ITENS=[], APT_CUR=null, APT_EDIT=null;
+function aptBR(d){ if(!d) return ''; var p=String(d).slice(0,10).split('-'); return p.length===3?(p[2]+'/'+p[1]+'/'+p[0]):d; }
+function aptStatus(validade){
+  if(!validade) return {k:'sem', txt:'sem validade', cor:'var(--tx3)', bg:'var(--surf2)'};
+  var hoje=new Date(); hoje.setHours(0,0,0,0);
+  var v=new Date(String(validade).slice(0,10)+'T00:00:00');
+  var dias=Math.round((v-hoje)/86400000);
+  if(dias<0) return {k:'vencido', txt:'vencido', cor:'var(--red)', bg:'#fcebeb'};
+  if(dias<=30) return {k:'breve', txt:'vence em '+dias+'d', cor:'var(--amber)', bg:'#faeeda'};
+  return {k:'valido', txt:'válido', cor:'var(--green)', bg:'#eaf3de'};
+}
+function aptResumo(itens){
+  var v=0,b=0,x=0,s=0;
+  itens.forEach(function(it){ var k=aptStatus(it.validade).k; if(k==='vencido')x++; else if(k==='breve')b++; else if(k==='valido')v++; else s++; });
+  return {v:v,b:b,x:x,s:s,total:itens.length, geral:(x>0?'vencido':(b>0?'breve':(itens.length?'valido':'vazio')))};
+}
+function aptGeralBadge(g){
+  var m={valido:['Apto','var(--green)','#eaf3de'],breve:['Atenção','var(--amber)','#faeeda'],vencido:['Pendência','var(--red)','#fcebeb'],vazio:['Sem docs','var(--tx3)','var(--surf2)']}[g];
+  return '<span style="font-size:10px;font-weight:600;color:'+m[1]+';background:'+m[2]+';padding:3px 10px;border-radius:20px;white-space:nowrap">'+m[0]+'</span>';
+}
+function aptTile(lbl,n,cor,bg){ return '<div style="background:'+bg+';border-radius:10px;padding:9px 12px"><div style="font-size:20px;font-weight:700;color:'+cor+'">'+n+'</div><div style="font-size:11px;color:var(--tx2)">'+lbl+'</div></div>'; }
+function aptErr(e){ return '<div class="note" style="border-color:var(--red)"><b>Erro ao carregar.</b><br>'+rtEsc(e.message)+'<br><br>Rodou a migração <b>_deploy/db/sst_aptidoes.sql</b> no Supabase?</div>'; }
+async function renderAptidao(){
+  var body=document.getElementById('sst-body'), pn=document.getElementById('sst-pname'); if(pn)pn.textContent='SST · Aptidão da equipe';
+  if(!body) return;
+  body.innerHTML='<div class="note">Carregando…</div>';
+  if(!SB){ body.innerHTML='<div class="note">Sem conexão com a nuvem — abra o app logado.</div>'; return; }
+  var cR=await SB.from('colaboradores').select('id,nome,ativo').is('deleted_at',null).order('nome');
+  if(cR.error){ body.innerHTML=aptErr(cR.error); return; }
+  var iR=await SB.from('sst_aptidoes').select('*').is('deleted_at',null);
+  if(iR.error){ body.innerHTML=aptErr(iR.error); return; }
+  APT_COLABS=(cR.data||[]).filter(function(c){return c.ativo!==false;});
+  APT_ITENS=iR.data||[];
+  paintAptidao();
+}
+function paintAptidao(){
+  var body=document.getElementById('sst-body'); if(!body) return;
+  var head='<div class="sstk-head"><span class="sstk-hic"><span class="msr" style="font-size:28px">verified_user</span></span>'
+    +'<div><div class="sstk-h1">Aptidão da equipe</div><div class="sstk-hsub">O portão: só vai a campo quem está apto e em dia — ASO, treinamentos NR e ficha de EPI, com validade.</div></div></div>';
+  if(!APT_COLABS.length){
+    body.innerHTML=head+'<div class="soon-wrap" style="padding:34px 20px"><div class="soon-ic">👷</div><div class="soon-t">Sem colaboradores ativos</div><div class="soon-d">Cadastre a equipe em Gestão → Equipe; a aptidão se pendura em cada colaborador.</div></div>';
+    return;
+  }
+  var aptos=0,aten=0,pend=0,semd=0;
+  APT_COLABS.forEach(function(c){ var g=aptResumo(APT_ITENS.filter(function(i){return i.colaborador_id===c.id;})).geral; if(g==='valido')aptos++; else if(g==='breve')aten++; else if(g==='vencido')pend++; else semd++; });
+  var tiles='<div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:6px 0 12px">'
+    +aptTile('Aptos',aptos,'var(--green)','#eaf3de')+aptTile('Atenção',aten,'var(--amber)','#faeeda')
+    +aptTile('Pendência',pend,'var(--red)','#fcebeb')+aptTile('Sem docs',semd,'var(--tx3)','var(--surf2)')+'</div>';
+  var list='<div style="display:flex;flex-direction:column;gap:7px">'+APT_COLABS.map(aptColabCard).join('')+'</div>';
+  body.innerHTML=head+tiles+list;
+}
+function aptColabCard(c){
+  var itens=APT_ITENS.filter(function(i){return i.colaborador_id===c.id;});
+  var r=aptResumo(itens);
+  var counts = r.total
+    ? '<span style="font-size:11px;color:var(--tx3)">'+r.v+' válidos · '+r.b+' vencendo · '+r.x+' vencidos'+(r.s?(' · '+r.s+' sem validade'):'')+'</span>'
+    : '<span style="font-size:11px;color:var(--tx3)">nenhum documento</span>';
+  return '<div style="display:flex;align-items:center;gap:11px;background:var(--surf);border:1px solid var(--line);border-radius:11px;padding:11px 14px">'
+    +'<span class="msr" style="font-size:20px">person</span>'
+    +'<div style="flex:1;min-width:0"><div style="font-weight:600;color:var(--tx);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">'+rtEsc(c.nome)+'</div>'+counts+'</div>'
+    +aptGeralBadge(r.geral)
+    +'<button class="btn btn-s" onclick="openApt(\''+c.id+'\')">Gerenciar</button></div>';
+}
+function openApt(cid){
+  APT_CUR=cid; var c=APT_COLABS.find(function(x){return x.id===cid;})||{};
+  document.getElementById('apt-title').textContent='Aptidão — '+(c.nome||'');
+  aptResetForm(); paintAptItens();
+  document.getElementById('modalApt').classList.add('show');
+}
+function closeApt(){ document.getElementById('modalApt').classList.remove('show'); APT_CUR=null; APT_EDIT=null; paintAptidao(); }
+function paintAptItens(){
+  var box=document.getElementById('apt-itens'); if(!box) return;
+  var itens=APT_ITENS.filter(function(i){return i.colaborador_id===APT_CUR;}).sort(function(a,b){ return (a.validade||'9999-99')<(b.validade||'9999-99')?-1:1; });
+  if(!itens.length){ box.innerHTML='<div class="note" style="margin:0 0 6px">Nenhum documento ainda — adicione abaixo.</div>'; return; }
+  box.innerHTML=itens.map(function(it){
+    var st=aptStatus(it.validade);
+    var nome=rtEsc(it.tipo)+(it.descricao?' · '+rtEsc(it.descricao):'');
+    var datas=(it.emissao?('emissão '+aptBR(it.emissao)):'')+(it.validade?((it.emissao?' · ':'')+'validade '+aptBR(it.validade)):(it.emissao?' · ':'')+'sem validade');
+    return '<div style="display:flex;align-items:center;gap:9px;padding:9px 0;border-bottom:1px solid var(--line)">'
+      +'<span style="font-size:10px;font-weight:600;color:'+st.cor+';background:'+st.bg+';padding:2px 8px;border-radius:20px;white-space:nowrap">'+st.txt+'</span>'
+      +'<div style="flex:1;min-width:0"><div style="font-size:13px;font-weight:500;color:var(--tx)">'+nome+'</div>'
+      +'<div style="font-size:11px;color:var(--tx3)">'+datas+(it.anexo_url?(' · <a href="'+rtEsc(it.anexo_url)+'" target="_blank" style="color:var(--pri)">documento</a>'):'')+'</div></div>'
+      +'<button class="ib" onclick="aptEditItem(\''+it.id+'\')" title="editar">✎</button>'
+      +'<button class="ib del" onclick="aptDelItem(\''+it.id+'\')" title="excluir">✕</button></div>';
+  }).join('');
+}
+function aptResetForm(){
+  APT_EDIT=null;
+  document.getElementById('apt-tipo').value='ASO';
+  document.getElementById('apt-desc').value='';
+  document.getElementById('apt-emissao').value='';
+  document.getElementById('apt-validade').value='';
+  document.getElementById('apt-anexo').value='';
+  document.getElementById('apt-obs').value='';
+  document.getElementById('apt-add-btn').textContent='Adicionar documento';
+}
+function aptEditItem(id){
+  var it=APT_ITENS.find(function(x){return x.id===id;}); if(!it) return; APT_EDIT=it;
+  document.getElementById('apt-tipo').value=it.tipo||'Outro';
+  document.getElementById('apt-desc').value=it.descricao||'';
+  document.getElementById('apt-emissao').value=it.emissao?String(it.emissao).slice(0,10):'';
+  document.getElementById('apt-validade').value=it.validade?String(it.validade).slice(0,10):'';
+  document.getElementById('apt-anexo').value=it.anexo_url||'';
+  document.getElementById('apt-obs').value=it.observacoes||'';
+  document.getElementById('apt-add-btn').textContent='Salvar alterações';
+  try{ document.getElementById('apt-tipo').scrollIntoView({block:'nearest'}); }catch(e){}
+}
+async function reloadAptItens(){ var iR=await SB.from('sst_aptidoes').select('*').is('deleted_at',null); if(!iR.error) APT_ITENS=iR.data||[]; }
+async function aptSaveItem(){
+  if(!SB){ alert('Sem conexão com a nuvem.'); return; }
+  if(!APT_CUR){ alert('Selecione um colaborador.'); return; }
+  var tipo=document.getElementById('apt-tipo').value;
+  if(!tipo){ alert('Escolha o tipo do documento.'); return; }
+  var row={
+    tipo:tipo,
+    descricao:document.getElementById('apt-desc').value.trim()||null,
+    emissao:document.getElementById('apt-emissao').value||null,
+    validade:document.getElementById('apt-validade').value||null,
+    anexo_url:document.getElementById('apt-anexo').value.trim()||null,
+    observacoes:document.getElementById('apt-obs').value.trim()||null
+  };
+  var r;
+  if(APT_EDIT){ r=await SB.from('sst_aptidoes').update(row).eq('id',APT_EDIT.id); }
+  else { r=await SB.from('sst_aptidoes').insert(Object.assign({},row,{id:uid(),colaborador_id:APT_CUR,empresa_id:_emp()})); }
+  if(r.error){ alert('Erro ao salvar: '+r.error.message); return; }
+  nuvemStatus('salvo ✓','ok');
+  await reloadAptItens(); aptResetForm(); paintAptItens();
+}
+async function aptDelItem(id){
+  if(!confirm('Excluir este documento?')) return;
+  var r=await SB.from('sst_aptidoes').update({deleted_at:new Date().toISOString()}).eq('id',id);
+  if(r.error){ alert('Erro ao excluir: '+r.error.message); return; }
+  nuvemStatus('salvo ✓','ok'); await reloadAptItens(); paintAptItens();
 }
 function renderSST(key){
   var b=SST_BLOCKS[key]||SST_BLOCKS.painel;
