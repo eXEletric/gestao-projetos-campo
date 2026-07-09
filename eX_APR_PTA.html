@@ -326,11 +326,11 @@
     <span><i class="dot" style="background:#e08a1e"></i> Pendente</span>
   </div>
   <div class="note" style="margin-top:10px">
-    <b>Níveis de permissão por qualificação:</b><br>
-    <b>Nível 1 — BT + Altura:</b> NR-10 (BT) + NR-35.<br>
-    <b>Nível 2 — BT + MT + Altura:</b> NR-10 (BT) + NR-10 SEP (MT) + NR-35.<br>
-    <b>Nível 3 — BT + MT + Altura + Plataforma:</b> NR-10 + NR-10 SEP + NR-35 + PEMT.<br>
-    <span style="color:#c0392b"><b>Restrição:</b></span> Nível 1 não atua em MT/SEP; plataforma exclusiva de quem tem PEMT válido (Nível 3).
+    <b>Grupos de permissão por qualificação:</b><br>
+    <b>Grupo 1 — BT + Altura:</b> NR-10 (BT) + NR-35.<br>
+    <b>Grupo 2 — BT + MT + Altura:</b> NR-10 (BT) + NR-10 SEP (MT) + NR-35.<br>
+    <b>Grupo 3 — BT + MT + Altura + Plataforma:</b> NR-10 + NR-10 SEP + NR-35 + PEMT.<br>
+    <span style="color:#c0392b"><b>Restrição:</b></span> Grupo 1 não atua em MT/SEP; plataforma exclusiva de quem tem PEMT válido (Grupo 3).
   </div>
 </div>
 </div>
@@ -392,11 +392,11 @@ const DEMO_CTX = {
     dataDoc:"08/07/2026"
   },
   equipe: [
-    { nome:"Ednael da Silva Gonçalves",     nivel:3 },
-    { nome:"Robson Junior Leite",           nivel:1 },
-    { nome:"Jonas Silva do Nascimento",     nivel:2 },
-    { nome:"Kennedy Nathan Almeida Mendes", nivel:1 },
-    { nome:"Esequias da Silva Gonsalves",   nivel:2 }
+    { nome:"Ednael da Silva Gonçalves",     grupo:3 },
+    { nome:"Robson Junior Leite",           grupo:1 },
+    { nome:"Jonas Silva do Nascimento",     grupo:2 },
+    { nome:"Kennedy Nathan Almeida Mendes", grupo:1 },
+    { nome:"Esequias da Silva Gonsalves",   grupo:2 }
   ]
 };
 
@@ -464,10 +464,10 @@ function renderDias(){
 }
 
 /* ---- matriz (pool, certificações manuais) ---- */
-const NIVEL_NOME={1:"NÍVEL 1 — BT + Altura",2:"NÍVEL 2 — BT + MT + Altura",3:"NÍVEL 3 — BT + MT + Altura + Plataforma"};
+const GRUPO_NOME={1:"GRUPO 1 — BT + Altura",2:"GRUPO 2 — BT + MT + Altura",3:"GRUPO 3 — BT + MT + Altura + Plataforma"};
 const clsMap={ok:"st-ok",na:"st-na",vc:"st-vc",pd:"st-pd"};
 const optList=[["ok","Conforme"],["na","N/A"],["vc","Vencido"],["pd","Pendente"]];
-function defsForNivel(n){
+function defsForGrupo(n){
   if(n===1) return ["ok","ok","ok","ok","ok","na","na","ok"];
   if(n===2) return ["ok","ok","ok","ok","ok","ok","na","ok"];
   return ["ok","ok","ok","ok","ok","ok","ok","ok"];
@@ -487,15 +487,15 @@ function updStatus(tr){
 function renderMatriz(){
   const mtb=document.querySelector('#matriz tbody'); mtb.innerHTML="";
   const grupos={1:[],2:[],3:[]};
-  CTX.equipe.forEach((m,idx)=>{ const n=m.nivel||1; (grupos[n]=grupos[n]||[]).push({...m,idx}); });
+  CTX.equipe.forEach((m,idx)=>{ const n=m.grupo||1; (grupos[n]=grupos[n]||[]).push({...m,idx}); });
   [1,2,3].forEach(n=>{
     if(!grupos[n]||!grupos[n].length) return;
-    const hr=document.createElement('tr');const hc=document.createElement('td');hc.colSpan=10;hc.textContent=NIVEL_NOME[n];
+    const hr=document.createElement('tr');const hc=document.createElement('td');hc.colSpan=10;hc.textContent=GRUPO_NOME[n];
     hc.style.cssText="text-align:left;font-weight:700;background:#dbe6ec;color:#0a3d54;font-size:10.5px";hr.appendChild(hc);mtb.appendChild(hr);
     grupos[n].forEach(m=>{
       const tr=document.createElement('tr');
       const td0=document.createElement('td');td0.className="nm";td0.textContent=m.nome;tr.appendChild(td0);
-      const defs=defsForNivel(n);
+      const defs=defsForGrupo(n);
       for(let c=1;c<=8;c++){const td=document.createElement('td');td.appendChild(mkSel(defs[c-1],`m_${m.idx}_${c}`));tr.appendChild(td);}
       const tdS=document.createElement('td');const st=document.createElement('select');
       [["ok","CONFORME"],["pd","PENDENTE"]].forEach(([v,t])=>{const o=document.createElement('option');o.value=v;o.textContent=t;st.appendChild(o);});
