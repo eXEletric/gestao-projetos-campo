@@ -647,6 +647,7 @@ body.papel-tecnico .adm-only{display:none !important}
   .sstk-feeds{margin-top:12px;display:flex;flex-direction:column;gap:5px}
   .sstk-feed{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:var(--pri)}
   .sstk-foot{display:flex;align-items:center;gap:7px;margin-top:18px;font-size:12px;color:var(--tx3)}
+  .rtln{display:flex;align-items:center;gap:7px}
   </style>
   <div class="view" id="v-sst">
     <div class="topbar"><span class="pname" id="sst-pname">Segurança do Trabalho</span></div>
@@ -657,6 +658,39 @@ body.papel-tecnico .adm-only{display:none !important}
     </div>
   </div>
 </div>
+
+<!-- MODAL RESPONSÁVEL TÉCNICO (SST Fase 1) -->
+<div class="modal-bg" id="modalRT"><div class="modal">
+  <div class="mh"><b id="rt-title">Responsável técnico</b><button class="x" onclick="closeRT()">&times;</button></div>
+  <div class="mb">
+    <div class="fg"><label class="fl">Tipo</label>
+      <select class="fi" id="rt-tipo" onchange="rtToggleTipo()">
+        <option value="interno">Interno — funcionário da empresa</option>
+        <option value="terceirizado">Terceirizado — empresa / consultoria</option>
+      </select>
+    </div>
+    <div class="fg"><label class="fl">Nome do técnico de segurança</label><input class="fi" id="rt-nome" placeholder="Nome completo"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Registro profissional (MTE)</label><input class="fi" id="rt-reg" placeholder="Nº do registro"></div>
+      <div class="fg"><label class="fl">Telefone / WhatsApp</label><input class="fi" id="rt-tel" placeholder="(00) 00000-0000"></div>
+    </div>
+    <div class="fg"><label class="fl">E-mail</label><input class="fi" id="rt-email" type="email"></div>
+    <div id="rt-terc" style="display:none">
+      <div class="frow">
+        <div class="fg" style="grid-column:span 2"><label class="fl">Empresa / consultoria</label><input class="fi" id="rt-empnome"></div>
+        <div class="fg"><label class="fl">CNPJ</label><input class="fi" id="rt-cnpj" placeholder="00.000.000/0001-00"></div>
+      </div>
+      <div class="fg"><label class="fl">Contrato (nº / referência)</label><input class="fi" id="rt-contrato"></div>
+    </div>
+    <div class="fg"><label class="fl">Observações</label><input class="fi" id="rt-obs"></div>
+    <div style="display:flex;gap:20px;margin-top:6px;flex-wrap:wrap">
+      <label style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--tx2);cursor:pointer"><input type="checkbox" id="rt-principal"> Responsável vigente (principal)</label>
+      <label style="display:flex;align-items:center;gap:7px;font-size:13px;color:var(--tx2);cursor:pointer"><input type="checkbox" id="rt-ativo" checked> Ativo</label>
+    </div>
+    <div class="note">Interno assina como funcionário; terceirizado registra a empresa/consultoria contratada. O <b>principal</b> é quem aparece como signatário na APR, na PT e nas investigações.</div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeRT()">Cancelar</button><button class="btn btn-p" onclick="saveRT()">Salvar responsável</button></div>
+</div></div>
 
 <!-- MODAL ADD TAREFA -->
 <div class="modal-bg" id="modal"><div class="modal">
@@ -2317,7 +2351,116 @@ const SST_BLOCKS={
     itens:[['person','Interno — nome, registro MTE, contato'],['apartment','Terceirizado — empresa, CNPJ, contrato']],
     nota:'Cadastro. Aparece como signatário na APR, na PT e nas investigações de ocorrência.'}
 };
-function navSST(key,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var v=document.getElementById('v-sst'); if(v)v.classList.add('active'); renderSST(key); }
+function navSST(key,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var v=document.getElementById('v-sst'); if(v)v.classList.add('active'); if(key==='rt'){ renderRT(); } else { renderSST(key); } }
+
+/* ----- SST Fase 1: Responsável técnico (SESMT) ----- */
+let RT_LIST=[], RT_EDIT=null;
+function rtEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+async function renderRT(){
+  var body=document.getElementById('sst-body'); var pn=document.getElementById('sst-pname'); if(pn)pn.textContent='SST · Responsável técnico';
+  if(!body) return;
+  body.innerHTML='<div class="note">Carregando…</div>';
+  if(!SB){ body.innerHTML='<div class="note">Sem conexão com a nuvem — abra o app logado para cadastrar.</div>'; return; }
+  var r=await SB.from('sst_responsaveis').select('*').is('deleted_at',null).order('principal',{ascending:false}).order('created_at');
+  if(r.error){ body.innerHTML='<div class="note" style="border-color:var(--red)"><b>Erro ao carregar.</b><br>'+rtEsc(r.error.message)+'<br><br>Falta rodar a migração <b>_deploy/db/sst_responsaveis.sql</b> no Supabase?</div>'; return; }
+  RT_LIST=r.data||[]; paintRT();
+}
+function paintRT(){
+  var body=document.getElementById('sst-body'); if(!body) return;
+  var head='<div class="sstk-head"><span class="sstk-hic"><span class="msr" style="font-size:28px">badge</span></span>'
+    +'<div><div class="sstk-h1">Responsável técnico (SESMT)</div><div class="sstk-hsub">Quem responde pela segurança do trabalho — assina APR/PT e investiga ocorrências.</div></div>'
+    +'<button class="btn btn-p btn-s" style="margin-left:auto;white-space:nowrap" onclick="openRT()">+ Novo responsável</button></div>';
+  var list;
+  if(!RT_LIST.length){
+    list='<div class="soon-wrap" style="padding:34px 20px"><div class="soon-ic">🦺</div><div class="soon-t">Nenhum responsável cadastrado</div><div class="soon-d">Cadastre o técnico de segurança que atende a empresa — interno ou terceirizado.</div></div>';
+  } else {
+    list='<div class="sstk-grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr))">'+RT_LIST.map(rtCard).join('')+'</div>';
+  }
+  body.innerHTML=head+list;
+}
+function rtCard(x){
+  var terc=x.tipo==='terceirizado';
+  var tipoBadge= terc
+    ? '<span style="font-size:10px;font-weight:600;color:var(--amber);background:#faeeda;padding:2px 9px;border-radius:20px">Terceirizado</span>'
+    : '<span style="font-size:10px;font-weight:600;color:var(--green);background:#eaf3de;padding:2px 9px;border-radius:20px">Interno</span>';
+  var pr = x.principal ? '<span class="msr" style="font-size:17px" title="Responsável vigente">star</span>' : '';
+  var linhas='';
+  if(x.registro_mte) linhas+='<div class="rtln"><span class="msr" style="font-size:15px">badge</span>Registro MTE: '+rtEsc(x.registro_mte)+'</div>';
+  if(x.telefone) linhas+='<div class="rtln"><span class="msr" style="font-size:15px">call</span>'+rtEsc(x.telefone)+'</div>';
+  if(x.email) linhas+='<div class="rtln"><span class="msr" style="font-size:15px">mail</span>'+rtEsc(x.email)+'</div>';
+  if(terc){
+    if(x.empresa_nome) linhas+='<div class="rtln"><span class="msr" style="font-size:15px">apartment</span>'+rtEsc(x.empresa_nome)+(x.cnpj?' · '+rtEsc(x.cnpj):'')+'</div>';
+    if(x.contrato_ref) linhas+='<div class="rtln"><span class="msr" style="font-size:15px">description</span>Contrato: '+rtEsc(x.contrato_ref)+'</div>';
+  }
+  if(x.observacoes) linhas+='<div class="rtln" style="color:var(--tx3)"><span class="msr" style="font-size:15px">notes</span>'+rtEsc(x.observacoes)+'</div>';
+  if(!x.ativo) linhas+='<div class="rtln" style="color:var(--tx3)"><span class="msr" style="font-size:15px">block</span>Inativo</div>';
+  var btnPr = x.principal ? '' : '<button class="btn btn-s" onclick="setPrincipalRT(\''+x.id+'\')" title="Tornar responsável vigente">Tornar principal</button>';
+  return '<div style="background:var(--surf);border:1px solid '+(x.principal?'var(--pri)':'var(--line)')+';border-radius:12px;padding:13px 15px">'
+    +'<div style="display:flex;align-items:center;gap:9px;margin-bottom:8px">'
+      +'<span class="msr" style="font-size:22px">'+(terc?'apartment':'engineering')+'</span>'
+      +'<span style="font-weight:600;color:var(--tx);flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'+rtEsc(x.nome)+'</span>'+pr+tipoBadge+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:4px;font-size:12.5px;color:var(--tx2)">'+(linhas||'<div class="rtln" style="color:var(--tx3)">sem dados adicionais</div>')+'</div>'
+    +'<div style="display:flex;gap:6px;margin-top:11px;flex-wrap:wrap">'+btnPr
+      +'<button class="btn btn-s" onclick="openRT(\''+x.id+'\')">Editar</button>'
+      +'<button class="btn btn-s" onclick="delRT(\''+x.id+'\')" style="color:var(--red)">Excluir</button></div>'
+    +'</div>';
+}
+function rtToggleTipo(){ var t=document.getElementById('rt-tipo').value; document.getElementById('rt-terc').style.display = (t==='terceirizado')?'':'none'; }
+function openRT(id){
+  RT_EDIT = id?RT_LIST.find(function(x){return x.id===id;}):null; var x=RT_EDIT||{};
+  document.getElementById('rt-title').textContent=id?'Editar responsável técnico':'Novo responsável técnico';
+  document.getElementById('rt-tipo').value=x.tipo||'interno';
+  document.getElementById('rt-nome').value=x.nome||'';
+  document.getElementById('rt-reg').value=x.registro_mte||'';
+  document.getElementById('rt-tel').value=x.telefone||'';
+  document.getElementById('rt-email').value=x.email||'';
+  document.getElementById('rt-empnome').value=x.empresa_nome||'';
+  document.getElementById('rt-cnpj').value=x.cnpj||'';
+  document.getElementById('rt-contrato').value=x.contrato_ref||'';
+  document.getElementById('rt-obs').value=x.observacoes||'';
+  document.getElementById('rt-principal').checked=!!x.principal;
+  document.getElementById('rt-ativo').checked=x.ativo!==false;
+  rtToggleTipo();
+  document.getElementById('modalRT').classList.add('show');
+}
+function closeRT(){ document.getElementById('modalRT').classList.remove('show'); RT_EDIT=null; }
+async function saveRT(){
+  if(!SB){ alert('Sem conexão com a nuvem.'); return; }
+  var tipo=document.getElementById('rt-tipo').value;
+  var nome=document.getElementById('rt-nome').value.trim();
+  if(!nome){ alert('Informe o nome do responsável técnico.'); return; }
+  var terc=(tipo==='terceirizado');
+  var row={
+    tipo:tipo, nome:nome,
+    registro_mte:document.getElementById('rt-reg').value.trim()||null,
+    telefone:document.getElementById('rt-tel').value.trim()||null,
+    email:document.getElementById('rt-email').value.trim()||null,
+    empresa_nome: terc?(document.getElementById('rt-empnome').value.trim()||null):null,
+    cnpj: terc?(document.getElementById('rt-cnpj').value.trim()||null):null,
+    contrato_ref: terc?(document.getElementById('rt-contrato').value.trim()||null):null,
+    observacoes:document.getElementById('rt-obs').value.trim()||null,
+    principal:document.getElementById('rt-principal').checked,
+    ativo:document.getElementById('rt-ativo').checked
+  };
+  var r, keepId;
+  if(RT_EDIT){ keepId=RT_EDIT.id; r=await SB.from('sst_responsaveis').update(row).eq('id',RT_EDIT.id); }
+  else { keepId=uid(); r=await SB.from('sst_responsaveis').insert(Object.assign({},row,{id:keepId,empresa_id:_emp()})); }
+  if(r.error){ alert('Erro ao salvar: '+r.error.message); return; }
+  if(row.principal){ await SB.from('sst_responsaveis').update({principal:false}).is('deleted_at',null).neq('id',keepId); }
+  closeRT(); nuvemStatus('salvo ✓','ok'); renderRT();
+}
+async function setPrincipalRT(id){
+  var r=await SB.from('sst_responsaveis').update({principal:true}).eq('id',id);
+  if(r.error){ alert('Erro: '+r.error.message); return; }
+  await SB.from('sst_responsaveis').update({principal:false}).is('deleted_at',null).neq('id',id);
+  nuvemStatus('salvo ✓','ok'); renderRT();
+}
+async function delRT(id){
+  if(!confirm('Excluir este responsável técnico?')) return;
+  var r=await SB.from('sst_responsaveis').update({deleted_at:new Date().toISOString(),principal:false}).eq('id',id);
+  if(r.error){ alert('Erro ao excluir: '+r.error.message); return; }
+  nuvemStatus('salvo ✓','ok'); renderRT();
+}
 function renderSST(key){
   var b=SST_BLOCKS[key]||SST_BLOCKS.painel;
   var pn=document.getElementById('sst-pname'); if(pn)pn.textContent='SST · '+b.nome;
