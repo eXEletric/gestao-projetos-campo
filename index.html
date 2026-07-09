@@ -1425,7 +1425,7 @@ function setExec(id,v){const t=P().tarefas.find(x=>x.id===id);t.exec=v;t.execLin
 function setLinha(id,v){const t=P().tarefas.find(x=>x.id===id);t.execLinha=parseInt(v)||0;render();pushTarefa(t);}
 function setQtd(id,v){const t=P().tarefas.find(x=>x.id===id);t.qtd=Math.max(0,parseFloat(v)||0);render();pushTarefa(t);}
 function setTempo(id,v){const t=P().tarefas.find(x=>x.id===id);t.tempo=parseFloat(v)||0;render();pushTarefa(t);}
-function setProg(id,v){const t=P().tarefas.find(x=>x.id===id);t.prog=Math.min(100,Math.max(0,parseFloat(v)||0));if(t.status!=='ice'){if(t.prog===100)t.status='done';else if(t.status==='done')t.status=t.prog>0?'wip':'todo';}render();pushTarefa(t);}
+function setProg(id,v){const t=P().tarefas.find(x=>x.id===id);t.prog=Math.min(100,Math.max(0,parseFloat(v)||0));if(t.status!=='ice'){t.status=t.prog>=100?'done':(t.prog>0?'wip':'todo');}render();pushTarefa(t);} // status segue o progresso: 0=a fazer, 1-99=andamento, 100=concluída (congelada é preservada)
 function taskUn(t){const s=S.catalogo.find(x=>x.id===t.svc);return s?s.un:(t.un||'');}
 /* variações: cada tarefa tem as suas (copiadas do catálogo no fallback) */
 function ensureVars(t){ if(!Array.isArray(t.vars)||!t.vars.length){ const s=S.catalogo.find(x=>x.id===t.svc); t.vars = (s&&s.vars.length)? s.vars.map(v=>[v[0],Number(v[1])]) : [[t.varNome||'Padrão',Number(t.tempo)||0]]; } if(!t.varNome) t.varNome=t.vars[0][0]; return t.vars; }
@@ -1972,7 +1972,7 @@ function setVar(si,vi,idx,v){const s=S.catalogo[si];const old=s.vars[vi][0];s.va
 }
 function delVar(si,vi){ const s=S.catalogo[si]; if(s.vars.length<=1){alert('O serviço precisa de ao menos uma variação.');return;}
   const gone=s.vars[vi];
-  S.projetos.forEach(p=>p.tarefas.forEach(t=>{if(t.svc===s.id&&t.varNome===gone[0])t.varNome='';}));
+  S.projetos.forEach(p=>p.tarefas.forEach(t=>{ if(t.svc===s.id&&t.varNome===gone[0]){ ensureVars(t); const nv=t.vars.find(v=>v[0]!==gone[0])||t.vars[0]; t.varNome=nv[0]; t.tempo=nv[1]; t.tempoPrev=nv[1]; } })); // troca p/ outra variação já sincronizando o tempo (evita rótulo novo com horas antigas)
   s.vars.splice(vi,1);renderCat();render();save();
   if(SB){ const afet=[];S.projetos.forEach(p=>p.tarefas.forEach(t=>{if(t.svc===s.id)afet.push(t);}));
     (async()=>{ for(const t of afet)await pushTarefa(t); if(gone&&gone[2])await delNuvem('servico_variacoes',gone[2]); await pushVarsOrdem(s); })(); }
@@ -2162,17 +2162,23 @@ function renderAcomp(){
   document.getElementById('hoje').textContent=HOJE.toLocaleDateString('pt-BR');
   const totalDays=NUM_WEEKS*7;let totP=0,n=0,done=0,wip=0,risk=0;
   document.getElementById('gantt').innerHTML=P().grupos.map((gr,gi)=>{
-    const tasks=grpTasks(gr.id).filter(t=>!t.header);if(!tasks.length)return'';
-    let gp=0;
+    const all=grpTasks(gr.id);                         // lista completa (com headers) p/ consolidar como no cronograma
+    const tasks=all.filter(t=>!t.header);if(!tasks.length)return'';
+    let gp=0,gn=0;
     const rows=tasks.map((t,ti)=>{
-      const si=statusInfo(t);gp+=(t.prog||0);totP+=(t.prog||0);n++;
-      if(si.cls==='done')done++;else if(si.cls==='wip')wip++;if(si.cls==='late')risk++;
+      const isSub=t.nivel===2;
+      const ka=!isSub?_kidsAvg(all,all.indexOf(t)):null; // se a tarefa tem subtarefas, % = média delas
+      const ep=(ka!=null)?ka:(t.prog||0);                // progresso efetivo (o pai consolida os filhos)
+      let cls;
+      if(ka!=null){ const pf=parseDate(t.fim); cls=ep>=100?'done':((pf&&pf<HOJE)?'late':(ep>0?'wip':'todo')); }
+      else cls=statusInfo(t).cls;
+      if(!isSub){ gp+=ep;gn++;totP+=ep;n++; if(cls==='done')done++;else if(cls==='wip')wip++;if(cls==='late')risk++; } // subtarefa não conta 2x: o pai já a consolida
       const ini=parseDate(t.ini)||PROJ_INI,fim=parseDate(t.fim)||ini;
       const left=Math.max(0,dd(ini,PROJ_INI))/totalDays*100,width=Math.max(1,dd(fim,ini)+1)/totalDays*100;
-      return `<div class="grow"><div class="gleft"><span class="gst st-${si.cls}"></span><span class="gwbs2">${gi+1}.${ti+1}</span><span class="gnm" title="${t.nome}">${t.nome}</span></div>
-      <div class="gtl"><div class="gbar b-${si.cls}" style="left:${left}%;width:${width}%"><div class="fill" style="width:${t.prog||0}%"></div><span class="lb">${t.prog||0}%</span></div></div></div>`;
+      return `<div class="grow"><div class="gleft"><span class="gst st-${cls}"></span><span class="gwbs2">${gi+1}.${ti+1}</span><span class="gnm" title="${t.nome}">${t.nome}</span></div>
+      <div class="gtl"><div class="gbar b-${cls}" style="left:${left}%;width:${width}%"><div class="fill" style="width:${ep}%"></div><span class="lb">${ep}%</span></div></div></div>`;
     }).join('');
-    return `<div class="gg"><div class="gg-h"><span>${gi+1}. ${gr.nome}</span><span class="gp">${Math.round(gp/tasks.length)}% · ${tasks.length} tar.</span></div>${rows}</div>`;
+    return `<div class="gg"><div class="gg-h"><span>${gi+1}. ${gr.nome}</span><span class="gp">${gn?Math.round(gp/gn):0}% · ${tasks.length} tar.</span></div>${rows}</div>`;
   }).join('');
   const todayPct=Math.min(100,Math.max(0,dd(HOJE,PROJ_INI)/totalDays*100));
   document.querySelectorAll('.gtl').forEach(tl=>{
