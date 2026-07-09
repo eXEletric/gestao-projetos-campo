@@ -1095,7 +1095,7 @@ function _varId(t){ const s=S.catalogo.find(x=>x.id===t.svc); if(s&&t.varNome){ 
 function _projOf(t){ return S.projetos.find(p=>p.tarefas.includes(t))||P(); }
 async function pushTarefa(t){ if(!SB||!t) return; const s=S.catalogo.find(x=>x.id===t.svc); const pj=_projOf(t);
   const svcOk=!!(s&&!s.avulso); // serviço avulso não existe na nuvem → manda nulo (evita violar a chave estrangeira)
-  const row={id:t.id,projeto_id:pj.id,grupo_id:t.grupo,nivel:t.nivel||1,is_header:!!t.header,servico_id:svcOk?t.svc:null,variacao_id:svcOk?_varId(t):null,nome:t.nome,quantidade:t.qtd||0,unidade:(s?s.un:(t.un||null)),tempo_previsto:t.tempoPrev||0,tempo_atual:t.tempo||0,executor_id:t.exec||null,colaborador_funcao_id:_cfId(t),responsavel_id:t.resp||null,prioridade:PRI2DB[t.prioridade]||'media',progresso:t.prog||0,status:ST2DB[t.status]||'a_fazer',data_inicio:t.ini||null,data_inicio_real:t.iniReal||null,data_fim_prevista:t.fim||null,data_fim_real:t.fimReal||null,variacoes:(t.vars&&t.vars.length?t.vars:null),notas:t.notas||null,ordem:pj.tarefas.indexOf(t)};
+  const row={id:t.id,projeto_id:pj.id,grupo_id:t.grupo,nivel:t.nivel||1,is_header:!!t.header,servico_id:svcOk?t.svc:null,variacao_id:svcOk?_varId(t):null,nome:t.nome,quantidade:t.qtd||0,unidade:(s?s.un:(t.un||null)),tempo_previsto:t.tempoPrev||0,tempo_atual:t.tempo||0,executor_id:t.exec||null,colaborador_funcao_id:_cfId(t),responsavel_id:t.resp||null,prioridade:PRI2DB[t.prioridade]||'media',progresso:t.prog||0,status:ST2DB[t.status]||'a_fazer',data_inicio:t.ini||null,data_inicio_real:t.iniReal||null,data_fim_prevista:t.fim||null,data_fim_real:t.fimReal||null,variacoes:(t.vars&&t.vars.length?t.vars:null),notas:t.notas||null,requisitos:(t.req||null),fase:(t.fase||null),ordem:pj.tarefas.indexOf(t)};
   const r=await SB.from('tarefas').upsert(row); if(r.error){ _erroNuvem('pushTarefa',r.error);} else nuvemStatus('salvo ✓','ok'); }
 async function pushTarefasOrdem(){ if(!SB) return; for(const t of P().tarefas){ await pushTarefa(t); } }
 async function pushGrupo(g){ if(!SB||!g) return; const row={id:g.id,projeto_id:S.ativo,nome:g.nome,categoria_id:g.cat||null,responsavel_id:g.resp||null,detalhes:g.det||null,ordem:P().grupos.indexOf(g),aberto:g.open!==false};
@@ -1196,7 +1196,7 @@ async function carregarDaNuvem(){
       const sCat=S.catalogo.find(x=>x.id===t.servico_id);
       let vars = Array.isArray(t.variacoes)&&t.variacoes.length ? t.variacoes.map(v=>[v[0],Number(v[1])]) : null; // variações próprias da tarefa
       if(!vars){ vars = sCat&&sCat.vars.length ? sCat.vars.map(v=>[v[0],Number(v[1])]) : (vNome?[[vNome,Number(t.tempo_atual)]]:[['Padrão',Number(t.tempo_atual)]]); } // fallback p/ tarefas antigas
-      return {id:t.id,grupo:t.grupo_id,nivel:t.nivel,header:t.is_header,svc:t.servico_id,un:t.unidade||'',vars,varNome:vNome||(vars[0]&&vars[0][0])||'',nome:t.nome,qtd:Number(t.quantidade),tempo:Number(t.tempo_atual),tempoPrev:Number(t.tempo_previsto),exec:t.executor_id||'',execLinha:execLinha,resp:t.responsavel_id||'',prioridade:PRI2APP[t.prioridade]||'Média',prog:t.progresso,status:ST2APP[t.status]||'todo',ini:t.data_inicio||'',iniReal:t.data_inicio_real||'',fim:t.data_fim_prevista||'',fimReal:t.data_fim_real||'',notas:t.notas||''};
+      return {id:t.id,grupo:t.grupo_id,nivel:t.nivel,header:t.is_header,svc:t.servico_id,un:t.unidade||'',vars,varNome:vNome||(vars[0]&&vars[0][0])||'',nome:t.nome,qtd:Number(t.quantidade),tempo:Number(t.tempo_atual),tempoPrev:Number(t.tempo_previsto),exec:t.executor_id||'',execLinha:execLinha,resp:t.responsavel_id||'',prioridade:PRI2APP[t.prioridade]||'Média',prog:t.progresso,status:ST2APP[t.status]||'todo',ini:t.data_inicio||'',iniReal:t.data_inicio_real||'',fim:t.data_fim_prevista||'',fimReal:t.data_fim_real||'',notas:t.notas||'',req:t.requisitos||undefined,fase:t.fase||undefined};
     });
     return {id:p.id,numero:p.numero_externo||'',nome:p.nome,contratante:p.contratante||'',contemplado:p.contemplado||'',local:p.local||'',cidade:p.cidade||'',uf:p.uf||'',endereco:p.endereco||'',localizacao:p.localizacao||'',lider:p.lider_id||'',gestor:p.gestor||'',dataIni:p.data_inicio||'',dataFim:p.data_fim_prevista||'',status:PJ2APP[p.status]||'Em andamento',prioridade:PRI2APP[p.prioridade]||'Média',obs:p.observacoes||'',modelo:!!p.modelo,grupos:grupos,tarefas:tarefas};
   });
@@ -1532,9 +1532,11 @@ function renderEditReq(t){
   document.querySelectorAll('#rq-seg-fase button').forEach(b=>b.classList.toggle('on',b.dataset.f===t.fase));
   document.getElementById('rq-fasenote').classList.toggle('show',t.fase==='lev');
 }
-function toggleReq(k){ const t=_et(); if(!t)return; const r=ensureReq(t); r[k]=!r[k]; renderEditReq(t); save(); render(); pushTarefa(t); }
-function setReqSub(field,val){ const t=_et(); if(!t)return; ensureReq(t); t.req[field]=val; renderEditReq(t); save(); pushTarefa(t); }
-function setReqFase(f){ const t=_et(); if(!t)return; ensureReq(t); t.fase=f; renderEditReq(t); save(); render(); pushTarefa(t); }
+/* Persistência: req/fase salvam local (save) e sincronizam na nuvem via colunas
+   tarefas.requisitos (jsonb) e tarefas.fase (text) — ver pushTarefa()/leitura da nuvem. */
+function toggleReq(k){ const t=_et(); if(!t)return; const r=ensureReq(t); r[k]=!r[k]; renderEditReq(t); save(); render(); }
+function setReqSub(field,val){ const t=_et(); if(!t)return; ensureReq(t); t.req[field]=val; renderEditReq(t); save(); }
+function setReqFase(f){ const t=_et(); if(!t)return; ensureReq(t); t.fase=f; renderEditReq(t); save(); render(); }
 function reqMini(t){
   if(t.header) return '';
   const r=ensureReq(t); let ic='';
@@ -2510,7 +2512,64 @@ const SST_BLOCKS={
     itens:[['person','Interno — nome, registro MTE, contato'],['apartment','Terceirizado — empresa, CNPJ, contrato']],
     nota:'Cadastro. Aparece como signatário na APR, na PT e nas investigações de ocorrência.'}
 };
-function navSST(key,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var v=document.getElementById('v-sst'); if(v)v.classList.add('active'); if(key==='rt'){ renderRT(); } else if(key==='aptidao'){ renderAptidao(); } else { renderSST(key); } }
+function navSST(key,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var v=document.getElementById('v-sst'); if(v)v.classList.add('active'); if(key==='rt'){ renderRT(); } else if(key==='aptidao'){ renderAptidao(); } else if(key==='frente'){ renderFrente(); } else { renderSST(key); } }
+
+/* ===== SST · Frente de serviço — integra o kit APR/PT (eX_APR_PTA.html) por obra ===== */
+let _frenteObra=null, _frenteReady=false;
+function _frEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function _frColabNome(id){ var c=((typeof S!=='undefined'&&S)&&S.colab||[]).find(function(x){return x.id===id;}); return c?c.nome:''; }
+function sstBuildCtx(proj){
+  var emp=(window._EMPRESA)||{};
+  var empNome=emp.nome||window._EMPRESA_NOME||'eX Eletric Engenharia Automação e Serviços LTDA';
+  var pool=((typeof S!=='undefined'&&S)&&S.colab||[]).filter(function(c){return c.ativo!==false;}).slice(0,8).map(function(c){ return {nome:c.nome, grupo:1}; });
+  var lider=_frColabNome(proj.lider);
+  return {
+    obraId: proj.id,
+    empresa:{ nome:empNome, logo:(emp.logo||''), cnpj:(emp.cnpj||'') },
+    obra:{
+      numero:proj.numero||'', filial:proj.contemplado||proj.nome||'',
+      contratante:proj.contratante||'', contemplado:proj.contemplado||'',
+      local:proj.local||proj.endereco||'', endereco:proj.endereco||'', cidade:proj.cidade||'', uf:proj.uf||'',
+      localizacao:proj.localizacao||'', escopo:proj.obs||'',
+      lider:lider, elaborador:lider, gestor:proj.gestor||'',
+      dataDoc:(new Date()).toLocaleDateString('pt-BR')
+    },
+    equipe: pool.length?pool:[{nome:'(sem equipe cadastrada)',grupo:1}]
+  };
+}
+function frentePushCtx(){
+  var fr=document.getElementById('frenteFrame'); if(!fr||!fr.contentWindow) return;
+  var proj=((typeof S!=='undefined'&&S)&&S.projetos||[]).find(function(p){return p.id===_frenteObra;}); if(!proj) return;
+  fr.contentWindow.postMessage({type:'eXsst:setContext',ctx:sstBuildCtx(proj)},'*');
+}
+function frenteSelObra(id){
+  _frenteObra=id;
+  document.querySelectorAll('.frchip').forEach(function(c){ c.classList.toggle('on', c.dataset.id===id); });
+  frentePushCtx();
+}
+function renderFrente(){
+  var body=document.getElementById('sst-body'); if(!body) return;
+  var pn=document.getElementById('sst-pname'); if(pn)pn.textContent='SST · Frente de serviço';
+  var projs=((typeof S!=='undefined'&&S)&&S.projetos||[]).filter(function(p){return !p.modelo;});
+  if(!projs.length){ body.innerHTML='<div class="note">Cadastre uma obra primeiro (menu Obras) para emitir a documentação de campo.</div>'; return; }
+  if(!_frenteObra || !projs.find(function(p){return p.id===_frenteObra;})){ var a=(typeof P==='function'&&P()&&!P().modelo)?P().id:projs[0].id; _frenteObra=a; }
+  var chips=projs.map(function(p){ return '<button class="frchip'+(p.id===_frenteObra?' on':'')+'" data-id="'+p.id+'" onclick="frenteSelObra(\''+p.id+'\')">'+_frEsc(p.nome)+'</button>'; }).join('');
+  body.innerHTML=''
+    +'<style>.frbar{display:flex;flex-wrap:wrap;gap:7px;align-items:center;margin-bottom:10px}'
+    +'.frchip{background:var(--surf2,#f1f0f8);border:1px solid var(--line2,#d9d5ec);border-radius:20px;padding:5px 13px;font:inherit;font-size:12.5px;cursor:pointer;color:var(--tx,#2a2540)}'
+    +'.frchip.on{background:#0a3d54;border-color:#0a3d54;color:#fff;font-weight:600}'
+    +'.frlbl{font-size:11px;color:var(--tx3,#8a83ad);text-transform:uppercase;letter-spacing:.05em;margin-right:2px}</style>'
+    +'<div class="note" style="margin-bottom:10px"><b>Frente de serviço · APR + PT.</b> Escolha a obra — o kit abre já preenchido com os dados dela e a equipe. Cada documento (APR / PT / Matriz / Anexos) sai como PDF próprio. <i>Integra a APR/PT prontas, conforme o desenho do módulo.</i></div>'
+    +'<div class="frbar"><span class="frlbl">Obra:</span>'+chips+'</div>'
+    +'<iframe id="frenteFrame" src="eX_APR_PTA.html" title="Kit APR/PT" style="width:100%;height:calc(100vh - 240px);min-height:520px;border:1px solid var(--line2,#d9d5ec);border-radius:10px;background:#eef2f5"></iframe>';
+  _frenteReady=false;
+  var fr=document.getElementById('frenteFrame');
+  if(fr) fr.onload=function(){ setTimeout(function(){ if(!_frenteReady) frentePushCtx(); }, 350); };
+}
+window.addEventListener('message',function(e){
+  var d=e.data||{};
+  if(d && d.type==='eXsst:ready'){ _frenteReady=true; frentePushCtx(); }
+});
 
 /* ----- SST Fase 1: Responsável técnico (SESMT) ----- */
 let RT_LIST=[], RT_EDIT=null;
