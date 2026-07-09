@@ -248,16 +248,8 @@
     <label><input type="checkbox" data-k="r_quente"> Trabalho a quente</label>
   </div></div>
 
-  <h2 class="section">CHECKLIST DE LIBERAÇÃO</h2>
-  <div class="chkwrap">
-    <label class="chk"><input type="checkbox" data-k="c1" checked><span>1. Executante possui treinamento válido para o tipo de trabalho (NR aplicável)?</span></label>
-    <label class="chk"><input type="checkbox" data-k="c2" checked><span>2. Possui todos os EPIs obrigatórios e adequados?</span></label>
-    <label class="chk"><input type="checkbox" data-k="c3" checked><span>3. Local devidamente isolado?</span></label>
-    <label class="chk"><input type="checkbox" data-k="c4" checked><span>4. Andaimes / plataforma montados e operados corretamente?</span></label>
-    <label class="chk"><input type="checkbox" data-k="c5" checked><span>5. Escadas em bom estado e amarradas?</span></label>
-    <label class="chk"><input type="checkbox" data-k="c6" checked><span>6. Ferramentas e equipamentos atendem requisitos básicos?</span></label>
-    <label class="chk"><input type="checkbox" data-k="c7"><span>7. Outros: <input data-k="c7txt" style="border:none;border-bottom:1px solid var(--line);outline:none" value="N/A"></span></label>
-  </div>
+  <h2 class="section">CHECKLIST DE LIBERAÇÃO <span id="ckNr" style="font-weight:400;font-size:10px;letter-spacing:.3px;opacity:.9">NR-35</span></h2>
+  <div class="chkwrap" id="ptChecklist"></div>
 
   <h2 class="section">EPIs / EPC</h2>
   <div class="grid" style="border-radius:0 0 5px 5px;padding:8px"><textarea class="auto" data-k="pta_epi" rows="1">Capacete c/ jugular, luvas, calçado de segurança, óculos de proteção, cinto de segurança, protetor auricular, avental de raspa, trava-quedas (EPC) e plataforma articulada operada por profissional certificado.</textarea></div>
@@ -414,6 +406,7 @@ let CTX = DEMO_CTX;
 let store = null;
 let dirty = new Set();
 let curDoc = "APR";
+let curTipo = "ALTURA";
 let saveTimer;
 
 window.eXsst = {
@@ -525,11 +518,91 @@ function renderAnexos(){
   });
 }
 
-function renderDynamic(){ renderRiscos(); renderSigns(); renderDias(); renderMatriz(); renderAnexos(); bindAll(); initAuto(); }
+function renderDynamic(){ renderRiscos(); renderSigns(); renderDias(); renderMatriz(); renderAnexos(); renderPtChecklist(curTipo); bindAll(); initAuto(); }
 
 /* ---------- tipo de PT ---------- */
 const TIPO_LBL={ALTURA:"ALTURA",ELETRICO:"INSTALAÇÕES ELÉTRICAS",CONFINADO:"ESPAÇO CONFINADO",QUENTE:"TRABALHO A QUENTE"};
-function onTipoPT(v){ const el=document.getElementById('ptTitTipo'); if(el) el.textContent=TIPO_LBL[v]||v; dirty.add('pta_tipo'); scheduleSave(); }
+
+/* perfis por tipo de PT — checklist/riscos/EPI/recomendações conforme a NR */
+const PT_PROFILES = {
+  ALTURA:{ nr:"NR-35",
+    riscos:{r_elet:true,r_alt:true,r_elev:true,r_conf:false,r_quente:false},
+    checklist:[
+      "Executante com treinamento NR-35 (altura) válido?",
+      "APR/Análise de Risco da tarefa emitida e conhecida pela equipe?",
+      "Cinto paraquedista + talabarte duplo c/ absorvedor / trava-quedas em uso?",
+      "Pontos de ancoragem definidos e resistentes (conforme fabricante)?",
+      "Plataforma/andaime montados por profissional e inspecionados? Escadas amarradas?",
+      "Área abaixo isolada e sinalizada contra queda de materiais?",
+      "Condições climáticas e físicas do trabalhador avaliadas?",
+      "Plano e equipe de resgate em altura definidos?"
+    ],
+    epi:"Capacete c/ jugular, óculos, luvas, calçado de segurança, protetor auricular, cinto paraquedista, talabarte duplo c/ absorvedor e trava-quedas (EPC). Plataforma articulada operada por profissional certificado (PEMT).",
+    rec:"Isolar e sinalizar a área; ancoragem conforme fabricante; proibir trabalho sob a vertical; suspender em condições climáticas adversas; resgate em altura previsto." },
+  ELETRICO:{ nr:"NR-10",
+    riscos:{r_elet:true,r_alt:false,r_elev:false,r_conf:false,r_quente:false},
+    checklist:[
+      "Executante com NR-10 (e NR-10 SEP, se média tensão) válido?",
+      "Análise de risco elétrico feita e prontuário disponível?",
+      "Circuito desenergizado, bloqueado e etiquetado (bloqueio/LOTO)?",
+      "Ausência de tensão testada com detector adequado antes de tocar?",
+      "Aterramento temporário instalado onde aplicável?",
+      "Zona de risco delimitada e sinalizada; impedido reenergizar?",
+      "EPI/EPC elétricos adequados (luvas isolantes de classe, vestimenta FR, ferramentas isoladas)?",
+      "Se impossível desenergizar: trabalho energizado justificado e liberado?"
+    ],
+    epi:"Vestimenta retardante de chama (FR) conforme risco, luvas isolantes de classe compatível + cobertura, capacete classe B, óculos/viseira p/ arco elétrico, calçado isolante, ferramentas isoladas e detector de tensão.",
+    rec:"Desenergizar sempre que possível (regra geral NR-10); bloquear e etiquetar; testar ausência de tensão; aterrar; delimitar e sinalizar; nunca reenergizar sem liberação do responsável." },
+  CONFINADO:{ nr:"NR-33",
+    riscos:{r_elet:false,r_alt:false,r_elev:false,r_conf:true,r_quente:false},
+    checklist:[
+      "Executantes e Vigia com NR-33 válido? Supervisor de entrada designado?",
+      "Permissão de Entrada e Trabalho (PET) emitida?",
+      "Atmosfera medida ANTES da entrada: O2 (19,5–23%), inflamáveis (<10% LII), tóxicos (H2S/CO)?",
+      "Monitoramento contínuo da atmosfera durante o trabalho?",
+      "Ventilação / exaustão forçada em operação?",
+      "Isolamento e bloqueio de energias/fontes do espaço (LOTO)?",
+      "Vigia posicionado do lado de fora em comunicação permanente?",
+      "Equipe e equipamento de resgate disponíveis (tripé, cinto, içamento)?"
+    ],
+    epi:"Cinto paraquedista com sistema de içamento, detector multigás pessoal, insuflador/exaustor, iluminação à prova de explosão, respirador conforme atmosfera, sistema de comunicação vigia-executante e tripé de resgate.",
+    rec:"Sem PET não entra; medir e monitorar a atmosfera continuamente; ventilar; vigia permanente; bloqueio de energias; resgate montado antes da entrada; suspender à primeira alteração de atmosfera." },
+  QUENTE:{ nr:"Trab. a quente",
+    riscos:{r_elet:false,r_alt:false,r_elev:false,r_conf:false,r_quente:true},
+    checklist:[
+      "Executante capacitado (solda/corte) e liberação de trabalho a quente emitida?",
+      "Materiais combustíveis/inflamáveis removidos ou protegidos num raio seguro?",
+      "Análise de atmosfera feita (se houver risco de inflamáveis)?",
+      "Extintor adequado e água/mangueira disponíveis no local?",
+      "Biombo/anteparo contra respingos e proteção de aberturas?",
+      "Vigia de incêndio designado durante a tarefa?",
+      "Área ventilada e fumos de solda controlados?",
+      "Monitoramento pós-trabalho (rescaldo) por período definido?"
+    ],
+    epi:"Máscara/escudo de solda, luvas e mangote de raspa, avental de raspa, perneira, óculos, respirador p/ fumos metálicos e calçado de segurança; extintor e biombo (EPC).",
+    rec:"Remover combustíveis; isolar e proteger aberturas; extintor ao alcance; vigia de incêndio durante e rescaldo após; monitorar atmosfera se houver inflamáveis." }
+};
+
+function renderPtChecklist(tipo){
+  const box=document.getElementById('ptChecklist'); if(!box) return;
+  const prof=PT_PROFILES[tipo]||PT_PROFILES.ALTURA;
+  let html=prof.checklist.map((q,i)=>`<label class="chk"><input type="checkbox" data-k="ck_${tipo}_${i}" checked><span>${i+1}. ${esc(q)}</span></label>`).join('');
+  const n=prof.checklist.length+1;
+  html+=`<label class="chk"><input type="checkbox" data-k="ck_${tipo}_out"><span>${n}. Outros: <input data-k="ck_${tipo}_outtxt" style="border:none;border-bottom:1px solid var(--line);outline:none" value="N/A"></span></label>`;
+  box.innerHTML=html;
+  const nr=document.getElementById('ckNr'); if(nr) nr.textContent=prof.nr;
+}
+function applyTipoUI(v,silent){
+  const prof=PT_PROFILES[v]||PT_PROFILES.ALTURA;
+  const el=document.getElementById('ptTitTipo'); if(el) el.textContent=TIPO_LBL[v]||v;
+  if(silent){ return; }   // checklist já veio do renderDynamic + valores salvos; não re-renderizar
+  renderPtChecklist(v);
+  Object.entries(prof.riscos).forEach(([k,val])=>{ if(!dirty.has(k)){ const c=document.querySelector('[data-k="'+k+'"]'); if(c) c.checked=val; }});
+  if(!dirty.has('pta_epi')){ const e=document.querySelector('[data-k=pta_epi]'); if(e){ e.value=prof.epi; autoGrow(e); } }
+  if(!dirty.has('pta_rec')){ const r=document.querySelector('[data-k=pta_rec]'); if(r){ r.value=prof.rec; autoGrow(r); } }
+  bindAll();
+}
+function onTipoPT(v){ curTipo=v; applyTipoUI(v,false); dirty.add('pta_tipo'); scheduleSave(); }
 
 /* ---------- contexto ---------- */
 function applyContext(onlyClean){
@@ -593,6 +666,7 @@ function applyStore(d){
   if(!d) return;
   if(d.context){ CTX=d.context; capPool(); }
   dirty=new Set(d.dirty||[]);
+  curTipo = (d.fields && d.fields.pta_tipo) || "ALTURA";
   renderDynamic();
   applyContext(true);
   if(d.fields){
@@ -602,14 +676,13 @@ function applyStore(d){
       else setVal(el,d.fields[k]);
       if(el.tagName==='SELECT'&&el.closest('#matriz')){ el.className=clsMap[el.value]||el.className; }
     });
-    if('pta_tipo' in d.fields) onTipoPTsilent(d.fields.pta_tipo);
+    applyTipoUI(curTipo,true);
   }
   document.querySelectorAll('#matriz tbody tr').forEach(updStatus);
   if(d.__logo){ store=store||{}; store.__logo=d.__logo; document.querySelectorAll('.logo').forEach(b=>b.innerHTML=`<img src="${d.__logo}">`); }
   document.querySelectorAll('textarea').forEach(autoGrow);
   renderCtxBar();
 }
-function onTipoPTsilent(v){ const el=document.getElementById('ptTitTipo'); if(el) el.textContent=TIPO_LBL[v]||v; }
 
 async function load(){
   capPool(); renderDynamic(); applyContext(false); renderCtxBar();
