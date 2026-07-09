@@ -434,7 +434,16 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">business_center</span></span><span class="lb">Gestão</span><span class="gchev">▶</span></div>
       <div class="sb-sub">
         <button class="sb-i" onclick="navView('colab',this)"><span class="ic"><span class="msr">groups</span></span><span class="lb">Equipe</span></button>
-        <button class="sb-i fut" onclick="navSoon('SST',this)" title="Segurança do Trabalho"><span class="ic"><span class="msr">health_and_safety</span></span><span class="lb">SST</span><span class="br">em breve</span></button>
+        <div class="sb-grp sb-grp-nest" onclick="toggleGrp(this)" title="Segurança do Trabalho"><span class="ic"><span class="msr">health_and_safety</span></span><span class="lb">SST</span><span class="gchev">▶</span></div>
+        <div class="sb-sub sb-sub-nest">
+          <button class="sb-i" onclick="navSST('painel',this)"><span class="ic"><span class="msr">speed</span></span><span class="lb">Painel SST</span></button>
+          <button class="sb-i" onclick="navSST('risco',this)"><span class="ic"><span class="msr">shield</span></span><span class="lb">Risco &amp; conformidade</span></button>
+          <button class="sb-i" onclick="navSST('aptidao',this)"><span class="ic"><span class="msr">verified_user</span></span><span class="lb">Aptidão da equipe</span></button>
+          <button class="sb-i" onclick="navSST('frente',this)"><span class="ic"><span class="msr">engineering</span></span><span class="lb">Frente de serviço</span></button>
+          <button class="sb-i" onclick="navSST('ocorrencias',this)"><span class="ic"><span class="msr">report</span></span><span class="lb">Ocorrências</span></button>
+          <button class="sb-i" onclick="navSST('entrega',this)"><span class="ic"><span class="msr">forward_to_inbox</span></span><span class="lb">Entrega ao cliente</span></button>
+          <button class="sb-i" onclick="navSST('rt',this)"><span class="ic"><span class="msr">badge</span></span><span class="lb">Responsável técnico</span></button>
+        </div>
         <button class="sb-i fut" onclick="navSoon('Clientes',this)"><span class="ic"><span class="msr">handshake</span></span><span class="lb">Clientes</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Atividades',this)"><span class="ic"><span class="msr">history</span></span><span class="lb">Atividades</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Financeiro',this)"><span class="ic"><span class="msr">monitoring</span></span><span class="lb">Financeiro</span><span class="br">em breve</span></button>
@@ -625,6 +634,25 @@ body.papel-tecnico .adm-only{display:none !important}
     <div id="pol-list"></div>
     <button class="btn" style="margin-top:8px" onclick="polAdd()">＋ Nova regra</button>
   </div>
+  <!-- SST (esqueleto navegável — Fase 0) -->
+  <style>
+  .sstk-head{display:flex;align-items:center;gap:13px;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px}
+  .sstk-hic{width:46px;height:46px;border-radius:11px;background:var(--pri-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .sstk-h1{font-size:16px;font-weight:600;color:var(--tx)}
+  .sstk-hsub{font-size:12.5px;color:var(--tx2);margin-top:2px}
+  .sstk-status{margin-left:auto;font-size:10px;color:var(--amber);background:#faeeda;border-radius:20px;padding:3px 10px;white-space:nowrap}
+  .sstk-lbl{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--tx3);margin:16px 2px 8px}
+  .sstk-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:8px}
+  .sstk-card{display:flex;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:11px 13px;font-size:13px;color:var(--tx);line-height:1.35}
+  .sstk-feeds{margin-top:12px;display:flex;flex-direction:column;gap:5px}
+  .sstk-feed{display:flex;align-items:center;gap:7px;font-size:12px;font-weight:500;color:var(--pri)}
+  .sstk-foot{display:flex;align-items:center;gap:7px;margin-top:18px;font-size:12px;color:var(--tx3)}
+  </style>
+  <div class="view" id="v-sst">
+    <div class="topbar"><span class="pname" id="sst-pname">Segurança do Trabalho</span></div>
+    <div id="sst-body"></div>
+  </div>
+
   <div class="view" id="v-soon"><div class="soon-wrap"><div class="soon-ic">🚧</div><div class="soon-t" id="soon-title">Em construção</div><div class="soon-d">Este módulo faz parte do roadmap do eX — já está aqui no menu pra lembrar que vamos construí-lo. 👷</div></div></div>
     </div>
   </div>
@@ -2261,6 +2289,51 @@ function _polSw(on){ return '<div class="ex-switch'+(on?' on':'')+'"><span class
 function renderPolitica(){ var L=document.getElementById('pol-list'); if(!L)return; L.innerHTML=''; POL.forEach(function(r,i){ var row=document.createElement('div'); row.className='pol-rule'+(r.on?' on':''); var led=document.createElement('span'); led.className='ex-led'+(r.on?' on':''); var nm=document.createElement('span'); nm.className='pol-name'; nm.contentEditable=true; nm.spellcheck=false; nm.textContent=r.t||''; nm.oninput=function(){ POL[i].t=nm.textContent; polSave(); }; var sw=document.createElement('div'); sw.innerHTML=_polSw(r.on); sw=sw.firstChild; sw.onclick=function(){ POL[i].on=!POL[i].on; polSave(); renderPolitica(); }; var del=document.createElement('span'); del.className='pol-del'; del.innerHTML='&times;'; del.title='remover'; del.onclick=function(){ POL.splice(i,1); polSave(); renderPolitica(); }; row.appendChild(led); row.appendChild(nm); row.appendChild(sw); row.appendChild(del); L.appendChild(row); }); }
 function polAdd(){ POL.push({t:'Nova regra',on:true}); polSave(); renderPolitica(); var L=document.getElementById('pol-list'); if(L&&L.lastChild)L.lastChild.querySelector('.pol-name').focus(); }
 function navPolitica(el){ setSbActive(el); _obranav(false); document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var v=document.getElementById('v-politica'); if(v)v.classList.add('active'); renderPolitica(); }
+/* ===== SST — esqueleto navegável (Fase 0) ===== */
+const SST_BLOCKS={
+  painel:{ic:'speed',nome:'Painel SST',sub:'Abre aqui — o que precisa de você hoje.',
+    itens:[['calendar_month','Vencimentos (ASO, treinamentos, PT/PTA)'],['notifications','Alertas do que está por vencer'],['monitoring','Indicadores de segurança']],
+    nota:'Página inicial do módulo: lê tudo o que vence nos outros blocos e mostra só o que exige ação.'},
+  risco:{ic:'shield',nome:'Risco & conformidade',sub:'A base da empresa — o motor que gera as APRs.',
+    itens:[['description','PGR / GRO — inventário de risco + plano de ação'],['medical_services','PCMSO — controle médico (NR-7)'],['assignment','Ordem de Serviço por função']],
+    feeds:['Define os riscos → alimenta a APR na Frente de serviço'],
+    nota:'Documentos-base da empresa (NR-1 / NR-7). Atualiza pouco, mas manda em todo o resto.'},
+  aptidao:{ic:'verified_user',nome:'Aptidão da equipe',sub:'O portão — só vai a campo quem está apto e em dia.',
+    itens:[['favorite','ASO — exame ocupacional com validade'],['workspace_premium','Treinamentos NR-10 / NR-35 / NR-18'],['checkroom','Ficha de EPI (NR-6)']],
+    feeds:['Liga na Equipe que já existe','Libera pessoas → APR/PT e Entrega ao cliente'],
+    nota:'Cada colaborador com validade rastreada. Vencido bloqueia no cronograma (fase futura).'},
+  frente:{ic:'engineering',nome:'Frente de serviço',sub:'O dia da obra — puxa risco da base e equipe da aptidão.',
+    itens:[['warning','APR — análise preliminar de risco'],['assignment_turned_in','PT / PTA — permissão de trabalho (NR-10/35)'],['forum','DDS — diálogo diário de segurança'],['fact_check','Inspeção / checklist de campo']],
+    feeds:['APR e PTA já existem prontas → aqui é integrar, não recriar'],
+    nota:'O ritual diário do técnico em campo.'},
+  ocorrencias:{ic:'report',nome:'Ocorrências',sub:'Quando algo foge do previsto.',
+    itens:[['personal_injury','Acidente / incidente'],['contract','CAT — comunicação de acidente'],['visibility','Quase-acidente / desvio']],
+    nota:'Registro + investigação. O responsável técnico conduz a apuração.'},
+  entrega:{ic:'forward_to_inbox',nome:'Entrega ao cliente',sub:'A prova organizada, por obra — quase automática.',
+    itens:[['store','Obra → equipe que vai → pacote de docs'],['send','Envio à unidade'],['history','Protocolo / registro do que foi enviado']],
+    feeds:['Consome Aptidão + APR/PT + Ocorrências'],
+    nota:'Ex.: Atacadão Sul → puxa quem vai pelo cronograma → monta e envia a documentação.'},
+  rt:{ic:'badge',nome:'Responsável técnico (SESMT)',sub:'Quem responde pela SST — assina e investiga.',
+    itens:[['person','Interno — nome, registro MTE, contato'],['apartment','Terceirizado — empresa, CNPJ, contrato']],
+    nota:'Cadastro. Aparece como signatário na APR, na PT e nas investigações de ocorrência.'}
+};
+function navSST(key,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var v=document.getElementById('v-sst'); if(v)v.classList.add('active'); renderSST(key); }
+function renderSST(key){
+  var b=SST_BLOCKS[key]||SST_BLOCKS.painel;
+  var pn=document.getElementById('sst-pname'); if(pn)pn.textContent='SST · '+b.nome;
+  var itens=(b.itens||[]).map(function(it){ return '<div class="sstk-card"><span class="msr" style="font-size:19px">'+it[0]+'</span><span>'+it[1]+'</span></div>'; }).join('');
+  var feeds=(b.feeds||[]).map(function(f){ return '<div class="sstk-feed"><span class="msr" style="font-size:16px">arrow_forward</span>'+f+'</div>'; }).join('');
+  var html=''
+    +'<div class="sstk-head"><span class="sstk-hic"><span class="msr" style="font-size:28px">'+b.ic+'</span></span>'
+    +'<div><div class="sstk-h1">'+b.nome+'</div><div class="sstk-hsub">'+b.sub+'</div></div>'
+    +'<span class="sstk-status">esqueleto</span></div>'
+    +'<div class="note">'+b.nota+'</div>'
+    +'<div class="sstk-lbl">O que vai ter aqui</div>'
+    +'<div class="sstk-grid">'+itens+'</div>'
+    +(feeds?'<div class="sstk-feeds">'+feeds+'</div>':'')
+    +'<div class="sstk-foot"><span class="msr" style="font-size:16px">construction</span>Tela em construção — estrutura aprovada, entra na próxima fase.</div>';
+  var body=document.getElementById('sst-body'); if(body)body.innerHTML=html;
+}
 document.addEventListener('click',e=>{ const m=document.getElementById('user-menu'); if(m&&m.classList.contains('open')&&!e.target.closest('#user-box')) m.classList.remove('open'); });
 async function fazerLogin(){
   if(!SB){ loginErro('Sem conexão com a nuvem.'); return; }
