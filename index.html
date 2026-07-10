@@ -659,7 +659,82 @@ body.papel-tecnico .adm-only{display:none !important}
   </div>
 
   <div class="view" id="v-soon"><div class="soon-wrap"><div class="soon-ic">🚧</div><div class="soon-t" id="soon-title">Em construção</div><div class="soon-d">Este módulo faz parte do roadmap do eX — já está aqui no menu pra lembrar que vamos construí-lo. 👷</div></div></div>
-  <div class="view" id="v-diario"><div class="soon-wrap"><div class="soon-ic">🚧</div><div class="soon-t">Diário de obra</div><div class="soon-d">Slot reservado — em construção nesta rodada. Aqui o técnico registra o dia da obra (atividades + horas) junto da documentação técnica; isso alimenta o tempo real/custo do cronograma e dispara planejamento e solicitação de materiais. Feito para <b>apoiar a equipe em campo</b>, não fiscalizar. 👷</div></div></div>
+  <style>
+  /* ===== DIÁRIO DE OBRA — tela do técnico (mobile-first) ===== */
+  #v-diario .dia-wrap{max-width:560px;margin:0 auto}
+  .dia-hdr{background:var(--pri);color:#fff;border-radius:14px;padding:14px 16px;margin-bottom:12px}
+  .dia-hdr .r1{display:flex;align-items:center;gap:9px;font-size:11px}
+  .dia-hdr .pn{font-family:ui-monospace,monospace;background:rgba(255,255,255,.18);padding:3px 9px;border-radius:5px}
+  .dia-hdr .nm{font-size:16px;font-weight:600;margin-top:7px;display:flex;align-items:center;gap:7px}
+  .dia-hdr .lo{font-size:12px;color:rgba(255,255,255,.82);margin-top:2px}
+  .dia-daybar{display:flex;align-items:center;gap:9px;background:var(--surf);border:1px solid var(--line);border-radius:11px;padding:10px 14px;margin-bottom:14px}
+  .dia-daybar .material-symbols-rounded{color:var(--pri);font-size:20px}
+  .dia-daybar .d1{font-size:14px;font-weight:600}
+  .dia-daybar .d2{font-size:11px;color:var(--tx3);margin-left:auto;background:var(--surf2);padding:3px 9px;border-radius:12px}
+  .dia-sec{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin:18px 2px 10px;display:flex;align-items:center;gap:6px}
+  .dia-sec .cnt{margin-left:auto;color:var(--tx2);background:var(--surf2);border-radius:11px;padding:1px 9px;font-size:10px;text-transform:none;letter-spacing:0}
+  .dia-mood{display:flex;gap:8px}
+  .dia-mood button{flex:1;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:10px 4px;display:flex;flex-direction:column;align-items:center;gap:4px;cursor:pointer;color:var(--tx2);font-size:11px}
+  .dia-mood button .material-symbols-rounded{font-size:23px}
+  .dia-mood button.on{border-color:var(--pri);background:var(--pri-bg);color:var(--pri);font-weight:600}
+  .dia-mood button.on.warn{border-color:#ba7517;background:#faeeda;color:#854f0b}
+  .dia-mood button.on.bad{border-color:#a32d2d;background:#fcebeb;color:#a32d2d}
+  .dia-task{background:var(--surf);border:1px solid var(--line);border-radius:13px;padding:13px 14px;margin-bottom:10px}
+  .dia-task.on{border-color:var(--line2)}
+  .dia-task.done{border-color:#3b6d11;background:#f4f8ec}
+  .dia-task .t1{display:flex;align-items:flex-start;gap:10px}
+  .dia-task .wbs{font-family:ui-monospace,monospace;font-size:10px;color:#185fa5;background:#eaf1f9;padding:2px 6px;border-radius:5px;flex-shrink:0;margin-top:1px}
+  .dia-task .nm{font-size:13.5px;font-weight:600;line-height:1.3;flex:1;min-width:0}
+  .dia-task .prev{font-size:11px;color:var(--tx3);margin-top:3px;display:flex;align-items:center;gap:5px}
+  .dia-task .prev .material-symbols-rounded{font-size:13px}
+  .dia-doneflag{display:none;align-items:center;gap:6px;color:#3b6d11;font-size:12px;font-weight:600;margin-top:9px}
+  .dia-task.done .dia-doneflag{display:flex}
+  .dia-task.done .dia-reveal,.dia-task.done .dia-sw{display:none!important}
+  .dia-sw{width:52px;height:30px;border-radius:16px;background:var(--surf2);border:1px solid var(--line2);position:relative;cursor:pointer;flex-shrink:0;transition:.18s}
+  .dia-sw .kn{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3);transition:.18s;display:flex;align-items:center;justify-content:center}
+  .dia-sw .kn .material-symbols-rounded{font-size:15px;color:var(--tx3)}
+  .dia-sw.on{background:#dff0c8;border-color:#3b6d11}
+  .dia-sw.on .kn{left:24px}
+  .dia-sw.on .kn .material-symbols-rounded{color:#3b6d11}
+  .dia-reveal{display:none;margin-top:12px;padding-top:12px;border-top:1px dashed var(--line)}
+  .dia-task.on .dia-reveal{display:block}
+  .dia-hours{display:flex;align-items:center;gap:10px}
+  .dia-hours .lb{font-size:12px;color:var(--tx2);display:flex;align-items:center;gap:5px}
+  .dia-hours .lb .material-symbols-rounded{font-size:16px;color:var(--tx3)}
+  .dia-step{margin-left:auto;display:flex;align-items:center;gap:2px}
+  .dia-step button{width:32px;height:32px;border-radius:8px;border:1px solid var(--line2);background:var(--surf);color:var(--pri);font-size:18px;cursor:pointer}
+  .dia-step .val{min-width:56px;text-align:center;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums}
+  .dia-step .val small{font-size:11px;font-weight:400;color:var(--tx3)}
+  .dia-photos{margin-top:14px}
+  .dia-photos .plbl{font-size:11.5px;color:var(--tx2);display:flex;align-items:center;gap:6px;margin-bottom:8px}
+  .dia-photos .plbl .req{color:#a32d2d;font-weight:700}
+  .dia-photos .plbl .material-symbols-rounded{font-size:16px;color:var(--tx3)}
+  .dia-thumbs{display:flex;gap:7px;flex-wrap:wrap}
+  .dia-thumb{width:56px;height:56px;border-radius:9px;position:relative;flex-shrink:0;overflow:hidden;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08);background:#c9d6e8}
+  .dia-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .dia-thumb .del{position:absolute;top:2px;right:2px;width:17px;height:17px;border-radius:50%;background:rgba(0,0,0,.55);color:#fff;font-size:12px;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2}
+  .dia-thumb.up{display:flex;align-items:center;justify-content:center}
+  .dia-thumb.up .material-symbols-rounded{color:#fff;font-size:20px;animation:diaspin 1s linear infinite}
+  @keyframes diaspin{to{transform:rotate(360deg)}}
+  .dia-addphoto{width:56px;height:56px;border-radius:9px;border:1.5px dashed var(--line2);background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;cursor:pointer;color:var(--pri);flex-shrink:0}
+  .dia-addphoto .material-symbols-rounded{font-size:22px}
+  .dia-addphoto .t{font-size:8.5px;font-weight:600}
+  .dia-concl{margin-top:14px;width:100%;border-radius:11px;padding:12px;font-size:13.5px;font-weight:600;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;border:1px solid}
+  .dia-concl .material-symbols-rounded{font-size:19px}
+  .dia-concl.locked{background:var(--surf2);border-color:var(--line2);color:var(--tx3);cursor:not-allowed}
+  .dia-concl.ready{background:#3b6d11;border-color:#3b6d11;color:#fff}
+  .dia-gatehint{font-size:11px;color:#a32d2d;display:none;align-items:center;gap:5px;margin-top:7px;justify-content:center}
+  .dia-gatehint.show{display:flex}
+  .dia-gatehint .material-symbols-rounded{font-size:14px}
+  .dia-foot{display:flex;align-items:center;gap:12px;background:var(--surf);border:1px solid var(--line);border-radius:13px;padding:12px 16px;margin-top:14px;position:sticky;bottom:10px;box-shadow:0 6px 20px rgba(0,0,0,.06)}
+  .dia-foot .roll{font-size:11px;color:var(--tx3);line-height:1.3}
+  .dia-foot .roll b{font-size:19px;color:var(--tx);font-weight:700;display:block}
+  .dia-foot .cta{margin-left:auto;background:var(--pri);color:#fff;border:none;border-radius:12px;padding:12px 18px;font-size:14px;font-weight:600;display:flex;align-items:center;gap:7px;cursor:pointer}
+  .dia-hidenote{font-size:10.5px;color:var(--tx3);display:flex;gap:6px;align-items:center;margin:14px 2px 4px;line-height:1.35}
+  .dia-hidenote .material-symbols-rounded{font-size:15px;color:#3b6d11}
+  .dia-localtag{font-size:9px;color:#854f0b;background:#faeeda;border-radius:6px;padding:1px 5px;position:absolute;bottom:2px;left:2px;z-index:2}
+  </style>
+  <div class="view" id="v-diario"></div>
   <div class="view" id="v-chat"><div class="soon-wrap"><div class="soon-ic">🚧</div><div class="soon-t">Chat interno</div><div class="soon-d">Slot reservado — em construção. Conversas da equipe e por obra + o canal <b>Assistente eX (IA)</b>, que tira dúvidas na hora e vai sintetizando problemas e soluções num banco de conhecimento. Feito para <b>apoiar o campo</b>, não fiscalizar. 👷</div></div></div>
     </div>
   </div>
@@ -2262,8 +2337,9 @@ function clonarProjeto(orig, opts){
   const grpMap={};
   (novo.grupos||[]).forEach(g=>{ const nid=uid(); grpMap[g.id]=nid; g.id=nid; });
   (novo.tarefas||[]).forEach(t=>{ t.id=uid(); if(grpMap[t.grupo]) t.grupo=grpMap[t.grupo];
-    if(opts.reset){ t.prog=0; t.status='todo'; t.fimReal=''; t.exec=''; t.execLinha=0; t.ini=''; t.fim=''; if(t.tempoPrev!=null) t.tempo=t.tempoPrev; }
+    if(opts.reset){ t.prog=0; t.status='todo'; t.fimReal=''; t.exec=''; t.execLinha=0; t.ini=''; t.fim=''; t.fotos=[]; if(t.tempoPrev!=null) t.tempo=t.tempoPrev; }
   });
+  if(opts.reset) delete novo._diario; // obra nova começa com o diário zerado (fotos/horas não herdam do modelo)
   S.projetos.push(novo); S.ativo=novo.id; S.emProjeto=true; save();
   if(SB){ (async()=>{ await pushProjeto(novo); for(const g of (novo.grupos||[])) await pushGrupo(g); for(const t of (novo.tarefas||[])) await pushTarefa(t); })(); }
   return novo;
@@ -2415,7 +2491,7 @@ function aplicarModoNav(){
 }
 function irLista(t){ S.emProjeto=false; save(); aplicarModoNav(); tab(t,document.getElementById(t==='modelos'?'nav-modelos-lbl':'nav-lista-lbl')); }
 function voltarProjetos(){ irLista('proj'); }
-function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();
+function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();
   const cadBtn=document.getElementById('cad-btn');
   if(cadBtn&&!['colab','cat','mat','acessos','cfg'].includes(t)){cadBtn.classList.remove('active');cadBtn.innerHTML='Cadastros <span style="font-size:10px">▾</span>';document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.remove('active'));}
 }
@@ -2931,6 +3007,133 @@ async function entrarApp(session){
   if(_PERFIL && _PERFIL.papel==='tecnico' && S.projetos.length===1){ S.ativo=S.projetos[0].id; S.emProjeto=true; aplicarModoNav(); tab('acomp',document.getElementById('tab-acomp')); }
 }
 function aoDeslogar(){ _USER=null;_PERFIL=null;window._PERFIL=null; pintarUsuario(); nuvemStatus('faça login','load'); loginVisivel(true); }
+/* ===================================================================
+   DIÁRIO DE OBRA — tela do técnico + foto-trava
+   Lê os requisitos do Padrão (ensureReq/t.req) e obriga no campo.
+   Fotos vão pro bucket 'anexos' (Storage privado, link assinado);
+   sem sessão de nuvem, cai pra dataURL local só pra demonstrar a trava.
+   Persistência de foto: local (save) por ora — nuvem é plugável depois.
+   =================================================================== */
+function diaState(p){ if(!p._diario) p._diario={mood:'',by:{}}; if(!p._diario.by) p._diario.by={}; return p._diario; }
+function diaBy(p,id){ const d=diaState(p); if(!d.by[id]) d.by[id]={on:false,horas:0}; return d.by[id]; }
+function diaFmtH(n){ n=Number(n)||0; return (n%1===0?String(n):n.toFixed(1)).replace('.',','); }
+function diaReqFotos(t){ const r=ensureReq(t); if(!r.foto) return 0; return r.ad?2:1; }
+function diaFotosOk(t){ return (t.fotos||[]).length >= diaReqFotos(t); }
+function diaTotal(p){ let tot=0; p.tarefas.forEach(t=>{ const b=diaBy(p,t.id); if(b.on||t.status==='done') tot+=Number(b.horas)||0; }); return tot; }
+
+function renderDiario(){
+  const host=document.getElementById('v-diario'); if(!host) return;
+  const p=(typeof S!=='undefined' && S.emProjeto && P())?P():null;
+  if(!p){ host.innerHTML='<div class="soon-wrap"><div class="soon-ic">📋</div><div class="soon-t">Nenhuma obra aberta</div><div class="soon-d">Abra uma obra em <b>Projetos</b> para registrar o diário de hoje.</div></div>'; return; }
+  const st=diaState(p);
+  const d=new Date();
+  const dias=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+  const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  const dataStr=dias[d.getDay()]+', '+d.getDate()+' de '+meses[d.getMonth()];
+  const tarefas=p.tarefas.filter(t=>!t.header);
+  const marcadas=tarefas.filter(t=>{const b=diaBy(p,t.id);return b.on||t.status==='done';}).length;
+  let h='<div class="dia-wrap">';
+  h+=`<div class="dia-hdr"><div class="r1"><span class="pn"># ${rtEsc(p.numero||'—')}</span></div>`
+    +`<div class="nm"><span class="material-symbols-rounded">store</span> ${rtEsc(p.nome||'Obra')}</div>`
+    +`<div class="lo">${rtEsc(p.contemplado||p.local||'')}</div></div>`;
+  h+=`<div class="dia-daybar"><span class="material-symbols-rounded">event</span><span class="d1">${dataStr}</span><span class="d2">Diário de hoje</span></div>`;
+  h+='<div class="dia-sec">Como foi o dia?</div><div class="dia-mood">'
+    +diaMoodBtn(st,'','sentiment_satisfied','Fluiu')
+    +diaMoodBtn(st,'warn','sentiment_neutral','Travou um pouco')
+    +diaMoodBtn(st,'bad','sentiment_dissatisfied','Parou')
+    +'</div>';
+  h+=`<div class="dia-sec">Atividades de hoje <span class="cnt">${marcadas} marcada${marcadas===1?'':'s'}</span></div>`;
+  if(!tarefas.length){ h+='<div class="soon-wrap" style="padding:24px">Sem tarefas nesta obra ainda. Monte o cronograma primeiro.</div>'; }
+  tarefas.forEach(t=>{ h+=diaTaskCard(p,t); });
+  const tot=diaTotal(p);
+  h+=`<div class="dia-hidenote"><span class="material-symbols-rounded">visibility_off</span> O técnico registra só tempo, atividade e foto. O <b>custo (R$)</b> fica atrás da cortina — o campo nunca vê valor.</div>`;
+  h+=`<div class="dia-foot"><div class="roll">total do dia<b>${diaFmtH(tot)} h</b></div><button class="cta" onclick="diaEncerrar()"><span class="material-symbols-rounded">check_circle</span> Encerrar o dia</button></div>`;
+  h+='</div>';
+  host.innerHTML=h;
+}
+function diaMoodBtn(st,val,ic,lbl){ const on=st.mood===val?('on '+(val||'')):''; return `<button class="${on}" onclick="diaMood('${val}')"><span class="material-symbols-rounded">${ic}</span>${lbl}</button>`; }
+function diaTaskCard(p,t){
+  const b=diaBy(p,t.id);
+  const done=t.status==='done';
+  const prevH=(Number(t.tempo)||0)*(Number(t.qtd)||0);
+  const prevTxt=done?'concluída':(prevH?('previsto '+diaFmtH(prevH)+'h'):'sem tempo previsto');
+  const reqN=diaReqFotos(t);
+  let h=`<div class="dia-task ${done?'done':(b.on?'on':'')}" id="dia-${t.id}">`;
+  h+=`<div class="t1"><div class="nm">${rtEsc(t.nome)}<div class="prev"><span class="material-symbols-rounded">schedule</span> ${prevTxt}</div></div>`;
+  if(!done) h+=`<div class="dia-sw ${b.on?'on':''}" onclick="diaTog('${t.id}')"><div class="kn"><span class="material-symbols-rounded">construction</span></div></div>`;
+  h+=`</div>`;
+  h+=`<div class="dia-doneflag"><span class="material-symbols-rounded">check_circle</span> Concluída${reqN?' — com foto anexada':''}</div>`;
+  h+=`<div class="dia-reveal">`;
+  h+=`<div class="dia-hours"><span class="lb"><span class="material-symbols-rounded">timer</span> Horas de hoje</span><div class="dia-step"><button onclick="diaStep('${t.id}',-0.5)">−</button><span class="val">${diaFmtH(b.horas)}<small>h</small></span><button onclick="diaStep('${t.id}',0.5)">+</button></div></div>`;
+  h+=`<div class="dia-photos"><div class="plbl"><span class="material-symbols-rounded">photo_camera</span> Fotos do serviço ${reqN?'<span class="req">obrigatório p/ concluir *</span>':'<span style="color:var(--tx3)">(opcional)</span>'}</div><div class="dia-thumbs">`;
+  (t.fotos||[]).forEach((f,i)=>{ h+=diaThumb(t.id,f,i); });
+  if(b.uploading) h+=`<div class="dia-thumb up"><span class="material-symbols-rounded">progress_activity</span></div>`;
+  h+=`<button class="dia-addphoto" onclick="diaAddFoto('${t.id}')"><span class="material-symbols-rounded">add_a_photo</span><span class="t">foto</span></button>`;
+  h+=`</div></div>`;
+  const ok=diaFotosOk(t);
+  h+=`<div class="dia-concl ${ok?'ready':'locked'}" onclick="diaConcluir('${t.id}')"><span class="material-symbols-rounded">${ok?'check_circle':'lock'}</span> Concluir tarefa</div>`;
+  if(reqN) h+=`<div class="dia-gatehint ${b.hint?'show':''}"><span class="material-symbols-rounded">info</span> Anexe ${reqN} foto${reqN>1?'s':''} para liberar</div>`;
+  h+=`</div></div>`;
+  return h;
+}
+function diaThumb(tid,f,i){ return `<div class="dia-thumb"><img src="${rtEsc(f.url||'')}" alt="foto"><div class="del" title="remover" onclick="diaDelFoto('${tid}',${i})">✕</div>${f.local?'<span class="dia-localtag">local</span>':''}</div>`; }
+function diaTog(id){ const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t||t.status==='done')return; const b=diaBy(p,id); b.on=!b.on; save(); renderDiario(); }
+function diaStep(id,d){ const p=P(); const b=diaBy(p,id); b.horas=Math.max(0,+(b.horas+d).toFixed(2)); if(d>0)b.on=true; save(); renderDiario(); }
+function diaMood(m){ diaState(P()).mood=m; save(); renderDiario(); }
+function diaFileToDataURL(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
+function diaAddFoto(id){
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.capture='environment';
+  inp.onchange=async()=>{ const file=inp.files&&inp.files[0]; if(file) await diaUploadFoto(id,file); };
+  inp.click();
+}
+async function diaUploadFoto(id,file){
+  const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t)return;
+  const b=diaBy(p,id); b.uploading=true; b.on=true; renderDiario();
+  const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
+  const path=`diario/${p.id}/${id}/${uid()}.${ext}`;
+  let ref=null;
+  try{
+    let sess=null; if(SB){ const r=await SB.auth.getSession(); sess=r.data&&r.data.session; }
+    if(SB && sess){
+      const up=await SB.storage.from('anexos').upload(path,file,{upsert:true,contentType:file.type||'image/jpeg'});
+      if(up.error) throw up.error;
+      const sg=await SB.storage.from('anexos').createSignedUrl(path,60*60*24*365);
+      if(sg.error) throw sg.error;
+      ref={path, url:(sg.data&&sg.data.signedUrl)||'', by:(typeof _USER!=='undefined'&&_USER&&_USER.id)||null, ts:new Date().toISOString()};
+    } else {
+      const durl=await diaFileToDataURL(file);
+      ref={url:durl, local:true, ts:new Date().toISOString()};
+    }
+  }catch(e){
+    try{ const durl=await diaFileToDataURL(file); ref={url:durl, local:true, erro:String((e&&e.message)||e), ts:new Date().toISOString()}; }catch(_){}
+    if(typeof nuvemStatus==='function') nuvemStatus('foto salva local','err');
+  }
+  b.uploading=false;
+  if(ref){ if(!t.fotos)t.fotos=[]; t.fotos.push(ref); save(); }
+  renderDiario();
+}
+function diaDelFoto(id,idx){
+  const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t||!t.fotos)return;
+  const f=t.fotos[idx]; t.fotos.splice(idx,1); save(); renderDiario();
+  if(f&&f.path&&SB){ SB.storage.from('anexos').remove([f.path]); }
+}
+function diaConcluir(id){
+  const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t)return;
+  const b=diaBy(p,id);
+  if(!diaFotosOk(t)){ b.hint=true; renderDiario(); return; }
+  b.hint=false;
+  t.prog=100; if(t.status!=='ice')t.status='done';
+  if(!t.fimReal)t.fimReal=new Date().toISOString().slice(0,10);
+  save(); if(typeof render==='function')render(); if(typeof renderAcomp==='function')renderAcomp(); pushTarefa(t);
+  renderDiario();
+}
+function diaEncerrar(){
+  const p=P(); const tot=diaTotal(p);
+  if(!confirm('Encerrar o diário de hoje?\n\nTotal lançado: '+diaFmtH(tot)+' h.\n\n(As horas viram tempo real no cronograma na próxima etapa — ponte de custo.)')) return;
+  save();
+  alert('✓ Diário de hoje registrado — '+diaFmtH(tot)+' h.\nAs tarefas concluídas já têm a foto de prova.\nA ponte horas → custo entra na próxima etapa.');
+}
+
 async function init(){
   if(!SB){ nuvemStatus('modo local','err'); loginVisivel(false); return; }
   SB.auth.onAuthStateChange((event,session)=>{
