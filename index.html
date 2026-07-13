@@ -464,6 +464,7 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="sb-grp adm-only" onclick="toggleGrp(this)"><span class="ic"><span class="msr">settings</span></span><span class="lb">Configurações</span><span class="gchev">▶</span></div>
       <div class="sb-sub adm-only">
         <button class="sb-i" onclick="navEmpresa(this)"><span class="ic"><span class="msr">domain</span></span><span class="lb">Perfil da empresa</span></button>
+        <button class="sb-i" onclick="navKits(this)"><span class="ic"><span class="msr">key</span></span><span class="lb">Kits de acesso</span></button>
         <div class="sb-grp sb-grp-nest" onclick="toggleGrp(this)"><span class="ic"><span class="msr">policy</span></span><span class="lb">Política</span><span class="gchev">▶</span></div>
         <div class="sb-sub sb-sub-nest">
           <button class="sb-i" onclick="abrirManualCartao()"><span class="ic"><span class="msr">credit_card</span></span><span class="lb">Manual do Cartão</span></button>
@@ -638,6 +639,52 @@ body.papel-tecnico .adm-only{display:none !important}
     <div id="pol-list"></div>
     <button class="btn" style="margin-top:8px" onclick="polAdd()">＋ Nova regra</button>
   </div>
+  <!-- KITS DE ACESSO (motor de grupos) -->
+  <style>
+  #v-kits .kt-toolbar{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+  #v-kits .kt-toolbar:empty{display:none}
+  #v-kits .kt-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:10px}
+  #v-kits .kt-card{border:1px solid var(--line);border-radius:12px;padding:13px;background:var(--surf);cursor:pointer;transition:.15s}
+  #v-kits .kt-card:hover{border-color:var(--pri);box-shadow:0 3px 12px rgba(83,58,183,.1)}
+  #v-kits .kt-card.sel{border-color:var(--pri);box-shadow:0 0 0 2px var(--pri-bg)}
+  #v-kits .kt-ch{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+  #v-kits .kt-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;color:#fff}
+  #v-kits .kt-ic .msr{font-size:20px}
+  #v-kits .kt-nm{font-weight:700;font-size:14.5px;color:var(--tx)}
+  #v-kits .kt-preset{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);background:var(--bg);border:1px solid var(--line);border-radius:20px;padding:2px 7px}
+  #v-kits .kt-meta{font-size:12px;color:var(--tx2);display:flex;gap:12px}
+  #v-kits .kt-meta b{color:var(--tx)}
+  #v-kits .kt-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+  #v-kits .kt-chip{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;color:var(--tx2);background:var(--bg);border:1px solid var(--line);border-radius:16px;padding:2px 8px}
+  #v-kits .kt-chip .msr{font-size:13px}
+  #v-kits .kt-detail{margin-top:18px;border:1px solid var(--line);border-radius:14px;background:var(--surf);padding:16px;display:none}
+  #v-kits .kt-detail.on{display:block}
+  #v-kits .kt-dh{display:flex;align-items:center;gap:11px}
+  #v-kits .kt-dcols{display:grid;grid-template-columns:1fr 1fr;gap:22px;margin-top:14px}
+  @media(max-width:640px){#v-kits .kt-dcols{grid-template-columns:1fr}}
+  #v-kits .kt-col h4{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--tx3);margin:0 0 4px}
+  #v-kits .kt-line{display:flex;align-items:center;gap:11px;padding:8px 0;border-bottom:1px solid var(--line)}
+  #v-kits .kt-line:last-child{border-bottom:0}
+  #v-kits .kt-li{width:30px;height:30px;border-radius:8px;background:var(--pri-bg);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  #v-kits .kt-li .msr{font-size:17px;color:var(--pri)}
+  #v-kits .kt-lt{flex:1;min-width:0}
+  #v-kits .kt-lt .n{font-size:13px;font-weight:600;color:var(--tx)}
+  #v-kits .kt-badge-adm{font-size:9px;font-weight:700;text-transform:uppercase;color:var(--pri);background:var(--pri-bg);border-radius:10px;padding:1px 6px;margin-left:6px}
+  #v-kits .kt-empty{color:var(--tx3);font-size:12.5px;padding:10px 0}
+  #modalKit .kt-choices{display:flex;flex-wrap:wrap;gap:7px;margin-top:3px}
+  #modalKit .kt-cho{width:38px;height:38px;border-radius:9px;display:flex;align-items:center;justify-content:center;cursor:pointer;border:2px solid transparent;background:var(--bg)}
+  #modalKit .kt-cho.on{border-color:var(--tx)}
+  #modalKit .kt-cho .msr{font-size:19px;color:var(--tx2)}
+  #modalKit .kt-col-cho{width:30px;height:30px;border-radius:50%;cursor:pointer;border:2px solid transparent}
+  #modalKit .kt-col-cho.on{border-color:var(--tx)}
+  </style>
+  <div class="view" id="v-kits">
+    <div class="topbar"><span class="pname">Configurações · Kits de acesso</span><button class="btn btn-p" onclick="openKitNovo()">+ Novo kit</button></div>
+    <div class="note">Um <b>kit</b> é um pacote de acesso: ele já sabe quais módulos abre. Pra liberar alguém, você põe a pessoa no kit. <b>O grupo é o motor</b> — ligue os módulos com as chaves e ponha as pessoas.</div>
+    <div class="kt-toolbar" id="kt-toolbar"></div>
+    <div class="kt-grid" id="kt-grid"></div>
+    <div class="kt-detail" id="kt-detail"></div>
+  </div>
   <!-- SST (esqueleto navegável — Fase 0) -->
   <style>
   .sstk-head{display:flex;align-items:center;gap:13px;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin-bottom:12px}
@@ -733,6 +780,14 @@ body.papel-tecnico .adm-only{display:none !important}
   .dia-hidenote{font-size:10.5px;color:var(--tx3);display:flex;gap:6px;align-items:center;margin:14px 2px 4px;line-height:1.35}
   .dia-hidenote .material-symbols-rounded{font-size:15px;color:#3b6d11}
   .dia-localtag{font-size:9px;color:#854f0b;background:#faeeda;border-radius:6px;padding:1px 5px;position:absolute;bottom:2px;left:2px;z-index:2}
+  .dia-fotoerr{display:flex;align-items:flex-start;gap:6px;font-size:11px;color:#a32d2d;background:#fcebeb;border:1px solid #eab6b6;border-radius:8px;padding:7px 9px;margin-top:8px;line-height:1.35}
+  .dia-fotoerr .material-symbols-rounded{font-size:15px;flex-shrink:0;margin-top:1px}
+  .dia-qsel{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-bottom:9px}
+  .dia-qsel .ql{display:flex;align-items:center;gap:4px;font-size:10.5px;color:var(--tx3);font-weight:600}
+  .dia-qsel .ql .material-symbols-rounded{font-size:14px}
+  .dia-qsel .qchip{border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:20px;padding:4px 11px;font-size:11.5px;font-weight:600;cursor:pointer}
+  .dia-qsel .qchip.on{border-color:var(--pri);background:var(--pri-bg);color:var(--pri)}
+  .dia-qsel .qsub{font-size:10px;color:var(--tx3);width:100%;margin-top:1px}
   </style>
   <div class="view" id="v-diario"></div>
   <div class="view" id="v-chat"><div class="soon-wrap"><div class="soon-ic">🚧</div><div class="soon-t">Chat interno</div><div class="soon-d">Slot reservado — em construção. Conversas da equipe e por obra + o canal <b>Assistente eX (IA)</b>, que tira dúvidas na hora e vai sintetizando problemas e soluções num banco de conhecimento. Feito para <b>apoiar o campo</b>, não fiscalizar. 👷</div></div></div>
@@ -771,6 +826,18 @@ body.papel-tecnico .adm-only{display:none !important}
     <div class="note">Interno assina como funcionário; terceirizado registra a empresa/consultoria contratada. O <b>principal</b> é quem aparece como signatário na APR, na PT e nas investigações.</div>
   </div>
   <div class="mf"><button class="btn" onclick="closeRT()">Cancelar</button><button class="btn btn-p" onclick="saveRT()">Salvar responsável</button></div>
+</div></div>
+
+<!-- MODAL KIT (motor de acesso) -->
+<div class="modal-bg" id="modalKit"><div class="modal" style="width:440px">
+  <div class="mh"><b id="kit-title">Novo kit</b><button class="x" onclick="closeKit()">&times;</button></div>
+  <div class="mb">
+    <div class="fg"><label class="fl">Nome do kit</label><input class="fi" id="kit-nome" placeholder="Ex.: Campo, Escritório, Supervisor"></div>
+    <div class="fg"><label class="fl">Ícone</label><div class="kt-choices" id="kit-icones"></div></div>
+    <div class="fg"><label class="fl">Cor</label><div class="kt-choices" id="kit-cores"></div></div>
+    <div class="note">Depois de criar, você liga os módulos e põe as pessoas na própria tela do kit.</div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeKit()">Cancelar</button><button class="btn btn-p" onclick="saveKit()">Salvar kit</button></div>
 </div></div>
 
 <!-- MODAL APTIDÃO (SST Fase 2) -->
@@ -3065,11 +3132,15 @@ function diaTaskCard(p,t){
   h+=`<div class="dia-doneflag"><span class="material-symbols-rounded">check_circle</span> Concluída${reqN?' — com foto anexada':''}</div>`;
   h+=`<div class="dia-reveal">`;
   h+=`<div class="dia-hours"><span class="lb"><span class="material-symbols-rounded">timer</span> Horas de hoje</span><div class="dia-step"><button onclick="diaStep('${t.id}',-0.5)">−</button><span class="val">${diaFmtH(b.horas)}<small>h</small></span><button onclick="diaStep('${t.id}',0.5)">+</button></div></div>`;
-  h+=`<div class="dia-photos"><div class="plbl"><span class="material-symbols-rounded">photo_camera</span> Fotos do serviço ${reqN?'<span class="req">obrigatório p/ concluir *</span>':'<span style="color:var(--tx3)">(opcional)</span>'}</div><div class="dia-thumbs">`;
+  h+=`<div class="dia-photos"><div class="plbl"><span class="material-symbols-rounded">photo_camera</span> Fotos do serviço ${reqN?'<span class="req">obrigatório p/ concluir *</span>':'<span style="color:var(--tx3)">(opcional)</span>'}</div>`;
+  h+=diaQChips(p);
+  h+=`<div class="dia-thumbs">`;
   (t.fotos||[]).forEach((f,i)=>{ h+=diaThumb(t.id,f,i); });
   if(b.uploading) h+=`<div class="dia-thumb up"><span class="material-symbols-rounded">progress_activity</span></div>`;
   h+=`<button class="dia-addphoto" onclick="diaAddFoto('${t.id}')"><span class="material-symbols-rounded">add_a_photo</span><span class="t">foto</span></button>`;
-  h+=`</div></div>`;
+  h+=`</div>`;
+  if(b.lastErro) h+=`<div class="dia-fotoerr"><span class="material-symbols-rounded">error</span> ${rtEsc(b.lastErro)}</div>`;
+  h+=`</div>`;
   const ok=diaFotosOk(t);
   h+=`<div class="dia-concl ${ok?'ready':'locked'}" onclick="diaConcluir('${t.id}')"><span class="material-symbols-rounded">${ok?'check_circle':'lock'}</span> Concluir tarefa</div>`;
   if(reqN) h+=`<div class="dia-gatehint ${b.hint?'show':''}"><span class="material-symbols-rounded">info</span> Anexe ${reqN} foto${reqN>1?'s':''} para liberar</div>`;
@@ -3077,10 +3148,49 @@ function diaTaskCard(p,t){
   return h;
 }
 function diaThumb(tid,f,i){ return `<div class="dia-thumb"><img src="${rtEsc(f.url||'')}" alt="foto"><div class="del" title="remover" onclick="diaDelFoto('${tid}',${i})">✕</div>${f.local?'<span class="dia-localtag">local</span>':''}</div>`; }
+function diaQChips(p){
+  const cur=diaQ(p);
+  let h='<div class="dia-qsel"><span class="ql"><span class="material-symbols-rounded">tune</span>Qualidade</span>';
+  Object.keys(DIA_FOTO_Q).forEach(k=>{ const o=DIA_FOTO_Q[k]; h+=`<button class="qchip ${k===cur?'on':''}" title="${o.sub}" onclick="diaSetQ('${k}')">${o.label}</button>`; });
+  h+=`<span class="qsub">${DIA_FOTO_Q[cur].sub}</span></div>`;
+  return h;
+}
 function diaTog(id){ const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t||t.status==='done')return; const b=diaBy(p,id); b.on=!b.on; save(); renderDiario(); }
 function diaStep(id,d){ const p=P(); const b=diaBy(p,id); b.horas=Math.max(0,+(b.horas+d).toFixed(2)); if(d>0)b.on=true; save(); renderDiario(); }
 function diaMood(m){ diaState(P()).mood=m; save(); renderDiario(); }
-function diaFileToDataURL(file){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(file); }); }
+/* Qualidade da foto — o técnico escolhe conforme o caso.
+   dim=0 → não reduz (máxima resolução, só via nuvem). */
+const DIA_FOTO_Q={
+  leve:{label:'Leve',   dim:1280, q:0.68, sub:'rápida · ocupa pouco'},
+  fhd: {label:'Full HD',dim:1920, q:0.80, sub:'equilíbrio (padrão)'},
+  max: {label:'Máxima', dim:0,    q:0.92, sub:'detalhe fino · precisa de nuvem'}
+};
+function diaQ(p){ const k=diaState(p).fotoQ; return DIA_FOTO_Q[k]?k:'fhd'; }
+function diaSetQ(k){ if(!DIA_FOTO_Q[k])return; diaState(P()).fotoQ=k; save(); renderDiario(); }
+
+/* comprime a foto (canvas → JPEG) ANTES de subir/guardar:
+   foto de celular tem vários MB; sem isso o dataURL local estoura o
+   localStorage (~5MB) e a nuvem fica lenta. dim=0 mantém a resolução. */
+function diaCompress(file, maxDim, quality){
+  if(maxDim==null)maxDim=1600; quality=quality||0.72;
+  return new Promise((resolve,reject)=>{
+    const url=URL.createObjectURL(file); const img=new Image();
+    img.onload=()=>{
+      URL.revokeObjectURL(url);
+      let w=img.naturalWidth||img.width, h=img.naturalHeight||img.height;
+      if(!w||!h){ reject(new Error('imagem sem dimensão')); return; }
+      const m=Math.max(w,h); if(maxDim>0 && m>maxDim){ const s=maxDim/m; w=Math.round(w*s); h=Math.round(h*s); }
+      const c=document.createElement('canvas'); c.width=w; c.height=h;
+      const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+      c.toBlob(bl=>{
+        if(!bl){ reject(new Error('canvas vazio')); return; }
+        const fr=new FileReader(); fr.onload=()=>resolve({blob:bl,dataUrl:fr.result,w:w,h:h,kb:Math.round(bl.size/1024)}); fr.onerror=()=>reject(new Error('leitura falhou')); fr.readAsDataURL(bl);
+      },'image/jpeg',quality);
+    };
+    img.onerror=()=>{ URL.revokeObjectURL(url); reject(new Error('não abriu a imagem')); };
+    img.src=url;
+  });
+}
 function diaAddFoto(id){
   const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.capture='environment';
   inp.onchange=async()=>{ const file=inp.files&&inp.files[0]; if(file) await diaUploadFoto(id,file); };
@@ -3088,28 +3198,50 @@ function diaAddFoto(id){
 }
 async function diaUploadFoto(id,file){
   const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t)return;
-  const b=diaBy(p,id); b.uploading=true; b.on=true; renderDiario();
-  const ext=(file.name.split('.').pop()||'jpg').toLowerCase().replace(/[^a-z0-9]/g,'')||'jpg';
-  const path=`diario/${p.id}/${id}/${uid()}.${ext}`;
+  const b=diaBy(p,id); b.uploading=true; b.on=true; b.lastErro=''; renderDiario();
+  const qk=diaQ(p); const preset=DIA_FOTO_Q[qk];
+  const path=`diario/${p.id}/${id}/${uid()}.jpg`;
   let ref=null;
   try{
     let sess=null; if(SB){ const r=await SB.auth.getSession(); sess=r.data&&r.data.session; }
     if(SB && sess){
-      const up=await SB.storage.from('anexos').upload(path,file,{upsert:true,contentType:file.type||'image/jpeg'});
+      // NA NUVEM respeita a qualidade escolhida: 'máxima' sobe o original intacto,
+      // as demais sobem comprimidas na dimensão do preset.
+      let body, ctype='image/jpeg', comp=null;
+      if(qk==='max'){ body=file; ctype=file.type||'image/jpeg'; }
+      else { comp=await diaCompress(file, preset.dim, preset.q); body=comp.blob; }
+      const up=await SB.storage.from('anexos').upload(path,body,{upsert:true,contentType:ctype});
       if(up.error) throw up.error;
       const sg=await SB.storage.from('anexos').createSignedUrl(path,60*60*24*365);
       if(sg.error) throw sg.error;
-      ref={path, url:(sg.data&&sg.data.signedUrl)||'', by:(typeof _USER!=='undefined'&&_USER&&_USER.id)||null, ts:new Date().toISOString()};
+      ref={path, url:(sg.data&&sg.data.signedUrl)||'', q:qk, kb:(comp?comp.kb:Math.round(file.size/1024)), by:(typeof _USER!=='undefined'&&_USER&&_USER.id)||null, ts:new Date().toISOString()};
     } else {
-      const durl=await diaFileToDataURL(file);
-      ref={url:durl, local:true, ts:new Date().toISOString()};
+      // SEM NUVEM guarda local sempre comprimido (senão estoura o localStorage).
+      // 'máxima' não cabe offline → cai p/ Full HD e avisa.
+      const dimLocal = qk==='leve'?1280:1600;
+      const comp=await diaCompress(file, dimLocal, qk==='leve'?0.68:0.75);
+      ref={url:comp.dataUrl, local:true, q:(qk==='max'?'fhd':qk), kb:comp.kb, ts:new Date().toISOString()};
+      b.lastErro = qk==='max'
+        ? 'Máxima resolução só com login/nuvem — sem sessão, guardei em Full HD neste aparelho.'
+        : 'Sem login/nuvem — foto ficou só neste aparelho.';
     }
   }catch(e){
-    try{ const durl=await diaFileToDataURL(file); ref={url:durl, local:true, erro:String((e&&e.message)||e), ts:new Date().toISOString()}; }catch(_){}
-    if(typeof nuvemStatus==='function') nuvemStatus('foto salva local','err');
+    const msg=String((e&&e.message)||e);
+    try{ const comp=await diaCompress(file,1280,0.6); ref={url:comp.dataUrl, local:true, q:'leve', erro:msg, kb:comp.kb, ts:new Date().toISOString()}; }catch(_){ ref=null; }
+    b.lastErro='Upload falhou: '+msg+(ref?' — guardei uma versão leve neste aparelho.':' — não deu pra guardar.');
+    if(typeof nuvemStatus==='function') nuvemStatus('falha no upload da foto','err');
+    console.warn('diario upload falhou:', msg);
   }
   b.uploading=false;
-  if(ref){ if(!t.fotos)t.fotos=[]; t.fotos.push(ref); save(); }
+  if(ref && ref.url){
+    if(!t.fotos)t.fotos=[]; t.fotos.push(ref);
+    try{ save(); }
+    catch(se){ // estouro de quota do localStorage (foto local grande demais)
+      t.fotos.pop();
+      b.lastErro='A foto é grande demais para guardar offline neste aparelho. Faça login para enviá-la à nuvem.';
+      if(typeof nuvemStatus==='function') nuvemStatus('sem espaço local p/ a foto','err');
+    }
+  }
   renderDiario();
 }
 function diaDelFoto(id,idx){
@@ -3143,6 +3275,179 @@ async function init(){
   const { data:{ session } } = await SB.auth.getSession();
   if(session && session.user){ if(!_USER) await entrarApp(session); }
   else { loginVisivel(true); nuvemStatus('faça login','load'); }
+}
+/* ===================== KITS DE ACESSO — motor de grupos ===================== */
+var KT_MODULOS_DEFAULT=[
+ {id:'painel',nome:'Painel Inicial',icone:'home',area:'principal',ordem:10,papel_min:'tecnico'},
+ {id:'tarefas',nome:'Tarefas',icone:'checklist',area:'principal',ordem:20,papel_min:'tecnico'},
+ {id:'agenda',nome:'Agenda',icone:'calendar_month',area:'principal',ordem:30,papel_min:'tecnico'},
+ {id:'obras',nome:'Obras',icone:'account_tree',area:'operacao',ordem:40,papel_min:'tecnico'},
+ {id:'diario',nome:'Diário de Obra',icone:'history_edu',area:'operacao',ordem:50,papel_min:'tecnico'},
+ {id:'estoque',nome:'Estoque',icone:'inventory_2',area:'gestao',ordem:60,papel_min:'tecnico'},
+ {id:'sst',nome:'SST',icone:'health_and_safety',area:'gestao',ordem:70,papel_min:'tecnico'},
+ {id:'equipe',nome:'Equipe',icone:'groups',area:'gestao',ordem:80,papel_min:'adm'},
+ {id:'clientes',nome:'Clientes',icone:'contacts',area:'gestao',ordem:90,papel_min:'adm'},
+ {id:'financeiro',nome:'Financeiro',icone:'payments',area:'gestao',ordem:100,papel_min:'adm'},
+ {id:'atividades',nome:'Atividades',icone:'manage_history',area:'gestao',ordem:110,papel_min:'adm'},
+ {id:'config',nome:'Configurações',icone:'settings',area:'config',ordem:900,papel_min:'adm'}
+];
+var KT_AREA_LBL={principal:'Principal',operacao:'Operação',gestao:'Gestão',config:'Configuração'};
+var KT_SUGERIDOS=[
+ {nome:'Campo',icone:'construction',cor:'#22d27f',mods:['painel','tarefas','agenda','obras','diario','estoque','sst']},
+ {nome:'Escritório',icone:'business_center',cor:'#533ab7',mods:['painel','tarefas','agenda','clientes','financeiro','atividades']},
+ {nome:'Supervisor',icone:'verified_user',cor:'#ba7517',mods:['painel','tarefas','agenda','obras','diario','estoque','sst','equipe','clientes','atividades']}
+];
+var KT_ICONES=['construction','business_center','verified_user','groups','engineering','badge','shield','handyman','apartment','key'];
+var KT_CORES=['#22d27f','#533ab7','#ba7517','#2f6fed','#a32d2d','#0ea5a5','#e0699f','#475569'];
+var KT={modulos:[],grupos:[],colabs:[]};
+var KT_SEL=null, KT_EDIT=null, KT_TMP={icone:'construction',cor:'#22d27f'};
+function _ktCloud(){ try{ return !!(SB && typeof _emp==='function' && _emp()); }catch(e){ return false; } }
+function _ktEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
+function _ktMod(id){ return KT.modulos.find(function(m){return m.id===id;}); }
+function _ktPlur(n,s,p){ return n+' '+(n===1?s:p); }
+function _ktLocalSave(){ try{ localStorage.setItem('ex_kits_local', JSON.stringify(KT.grupos.map(function(g){return {id:g.id,nome:g.nome,icone:g.icone,cor:g.cor,preset:g.preset,ordem:g.ordem,mods:Array.from(g.mods),membros:Array.from(g.membros)};}))); }catch(e){} }
+function _ktLocalLoad(){ try{ var raw=localStorage.getItem('ex_kits_local'); var arr=raw?JSON.parse(raw):[]; return arr.map(function(g){return {id:g.id,nome:g.nome,icone:g.icone||'groups',cor:g.cor||'#533ab7',preset:!!g.preset,ordem:g.ordem||0,mods:new Set(g.mods||[]),membros:new Set(g.membros||[])};}); }catch(e){ return []; } }
+function navKits(el){ if(el&&typeof setSbActive==='function')setSbActive(el); if(typeof _obranav==='function')_obranav(false); if(window.S)S.emProjeto=false; document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var v=document.getElementById('v-kits'); if(v)v.classList.add('active'); renderKits(); }
+function _ktErr(e,tbl){ return '<div class="note" style="border-color:var(--red);color:var(--red)"><b>Erro ao carregar ('+tbl+').</b><br>'+(e&&e.message?_ktEsc(e.message):'')+'<br><br>Rodou a migração <b>SQL_acesso_motor.sql</b> no Supabase?</div>'; }
+async function renderKits(){
+  var grid=document.getElementById('kt-grid'); if(!grid) return;
+  grid.innerHTML='<div class="note">Carregando…</div>';
+  if(_ktCloud()){
+    var mR=await SB.from('modulos').select('*').order('ordem');
+    if(mR.error){ grid.innerHTML=_ktErr(mR.error,'modulos'); return; }
+    KT.modulos=(mR.data&&mR.data.length)?mR.data:KT_MODULOS_DEFAULT.slice();
+    var gR=await SB.from('grupos').select('*').is('deleted_at',null).order('ordem');
+    if(gR.error){ grid.innerHTML=_ktErr(gR.error,'grupos'); return; }
+    var gmR=await SB.from('grupo_modulos').select('*');
+    if(gmR.error){ grid.innerHTML=_ktErr(gmR.error,'grupo_modulos'); return; }
+    var cgR=await SB.from('colaborador_grupos').select('*');
+    if(cgR.error){ grid.innerHTML=_ktErr(cgR.error,'colaborador_grupos'); return; }
+    var cR=await SB.from('colaboradores').select('id,nome,ativo').is('deleted_at',null).order('nome');
+    KT.colabs=(cR.error?[]:(cR.data||[])).filter(function(c){return c.ativo!==false;});
+    var byG={}; (gmR.data||[]).forEach(function(x){ (byG[x.grupo_id]=byG[x.grupo_id]||new Set()).add(x.modulo_id); });
+    var mbG={}; (cgR.data||[]).forEach(function(x){ (mbG[x.grupo_id]=mbG[x.grupo_id]||new Set()).add(x.colaborador_id); });
+    KT.grupos=(gR.data||[]).map(function(g){ return {id:g.id,nome:g.nome,icone:g.icone||'groups',cor:g.cor||'#533ab7',preset:!!g.preset,ordem:g.ordem||0,mods:byG[g.id]||new Set(),membros:mbG[g.id]||new Set()}; });
+  } else {
+    KT.modulos=KT_MODULOS_DEFAULT.slice();
+    KT.grupos=_ktLocalLoad();
+    KT.colabs=((typeof S!=='undefined'&&S&&S.colab)?S.colab:[]).filter(function(c){return c.ativo!==false;}).map(function(c){return {id:c.id,nome:c.nome,ativo:c.ativo};});
+  }
+  paintKits();
+}
+function paintKits(){
+  var tb=document.getElementById('kt-toolbar');
+  if(tb){ tb.innerHTML = (KT.grupos.length? '' : '<button class="btn btn-p" onclick="kitCriarSugeridos()"><span class="msr" style="font-size:16px;vertical-align:-3px">auto_awesome</span> Criar kits sugeridos (Campo · Escritório · Supervisor)</button>'); }
+  var grid=document.getElementById('kt-grid'); if(!grid) return;
+  if(!KT.grupos.length){ grid.innerHTML='<div class="kt-empty" style="grid-column:1/-1">Nenhum kit ainda. Crie os sugeridos acima, ou clique em <b>+ Novo kit</b>.</div>'; var d0=document.getElementById('kt-detail'); if(d0)d0.classList.remove('on'); return; }
+  grid.innerHTML=KT.grupos.map(function(g){
+    var arr=Array.from(g.mods);
+    var chips=arr.slice(0,5).map(function(mid){ var m=_ktMod(mid); return m?('<span class="kt-chip"><span class="msr">'+m.icone+'</span>'+_ktEsc(m.nome)+'</span>'):''; }).join('');
+    var extra=arr.length>5?('<span class="kt-chip">+'+(arr.length-5)+'</span>'):'';
+    return '<div class="kt-card'+(KT_SEL===g.id?' sel':'')+'" onclick="kitSelect(\''+g.id+'\')">'+
+      '<div class="kt-ch"><span class="kt-ic" style="background:'+g.cor+'"><span class="msr">'+g.icone+'</span></span>'+
+        '<div style="flex:1;min-width:0"><div class="kt-nm">'+_ktEsc(g.nome)+'</div></div>'+
+        (g.preset?'<span class="kt-preset">sugerido</span>':'')+'</div>'+
+      '<div class="kt-meta"><span>'+_ktPlur(g.mods.size,'módulo','módulos')+'</span><span>'+_ktPlur(g.membros.size,'pessoa','pessoas')+'</span></div>'+
+      '<div class="kt-chips">'+chips+extra+'</div>'+
+    '</div>';
+  }).join('');
+  paintKitDetail();
+}
+function kitSelect(id){ KT_SEL=(KT_SEL===id?null:id); paintKits(); if(KT_SEL){ var d=document.getElementById('kt-detail'); if(d)try{d.scrollIntoView({block:'nearest',behavior:'smooth'});}catch(e){} } }
+function _ktSwitch(on,onclick){ return '<div class="ex-switch'+(on?' on':'')+'" onclick="'+onclick+'"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="pin"></span></span></div>'; }
+function paintKitDetail(){
+  var d=document.getElementById('kt-detail'); if(!d) return;
+  var g=KT.grupos.find(function(x){return x.id===KT_SEL;});
+  if(!g){ d.classList.remove('on'); d.innerHTML=''; return; }
+  d.classList.add('on');
+  var areas={}; KT.modulos.forEach(function(m){ (areas[m.area]=areas[m.area]||[]).push(m); });
+  var ordemAreas=['principal','operacao','gestao','config'];
+  var chaves=Object.keys(areas).sort(function(a,b){return ordemAreas.indexOf(a)-ordemAreas.indexOf(b);});
+  var modHtml=chaves.map(function(a){
+    var lines=areas[a].sort(function(x,y){return x.ordem-y.ordem;}).map(function(m){
+      var on=g.mods.has(m.id);
+      var admBadge=(m.papel_min&&m.papel_min!=='tecnico')?'<span class="kt-badge-adm" title="Só abre para quem tem papel Admin/Master">'+(m.papel_min==='fundador'?'Master':'Admin')+'</span>':'';
+      return '<div class="kt-line"><span class="kt-li"><span class="msr">'+m.icone+'</span></span>'+
+        '<div class="kt-lt"><div class="n">'+_ktEsc(m.nome)+admBadge+'</div></div>'+
+        _ktSwitch(on,'kitToggleMod(\''+g.id+'\',\''+m.id+'\')')+'</div>';
+    }).join('');
+    return '<div class="sstk-lbl" style="margin:12px 2px 2px">'+(KT_AREA_LBL[a]||a)+'</div>'+lines;
+  }).join('');
+  var pessoas = KT.colabs.length? KT.colabs.map(function(c){
+    var on=g.membros.has(c.id);
+    return '<div class="kt-line"><span class="kt-li" style="background:var(--bg)"><span class="msr" style="color:var(--tx2)">person</span></span>'+
+      '<div class="kt-lt"><div class="n">'+_ktEsc(c.nome)+'</div></div>'+
+      _ktSwitch(on,'kitToggleMembro(\''+g.id+'\',\''+c.id+'\')')+'</div>';
+  }).join('') : '<div class="kt-empty">Nenhum colaborador cadastrado ainda (cadastre em Gestão · Equipe).</div>';
+  d.innerHTML='<div class="kt-dh"><span class="kt-ic" style="background:'+g.cor+';width:42px;height:42px"><span class="msr">'+g.icone+'</span></span>'+
+    '<div style="flex:1;min-width:0"><div class="kt-nm" style="font-size:17px">'+_ktEsc(g.nome)+'</div><div style="font-size:12px;color:var(--tx3)">'+_ktPlur(g.mods.size,'módulo','módulos')+' · '+_ktPlur(g.membros.size,'pessoa','pessoas')+'</div></div>'+
+    '<button class="btn" onclick="openKitEdit(\''+g.id+'\')" style="padding:5px 10px;font-size:12px">Editar</button>'+
+    '<button class="btn" onclick="kitExcluir(\''+g.id+'\')" style="padding:5px 10px;font-size:12px;color:var(--red)">Excluir</button></div>'+
+    '<div class="kt-dcols"><div class="kt-col"><h4>Módulos que este kit abre</h4>'+modHtml+'</div>'+
+    '<div class="kt-col"><h4>Pessoas neste kit</h4>'+pessoas+'</div></div>';
+}
+async function kitToggleMod(gid,mid){
+  var g=KT.grupos.find(function(x){return x.id===gid;}); if(!g)return;
+  var on=g.mods.has(mid); if(on)g.mods.delete(mid); else g.mods.add(mid); paintKits();
+  if(_ktCloud()){
+    var r = on? await SB.from('grupo_modulos').delete().eq('grupo_id',gid).eq('modulo_id',mid)
+              : await SB.from('grupo_modulos').insert({grupo_id:gid,modulo_id:mid});
+    if(r&&r.error){ alert('Erro ao salvar chave: '+r.error.message); if(on)g.mods.add(mid); else g.mods.delete(mid); paintKits(); return; }
+    if(typeof nuvemStatus==='function')nuvemStatus('salvo ✓','ok');
+  } else _ktLocalSave();
+}
+async function kitToggleMembro(gid,cid){
+  var g=KT.grupos.find(function(x){return x.id===gid;}); if(!g)return;
+  var on=g.membros.has(cid); if(on)g.membros.delete(cid); else g.membros.add(cid); paintKits();
+  if(_ktCloud()){
+    var r = on? await SB.from('colaborador_grupos').delete().eq('grupo_id',gid).eq('colaborador_id',cid)
+              : await SB.from('colaborador_grupos').insert({grupo_id:gid,colaborador_id:cid});
+    if(r&&r.error){ alert('Erro ao salvar pessoa: '+r.error.message); if(on)g.membros.add(cid); else g.membros.delete(cid); paintKits(); return; }
+    if(typeof nuvemStatus==='function')nuvemStatus('salvo ✓','ok');
+  } else _ktLocalSave();
+}
+function _ktPaintChoices(){
+  var ic=document.getElementById('kit-icones'); if(ic)ic.innerHTML=KT_ICONES.map(function(i){return '<div class="kt-cho'+(KT_TMP.icone===i?' on':'')+'" onclick="KT_TMP.icone=\''+i+'\';_ktPaintChoices()"><span class="msr">'+i+'</span></div>';}).join('');
+  var co=document.getElementById('kit-cores'); if(co)co.innerHTML=KT_CORES.map(function(c){return '<div class="kt-col-cho'+(KT_TMP.cor===c?' on':'')+'" style="background:'+c+'" onclick="KT_TMP.cor=\''+c+'\';_ktPaintChoices()"></div>';}).join('');
+}
+function openKitNovo(){ KT_EDIT=null; KT_TMP={icone:'construction',cor:'#22d27f'}; document.getElementById('kit-title').textContent='Novo kit'; document.getElementById('kit-nome').value=''; _ktPaintChoices(); document.getElementById('modalKit').classList.add('show'); setTimeout(function(){var n=document.getElementById('kit-nome');if(n)n.focus();},60); }
+function openKitEdit(id){ var g=KT.grupos.find(function(x){return x.id===id;}); if(!g)return; KT_EDIT=g; KT_TMP={icone:g.icone,cor:g.cor}; document.getElementById('kit-title').textContent='Editar kit'; document.getElementById('kit-nome').value=g.nome; _ktPaintChoices(); document.getElementById('modalKit').classList.add('show'); }
+function closeKit(){ document.getElementById('modalKit').classList.remove('show'); KT_EDIT=null; }
+async function saveKit(){
+  var nome=(document.getElementById('kit-nome').value||'').trim(); if(!nome){ alert('Dê um nome ao kit.'); return; }
+  if(KT_EDIT){
+    KT_EDIT.nome=nome; KT_EDIT.icone=KT_TMP.icone; KT_EDIT.cor=KT_TMP.cor;
+    if(_ktCloud()){ var r=await SB.from('grupos').update({nome:nome,icone:KT_TMP.icone,cor:KT_TMP.cor}).eq('id',KT_EDIT.id); if(r.error){alert('Erro: '+r.error.message);return;} if(typeof nuvemStatus==='function')nuvemStatus('salvo ✓','ok'); } else _ktLocalSave();
+  } else {
+    var id=uid();
+    var g={id:id,nome:nome,icone:KT_TMP.icone,cor:KT_TMP.cor,preset:false,ordem:(KT.grupos.length+1)*10,mods:new Set(),membros:new Set()};
+    KT.grupos.push(g); KT_SEL=id;
+    if(_ktCloud()){ var r2=await SB.from('grupos').insert({id:id,empresa_id:(typeof _emp==='function'?_emp():null),nome:nome,icone:KT_TMP.icone,cor:KT_TMP.cor,preset:false,ordem:g.ordem}); if(r2.error){alert('Erro ao criar: '+r2.error.message); KT.grupos=KT.grupos.filter(function(x){return x.id!==id;}); KT_SEL=null; return;} if(typeof nuvemStatus==='function')nuvemStatus('salvo ✓','ok'); } else _ktLocalSave();
+  }
+  closeKit(); paintKits();
+}
+async function kitExcluir(id){
+  var g=KT.grupos.find(function(x){return x.id===id;}); if(!g)return;
+  if(!confirm('Excluir o kit "'+g.nome+'"? As pessoas perdem esse acesso.')) return;
+  KT.grupos=KT.grupos.filter(function(x){return x.id!==id;}); if(KT_SEL===id)KT_SEL=null;
+  if(_ktCloud()){ var r=await SB.from('grupos').update({deleted_at:new Date().toISOString()}).eq('id',id); if(r.error){alert('Erro ao excluir: '+r.error.message);} else if(typeof nuvemStatus==='function')nuvemStatus('salvo ✓','ok'); } else _ktLocalSave();
+  paintKits();
+}
+async function kitCriarSugeridos(){
+  for(var i=0;i<KT_SUGERIDOS.length;i++){
+    var s=KT_SUGERIDOS[i]; var id=uid();
+    var g={id:id,nome:s.nome,icone:s.icone,cor:s.cor,preset:true,ordem:(i+1)*10,mods:new Set(s.mods),membros:new Set()};
+    KT.grupos.push(g);
+    if(_ktCloud()){
+      var r=await SB.from('grupos').insert({id:id,empresa_id:(typeof _emp==='function'?_emp():null),nome:s.nome,icone:s.icone,cor:s.cor,preset:true,ordem:g.ordem});
+      if(r.error){ alert('Erro ao criar kit '+s.nome+': '+r.error.message); KT.grupos=KT.grupos.filter(function(x){return x.id!==id;}); paintKits(); return; }
+      var rows=s.mods.map(function(mid){return {grupo_id:id,modulo_id:mid};});
+      var r2=await SB.from('grupo_modulos').insert(rows);
+      if(r2.error){ alert('Erro ao ligar módulos do kit '+s.nome+': '+r2.error.message); }
+    }
+  }
+  if(_ktCloud()){ if(typeof nuvemStatus==='function')nuvemStatus('salvo ✓','ok'); } else _ktLocalSave();
+  paintKits();
 }
 init();
 </script>
