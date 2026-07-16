@@ -797,6 +797,10 @@ body.papel-tecnico .adm-only{display:none !important}
   .dia-daybar .material-symbols-rounded{color:var(--pri);font-size:20px}
   .dia-daybar .d1{font-size:14px;font-weight:600}
   .dia-daybar .d2{font-size:11px;color:var(--tx3);margin-left:auto;background:var(--surf2);padding:3px 9px;border-radius:12px}
+  .dia-daybar .d2.enc{background:var(--pri-bg);color:var(--pri);font-weight:600}
+  .dia-nav{border:1px solid var(--line2);background:var(--surf);border-radius:8px;width:27px;height:27px;min-width:27px;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+  .dia-nav .material-symbols-rounded{font-size:18px;color:var(--tx2)}
+  .dia-nav:disabled{opacity:.3;cursor:default}
   .dia-sec{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin:18px 2px 10px;display:flex;align-items:center;gap:6px}
   .dia-sec .cnt{margin-left:auto;color:var(--tx2);background:var(--surf2);border-radius:11px;padding:1px 9px;font-size:10px;text-transform:none;letter-spacing:0}
   .dia-mood{display:flex;gap:8px}
@@ -1316,7 +1320,7 @@ function _varId(t){ const s=S.catalogo.find(x=>x.id===t.svc); if(s&&t.varNome){ 
 function _projOf(t){ return S.projetos.find(p=>p.tarefas.includes(t))||P(); }
 async function pushTarefa(t){ if(!SB||!t) return; const s=S.catalogo.find(x=>x.id===t.svc); const pj=_projOf(t);
   const svcOk=!!(s&&!s.avulso); // serviço avulso não existe na nuvem → manda nulo (evita violar a chave estrangeira)
-  const row={id:t.id,projeto_id:pj.id,grupo_id:t.grupo,nivel:t.nivel||1,is_header:!!t.header,servico_id:svcOk?t.svc:null,variacao_id:svcOk?_varId(t):null,nome:t.nome,quantidade:t.qtd||0,unidade:(s?s.un:(t.un||null)),tempo_previsto:t.tempoPrev||0,tempo_atual:t.tempo||0,executor_id:t.exec||null,colaborador_funcao_id:_cfId(t),responsavel_id:t.resp||null,prioridade:PRI2DB[t.prioridade]||'media',progresso:t.prog||0,status:ST2DB[t.status]||'a_fazer',data_inicio:t.ini||null,data_inicio_real:t.iniReal||null,data_fim_prevista:t.fim||null,data_fim_real:t.fimReal||null,variacoes:(t.vars&&t.vars.length?t.vars:null),notas:t.notas||null,requisitos:(t.req||null),fase:(t.fase||null),ordem:pj.tarefas.indexOf(t)};
+  const row={id:t.id,projeto_id:pj.id,grupo_id:t.grupo,nivel:t.nivel||1,is_header:!!t.header,servico_id:svcOk?t.svc:null,variacao_id:svcOk?_varId(t):null,nome:t.nome,quantidade:t.qtd||0,unidade:(s?s.un:(t.un||null)),tempo_previsto:t.tempoPrev||0,tempo_atual:t.tempo||0,executor_id:t.exec||null,colaborador_funcao_id:_cfId(t),responsavel_id:t.resp||null,prioridade:PRI2DB[t.prioridade]||'media',progresso:t.prog||0,status:ST2DB[t.status]||'a_fazer',data_inicio:t.ini||null,data_inicio_real:t.iniReal||null,data_fim_prevista:t.fim||null,data_fim_real:t.fimReal||null,variacoes:(t.vars&&t.vars.length?t.vars:null),notas:t.notas||null,requisitos:(t.req||null),fase:(t.fase||null),fotos:(t.fotos&&t.fotos.length?t.fotos:null),ordem:pj.tarefas.indexOf(t)};
   const r=await SB.from('tarefas').upsert(row); if(r.error){ _erroNuvem('pushTarefa',r.error);} else nuvemStatus('salvo ✓','ok'); }
 async function pushTarefasOrdem(){ if(!SB) return; for(const t of P().tarefas){ await pushTarefa(t); } }
 async function pushGrupo(g){ if(!SB||!g) return; const row={id:g.id,projeto_id:S.ativo,nome:g.nome,categoria_id:g.cat||null,responsavel_id:g.resp||null,detalhes:g.det||null,ordem:P().grupos.indexOf(g),aberto:g.open!==false};
@@ -1417,7 +1421,7 @@ async function carregarDaNuvem(){
       const sCat=S.catalogo.find(x=>x.id===t.servico_id);
       let vars = Array.isArray(t.variacoes)&&t.variacoes.length ? t.variacoes.map(v=>[v[0],Number(v[1])]) : null; // variações próprias da tarefa
       if(!vars){ vars = sCat&&sCat.vars.length ? sCat.vars.map(v=>[v[0],Number(v[1])]) : (vNome?[[vNome,Number(t.tempo_atual)]]:[['Padrão',Number(t.tempo_atual)]]); } // fallback p/ tarefas antigas
-      return {id:t.id,grupo:t.grupo_id,nivel:t.nivel,header:t.is_header,svc:t.servico_id,un:t.unidade||'',vars,varNome:vNome||(vars[0]&&vars[0][0])||'',nome:t.nome,qtd:Number(t.quantidade),tempo:Number(t.tempo_atual),tempoPrev:Number(t.tempo_previsto),exec:t.executor_id||'',execLinha:execLinha,resp:t.responsavel_id||'',prioridade:PRI2APP[t.prioridade]||'Média',prog:t.progresso,status:ST2APP[t.status]||'todo',ini:t.data_inicio||'',iniReal:t.data_inicio_real||'',fim:t.data_fim_prevista||'',fimReal:t.data_fim_real||'',notas:t.notas||'',req:t.requisitos||undefined,fase:t.fase||undefined};
+      return {id:t.id,grupo:t.grupo_id,nivel:t.nivel,header:t.is_header,svc:t.servico_id,un:t.unidade||'',vars,varNome:vNome||(vars[0]&&vars[0][0])||'',nome:t.nome,qtd:Number(t.quantidade),tempo:Number(t.tempo_atual),tempoPrev:Number(t.tempo_previsto),exec:t.executor_id||'',execLinha:execLinha,resp:t.responsavel_id||'',prioridade:PRI2APP[t.prioridade]||'Média',prog:t.progresso,status:ST2APP[t.status]||'todo',ini:t.data_inicio||'',iniReal:t.data_inicio_real||'',fim:t.data_fim_prevista||'',fimReal:t.data_fim_real||'',notas:t.notas||'',req:t.requisitos||undefined,fase:t.fase||undefined,fotos:(Array.isArray(t.fotos)?t.fotos:[])};
     });
     return {id:p.id,numero:p.numero_externo||'',nome:p.nome,contratante:p.contratante||'',contemplado:p.contemplado||'',local:p.local||'',cidade:p.cidade||'',uf:p.uf||'',endereco:p.endereco||'',localizacao:p.localizacao||'',lider:p.lider_id||'',gestor:p.gestor||'',dataIni:p.data_inicio||'',dataFim:p.data_fim_prevista||'',status:PJ2APP[p.status]||'Em andamento',prioridade:PRI2APP[p.prioridade]||'Média',obs:p.observacoes||'',modelo:!!p.modelo,grupos:grupos,tarefas:tarefas};
   });
@@ -3161,46 +3165,145 @@ function aoDeslogar(){ _USER=null;_PERFIL=null;window._PERFIL=null; pintarUsuari
    sem sessão de nuvem, cai pra dataURL local só pra demonstrar a trava.
    Persistência de foto: local (save) por ora — nuvem é plugável depois.
    =================================================================== */
-function diaState(p){ if(!p._diario) p._diario={mood:'',by:{}}; if(!p._diario.by) p._diario.by={}; return p._diario; }
-function diaBy(p,id){ const d=diaState(p); if(!d.by[id]) d.by[id]={on:false,horas:0}; return d.by[id]; }
+/* Data LOCAL (aaaa-mm-dd). Não usar toISOString: ele devolve UTC e em
+   UTC-3 o diário viraria de dia às 21h, jogando o lançamento pra amanhã. */
+function diaHoje(){ const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+var DIA_DATA=diaHoje();               // dia em foco na tela
+function diaData(){ return DIA_DATA; }
+function diaEhHoje(){ return DIA_DATA===diaHoje(); }
+function diaSoma(k,n){ const a=k.split('-').map(Number); const d=new Date(a[0],a[1]-1,a[2]); d.setDate(d.getDate()+n);
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+const DIA_SEM=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
+const DIA_MES=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+function diaDataFmt(k){ const a=k.split('-').map(Number); const d=new Date(a[0],a[1]-1,a[2]); return DIA_SEM[d.getDay()]+', '+d.getDate()+' de '+DIA_MES[d.getMonth()]; }
+
+/* Raiz do diário da obra: { dias:{ 'aaaa-mm-dd':{mood,by,_id,encerrado} }, fotoQ }
+   Migra o formato ANTIGO (registro único por obra, que sobrescrevia o dia
+   anterior) para o novo, pendurando o que existia no dia de hoje. */
+function diaRaiz(p){
+  if(!p._diario) p._diario={dias:{}};
+  if(p._diario.by || (p._diario.mood!==undefined && !p._diario.dias)){
+    const velho={mood:p._diario.mood||'',by:p._diario.by||{}};
+    const q=p._diario.fotoQ;
+    p._diario={dias:{},fotoQ:q};
+    p._diario.dias[diaHoje()]=velho;
+  }
+  if(!p._diario.dias) p._diario.dias={};
+  return p._diario;
+}
+function diaState(p,data){ const r=diaRaiz(p); const k=data||diaData(); if(!r.dias[k]) r.dias[k]={mood:'',by:{}}; if(!r.dias[k].by) r.dias[k].by={}; return r.dias[k]; }
+function diaBy(p,id,data){ const d=diaState(p,data); if(!d.by[id]) d.by[id]={on:false,horas:0}; return d.by[id]; }
 function diaFmtH(n){ n=Number(n)||0; return (n%1===0?String(n):n.toFixed(1)).replace('.',','); }
 function diaReqFotos(t){ const r=ensureReq(t); if(!r.foto) return 0; return r.ad?2:1; }
 function diaFotosOk(t){ return (t.fotos||[]).length >= diaReqFotos(t); }
-function diaTotal(p){ let tot=0; p.tarefas.forEach(t=>{ const b=diaBy(p,t.id); if(b.on||t.status==='done') tot+=Number(b.horas)||0; }); return tot; }
+function diaTotal(p,data){ let tot=0; p.tarefas.forEach(t=>{ const b=diaBy(p,t.id,data); tot+=Number(b.horas)||0; }); return tot; }
+
+/* ===== DIÁRIO NA NUVEM =====
+   Fonte da verdade = Supabase; o localStorage é só cache de trabalho.
+   Carrega sob demanda (obra+data) e escreve a cada toque (write-through),
+   igual ao resto do app. */
+var _diaLoaded={};
+async function diaCarregar(p,data){
+  if(!SB||!p) return;
+  const k=p.id+'|'+data;
+  if(_diaLoaded[k]) return;          // já carregado ou carregando
+  _diaLoaded[k]='load';
+  try{
+    const dR=await SB.from('diario_dias').select('*').eq('projeto_id',p.id).eq('data',data).maybeSingle();
+    if(dR.error) throw dR.error;
+    const st=diaState(p,data);
+    if(dR.data){
+      st._id=dR.data.id; st.mood=dR.data.mood||''; st.encerrado=dR.data.encerrado_em||'';
+      if(dR.data.foto_q) diaRaiz(p).fotoQ=dR.data.foto_q;
+      const lR=await SB.from('diario_lancamentos').select('*').eq('diario_id',dR.data.id);
+      if(lR.error) throw lR.error;
+      st.by={};
+      lR.data.forEach(l=>{ st.by[l.tarefa_id]={on:!!l.marcada,horas:Number(l.horas)||0}; });
+    }
+    _diaLoaded[k]=true; save(); renderDiario();
+  }catch(e){
+    _diaLoaded[k]=false;
+    console.warn('diário: falha ao carregar da nuvem',e);
+    nuvemStatus('diário fora da nuvem','err');
+  }
+}
+/* garante o registro do DIA na nuvem e devolve o id */
+async function diaDiaId(p,k){
+  const st=diaState(p,k);
+  if(st._id) return st._id;
+  const row={projeto_id:p.id,data:k,mood:st.mood||'',foto_q:diaQ(p),autor_id:(window._USER&&_USER.id)||null};
+  const r=await SB.from('diario_dias').upsert(row,{onConflict:'projeto_id,data'}).select('id').single();
+  if(r.error){ _erroNuvem('diario_dias',r.error); return null; }
+  st._id=r.data.id; save(); return st._id;
+}
+/* cabeçalho do dia (humor / qualidade de foto / encerramento) */
+async function pushDiaDia(){
+  const p=P(); if(!SB||!p) return;
+  const k=diaData(), st=diaState(p,k);
+  const row={projeto_id:p.id,data:k,mood:st.mood||'',foto_q:diaQ(p),autor_id:(window._USER&&_USER.id)||null};
+  if(st._id) row.id=st._id;
+  row.encerrado_em=st.encerrado||null;
+  const r=await SB.from('diario_dias').upsert(row,{onConflict:'projeto_id,data'}).select('id').single();
+  if(r.error){ _erroNuvem('diario_dias',r.error); return; }
+  st._id=r.data.id; save(); nuvemStatus('salvo ✓','ok');
+}
+/* lançamento de UMA tarefa no dia; sem marca e sem horas, some da nuvem */
+async function pushDiaLanc(tid){
+  const p=P(); if(!SB||!p) return;
+  const k=diaData(), b=diaBy(p,tid,k);
+  const id=await diaDiaId(p,k); if(!id) return;
+  if(!b.on && !Number(b.horas)){
+    const r=await SB.from('diario_lancamentos').delete().eq('diario_id',id).eq('tarefa_id',tid);
+    if(r.error) _erroNuvem('diario_lancamentos',r.error); else nuvemStatus('salvo ✓','ok');
+    return;
+  }
+  const row={diario_id:id,tarefa_id:tid,marcada:!!b.on,horas:Number(b.horas)||0,autor_id:(window._USER&&_USER.id)||null};
+  const r=await SB.from('diario_lancamentos').upsert(row,{onConflict:'diario_id,tarefa_id'});
+  if(r.error) _erroNuvem('diario_lancamentos',r.error); else nuvemStatus('salvo ✓','ok');
+}
 
 function renderDiario(){
   const host=document.getElementById('v-diario'); if(!host) return;
   const p=(typeof S!=='undefined' && S.emProjeto && P())?P():null;
   if(!p){ host.innerHTML='<div class="soon-wrap"><div class="soon-ic">📋</div><div class="soon-t">Nenhuma obra aberta</div><div class="soon-d">Abra uma obra em <b>Projetos</b> para registrar o diário de hoje.</div></div>'; return; }
-  const st=diaState(p);
-  const d=new Date();
-  const dias=['Domingo','Segunda-feira','Terça-feira','Quarta-feira','Quinta-feira','Sexta-feira','Sábado'];
-  const meses=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
-  const dataStr=dias[d.getDay()]+', '+d.getDate()+' de '+meses[d.getMonth()];
+  const k=diaData();
+  diaCarregar(p,k);                      // busca na nuvem se ainda não veio (re-renderiza sozinho)
+  const st=diaState(p,k);
+  const dataStr=diaDataFmt(k);
+  const hoje=diaEhHoje();
   const tarefas=p.tarefas.filter(t=>!t.header);
-  const marcadas=tarefas.filter(t=>{const b=diaBy(p,t.id);return b.on||t.status==='done';}).length;
+  const marcadas=tarefas.filter(t=>diaBy(p,t.id,k).on).length;
   let h='<div class="dia-wrap">';
   h+=`<div class="dia-hdr"><div class="r1"><span class="pn"># ${rtEsc(p.numero||'—')}</span></div>`
     +`<div class="nm"><span class="material-symbols-rounded">store</span> ${rtEsc(p.nome||'Obra')}</div>`
     +`<div class="lo">${rtEsc(p.contemplado||p.local||'')}</div></div>`;
-  h+=`<div class="dia-daybar"><span class="material-symbols-rounded">event</span><span class="d1">${dataStr}</span><span class="d2">Diário de hoje</span></div>`;
+  const selo = st.encerrado ? '<span class="d2 enc">encerrado</span>' : `<span class="d2">${hoje?'Diário de hoje':'dia anterior'}</span>`;
+  h+=`<div class="dia-daybar">`
+    +`<button class="dia-nav" onclick="diaShift(-1)" title="dia anterior"><span class="material-symbols-rounded">chevron_left</span></button>`
+    +`<span class="material-symbols-rounded">event</span><span class="d1">${dataStr}</span>${selo}`
+    +`<button class="dia-nav" onclick="diaShift(1)" title="próximo dia" ${hoje?'disabled':''}><span class="material-symbols-rounded">chevron_right</span></button>`
+    +`</div>`;
   h+='<div class="dia-sec">Como foi o dia?</div><div class="dia-mood">'
     +diaMoodBtn(st,'','sentiment_satisfied','Fluiu')
     +diaMoodBtn(st,'warn','sentiment_neutral','Travou um pouco')
     +diaMoodBtn(st,'bad','sentiment_dissatisfied','Parou')
     +'</div>';
-  h+=`<div class="dia-sec">Atividades de hoje <span class="cnt">${marcadas} marcada${marcadas===1?'':'s'}</span></div>`;
+  h+=`<div class="dia-sec">Atividades ${hoje?'de hoje':'do dia'} <span class="cnt">${marcadas} marcada${marcadas===1?'':'s'}</span></div>`;
   if(!tarefas.length){ h+='<div class="soon-wrap" style="padding:24px">Sem tarefas nesta obra ainda. Monte o cronograma primeiro.</div>'; }
-  tarefas.forEach(t=>{ h+=diaTaskCard(p,t); });
-  const tot=diaTotal(p);
+  tarefas.forEach(t=>{ h+=diaTaskCard(p,t,k); });
+  const tot=diaTotal(p,k);
   h+=`<div class="dia-hidenote"><span class="material-symbols-rounded">visibility_off</span> O técnico registra só tempo, atividade e foto. O <b>custo (R$)</b> fica atrás da cortina — o campo nunca vê valor.</div>`;
-  h+=`<div class="dia-foot"><div class="roll">total do dia<b>${diaFmtH(tot)} h</b></div><button class="cta" onclick="diaEncerrar()"><span class="material-symbols-rounded">check_circle</span> Encerrar o dia</button></div>`;
+  h+=`<div class="dia-foot"><div class="roll">total do dia<b>${diaFmtH(tot)} h</b></div>`
+    +(st.encerrado
+      ? `<button class="cta" onclick="diaReabrir()" style="background:var(--surf2);color:var(--tx2)"><span class="material-symbols-rounded">lock_open</span> Reabrir o dia</button>`
+      : `<button class="cta" onclick="diaEncerrar()"><span class="material-symbols-rounded">check_circle</span> Encerrar o dia</button>`)
+    +`</div>`;
   h+='</div>';
   host.innerHTML=h;
 }
 function diaMoodBtn(st,val,ic,lbl){ const on=st.mood===val?('on '+(val||'')):''; return `<button class="${on}" onclick="diaMood('${val}')"><span class="material-symbols-rounded">${ic}</span>${lbl}</button>`; }
-function diaTaskCard(p,t){
-  const b=diaBy(p,t.id);
+function diaTaskCard(p,t,k){
+  const b=diaBy(p,t.id,k);
   const done=t.status==='done';
   const prevH=(Number(t.tempo)||0)*(Number(t.qtd)||0);
   const prevTxt=done?'concluída':(prevH?('previsto '+diaFmtH(prevH)+'h'):'sem tempo previsto');
@@ -3235,9 +3338,11 @@ function diaQChips(p){
   h+=`<span class="qsub">${DIA_FOTO_Q[cur].sub}</span></div>`;
   return h;
 }
-function diaTog(id){ const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t||t.status==='done')return; const b=diaBy(p,id); b.on=!b.on; save(); renderDiario(); }
-function diaStep(id,d){ const p=P(); const b=diaBy(p,id); b.horas=Math.max(0,+(b.horas+d).toFixed(2)); if(d>0)b.on=true; save(); renderDiario(); }
-function diaMood(m){ diaState(P()).mood=m; save(); renderDiario(); }
+function diaTog(id){ const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t||t.status==='done')return; const b=diaBy(p,id,diaData()); b.on=!b.on; save(); pushDiaLanc(id); renderDiario(); }
+function diaStep(id,d){ const p=P(); const b=diaBy(p,id,diaData()); b.horas=Math.max(0,+(b.horas+d).toFixed(2)); if(d>0)b.on=true; save(); pushDiaLanc(id); renderDiario(); }
+function diaMood(m){ diaState(P(),diaData()).mood=m; save(); pushDiaDia(); renderDiario(); }
+/* navega entre os dias do diário; não deixa passar de hoje */
+function diaShift(n){ const k=diaSoma(DIA_DATA,n); if(k>diaHoje()) return; DIA_DATA=k; renderDiario(); }
 /* Qualidade da foto — o técnico escolhe conforme o caso.
    dim=0 → não reduz (máxima resolução, só via nuvem). */
 const DIA_FOTO_Q={
@@ -3245,8 +3350,8 @@ const DIA_FOTO_Q={
   fhd: {label:'Full HD',dim:1920, q:0.80, sub:'equilíbrio (padrão)'},
   max: {label:'Máxima', dim:0,    q:0.92, sub:'detalhe fino · precisa de nuvem'}
 };
-function diaQ(p){ const k=diaState(p).fotoQ; return DIA_FOTO_Q[k]?k:'fhd'; }
-function diaSetQ(k){ if(!DIA_FOTO_Q[k])return; diaState(P()).fotoQ=k; save(); renderDiario(); }
+function diaQ(p){ const k=diaRaiz(p).fotoQ; return DIA_FOTO_Q[k]?k:'fhd'; }
+function diaSetQ(k){ if(!DIA_FOTO_Q[k])return; diaRaiz(P()).fotoQ=k; save(); pushDiaDia(); renderDiario(); }
 
 /* comprime a foto (canvas → JPEG) ANTES de subir/guardar:
    foto de celular tem vários MB; sem isso o dataURL local estoura o
@@ -3278,7 +3383,7 @@ function diaAddFoto(id){
 }
 async function diaUploadFoto(id,file){
   const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t)return;
-  const b=diaBy(p,id); b.uploading=true; b.on=true; b.lastErro=''; renderDiario();
+  const b=diaBy(p,id,diaData()); b.uploading=true; b.on=true; b.lastErro=''; renderDiario();
   const qk=diaQ(p); const preset=DIA_FOTO_Q[qk];
   const path=`diario/${p.id}/${id}/${uid()}.jpg`;
   let ref=null;
@@ -3315,7 +3420,7 @@ async function diaUploadFoto(id,file){
   b.uploading=false;
   if(ref && ref.url){
     if(!t.fotos)t.fotos=[]; t.fotos.push(ref);
-    try{ save(); }
+    try{ save(); pushTarefa(t); pushDiaLanc(id); }  // a referência da foto vai junto da tarefa p/ a nuvem
     catch(se){ // estouro de quota do localStorage (foto local grande demais)
       t.fotos.pop();
       b.lastErro='A foto é grande demais para guardar offline neste aparelho. Faça login para enviá-la à nuvem.';
@@ -3326,7 +3431,7 @@ async function diaUploadFoto(id,file){
 }
 function diaDelFoto(id,idx){
   const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t||!t.fotos)return;
-  const f=t.fotos[idx]; t.fotos.splice(idx,1); save(); renderDiario();
+  const f=t.fotos[idx]; t.fotos.splice(idx,1); save(); pushTarefa(t); renderDiario();
   if(f&&f.path&&SB){ SB.storage.from('anexos').remove([f.path]); }
 }
 function diaConcluir(id){
@@ -3340,10 +3445,16 @@ function diaConcluir(id){
   renderDiario();
 }
 function diaEncerrar(){
-  const p=P(); const tot=diaTotal(p);
-  if(!confirm('Encerrar o diário de hoje?\n\nTotal lançado: '+diaFmtH(tot)+' h.\n\n(As horas viram tempo real no cronograma na próxima etapa — ponte de custo.)')) return;
-  save();
-  alert('✓ Diário de hoje registrado — '+diaFmtH(tot)+' h.\nAs tarefas concluídas já têm a foto de prova.\nA ponte horas → custo entra na próxima etapa.');
+  const p=P(); const k=diaData(); const tot=diaTotal(p,k); const st=diaState(p,k);
+  if(!confirm('Encerrar o diário de '+diaDataFmt(k)+'?\n\nTotal lançado: '+diaFmtH(tot)+' h.\n\n(As horas viram tempo real no cronograma na próxima etapa — ponte de custo.)')) return;
+  st.encerrado=new Date().toISOString();
+  save(); pushDiaDia(); renderDiario();
+}
+function diaReabrir(){
+  const p=P(); const k=diaData(); const st=diaState(p,k);
+  if(!confirm('Reabrir o diário de '+diaDataFmt(k)+' para novos lançamentos?')) return;
+  st.encerrado='';
+  save(); pushDiaDia(); renderDiario();
 }
 
 async function init(){
