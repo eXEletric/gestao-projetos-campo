@@ -818,6 +818,7 @@ body.papel-tecnico .adm-only{display:none !important}
   .dia-task .prev{font-size:11px;color:var(--tx3);margin-top:3px;display:flex;align-items:center;gap:5px}
   .dia-task .prev .material-symbols-rounded{font-size:13px}
   .dia-doneflag{display:none;align-items:center;gap:6px;color:#3b6d11;font-size:12px;font-weight:600;margin-top:9px}
+  .dia-doneflag.semfoto{color:#8a5d0b}   /* concluída sem a prova: sinaliza, sem alarmar */
   .dia-task.done .dia-doneflag{display:flex}
   .dia-task.done .dia-reveal,.dia-task.done .dia-sw{display:none!important}
   .dia-sw{width:52px;height:30px;border-radius:16px;background:var(--surf2);border:1px solid var(--line2);position:relative;cursor:pointer;flex-shrink:0;transition:.18s}
@@ -3312,7 +3313,13 @@ function diaTaskCard(p,t,k){
   h+=`<div class="t1"><div class="nm">${rtEsc(t.nome)}<div class="prev"><span class="material-symbols-rounded">schedule</span> ${prevTxt}</div></div>`;
   if(!done) h+=`<div class="dia-sw ${b.on?'on':''}" onclick="diaTog('${t.id}')"><div class="kn"><span class="material-symbols-rounded">construction</span></div></div>`;
   h+=`</div>`;
-  h+=`<div class="dia-doneflag"><span class="material-symbols-rounded">check_circle</span> Concluída${reqN?' — com foto anexada':''}</div>`;
+  /* o selo diz o que a tarefa TEM, não o que ela exige: antes ele afirmava
+     "com foto anexada" só porque a foto era obrigatória — atestava uma prova
+     que podia não existir (tarefa concluída antes da trava, p.ex.). */
+  const nf=(t.fotos||[]).length;
+  const semProva=(!nf && reqN>0);
+  const selo = nf ? (' — '+nf+' foto'+(nf>1?'s':'')) : (semProva?' — sem foto':'');
+  h+=`<div class="dia-doneflag${semProva?' semfoto':''}"><span class="material-symbols-rounded">${semProva?'no_photography':'check_circle'}</span> Concluída${selo}</div>`;
   h+=`<div class="dia-reveal">`;
   h+=`<div class="dia-hours"><span class="lb"><span class="material-symbols-rounded">timer</span> Horas de hoje</span><div class="dia-step"><button onclick="diaStep('${t.id}',-0.5)">−</button><span class="val">${diaFmtH(b.horas)}<small>h</small></span><button onclick="diaStep('${t.id}',0.5)">+</button></div></div>`;
   h+=`<div class="dia-photos"><div class="plbl"><span class="material-symbols-rounded">photo_camera</span> Fotos do serviço ${reqN?'<span class="req">obrigatório p/ concluir *</span>':'<span style="color:var(--tx3)">(opcional)</span>'}</div>`;
