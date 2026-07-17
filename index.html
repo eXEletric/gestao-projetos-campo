@@ -1319,9 +1319,14 @@ function uid(){ return (crypto.randomUUID ? crypto.randomUUID() : 'id'+Math.rand
 function _cfId(t){ const c=colab(t.exec); return (c&&c.linhas[t.execLinha])?c.linhas[t.execLinha]._id:null; }
 function _varId(t){ const s=S.catalogo.find(x=>x.id===t.svc); if(s&&t.varNome){ const v=s.vars.find(x=>x[0]===t.varNome); if(v) return v[2]||null; } return null; }
 function _projOf(t){ return S.projetos.find(p=>p.tarefas.includes(t))||P(); }
+/* Só vai pro banco a foto que JÁ está no Storage (tem `path`). A foto tirada
+   offline é uma imagem embutida de vários MB: mandá-la pro jsonb inflaria o
+   banco e ela voltaria em toda carga, estourando o cache do navegador.
+   Ela fica no aparelho, marcada `local`, até o diaSyncFotos() conseguir subir. */
+function _fotosNuvem(t){ const f=(t.fotos||[]).filter(x=>x&&x.path&&!x.local&&!/^data:/.test(x.url||'')); return f.length?f:null; }
 async function pushTarefa(t){ if(!SB||!t) return; const s=S.catalogo.find(x=>x.id===t.svc); const pj=_projOf(t);
   const svcOk=!!(s&&!s.avulso); // serviço avulso não existe na nuvem → manda nulo (evita violar a chave estrangeira)
-  const row={id:t.id,projeto_id:pj.id,grupo_id:t.grupo,nivel:t.nivel||1,is_header:!!t.header,servico_id:svcOk?t.svc:null,variacao_id:svcOk?_varId(t):null,nome:t.nome,quantidade:t.qtd||0,unidade:(s?s.un:(t.un||null)),tempo_previsto:t.tempoPrev||0,tempo_atual:t.tempo||0,executor_id:t.exec||null,colaborador_funcao_id:_cfId(t),responsavel_id:t.resp||null,prioridade:PRI2DB[t.prioridade]||'media',progresso:t.prog||0,status:ST2DB[t.status]||'a_fazer',data_inicio:t.ini||null,data_inicio_real:t.iniReal||null,data_fim_prevista:t.fim||null,data_fim_real:t.fimReal||null,variacoes:(t.vars&&t.vars.length?t.vars:null),notas:t.notas||null,requisitos:(t.req||null),fase:(t.fase||null),fotos:(t.fotos&&t.fotos.length?t.fotos:null),ordem:pj.tarefas.indexOf(t)};
+  const row={id:t.id,projeto_id:pj.id,grupo_id:t.grupo,nivel:t.nivel||1,is_header:!!t.header,servico_id:svcOk?t.svc:null,variacao_id:svcOk?_varId(t):null,nome:t.nome,quantidade:t.qtd||0,unidade:(s?s.un:(t.un||null)),tempo_previsto:t.tempoPrev||0,tempo_atual:t.tempo||0,executor_id:t.exec||null,colaborador_funcao_id:_cfId(t),responsavel_id:t.resp||null,prioridade:PRI2DB[t.prioridade]||'media',progresso:t.prog||0,status:ST2DB[t.status]||'a_fazer',data_inicio:t.ini||null,data_inicio_real:t.iniReal||null,data_fim_prevista:t.fim||null,data_fim_real:t.fimReal||null,variacoes:(t.vars&&t.vars.length?t.vars:null),notas:t.notas||null,requisitos:(t.req||null),fase:(t.fase||null),fotos:_fotosNuvem(t),ordem:pj.tarefas.indexOf(t)};
   const r=await SB.from('tarefas').upsert(row); if(r.error){ _erroNuvem('pushTarefa',r.error);} else nuvemStatus('salvo ✓','ok'); }
 async function pushTarefasOrdem(){ if(!SB) return; for(const t of P().tarefas){ await pushTarefa(t); } }
 async function pushGrupo(g){ if(!SB||!g) return; const row={id:g.id,projeto_id:S.ativo,nome:g.nome,categoria_id:g.cat||null,responsavel_id:g.resp||null,detalhes:g.det||null,ordem:P().grupos.indexOf(g),aberto:g.open!==false};
@@ -1379,11 +1384,19 @@ const CATALOGO_BASE=[
 window._FUNC_ID=window._FUNC_ID||{}; window._NIV_ID=window._NIV_ID||{};
 let S=load();
 function load(){const s=localStorage.getItem(STORE_KEY);const o=s?JSON.parse(s):demo();if(!o.padroes)o.padroes=[];return o;}
-function save(){localStorage.setItem(STORE_KEY,JSON.stringify(S));}
+/* Devolve false em vez de estourar. O cache do navegador é pequeno (~5MB) e
+   uma foto tirada offline (imagem embutida) pode enchê-lo sozinha; antes o
+   erro subia cru e quebrava a ação que chamou. Quem chama decide o que fazer. */
+function save(){ try{ localStorage.setItem(STORE_KEY,JSON.stringify(S)); return true; }
+  catch(e){ console.warn('save: cache local cheio',e); if(typeof nuvemStatus==='function') nuvemStatus('cache local cheio','err'); return false; } }
 
 /* ===== CARREGAR DA NUVEM ===== */
 async function carregarDaNuvem(){
   if(!SB) return null;
+  /* O boot faz S=dados (troca o estado INTEIRO). Fotos ainda não sincronizadas
+     só existem no aparelho e seriam apagadas aqui — guarda e reanexa abaixo. */
+  const _pend={};
+  try{ ((S&&S.projetos)||[]).forEach(p=>(p.tarefas||[]).forEach(t=>{ const l=(t.fotos||[]).filter(f=>f&&f.local); if(l.length)_pend[t.id]=l; })); }catch(e){}
   const [fR,nR,cR,coR,cfR,sR,svR,pR,gR,tR,paR] = await Promise.all([
     SB.from('funcoes').select('*').is('deleted_at',null).order('ordem'),
     SB.from('niveis').select('*').is('deleted_at',null).order('ordem'),
@@ -1422,7 +1435,7 @@ async function carregarDaNuvem(){
       const sCat=S.catalogo.find(x=>x.id===t.servico_id);
       let vars = Array.isArray(t.variacoes)&&t.variacoes.length ? t.variacoes.map(v=>[v[0],Number(v[1])]) : null; // variações próprias da tarefa
       if(!vars){ vars = sCat&&sCat.vars.length ? sCat.vars.map(v=>[v[0],Number(v[1])]) : (vNome?[[vNome,Number(t.tempo_atual)]]:[['Padrão',Number(t.tempo_atual)]]); } // fallback p/ tarefas antigas
-      return {id:t.id,grupo:t.grupo_id,nivel:t.nivel,header:t.is_header,svc:t.servico_id,un:t.unidade||'',vars,varNome:vNome||(vars[0]&&vars[0][0])||'',nome:t.nome,qtd:Number(t.quantidade),tempo:Number(t.tempo_atual),tempoPrev:Number(t.tempo_previsto),exec:t.executor_id||'',execLinha:execLinha,resp:t.responsavel_id||'',prioridade:PRI2APP[t.prioridade]||'Média',prog:t.progresso,status:ST2APP[t.status]||'todo',ini:t.data_inicio||'',iniReal:t.data_inicio_real||'',fim:t.data_fim_prevista||'',fimReal:t.data_fim_real||'',notas:t.notas||'',req:t.requisitos||undefined,fase:t.fase||undefined,fotos:(Array.isArray(t.fotos)?t.fotos:[])};
+      return {id:t.id,grupo:t.grupo_id,nivel:t.nivel,header:t.is_header,svc:t.servico_id,un:t.unidade||'',vars,varNome:vNome||(vars[0]&&vars[0][0])||'',nome:t.nome,qtd:Number(t.quantidade),tempo:Number(t.tempo_atual),tempoPrev:Number(t.tempo_previsto),exec:t.executor_id||'',execLinha:execLinha,resp:t.responsavel_id||'',prioridade:PRI2APP[t.prioridade]||'Média',prog:t.progresso,status:ST2APP[t.status]||'todo',ini:t.data_inicio||'',iniReal:t.data_inicio_real||'',fim:t.data_fim_prevista||'',fimReal:t.data_fim_real||'',notas:t.notas||'',req:t.requisitos||undefined,fase:t.fase||undefined,fotos:(Array.isArray(t.fotos)?t.fotos:[]).concat(_pend[t.id]||[])};
     });
     return {id:p.id,numero:p.numero_externo||'',nome:p.nome,contratante:p.contratante||'',contemplado:p.contemplado||'',local:p.local||'',cidade:p.cidade||'',uf:p.uf||'',endereco:p.endereco||'',localizacao:p.localizacao||'',lider:p.lider_id||'',gestor:p.gestor||'',dataIni:p.data_inicio||'',dataFim:p.data_fim_prevista||'',status:PJ2APP[p.status]||'Em andamento',prioridade:PRI2APP[p.prioridade]||'Média',obs:p.observacoes||'',modelo:!!p.modelo,grupos:grupos,tarefas:tarefas};
   });
@@ -3269,6 +3282,7 @@ function renderDiario(){
   if(!p){ host.innerHTML='<div class="soon-wrap"><div class="soon-ic">📋</div><div class="soon-t">Nenhuma obra aberta</div><div class="soon-d">Abra uma obra em <b>Projetos</b> para registrar o diário de hoje.</div></div>'; return; }
   const k=diaData();
   diaCarregar(p,k);                      // busca na nuvem se ainda não veio (re-renderiza sozinho)
+  diaSyncFotos(p);                       // sobe foto que ficou presa no aparelho (offline)
   const st=diaState(p,k);
   const dataStr=diaDataFmt(k);
   const hoje=diaEhHoje();
@@ -3427,14 +3441,46 @@ async function diaUploadFoto(id,file){
   b.uploading=false;
   if(ref && ref.url){
     if(!t.fotos)t.fotos=[]; t.fotos.push(ref);
-    try{ save(); pushTarefa(t); pushDiaLanc(id); }  // a referência da foto vai junto da tarefa p/ a nuvem
-    catch(se){ // estouro de quota do localStorage (foto local grande demais)
-      t.fotos.pop();
+    if(!save()){                 // não coube no cache do navegador (foto offline grande demais)
+      t.fotos.pop(); save();
       b.lastErro='A foto é grande demais para guardar offline neste aparelho. Faça login para enviá-la à nuvem.';
       if(typeof nuvemStatus==='function') nuvemStatus('sem espaço local p/ a foto','err');
-    }
+    } else { pushTarefa(t); pushDiaLanc(id); }  // a referência da foto vai junto da tarefa p/ a nuvem
   }
   renderDiario();
+}
+/* Sobe as fotos que ficaram presas no aparelho (tiradas sem sinal/sessão).
+   Roda quando o diário abre já logado: converte a imagem embutida de volta
+   em arquivo, manda pro Storage e troca a referência local pela da nuvem —
+   é o que impede a foto de campo de morrer no celular. */
+var _diaSync={};
+async function diaSyncFotos(p){
+  if(!SB||!p||_diaSync[p.id]) return;
+  let sess=null; try{ const r=await SB.auth.getSession(); sess=r.data&&r.data.session; }catch(e){ return; }
+  if(!sess) return;
+  const alvos=p.tarefas.filter(t=>(t.fotos||[]).some(f=>f&&f.local));
+  if(!alvos.length) return;
+  _diaSync[p.id]=true;
+  let subiu=0;
+  for(const t of alvos){
+    let mudou=false;
+    for(let i=0;i<(t.fotos||[]).length;i++){
+      const f=t.fotos[i]; if(!f||!f.local||!/^data:/.test(f.url||'')) continue;
+      try{
+        const blob=await (await fetch(f.url)).blob();
+        const path='diario/'+p.id+'/'+t.id+'/'+uid()+'.jpg';
+        const up=await SB.storage.from('anexos').upload(path,blob,{upsert:true,contentType:'image/jpeg'});
+        if(up.error) throw up.error;
+        const sg=await SB.storage.from('anexos').createSignedUrl(path,60*60*24*365);
+        if(sg.error) throw sg.error;
+        t.fotos[i]={path:path,url:(sg.data&&sg.data.signedUrl)||'',q:f.q||'fhd',kb:Math.round(blob.size/1024),ts:f.ts||new Date().toISOString()};
+        subiu++; mudou=true;
+      }catch(e){ console.warn('diário: foto pendente não subiu',e); }
+    }
+    if(mudou) await pushTarefa(t);
+  }
+  _diaSync[p.id]=false;
+  if(subiu){ save(); nuvemStatus(subiu+(subiu>1?' fotos sincronizadas ✓':' foto sincronizada ✓'),'ok'); renderDiario(); }
 }
 function diaDelFoto(id,idx){
   const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t||!t.fotos)return;
