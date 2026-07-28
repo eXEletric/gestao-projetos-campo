@@ -168,6 +168,11 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .pkitem .pkcusto{font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums;white-space:nowrap}
 .pkitem.avulso{color:var(--pri);border-style:dashed;margin-top:4px}
 .pkitem.avulso .material-symbols-rounded{font-size:17px}
+.fpick{font-size:10px;font-weight:600;color:var(--pri);background:var(--pri-bg);border:none;border-radius:20px;padding:2px 9px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;margin-left:6px;vertical-align:middle;text-transform:none;letter-spacing:0}
+.fpick:hover{background:#e2dffb}
+.fpick .material-symbols-rounded{font-size:13px}
+.hintlbl{font-size:9px;color:var(--tx3);font-weight:400;text-transform:none;letter-spacing:0}
+.svcnm{font-size:13px;padding:5px 0;color:var(--tx);line-height:1.3}
 .chip{font-size:11px;font-weight:600;color:var(--tx2);background:var(--surf2);border:1px solid var(--line);border-radius:20px;padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .chip:hover{border-color:var(--line2)}
 .chip .material-symbols-rounded{font-size:15px}
@@ -220,12 +225,12 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
       <div class="panel">
         <div class="phead"><span class="material-symbols-rounded">contract</span><h2>Dados da cotação</h2></div>
         <div class="fgrid">
-          <div class="f"><label>Nº da cotação</label><input class="in mono" data-m="numero"></div>
-          <div class="f"><label>ID Pipefy</label><input class="in mono" data-m="idpipe"></div>
+          <div class="f"><label>Nº da cotação <span class="hintlbl">interno · gerado</span></label><input class="in mono" data-m="numero"></div>
+          <div class="f"><label>ID externo <span class="hintlbl">opcional · ex: Pipefy</span></label><input class="in mono" data-m="idpipe" placeholder="—"></div>
           <div class="f"><label>Data</label><input class="in" type="date" data-m="dataISO"></div>
           <div class="f"><label>Validade</label><input class="in" type="date" data-m="validadeISO"></div>
-          <div class="f full"><label>Solução</label><input class="in" data-m="solTitulo"></div>
-          <div class="f full"><label>Descrição do escopo</label><input class="in" data-m="solDesc"></div>
+          <div class="f full"><label>Solução <button class="fpick" onclick="openHP('solucao')"><span class="material-symbols-rounded">list</span>escolher do cadastro</button></label><input class="in" data-m="solTitulo" placeholder="Escolha uma solução…"></div>
+          <div class="f full"><label>Descrição do escopo <span class="hintlbl">vem da solução · editável</span></label><input class="in" data-m="solDesc"></div>
         </div>
       </div>
 
@@ -233,13 +238,13 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
       <div class="panel">
         <div class="phead"><span class="material-symbols-rounded">business</span><h2>Cliente & destino</h2></div>
         <div class="fgrid">
-          <div class="f"><label>Cliente (contratante)</label><input class="in" data-m="cliNome"></div>
+          <div class="f"><label>Cliente (contratante) <button class="fpick" onclick="openHP('contratante')"><span class="material-symbols-rounded">list</span>do CRM</button></label><input class="in" data-m="cliNome" placeholder="Escolha o cliente…"></div>
           <div class="f"><label>Contato</label><input class="in" data-m="cliContato"></div>
           <div class="f"><label>Fone</label><input class="in" data-m="cliFone"></div>
           <div class="f"><label>E-mail</label><input class="in" data-m="cliEmail"></div>
-          <div class="f"><label>Cliente final / loja</label><input class="in" data-m="finNome"></div>
+          <div class="f"><label>Cliente final / loja <button class="fpick" onclick="openHP('final')"><span class="material-symbols-rounded">list</span>do CRM</button></label><input class="in" data-m="finNome" placeholder="Escolha a loja…"></div>
           <div class="f"><label>Endereço</label><input class="in" data-m="finEnd"></div>
-          <div class="f"><label>Responsável eX (PRO-W)</label><input class="in" data-m="respNome"></div>
+          <div class="f"><label>Responsável eX <button class="fpick" onclick="openHP('resp')"><span class="material-symbols-rounded">list</span>usuários</button></label><input class="in" data-m="respNome" placeholder="Escolha o responsável…"></div>
           <div class="f"><label>Fone / e-mail eX</label><input class="in" data-m="respContato"></div>
         </div>
       </div>
@@ -301,7 +306,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
 
 <script>
 "use strict";
-const STORE="ex_orc_v5";
+const STORE="ex_orc_v6";
 let S=null;
 
 /* ---------- utilidades ---------- */
@@ -345,7 +350,7 @@ function blkCusto(blk){
 /* ---------- estado exemplo (Copeland / Assaí) ---------- */
 function demo(){
   return {
-    numero:"eX_2025-CPLND-ASSAÍ NACIONAL-SERV_01", idpipe:"1049469624",
+    numero:"ORÇ-2026-0042", idpipe:"1049469624",
     dataISO:"2025-03-26", validadeISO:"2025-04-25",
     solTitulo:"SOLUÇÃO COPELAND 2025 ASSAÍ",
     solDesc:"Lojas 2022 (Olimpo) — Iluminação (4 QDs) + substituição do controlador do ar-condicionado central.",
@@ -421,6 +426,23 @@ materiais:[
   {id:uid(),nome:"Botão de impulsão 22mm 1NA verde",custo:16,und:"PÇ",marca:"SCHNEIDER",margem:25},
   {id:uid(),nome:"Bloco de contato auxiliar BFC0-22",custo:50,und:"PÇ",marca:"WEG",margem:25},
   {id:uid(),nome:"Caixa de alumínio 20×20",custo:127,und:"PÇ",marca:"TRAMONTINA",margem:25}
+],
+solucoes:[
+  {id:uid(),nome:"Solução Copeland 2025 — Assaí",escopo:"Lojas 2022 (Olimpo) — iluminação (4 QDs) + substituição do controlador do ar-condicionado central."},
+  {id:uid(),nome:"Automação de iluminação (padrão)",escopo:"Automação dos quadros de iluminação com controladores e sensores, integrada ao supervisório."},
+  {id:uid(),nome:"Adequação de comando elétrico",escopo:"Adequação dos comandos dos quadros para automação, incluindo BUS de comunicação."}
+],
+clientes:[
+  {id:uid(),nome:"COPELAND",contato:"Denis Ferraz",fone:"11 98950-4477",email:"denis.ferraz@copeland.com",endereco:""},
+  {id:uid(),nome:"ASSAÍ NACIONAL",contato:"",fone:"",email:"",endereco:"Nacional"},
+  {id:uid(),nome:"ATACADÃO",contato:"",fone:"",email:"",endereco:""},
+  {id:uid(),nome:"PÃO DE AÇÚCAR",contato:"",fone:"",email:"",endereco:""},
+  {id:uid(),nome:"ECONOMART",contato:"",fone:"",email:"",endereco:""}
+],
+usuarios:[
+  {id:uid(),nome:"André Camilo",papel:"comercial",fone:"62 99392-2999",email:"aocinnet@gmail.com"},
+  {id:uid(),nome:"Gustavo Neves",papel:"comercial",fone:"",email:"gustavoneves@exautomacao.com.br"},
+  {id:uid(),nome:"José Arnaldo",papel:"tecnico",fone:"",email:""}
 ]};
 
 /* ---------- carga / persistência ---------- */
@@ -434,10 +456,10 @@ function resetDemo(){ if(confirm("Recarregar o exemplo Copeland/Assaí? As ediç
 
 /* ---------- blocos ---------- */
 const BLKS=[
-  {key:"servicos",titulo:"Serviços",icon:"build",obs:true,mat:false,custo:true,sing:"serviço"},
-  {key:"equip",titulo:"Locação de equipamentos",icon:"construction",obs:false,mat:false,custo:true,sing:"equipamento"},
-  {key:"despesas",titulo:"Deslocamento & Despesas",icon:"local_shipping",obs:true,mat:false,custo:true,sing:"despesa"},
-  {key:"materiais",titulo:"Materiais empregados",icon:"inventory_2",obs:true,mat:true,custo:true,sing:"material"}
+  {key:"servicos",titulo:"Serviços",icon:"build",obs:true,mat:false,custo:true,soCad:true,sing:"serviço"},
+  {key:"equip",titulo:"Locação de equipamentos",icon:"construction",obs:false,mat:false,custo:true,soCad:true,sing:"equipamento"},
+  {key:"despesas",titulo:"Deslocamento & Despesas",icon:"local_shipping",obs:true,mat:false,custo:true,soCad:true,sing:"despesa"},
+  {key:"materiais",titulo:"Materiais empregados",icon:"inventory_2",obs:true,mat:true,custo:true,soCad:false,sing:"material"}
 ];
 
 function renderBlk(cfg){
@@ -493,7 +515,7 @@ function renderBlk(cfg){
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
       return `<tr>
         <td class="idx">${i+1}</td>
-        <td class="svc"><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"><div class="bs"><span class="material-symbols-rounded">database</span>base: ${fmt(r.custoBase)}${r.catId?'':' · avulso'}</div></td>
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: ${fmt(r.custoBase)}${r.catId?'':' · avulso'}</div></td>
         ${marcaCell}
         <td>
           <div class="swcell">
@@ -606,9 +628,9 @@ const UND_DFLT={servicos:'UND',equip:'DIA',despesas:'UND',materiais:'PÇ'};
 function openPick(blk){
   const cfg=BLKS.find(b=>b.key===blk), cad=CAD[blk]||[];
   const list=cad.map(c=>`<button class="pkitem" onclick="pickCad('${blk}','${c.id}')"><span class="pknm">${esc(c.nome)}${c.marca?' — '+esc(c.marca):''}</span><span class="pkcusto">custo ${fmt(c.custo)}/${esc(c.und||UND_DFLT[blk])}</span></button>`).join('');
+  const avulso = cfg.soCad ? '' : `<button class="pkitem avulso" onclick="addAvulso('${blk}')"><span class="material-symbols-rounded">edit_note</span>Material genérico / avulso (sem preço fixo)</button>`;
   document.getElementById('pickTitle').textContent='Adicionar '+cfg.sing;
-  document.getElementById('pickBody').innerHTML=(cad.length?list:'<div style="color:var(--tx3);padding:12px;font-size:12px">Cadastro vazio.</div>')
-    +`<button class="pkitem avulso" onclick="addAvulso('${blk}')"><span class="material-symbols-rounded">edit_note</span>${blk==='materiais'?'Material genérico / avulso (sem preço fixo)':cfg.sing.charAt(0).toUpperCase()+cfg.sing.slice(1)+' avulso (fora do cadastro)'}</button>`;
+  document.getElementById('pickBody').innerHTML=(cad.length?list:'<div style="color:var(--tx3);padding:12px;font-size:12px">Cadastro vazio.</div>')+avulso;
   document.getElementById('pickModal').classList.add('open');
 }
 function closePick(){ document.getElementById('pickModal').classList.remove('open'); }
@@ -620,6 +642,36 @@ function pickCad(blk,cid){
 function addAvulso(blk){
   S[blk].push(rowSvc("",1,UND_DFLT[blk],0,'',null,''));
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
+}
+
+/* ---------- picker do cabeçalho (solução, cliente, responsável) ---------- */
+function setM(f,v){ S[f]=v; const el=document.querySelector('[data-m="'+f+'"]'); if(el)el.value=v; }
+function pkRow(kind,id,nome,sub){ return `<button class="pkitem" onclick="pickHP('${kind}','${id}')"><span class="pknm">${esc(nome)}</span>${sub?`<span class="pkcusto">${esc(sub)}</span>`:''}</button>`; }
+function openHP(kind){
+  let title='', html='';
+  if(kind==='solucao'){
+    title='Escolher solução';
+    html=CAD.solucoes.map(s=>pkRow('solucao',s.id,s.nome,(s.escopo||'').slice(0,46)+((s.escopo||'').length>46?'…':''))).join('')
+      +`<button class="pkitem avulso" onclick="pickHP('solucao','__gen')"><span class="material-symbols-rounded">edit_note</span>Solução genérica / manual</button>`;
+  } else if(kind==='contratante'||kind==='final'){
+    title = kind==='contratante'?'Escolher cliente contratante':'Escolher cliente final / loja';
+    html=CAD.clientes.map(c=>pkRow(kind,c.id,c.nome,c.contato||c.endereco||'')).join('');
+  } else if(kind==='resp'){
+    title='Escolher responsável (comercial)';
+    html=CAD.usuarios.filter(u=>u.papel==='comercial').map(u=>pkRow('resp',u.id,u.nome,u.email||u.fone||'')).join('');
+  }
+  document.getElementById('pickTitle').textContent=title;
+  document.getElementById('pickBody').innerHTML=html;
+  document.getElementById('pickModal').classList.add('open');
+}
+function pickHP(kind,id){
+  if(kind==='solucao'){
+    if(id==='__gen'){ setM('solTitulo',''); setM('solDesc',''); }
+    else{ const s=CAD.solucoes.find(x=>x.id===id); if(s){ setM('solTitulo',s.nome); setM('solDesc',s.escopo||''); } }
+  } else if(kind==='contratante'){ const c=CAD.clientes.find(x=>x.id===id); if(c){ setM('cliNome',c.nome); setM('cliContato',c.contato||''); setM('cliFone',c.fone||''); setM('cliEmail',c.email||''); } }
+  else if(kind==='final'){ const c=CAD.clientes.find(x=>x.id===id); if(c){ setM('finNome',c.nome); setM('finEnd',c.endereco||''); } }
+  else if(kind==='resp'){ const u=CAD.usuarios.find(x=>x.id===id); if(u){ setM('respNome',u.nome); setM('respContato',(u.fone||'')+((u.fone&&u.email)?' · ':'')+(u.email||'')); } }
+  save(); closePick();
 }
 function updObs(blk,val){ if(!S.obs)S.obs={}; S.obs[blk]=val; save(); }
 function addRow(blk){ const dflt=blk==='equip'?'DIA':blk==='materiais'?'PÇ':'UND'; S[blk].push(row("",1,dflt,0)); save(); renderBlk(BLKS.find(b=>b.key===blk)); }
