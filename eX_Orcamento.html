@@ -645,6 +645,10 @@ function addAvulso(blk){
 }
 
 /* ---------- picker do cabeçalho (solução, cliente, responsável) ---------- */
+// clientes vêm do CRM (ex_crm_v1, mesmo domínio) se existir; senão do seed local
+function crmData(){ try{const r=localStorage.getItem('ex_crm_v1'); if(r){const d=JSON.parse(r); if(d&&Array.isArray(d.clientes)&&d.clientes.length) return d.clientes;}}catch(e){} return null; }
+function cliList(kind){ const crm=crmData(); if(crm) return crm.filter(c=> kind==='contratante'?c.tipo==='contratante':c.tipo==='contemplado'); return CAD.clientes; }
+function cliFind(id){ const crm=crmData(); const src=crm||CAD.clientes; return src.find(x=>x.id===id); }
 function setM(f,v){ S[f]=v; const el=document.querySelector('[data-m="'+f+'"]'); if(el)el.value=v; }
 function pkRow(kind,id,nome,sub){ return `<button class="pkitem" onclick="pickHP('${kind}','${id}')"><span class="pknm">${esc(nome)}</span>${sub?`<span class="pkcusto">${esc(sub)}</span>`:''}</button>`; }
 function openHP(kind){
@@ -655,7 +659,9 @@ function openHP(kind){
       +`<button class="pkitem avulso" onclick="pickHP('solucao','__gen')"><span class="material-symbols-rounded">edit_note</span>Solução genérica / manual</button>`;
   } else if(kind==='contratante'||kind==='final'){
     title = kind==='contratante'?'Escolher cliente contratante':'Escolher cliente final / loja';
-    html=CAD.clientes.map(c=>pkRow(kind,c.id,c.nome,c.contato||c.endereco||'')).join('');
+    const lst=cliList(kind);
+    html=lst.length?lst.map(c=>pkRow(kind,c.id,c.nome,c.contato||c.endereco||'')).join('')
+      :'<div style="color:var(--tx3);padding:12px;font-size:12px">Nenhum cliente no CRM ainda.</div>';
   } else if(kind==='resp'){
     title='Escolher responsável (comercial)';
     html=CAD.usuarios.filter(u=>u.papel==='comercial').map(u=>pkRow('resp',u.id,u.nome,u.email||u.fone||'')).join('');
@@ -668,8 +674,8 @@ function pickHP(kind,id){
   if(kind==='solucao'){
     if(id==='__gen'){ setM('solTitulo',''); setM('solDesc',''); }
     else{ const s=CAD.solucoes.find(x=>x.id===id); if(s){ setM('solTitulo',s.nome); setM('solDesc',s.escopo||''); } }
-  } else if(kind==='contratante'){ const c=CAD.clientes.find(x=>x.id===id); if(c){ setM('cliNome',c.nome); setM('cliContato',c.contato||''); setM('cliFone',c.fone||''); setM('cliEmail',c.email||''); } }
-  else if(kind==='final'){ const c=CAD.clientes.find(x=>x.id===id); if(c){ setM('finNome',c.nome); setM('finEnd',c.endereco||''); } }
+  } else if(kind==='contratante'){ const c=cliFind(id); if(c){ setM('cliNome',c.nome); setM('cliContato',c.contato||''); setM('cliFone',c.fone||''); setM('cliEmail',c.email||''); } }
+  else if(kind==='final'){ const c=cliFind(id); if(c){ setM('finNome',c.nome); setM('finEnd',c.endereco||''); } }
   else if(kind==='resp'){ const u=CAD.usuarios.find(x=>x.id===id); if(u){ setM('respNome',u.nome); setM('respContato',(u.fone||'')+((u.fone&&u.email)?' · ':'')+(u.email||'')); } }
   save(); closePick();
 }
