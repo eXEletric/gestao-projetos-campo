@@ -728,8 +728,17 @@ function setMode(m){
   document.getElementById('mEdit').classList.toggle('on',m==='edit');
 }
 
+/* ---------- ponte com o CRM: pré-preenche o cabeçalho vindo de uma oportunidade ---------- */
+function applyPrefill(){
+  try{ const r=localStorage.getItem('ex_orc_prefill'); if(!r)return; localStorage.removeItem('ex_orc_prefill');
+    const p=JSON.parse(r);
+    ['cliNome','cliContato','cliFone','cliEmail','finNome','finEnd','solTitulo','solDesc'].forEach(k=>{ if(p[k]!=null&&p[k]!=='') setM(k,p[k]); });
+    save();
+  }catch(e){}
+}
+
 /* ---------- boot ---------- */
-function boot(){ BLKS.forEach(renderBlk); bindFields(); recalc(); }
+function boot(){ BLKS.forEach(renderBlk); bindFields(); applyPrefill(); recalc(); }
 load(); boot();
 </script>
 </body>
