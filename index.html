@@ -440,7 +440,7 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">sell</span></span><span class="lb">Comercial</span><span class="gchev">▶</span></div>
       <div class="sb-sub">
         <button class="sb-i fut" onclick="navSoon('Propostas',this)"><span class="ic"><span class="msr">description</span></span><span class="lb">Propostas</span><span class="br">em breve</span></button>
-        <button class="sb-i fut" onclick="navSoon('Orçamentos',this)"><span class="ic"><span class="msr">request_quote</span></span><span class="lb">Orçamentos</span><span class="br">em breve</span></button>
+        <button class="sb-i" onclick="navView('orcamento',this)"><span class="ic"><span class="msr">request_quote</span></span><span class="lb">Orçamentos</span></button>
       </div>
 
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">business_center</span></span><span class="lb">Gestão</span><span class="gchev">▶</span></div>
@@ -604,6 +604,10 @@ body.papel-tecnico .adm-only{display:none !important}
   <!-- MATERIAIS -->
   <div class="view" id="v-mat">
     <iframe id="mat-frame" title="Cadastro de Materiais / Estoque" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
+  </div>
+
+  <div class="view" id="v-orcamento">
+    <iframe id="orc-frame" title="Orçamento" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
   </div>
 
   <!-- PERFIL DA EMPRESA (página, só leitura) -->
@@ -809,6 +813,11 @@ body.papel-tecnico .adm-only{display:none !important}
   .dia-mood button.on{border-color:var(--pri);background:var(--pri-bg);color:var(--pri);font-weight:600}
   .dia-mood button.on.warn{border-color:#ba7517;background:#faeeda;color:#854f0b}
   .dia-mood button.on.bad{border-color:#a32d2d;background:#fcebeb;color:#a32d2d}
+  /* dia selado: só leitura — o clima fica visível mas não clicável */
+  .dia-mood.selado button{cursor:default;opacity:.55}
+  .dia-mood.selado button.on{opacity:1}
+  .dia-selado{display:flex;align-items:flex-start;gap:8px;background:#e5f3ee;border:1px solid #9fd3c2;color:var(--teal,#0f6e56);border-radius:11px;padding:10px 13px;margin-bottom:14px;font-size:12px;line-height:1.4}
+  .dia-selado .material-symbols-rounded{font-size:17px;flex-shrink:0;margin-top:1px}
   .dia-task{background:var(--surf);border:1px solid var(--line);border-radius:13px;padding:13px 14px;margin-bottom:10px}
   .dia-task.on{border-color:var(--line2)}
   .dia-task.done{border-color:#3b6d11;background:#f4f8ec}
@@ -1020,7 +1029,17 @@ body.papel-tecnico .adm-only{display:none !important}
         <div class="rtxt"><div class="rt"><span class="rq-ic">verified</span> Carimbo na foto</div><div class="rd">Data, hora e local — anti-fraude.</div></div>
         <div class="ex-switch" id="rq-sw-carimbo" onclick="toggleReq('carimbo')"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="pin"></span></span></div>
       </div>
-      <div class="req-rule">
+      <div class="req-qmin">
+        <div class="req-sublbl" style="margin-top:10px"><span class="rq-ic" style="font-size:14px;color:var(--tx3)">hd</span> Qualidade mínima da foto</div>
+        <div class="req-seg" id="rq-seg-qmin">
+          <button type="button" data-q="leve" onclick="setReqQmin('leve')"><span class="rq-ic">signal_cellular_alt_1_bar</span>Leve</button>
+          <button type="button" data-q="full" onclick="setReqQmin('full')"><span class="rq-ic">hd</span>Full</button>
+          <button type="button" data-q="max" onclick="setReqQmin('max')"><span class="rq-ic">4k</span>Máxima</button>
+        </div>
+        <div class="req-qminnote" id="rq-qminnote"></div>
+      </div>
+
+      <div class="req-rule" style="border-top:1px solid var(--line);margin-top:12px">
         <span class="ex-led" id="rq-led-arquivo"></span>
         <div class="rtxt"><div class="rt"><span class="rq-ic">attach_file</span> Arquivo / documento obrigatório</div><div class="rd">Ex.: ART, medição, laudo, NF. Não fecha sem anexar.</div></div>
         <div class="ex-switch" id="rq-sw-arquivo" onclick="toggleReq('arquivo')"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="pin"></span></span></div>
@@ -1138,6 +1157,10 @@ body.papel-tecnico .adm-only{display:none !important}
 .req-fasenote{font-size:10.5px;color:var(--blue);background:#eef3fb;border-radius:7px;padding:7px 9px;margin-top:7px;display:none;gap:6px;line-height:1.35}
 .req-fasenote.show{display:flex}
 .req-fasenote .rq-ic{font-size:14px;flex-shrink:0;margin-top:1px}
+.req-qminnote{font-size:10.5px;color:var(--tx3);margin-top:6px;line-height:1.35}
+.req-qminnote b{color:var(--tx2)}
+.req-qminnote.exige{color:var(--blue)}
+.req-qminnote.exige b{color:var(--blue)}
 /* selinhos na linha do cronograma */
 .reqmini{display:inline-flex;align-items:center;gap:3px;margin-left:7px;vertical-align:middle}
 .reqmini .rq-ic{font-size:13px;color:var(--tx3)}
@@ -1298,7 +1321,10 @@ body.papel-tecnico .adm-only{display:none !important}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const STORE_KEY='ex_crono_v10';
+/* v9 mantido de propósito: ensureReq() aplica os campos novos (req/fase/qmin)
+   campo a campo em estado antigo, então NÃO é preciso subir a versão — e subir
+   apagaria o estado local do usuário (inclusive fotos ainda não sincronizadas). */
+const STORE_KEY='ex_crono_v9';
 /* ===== NUVEM (Supabase) ===== */
 const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
@@ -1758,7 +1784,15 @@ function promoverAvulsa(){
 }
 function _et(){ return P().tarefas.find(x=>x.id===EID); }
 /* ===== Requisitos de campo (Diário) — regras por tarefa, lidas depois pelo diário ===== */
-function ensureReq(t){ if(!t.req) t.req={foto:true,ad:false,carimbo:false,arquivo:false,assin:false,quem:'resp',met:'tela'}; if(!t.fase) t.fase='exe'; return t.req; }
+const REQ_PADRAO={foto:true,ad:false,carimbo:false,arquivo:false,assin:false,quem:'resp',met:'tela',qmin:'leve'};
+const QORD={leve:0,full:1,max:2}; // ordem de qualidade — 'leve' = sem exigência (campo escolhe)
+/* defensivo campo a campo: tarefa que já tem req ganha os campos novos sem perder o que foi configurado */
+function ensureReq(t){
+  if(!t.req) t.req={};
+  for(const k in REQ_PADRAO) if(t.req[k]===undefined) t.req[k]=REQ_PADRAO[k];
+  if(!t.fase) t.fase='exe';
+  return t.req;
+}
 function renderEditReq(t){
   const r=ensureReq(t);
   ['foto','ad','carimbo','arquivo','assin'].forEach(k=>{
@@ -1770,12 +1804,23 @@ function renderEditReq(t){
   document.querySelectorAll('#rq-seg-met button').forEach(b=>b.classList.toggle('on',b.dataset.m===r.met));
   document.querySelectorAll('#rq-seg-fase button').forEach(b=>b.classList.toggle('on',b.dataset.f===t.fase));
   document.getElementById('rq-fasenote').classList.toggle('show',t.fase==='lev');
+  // qualidade mínima
+  document.querySelectorAll('#rq-seg-qmin button').forEach(b=>b.classList.toggle('on',b.dataset.q===r.qmin));
+  const nt=document.getElementById('rq-qminnote');
+  const NOTA={
+    leve:'<b>Sem exigência</b> — o técnico escolhe. A captura já abre em Full por padrão.',
+    full:'O campo <b>não poderá</b> escolher Leve nesta tarefa. Para prova que precisa aguentar discussão.',
+    max:'Só <b>Máxima</b> é aceita — detalhe fino. Foto pesada: sobe depois, quando houver sinal.'
+  };
+  nt.innerHTML=NOTA[r.qmin]||NOTA.leve;
+  nt.classList.toggle('exige',r.qmin!=='leve');
 }
 /* Persistência: req/fase salvam local (save) e sincronizam na nuvem via colunas
    tarefas.requisitos (jsonb) e tarefas.fase (text) — ver pushTarefa()/leitura da nuvem. */
 function toggleReq(k){ const t=_et(); if(!t)return; const r=ensureReq(t); r[k]=!r[k]; renderEditReq(t); save(); render(); }
 function setReqSub(field,val){ const t=_et(); if(!t)return; ensureReq(t); t.req[field]=val; renderEditReq(t); save(); }
 function setReqFase(f){ const t=_et(); if(!t)return; ensureReq(t); t.fase=f; renderEditReq(t); save(); render(); }
+function setReqQmin(q){ const t=_et(); if(!t)return; ensureReq(t); t.req.qmin=q; renderEditReq(t); save(); render(); }
 function reqMini(t){
   if(t.header) return '';
   const r=ensureReq(t); let ic='';
@@ -1784,6 +1829,7 @@ function reqMini(t){
   if(r.carimbo) ic+='<span class="rq-ic on" title="carimbo na foto">verified</span>';
   if(r.arquivo) ic+='<span class="rq-ic on" title="arquivo obrigatório">attach_file</span>';
   if(r.assin) ic+='<span class="rq-ic on" title="assinatura">draw</span>';
+  if(QORD[r.qmin]>0) ic+=`<span class="rq-ic on" title="qualidade mínima: ${r.qmin==='max'?'máxima':'full'}">${r.qmin==='max'?'4k':'hd'}</span>`;
   if(t.fase==='lev') ic+='<span class="rq-ic" title="fase de levantamento" style="color:var(--blue)">frame_inspect</span>';
   return ic?`<span class="reqmini">${ic}</span>`:'';
 }
@@ -2655,7 +2701,7 @@ function aplicarModoNav(){
 }
 function irLista(t){ S.emProjeto=false; save(); aplicarModoNav(); tab(t,document.getElementById(t==='modelos'?'nav-modelos-lbl':'nav-lista-lbl')); }
 function voltarProjetos(){ irLista('proj'); }
-function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();
+function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='orcamento')carregarOrcamento();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();
   const cadBtn=document.getElementById('cad-btn');
   if(cadBtn&&!['colab','cat','mat','acessos','cfg'].includes(t)){cadBtn.classList.remove('active');cadBtn.innerHTML='Cadastros <span style="font-size:10px">▾</span>';document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.remove('active'));}
 }
@@ -2706,6 +2752,7 @@ function setSbActive(el){ document.querySelectorAll('.sb-i').forEach(function(b)
 function toggleGrp(el){ if(!el.classList.contains('open')){ var sibs=el.parentNode?el.parentNode.children:[]; for(var i=0;i<sibs.length;i++){ var s=sibs[i]; if(s!==el&&s.classList&&s.classList.contains('sb-grp')&&s.classList.contains('open')){ s.classList.remove('open'); var ss=s.nextElementSibling; if(ss&&ss.classList)ss.classList.remove('show'); } } } var op=el.classList.toggle('open'); var sub=el.nextElementSibling; if(sub&&sub.classList)sub.classList.toggle('show'); if(op)_pop(el); }
 function _obranav(show){ var ob=document.querySelector('.obranav'); if(ob)ob.style.display=show?'':'none'; }
 function navView(t,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; tab(t,null); }
+function carregarOrcamento(){ const f=document.getElementById('orc-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Orcamento.html'); }
 function navObras(el){ setSbActive(el); _obranav(true); irLista('proj'); }
 async function navEmpresa(el){ navView('empresa',el); await _hubEnsureEmpresa(); renderEmpresaView(); }
 function renderEmpresaView(){
@@ -3207,6 +3254,11 @@ function diaRaiz(p){
 }
 function diaState(p,data){ const r=diaRaiz(p); const k=data||diaData(); if(!r.dias[k]) r.dias[k]={mood:'',by:{}}; if(!r.dias[k].by) r.dias[k].by={}; return r.dias[k]; }
 function diaBy(p,id,data){ const d=diaState(p,data); if(!d.by[id]) d.by[id]={on:false,horas:0}; return d.by[id]; }
+/* SELAGEM — o dia é a unidade: encerrado = virou prova, ninguém mexe.
+   Sem esta trava o "Encerrar" era só um selo na tela: dava pra trocar a foto
+   DEPOIS de fechado, e aí a foto-trava não provaria nada. Reabrir é o ato
+   explícito e consciente (diaReabrir) — só por ele o dia volta a aceitar. */
+function diaSelado(p,data){ return !!diaState(p||P(),data||diaData()).encerrado; }
 function diaFmtH(n){ n=Number(n)||0; return (n%1===0?String(n):n.toFixed(1)).replace('.',','); }
 function diaReqFotos(t){ const r=ensureReq(t); if(!r.foto) return 0; return r.ad?2:1; }
 function diaFotosOk(t){ return (t.fotos||[]).length >= diaReqFotos(t); }
@@ -3298,7 +3350,8 @@ function renderDiario(){
     +`<span class="material-symbols-rounded">event</span><span class="d1">${dataStr}</span>${selo}`
     +`<button class="dia-nav" onclick="diaShift(1)" title="próximo dia" ${hoje?'disabled':''}><span class="material-symbols-rounded">chevron_right</span></button>`
     +`</div>`;
-  h+='<div class="dia-sec">Como foi o dia?</div><div class="dia-mood">'
+  if(st.encerrado) h+=`<div class="dia-selado"><span class="material-symbols-rounded">lock</span><span><b>Dia encerrado</b> — o lançamento e as fotos estão selados; viraram prova e ninguém mexe. Para ajustar, use <b>Reabrir o dia</b>.</span></div>`;
+  h+='<div class="dia-sec">Como foi o dia?</div><div class="dia-mood'+(st.encerrado?' selado':'')+'">'
     +diaMoodBtn(st,'','sentiment_satisfied','Fluiu')
     +diaMoodBtn(st,'warn','sentiment_neutral','Travou um pouco')
     +diaMoodBtn(st,'bad','sentiment_dissatisfied','Parou')
@@ -3320,12 +3373,13 @@ function diaMoodBtn(st,val,ic,lbl){ const on=st.mood===val?('on '+(val||'')):'';
 function diaTaskCard(p,t,k){
   const b=diaBy(p,t.id,k);
   const done=t.status==='done';
+  const selado=!!diaState(p,k).encerrado;   // dia fechado: a tela vira só leitura
   const prevH=(Number(t.tempo)||0)*(Number(t.qtd)||0);
   const prevTxt=done?'concluída':(prevH?('previsto '+diaFmtH(prevH)+'h'):'sem tempo previsto');
   const reqN=diaReqFotos(t);
   let h=`<div class="dia-task ${done?'done':(b.on?'on':'')}" id="dia-${t.id}">`;
   h+=`<div class="t1"><div class="nm">${rtEsc(t.nome)}<div class="prev"><span class="material-symbols-rounded">schedule</span> ${prevTxt}</div></div>`;
-  if(!done) h+=`<div class="dia-sw ${b.on?'on':''}" onclick="diaTog('${t.id}')"><div class="kn"><span class="material-symbols-rounded">construction</span></div></div>`;
+  if(!done && !selado) h+=`<div class="dia-sw ${b.on?'on':''}" onclick="diaTog('${t.id}')"><div class="kn"><span class="material-symbols-rounded">construction</span></div></div>`;
   h+=`</div>`;
   /* o selo diz o que a tarefa TEM, não o que ela exige: antes ele afirmava
      "com foto anexada" só porque a foto era obrigatória — atestava uma prova
@@ -3335,23 +3389,29 @@ function diaTaskCard(p,t,k){
   const selo = nf ? (' — '+nf+' foto'+(nf>1?'s':'')) : (semProva?' — sem foto':'');
   h+=`<div class="dia-doneflag${semProva?' semfoto':''}"><span class="material-symbols-rounded">${semProva?'no_photography':'check_circle'}</span> Concluída${selo}</div>`;
   h+=`<div class="dia-reveal">`;
-  h+=`<div class="dia-hours"><span class="lb"><span class="material-symbols-rounded">timer</span> Horas de hoje</span><div class="dia-step"><button onclick="diaStep('${t.id}',-0.5)">−</button><span class="val">${diaFmtH(b.horas)}<small>h</small></span><button onclick="diaStep('${t.id}',0.5)">+</button></div></div>`;
-  h+=`<div class="dia-photos"><div class="plbl"><span class="material-symbols-rounded">photo_camera</span> Fotos do serviço ${reqN?'<span class="req">obrigatório p/ concluir *</span>':'<span style="color:var(--tx3)">(opcional)</span>'}</div>`;
-  h+=diaQChips(p);
+  h+= selado
+    ? `<div class="dia-hours"><span class="lb"><span class="material-symbols-rounded">timer</span> Horas lançadas</span><div class="dia-step"><span class="val">${diaFmtH(b.horas)}<small>h</small></span></div></div>`
+    : `<div class="dia-hours"><span class="lb"><span class="material-symbols-rounded">timer</span> Horas de hoje</span><div class="dia-step"><button onclick="diaStep('${t.id}',-0.5)">−</button><span class="val">${diaFmtH(b.horas)}<small>h</small></span><button onclick="diaStep('${t.id}',0.5)">+</button></div></div>`;
+  h+=`<div class="dia-photos"><div class="plbl"><span class="material-symbols-rounded">photo_camera</span> Fotos do serviço ${selado?'<span style="color:var(--teal)">seladas</span>':(reqN?'<span class="req">obrigatório p/ concluir *</span>':'<span style="color:var(--tx3)">(opcional)</span>')}</div>`;
+  if(!selado) h+=diaQChips(p);
   h+=`<div class="dia-thumbs">`;
-  (t.fotos||[]).forEach((f,i)=>{ h+=diaThumb(t.id,f,i); });
+  (t.fotos||[]).forEach((f,i)=>{ h+=diaThumb(t.id,f,i,selado); });
   if(b.uploading) h+=`<div class="dia-thumb up"><span class="material-symbols-rounded">progress_activity</span></div>`;
-  h+=`<button class="dia-addphoto" onclick="diaAddFoto('${t.id}')"><span class="material-symbols-rounded">add_a_photo</span><span class="t">foto</span></button>`;
+  if(!selado) h+=`<button class="dia-addphoto" onclick="diaAddFoto('${t.id}')"><span class="material-symbols-rounded">add_a_photo</span><span class="t">foto</span></button>`;
+  if(selado && !(t.fotos||[]).length) h+=`<span style="font-size:11px;color:var(--tx3);align-self:center">sem foto neste dia</span>`;
   h+=`</div>`;
-  if(b.lastErro) h+=`<div class="dia-fotoerr"><span class="material-symbols-rounded">error</span> ${rtEsc(b.lastErro)}</div>`;
+  if(b.lastErro && !selado) h+=`<div class="dia-fotoerr"><span class="material-symbols-rounded">error</span> ${rtEsc(b.lastErro)}</div>`;
   h+=`</div>`;
   const ok=diaFotosOk(t);
-  h+=`<div class="dia-concl ${ok?'ready':'locked'}" onclick="diaConcluir('${t.id}')"><span class="material-symbols-rounded">${ok?'check_circle':'lock'}</span> Concluir tarefa</div>`;
-  if(reqN) h+=`<div class="dia-gatehint ${b.hint?'show':''}"><span class="material-symbols-rounded">info</span> Anexe ${reqN} foto${reqN>1?'s':''} para liberar</div>`;
+  if(!selado){
+    h+=`<div class="dia-concl ${ok?'ready':'locked'}" onclick="diaConcluir('${t.id}')"><span class="material-symbols-rounded">${ok?'check_circle':'lock'}</span> Concluir tarefa</div>`;
+    if(reqN) h+=`<div class="dia-gatehint ${b.hint?'show':''}"><span class="material-symbols-rounded">info</span> Anexe ${reqN} foto${reqN>1?'s':''} para liberar</div>`;
+  }
   h+=`</div></div>`;
   return h;
 }
-function diaThumb(tid,f,i){ return `<div class="dia-thumb"><img src="${rtEsc(f.url||'')}" alt="foto"><div class="del" title="remover" onclick="diaDelFoto('${tid}',${i})">✕</div>${f.local?'<span class="dia-localtag">local</span>':''}</div>`; }
+/* selado esconde o ✕: a foto do dia fechado é prova, não some por um toque torto */
+function diaThumb(tid,f,i,selado){ return `<div class="dia-thumb"><img src="${rtEsc(f.url||'')}" alt="foto">${selado?'':`<div class="del" title="remover" onclick="diaDelFoto('${tid}',${i})">✕</div>`}${f.local?'<span class="dia-localtag">local</span>':''}</div>`; }
 function diaQChips(p){
   const cur=diaQ(p);
   let h='<div class="dia-qsel"><span class="ql"><span class="material-symbols-rounded">tune</span>Qualidade</span>';
@@ -3359,9 +3419,9 @@ function diaQChips(p){
   h+=`<span class="qsub">${DIA_FOTO_Q[cur].sub}</span></div>`;
   return h;
 }
-function diaTog(id){ const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t||t.status==='done')return; const b=diaBy(p,id,diaData()); b.on=!b.on; save(); pushDiaLanc(id); renderDiario(); }
-function diaStep(id,d){ const p=P(); const b=diaBy(p,id,diaData()); b.horas=Math.max(0,+(b.horas+d).toFixed(2)); if(d>0)b.on=true; save(); pushDiaLanc(id); renderDiario(); }
-function diaMood(m){ diaState(P(),diaData()).mood=m; save(); pushDiaDia(); renderDiario(); }
+function diaTog(id){ const p=P(); if(diaSelado(p))return; const t=p.tarefas.find(x=>x.id===id); if(!t||t.status==='done')return; const b=diaBy(p,id,diaData()); b.on=!b.on; save(); pushDiaLanc(id); renderDiario(); }
+function diaStep(id,d){ const p=P(); if(diaSelado(p))return; const b=diaBy(p,id,diaData()); b.horas=Math.max(0,+(b.horas+d).toFixed(2)); if(d>0)b.on=true; save(); pushDiaLanc(id); renderDiario(); }
+function diaMood(m){ if(diaSelado(P()))return; diaState(P(),diaData()).mood=m; save(); pushDiaDia(); renderDiario(); }
 /* navega entre os dias do diário; não deixa passar de hoje */
 function diaShift(n){ const k=diaSoma(DIA_DATA,n); if(k>diaHoje()) return; DIA_DATA=k; renderDiario(); }
 /* Qualidade da foto — o técnico escolhe conforme o caso.
@@ -3372,7 +3432,7 @@ const DIA_FOTO_Q={
   max: {label:'Máxima', dim:0,    q:0.92, sub:'detalhe fino · precisa de nuvem'}
 };
 function diaQ(p){ const k=diaRaiz(p).fotoQ; return DIA_FOTO_Q[k]?k:'fhd'; }
-function diaSetQ(k){ if(!DIA_FOTO_Q[k])return; diaRaiz(P()).fotoQ=k; save(); pushDiaDia(); renderDiario(); }
+function diaSetQ(k){ if(!DIA_FOTO_Q[k])return; if(diaSelado(P()))return; diaRaiz(P()).fotoQ=k; save(); pushDiaDia(); renderDiario(); }
 
 /* comprime a foto (canvas → JPEG) ANTES de subir/guardar:
    foto de celular tem vários MB; sem isso o dataURL local estoura o
@@ -3398,12 +3458,13 @@ function diaCompress(file, maxDim, quality){
   });
 }
 function diaAddFoto(id){
+  if(diaSelado(P()))return;
   const inp=document.createElement('input'); inp.type='file'; inp.accept='image/*'; inp.capture='environment';
   inp.onchange=async()=>{ const file=inp.files&&inp.files[0]; if(file) await diaUploadFoto(id,file); };
   inp.click();
 }
 async function diaUploadFoto(id,file){
-  const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t)return;
+  const p=P(); if(diaSelado(p))return; const t=p.tarefas.find(x=>x.id===id); if(!t)return;
   const b=diaBy(p,id,diaData()); b.uploading=true; b.on=true; b.lastErro=''; renderDiario();
   const qk=diaQ(p); const preset=DIA_FOTO_Q[qk];
   const path=`diario/${p.id}/${id}/${uid()}.jpg`;
@@ -3483,12 +3544,12 @@ async function diaSyncFotos(p){
   if(subiu){ save(); nuvemStatus(subiu+(subiu>1?' fotos sincronizadas ✓':' foto sincronizada ✓'),'ok'); renderDiario(); }
 }
 function diaDelFoto(id,idx){
-  const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t||!t.fotos)return;
+  const p=P(); if(diaSelado(p))return; const t=p.tarefas.find(x=>x.id===id); if(!t||!t.fotos)return;
   const f=t.fotos[idx]; t.fotos.splice(idx,1); save(); pushTarefa(t); renderDiario();
   if(f&&f.path&&SB){ SB.storage.from('anexos').remove([f.path]); }
 }
 function diaConcluir(id){
-  const p=P(); const t=p.tarefas.find(x=>x.id===id); if(!t)return;
+  const p=P(); if(diaSelado(p))return; const t=p.tarefas.find(x=>x.id===id); if(!t)return;
   const b=diaBy(p,id);
   if(!diaFotosOk(t)){ b.hint=true; renderDiario(); return; }
   b.hint=false;
