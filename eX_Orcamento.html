@@ -133,6 +133,41 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .ex-switch.on .kb{left:27px}
 .ex-switch .pin{width:3px;height:11px;border-radius:2px;background:linear-gradient(#9a9a92,#565650);box-shadow:0 1px 1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5)}
 body.viewing .ex-switch{pointer-events:none;opacity:.55}
+
+/* modelo base+margem (linha de serviço) */
+.svc{min-width:190px}
+.svc>.cin{width:100%}
+.svc .bs{font-size:11px;color:var(--tx3);display:flex;align-items:center;gap:4px;margin-top:2px}
+.svc .bs .material-symbols-rounded{font-size:13px;color:var(--blue)}
+.money{white-space:nowrap}
+.preco{font-weight:700;color:var(--tx)}
+.lucro{color:var(--green);font-weight:600}
+.lockval{display:inline-flex;align-items:center;gap:5px;color:var(--tx2);font-variant-numeric:tabular-nums;font-weight:600;justify-content:flex-end}
+.lockval .material-symbols-rounded{font-size:14px;color:var(--tx3)}
+.swcell{display:flex;flex-direction:column;align-items:flex-start;gap:3px;white-space:nowrap}
+.swlbl{font-size:10.5px;font-weight:600}
+.swlbl.on{color:var(--green)}.swlbl.off{color:var(--amber)}
+.mkwrap{display:flex;align-items:center;gap:4px;justify-content:flex-end}
+.mktag{text-align:right;margin-top:3px}
+.pd{font-size:9px;color:var(--pri);background:var(--pri-bg);padding:2px 6px;border-radius:9px;white-space:nowrap}
+.pd.own{background:#faeeda;color:#854f0b}
+
+/* modal picker do cadastro */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:var(--surf);border-radius:14px;max-width:560px;width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.modal .mh{display:flex;align-items:center;gap:9px;padding:15px 18px;border-bottom:1px solid var(--line)}
+.modal .mh .material-symbols-rounded{color:var(--pri)}
+.modal .mh h3{font-size:15px;font-weight:700;flex:1}
+.modal .mh .x{width:30px;height:30px;border:none;background:none;color:var(--tx3);cursor:pointer;border-radius:7px}
+.modal .mh .x:hover{background:var(--surf2)}
+.modal .mb{padding:10px 12px;overflow-y:auto}
+.pkitem{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surf);cursor:pointer;margin-bottom:6px;font-size:13px;color:var(--tx)}
+.pkitem:hover{background:var(--pri-bg);border-color:var(--pri)}
+.pkitem .pknm{flex:1;min-width:0}
+.pkitem .pkcusto{font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pkitem.avulso{color:var(--pri);border-style:dashed;margin-top:4px}
+.pkitem.avulso .material-symbols-rounded{font-size:17px}
 .chip{font-size:11px;font-weight:600;color:var(--tx2);background:var(--surf2);border:1px solid var(--line);border-radius:20px;padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .chip:hover{border-color:var(--line2)}
 .chip .material-symbols-rounded{font-size:15px}
@@ -235,8 +270,9 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
           <!-- VISÃO INTERNA -->
           <div class="intbox">
             <div class="ih"><span class="material-symbols-rounded">lock</span>Visão interna — não vai pro cliente</div>
+            <div class="iln"><span class="lbl">Margem base <input class="pin" style="width:52px" data-f="margemBase" inputmode="decimal">%</span><span class="val" style="color:var(--tx3);font-size:11px;font-weight:400">padrão das linhas</span></div>
             <div class="iln"><span class="lbl">Imposto <input class="pin" style="width:52px" data-f="impostoPct" inputmode="decimal">%</span><span class="val" id="s_imp">—</span></div>
-            <div class="iln"><span class="lbl">Custo real estimado</span><input class="pin" data-f="custoInterno" inputmode="decimal"></div>
+            <div class="iln"><span class="lbl">Custo real <span style="color:var(--tx3);font-weight:400">(auto)</span></span><span class="val" id="s_custo">—</span></div>
             <div class="iln"><span class="lbl">Lucro líquido</span><span class="val luc" id="s_lucro">—</span></div>
             <div class="iln"><span class="lbl">Margem de lucro</span><span class="val luc" id="s_marg">—</span></div>
           </div>
@@ -252,9 +288,20 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
   </div>
 </div>
 
+<div class="modal-bg" id="pickModal">
+  <div class="modal">
+    <div class="mh">
+      <span class="material-symbols-rounded">playlist_add</span>
+      <h3 id="pickTitle">Adicionar</h3>
+      <button class="x" onclick="closePick()"><span class="material-symbols-rounded">close</span></button>
+    </div>
+    <div class="mb" id="pickBody"></div>
+  </div>
+</div>
+
 <script>
 "use strict";
-const STORE="ex_orc_v3";
+const STORE="ex_orc_v4";
 let S=null;
 
 /* ---------- utilidades ---------- */
@@ -267,12 +314,32 @@ const num=v=>{
 };
 const fmt=n=>'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-const lineTot=(r,modo)=> modo==='geral' ? num(r.geral) : num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100);
-// subtotal do bloco: no modo Geral+"só o total" usa o valor manual; senão soma os itens
+// modelo base+margem (custo): custo usado, margem herdada/própria
+const isCusto=r=>r.custoBase!==undefined;
+const custoUn=r=>num(r.usarBase?r.custoBase:r.custoAlt);
+const mgOf=r=>(r.margem===''||r.margem==null)?num(S.margemBase):num(r.margem);
+// preço (o que o cliente paga) e custo (interno) por linha
+function linePreco(r,modo){
+  if(modo==='geral') return num(r.geral);
+  if(isCusto(r)) return num(r.qtd)*custoUn(r)*(1+mgOf(r)/100);
+  return num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100);
+}
+function lineCusto(r,modo){
+  if(modo==='geral') return num(r.geral);           // verba: custo=preço (lucro 0)
+  if(isCusto(r)) return num(r.qtd)*custoUn(r);
+  return num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100); // bloco não migrado: custo=preço
+}
+const lineTot=(r,modo)=>linePreco(r,modo);           // alias p/ compat
+// subtotal do bloco (PREÇO): no Geral+"só o total" usa o valor manual; senão soma
 function blkSub(blk){
   const modo=S.modos[blk]||'unit';
   if(modo==='geral' && S.soTotal[blk]) return num(S.blocoTotal[blk]);
-  return S[blk].reduce((a,r)=>a+lineTot(r,modo),0);
+  return S[blk].reduce((a,r)=>a+linePreco(r,modo),0);
+}
+function blkCusto(blk){
+  const modo=S.modos[blk]||'unit';
+  if(modo==='geral' && S.soTotal[blk]) return num(S.blocoTotal[blk]);
+  return S[blk].reduce((a,r)=>a+lineCusto(r,modo),0);
 }
 
 /* ---------- estado exemplo (Copeland / Assaí) ---------- */
@@ -286,7 +353,7 @@ function demo(){
     finNome:"ASSAÍ NACIONAL", finEnd:"Nacional",
     respNome:"André Camilo", respContato:"62 99392-2999 · aocinnet@gmail.com",
     equipe:"1 Eletrotécnico + 1 Eletricista + Operacional",
-    prazoDias:5, impostoPct:6.38, descontoPct:0, custoInterno:0,
+    prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30,
     modos:{servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'},
     soTotal:{servicos:false,equip:false,despesas:false,materiais:false},
     blocoTotal:{servicos:0,equip:0,despesas:0,materiais:0},
@@ -295,21 +362,7 @@ function demo(){
       materiais:"Neste orçamento foi considerado o uso de toda a infra de rede existente na loja para a passagem dos circuitos de comunicação e sensores.",
       despesas:"Todas as despesas para instalação dos itens propostos estão incluídas."
     },
-    servicos:[
-      row("INSTALAÇÃO — QA AUTOMAÇÃO — ILUMINAÇÃO FRENTE DE CAIXA",1,"UND",6970),
-      row("INSTALAÇÃO — QA AUTOMAÇÃO — ILUMINAÇÃO E ENERGIA",1,"UND",4790),
-      row("INSTALAÇÃO — QA AUTOMAÇÃO — ILUMINAÇÃO ESTACIONAMENTO",1,"UND",4390),
-      row("INSTALAÇÃO — QA AUTOMAÇÃO — ILUMINAÇÃO ADMINISTRATIVO",1,"UND",4390),
-      row("ADEQUAÇÃO DE COMANDO P/ AUTOMATIZAR QD ILUMINAÇÃO FRENTE DE CAIXA",1,"CIRCT",4590),
-      row("ADEQUAÇÃO DE COMANDO P/ AUTOMATIZAR QD ILUMINAÇÃO DEPÓSITO",1,"CIRCT",1760),
-      row("ADEQUAÇÃO DE COMANDO P/ AUTOMATIZAR QD ILUMINAÇÃO ESTACIONAMENTO",1,"CIRCT",1760),
-      row("ADEQUAÇÃO DE COMANDO P/ AUTOMATIZAR QD ILUMINAÇÃO ADMINISTRATIVO",1,"CIRCT",1760),
-      row("INSTALAÇÃO BUS — QA AUTOMAÇÃO — ILUMINAÇÃO FRENTE DE CAIXA",1,"UND",900),
-      row("INSTALAÇÃO BUS — QA AUTOMAÇÃO — ILUMINAÇÃO E ENERGIA",1,"UND",900),
-      row("INSTALAÇÃO BUS — QA AUTOMAÇÃO — ILUMINAÇÃO ESTACIONAMENTO",1,"UND",900),
-      row("INSTALAÇÃO BUS — QA AUTOMAÇÃO — ILUMINAÇÃO ADMINISTRATIVO",1,"UND",900),
-      row("SUBSTITUIÇÃO — CONTROLADOR DE AR-CONDICIONADO CENTRAL",1,"UND",3500)
-    ],
+    servicos: CAD.servicos.map(c=>rowSvc(c.nome,1,"UND",c.custo,'',c.id)),
     equip:[ row("PLATAFORMA ELEVATÓRIA TESOURA 10M (ELÉTRICA)",0,"SEMANA",0) ],
     despesas:[
       row("DESLOCAMENTO",1200,"KM",2,11.1111),
@@ -324,18 +377,38 @@ function demo(){
   };
 }
 function row(desc,qtd,und,vunit,markup,marca){return{id:uid(),desc,qtd,und,vunit,markup:markup||0,marca:marca||""};}
+// linha do modelo base+margem (custo). margem '' = herda a margem base
+function rowSvc(desc,qtd,und,custo,margem,catId){return{id:uid(),desc,qtd,und,custoBase:custo,usarBase:true,custoAlt:custo,margem:(margem===undefined?'':margem),catId:catId||null,marca:""};}
+
+// cadastro-semente de serviços (custo predeterminado por serviço)
+const CAD={ servicos:[
+  {id:uid(),nome:"Instalação — QA automação — iluminação frente de caixa",custo:5362},
+  {id:uid(),nome:"Instalação — QA automação — iluminação e energia",custo:3685},
+  {id:uid(),nome:"Instalação — QA automação — iluminação estacionamento",custo:3377},
+  {id:uid(),nome:"Instalação — QA automação — iluminação administrativo",custo:3377},
+  {id:uid(),nome:"Adequação de comando — automatizar QD iluminação frente de caixa",custo:3531},
+  {id:uid(),nome:"Adequação de comando — automatizar QD iluminação depósito",custo:1354},
+  {id:uid(),nome:"Adequação de comando — automatizar QD iluminação estacionamento",custo:1354},
+  {id:uid(),nome:"Adequação de comando — automatizar QD iluminação administrativo",custo:1354},
+  {id:uid(),nome:"Instalação BUS — QA automação — iluminação frente de caixa",custo:692},
+  {id:uid(),nome:"Instalação BUS — QA automação — iluminação e energia",custo:692},
+  {id:uid(),nome:"Instalação BUS — QA automação — iluminação estacionamento",custo:692},
+  {id:uid(),nome:"Instalação BUS — QA automação — iluminação administrativo",custo:692},
+  {id:uid(),nome:"Substituição — controlador de ar-condicionado central",custo:2692}
+]};
 
 /* ---------- carga / persistência ---------- */
 function load(){ try{const r=localStorage.getItem(STORE);S=r?JSON.parse(r):demo();}catch(e){S=demo();}
   if(!S.modos)S.modos={servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'};
   if(!S.soTotal)S.soTotal={servicos:false,equip:false,despesas:false,materiais:false};
-  if(!S.blocoTotal)S.blocoTotal={servicos:0,equip:0,despesas:0,materiais:0}; }
+  if(!S.blocoTotal)S.blocoTotal={servicos:0,equip:0,despesas:0,materiais:0};
+  if(S.margemBase===undefined)S.margemBase=30; }
 function save(){ try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){} }
 function resetDemo(){ if(confirm("Recarregar o exemplo Copeland/Assaí? As edições atuais serão perdidas.")){S=demo();save();boot();} }
 
 /* ---------- blocos ---------- */
 const BLKS=[
-  {key:"servicos",titulo:"Serviços",icon:"build",obs:true,mat:false},
+  {key:"servicos",titulo:"Serviços",icon:"build",obs:true,mat:false,custo:true},
   {key:"equip",titulo:"Locação de equipamentos",icon:"construction",obs:false,mat:false},
   {key:"despesas",titulo:"Deslocamento & Despesas",icon:"local_shipping",obs:true,mat:false},
   {key:"materiais",titulo:"Materiais empregados",icon:"inventory_2",obs:true,mat:true}
@@ -381,6 +454,35 @@ function renderBlk(cfg){
       </tr>`;
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?5:4}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar” abaixo.</td></tr>`;
+  } else if(cfg.custo){
+    // MODELO base+margem: custo (do cadastro, usar/alterar) → margem → preço e lucro
+    cols = `<th>#</th><th>Serviço (do cadastro)</th><th>Valor</th><th class="r">Custo</th><th class="r">Qtd</th><th class="r">Margem</th><th class="r">Preço</th><th class="r">Lucro</th><th></th>`;
+    body=rows.map((r,i)=>{
+      const cu=custoUn(r), preco=num(r.qtd)*cu*(1+mgOf(r)/100), custo=num(r.qtd)*cu, lucro=preco-custo;
+      const propria=!(r.margem===''||r.margem==null);
+      const custoCell = r.usarBase
+        ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
+        : `<input class="cin num" value="${esc(r.custoAlt)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)">`;
+      return `<tr>
+        <td class="idx">${i+1}</td>
+        <td class="svc"><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"><div class="bs"><span class="material-symbols-rounded">database</span>base: ${fmt(r.custoBase)}</div></td>
+        <td>
+          <div class="swcell">
+            <div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar">
+              <span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span>
+            </div>
+            <span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'usar base':'alterar'}</span>
+          </div>
+        </td>
+        <td class="r money">${custoCell}</td>
+        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
+        <td class="r"><div class="mkwrap"><input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span>%</span></div><div class="mktag">${propria?'<span class="pd own">própria</span>':'<span class="pd">padrão</span>'}</div></td>
+        <td class="r money preco" id="tp_${r.id}">${fmt(preco)}</td>
+        <td class="r money lucro" id="tl_${r.id}">${fmt(lucro)}</td>
+        <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+      </tr>`;
+    }).join('');
+    if(!rows.length) body=`<tr><td colspan="9" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum serviço. Clique em “Adicionar serviço” abaixo.</td></tr>`;
   } else {
     cols = cfg.mat
       ? `<th>#</th><th>Material</th><th>Marca</th><th class="r">Qtd</th><th>Und</th><th class="r">V. unit.</th><th class="r">Mrk%</th><th class="r">Total</th><th></th>`
@@ -418,7 +520,7 @@ function renderBlk(cfg){
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody>${body}</tbody>${foot}</table></div>
-    <div class="addrow"><button onclick="addRow('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.mat?'material':'item'}</button></div>
+    <div class="addrow"><button onclick="${cfg.custo?`openPick('${cfg.key}')`:`addRow('${cfg.key}')`}"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.custo?'serviço':(cfg.mat?'material':'item')}</button></div>
     ${obsHtml}`;
 }
 
@@ -445,15 +547,48 @@ function updBloco(blk,val){
 function upd(blk,id,field,val){
   const r=S[blk].find(x=>x.id===id); if(!r)return;
   r[field]=val;
-  if(['qtd','vunit','markup','geral'].includes(field)){
-    const modo=S.modos[blk]||'unit';
-    const c=document.getElementById('tt_'+id); const t=lineTot(r,modo);
-    if(c){c.textContent=fmt(t);c.className='tot '+(t?'':'z');}
+  if(['qtd','vunit','markup','geral','custoAlt','margem'].includes(field)){
+    refreshRow(blk,r);
     const st=document.getElementById('st_'+blk);
     if(st) st.innerHTML='Subtotal <b>'+fmt(blkSub(blk))+'</b>';
     recalc();
   }
   save();
+}
+function refreshRow(blk,r){
+  const modo=S.modos[blk]||'unit';
+  const c=document.getElementById('tt_'+r.id);
+  if(c){const t=lineTot(r,modo); c.textContent=fmt(t); c.className='tot '+(t?'':'z');}
+  const pe=document.getElementById('tp_'+r.id), le=document.getElementById('tl_'+r.id);
+  if(pe){ const cu=custoUn(r), preco=num(r.qtd)*cu*(1+mgOf(r)/100), custo=num(r.qtd)*cu;
+    pe.textContent=fmt(preco); if(le)le.textContent=fmt(preco-custo); }
+}
+function togBase(blk,id){
+  const r=S[blk].find(x=>x.id===id); if(!r)return;
+  r.usarBase=!r.usarBase;
+  if(r.usarBase) r.custoAlt=r.custoBase;                 // volta pro base do cadastro
+  else if(r.custoAlt===undefined||r.custoAlt==='') r.custoAlt=r.custoBase;
+  save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc();
+}
+
+/* ---------- picker do cadastro ---------- */
+function openPick(blk){
+  const cad=CAD[blk]||[];
+  const list=cad.map(c=>`<button class="pkitem" onclick="pickCad('${blk}','${c.id}')"><span class="pknm">${esc(c.nome)}</span><span class="pkcusto">custo ${fmt(c.custo)}</span></button>`).join('');
+  document.getElementById('pickTitle').textContent='Adicionar '+(blk==='servicos'?'serviço':'item');
+  document.getElementById('pickBody').innerHTML=(cad.length?list:'<div style="color:var(--tx3);padding:12px;font-size:12px">Cadastro vazio.</div>')
+    +`<button class="pkitem avulso" onclick="addAvulso('${blk}')"><span class="material-symbols-rounded">edit_note</span>Item avulso (fora do cadastro)</button>`;
+  document.getElementById('pickModal').classList.add('open');
+}
+function closePick(){ document.getElementById('pickModal').classList.remove('open'); }
+function pickCad(blk,cid){
+  const c=(CAD[blk]||[]).find(x=>x.id===cid); if(!c)return;
+  S[blk].push(rowSvc(c.nome,1,'UND',c.custo,'',c.id));
+  save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
+}
+function addAvulso(blk){
+  S[blk].push(rowSvc("",1,'UND',0,'',null));
+  save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
 }
 function updObs(blk,val){ if(!S.obs)S.obs={}; S.obs[blk]=val; save(); }
 function addRow(blk){ const dflt=blk==='equip'?'DIA':blk==='materiais'?'PÇ':'UND'; S[blk].push(row("",1,dflt,0)); save(); renderBlk(BLKS.find(b=>b.key===blk)); }
@@ -467,31 +602,33 @@ function bindFields(){
   });
   document.querySelectorAll('[data-f]').forEach(el=>{
     const k=el.dataset.f; el.value=S[k]??0;
-    el.oninput=()=>{S[k]=num(el.value);save();recalc();};
+    el.oninput=()=>{S[k]=num(el.value);save();
+      if(k==='margemBase') BLKS.filter(b=>b.custo).forEach(renderBlk); // re-renderiza linhas que herdam
+      recalc();};
   });
 }
 
 /* ---------- fechamento ---------- */
 function recalc(){
-  const sub={};
-  BLKS.forEach(b=>sub[b.key]=blkSub(b.key));
-  const bruto=sub.servicos+sub.equip+sub.despesas+sub.materiais;
+  const preco={}, cst={};
+  BLKS.forEach(b=>{preco[b.key]=blkSub(b.key); cst[b.key]=blkCusto(b.key);});
+  const bruto=preco.servicos+preco.equip+preco.despesas+preco.materiais;
   const desc=bruto*num(S.descontoPct)/100;
   const total=bruto-desc;
   const imp=total*num(S.impostoPct)/100;
-  const custo=num(S.custoInterno);
+  const custo=cst.servicos+cst.equip+cst.despesas+cst.materiais;   // custo real (auto)
   const lucro=total-custo-imp;
   const marg=total?lucro/total*100:0;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-  set('s_serv',fmt(sub.servicos)); set('s_equip',fmt(sub.equip));
-  set('s_desp',fmt(sub.despesas)); set('s_mat',fmt(sub.materiais));
+  set('s_serv',fmt(preco.servicos)); set('s_equip',fmt(preco.equip));
+  set('s_desp',fmt(preco.despesas)); set('s_mat',fmt(preco.materiais));
   set('s_bruto',fmt(bruto)); set('s_desc','− '+fmt(desc));
   set('s_total',fmt(total)); set('s_preco',fmt(total));
-  set('s_imp',fmt(imp));
+  set('s_imp',fmt(imp)); set('s_custo',fmt(custo));
   const lu=document.getElementById('s_lucro'), mg=document.getElementById('s_marg');
-  lu.textContent=fmt(lucro); mg.textContent=marg.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
-  const neg=(custo>0&&lucro<0);
-  lu.className='val luc'+(neg?' neg':''); mg.className='val luc'+(neg?' neg':'');
+  if(lu)lu.textContent=fmt(lucro); if(mg)mg.textContent=marg.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+  const neg=(lucro<0);
+  if(lu)lu.className='val luc'+(neg?' neg':''); if(mg)mg.className='val luc'+(neg?' neg':'');
 }
 
 /* ---------- modo ver/editar ---------- */
