@@ -301,7 +301,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
 
 <script>
 "use strict";
-const STORE="ex_orc_v4";
+const STORE="ex_orc_v5";
 let S=null;
 
 /* ---------- utilidades ---------- */
@@ -363,22 +363,22 @@ function demo(){
       despesas:"Todas as despesas para instalação dos itens propostos estão incluídas."
     },
     servicos: CAD.servicos.map(c=>rowSvc(c.nome,1,"UND",c.custo,'',c.id)),
-    equip:[ row("PLATAFORMA ELEVATÓRIA TESOURA 10M (ELÉTRICA)",0,"SEMANA",0) ],
-    despesas:[
-      row("DESLOCAMENTO",1200,"KM",2,11.1111),
-      row("AÉREO",0,"UND",2300,11.1111),
-      row("TRANSLADO",120,"KM",2,11.1111),
-      row("ESTADIA",12,"DIÁRIA",120,11.1111),
-      row("ALIMENTAÇÃO DIÁRIA",12,"DIÁRIA",80,11.1111),
-      row("TAXI / APP",0,"UND",50,11.1111),
-      row("DESPESAS GERAIS",1,"VB",500,11.1111)
+    equip: [ rowSvc(CAD.equip[0].nome,0,CAD.equip[0].und,CAD.equip[0].custo,'',CAD.equip[0].id) ],
+    despesas: [
+      rowSvc(CAD.despesas[0].nome,1200,CAD.despesas[0].und,CAD.despesas[0].custo,CAD.despesas[0].margem,CAD.despesas[0].id),
+      rowSvc(CAD.despesas[4].nome,0,CAD.despesas[4].und,CAD.despesas[4].custo,CAD.despesas[4].margem,CAD.despesas[4].id),
+      rowSvc(CAD.despesas[1].nome,120,CAD.despesas[1].und,CAD.despesas[1].custo,CAD.despesas[1].margem,CAD.despesas[1].id),
+      rowSvc(CAD.despesas[2].nome,12,CAD.despesas[2].und,CAD.despesas[2].custo,CAD.despesas[2].margem,CAD.despesas[2].id),
+      rowSvc(CAD.despesas[3].nome,12,CAD.despesas[3].und,CAD.despesas[3].custo,CAD.despesas[3].margem,CAD.despesas[3].id),
+      rowSvc(CAD.despesas[5].nome,0,CAD.despesas[5].und,CAD.despesas[5].custo,CAD.despesas[5].margem,CAD.despesas[5].id),
+      rowSvc(CAD.despesas[8].nome,1,CAD.despesas[8].und,CAD.despesas[8].custo,CAD.despesas[8].margem,CAD.despesas[8].id)
     ],
     materiais:[]
   };
 }
 function row(desc,qtd,und,vunit,markup,marca){return{id:uid(),desc,qtd,und,vunit,markup:markup||0,marca:marca||""};}
 // linha do modelo base+margem (custo). margem '' = herda a margem base
-function rowSvc(desc,qtd,und,custo,margem,catId){return{id:uid(),desc,qtd,und,custoBase:custo,usarBase:true,custoAlt:custo,margem:(margem===undefined?'':margem),catId:catId||null,marca:""};}
+function rowSvc(desc,qtd,und,custo,margem,catId,marca){return{id:uid(),desc,qtd,und,custoBase:custo,usarBase:true,custoAlt:custo,margem:(margem===undefined||margem===null?'':margem),catId:catId||null,marca:marca||""};}
 
 // cadastro-semente de serviços (custo predeterminado por serviço)
 const CAD={ servicos:[
@@ -395,6 +395,32 @@ const CAD={ servicos:[
   {id:uid(),nome:"Instalação BUS — QA automação — iluminação estacionamento",custo:692},
   {id:uid(),nome:"Instalação BUS — QA automação — iluminação administrativo",custo:692},
   {id:uid(),nome:"Substituição — controlador de ar-condicionado central",custo:2692}
+],
+equip:[
+  {id:uid(),nome:"Plataforma elevatória tesoura 10m (elétrica)",custo:880,und:"DIA"},
+  {id:uid(),nome:"Veículo popular 1.0",custo:130,und:"DIA"},
+  {id:uid(),nome:"Andaime fachadeiro (módulo)",custo:45,und:"DIA"}
+],
+despesas:[
+  {id:uid(),nome:"Deslocamento",custo:2,und:"KM",margem:11.1111},
+  {id:uid(),nome:"Translado",custo:2,und:"KM",margem:11.1111},
+  {id:uid(),nome:"Estadia",custo:120,und:"DIÁRIA",margem:11.1111},
+  {id:uid(),nome:"Alimentação diária",custo:80,und:"DIÁRIA",margem:11.1111},
+  {id:uid(),nome:"Aéreo (passagem)",custo:2300,und:"UND",margem:11.1111},
+  {id:uid(),nome:"Táxi / app",custo:50,und:"UND",margem:11.1111},
+  {id:uid(),nome:"Pedágio",custo:6.9,und:"UND",margem:11.1111},
+  {id:uid(),nome:"Combustível",custo:5.2,und:"L",margem:11.1111},
+  {id:uid(),nome:"Despesas gerais",custo:500,und:"VB",margem:11.1111}
+],
+materiais:[
+  {id:uid(),nome:"Cabo flexível 2,50mm² 750V afumex",custo:2.7,und:"M",marca:"PRYSMIAN",margem:25},
+  {id:uid(),nome:"Cabo flexível 10mm² 1kV 90° afumex",custo:10.25,und:"M",marca:"PRYSMIAN",margem:25},
+  {id:uid(),nome:"Cabo de rede RJ45 blindado (cobre)",custo:4,und:"M",marca:"Megatron",margem:25},
+  {id:uid(),nome:"Abraçadeira p/ eletroduto galvanizada 3/4",custo:7.53,und:"PÇ",marca:"ELECON",margem:25},
+  {id:uid(),nome:"Borne 2,5mm tipo mola push in",custo:5,und:"PÇ",marca:"PROAUTO",margem:25},
+  {id:uid(),nome:"Botão de impulsão 22mm 1NA verde",custo:16,und:"PÇ",marca:"SCHNEIDER",margem:25},
+  {id:uid(),nome:"Bloco de contato auxiliar BFC0-22",custo:50,und:"PÇ",marca:"WEG",margem:25},
+  {id:uid(),nome:"Caixa de alumínio 20×20",custo:127,und:"PÇ",marca:"TRAMONTINA",margem:25}
 ]};
 
 /* ---------- carga / persistência ---------- */
@@ -408,10 +434,10 @@ function resetDemo(){ if(confirm("Recarregar o exemplo Copeland/Assaí? As ediç
 
 /* ---------- blocos ---------- */
 const BLKS=[
-  {key:"servicos",titulo:"Serviços",icon:"build",obs:true,mat:false,custo:true},
-  {key:"equip",titulo:"Locação de equipamentos",icon:"construction",obs:false,mat:false},
-  {key:"despesas",titulo:"Deslocamento & Despesas",icon:"local_shipping",obs:true,mat:false},
-  {key:"materiais",titulo:"Materiais empregados",icon:"inventory_2",obs:true,mat:true}
+  {key:"servicos",titulo:"Serviços",icon:"build",obs:true,mat:false,custo:true,sing:"serviço"},
+  {key:"equip",titulo:"Locação de equipamentos",icon:"construction",obs:false,mat:false,custo:true,sing:"equipamento"},
+  {key:"despesas",titulo:"Deslocamento & Despesas",icon:"local_shipping",obs:true,mat:false,custo:true,sing:"despesa"},
+  {key:"materiais",titulo:"Materiais empregados",icon:"inventory_2",obs:true,mat:true,custo:true,sing:"material"}
 ];
 
 function renderBlk(cfg){
@@ -456,16 +482,19 @@ function renderBlk(cfg){
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?5:4}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar” abaixo.</td></tr>`;
   } else if(cfg.custo){
     // MODELO base+margem: custo (do cadastro, usar/alterar) → margem → preço e lucro
-    cols = `<th>#</th><th>Serviço (do cadastro)</th><th>Valor</th><th class="r">Custo</th><th class="r">Qtd</th><th class="r">Margem</th><th class="r">Preço</th><th class="r">Lucro</th><th></th>`;
+    const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
+    cols = `<th>#</th><th>${nomeLbl} (do cadastro)</th>${cfg.mat?'<th>Marca</th>':''}<th>Valor</th><th class="r">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r">Margem</th><th class="r">Preço</th><th class="r">Lucro</th><th></th>`;
     body=rows.map((r,i)=>{
       const cu=custoUn(r), preco=num(r.qtd)*cu*(1+mgOf(r)/100), custo=num(r.qtd)*cu, lucro=preco-custo;
       const propria=!(r.margem===''||r.margem==null);
       const custoCell = r.usarBase
         ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
         : `<input class="cin num" value="${esc(r.custoAlt)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)">`;
+      const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
       return `<tr>
         <td class="idx">${i+1}</td>
-        <td class="svc"><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"><div class="bs"><span class="material-symbols-rounded">database</span>base: ${fmt(r.custoBase)}</div></td>
+        <td class="svc"><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"><div class="bs"><span class="material-symbols-rounded">database</span>base: ${fmt(r.custoBase)}${r.catId?'':' · avulso'}</div></td>
+        ${marcaCell}
         <td>
           <div class="swcell">
             <div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar">
@@ -476,13 +505,14 @@ function renderBlk(cfg){
         </td>
         <td class="r money">${custoCell}</td>
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
+        <td><input class="cin un" value="${esc(r.und)}" oninput="upd('${cfg.key}','${r.id}','und',this.value)"></td>
         <td class="r"><div class="mkwrap"><input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span>%</span></div><div class="mktag">${propria?'<span class="pd own">própria</span>':'<span class="pd">padrão</span>'}</div></td>
         <td class="r money preco" id="tp_${r.id}">${fmt(preco)}</td>
         <td class="r money lucro" id="tl_${r.id}">${fmt(lucro)}</td>
         <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
-    if(!rows.length) body=`<tr><td colspan="9" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum serviço. Clique em “Adicionar serviço” abaixo.</td></tr>`;
+    if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
   } else {
     cols = cfg.mat
       ? `<th>#</th><th>Material</th><th>Marca</th><th class="r">Qtd</th><th>Und</th><th class="r">V. unit.</th><th class="r">Mrk%</th><th class="r">Total</th><th></th>`
@@ -520,7 +550,7 @@ function renderBlk(cfg){
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody>${body}</tbody>${foot}</table></div>
-    <div class="addrow"><button onclick="${cfg.custo?`openPick('${cfg.key}')`:`addRow('${cfg.key}')`}"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.custo?'serviço':(cfg.mat?'material':'item')}</button></div>
+    <div class="addrow"><button onclick="${cfg.custo?`openPick('${cfg.key}')`:`addRow('${cfg.key}')`}"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.custo?cfg.sing:(cfg.mat?'material':'item')}</button></div>
     ${obsHtml}`;
 }
 
@@ -572,22 +602,23 @@ function togBase(blk,id){
 }
 
 /* ---------- picker do cadastro ---------- */
+const UND_DFLT={servicos:'UND',equip:'DIA',despesas:'UND',materiais:'PÇ'};
 function openPick(blk){
-  const cad=CAD[blk]||[];
-  const list=cad.map(c=>`<button class="pkitem" onclick="pickCad('${blk}','${c.id}')"><span class="pknm">${esc(c.nome)}</span><span class="pkcusto">custo ${fmt(c.custo)}</span></button>`).join('');
-  document.getElementById('pickTitle').textContent='Adicionar '+(blk==='servicos'?'serviço':'item');
+  const cfg=BLKS.find(b=>b.key===blk), cad=CAD[blk]||[];
+  const list=cad.map(c=>`<button class="pkitem" onclick="pickCad('${blk}','${c.id}')"><span class="pknm">${esc(c.nome)}${c.marca?' — '+esc(c.marca):''}</span><span class="pkcusto">custo ${fmt(c.custo)}/${esc(c.und||UND_DFLT[blk])}</span></button>`).join('');
+  document.getElementById('pickTitle').textContent='Adicionar '+cfg.sing;
   document.getElementById('pickBody').innerHTML=(cad.length?list:'<div style="color:var(--tx3);padding:12px;font-size:12px">Cadastro vazio.</div>')
-    +`<button class="pkitem avulso" onclick="addAvulso('${blk}')"><span class="material-symbols-rounded">edit_note</span>Item avulso (fora do cadastro)</button>`;
+    +`<button class="pkitem avulso" onclick="addAvulso('${blk}')"><span class="material-symbols-rounded">edit_note</span>${blk==='materiais'?'Material genérico / avulso (sem preço fixo)':cfg.sing.charAt(0).toUpperCase()+cfg.sing.slice(1)+' avulso (fora do cadastro)'}</button>`;
   document.getElementById('pickModal').classList.add('open');
 }
 function closePick(){ document.getElementById('pickModal').classList.remove('open'); }
 function pickCad(blk,cid){
   const c=(CAD[blk]||[]).find(x=>x.id===cid); if(!c)return;
-  S[blk].push(rowSvc(c.nome,1,'UND',c.custo,'',c.id));
+  S[blk].push(rowSvc(c.nome,1,c.und||UND_DFLT[blk],c.custo,(c.margem===undefined?'':c.margem),c.id,c.marca||''));
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
 }
 function addAvulso(blk){
-  S[blk].push(rowSvc("",1,'UND',0,'',null));
+  S[blk].push(rowSvc("",1,UND_DFLT[blk],0,'',null,''));
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
 }
 function updObs(blk,val){ if(!S.obs)S.obs={}; S.obs[blk]=val; save(); }
