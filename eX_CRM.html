@@ -40,6 +40,9 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .board{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;align-items:flex-start}
 .kcol{flex:0 0 250px;background:var(--surf2);border-radius:12px;padding:8px;display:flex;flex-direction:column;max-height:calc(100vh - 230px)}
 .kcol.dragover{outline:2px dashed var(--pri);outline-offset:-2px}
+.kcol.fim{background:#eaf2e3}
+.kcol.fim .kcol-nm{color:var(--green)}
+select.fi{appearance:auto;cursor:pointer}
 .kcol-h{display:flex;align-items:center;gap:6px;padding:4px 6px 8px}
 .kcol-nm{font-size:12.5px;font-weight:700;cursor:text;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .kcol-nm:hover{color:var(--pri)}
@@ -158,8 +161,8 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
   <div class="modal">
     <div class="mh"><b id="oTitle">Oportunidade</b><button class="x" onclick="closeOpp()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div class="fg"><label class="fl">Cliente contratante</label><div class="chips" id="o_contratante"></div></div>
-      <div class="fg"><label class="fl">Cliente contemplado / loja</label><div class="chips" id="o_contemplado"></div></div>
+      <div class="fg"><label class="fl">Cliente contratante</label><select class="fi" id="o_contratante_sel" onchange="onContratante(this.value)"></select></div>
+      <div class="fg"><label class="fl">Cliente contemplado / loja</label><select class="fi" id="o_contemplado_sel" onchange="onContemplado(this.value)"></select></div>
       <div class="fg"><label class="fl">Objeto da demanda</label><input class="fi" id="o_objeto" placeholder="Ex.: Automação de iluminação — 4 QDs"></div>
       <div class="frow">
         <div class="fg"><label class="fl">Temperatura</label><div class="chips" id="o_temp"></div></div>
@@ -204,7 +207,7 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 "use strict";
 const STORE="ex_crm_v1";
 const TEMPS=["Frio","Morno","Quente"];
-let S=null, TAB='funil', SELO=null, SELC=null, EDITO=null, EDITC=null, _drag=null, _oc=null, _op=null, _ot='Morno';
+let S=null, TAB='funil', SELO=null, SELC=null, EDITO=null, EDITC=null, _drag=null, _oc=null, _op=null, _ot='Morno', _fromPipe=null;
 const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const ini=n=>String(n||'?').trim().slice(0,2).toUpperCase();
@@ -213,7 +216,8 @@ const cli=id=>S.clientes.find(x=>x.id===id);
 function demo(){ return { v:3,
   colunas:[
     {id:"leads",nome:"Leads"},{id:"visita",nome:"Visita técnica"},{id:"proposta",nome:"Gerando proposta"},
-    {id:"negoc",nome:"Em negociação"},{id:"obra",nome:"Obra / execução"},{id:"geladeira",nome:"Geladeira"},{id:"declinado",nome:"Declinado"}
+    {id:"negoc",nome:"Em negociação"},{id:"obra",nome:"Obra / execução"},{id:"concluido",nome:"Concluído",fim:true},
+    {id:"geladeira",nome:"Geladeira"},{id:"declinado",nome:"Declinado"}
   ],
   clientes:[
     {id:"gy",nome:"GREENYELLOW",tipo:"contratante",paiId:null,cnpj:"",contato:"",fone:"",email:"",endereco:"",obs:"Integrador de sistemas; contratante recorrente."},
@@ -260,8 +264,9 @@ function render(){ if(TAB==='funil'){ renderBoard(); renderOppDetail(); } else {
 function renderBoard(){
   document.getElementById('board').innerHTML = S.colunas.map((col,ci)=>{
     const cards=oppsIn(col.id).filter(matchQ);
-    return `<div class="kcol" ondragover="allow(event,this)" ondragleave="this.classList.remove('dragover')" ondrop="drop(event,'${col.id}',this)">
+    return `<div class="kcol ${col.fim?'fim':''}" ondragover="allow(event,this)" ondragleave="this.classList.remove('dragover')" ondrop="drop(event,'${col.id}',this)">
       <div class="kcol-h">
+        ${col.fim?'<span class="material-symbols-rounded" style="font-size:15px;color:var(--green)">check_circle</span>':''}
         <span class="kcol-nm" title="Renomear" onclick="renameColuna('${col.id}')">${esc(col.nome)}</span>
         <span class="kcol-ct">${cards.length}</span>
         <span class="kcol-acts">
@@ -335,24 +340,27 @@ function novaOpp(colId){ openOpp(null, colId); }
 function openOpp(id,colId){
   const o=id?S.oportunidades.find(x=>x.id===id):null;
   EDITO={id:id||null, colId:(o?o.colId:(colId||S.colunas[0].id))};
-  _oc=o?o.contratanteId:null; _op=o?o.contempladoId:null; _ot=o?(o.temperatura||'Morno'):'Morno';
+  _oc=o?o.contratanteId:null; _op=o?o.contempladoId:null; _ot=o?(o.temperatura||'Morno'):'Morno'; _fromPipe=null;
   document.getElementById('oTitle').textContent=id?'Editar oportunidade':'Nova oportunidade';
   document.getElementById('o_objeto').value=o?(o.objeto||''):'';
   document.getElementById('o_obs').value=o?(o.obs||''):'';
   document.getElementById('o_data').value=o?(o.dataLimite||''):'';
   document.getElementById('oDel').style.display=id?'inline-flex':'none';
-  renderOppChips();
+  renderOppSelects();
   document.getElementById('modalOpp').classList.add('show');
 }
-function renderOppChips(){
-  document.getElementById('o_contratante').innerHTML=contratantes().map(c=>`<span class="chip ${_oc===c.id?'sel':''}" onclick="pickContratante('${c.id}')">${esc(c.nome)}</span>`).join('')||'<span style="color:var(--tx3);font-size:12px">Cadastre um contratante na aba Clientes.</span>';
+function renderOppSelects(){
+  const ctSel=document.getElementById('o_contratante_sel');
+  ctSel.innerHTML=`<option value="">— escolher contratante —</option>`+contratantes().map(c=>`<option value="${c.id}" ${_oc===c.id?'selected':''}>${esc(c.nome)}</option>`).join('')+`<option value="__new">+ Cadastrar novo contratante…</option>`;
+  const cpSel=document.getElementById('o_contemplado_sel');
   const subs=_oc?filhos(_oc):[];
-  document.getElementById('o_contemplado').innerHTML= _oc?(subs.length?subs.map(s=>`<span class="chip ${_op===s.id?'sel':''}" onclick="pickContemplado('${s.id}')">${esc(s.nome)}</span>`).join(''):'<span style="color:var(--tx3);font-size:12px">Sem contemplados neste contratante.</span>'):'<span style="color:var(--tx3);font-size:12px">Escolha o contratante primeiro.</span>';
+  cpSel.innerHTML=`<option value="">${_oc?'— (opcional) —':'escolha o contratante primeiro'}</option>`+subs.map(s=>`<option value="${s.id}" ${_op===s.id?'selected':''}>${esc(s.nome)}</option>`).join('')+(_oc?`<option value="__new">+ Cadastrar novo contemplado…</option>`:'');
   document.getElementById('o_temp').innerHTML=TEMPS.map(t=>`<span class="chip ${_ot===t?'sel':''}" onclick="pickTemp('${t}')">${t}</span>`).join('');
 }
-function pickContratante(id){ _oc=id; if(_op&&!filhos(id).find(s=>s.id===_op))_op=null; renderOppChips(); }
-function pickContemplado(id){ _op=(_op===id?null:id); renderOppChips(); }
-function pickTemp(t){ _ot=t; renderOppChips(); }
+function onContratante(val){ if(val==='__new'){ document.getElementById('o_contratante_sel').value=_oc||''; openCliFromPipe('contratante'); return; } _oc=val||null; if(_op&&(!_oc||!filhos(_oc).find(s=>s.id===_op)))_op=null; renderOppSelects(); }
+function onContemplado(val){ if(val==='__new'){ document.getElementById('o_contemplado_sel').value=_op||''; if(!_oc){alert('Escolha o contratante primeiro.');return;} openCliFromPipe('contemplado'); return; } _op=val||null; }
+function pickTemp(t){ _ot=t; renderOppSelects(); }
+function openCliFromPipe(tipo){ _fromPipe=tipo; openCli(tipo,null); }
 function closeOpp(){ document.getElementById('modalOpp').classList.remove('show'); EDITO=null; }
 function saveOpp(){
   if(!_oc){ alert('Escolha o cliente contratante.'); return; }
@@ -417,15 +425,18 @@ function openCli(tipo,id){
   document.getElementById('cDel').style.display=id?'inline-flex':'none';
   document.getElementById('modalCli').classList.add('show');
 }
-function closeCli(){ document.getElementById('modalCli').classList.remove('show'); EDITC=null; }
+function closeCli(){ document.getElementById('modalCli').classList.remove('show'); EDITC=null; _fromPipe=null; }
 function saveCli(){
+  const fp=_fromPipe;
   const g=f=>document.getElementById('c_'+f).value.trim();
   const nome=g('nome'); if(!nome){ alert('Informe o nome.'); return; }
   const data={nome,cnpj:g('cnpj'),contato:g('contato'),fone:g('fone'),email:g('email'),endereco:g('endereco'),obs:g('obs')};
   if(EDITC.id){ Object.assign(S.clientes.find(x=>x.id===EDITC.id), data); }
-  else if(EDITC.tipo==='contratante'){ const nc={id:uid(),tipo:'contratante',paiId:null,...data}; S.clientes.push(nc); SELC=nc.id; }
-  else{ S.clientes.push({id:uid(),tipo:'contemplado',paiId:SELC,...data}); }
-  save(); closeCli(); render();
+  else if(EDITC.tipo==='contratante'){ const nc={id:uid(),tipo:'contratante',paiId:null,...data}; S.clientes.push(nc); if(fp){_oc=nc.id;_op=null;}else{SELC=nc.id;} }
+  else{ const parent=fp?_oc:SELC; const nc={id:uid(),tipo:'contemplado',paiId:parent,...data}; S.clientes.push(nc); if(fp)_op=nc.id; }
+  save(); closeCli();
+  if(fp) renderOppSelects();
+  render();
 }
 function delCliBtn(){ if(EDITC&&EDITC.id) delCliDireto(EDITC.id,true); }
 function delCliDireto(id,fromModal){
