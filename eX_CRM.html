@@ -134,6 +134,7 @@ select.fi{appearance:auto;cursor:pointer}
   <div class="appbar">
     <span class="logo"><b>e</b>X</span>
     <span class="modtag"><span class="material-symbols-rounded">sell</span>Comercial (CRM)</span>
+    <span id="cloudb" style="font-size:11px;color:var(--tx3)"></span>
     <span class="spacer"></span>
     <div class="search"><span class="material-symbols-rounded">search</span><input id="q" placeholder="Buscar…" oninput="render()"></div>
     <button class="btn" onclick="resetDemo()" title="Recarregar exemplo"><span class="material-symbols-rounded">restart_alt</span></button>
@@ -208,12 +209,57 @@ select.fi{appearance:auto;cursor:pointer}
   </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 "use strict";
 const STORE="ex_crm_v1";
+/* ===== NUVEM (Supabase) — mesma conexão/sessão do app ===== */
+const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
+const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
+const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
+let CLOUD=false, EMPRESA_ID=null;
+function cloudMsg(t){ const e=document.getElementById('cloudb'); if(e)e.textContent=t; }
+const mCli=c=>({id:c.id,empresa_id:EMPRESA_ID,tipo:c.tipo,pai_id:c.paiId||null,nome:c.nome,cnpj:c.cnpj||null,contato:c.contato||null,fone:c.fone||null,email:c.email||null,endereco:c.endereco||null,obs:c.obs||null});
+const mFase=(f,ord)=>({id:f.id,empresa_id:EMPRESA_ID,nome:f.nome,ordem:ord,tipo:f.fim?'final':'ativa'});
+const mOpp=o=>({id:o.id,empresa_id:EMPRESA_ID,contratante_id:o.contratanteId||null,contemplado_id:o.contempladoId||null,fase_id:o.colId||null,objeto:o.objeto||null,temperatura:o.temperatura||'Morno',data_limite:o.dataLimite||null,obs:o.obs||null});
+function cUp(table,row){ if(!CLOUD)return; SB.from(table).upsert(row).then(({error})=>{ if(error){console.error('cloud up',table,error);cloudMsg('erro ao salvar na nuvem');} }); }
+function cDel(table,id){ if(!CLOUD)return; SB.from(table).update({deleted_at:new Date().toISOString()}).eq('id',id).then(({error})=>{ if(error)console.error('cloud del',table,error); }); }
+function cFases(){ if(!CLOUD)return; SB.from('crm_fases').upsert(S.colunas.map((f,i)=>mFase(f,i))).then(({error})=>{ if(error)console.error('cloud fases',error); }); }
+async function carregarNuvem(){
+  const [cl,fa,op]=await Promise.all([
+    SB.from('clientes').select('*').is('deleted_at',null),
+    SB.from('crm_fases').select('*').is('deleted_at',null).order('ordem'),
+    SB.from('oportunidades').select('*').is('deleted_at',null)
+  ]);
+  if(cl.error||fa.error||op.error) throw (cl.error||fa.error||op.error);
+  S={ v:3,
+    colunas:(fa.data||[]).map(f=>({id:f.id,nome:f.nome,fim:f.tipo==='final'})),
+    clientes:(cl.data||[]).map(c=>({id:c.id,nome:c.nome,tipo:c.tipo,paiId:c.pai_id,cnpj:c.cnpj,contato:c.contato,fone:c.fone,email:c.email,endereco:c.endereco,obs:c.obs})),
+    oportunidades:(op.data||[]).map(o=>({id:o.id,contratanteId:o.contratante_id,contempladoId:o.contemplado_id,objeto:o.objeto,temperatura:o.temperatura,dataLimite:o.data_limite||'',colId:o.fase_id,obs:o.obs}))
+  };
+  if(!S.colunas.length) await seedFases();
+}
+async function seedFases(){
+  const pad=[['Leads',0,'ativa'],['Visita técnica',1,'ativa'],['Gerando proposta',2,'ativa'],['Em negociação',3,'ativa'],['Obra / execução',4,'ativa'],['Concluído',5,'final'],['Geladeira',6,'ativa'],['Declinado',7,'ativa']];
+  const rows=pad.map(p=>({id:uid(),empresa_id:EMPRESA_ID,nome:p[0],ordem:p[1],tipo:p[2]}));
+  const {error}=await SB.from('crm_fases').insert(rows);
+  if(error){console.error('seed fases',error);return;}
+  S.colunas=rows.map(r=>({id:r.id,nome:r.nome,fim:r.tipo==='final'}));
+}
+async function initCRM(){
+  if(SB){ try{
+    const {data:{session}}=await SB.auth.getSession();
+    if(session){
+      try{ const emp=await SB.rpc('empresa_atual'); EMPRESA_ID=(emp&&emp.data)||null; }catch(e){}
+      await carregarNuvem(); CLOUD=true; cloudMsg('nuvem ✓');
+    } else { cloudMsg('modo local (sem login)'); }
+  }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
+  if(!CLOUD){ load(); }
+  render();
+}
 const TEMPS=["Frio","Morno","Quente"];
 let S=null, TAB='funil', SELO=null, SELC=null, EDITO=null, EDITC=null, _drag=null, _oc=null, _op=null, _ot='Morno', _fromPipe=null;
-const uid=()=>Math.random().toString(36).slice(2,9);
+const uid=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);});
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const ini=n=>String(n||'?').trim().slice(0,2).toUpperCase();
 const cli=id=>S.clientes.find(x=>x.id===id);
@@ -253,7 +299,7 @@ function load(){
   save();
 }
 function save(){ try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){} }
-function resetDemo(){ if(confirm("Recarregar o exemplo? As edições atuais serão perdidas.")){S=demo();SELO=null;SELC=null;save();render();} }
+function resetDemo(){ if(CLOUD){ if(confirm("Recarregar do banco (nuvem)?")){ carregarNuvem().then(()=>{SELO=null;SELC=null;render();}).catch(e=>console.error(e)); } return; } if(confirm("Recarregar o exemplo? As edições atuais serão perdidas.")){S=demo();SELO=null;SELC=null;save();render();} }
 
 const contratantes=()=>S.clientes.filter(c=>c.tipo==="contratante");
 const filhos=id=>S.clientes.filter(c=>c.tipo==="contemplado"&&c.paiId===id);
@@ -306,14 +352,14 @@ function oppCardHTML(o,ci){
 }
 function dragStart(e,id){ _drag=id; try{e.dataTransfer.setData('text/plain',id);e.dataTransfer.effectAllowed='move';}catch(_){} }
 function allow(e,el){ e.preventDefault(); if(el)el.classList.add('dragover'); }
-function drop(e,colId,el){ e.preventDefault(); if(el)el.classList.remove('dragover'); const id=_drag||(e.dataTransfer&&e.dataTransfer.getData('text/plain')); const o=id&&S.oportunidades.find(x=>x.id===id); if(o){ o.colId=colId; save(); render(); } _drag=null; }
-function moveOpp(id,dir){ const o=S.oportunidades.find(x=>x.id===id); if(!o)return; const i=colIdx(o.colId)+dir; if(i<0||i>=S.colunas.length)return; o.colId=S.colunas[i].id; save(); render(); }
+function drop(e,colId,el){ e.preventDefault(); if(el)el.classList.remove('dragover'); const id=_drag||(e.dataTransfer&&e.dataTransfer.getData('text/plain')); const o=id&&S.oportunidades.find(x=>x.id===id); if(o){ o.colId=colId; save(); cUp('oportunidades',mOpp(o)); render(); } _drag=null; }
+function moveOpp(id,dir){ const o=S.oportunidades.find(x=>x.id===id); if(!o)return; const i=colIdx(o.colId)+dir; if(i<0||i>=S.colunas.length)return; o.colId=S.colunas[i].id; save(); cUp('oportunidades',mOpp(o)); render(); }
 function selOpp(id){ SELO=id; render(); const d=document.getElementById('oppDetail'); if(d)d.scrollIntoView({behavior:'smooth',block:'nearest'}); }
 
-function addColuna(){ const nm=prompt('Nome da nova fase:'); if(nm&&nm.trim()){ S.colunas.push({id:uid(),nome:nm.trim()}); save(); render(); } }
-function renameColuna(id){ const k=S.colunas.find(x=>x.id===id); if(!k)return; const nm=prompt('Renomear fase:',k.nome); if(nm&&nm.trim()){ k.nome=nm.trim(); save(); render(); } }
-function moveColuna(id,dir){ const i=colIdx(id), j=i+dir; if(j<0||j>=S.colunas.length)return; const a=S.colunas;[a[i],a[j]]=[a[j],a[i]]; save(); render(); }
-function delColuna(id){ if(S.colunas.length<=1)return; const n=oppsIn(id).length; const dest=S.colunas.find(k=>k.id!==id); if(!confirm(`Excluir a fase "${colNome(id)}"?`+(n?` As ${n} oportunidade(s) vão para "${dest.nome}".`:'')))return; S.oportunidades.forEach(o=>{if(o.colId===id)o.colId=dest.id;}); S.colunas=S.colunas.filter(k=>k.id!==id); save(); render(); }
+function addColuna(){ const nm=prompt('Nome da nova fase:'); if(nm&&nm.trim()){ S.colunas.push({id:uid(),nome:nm.trim()}); save(); cFases(); render(); } }
+function renameColuna(id){ const k=S.colunas.find(x=>x.id===id); if(!k)return; const nm=prompt('Renomear fase:',k.nome); if(nm&&nm.trim()){ k.nome=nm.trim(); save(); cFases(); render(); } }
+function moveColuna(id,dir){ const i=colIdx(id), j=i+dir; if(j<0||j>=S.colunas.length)return; const a=S.colunas;[a[i],a[j]]=[a[j],a[i]]; save(); cFases(); render(); }
+function delColuna(id){ if(S.colunas.length<=1)return; const n=oppsIn(id).length; const dest=S.colunas.find(k=>k.id!==id); if(!confirm(`Excluir a fase "${colNome(id)}"?`+(n?` As ${n} oportunidade(s) vão para "${dest.nome}".`:'')))return; const movidas=S.oportunidades.filter(o=>o.colId===id); S.oportunidades.forEach(o=>{if(o.colId===id)o.colId=dest.id;}); S.colunas=S.colunas.filter(k=>k.id!==id); save(); cDel('crm_fases',id); movidas.forEach(o=>cUp('oportunidades',mOpp(o))); cFases(); render(); }
 
 function renderOppDetail(){
   const el=document.getElementById('oppDetail');
@@ -329,6 +375,7 @@ function renderOppDetail(){
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-s" onclick="openOpp('${o.id}')"><span class="material-symbols-rounded">edit</span>Editar</button>
         <button class="btn btn-s btn-p" onclick="gerarOrcamento('${o.id}')"><span class="material-symbols-rounded">request_quote</span>${oc?'Abrir orçamento':'Gerar orçamento'}</button>
+        <button class="btn btn-s" onclick="gerarOrcBarramento('${o.id}')" title="Gerar/abrir orçamento de barramento (fabricação de cobre)"><span class="material-symbols-rounded">bolt</span>Barramento</button>
         ${oc?`<button class="btn btn-s" onclick="duplicarOpp('${o.id}')" title="Cria uma cópia da oportunidade com o orçamento junto"><span class="material-symbols-rounded">content_copy</span>Duplicar</button>`:''}
         ${oc?`<button class="btn btn-s" onclick="gerarObra('${o.id}')" title="Cria a obra no Cronograma com os serviços do orçamento virando tarefas"><span class="material-symbols-rounded">engineering</span>Gerar obra</button>`:''}
       </div>
@@ -376,11 +423,12 @@ function closeOpp(){ document.getElementById('modalOpp').classList.remove('show'
 function saveOpp(){
   if(!_oc){ alert('Escolha o cliente contratante.'); return; }
   const data={contratanteId:_oc, contempladoId:_op, objeto:document.getElementById('o_objeto').value.trim(), temperatura:_ot, dataLimite:document.getElementById('o_data').value, obs:document.getElementById('o_obs').value.trim()};
-  if(EDITO.id){ Object.assign(S.oportunidades.find(x=>x.id===EDITO.id), data); }
-  else{ const no={id:uid(),colId:EDITO.colId,...data}; S.oportunidades.push(no); SELO=no.id; }
-  save(); closeOpp(); render();
+  let alvo;
+  if(EDITO.id){ alvo=S.oportunidades.find(x=>x.id===EDITO.id); Object.assign(alvo, data); }
+  else{ alvo={id:uid(),colId:EDITO.colId,...data}; S.oportunidades.push(alvo); SELO=alvo.id; }
+  save(); cUp('oportunidades',mOpp(alvo)); closeOpp(); render();
 }
-function delOpp(){ if(EDITO&&EDITO.id&&confirm('Excluir esta oportunidade?')){ S.oportunidades=S.oportunidades.filter(x=>x.id!==EDITO.id); if(SELO===EDITO.id)SELO=null; save(); closeOpp(); render(); } }
+function delOpp(){ if(EDITO&&EDITO.id&&confirm('Excluir esta oportunidade?')){ const id=EDITO.id; S.oportunidades=S.oportunidades.filter(x=>x.id!==id); if(SELO===id)SELO=null; save(); cDel('oportunidades',id); closeOpp(); render(); } }
 function duplicarOpp(id){
   const o=S.oportunidades.find(x=>x.id===id); if(!o)return;
   if(!confirm('Duplicar esta oportunidade com o orçamento junto?'))return;
@@ -388,7 +436,7 @@ function duplicarOpp(id){
   S.oportunidades.push(novo);
   try{ const src=localStorage.getItem('ex_orc_v6__'+id); if(src) localStorage.setItem('ex_orc_v6__'+novo.id, src);
        const idx=orcIndex(); if(idx[id]){ idx[novo.id]={...idx[id]}; localStorage.setItem('ex_orc_index',JSON.stringify(idx)); } }catch(e){}
-  SELO=novo.id; save(); render();
+  SELO=novo.id; save(); cUp('oportunidades',mOpp(novo)); render();
 }
 
 /* ===== ponte com o Orçamento ===== */
@@ -401,6 +449,14 @@ function gerarOrcamento(id){
     try{ localStorage.setItem('ex_orc_prefill', JSON.stringify(prefill)); }catch(e){}
   }
   window.open('eX_Orcamento.html?opp='+id,'_blank');
+}
+function gerarOrcBarramento(id){
+  const o=S.oportunidades.find(x=>x.id===id); if(!o)return;
+  const ct=cli(o.contratanteId), cp=cli(o.contempladoId);
+  const prefill={ oppId:o.id, cliNome:ct?ct.nome:'', cliContato:ct?(ct.contato||''):'', cliFone:ct?(ct.fone||''):'', cliEmail:ct?(ct.email||''):'',
+    finNome:cp?cp.nome:'', solTitulo:o.objeto||'', solDesc:o.obs||'' };
+  try{ localStorage.setItem('ex_orc_bar_prefill', JSON.stringify(prefill)); }catch(e){}
+  window.open('eX_Orcamento_Barramento.html?opp='+id,'_blank');
 }
 function gerarObra(id){
   const o=S.oportunidades.find(x=>x.id===id); if(!o)return;
@@ -464,10 +520,11 @@ function saveCli(){
   const g=f=>document.getElementById('c_'+f).value.trim();
   const nome=g('nome'); if(!nome){ alert('Informe o nome.'); return; }
   const data={nome,cnpj:g('cnpj'),contato:g('contato'),fone:g('fone'),email:g('email'),endereco:g('endereco'),obs:g('obs')};
-  if(EDITC.id){ Object.assign(S.clientes.find(x=>x.id===EDITC.id), data); }
-  else if(EDITC.tipo==='contratante'){ const nc={id:uid(),tipo:'contratante',paiId:null,...data}; S.clientes.push(nc); if(fp){_oc=nc.id;_op=null;}else{SELC=nc.id;} }
-  else{ const parent=fp?_oc:SELC; const nc={id:uid(),tipo:'contemplado',paiId:parent,...data}; S.clientes.push(nc); if(fp)_op=nc.id; }
-  save(); closeCli();
+  let alvo;
+  if(EDITC.id){ alvo=S.clientes.find(x=>x.id===EDITC.id); Object.assign(alvo, data); }
+  else if(EDITC.tipo==='contratante'){ alvo={id:uid(),tipo:'contratante',paiId:null,...data}; S.clientes.push(alvo); if(fp){_oc=alvo.id;_op=null;}else{SELC=alvo.id;} }
+  else{ const parent=fp?_oc:SELC; alvo={id:uid(),tipo:'contemplado',paiId:parent,...data}; S.clientes.push(alvo); if(fp)_op=alvo.id; }
+  save(); cUp('clientes',mCli(alvo)); closeCli();
   if(fp) renderOppSelects();
   render();
 }
@@ -475,14 +532,22 @@ function delCliBtn(){ if(EDITC&&EDITC.id) delCliDireto(EDITC.id,true); }
 function delCliDireto(id,fromModal){
   const c=S.clientes.find(x=>x.id===id); if(!c)return;
   if(!confirm(`Excluir "${c.nome}"?`+(c.tipo==='contratante'?' (contemplados e oportunidades ligadas também saem)':'')))return;
+  const filhosIds=S.clientes.filter(x=>x.paiId===id).map(x=>x.id);
+  let oppsRemovidas=[], oppsAtualizadas=[];
+  if(c.tipo==='contratante'){ oppsRemovidas=S.oportunidades.filter(o=>o.contratanteId===id).map(o=>o.id); }
+  else { oppsAtualizadas=S.oportunidades.filter(o=>o.contempladoId===id); }
   S.clientes=S.clientes.filter(x=>x.id!==id && x.paiId!==id);
   if(c.tipo==='contratante'){ S.oportunidades=S.oportunidades.filter(o=>o.contratanteId!==id); }
   else { S.oportunidades.forEach(o=>{ if(o.contempladoId===id)o.contempladoId=null; }); }
   if(SELC===id)SELC=null;
-  save(); if(fromModal)closeCli(); render();
+  save();
+  cDel('clientes',id); filhosIds.forEach(fid=>cDel('clientes',fid));
+  oppsRemovidas.forEach(oid=>cDel('oportunidades',oid));
+  oppsAtualizadas.forEach(o=>cUp('oportunidades',mOpp(o)));
+  if(fromModal)closeCli(); render();
 }
 
-load(); render();
+initCRM();
 </script>
 </body>
 </html>
