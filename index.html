@@ -441,6 +441,7 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="sb-sub">
         <button class="sb-i fut" onclick="navSoon('Propostas',this)"><span class="ic"><span class="msr">description</span></span><span class="lb">Propostas</span><span class="br">em breve</span></button>
         <button class="sb-i" onclick="navView('orcamento',this)"><span class="ic"><span class="msr">request_quote</span></span><span class="lb">Orçamentos</span></button>
+        <button class="sb-i fut" onclick="navSoon('Orçamento de barramento',this)"><span class="ic"><span class="msr">bolt</span></span><span class="lb">Orç. de barramento</span><span class="br">em breve</span></button>
       </div>
 
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">business_center</span></span><span class="lb">Gestão</span><span class="gchev">▶</span></div>
@@ -2716,7 +2717,37 @@ function toggleFin(e){e.stopPropagation();document.getElementById('fin-menu').cl
 function abrirManualCartao(){var m=document.getElementById('fin-menu');if(m)m.classList.remove('open');window.open(MANUAL_CARTAO_URL,'_blank');}
 function cadGo(t){const btn=document.getElementById('cad-btn');tab(t,btn);btn.classList.add('active');btn.innerHTML='Cadastros · '+CAD_LABELS[t]+' <span style="font-size:10px">▾</span>';document.getElementById('cad-menu').classList.remove('open');document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.toggle('active',b.getAttribute('data-t')===t));}
 document.addEventListener('click',e=>{const m=document.getElementById('cad-menu');if(m&&m.classList.contains('open')&&!e.target.closest('.tabdrop'))m.classList.remove('open'); const fm=document.getElementById('fin-menu');if(fm&&fm.classList.contains('open')&&!e.target.closest('.tabdrop'))fm.classList.remove('open'); if(!e.target.closest('.combo'))closeSvcList();});
-function renderAll(){refreshHeaders();render();renderAcomp();renderProjetos();aplicarModoNav();}
+/* ===== PONTE: importar OBRA vinda do Orçamento (ex_obra_pending) ===== */
+function checkObraPendente(){
+  let bar=document.getElementById('obraImport'), pend=null;
+  try{ pend=JSON.parse(localStorage.getItem('ex_obra_pending')||'null'); }catch(e){}
+  if(!pend||!pend.servicos){ if(bar)bar.remove(); return; }
+  if(!bar){ bar=document.createElement('div'); bar.id='obraImport';
+    bar.style.cssText='position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:9999;background:#533ab7;color:#fff;border-radius:12px;padding:11px 16px;display:flex;align-items:center;gap:12px;box-shadow:0 8px 24px rgba(0,0,0,.28);max-width:94vw;font-size:13px;flex-wrap:wrap';
+    document.body.appendChild(bar); }
+  bar.innerHTML='<span class="msr" style="font-size:20px">engineering</span>'
+    +'<div><b>Obra do orçamento pronta:</b> '+((pend.nome||'—'))+' <span style="opacity:.8">('+(pend.servicos.length)+' serviços → tarefas)</span></div>'
+    +'<button onclick="importObra()" style="background:#fff;color:#533ab7;border:none;border-radius:8px;padding:7px 13px;font-weight:600;cursor:pointer">Importar obra</button>'
+    +'<button onclick="descartarObra()" style="background:none;color:#fff;border:1px solid rgba(255,255,255,.45);border-radius:8px;padding:7px 11px;cursor:pointer">Descartar</button>';
+}
+function descartarObra(){ localStorage.removeItem('ex_obra_pending'); checkObraPendente(); }
+function importObra(){
+  let pend=null; try{ pend=JSON.parse(localStorage.getItem('ex_obra_pending')||'null'); }catch(e){}
+  if(!pend){ checkObraPendente(); return; }
+  const g=uid();
+  const mkT=s=>({id:uid(),grupo:g,nivel:1,svc:'',nome:s.nome||'',varNome:'',qtd:(+s.qtd||1),tempo:0,tempoPrev:0,exec:'',execLinha:0,resp:'',prioridade:'Média',prog:0,status:'todo',ini:'',fim:'',fimReal:'',notas:'vindo do orçamento'});
+  const alvo={ id:uid(), numero:pend.numero||'', nome:pend.nome||'Nova obra', contratante:pend.contratante||'', contemplado:pend.contemplado||'', local:'', status:'Em andamento', prioridade:'Média', lider:'', dataIni:'', dataFim:'', obs:(pend.obs||'')+(pend.oppId?(' · origem: oportunidade '+pend.oppId):''), endereco:'', localizacao:'', gestor:'',
+    grupos:[{id:g,nome:'Serviços (do orçamento)',cat:'',resp:'',open:true}],
+    tarefas:(pend.servicos||[]).filter(s=>s&&s.nome).map(mkT) };
+  S.projetos.push(alvo); S.ativo=alvo.id; S.emProjeto=true; save();
+  try{ pushProjeto(alvo); }catch(e){}
+  localStorage.removeItem('ex_obra_pending');
+  const b=document.getElementById('obraImport'); if(b)b.remove();
+  refreshHeaders(); renderProjetos(); try{renderModelos();}catch(e){} render(); renderAcomp(); aplicarModoNav();
+  try{ tab('acomp',document.getElementById('tab-acomp')); }catch(e){}
+  alert('Obra criada com '+alvo.tarefas.length+' tarefa(s) do orçamento. Agora é ajustar tempo, equipe e datas.');
+}
+function renderAll(){refreshHeaders();render();renderAcomp();renderProjetos();aplicarModoNav();checkObraPendente();}
 renderAll(); // render local primeiro (instantâneo)
 try{ navInicio(null); }catch(e){}  // landing: o app abre na apresentação inicial
 async function bootNuvem(){

@@ -330,6 +330,7 @@ function renderOppDetail(){
         <button class="btn btn-s" onclick="openOpp('${o.id}')"><span class="material-symbols-rounded">edit</span>Editar</button>
         <button class="btn btn-s btn-p" onclick="gerarOrcamento('${o.id}')"><span class="material-symbols-rounded">request_quote</span>${oc?'Abrir orçamento':'Gerar orçamento'}</button>
         ${oc?`<button class="btn btn-s" onclick="duplicarOpp('${o.id}')" title="Cria uma cópia da oportunidade com o orçamento junto"><span class="material-symbols-rounded">content_copy</span>Duplicar</button>`:''}
+        ${oc?`<button class="btn btn-s" onclick="gerarObra('${o.id}')" title="Cria a obra no Cronograma com os serviços do orçamento virando tarefas"><span class="material-symbols-rounded">engineering</span>Gerar obra</button>`:''}
       </div>
     </div>
     <div class="dinfo">
@@ -400,6 +401,17 @@ function gerarOrcamento(id){
     try{ localStorage.setItem('ex_orc_prefill', JSON.stringify(prefill)); }catch(e){}
   }
   window.open('eX_Orcamento.html?opp='+id,'_blank');
+}
+function gerarObra(id){
+  const o=S.oportunidades.find(x=>x.id===id); if(!o)return;
+  let orc=null; try{ orc=JSON.parse(localStorage.getItem('ex_orc_v6__'+id)||'null'); }catch(e){}
+  if(!orc){ alert('Gere o orçamento desta oportunidade primeiro.'); return; }
+  const ct=cli(o.contratanteId), cp=cli(o.contempladoId);
+  const servicos=(orc.servicos||[]).filter(s=>s&&s.desc).map(s=>({nome:s.desc, qtd:(+s.qtd||1)}));
+  if(!servicos.length){ if(!confirm('O orçamento não tem serviços. Criar a obra mesmo assim (vazia)?'))return; }
+  const payload={ oppId:o.id, numero:orc.numero||'', nome:o.objeto||titulo(o), contratante:ct?ct.nome:'', contemplado:cp?cp.nome:'', obs:o.obs||'', servicos };
+  try{ localStorage.setItem('ex_obra_pending', JSON.stringify(payload)); }catch(e){}
+  window.open('index.html','_blank');
 }
 
 /* ===== CLIENTES (banco) ===== */
