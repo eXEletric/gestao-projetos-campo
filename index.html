@@ -439,6 +439,7 @@ body.papel-tecnico .adm-only{display:none !important}
 
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">sell</span></span><span class="lb">Comercial</span><span class="gchev">▶</span></div>
       <div class="sb-sub">
+        <button class="sb-i" onclick="navView('funil',this)"><span class="ic"><span class="msr">view_kanban</span></span><span class="lb">Funil</span></button>
         <button class="sb-i fut" onclick="navSoon('Propostas',this)"><span class="ic"><span class="msr">description</span></span><span class="lb">Propostas</span><span class="br">em breve</span></button>
         <button class="sb-i" onclick="navView('orcamento',this)"><span class="ic"><span class="msr">request_quote</span></span><span class="lb">Orçamentos</span></button>
         <button class="sb-i fut" onclick="navSoon('Orçamento de barramento',this)"><span class="ic"><span class="msr">bolt</span></span><span class="lb">Orç. de barramento</span><span class="br">em breve</span></button>
@@ -613,6 +614,10 @@ body.papel-tecnico .adm-only{display:none !important}
 
   <div class="view" id="v-clientes">
     <iframe id="cli-frame" title="Clientes (CRM)" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
+  </div>
+
+  <div class="view" id="v-funil">
+    <iframe id="fun-frame" title="Funil comercial" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
   </div>
 
   <!-- PERFIL DA EMPRESA (página, só leitura) -->
@@ -2706,7 +2711,7 @@ function aplicarModoNav(){
 }
 function irLista(t){ S.emProjeto=false; save(); aplicarModoNav(); tab(t,document.getElementById(t==='modelos'?'nav-modelos-lbl':'nav-lista-lbl')); }
 function voltarProjetos(){ irLista('proj'); }
-function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();
+function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();
   const cadBtn=document.getElementById('cad-btn');
   if(cadBtn&&!['colab','cat','mat','acessos','cfg'].includes(t)){cadBtn.classList.remove('active');cadBtn.innerHTML='Cadastros <span style="font-size:10px">▾</span>';document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.remove('active'));}
 }
@@ -2788,7 +2793,8 @@ function toggleGrp(el){ if(!el.classList.contains('open')){ var sibs=el.parentNo
 function _obranav(show){ var ob=document.querySelector('.obranav'); if(ob)ob.style.display=show?'':'none'; }
 function navView(t,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; tab(t,null); }
 function carregarOrcamento(){ const f=document.getElementById('orc-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Orcamento.html'); }
-function carregarClientes(){ const f=document.getElementById('cli-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_CRM.html'); }
+function carregarClientes(){ const f=document.getElementById('cli-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_CRM.html?m=clientes'); }
+function carregarFunil(){ const f=document.getElementById('fun-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_CRM.html?m=funil'); }
 function navObras(el){ setSbActive(el); _obranav(true); irLista('proj'); }
 async function navEmpresa(el){ navView('empresa',el); await _hubEnsureEmpresa(); renderEmpresaView(); }
 function renderEmpresaView(){

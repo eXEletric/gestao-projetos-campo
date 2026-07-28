@@ -255,10 +255,18 @@ async function initCRM(){
     } else { cloudMsg('modo local (sem login)'); }
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
   if(!CLOUD){ load(); }
-  render();
+  applyMode(); setTab(TAB);
 }
 const TEMPS=["Frio","Morno","Quente"];
-let S=null, TAB='funil', SELO=null, SELC=null, EDITO=null, EDITC=null, _drag=null, _oc=null, _op=null, _ot='Morno', _fromPipe=null;
+const MODE=(new URLSearchParams(location.search)).get('m'); // 'clientes' | 'funil' | null(ambos)
+let S=null, TAB=(MODE||'funil'), SELO=null, SELC=null, EDITO=null, EDITC=null, _drag=null, _oc=null, _op=null, _ot='Morno', _fromPipe=null;
+function applyMode(){
+  if(!MODE) return;
+  const tb=document.querySelector('.tabs'); if(tb)tb.style.display='none';
+  const mt=document.querySelector('.modtag');
+  if(mt)mt.innerHTML='<span class="material-symbols-rounded">'+(MODE==='clientes'?'contacts':'view_kanban')+'</span>'+(MODE==='clientes'?'Clientes':'Funil comercial');
+  document.title='eX '+(MODE==='clientes'?'Clientes':'Funil comercial');
+}
 const uid=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);});
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const ini=n=>String(n||'?').trim().slice(0,2).toUpperCase();
