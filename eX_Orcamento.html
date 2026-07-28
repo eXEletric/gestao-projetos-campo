@@ -35,6 +35,13 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .btn-p{background:var(--pri);color:#fff;border-color:var(--pri)}
 .btn-p:hover{background:#472f9e}
 .sub{font-size:12px;color:var(--tx2);margin:2px 0 16px}
+.oppbar{display:flex;align-items:center;gap:11px;flex-wrap:wrap;background:var(--pri-bg);border:1px solid #cfc7f5;border-radius:10px;padding:9px 14px;margin-bottom:16px}
+.oppbar>.material-symbols-rounded{color:var(--pri);font-size:18px}
+.ob-txt{font-size:13px;color:var(--tx);flex:1;min-width:160px}
+.ob-fase{font-size:10px;background:var(--pri);color:#fff;padding:2px 8px;border-radius:10px;margin-left:4px;white-space:nowrap}
+.ob-st{display:inline-flex;background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:2px}
+.obst{font-size:11px;font-weight:600;border:none;background:none;color:var(--tx3);cursor:pointer;padding:4px 9px;border-radius:6px;text-transform:capitalize}
+.obst.on{background:var(--pri);color:#fff}
 
 /* ===== LAYOUT ===== */
 .grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
@@ -218,6 +225,8 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
   </div>
   <div class="sub">Folha de cotação — protótipo do módulo. Fonte de exemplo: <b>eX_2025-CPLND-ASSAÍ NACIONAL-SERV</b>. Edite à vontade; use “Recarregar exemplo” pra voltar ao original.</div>
 
+  <div id="oppBanner"></div>
+
   <div class="grid">
     <!-- ===== COLUNA ESQUERDA: A FOLHA ===== -->
     <div>
@@ -306,7 +315,8 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
 
 <script>
 "use strict";
-const STORE="ex_orc_v6";
+const OPP=(new URLSearchParams(location.search)).get('opp')||null;   // ?opp=<id> → orçamento desta oportunidade
+const STORE=OPP?('ex_orc_v6__'+OPP):'ex_orc_v6';
 let S=null;
 
 /* ---------- utilidades ---------- */
@@ -358,7 +368,7 @@ function demo(){
     finNome:"ASSAÍ NACIONAL", finEnd:"Nacional",
     respNome:"André Camilo", respContato:"62 99392-2999 · aocinnet@gmail.com",
     equipe:"1 Eletrotécnico + 1 Eletricista + Operacional",
-    prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30,
+    prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho',
     modos:{servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'},
     soTotal:{servicos:false,equip:false,despesas:false,materiais:false},
     blocoTotal:{servicos:0,equip:0,despesas:0,materiais:0},
@@ -450,7 +460,8 @@ function load(){ try{const r=localStorage.getItem(STORE);S=r?JSON.parse(r):demo(
   if(!S.modos)S.modos={servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'};
   if(!S.soTotal)S.soTotal={servicos:false,equip:false,despesas:false,materiais:false};
   if(!S.blocoTotal)S.blocoTotal={servicos:0,equip:0,despesas:0,materiais:0};
-  if(S.margemBase===undefined)S.margemBase=30; }
+  if(S.margemBase===undefined)S.margemBase=30;
+  if(!S.status)S.status='rascunho'; }
 function save(){ try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){} }
 function resetDemo(){ if(confirm("Recarregar o exemplo Copeland/Assaí? As edições atuais serão perdidas.")){S=demo();save();boot();} }
 
@@ -718,6 +729,7 @@ function recalc(){
   if(lu)lu.textContent=fmt(lucro); if(mg)mg.textContent=marg.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
   const neg=(lucro<0);
   if(lu)lu.className='val luc'+(neg?' neg':''); if(mg)mg.className='val luc'+(neg?' neg':'');
+  writeback(total);
 }
 
 /* ---------- modo ver/editar ---------- */
@@ -736,9 +748,23 @@ function applyPrefill(){
     save();
   }catch(e){}
 }
+// info da oportunidade (lê o CRM) para o banner de vínculo
+function oppInfo(){ if(!OPP)return null; try{ const crm=JSON.parse(localStorage.getItem('ex_crm_v1')||'{}'); const o=(crm.oportunidades||[]).find(x=>x.id===OPP); if(!o)return null; const f=id=>(crm.clientes||[]).find(c=>c.id===id); const ct=f(o.contratanteId),cp=f(o.contempladoId); const col=(crm.colunas||[]).find(k=>k.id===o.colId); return {titulo:[ct&&ct.nome,cp&&cp.nome,o.objeto].filter(Boolean).join(' · '), fase:col?col.nome:''}; }catch(e){return null;} }
+// grava total + status de volta no índice que o funil lê
+function writeback(total){ if(!OPP)return; try{ const idx=JSON.parse(localStorage.getItem('ex_orc_index')||'{}'); const info=oppInfo(); idx[OPP]={total:total, status:S.status||'rascunho', titulo:info?info.titulo:''}; localStorage.setItem('ex_orc_index',JSON.stringify(idx)); }catch(e){} }
+function renderBanner(){ const el=document.getElementById('oppBanner'); if(!el)return; if(!OPP){ el.innerHTML=''; return; }
+  const info=oppInfo(), st=S.status||'rascunho';
+  el.innerHTML=`<div class="oppbar">
+    <span class="material-symbols-rounded">link</span>
+    <div class="ob-txt"><b>Orçamento da oportunidade:</b> ${info?esc(info.titulo):esc(OPP)}${info&&info.fase?` <span class="ob-fase">${esc(info.fase)}</span>`:''}</div>
+    <div class="ob-st">${['rascunho','enviado','aprovado'].map(s=>`<button class="obst ${st===s?'on':''}" onclick="setStatus('${s}')">${s}</button>`).join('')}</div>
+    <button class="btn btn-s" onclick="location.href='eX_CRM.html'"><span class="material-symbols-rounded">arrow_back</span>Funil</button>
+  </div>`;
+}
+function setStatus(s){ S.status=s; save(); recalc(); renderBanner(); }
 
 /* ---------- boot ---------- */
-function boot(){ BLKS.forEach(renderBlk); bindFields(); applyPrefill(); recalc(); }
+function boot(){ BLKS.forEach(renderBlk); bindFields(); applyPrefill(); recalc(); renderBanner(); }
 load(); boot();
 </script>
 </body>

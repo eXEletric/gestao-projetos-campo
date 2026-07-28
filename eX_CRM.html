@@ -61,6 +61,11 @@ select.fi{appearance:auto;cursor:pointer}
 .kcard-foot{display:flex;align-items:center;gap:6px;margin-top:8px}
 .temp{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:10px}
 .temp.frio{background:#e7f0fa;color:var(--blue)}.temp.morno{background:#faeeda;color:var(--amber)}.temp.quente{background:#fcebeb;color:var(--red)}
+.orcb{font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;margin-top:6px;text-transform:capitalize}
+.orcb .material-symbols-rounded{font-size:13px}
+.orcb.rascunho{color:var(--tx2);background:var(--surf2)}
+.orcb.enviado{color:var(--blue);background:#e7f0fa}
+.orcb.aprovado{color:var(--green);background:#e9f2dd}
 .kmove{margin-left:auto;display:flex;gap:1px}
 .kmove button{width:22px;height:22px;border:1px solid var(--line);border-radius:6px;background:var(--surf);color:var(--tx3);cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
 .kmove button:hover:not(:disabled){background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}
@@ -212,6 +217,8 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const ini=n=>String(n||'?').trim().slice(0,2).toUpperCase();
 const cli=id=>S.clientes.find(x=>x.id===id);
+const fmtBRL=n=>'R$ '+(Math.round((+n||0)*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function orcIndex(){ try{return JSON.parse(localStorage.getItem('ex_orc_index')||'{}');}catch(e){return {};} }
 
 function demo(){ return { v:3,
   colunas:[
@@ -283,10 +290,11 @@ function renderBoard(){
   }).join('') + `<button class="newcol" onclick="addColuna()"><span class="material-symbols-rounded">add</span>Nova fase</button>`;
 }
 function oppCardHTML(o,ci){
-  const ct=cli(o.contratanteId), tc=(o.temperatura||'Morno').toLowerCase();
+  const ct=cli(o.contratanteId), tc=(o.temperatura||'Morno').toLowerCase(), oc=orcIndex()[o.id];
   return `<div class="kcard ${SELO===o.id?'sel':''}" draggable="true" ondragstart="dragStart(event,'${o.id}')" ondragend="_drag=null" onclick="selOpp('${o.id}')">
     <div class="kcard-nm">${esc(o.objeto||'(sem objeto)')}</div>
     <div class="kcard-cli"><span class="material-symbols-rounded">business</span>${esc(ct?ct.nome:'—')}${o.contempladoId&&cli(o.contempladoId)?' · '+esc(cli(o.contempladoId).nome):''}</div>
+    ${oc?`<div class="orcb ${esc(oc.status||'rascunho')}"><span class="material-symbols-rounded">request_quote</span>${fmtBRL(oc.total)} · ${esc(oc.status||'rascunho')}</div>`:''}
     <div class="kcard-foot">
       <span class="temp ${tc}">${esc(o.temperatura||'Morno')}</span>
       <span class="kmove">
@@ -311,7 +319,7 @@ function renderOppDetail(){
   const el=document.getElementById('oppDetail');
   const o=SELO&&S.oportunidades.find(x=>x.id===SELO);
   if(!o){ el.innerHTML=''; if(SELO)SELO=null; return; }
-  const ct=cli(o.contratanteId), cp=cli(o.contempladoId), tc=(o.temperatura||'Morno').toLowerCase();
+  const ct=cli(o.contratanteId), cp=cli(o.contempladoId), tc=(o.temperatura||'Morno').toLowerCase(), oc=orcIndex()[o.id];
   const di=(l,v)=>`<div class="di"><span class="l">${l}</span><span class="v ${v?'':'empty'}">${v?esc(v):'—'}</span></div>`;
   el.innerHTML=`<div class="detail">
     <div class="dhead">
@@ -320,7 +328,8 @@ function renderOppDetail(){
         <div class="chiprow"><span class="temp ${tc}">${esc(o.temperatura||'Morno')}</span></div></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-s" onclick="openOpp('${o.id}')"><span class="material-symbols-rounded">edit</span>Editar</button>
-        <button class="btn btn-s btn-p" onclick="gerarOrcamento('${o.id}')"><span class="material-symbols-rounded">request_quote</span>Gerar orçamento</button>
+        <button class="btn btn-s btn-p" onclick="gerarOrcamento('${o.id}')"><span class="material-symbols-rounded">request_quote</span>${oc?'Abrir orçamento':'Gerar orçamento'}</button>
+        ${oc?`<button class="btn btn-s" onclick="duplicarOpp('${o.id}')" title="Cria uma cópia da oportunidade com o orçamento junto"><span class="material-symbols-rounded">content_copy</span>Duplicar</button>`:''}
       </div>
     </div>
     <div class="dinfo">
@@ -330,6 +339,7 @@ function renderOppDetail(){
       ${di('Contato',ct?ct.contato:'')}
       ${di('Fone · e-mail',[ct&&ct.fone,ct&&ct.email].filter(Boolean).join(' · '))}
       ${di('Data limite p/ orçamento',o.dataLimite?o.dataLimite.split('-').reverse().join('/'):'')}
+      ${oc?di('Orçamento',fmtBRL(oc.total)+' · '+(oc.status||'rascunho')):''}
     </div>
     ${o.obs?`<div class="dobs">${esc(o.obs)}</div>`:''}
   </div>`;
@@ -370,15 +380,26 @@ function saveOpp(){
   save(); closeOpp(); render();
 }
 function delOpp(){ if(EDITO&&EDITO.id&&confirm('Excluir esta oportunidade?')){ S.oportunidades=S.oportunidades.filter(x=>x.id!==EDITO.id); if(SELO===EDITO.id)SELO=null; save(); closeOpp(); render(); } }
+function duplicarOpp(id){
+  const o=S.oportunidades.find(x=>x.id===id); if(!o)return;
+  if(!confirm('Duplicar esta oportunidade com o orçamento junto?'))return;
+  const novo={...o, id:uid(), objeto:(o.objeto||'')+' (cópia)'};
+  S.oportunidades.push(novo);
+  try{ const src=localStorage.getItem('ex_orc_v6__'+id); if(src) localStorage.setItem('ex_orc_v6__'+novo.id, src);
+       const idx=orcIndex(); if(idx[id]){ idx[novo.id]={...idx[id]}; localStorage.setItem('ex_orc_index',JSON.stringify(idx)); } }catch(e){}
+  SELO=novo.id; save(); render();
+}
 
 /* ===== ponte com o Orçamento ===== */
 function gerarOrcamento(id){
   const o=S.oportunidades.find(x=>x.id===id); if(!o)return;
-  const ct=cli(o.contratanteId), cp=cli(o.contempladoId);
-  const prefill={ oppId:o.id, cliNome:ct?ct.nome:'', cliContato:ct?(ct.contato||''):'', cliFone:ct?(ct.fone||''):'', cliEmail:ct?(ct.email||''):'',
-    finNome:cp?cp.nome:'', finEnd:cp?(cp.endereco||''):'', solTitulo:o.objeto||'', solDesc:o.obs||'' };
-  try{ localStorage.setItem('ex_orc_prefill', JSON.stringify(prefill)); }catch(e){}
-  window.open('eX_Orcamento.html','_blank');
+  if(!orcIndex()[id]){   // 1ª vez: manda o pré-preenchimento
+    const ct=cli(o.contratanteId), cp=cli(o.contempladoId);
+    const prefill={ oppId:o.id, cliNome:ct?ct.nome:'', cliContato:ct?(ct.contato||''):'', cliFone:ct?(ct.fone||''):'', cliEmail:ct?(ct.email||''):'',
+      finNome:cp?cp.nome:'', finEnd:cp?(cp.endereco||''):'', solTitulo:o.objeto||'', solDesc:o.obs||'' };
+    try{ localStorage.setItem('ex_orc_prefill', JSON.stringify(prefill)); }catch(e){}
+  }
+  window.open('eX_Orcamento.html?opp='+id,'_blank');
 }
 
 /* ===== CLIENTES (banco) ===== */
