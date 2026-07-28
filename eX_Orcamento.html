@@ -133,6 +133,15 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .ex-switch.on .kb{left:27px}
 .ex-switch .pin{width:3px;height:11px;border-radius:2px;background:linear-gradient(#9a9a92,#565650);box-shadow:0 1px 1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5)}
 body.viewing .ex-switch{pointer-events:none;opacity:.55}
+.chip{font-size:11px;font-weight:600;color:var(--tx2);background:var(--surf2);border:1px solid var(--line);border-radius:20px;padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.chip:hover{border-color:var(--line2)}
+.chip .material-symbols-rounded{font-size:15px}
+.chip.on{background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}
+body.viewing .chip{pointer-events:none;opacity:.55}
+.tbl tfoot .ftot td{border-top:1.5px solid var(--line2);padding-top:8px}
+.tbl .ftl{color:var(--tx2);font-weight:700;font-size:12px}
+.tbl tfoot .cin.num{font-weight:700;color:var(--pri);width:100px}
+.incl{color:var(--tx3);font-size:11px;font-style:italic}
 
 /* editar x ver */
 body.viewing .cin:hover,body.viewing .in:hover{border-color:transparent}
@@ -245,7 +254,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
 
 <script>
 "use strict";
-const STORE="ex_orc_v2";
+const STORE="ex_orc_v3";
 let S=null;
 
 /* ---------- utilidades ---------- */
@@ -259,6 +268,12 @@ const num=v=>{
 const fmt=n=>'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const lineTot=(r,modo)=> modo==='geral' ? num(r.geral) : num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100);
+// subtotal do bloco: no modo Geral+"só o total" usa o valor manual; senão soma os itens
+function blkSub(blk){
+  const modo=S.modos[blk]||'unit';
+  if(modo==='geral' && S.soTotal[blk]) return num(S.blocoTotal[blk]);
+  return S[blk].reduce((a,r)=>a+lineTot(r,modo),0);
+}
 
 /* ---------- estado exemplo (Copeland / Assaí) ---------- */
 function demo(){
@@ -273,6 +288,8 @@ function demo(){
     equipe:"1 Eletrotécnico + 1 Eletricista + Operacional",
     prazoDias:5, impostoPct:6.38, descontoPct:0, custoInterno:0,
     modos:{servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'},
+    soTotal:{servicos:false,equip:false,despesas:false,materiais:false},
+    blocoTotal:{servicos:0,equip:0,despesas:0,materiais:0},
     obs:{
       servicos:"Não inclui: controladores, componentes eletrônicos, sensores; programação de controladores; material de infraestrutura 100% dedicada.",
       materiais:"Neste orçamento foi considerado o uso de toda a infra de rede existente na loja para a passagem dos circuitos de comunicação e sensores.",
@@ -310,7 +327,9 @@ function row(desc,qtd,und,vunit,markup,marca){return{id:uid(),desc,qtd,und,vunit
 
 /* ---------- carga / persistência ---------- */
 function load(){ try{const r=localStorage.getItem(STORE);S=r?JSON.parse(r):demo();}catch(e){S=demo();}
-  if(!S.modos)S.modos={servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'}; }
+  if(!S.modos)S.modos={servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'};
+  if(!S.soTotal)S.soTotal={servicos:false,equip:false,despesas:false,materiais:false};
+  if(!S.blocoTotal)S.blocoTotal={servicos:0,equip:0,despesas:0,materiais:0}; }
 function save(){ try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){} }
 function resetDemo(){ if(confirm("Recarregar o exemplo Copeland/Assaí? As edições atuais serão perdidas.")){S=demo();save();boot();} }
 
@@ -324,9 +343,30 @@ const BLKS=[
 
 function renderBlk(cfg){
   const modo=S.modos[cfg.key]||'unit';
-  const rows=S[cfg.key], sub=rows.reduce((a,r)=>a+lineTot(r,modo),0);
-  let cols, body;
-  if(modo==='geral'){
+  const soT = modo==='geral' && S.soTotal[cfg.key];
+  const rows=S[cfg.key], sub=blkSub(cfg.key);
+  let cols, body, foot='';
+  if(modo==='geral' && soT){
+    // Geral + só o total: itens sem valor, total do bloco editável (verba fechada)
+    cols = cfg.mat
+      ? `<th>#</th><th>Material</th><th>Marca</th><th class="r"></th><th></th>`
+      : `<th>#</th><th>Descrição</th><th class="r"></th><th></th>`;
+    body=rows.map((r,i)=>{
+      const marca = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
+      return `<tr>
+        <td class="idx">${i+1}</td>
+        <td><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"></td>
+        ${marca}
+        <td class="r"><span class="incl">incluso</span></td>
+        <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+      </tr>`;
+    }).join('');
+    if(!rows.length) body=`<tr><td colspan="${cfg.mat?5:4}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar” abaixo.</td></tr>`;
+    foot=`<tfoot><tr class="ftot">
+      <td></td><td class="ftl" ${cfg.mat?'colspan="2"':''}>Total do bloco (verba)</td>
+      <td class="r"><input class="cin num" value="${esc(S.blocoTotal[cfg.key]??'')}" inputmode="decimal" oninput="updBloco('${cfg.key}',this.value)" title="Digite o valor total; sobrescreve a soma dos itens"></td>
+      <td></td></tr></tfoot>`;
+  } else if(modo==='geral'){
     cols = cfg.mat
       ? `<th>#</th><th>Material</th><th>Marca</th><th class="r">Valor (geral)</th><th></th>`
       : `<th>#</th><th>Descrição</th><th class="r">Valor (geral)</th><th></th>`;
@@ -368,6 +408,7 @@ function renderBlk(cfg){
       <span class="ic"><span class="material-symbols-rounded">${cfg.icon}</span></span>
       <h2>${cfg.titulo}</h2>
       <div class="modosw">
+        ${modo==='geral'?`<button class="chip ${soT?'on':''}" onclick="toggleSoTotal('${cfg.key}')" title="Ocultar o valor de cada item e mostrar só o total do bloco"><span class="material-symbols-rounded">${soT?'visibility_off':'visibility'}</span>Só o total</button>`:''}
         <span class="modolbl" id="modolbl_${cfg.key}">${modo==='geral'?'Valor geral':'Valor unitário'}</span>
         <div class="ex-switch ${modo==='geral'?'on':''}" onclick="toggleModo('${cfg.key}')" title="Alterna: valor unitário (qtd × preço) ⇄ valor geral (verba única)">
           <span class="lb off">UN</span><span class="lb onx">GER</span>
@@ -376,7 +417,7 @@ function renderBlk(cfg){
       </div>
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
-    <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody>${body}</tbody></table></div>
+    <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody>${body}</tbody>${foot}</table></div>
     <div class="addrow"><button onclick="addRow('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.mat?'material':'item'}</button></div>
     ${obsHtml}`;
 }
@@ -386,6 +427,18 @@ function toggleModo(blk){
   if(next==='geral') S[blk].forEach(r=>{ if(r.geral===undefined||r.geral==='') r.geral=+(lineTot(r,'unit').toFixed(2)); });
   S.modos[blk]=next; save();
   renderBlk(BLKS.find(b=>b.key===blk)); recalc();
+}
+function toggleSoTotal(blk){
+  const next=!S.soTotal[blk];
+  if(next && !num(S.blocoTotal[blk])) S.blocoTotal[blk]=+(S[blk].reduce((a,r)=>a+lineTot(r,'geral'),0).toFixed(2)); // parte da soma dos itens
+  S.soTotal[blk]=next; save();
+  renderBlk(BLKS.find(b=>b.key===blk)); recalc();
+}
+function updBloco(blk,val){
+  S.blocoTotal[blk]=val;
+  const st=document.getElementById('st_'+blk);
+  if(st) st.innerHTML='Subtotal <b>'+fmt(blkSub(blk))+'</b>';
+  recalc(); save();
 }
 
 /* ---------- edição ---------- */
@@ -397,7 +450,7 @@ function upd(blk,id,field,val){
     const c=document.getElementById('tt_'+id); const t=lineTot(r,modo);
     if(c){c.textContent=fmt(t);c.className='tot '+(t?'':'z');}
     const st=document.getElementById('st_'+blk);
-    if(st) st.innerHTML='Subtotal <b>'+fmt(S[blk].reduce((a,x)=>a+lineTot(x,modo),0))+'</b>';
+    if(st) st.innerHTML='Subtotal <b>'+fmt(blkSub(blk))+'</b>';
     recalc();
   }
   save();
@@ -421,7 +474,7 @@ function bindFields(){
 /* ---------- fechamento ---------- */
 function recalc(){
   const sub={};
-  BLKS.forEach(b=>sub[b.key]=S[b.key].reduce((a,r)=>a+lineTot(r,S.modos[b.key]||'unit'),0));
+  BLKS.forEach(b=>sub[b.key]=blkSub(b.key));
   const bruto=sub.servicos+sub.equip+sub.despesas+sub.materiais;
   const desc=bruto*num(S.descontoPct)/100;
   const total=bruto-desc;
