@@ -763,7 +763,8 @@ function pickCad(blk,cid){
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
 }
 function addAvulso(blk){
-  S[blk].push(rowSvc("",1,UND_DFLT[blk],0,'',null,''));
+  const r=rowSvc("",1,UND_DFLT[blk],0,'',null,''); r.usarBase=false; // avulso: sem base do cadastro → custo editável
+  S[blk].push(r);
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
 }
 
