@@ -76,11 +76,16 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
     <div class="mb">
       <div class="fg"><label class="fl">Nome</label><input class="fi" id="f_nome"></div>
       <div class="frow">
-        <div class="fg"><label class="fl">Unidade</label><input class="fi" id="f_unidade" placeholder="UND"></div>
+        <div class="fg"><label class="fl">Unidade</label>
+          <select class="fi" id="f_unidade">
+            <option>UND</option><option>PÇ</option><option>M</option><option>M²</option><option>KM</option><option>L</option><option>KG</option><option>CX</option><option>CIRCT</option><option>DIÁRIA</option><option>HORA</option><option>DIA</option><option>SEMANA</option><option>MÊS</option><option>VB</option><option>GLOBAL</option>
+          </select></div>
         <div class="fg"><label class="fl">Custo (R$)</label><input class="fi" id="f_custo" inputmode="decimal"></div>
         <div class="fg"><label class="fl">Margem %</label><input class="fi" id="f_margem" inputmode="decimal" placeholder="padrão"><div class="hint">vazio = margem base do orçamento</div></div>
       </div>
-      <div class="fg"><label class="fl">Categoria</label><input class="fi" id="f_categoria"></div>
+      <div class="fg"><label class="fl">Categoria</label><input class="fi" id="f_categoria" list="catlist" placeholder="escolha ou digite…">
+        <datalist id="catlist"><option>Automação</option><option>Elétrica</option><option>Instalação</option><option>Comando</option><option>Refrigeração</option><option>Infraestrutura</option><option>Supervisório</option><option>Comunicação / BUS</option><option>Mão de obra</option><option>Locação</option><option>Deslocamento</option><option>Material</option></datalist></div>
+      <div class="fg"><label class="fl">Detalhes</label><textarea class="fi" id="f_detalhes" rows="3" placeholder="Descrição do serviço, o que está incluso…" style="resize:vertical"></textarea></div>
       <div class="fg" id="fg_marca" style="display:none"><label class="fl">Marca</label><input class="fi" id="f_marca"></div>
     </div>
     <div class="mf">
@@ -152,10 +157,13 @@ function openItem(id){
   const it=id?ITENS.find(x=>x.id===id):null;
   document.getElementById('mTitle').textContent=(id?'Editar ':'Novo ')+(LBL[TIPO]||LBL.servico)[2];
   document.getElementById('f_nome').value=it?it.nome||'':'';
-  document.getElementById('f_unidade').value=it?(it.unidade||''):'';
+  const uSel=document.getElementById('f_unidade'), uv=it?(it.unidade||'UND'):'UND';
+  if(uv && ![...uSel.options].some(o=>o.value===uv)){ const op=document.createElement('option'); op.value=uv; op.textContent=uv; uSel.appendChild(op); }
+  uSel.value=uv;
   document.getElementById('f_custo').value=it?(it.custo??''):'';
   document.getElementById('f_margem').value=(it&&it.margem!=null)?it.margem:'';
   document.getElementById('f_categoria').value=it?(it.categoria||''):'';
+  document.getElementById('f_detalhes').value=it?(it.detalhes||''):'';
   document.getElementById('f_marca').value=it?(it.marca||''):'';
   document.getElementById('mDel').style.display=id?'inline-flex':'none';
   document.getElementById('modal').classList.add('show');
@@ -170,6 +178,7 @@ function saveItem(){
     custo:num(document.getElementById('f_custo').value),
     margem:mv===''?null:num(mv),
     categoria:document.getElementById('f_categoria').value.trim()||null,
+    detalhes:document.getElementById('f_detalhes').value.trim()||null,
     marca:(TIPO==='material')?(document.getElementById('f_marca').value.trim()||null):null };
   if(EDIT){ row.id=EDIT; } else { row.id=uid(); }
   SB.from('orc_catalogo').upsert(row).then(({error})=>{
