@@ -241,7 +241,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
   /* mecanismo interno — nunca vai pro cliente */
   .appbar .mode,.appbar .btn,.addrow,.del,.intbox,.obs textarea,
   .pint,.bs,.modosw,.oppbar,.fpick,.hintlbl,.dgrab,
-  .sub,#cloudb,.noprint{display:none!important}
+  .sub,#cloudb,.noprint,.ln.zeroprint{display:none!important}
   .side{position:static}
   .panel,.summ,.blk{break-inside:avoid}
   .app{padding:0}
@@ -252,6 +252,17 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
 }
 .blk{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:15px 16px;margin-bottom:16px}
 .scroll{overflow-x:auto}
+/* barra liga/desliga de blocos */
+.blocosbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:2px 0 14px}
+.blocosbar .bb-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3)}
+.bbchip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);font-size:12px;font-weight:600;cursor:pointer;transition:.14s}
+.bbchip .ic,.bbchip .ck{font-size:16px}
+.bbchip.on{background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}
+.bbchip.off{opacity:.65}
+.bbchip.off .nm{text-decoration:line-through}
+.bbchip.off .ck{color:var(--tx3)}
+.valwarn{font-size:10px;font-weight:700;color:var(--red);background:#fcebeb;padding:1px 7px;border-radius:9px;display:none}
+.valwarn.on{display:inline-block}
 </style>
 </head>
 <body class="editing">
@@ -284,7 +295,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
           <div class="f"><label>Nº da cotação <span class="hintlbl">interno · gerado</span></label><input class="in mono" data-m="numero"></div>
           <div class="f noprint"><label>ID externo <span class="hintlbl">opcional · ex: Pipefy</span></label><input class="in mono" data-m="idpipe" placeholder="—"></div>
           <div class="f"><label>Data</label><input class="in" type="date" data-m="dataISO"></div>
-          <div class="f"><label>Validade</label><input class="in" type="date" data-m="validadeISO"></div>
+          <div class="f"><label>Validade <span class="valwarn noprint" id="valWarn"></span></label><input class="in" type="date" data-m="validadeISO" onchange="checkValidade()"></div>
           <div class="f full"><label>Solução <button class="fpick" onclick="openHP('solucao')"><span class="material-symbols-rounded">list</span>escolher do cadastro</button></label><input class="in" data-m="solTitulo" placeholder="Escolha uma solução…"></div>
           <div class="f full"><label>Descrição do escopo <span class="hintlbl">vem da solução · editável</span></label><input class="in" data-m="solDesc"></div>
         </div>
@@ -306,6 +317,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
       </div>
 
       <!-- BLOCOS DE ITENS -->
+      <div id="blocosBar" class="blocosbar noprint"></div>
       <div class="blk" id="blk_servicos"></div>
       <div class="blk" id="blk_equip"></div>
       <div class="blk" id="blk_despesas"></div>
@@ -320,12 +332,12 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
           <div class="v" id="s_preco">R$ 0,00</div>
         </div>
         <div class="body">
-          <div class="ln"><span class="lbl"><span class="material-symbols-rounded">build</span>Serviços</span><span class="val" id="s_serv">—</span></div>
-          <div class="ln"><span class="lbl"><span class="material-symbols-rounded">construction</span>Equipamentos</span><span class="val" id="s_equip">—</span></div>
-          <div class="ln"><span class="lbl"><span class="material-symbols-rounded">local_shipping</span>Despesas</span><span class="val" id="s_desp">—</span></div>
-          <div class="ln"><span class="lbl"><span class="material-symbols-rounded">inventory_2</span>Materiais</span><span class="val" id="s_mat">—</span></div>
+          <div class="ln" id="ln_servicos"><span class="lbl"><span class="material-symbols-rounded">build</span>Serviços</span><span class="val" id="s_serv">—</span></div>
+          <div class="ln" id="ln_equip"><span class="lbl"><span class="material-symbols-rounded">construction</span>Equipamentos</span><span class="val" id="s_equip">—</span></div>
+          <div class="ln" id="ln_despesas"><span class="lbl"><span class="material-symbols-rounded">local_shipping</span>Despesas</span><span class="val" id="s_desp">—</span></div>
+          <div class="ln" id="ln_materiais"><span class="lbl"><span class="material-symbols-rounded">inventory_2</span>Materiais</span><span class="val" id="s_mat">—</span></div>
           <div class="ln"><span class="lbl">Subtotal</span><span class="val" id="s_bruto">—</span></div>
-          <div class="ln"><span class="lbl">Desconto <input class="pin" style="width:52px" data-f="descontoPct" inputmode="decimal">%</span><span class="val" id="s_desc">—</span></div>
+          <div class="ln" id="ln_desc"><span class="lbl">Desconto <input class="pin" style="width:52px" data-f="descontoPct" inputmode="decimal">%</span><span class="val" id="s_desc">—</span></div>
           <div class="ln tt"><span class="lbl">Total</span><span class="val" id="s_total">R$ 0,00</span></div>
 
           <!-- VISÃO INTERNA -->
@@ -530,8 +542,10 @@ function undSelect(blk,id,val){
 function fillUnd(sel,val){ if(!sel)return; const cur=String(val||'').trim(); const opts=UNIDADES.slice(); if(cur && opts.indexOf(cur)<0) opts.unshift(cur);
   sel.innerHTML=opts.map(u=>`<option value="${esc(u)}"${u===cur?' selected':''}>${esc(u)}</option>`).join(''); sel.value=cur||opts[0]; }
 /* formata o campo de valor ao sair (padrão financeiro) */
-function moneyBlur(el,blk,id,field){ const v=el.value.trim(); el.value=(v===''?'':fmtN(v)); upd(blk,id,field,el.value); }
-function moneyBlurBloco(el,blk){ const v=el.value.trim(); el.value=(v===''?'':fmtN(v)); updBloco(blk,el.value); }
+function moneyBlur(el,blk,id,field){ const v=el.value.trim(); el.value=(v===''?'':fmtN(Math.max(0,num(v)))); upd(blk,id,field,el.value); }
+function moneyBlurBloco(el,blk){ const v=el.value.trim(); el.value=(v===''?'':fmtN(Math.max(0,num(v)))); updBloco(blk,el.value); }
+function qtBlur(el,blk,id){ const n=Math.max(0,num(el.value)); el.value=String(n).replace('.',','); upd(blk,id,'qtd',el.value); }
+function mgBlur(el,blk,id){ const v=el.value.trim(); if(v==='') { upd(blk,id,'margem',''); return; } el.value=String(Math.max(0,num(v))).replace('.',','); upd(blk,id,'margem',el.value); }
 // modelo base+margem (custo): custo usado, margem herdada/própria
 const isCusto=r=>r.custoBase!==undefined;
 const custoUn=r=>num(r.usarBase?r.custoBase:r.custoAlt);
@@ -594,7 +608,6 @@ function demo(){
     materiais:[]
   };
 }
-function row(desc,qtd,und,vunit,markup,marca){return{id:uid(),desc,qtd,und,vunit,markup:markup||0,marca:marca||""};}
 // linha do modelo base+margem (custo). margem '' = herda a margem base
 function rowSvc(desc,qtd,und,custo,margem,catId,marca){return{id:uid(),desc,qtd,und,custoBase:custo,usarBase:true,custoAlt:custo,margem:(margem===undefined||margem===null?'':margem),catId:catId||null,marca:marca||""};}
 
@@ -663,9 +676,12 @@ function sanitize(){
   if(!S.modos)S.modos={servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'};
   if(!S.soTotal)S.soTotal={servicos:false,equip:false,despesas:false,materiais:false};
   if(!S.blocoTotal)S.blocoTotal={servicos:0,equip:0,despesas:0,materiais:0};
+  if(!S.blocoOn)S.blocoOn={servicos:true,equip:true,despesas:true,materiais:true};
+  ['servicos','equip','despesas','materiais'].forEach(k=>{ if(S.blocoOn[k]===undefined)S.blocoOn[k]=true; });
   if(S.margemBase===undefined)S.margemBase=30;
   if(!S.status)S.status='rascunho';
 }
+const blocoAtivo=k=>S.blocoOn[k]!==false;
 function load(){ try{const r=localStorage.getItem(STORE);S=r?JSON.parse(r):demo();}catch(e){S=demo();} sanitize(); }
 function save(){ try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){} saveOrc(); }
 function resetDemo(){ if(OPP&&CLOUD){ if(confirm("Recarregar este orçamento do banco (nuvem)?")){ carregarOrc().then(()=>boot()).catch(e=>console.error(e)); } return; } if(confirm("Recarregar o exemplo Copeland/Assaí? As edições atuais serão perdidas.")){S=demo();save();boot();} }
@@ -694,7 +710,7 @@ function renderBlk(cfg){
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"></td>
         ${marca}
-        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
+        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
         <td>${undSelect(cfg.key,r.id,r.und)}</td>
         <td class="r"><span class="incl">incluso</span></td>
         <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
@@ -715,7 +731,7 @@ function renderBlk(cfg){
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"></td>
         ${marca}
-        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
+        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
         <td>${undSelect(cfg.key,r.id,r.und)}</td>
         <td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
         <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
@@ -747,35 +763,15 @@ function renderBlk(cfg){
           </div>
         </td>
         <td class="r money pint">${custoCell}</td>
-        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
+        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
         <td>${undSelect(cfg.key,r.id,r.und)}</td>
-        <td class="r pint"><div class="mkwrap"><input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span>%</span></div><div class="mktag">${propria?'<span class="pd own">própria</span>':'<span class="pd">padrão</span>'}</div></td>
+        <td class="r pint"><div class="mkwrap"><input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span>%</span></div><div class="mktag">${propria?'<span class="pd own">própria</span>':'<span class="pd">padrão</span>'}</div></td>
         <td class="r money preco" id="tp_${r.id}">${fmt(preco)}</td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
         <td class="pint rowact">${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
-  } else {
-    cols = cfg.mat
-      ? `<th>#</th><th>Material</th><th>Marca</th><th class="r">Qtd</th><th>Und</th><th class="r">V. unit.</th><th class="r">Mrk%</th><th class="r">Total</th><th></th>`
-      : `<th>#</th><th>Descrição</th><th class="r">Qtd</th><th>Und</th><th class="r">V. unit.</th><th class="r">Mrk%</th><th class="r">Total</th><th></th>`;
-    body=rows.map((r,i)=>{
-      const t=lineTot(r,'unit');
-      const marca = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
-      return `<tr data-id="${r.id}">
-        <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
-        <td><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"></td>
-        ${marca}
-        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
-        <td>${undSelect(cfg.key,r.id,r.und)}</td>
-        <td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.vunit)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','vunit')" oninput="upd('${cfg.key}','${r.id}','vunit',this.value)"></span></td>
-        <td class="r"><input class="cin num mk" value="${esc(r.markup)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','markup',this.value)"></td>
-        <td class="tot ${t?'':'z'}" id="tt_${r.id}">${fmt(t)}</td>
-        <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
-      </tr>`;
-    }).join('');
-    if(!rows.length) body=`<tr><td colspan="${cfg.mat?9:8}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar” abaixo.</td></tr>`;
   }
   const obsHtml = cfg.obs?`<div class="obs"><span class="material-symbols-rounded">info</span><textarea rows="2" oninput="updObs('${cfg.key}',this.value)" placeholder="Observações do bloco…">${esc((S.obs&&S.obs[cfg.key])||'')}</textarea></div>`:'';
   document.getElementById('blk_'+cfg.key).innerHTML=`
@@ -793,7 +789,7 @@ function renderBlk(cfg){
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
-    <div class="addrow"><button onclick="${cfg.custo?`openPick('${cfg.key}')`:`addRow('${cfg.key}')`}"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.custo?cfg.sing:(cfg.mat?'material':'item')}</button></div>
+    <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button></div>
     ${obsHtml}`;
 }
 
@@ -977,7 +973,6 @@ function pickHP(kind,id){
   save(); closePick();
 }
 function updObs(blk,val){ if(!S.obs)S.obs={}; S.obs[blk]=val; save(); }
-function addRow(blk){ const dflt=blk==='equip'?'DIA':blk==='materiais'?'PÇ':'UND'; S[blk].push(row("",1,dflt,0)); save(); renderBlk(BLKS.find(b=>b.key===blk)); }
 function delRow(blk,id){ S[blk]=S[blk].filter(x=>x.id!==id); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
 
 /* ---------- arrastar para reordenar (dentro do mesmo bloco) ---------- */
@@ -1018,7 +1013,7 @@ function bindFields(){
 /* ---------- fechamento ---------- */
 function recalc(){
   const preco={}, cst={};
-  BLKS.forEach(b=>{preco[b.key]=blkSub(b.key); cst[b.key]=blkCusto(b.key);});
+  BLKS.forEach(b=>{ const on=blocoAtivo(b.key); preco[b.key]=on?blkSub(b.key):0; cst[b.key]=on?blkCusto(b.key):0; });
   const bruto=preco.servicos+preco.equip+preco.despesas+preco.materiais;
   const desc=bruto*num(S.descontoPct)/100;
   const total=bruto-desc;
@@ -1036,8 +1031,20 @@ function recalc(){
   if(lu)lu.textContent=fmt(lucro); if(mg)mg.textContent=marg.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
   const neg=(lucro<0);
   if(lu)lu.className='val luc'+(neg?' neg':''); if(mg)mg.className='val luc'+(neg?' neg':'');
+  const lnd=document.getElementById('ln_desc'); if(lnd) lnd.classList.toggle('zeroprint', num(S.descontoPct)<=0);  // desconto 0% some na proposta
+  checkValidade();
   S._total=total; S._custo=custo; S._lucro=lucro;
   writeback(total);
+}
+/* aviso de validade vencida (interno, some na proposta) */
+function checkValidade(){
+  const el=document.getElementById('valWarn'); if(!el)return;
+  const v=S.validadeISO;
+  if(!v){ el.textContent=''; el.classList.remove('on'); return; }
+  const hoje=new Date(); hoje.setHours(0,0,0,0);
+  const d=new Date(v+'T00:00:00');
+  if(!isNaN(d) && d<hoje){ el.textContent='validade vencida'; el.classList.add('on'); }
+  else { el.textContent=''; el.classList.remove('on'); }
 }
 
 /* ---------- modo ver/editar ---------- */
@@ -1073,8 +1080,26 @@ function renderBanner(){ const el=document.getElementById('oppBanner'); if(!el)r
 }
 function setStatus(s){ S.status=s; save(); recalc(); renderBanner(); }
 
+/* ---------- blocos: liga/desliga ---------- */
+function renderBlocosBar(){
+  const el=document.getElementById('blocosBar'); if(!el)return;
+  el.innerHTML='<span class="bb-lbl">Blocos da proposta:</span>'+BLKS.map(b=>{
+    const on=blocoAtivo(b.key);
+    return `<button class="bbchip ${on?'on':'off'}" onclick="toggleBloco('${b.key}')" title="${on?'Incluído — clique para remover deste orçamento':'Removido — clique para incluir'}">
+      <span class="material-symbols-rounded ic">${b.icon}</span><span class="nm">${b.titulo}</span>
+      <span class="material-symbols-rounded ck">${on?'check_circle':'add_circle'}</span></button>`;
+  }).join('');
+}
+function applyBlocoVis(){
+  BLKS.forEach(b=>{ const on=blocoAtivo(b.key);
+    const c=document.getElementById('blk_'+b.key); if(c) c.style.display=on?'':'none';
+    const ln=document.getElementById('ln_'+b.key); if(ln) ln.style.display=on?'':'none';
+  });
+}
+function toggleBloco(k){ S.blocoOn[k]=!blocoAtivo(k); save(); applyBlocoVis(); renderBlocosBar(); recalc(); }
+
 /* ---------- boot ---------- */
-function boot(){ BLKS.forEach(renderBlk); bindFields(); applyPrefill(); recalc(); renderBanner(); }
+function boot(){ BLKS.forEach(renderBlk); renderBlocosBar(); applyBlocoVis(); bindFields(); applyPrefill(); recalc(); renderBanner(); }
 initOrc();
 </script>
 </body>
