@@ -240,7 +240,8 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
   body{background:#fff}
   /* mecanismo interno — nunca vai pro cliente */
   .appbar .mode,.appbar .btn,.addrow,.del,.intbox,.obs textarea,
-  .pint,.bs,.modosw,.oppbar,.fpick,.hintlbl,.dgrab{display:none!important}
+  .pint,.bs,.modosw,.oppbar,.fpick,.hintlbl,.dgrab,
+  .sub,#cloudb,.noprint{display:none!important}
   .side{position:static}
   .panel,.summ,.blk{break-inside:avoid}
   .app{padding:0}
@@ -281,7 +282,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
         <div class="phead"><span class="material-symbols-rounded">contract</span><h2>Dados da cotação</h2></div>
         <div class="fgrid">
           <div class="f"><label>Nº da cotação <span class="hintlbl">interno · gerado</span></label><input class="in mono" data-m="numero"></div>
-          <div class="f"><label>ID externo <span class="hintlbl">opcional · ex: Pipefy</span></label><input class="in mono" data-m="idpipe" placeholder="—"></div>
+          <div class="f noprint"><label>ID externo <span class="hintlbl">opcional · ex: Pipefy</span></label><input class="in mono" data-m="idpipe" placeholder="—"></div>
           <div class="f"><label>Data</label><input class="in" type="date" data-m="dataISO"></div>
           <div class="f"><label>Validade</label><input class="in" type="date" data-m="validadeISO"></div>
           <div class="f full"><label>Solução <button class="fpick" onclick="openHP('solucao')"><span class="material-symbols-rounded">list</span>escolher do cadastro</button></label><input class="in" data-m="solTitulo" placeholder="Escolha uma solução…"></div>
@@ -509,7 +510,10 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 const num=v=>{
   if(typeof v==='number')return isNaN(v)?0:v;
   let s=String(v).trim();if(!s)return 0;
-  if(s.indexOf(',')>-1)s=s.replace(/\./g,'').replace(',','.'); // pt-BR: 1.234,56
+  s=s.replace(/[R$\s ]/g,'');                                  // remove "R$", espaços
+  if(s.indexOf(',')>-1) s=s.replace(/\./g,'').replace(',','.');     // pt-BR: 1.234,56
+  else if(/^-?\d{1,3}(\.\d{3})+$/.test(s)) s=s.replace(/\./g,'');   // 1.500 / 2.345.678 = milhar (ponto agrupador)
+  // senão o ponto é decimal (1.5, 3.14) — mantém
   const n=parseFloat(s);return isNaN(n)?0:n;
 };
 const fmt=n=>'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
