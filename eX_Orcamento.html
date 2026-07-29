@@ -350,6 +350,18 @@ function stampNovo(){ // orçamento novo: data de hoje + criador (usuário logad
   S.criadoPor=USER_NOME||S.respNome||''; S.criadoEm=d;
 }
 function cloudMsg(t){ let e=document.getElementById('cloudb'); if(!e){ e=document.createElement('span'); e.id='cloudb'; e.style.cssText='font-size:11px;color:var(--tx3)'; const bar=document.querySelector('.appbar'); if(bar)bar.appendChild(e); else return; } e.textContent=t; }
+/* catálogo real do orçamento (tabela orc_catalogo); fallback = semente CAD */
+const TIPO_BLK={servico:'servicos',equipamento:'equip',despesa:'despesas',material:'materiais'};
+let CATALOGO={servicos:[],equip:[],despesas:[],materiais:[]};
+function catFor(blk){ return (CATALOGO[blk]&&CATALOGO[blk].length)?CATALOGO[blk]:(CAD[blk]||[]); }
+async function carregarCatalogo(){
+  try{ const {data,error}=await SB.from('orc_catalogo').select('id,tipo,nome,unidade,custo,margem,marca').is('deleted_at',null).eq('ativo',true).order('nome');
+    if(error) throw error;
+    const g={servicos:[],equip:[],despesas:[],materiais:[]};
+    (data||[]).forEach(it=>{ const blk=TIPO_BLK[it.tipo]; if(blk) g[blk].push({id:it.id,nome:it.nome,custo:it.custo||0,und:it.unidade||'UND',margem:(it.margem==null?'':it.margem),marca:it.marca||''}); });
+    CATALOGO=g;
+  }catch(e){ console.error('catalogo',e); }
+}
 function pushOrc(){
   if(!(OPP&&CLOUD))return;
   const p={ empresa_id:EMPRESA_ID, oportunidade_id:OPP, numero:S.numero||null, status:S.status||'rascunho',
@@ -377,6 +389,7 @@ async function initOrc(){
     if(session){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
       try{ const p=await SB.from('perfis').select('nome,email').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; } }catch(_){}
+      await carregarCatalogo();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
     } else { cloudMsg('modo local (sem login)'); }
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
@@ -748,7 +761,7 @@ function togBase(blk,id){
 /* ---------- picker do cadastro ---------- */
 const UND_DFLT={servicos:'UND',equip:'DIA',despesas:'UND',materiais:'PÇ'};
 function openPick(blk){
-  const cfg=BLKS.find(b=>b.key===blk), cad=CAD[blk]||[];
+  const cfg=BLKS.find(b=>b.key===blk), cad=catFor(blk);
   const list=cad.map(c=>`<button class="pkitem" onclick="pickCad('${blk}','${c.id}')"><span class="pknm">${esc(c.nome)}${c.marca?' — '+esc(c.marca):''}</span><span class="pkcusto">custo ${fmt(c.custo)}/${esc(c.und||UND_DFLT[blk])}</span></button>`).join('');
   const avLabel = cfg.mat ? 'Material genérico / avulso (sem preço fixo)' : ('+ Novo '+cfg.sing+' (fora do cadastro)');
   const avulso = `<button class="pkitem avulso" onclick="addAvulso('${blk}')"><span class="material-symbols-rounded">edit_note</span>${avLabel}</button>`;
@@ -758,7 +771,7 @@ function openPick(blk){
 }
 function closePick(){ document.getElementById('pickModal').classList.remove('open'); }
 function pickCad(blk,cid){
-  const c=(CAD[blk]||[]).find(x=>x.id===cid); if(!c)return;
+  const c=catFor(blk).find(x=>x.id===cid); if(!c)return;
   S[blk].push(rowSvc(c.nome,1,c.und||UND_DFLT[blk],c.custo,(c.margem===undefined?'':c.margem),c.id,c.marca||''));
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
 }

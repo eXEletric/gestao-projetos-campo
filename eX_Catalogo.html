@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>eX Catálogo</title>
+<meta name="theme-color" content="#533ab7">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0" rel="stylesheet">
+<style>
+:root{--bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--pri:#533ab7;--pri-bg:#eeedfe;--blue:#185fa5;--green:#3b6d11;--amber:#ba7517;--red:#a32d2d;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
+.material-symbols-rounded{font-family:'Material Symbols Rounded';line-height:1;vertical-align:middle;font-size:20px}
+.app{max-width:1080px;margin:0 auto;padding:16px 18px 60px}
+.appbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.logo{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--pri)}.logo b{color:var(--tx)}
+.modtag{font-size:12px;font-weight:600;color:var(--tx2);background:var(--surf2);padding:4px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px}
+.modtag .material-symbols-rounded{font-size:16px;color:var(--pri)}
+.spacer{flex:1}
+.btn{font-size:13px;padding:8px 13px;border-radius:8px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--surf2)}.btn .material-symbols-rounded{font-size:18px}
+.btn-p{background:var(--pri);color:#fff;border-color:var(--pri)}.btn-p:hover{background:#472f9e}
+.btn-s{font-size:12px;padding:5px 10px}
+.sub{font-size:12px;color:var(--tx2);margin:2px 0 14px}
+.bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.search{display:flex;align-items:center;gap:7px;border:1px solid var(--line2);border-radius:8px;padding:7px 11px;background:var(--surf);flex:1;min-width:200px}
+.search input{border:none;outline:none;background:none;font-size:13px;color:var(--tx);width:100%}
+.search .material-symbols-rounded{font-size:18px;color:var(--tx3)}
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:600;text-align:left;padding:0 10px 7px;border-bottom:1px solid var(--line2);white-space:nowrap}
+.tbl th.r{text-align:right}
+.tbl td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tr[data-id]:hover td{background:var(--surf2)}
+.tbl .nm{font-weight:600}
+.tbl .cat{color:var(--tx2);font-size:11.5px}
+.tbl .r{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.acts{display:flex;gap:2px;justify-content:flex-end;opacity:0;transition:.1s}
+.tbl tr:hover .acts{opacity:1}
+.iconb{width:26px;height:26px;border:1px solid var(--line);border-radius:6px;background:var(--surf);color:var(--tx3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.iconb:hover{background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}
+.iconb.del:hover{background:#fcebeb;border-color:var(--red);color:var(--red)}.iconb .material-symbols-rounded{font-size:15px}
+.empty{padding:26px;text-align:center;color:var(--tx3);font-size:13px}
+.scroll{overflow-x:auto}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
+.modal-bg.show{display:flex}
+.modal{background:var(--surf);border-radius:13px;width:520px;max-width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.mh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.mh b{font-size:15px;font-weight:700}.mh .x{cursor:pointer;color:var(--tx3);background:none;border:none;display:flex}
+.mb{padding:16px 18px;overflow-y:auto}
+.mf{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+.fg{margin-bottom:12px}.fl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);margin-bottom:5px;display:block}
+.fi{width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx);font-family:inherit}
+.fi:focus{outline:none;border-color:var(--pri)}
+.frow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.hint{font-size:10px;color:var(--tx3);margin-top:3px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="appbar">
+    <span class="logo"><b>e</b>X</span>
+    <span class="modtag" id="tag"><span class="material-symbols-rounded">list_alt</span>Catálogo</span>
+    <span id="cloudb" style="font-size:11px;color:var(--tx3)"></span>
+    <span class="spacer"></span>
+    <button class="btn btn-p" onclick="openItem()"><span class="material-symbols-rounded">add</span><span id="btnNovo">Novo</span></button>
+  </div>
+  <div class="sub" id="sub">Cadastro do catálogo de orçamento.</div>
+  <div class="bar"><div class="search"><span class="material-symbols-rounded">search</span><input id="q" placeholder="Buscar…" oninput="render()"></div></div>
+  <div class="scroll"><table class="tbl"><thead><tr><th>Nome</th><th>Categoria</th><th>Und</th><th class="r">Custo</th><th class="r">Margem</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+</div>
+
+<div class="modal-bg" id="modal">
+  <div class="modal">
+    <div class="mh"><b id="mTitle">Item</b><button class="x" onclick="closeItem()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Nome</label><input class="fi" id="f_nome"></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Unidade</label><input class="fi" id="f_unidade" placeholder="UND"></div>
+        <div class="fg"><label class="fl">Custo (R$)</label><input class="fi" id="f_custo" inputmode="decimal"></div>
+        <div class="fg"><label class="fl">Margem %</label><input class="fi" id="f_margem" inputmode="decimal" placeholder="padrão"><div class="hint">vazio = margem base do orçamento</div></div>
+      </div>
+      <div class="fg"><label class="fl">Categoria</label><input class="fi" id="f_categoria"></div>
+      <div class="fg" id="fg_marca" style="display:none"><label class="fl">Marca</label><input class="fi" id="f_marca"></div>
+    </div>
+    <div class="mf">
+      <button class="btn" id="mDel" onclick="delItem()" style="color:var(--red)"><span class="material-symbols-rounded">delete</span>Excluir</button>
+      <span class="spacer"></span>
+      <button class="btn btn-p" onclick="saveItem()"><span class="material-symbols-rounded">check</span>Salvar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+const TIPO=(new URLSearchParams(location.search)).get('tipo')||'servico';
+const LBL={servico:['Serviços','build','serviço'],equipamento:['Equipamentos','construction','equipamento'],despesa:['Despesas','local_shipping','despesa'],material:['Materiais','inventory_2','material']};
+const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
+const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
+const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
+let ITENS=[], EDIT=null, CLOUD=false, EMPRESA_ID=null;
+const uid=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);});
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const num=v=>{if(typeof v==='number')return isNaN(v)?0:v;let s=String(v||'').trim();if(!s)return 0;if(s.indexOf(',')>-1)s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?0:n;};
+const fmt=n=>'R$ '+(Math.round((+n||0)*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function cloudMsg(t){ const e=document.getElementById('cloudb'); if(e)e.textContent=t; }
+
+function applyTipo(){
+  const l=LBL[TIPO]||LBL.servico;
+  document.getElementById('tag').innerHTML='<span class="material-symbols-rounded">'+l[1]+'</span>Catálogo · '+l[0];
+  document.getElementById('btnNovo').textContent='Novo '+l[2];
+  document.getElementById('sub').textContent='Cadastro de '+l[0].toLowerCase()+' do orçamento. Estes itens aparecem no picker da folha.';
+  document.getElementById('q').placeholder='Buscar '+l[0].toLowerCase()+'…';
+  document.title='eX Catálogo · '+l[0];
+  document.getElementById('fg_marca').style.display=(TIPO==='material')?'block':'none';
+}
+async function init(){
+  applyTipo();
+  if(SB){ try{
+    const {data:{session}}=await SB.auth.getSession();
+    if(session){
+      try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
+      const {data,error}=await SB.from('orc_catalogo').select('*').eq('tipo',TIPO).is('deleted_at',null).order('nome');
+      if(error) throw error;
+      ITENS=data||[]; CLOUD=true; cloudMsg('nuvem ✓');
+    } else cloudMsg('faça login');
+  }catch(e){ console.error(e); cloudMsg('erro nuvem'); } }
+  render();
+}
+function render(){
+  const q=(document.getElementById('q').value||'').toLowerCase();
+  const rows=ITENS.filter(it=>((it.nome||'')+' '+(it.categoria||'')+' '+(it.marca||'')).toLowerCase().includes(q));
+  const el=document.getElementById('rows');
+  if(!CLOUD){ el.innerHTML='<tr><td colspan="6" class="empty">Entre com login pra ver e cadastrar o catálogo.</td></tr>'; return; }
+  if(!rows.length){ el.innerHTML='<tr><td colspan="6" class="empty">'+(ITENS.length?'Nada encontrado.':'Catálogo vazio — clique em “Novo”.')+'</td></tr>'; return; }
+  el.innerHTML=rows.map(it=>`<tr data-id="${it.id}">
+    <td class="nm">${esc(it.nome)}${it.marca?' <span style="color:var(--tx3);font-weight:400">· '+esc(it.marca)+'</span>':''}</td>
+    <td class="cat">${esc(it.categoria||'—')}</td>
+    <td>${esc(it.unidade||'UND')}</td>
+    <td class="r">${fmt(it.custo)}</td>
+    <td class="r">${it.margem==null?'<span style="color:var(--tx3)">padrão</span>':(it.margem+'%')}</td>
+    <td><div class="acts">
+      <button class="iconb" onclick="openItem('${it.id}')"><span class="material-symbols-rounded">edit</span></button>
+      <button class="iconb del" onclick="delDireto('${it.id}')"><span class="material-symbols-rounded">delete</span></button>
+    </div></td>
+  </tr>`).join('');
+}
+function openItem(id){
+  if(!CLOUD){ alert('Entre com login pra cadastrar.'); return; }
+  EDIT=id||null;
+  const it=id?ITENS.find(x=>x.id===id):null;
+  document.getElementById('mTitle').textContent=(id?'Editar ':'Novo ')+(LBL[TIPO]||LBL.servico)[2];
+  document.getElementById('f_nome').value=it?it.nome||'':'';
+  document.getElementById('f_unidade').value=it?(it.unidade||''):'';
+  document.getElementById('f_custo').value=it?(it.custo??''):'';
+  document.getElementById('f_margem').value=(it&&it.margem!=null)?it.margem:'';
+  document.getElementById('f_categoria').value=it?(it.categoria||''):'';
+  document.getElementById('f_marca').value=it?(it.marca||''):'';
+  document.getElementById('mDel').style.display=id?'inline-flex':'none';
+  document.getElementById('modal').classList.add('show');
+  setTimeout(()=>document.getElementById('f_nome').focus(),40);
+}
+function closeItem(){ document.getElementById('modal').classList.remove('show'); EDIT=null; }
+function saveItem(){
+  const nome=document.getElementById('f_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
+  const mv=document.getElementById('f_margem').value.trim();
+  const row={ empresa_id:EMPRESA_ID, tipo:TIPO, nome,
+    unidade:document.getElementById('f_unidade').value.trim()||'UND',
+    custo:num(document.getElementById('f_custo').value),
+    margem:mv===''?null:num(mv),
+    categoria:document.getElementById('f_categoria').value.trim()||null,
+    marca:(TIPO==='material')?(document.getElementById('f_marca').value.trim()||null):null };
+  if(EDIT){ row.id=EDIT; } else { row.id=uid(); }
+  SB.from('orc_catalogo').upsert(row).then(({error})=>{
+    if(error){ console.error(error); alert('Erro ao salvar: '+error.message); return; }
+    const i=ITENS.findIndex(x=>x.id===row.id);
+    if(i>=0) ITENS[i]={...ITENS[i],...row}; else ITENS.push(row);
+    ITENS.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+    closeItem(); render();
+  });
+}
+function delItem(){ if(EDIT) delDireto(EDIT,true); }
+function delDireto(id,fromModal){
+  const it=ITENS.find(x=>x.id===id); if(!it)return;
+  if(!confirm('Excluir "'+it.nome+'" do catálogo?'))return;
+  SB.from('orc_catalogo').update({deleted_at:new Date().toISOString()}).eq('id',id).then(({error})=>{
+    if(error){ console.error(error); alert('Erro: '+error.message); return; }
+    ITENS=ITENS.filter(x=>x.id!==id); if(fromModal)closeItem(); render();
+  });
+}
+init();
+</script>
+</body>
+</html>
