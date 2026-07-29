@@ -42,6 +42,24 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .ob-st{display:inline-flex;background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:2px}
 .obst{font-size:11px;font-weight:600;border:none;background:none;color:var(--tx3);cursor:pointer;padding:4px 9px;border-radius:6px;text-transform:capitalize}
 .obst.on{background:var(--pri);color:#fff}
+/* lista de orçamentos */
+.olbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.olsearch{display:flex;align-items:center;gap:7px;border:1px solid var(--line2);border-radius:8px;padding:7px 11px;background:var(--surf);flex:1;min-width:220px}
+.olsearch input{border:none;outline:none;background:none;font-size:13px;color:var(--tx);width:100%}
+.olsearch .material-symbols-rounded{font-size:18px;color:var(--tx3)}
+.oltbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.oltbl th{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:600;text-align:left;padding:0 10px 7px;border-bottom:1px solid var(--line2);white-space:nowrap}
+.oltbl th.r{text-align:right}
+.oltbl td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.oltbl tr[data-opp]{cursor:pointer}
+.oltbl tr[data-opp]:hover td{background:var(--surf2)}
+.oltbl .num{font-family:ui-monospace,monospace;font-size:12px;color:var(--pri)}
+.oltbl .cli{font-weight:600}
+.oltbl .sol{color:var(--tx2);font-size:11.5px}
+.oltbl .tot{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.oltbl .dt{color:var(--tx3);white-space:nowrap}
+.stb{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;text-transform:capitalize;white-space:nowrap}
+.stb.rascunho{background:var(--surf2);color:var(--tx2)}.stb.enviado{background:#e7f0fa;color:var(--blue)}.stb.aprovado{background:#e9f2dd;color:var(--green)}.stb.recusado{background:#fcebeb;color:var(--red)}
 
 /* ===== LAYOUT ===== */
 .grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
@@ -226,6 +244,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
   <div class="sub">Folha de cotação — protótipo do módulo. Fonte de exemplo: <b>eX_2025-CPLND-ASSAÍ NACIONAL-SERV</b>. Edite à vontade; use “Recarregar exemplo” pra voltar ao original.</div>
 
   <div id="oppBanner"></div>
+  <div id="orcList" style="display:none"></div>
 
   <div class="grid">
     <!-- ===== COLUNA ESQUERDA: A FOLHA ===== -->
@@ -352,6 +371,7 @@ async function carregarOrc(){
   sanitize();
 }
 async function initOrc(){
+  if(!OPP){ await initList(); return; }   // sem ?opp → LISTA de orçamentos
   if(OPP&&SB){ try{
     const {data:{session}}=await SB.auth.getSession();
     if(session){
@@ -362,6 +382,49 @@ async function initOrc(){
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
   if(!CLOUD){ load(); }
   boot();
+}
+
+/* ---------- LISTA de orçamentos (Comercial › Orçamentos) ---------- */
+let _ORCS=[];
+async function initList(){
+  document.querySelectorAll('.grid,#oppBanner').forEach(e=>{e.style.display='none';});
+  const mode=document.querySelector('.appbar .mode'); if(mode)mode.style.display='none';
+  const mt=document.querySelector('.modtag'); if(mt)mt.innerHTML='<span class="material-symbols-rounded">request_quote</span>Orçamentos';
+  const sub=document.querySelector('.sub'); if(sub)sub.textContent='Lista de orçamentos — clique para abrir. Novos orçamentos nascem do funil (Comercial › Funil).';
+  const wrap=document.getElementById('orcList'); wrap.style.display='block';
+  wrap.innerHTML=`<div class="olbar"><div class="olsearch"><span class="material-symbols-rounded">search</span><input id="orcQ" oninput="renderList()" placeholder="Buscar por número, cliente ou solução…"></div></div>
+    <div class="scroll"><table class="oltbl"><thead><tr><th>Nº</th><th>Cliente</th><th>Solução / objeto</th><th>Data</th><th class="r">Total</th><th>Status</th></tr></thead><tbody id="orcRows"></tbody></table></div>`;
+  if(SB){ try{
+    const {data:{session}}=await SB.auth.getSession();
+    if(session){ CLOUD=true; cloudMsg('nuvem ✓'); await loadList(); return; }
+    else cloudMsg('faça login');
+  }catch(e){ console.error(e); cloudMsg('erro nuvem'); } }
+  document.getElementById('orcRows').innerHTML='<tr><td colspan="6" style="padding:26px;text-align:center;color:var(--tx3)">Entre com login pra ver os orçamentos salvos.</td></tr>';
+}
+async function loadList(){
+  const {data,error}=await SB.from('orcamentos').select('id,numero,status,total,oportunidade_id,cliente_contratante,cliente_final,solucao,data_cotacao,created_at').is('deleted_at',null).order('created_at',{ascending:false});
+  if(error){ document.getElementById('orcRows').innerHTML='<tr><td colspan="6" style="padding:20px;color:var(--red)">Erro: '+esc(error.message)+'</td></tr>'; return; }
+  _ORCS=data||[]; renderList();
+}
+function renderList(){
+  const qi=document.getElementById('orcQ'); const q=(qi?qi.value:'').toLowerCase();
+  const rows=_ORCS.filter(o=>((o.numero||'')+' '+(o.cliente_contratante||'')+' '+(o.cliente_final||'')+' '+(o.solucao||'')).toLowerCase().includes(q));
+  const el=document.getElementById('orcRows'); if(!el)return;
+  if(!rows.length){ el.innerHTML='<tr><td colspan="6" style="padding:26px;text-align:center;color:var(--tx3)">'+(_ORCS.length?'Nada encontrado.':'Nenhum orçamento ainda — gere um a partir do funil.')+'</td></tr>'; return; }
+  el.innerHTML=rows.map(o=>{
+    const dt=o.data_cotacao?o.data_cotacao.split('-').reverse().join('/'):(o.created_at?o.created_at.slice(0,10).split('-').reverse().join('/'):'—');
+    const cli=[o.cliente_contratante,o.cliente_final].filter(Boolean).join(' · ')||'—';
+    const st=o.status||'rascunho';
+    const open=o.oportunidade_id?`onclick="location.href='eX_Orcamento.html?opp=${o.oportunidade_id}'"`:'';
+    return `<tr data-opp ${open}>
+      <td class="num">${esc(o.numero||'—')}</td>
+      <td class="cli">${esc(cli)}</td>
+      <td class="sol">${esc(o.solucao||'—')}</td>
+      <td class="dt">${dt}</td>
+      <td class="tot">${fmt(o.total||0)}</td>
+      <td><span class="stb ${st}">${esc(st)}</span></td>
+    </tr>`;
+  }).join('');
 }
 let S=null;
 

@@ -1,0 +1,950 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>eX Orçamento · Barramentos</title>
+<meta name="theme-color" content="#533ab7">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);
+  --tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--pri:#533ab7;--pri-bg:#eeedfe;
+  --blue:#185fa5;--green:#3b6d11;--amber:#ba7517;--red:#a32d2d;--teal:#0f6e56;
+  --cobre:#b06a2c;--cobre-bg:#fbeee0;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
+.material-symbols-rounded{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;line-height:1;vertical-align:middle;font-size:20px}
+.app{max-width:1220px;margin:0 auto;padding:16px 18px 80px}
+
+/* ===== TOPO ===== */
+.appbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.logo{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--pri)}
+.logo b{color:var(--tx)}
+.modtag{font-size:12px;font-weight:600;color:var(--tx2);background:var(--surf2);padding:4px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px}
+.modtag .material-symbols-rounded{font-size:16px;color:var(--cobre)}
+.spacer{flex:1}
+.mode{display:inline-flex;background:var(--surf2);border-radius:9px;padding:3px}
+.mode button{font-size:12px;font-weight:600;border:none;background:none;color:var(--tx2);cursor:pointer;padding:6px 12px;border-radius:7px;display:inline-flex;align-items:center;gap:5px}
+.mode button.on{background:var(--surf);color:var(--pri);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.mode .material-symbols-rounded{font-size:17px}
+.btn{font-size:13px;padding:8px 13px;border-radius:8px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--surf2)}
+.btn .material-symbols-rounded{font-size:18px}
+.btn-p{background:var(--pri);color:#fff;border-color:var(--pri)}
+.btn-p:hover{background:#472f9e}
+.btn.sm{padding:6px 9px;font-size:12px}
+.btn.sm .material-symbols-rounded{font-size:16px}
+.orcbar{display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap}
+.orcbar #orcSel{font-size:12px;padding:6px 8px;border:1px solid var(--line2);border-radius:8px;background:var(--surf);color:var(--tx);max-width:230px;cursor:pointer}
+.orcbar #orcSel:focus{outline:none;border-color:var(--pri)}
+.sub{font-size:12px;color:var(--tx2);margin:2px 0 16px}
+
+/* ===== LAYOUT ===== */
+.grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+@media(max-width:940px){.grid{grid-template-columns:1fr}}
+
+/* ===== CARTÃO / CABEÇALHO ===== */
+.panel{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+.phead{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.phead .material-symbols-rounded{font-size:20px;color:var(--pri)}
+.phead h2{font-size:14px;font-weight:700}
+.phead .cnt{font-size:11px;color:var(--tx3);margin-left:auto}
+.fgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 16px}
+@media(max-width:560px){.fgrid{grid-template-columns:1fr}}
+.f{display:flex;flex-direction:column;gap:3px}
+.f.full{grid-column:1/-1}
+.f label{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:600}
+.in{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)}
+.in:focus{outline:none;border-color:var(--pri);background:#fff}
+.in[readonly]{border-color:transparent;background:transparent;padding-left:0;color:var(--tx)}
+.in.mono{font-family:ui-monospace,monospace}
+
+/* ===== BASE DE CÁLCULO (cobre) ===== */
+.basebox{background:var(--cobre-bg);border:1px solid #ecd3b6;border-radius:12px;padding:14px 16px;margin-bottom:16px}
+.basebox .bh{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.basebox .bh .material-symbols-rounded{font-size:20px;color:var(--cobre)}
+.basebox .bh h2{font-size:14px;font-weight:700}
+.basegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px 16px}
+@media(max-width:560px){.basegrid{grid-template-columns:1fr 1fr}}
+.bf{display:flex;flex-direction:column;gap:3px}
+.bf label{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:#976534;font-weight:700}
+.bf .cu{display:flex;align-items:center;gap:5px;background:#fff;border:1px solid #e3c49f;border-radius:8px;padding:6px 9px}
+.bf .cu .pre{font-size:12px;color:#976534;font-weight:600}
+.bf .cu input{border:none;outline:none;background:transparent;font-size:15px;font-weight:700;color:var(--cobre);width:100%;text-align:right;font-variant-numeric:tabular-nums}
+.bf .cu .suf{font-size:11px;color:var(--tx3)}
+.baseobs{font-size:11px;color:#976534;margin-top:9px;display:flex;gap:6px;align-items:flex-start;line-height:1.4}
+.baseobs .material-symbols-rounded{font-size:15px;flex-shrink:0}
+
+/* ===== BLOCOS DE ITENS ===== */
+.blk{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:15px 16px;margin-bottom:16px}
+.blkhead{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.blkhead .ic{width:30px;height:30px;border-radius:8px;background:var(--pri-bg);color:var(--pri);display:flex;align-items:center;justify-content:center}
+.blkhead .ic.cu{background:var(--cobre-bg);color:var(--cobre)}
+.blkhead .ic .material-symbols-rounded{font-size:18px}
+.blkhead h2{font-size:14px;font-weight:700}
+.blkhead .st{font-size:12px;color:var(--tx2);margin-left:auto;font-variant-numeric:tabular-nums}
+.blkhead .st b{color:var(--tx);font-weight:700}
+.scroll{overflow-x:auto}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:600;text-align:left;padding:0 6px 5px;border-bottom:1px solid var(--line2);white-space:nowrap}
+.tbl th.r,.tbl td.r{text-align:right}
+.tbl td{padding:3px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tr:hover td{background:var(--surf2)}
+.tbl .idx{color:var(--tx3);font-variant-numeric:tabular-nums;width:26px;font-size:11px}
+.cin{width:100%;border:1px solid transparent;border-radius:6px;background:transparent;font-size:12px;color:var(--tx);padding:5px 6px}
+.cin:hover{border-color:var(--line)}
+.cin:focus{outline:none;border-color:var(--pri);background:#fff}
+.cin.num{text-align:right;font-variant-numeric:tabular-nums;width:74px}
+.cin.mk{width:58px}
+.cin.qt{width:56px}
+.cin.un{width:66px;color:var(--tx2)}
+.cin.mc{width:110px;color:var(--tx2)}
+select.cin{min-width:190px;cursor:pointer;-webkit-appearance:none;appearance:none;background:transparent url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23888780' stroke-width='2'><path d='M6 9l6 6 6-6'/></svg>") no-repeat right 4px center;padding-right:22px}
+select.cin:hover{border-color:var(--line)}
+select.cin:focus{outline:none;border-color:var(--pri);background-color:#fff}
+.kg{font-variant-numeric:tabular-nums;color:var(--tx2);white-space:nowrap;text-align:right}
+.cust{text-align:right;font-variant-numeric:tabular-nums;color:var(--cobre);font-weight:600;white-space:nowrap}
+.tot{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--tx);white-space:nowrap;padding-right:6px}
+.tot.z{color:var(--tx3);font-weight:400}
+.amp{display:inline-block;font-size:10px;color:var(--tx3);font-variant-numeric:tabular-nums}
+.del{width:26px;height:26px;border:1px solid transparent;border-radius:6px;background:none;color:var(--tx3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.del:hover{background:#fcebeb;color:var(--red)}
+.del .material-symbols-rounded{font-size:16px}
+.addrow{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap}
+.addrow button{font-size:12px;color:var(--pri);background:none;border:1px dashed var(--line2);border-radius:7px;padding:6px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.addrow button:hover{background:var(--pri-bg);border-color:var(--pri)}
+.addrow .material-symbols-rounded{font-size:16px}
+.obs{font-size:11px;color:var(--tx3);margin-top:9px;display:flex;gap:6px;align-items:flex-start;line-height:1.4}
+.obs .material-symbols-rounded{font-size:15px;color:var(--amber);flex-shrink:0}
+.obs textarea{flex:1;border:1px solid transparent;border-radius:6px;background:transparent;font-size:11px;color:var(--tx3);resize:vertical;font-family:inherit;padding:2px 4px;line-height:1.4}
+.obs textarea:hover{border-color:var(--line)}
+.obs textarea:focus{outline:none;border-color:var(--pri);background:#fff;color:var(--tx)}
+
+/* ===== RESUMO (direita, sticky) ===== */
+.side{position:sticky;top:16px}
+.summ{background:var(--surf);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.summ .cap{background:var(--pri);color:#fff;padding:13px 16px}
+.summ .cap .l{font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.summ .cap .v{font-size:27px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.summ .body{padding:14px 16px}
+.ln{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12.5px}
+.ln .lbl{color:var(--tx2);display:flex;align-items:center;gap:7px}
+.ln .lbl .material-symbols-rounded{font-size:16px;color:var(--tx3)}
+.ln .val{font-variant-numeric:tabular-nums;font-weight:600}
+.ln.tt{border-top:1px solid var(--line2);margin-top:6px;padding-top:9px;font-size:15px;font-weight:700}
+.ln.tt .val{font-size:16px;color:var(--pri)}
+.hr{height:1px;background:var(--line);margin:11px 0}
+.cobrebar{background:var(--cobre-bg);border:1px solid #ecd3b6;border-radius:9px;padding:9px 11px;margin:4px 0 2px;display:flex;justify-content:space-between;align-items:center}
+.cobrebar .l{font-size:11px;color:#976534;font-weight:600;display:flex;align-items:center;gap:6px}
+.cobrebar .l .material-symbols-rounded{font-size:16px;color:var(--cobre)}
+.cobrebar .v{font-variant-numeric:tabular-nums;font-weight:700;color:var(--cobre)}
+.intbox{background:var(--surf2);border-radius:9px;padding:11px 12px;margin-top:8px}
+.intbox .ih{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.intbox .ih .material-symbols-rounded{font-size:15px}
+.iln{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px}
+.iln .lbl{color:var(--tx2)}
+.pin{width:66px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surf);font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:var(--tx)}
+.pin:focus{outline:none;border-color:var(--pri)}
+.iln .val{font-variant-numeric:tabular-nums;font-weight:600}
+.luc{color:var(--green)}.luc.neg{color:var(--red)}
+.meta{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.meta .m{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--tx2)}
+.meta .m .material-symbols-rounded{font-size:17px;color:var(--pri)}
+.meta .m b{color:var(--tx);font-weight:600}
+
+/* chave/led padrão eX (para futuros toggles) */
+.ex-switch{position:relative;width:50px;height:25px;border-radius:13px;cursor:pointer;flex-shrink:0;background:linear-gradient(#bbbeb7,#9a9d95);box-shadow:inset 0 2px 4px rgba(0,0,0,.38),inset 0 -1px 1px rgba(255,255,255,.35);transition:.16s;font:800 8px ui-monospace,monospace;letter-spacing:.3px}
+.ex-switch.on{background:linear-gradient(#2fcf88,#0f8f5b);box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
+.ex-switch .lb{position:absolute;top:0;height:100%;display:flex;align-items:center;color:#fff}
+.ex-switch .lb.off{right:6px;color:#5a5a50}.ex-switch.on .lb.off{display:none}
+.ex-switch .lb.onx{left:5px;display:none}.ex-switch.on .lb.onx{display:flex}
+.ex-switch .kb{position:absolute;top:3px;left:3px;width:20px;height:19px;border-radius:10px;transition:.16s;background:linear-gradient(#ffffff,#d4d4cf);box-shadow:0 2px 2px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 2px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
+.ex-switch.on .kb{left:27px}
+.ex-switch .pin{width:3px;height:11px;border-radius:2px;background:linear-gradient(#9a9a92,#565650);box-shadow:0 1px 1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5)}
+body.viewing .ex-switch{pointer-events:none;opacity:.55}
+
+/* editar x ver */
+body.viewing .cin:hover,body.viewing .in:hover{border-color:transparent}
+body.viewing .del,body.viewing .addrow{display:none}
+body.viewing .cin,body.viewing .in,body.viewing select.cin{pointer-events:none}
+body.viewing .pin,body.viewing .basebox input{pointer-events:none;border-color:transparent;background:transparent}
+body.viewing .bf .cu{background:transparent;border-color:transparent;padding-left:0}
+
+/* ===== picker de clientes do CRM ===== */
+.fpick{font-size:10px;font-weight:600;color:var(--pri);background:var(--pri-bg);border:none;border-radius:20px;padding:2px 9px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;margin-left:6px;vertical-align:middle;text-transform:none;letter-spacing:0}
+.fpick:hover{background:#e2dffb}
+.fpick .material-symbols-rounded{font-size:13px}
+body.viewing .fpick{display:none}
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:var(--surf);border-radius:14px;max-width:520px;width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.modal .mh{display:flex;align-items:center;gap:9px;padding:15px 18px;border-bottom:1px solid var(--line)}
+.modal .mh .material-symbols-rounded{color:var(--pri)}
+.modal .mh h3{font-size:15px;font-weight:700;flex:1}
+.modal .mh .x{width:30px;height:30px;border:none;background:none;color:var(--tx3);cursor:pointer;border-radius:7px}
+.modal .mh .x:hover{background:var(--surf2)}
+.modal .mb{padding:10px 12px;overflow-y:auto}
+.pkitem{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surf);cursor:pointer;margin-bottom:6px;font-size:13px;color:var(--tx)}
+.pkitem:hover{background:var(--pri-bg);border-color:var(--pri)}
+.pkitem .pknm{flex:1;min-width:0}
+.pkitem .pkcusto{font-size:11px;color:var(--tx3);white-space:nowrap}
+
+/* ===== FIXAÇÃO — conjuntos (Formato B) ===== */
+.cjto{border:1px solid var(--line);border-radius:10px;padding:8px 10px;margin-bottom:8px;background:var(--surf)}
+.cjhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.cjic{width:24px;height:24px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.cjnome{flex:1;min-width:130px;font-weight:600;border:1px solid transparent;border-radius:6px;padding:4px 6px;font-size:13px;color:var(--tx);background:transparent}
+.cjnome:hover{border-color:var(--line)} .cjnome:focus{outline:none;border-color:var(--pri);background:#fff}
+.cjbit{width:60px;cursor:pointer}
+.cjx{font-size:11px;color:var(--tx3)}
+.cju{font-size:11px;color:var(--tx2);font-variant-numeric:tabular-nums;white-space:nowrap}
+.cjmk{font-size:11px;color:var(--tx3);display:inline-flex;align-items:center;gap:3px}
+.cjt{font-weight:700;font-variant-numeric:tabular-nums;color:var(--pri);min-width:80px;text-align:right}
+.cjexp{width:26px;height:26px;border:1px solid transparent;border-radius:6px;background:none;color:var(--tx3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.cjexp:hover{background:var(--surf2);color:var(--pri)} .cjexp .material-symbols-rounded{font-size:17px}
+.cjchips{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:7px}
+.cchip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;border:1px solid var(--line);border-radius:20px;padding:3px 10px 3px 4px;cursor:pointer;color:var(--tx3);background:var(--surf);user-select:none}
+.cchip b{font-weight:800}
+.cchip.on{color:var(--tx);border-color:var(--pri);background:var(--pri-bg)}
+.cchip .cbox{width:15px;height:15px;border-radius:4px;border:1.5px solid var(--line2);display:inline-flex;align-items:center;justify-content:center;background:#fff}
+.cchip.on .cbox{background:var(--pri);border-color:var(--pri)}
+.cchip .cbox .material-symbols-rounded{font-size:12px;color:#fff}
+.cjhint{font-size:10.5px;color:var(--tx3);font-style:italic;margin-left:4px}
+.cjedit{margin-top:8px;border-top:1px dashed var(--line);padding-top:7px;display:flex;flex-direction:column;gap:5px}
+.cerow{display:flex;align-items:center;gap:10px;font-size:11.5px;flex-wrap:wrap}
+.cerow .cename{min-width:150px;color:var(--tx2)}
+.cerow label{font-size:11px;color:var(--tx3);display:inline-flex;align-items:center;gap:4px}
+body.viewing .cchip,body.viewing .cjexp,body.viewing .cjnome,body.viewing .cjbit{pointer-events:none}
+body.viewing .cjhint{display:none}
+
+/* impressão */
+@media print{
+  body{background:#fff}
+  .appbar .mode,.orcbar,.appbar .btn,.addrow,.del,.intbox,.obs textarea{display:none!important}
+  .side{position:static}
+  .panel,.summ,.blk,.basebox{break-inside:avoid}
+  .app{padding:0}
+  select.cin{background-image:none}
+}
+</style>
+</head>
+<body class="editing">
+<div class="app">
+
+  <!-- ===== BARRA SUPERIOR ===== -->
+  <div class="appbar">
+    <span class="logo"><b>e</b>X</span>
+    <span class="modtag"><span class="material-symbols-rounded">bolt</span>Orçamento · Barramentos</span>
+    <span class="orcbar">
+      <span class="material-symbols-rounded" style="font-size:17px;color:var(--tx3)">folder_open</span>
+      <select id="orcSel" onchange="switchOrc(this.value)" title="Trocar de orçamento"></select>
+      <button class="btn sm" onclick="dupOrc()" title="Duplicar este orçamento"><span class="material-symbols-rounded">content_copy</span>Duplicar</button>
+      <button class="btn sm" onclick="novoOrc()" title="Novo orçamento em branco"><span class="material-symbols-rounded">note_add</span></button>
+      <button class="btn sm" onclick="delOrc()" title="Excluir este orçamento"><span class="material-symbols-rounded">delete</span></button>
+    </span>
+    <span class="spacer"></span>
+    <div class="mode">
+      <button id="mView" onclick="setMode('view')"><span class="material-symbols-rounded">visibility</span>Ver</button>
+      <button id="mEdit" class="on" onclick="setMode('edit')"><span class="material-symbols-rounded">edit</span>Editar</button>
+    </div>
+    <button class="btn" onclick="window.open('eX_Barramento_Precos.html','_blank')" title="Tabela de preços-padrão (admin)"><span class="material-symbols-rounded">tune</span>Preços</button>
+    <button class="btn" onclick="window.print()"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
+    <button class="btn" onclick="resetDemo()" title="Recarregar o exemplo"><span class="material-symbols-rounded">restart_alt</span>Recarregar exemplo</button>
+  </div>
+  <div class="sub">Folha de cotação de <b>confecção de barramentos de cobre</b> — cadastro CopperBarras. O custo do cobre é calculado por peso (kg/m × comprimento) sobre o <b>preço de mercado</b> que você define abaixo.</div>
+
+  <div class="grid">
+    <!-- ===== COLUNA ESQUERDA: A FOLHA ===== -->
+    <div>
+      <!-- CABEÇALHO -->
+      <div class="panel">
+        <div class="phead"><span class="material-symbols-rounded">contract</span><h2>Dados da cotação</h2></div>
+        <div class="fgrid">
+          <div class="f"><label>Nº da cotação</label><input class="in mono" data-m="numero"></div>
+          <div class="f"><label>ID Pipefy</label><input class="in mono" data-m="idpipe"></div>
+          <div class="f"><label>Data</label><input class="in" type="date" data-m="dataISO"></div>
+          <div class="f"><label>Validade</label><input class="in" type="date" data-m="validadeISO"></div>
+          <div class="f full"><label>Solução / título</label><input class="in" data-m="solTitulo"></div>
+          <div class="f full"><label>Descrição do escopo</label><input class="in" data-m="solDesc"></div>
+        </div>
+      </div>
+
+      <!-- CLIENTE -->
+      <div class="panel">
+        <div class="phead"><span class="material-symbols-rounded">business</span><h2>Cliente &amp; destino</h2></div>
+        <div class="fgrid">
+          <div class="f"><label>Cliente (contratante) <button class="fpick" onclick="openHP('contratante')"><span class="material-symbols-rounded">list</span>do CRM</button></label><input class="in" data-m="cliNome" placeholder="Escolha do CRM ou digite…"></div>
+          <div class="f"><label>Contato</label><input class="in" data-m="cliContato"></div>
+          <div class="f"><label>Fone</label><input class="in" data-m="cliFone"></div>
+          <div class="f"><label>E-mail</label><input class="in" data-m="cliEmail"></div>
+          <div class="f"><label>Obra / loja <button class="fpick" onclick="openHP('final')"><span class="material-symbols-rounded">list</span>do CRM</button></label><input class="in" data-m="finNome" placeholder="Escolha do CRM ou digite…"></div>
+          <div class="f"><label>Responsável eX</label><input class="in" data-m="respNome"></div>
+        </div>
+      </div>
+
+      <!-- BASE DE CÁLCULO: COBRE -->
+      <div class="basebox">
+        <div class="bh"><span class="material-symbols-rounded">payments</span><h2>Base de cálculo — cobre</h2></div>
+        <div class="basegrid">
+          <div class="bf">
+            <label>Preço do cobre (mercado)</label>
+            <div class="cu"><span class="pre">R$</span><input data-f="precoCobre" inputmode="decimal"><span class="suf">/kg</span></div>
+          </div>
+          <div class="bf">
+            <label>Perda / sobra de corte</label>
+            <div class="cu"><input data-f="perdaPct" inputmode="decimal"><span class="suf">%</span></div>
+          </div>
+          <div class="bf">
+            <label>Peso total de cobre</label>
+            <div class="cu" style="background:transparent;border-color:transparent;padding-left:0"><input id="pesoTotalRO" readonly style="color:var(--tx)"><span class="suf">kg</span></div>
+          </div>
+        </div>
+        <div class="baseobs"><span class="material-symbols-rounded">info</span><span>Referência de mercado 28/07/2026: cobre eletrolítico ~R$ 75–85/kg (commodity ≈ 6,3 USD/lb). Atualize a cada cotação — o cobre oscila. A “perda de corte” incide só sobre o peso das barras.</span></div>
+      </div>
+
+      <!-- BLOCO: BARRAMENTOS (COBRE) -->
+      <div class="blk" id="blk_barras"></div>
+      <!-- BLOCO: FABRICAÇÃO -->
+      <div class="blk" id="blk_fabricacao"></div>
+      <!-- BLOCO: ISOLADORES -->
+      <div class="blk" id="blk_isoladores"></div>
+      <!-- BLOCO: PARAFUSOS -->
+      <div class="blk" id="blk_parafusos"></div>
+      <!-- BLOCO: OUTROS ACESSÓRIOS -->
+      <div class="blk" id="blk_outros"></div>
+    </div>
+
+    <!-- ===== COLUNA DIREITA: RESUMO ===== -->
+    <div class="side">
+      <div class="summ">
+        <div class="cap">
+          <div class="l">Preço da proposta</div>
+          <div class="v" id="s_preco">R$ 0,00</div>
+        </div>
+        <div class="body">
+          <div class="ln"><span class="lbl"><span class="material-symbols-rounded">bolt</span>Barramentos (cobre)</span><span class="val" id="s_barras">—</span></div>
+          <div class="ln"><span class="lbl"><span class="material-symbols-rounded">precision_manufacturing</span>Fabricação</span><span class="val" id="s_fab">—</span></div>
+          <div class="ln"><span class="lbl"><span class="material-symbols-rounded">settings_input_component</span>Isoladores</span><span class="val" id="s_iso">—</span></div>
+          <div class="ln"><span class="lbl"><span class="material-symbols-rounded">hardware</span>Fixação</span><span class="val" id="s_par">—</span></div>
+          <div class="ln"><span class="lbl"><span class="material-symbols-rounded">category</span>Outros</span><span class="val" id="s_out">—</span></div>
+          <div class="ln"><span class="lbl">Subtotal</span><span class="val" id="s_bruto">—</span></div>
+          <div class="ln"><span class="lbl">Desconto <input class="pin" style="width:52px" data-f="descontoPct" inputmode="decimal">%</span><span class="val" id="s_desc">—</span></div>
+          <div class="ln tt"><span class="lbl">Total</span><span class="val" id="s_total">R$ 0,00</span></div>
+
+          <div class="cobrebar">
+            <span class="l"><span class="material-symbols-rounded">monitoring</span>Cobre no orçamento</span>
+            <span class="v" id="s_cobreinfo">—</span>
+          </div>
+
+          <!-- VISÃO INTERNA -->
+          <div class="intbox">
+            <div class="ih"><span class="material-symbols-rounded">lock</span>Visão interna — não vai pro cliente</div>
+            <div class="iln"><span class="lbl">Imposto <input class="pin" style="width:52px" data-f="impostoPct" inputmode="decimal">%</span><span class="val" id="s_imp">—</span></div>
+            <div class="iln"><span class="lbl">Custo real estimado</span><input class="pin" data-f="custoInterno" inputmode="decimal"></div>
+            <div class="iln"><span class="lbl">Lucro líquido</span><span class="val luc" id="s_lucro">—</span></div>
+            <div class="iln"><span class="lbl">Margem de lucro</span><span class="val luc" id="s_marg">—</span></div>
+          </div>
+
+          <div class="hr"></div>
+          <div class="meta">
+            <div class="m"><span class="material-symbols-rounded">schedule</span>Prazo estimado: <input class="pin" style="width:44px" data-f="prazoDias" inputmode="numeric"> dias</div>
+            <div class="m"><span class="material-symbols-rounded">groups</span><input class="in" style="padding:2px 0;font-size:12px" data-m="equipe"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="pickModal">
+  <div class="modal">
+    <div class="mh"><span class="material-symbols-rounded">groups</span><h3 id="pickTitle">Escolher</h3><button class="x" onclick="closePick()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb" id="pickBody"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const STORE="ex_orc_barra_v2";
+let S=null;     // orçamento atual (referência p/ DB.orcs[DB.cur])
+let DB=null;    // { orcs:[...], cur:idx } — lista de orçamentos salvos
+
+/* ---------- utilidades ---------- */
+const uid=()=>Math.random().toString(36).slice(2,9);
+const num=v=>{
+  if(typeof v==='number')return isNaN(v)?0:v;
+  let s=String(v).trim();if(!s)return 0;
+  if(s.indexOf(',')>-1)s=s.replace(/\./g,'').replace(',','.');
+  const n=parseFloat(s);return isNaN(n)?0:n;
+};
+const fmt=n=>'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtKg=n=>(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+/* ---------- preços-padrão (cadastro admin: eX_Barramento_Precos.html → store ex_barra_precos) ---------- */
+const PRECOS_DEFAULT={
+  cobre:{precoCobre:80,perdaPct:8},
+  fixacao:{ M6:{parafuso:0.70,pressao:0.15,lisa:0.10,porca:0.30,len:20}, M8:{parafuso:0.90,pressao:0.20,lisa:0.15,porca:0.40,len:25},
+            M10:{parafuso:1.40,pressao:0.30,lisa:0.22,porca:0.60,len:30}, M12:{parafuso:2.10,pressao:0.45,lisa:0.35,porca:0.90,len:30} },
+  fabricacao:[ {label:'1. Corte de barra',und:'CORTE',vunit:8}, {label:'2. Furação / puncionamento',und:'FURO',vunit:3.5},
+               {label:'3. Dobra (raio a frio)',und:'DOBRA',vunit:22}, {label:'4. Estanhagem eletrolítica',und:'BARRA',vunit:45},
+               {label:'5. Montagem & identificação',und:'CJ',vunit:180} ],
+  isoladores:{ basePol:45, baseMil:45, over:{} },
+  outros:{ O_SUP:12, O_DIN:9.5, O_ANIL:2.5, O_TERMO:6 }
+};
+function loadPrecos(){ try{const r=localStorage.getItem('ex_barra_precos'); if(r){ return Object.assign({},PRECOS_DEFAULT,JSON.parse(r)); }}catch(e){} return PRECOS_DEFAULT; }
+const PRECOS=loadPrecos();
+function isoPrice(id){ const o=ISOMAP[id]; if(!o)return 0; const p=PRECOS.isoladores||{}; if(p.over&&p.over[o.modelo]!=null)return p.over[o.modelo]; return o.tipo==='Milimétrica'?(p.baseMil||0):(p.basePol||0); }
+
+/* ---------- CADASTRO CopperBarras (gerado por fórmula) ----------
+   peso(kg/m) = largura_mm × espessura_mm × 0,0089  (densidade 8,9 g/cm³)
+   área elétrica(mm²) ≈ 0,97 × largura × espessura   (bate com a tabela)
+   amperagem(A) = área × (A/mm² da espessura)
+   disponível quando espessura < largura (regra da tabela)              */
+const LARG=[["1/4\"",6.35],["3/8\"",9.52],["1/2\"",12.70],["5/8\"",15.87],["3/4\"",19.05],
+  ["7/8\"",22.22],["1\"",25.40],["1.1/4\"",31.75],["1.1/2\"",38.10],["1.3/4\"",44.45],
+  ["2\"",50.80],["2.1/4\"",57.15],["2.1/2\"",63.50],["2.3/4\"",69.85],["3\"",76.20],
+  ["3.1/4\"",82.55],["3.1/2\"",88.90],["3.3/4\"",95.25],["4\"",101.60],["4.1/2\"",114.30],
+  ["5\"",127.00],["5.1/2\"",139.70],["6\"",152.40]];
+const ESP=[["1/8\"",3.17,2.50],["3/16\"",4.76,2.40],["1/4\"",6.35,2.40],["5/16\"",7.93,2.25],
+  ["3/8\"",9.52,2.20],["1/2\"",12.70,2.10],["5/8\"",15.87,2.00]];
+const CAT=[]; const CATMAP={};
+LARG.forEach(([ln,wmm])=>{
+  ESP.forEach(([en,tmm,dens])=>{
+    if(tmm>=wmm) return;                 // regra: espessura < largura
+    const kgm=+(wmm*tmm*0.0089).toFixed(3);
+    const area=+(0.97*wmm*tmm).toFixed(2);
+    const amp=Math.round(area*dens);
+    const id=ln+"x"+en;
+    const o={id,larg:ln,esp:en,wmm,tmm,kgm,area,amp};
+    CAT.push(o); CATMAP[id]=o;
+  });
+});
+function barOptions(sel){
+  let out='<option value="">— escolher barra —</option>';
+  let curLarg=null;
+  CAT.forEach(o=>{
+    if(o.larg!==curLarg){ if(curLarg!==null)out+='</optgroup>'; out+='<optgroup label="Largura '+esc(o.larg)+'">'; curLarg=o.larg; }
+    out+='<option value="'+o.id+'"'+(o.id===sel?' selected':'')+'>'+esc(o.larg)+' × '+esc(o.esp)+' · '+fmtKg(o.kgm)+' kg/m · '+o.amp+'A</option>';
+  });
+  out+='</optgroup>';
+  return out;
+}
+
+/* ---------- CADASTRO Isoladores SIBRATEC MNS (epóxi) ----------
+   Fonte: catálogo SIBRATEC. Preço NÃO consta no catálogo → campo editável na folha.
+   D = diâmetro (mm), L = comprimento/altura (mm), P = profundidade de rosca (mm). */
+const ISO_POL=[[16,20,7],[16,25,8],[16,30,8],[20,25,8],[20,30,8],[25,30,8],[25,40,8],[25,50,10],
+  [30,30,7],[30,40,10],[30,50,10],[30,60,10],[40,40,10],[40,50,10],[40,60,10],[50,50,10],[50,60,10],[50,70,10]];
+const ISO_MIL=[[16,20,7,'M6'],[16,25,8,'M6'],[16,30,8,'M6'],[20,25,8,'M6'],[20,30,8,'M6'],[25,30,8,'M6'],
+  [25,40,8,'M6'],[25,50,10,'M6'],[30,30,8,'M6'],[30,40,10,'M6'],[30,50,9,'M6'],[40,40,9,'M6'],
+  [40,40,9,'M8'],[40,50,9,'M8'],[40,60,12,'M8'],[50,50,12,'M8'],[50,70,12,'M8']];
+const ISO=[]; const ISOMAP={};
+ISO_POL.forEach(([d,l,p])=>{ const modelo='MNS '+d+'x'+l+'x1/4'; const id='I_'+modelo.replace(/[^a-zA-Z0-9]/g,'');
+  const o={id,modelo,d,l,p,rosca:'1/4"',tipo:'Polegada',cor:'Laranja'}; ISO.push(o); ISOMAP[id]=o; });
+ISO_MIL.forEach(([d,l,p,r])=>{ const modelo='MNS '+d+'x'+l+'x'+r; const id='I_'+modelo.replace(/[^a-zA-Z0-9]/g,'');
+  const o={id,modelo,d,l,p,rosca:r,tipo:'Milimétrica',cor:'Vermelho'}; ISO.push(o); ISOMAP[id]=o; });
+function isoOptions(sel){
+  let out='<option value="">— escolher isolador —</option>'; let cur=null;
+  ISO.forEach(o=>{
+    const grp=o.tipo==='Polegada'?'Rosca polegada 1/4" (laranja)':'Rosca milimétrica M6/M8 (vermelho)';
+    if(grp!==cur){ if(cur!==null)out+='</optgroup>'; out+='<optgroup label="'+grp+'">'; cur=grp; }
+    out+='<option value="'+o.id+'"'+(o.id===sel?' selected':'')+'>'+esc(o.modelo)+' · Ø'+o.d+'×'+o.l+'mm · '+esc(o.rosca)+'</option>';
+  });
+  out+='</optgroup>'; return out;
+}
+
+/* ---------- CADASTRO Parafusos & fixação (padrão-base, editável) ----------
+   Sem catálogo de fornecedor ainda → padrão sensato (métrica). Preço sempre editável. */
+const PAR=[]; const PARMAP={};
+[6,8,10,12].forEach(b=>{ [16,20,25,30,40,50].forEach(c=>{ const id='P_M'+b+'x'+c;
+  const o={id,nome:'Parafuso sext. M'+b+'×'+c,spec:'Aço zincado · M'+b+' · '+c+'mm',und:'PÇ',grupo:'Parafuso sextavado'};
+  PAR.push(o); PARMAP[id]=o; }); });
+[6,8,10,12].forEach(b=>{ const id='P_PN'+b;
+  const o={id,nome:'Porca sext. M'+b,spec:'Aço zincado · M'+b,und:'PÇ',grupo:'Porca'}; PAR.push(o); PARMAP[id]=o; });
+[6,8,10,12].forEach(b=>{
+  const a={id:'P_AL'+b,nome:'Arruela lisa M'+b,spec:'M'+b,und:'PÇ',grupo:'Arruela'}; PAR.push(a); PARMAP[a.id]=a;
+  const p={id:'P_AP'+b,nome:'Arruela pressão M'+b,spec:'M'+b,und:'PÇ',grupo:'Arruela'}; PAR.push(p); PARMAP[p.id]=p; });
+
+/* ---------- CADASTRO Outros acessórios (padrão-base + item livre) ---------- */
+const OUT=[
+  {id:'O_SUP',nome:'Suporte / cantoneira de fixação',spec:'aço',und:'PÇ',grupo:'Suporte'},
+  {id:'O_DIN',nome:'Trilho DIN 35mm',spec:'perfilado',und:'M',grupo:'Suporte'},
+  {id:'O_CANAL',nome:'Canaleta',spec:'conforme projeto',und:'M',grupo:'Suporte'},
+  {id:'O_TERM',nome:'Terminal de compressão (olhal)',spec:'conforme bitola do cabo',und:'PÇ',grupo:'Conexão'},
+  {id:'O_CONE',nome:'Conector / emenda',spec:'conforme projeto',und:'PÇ',grupo:'Conexão'},
+  {id:'O_ANIL',nome:'Anilha de identificação (R/S/T/N)',spec:'fase / neutro',und:'PÇ',grupo:'Identificação'},
+  {id:'O_PLAQ',nome:'Plaqueta de identificação',spec:'gravada',und:'PÇ',grupo:'Identificação'},
+  {id:'O_TERMO',nome:'Espaguete termorretrátil',spec:'isolação de barra',und:'M',grupo:'Isolação'},
+  {id:'O_FITA',nome:'Fita isolante autofusão',spec:'alta fusão',und:'RL',grupo:'Isolação'},
+  {id:'O_TINTA',nome:'Tinta/verniz de acabamento',spec:'cores R/S/T',und:'CJ',grupo:'Acabamento'}
+];
+const OUTMAP={}; OUT.forEach(o=>OUTMAP[o.id]=o);
+
+/* opções genéricas p/ cadastro + item livre */
+function mkOptions(cat,sel){
+  let out='<option value=""'+(!sel?' selected':'')+'>✏️ Item livre / específico</option>'; let cur=null;
+  cat.forEach(o=>{
+    if(o.grupo!==cur){ if(cur!==null)out+='</optgroup>'; out+='<optgroup label="'+esc(o.grupo)+'">'; cur=o.grupo; }
+    out+='<option value="'+o.id+'"'+(o.id===sel?' selected':'')+'>'+esc(o.nome)+'</option>';
+  });
+  if(cur!==null)out+='</optgroup>'; return out;
+}
+
+/* ---------- exemplo ---------- */
+function bRow(desc,barId,comp,qtd,markup){return{id:uid(),desc,barId,comp,qtd,markup:markup||0};}
+function iRow(isoId,qtd,vunit,markup){return{id:uid(),isoId,qtd,vunit,markup:markup||0};}
+function cRow(catId,desc,und,qtd,vunit,markup){return{id:uid(),catId,desc:desc||"",und:und||"",qtd,vunit,markup:markup||0};}
+function row(desc,qtd,und,vunit,markup,marca){return{id:uid(),desc,qtd,und,vunit,markup:markup||0,marca:marca||""};}
+function demo(){
+  return {
+    numero:"eX_2026-BARRA_01", idpipe:"",
+    dataISO:"2026-07-28", validadeISO:"2026-08-27",
+    solTitulo:"CONFECÇÃO DE BARRAMENTO — QGBT",
+    solDesc:"Jogo de barras principal trifásico + neutro e terra, furado e estanhado, para quadro geral de baixa tensão.",
+    cliNome:"", cliContato:"", cliFone:"", cliEmail:"",
+    finNome:"", respNome:"André Camilo",
+    equipe:"1 Ferramenteiro + 1 Ajudante",
+    precoCobre:PRECOS.cobre.precoCobre, perdaPct:PRECOS.cobre.perdaPct,
+    prazoDias:6, impostoPct:6.38, descontoPct:0, custoInterno:0,
+    obs:{
+      barras:"Peso calculado por medidas nominais e densidade 8,9 g/cm³ (cadastro CopperBarras). Preço do cobre conforme base de cálculo acima.",
+      fabricacao:"Sequência de fabricação: corte → furação → dobra → estanhagem → montagem.",
+      isoladores:"Isolador epóxi SIBRATEC MNS. Preço não consta no catálogo — informar por cotação do fornecedor.",
+      parafusos:"Conjuntos de fixação (parafuso + arruelas + porca) por bitola. Clique numa peça pra tirar/pôr do conjunto. Preço por cotação.",
+      outros:"Suportes, identificação, isolação e acabamento. Use ‘item livre’ para o que for específico do projeto."
+    },
+    barras:[
+      bRow("Barras de fase (R, S, T)","2\"x1/4\"",1.20,3,30),
+      bRow("Barra de neutro","2\"x1/4\"",1.20,1,30),
+      bRow("Barra de terra","1\"x1/4\"",1.20,1,30)
+    ],
+    fabricacao: PRECOS.fabricacao.map((o,i)=>row(o.label,[10,48,12,5,1][i]!=null?[10,48,12,5,1][i]:1,o.und,o.vunit,20)),
+    isoladores:[
+      iRow("I_MNS30x40x14",16,isoPrice("I_MNS30x40x14"),25),
+      iRow("I_MNS40x50x14",4,isoPrice("I_MNS40x50x14"),25)
+    ],
+    parafusos:[
+      pCjto("Fixação barra↔isolador","M8",64,25),
+      pCjto("Fixação terminal de terra","M10",8,25)
+    ],
+    outros:[
+      cRow("O_SUP","","",8,PRECOS.outros.O_SUP||12,25),
+      cRow("O_ANIL","","",8,PRECOS.outros.O_ANIL||2.5,25),
+      cRow("","Item específico do projeto","CJ",1,90,25)
+    ]
+  };
+}
+
+/* ---------- carga / persistência (multi-orçamento) ---------- */
+function ensureFields(s){
+  if(!s._id) s._id=uid();
+  if(s.precoCobre===undefined)s.precoCobre=80;
+  if(s.perdaPct===undefined)s.perdaPct=0;
+  if(!s.isoladores)s.isoladores=[];
+  if(!Array.isArray(s.parafusos)) s.parafusos=[];
+  if(s.parafusos[0] && !s.parafusos[0].comp) s.parafusos=demo().parafusos; // migra avulso→conjunto
+  if(!s.outros)s.outros=s.acessorios||[];
+  if(!s.obs)s.obs={};
+  return s;
+}
+function load(){
+  let raw=null; try{raw=JSON.parse(localStorage.getItem(STORE));}catch(e){}
+  if(raw && Array.isArray(raw.orcs) && raw.orcs.length){ DB=raw; }
+  else if(raw && raw.barras){ DB={orcs:[raw],cur:0}; }   // migra single-doc → lista
+  else { DB={orcs:[demo()],cur:0}; }
+  if(!(DB.cur>=0 && DB.cur<DB.orcs.length)) DB.cur=0;
+  DB.orcs.forEach(ensureFields);
+  S=DB.orcs[DB.cur];
+}
+function save(){ try{localStorage.setItem(STORE,JSON.stringify(DB));}catch(e){} }
+function resetDemo(){ if(confirm("Recarregar o exemplo NESTE orçamento? As edições atuais serão perdidas.")){ DB.orcs[DB.cur]=ensureFields(demo()); S=DB.orcs[DB.cur]; save(); boot(); } }
+
+/* ---------- gerenciador de orçamentos ---------- */
+function orcNome(s){ return (s.numero&&s.numero.trim()) || (s.solTitulo&&s.solTitulo.trim()) || 'Orçamento sem nº'; }
+function renderOrcBar(){ const sel=document.getElementById('orcSel'); if(!sel)return;
+  sel.innerHTML=DB.orcs.map((s,i)=>`<option value="${i}"${i===DB.cur?' selected':''}>${esc(orcNome(s))}</option>`).join(''); }
+function switchOrc(i){ DB.cur=+i; S=DB.orcs[DB.cur]; save(); boot(); }
+function novoOrc(){ const s=ensureFields(demo()); s.numero=''; s.solTitulo='NOVO ORÇAMENTO'; DB.orcs.push(s); DB.cur=DB.orcs.length-1; S=s; save(); boot(); }
+function dupOrc(){
+  const c=JSON.parse(JSON.stringify(S)); c._id=uid();
+  c.numero=(S.numero&&S.numero.trim()? S.numero.trim():'Orçamento')+' (cópia)';
+  ['barras','fabricacao','isoladores','parafusos','outros'].forEach(k=>{ if(Array.isArray(c[k])) c[k].forEach(r=>{ if(r&&r.id) r.id=uid(); }); });
+  DB.orcs.push(c); DB.cur=DB.orcs.length-1; S=c; save(); boot();
+}
+function delOrc(){ if(DB.orcs.length<=1){ alert('É o único orçamento — não dá pra excluir.'); return; }
+  if(!confirm('Excluir "'+orcNome(S)+'"? Não dá pra desfazer.')) return;
+  DB.orcs.splice(DB.cur,1); DB.cur=Math.min(DB.cur,DB.orcs.length-1); S=DB.orcs[DB.cur]; save(); boot(); }
+
+/* ---------- cálculos ---------- */
+function barPeso(r){ const o=CATMAP[r.barId]; if(!o)return 0; return o.kgm*num(r.comp)*num(r.qtd); }
+function barPesoComPerda(r){ return barPeso(r)*(1+num(S.perdaPct)/100); }
+function barCusto(r){ return barPesoComPerda(r)*num(S.precoCobre); }
+function barTotal(r){ return barCusto(r)*(1+num(r.markup)/100); }
+const lineTot=r=>num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100);
+function subBarras(){ return S.barras.reduce((a,r)=>a+barTotal(r),0); }
+function subFab(){ return S.fabricacao.reduce((a,r)=>a+lineTot(r),0); }
+function pesoTotal(){ return S.barras.reduce((a,r)=>a+barPesoComPerda(r),0); }
+function custoCobreTotal(){ return S.barras.reduce((a,r)=>a+barCusto(r),0); }
+
+/* ---------- render: BARRAS ---------- */
+function renderBarras(){
+  const rows=S.barras;
+  const body=rows.map((r,i)=>{
+    const o=CATMAP[r.barId];
+    const peso=barPesoComPerda(r), cust=barCusto(r), t=barTotal(r);
+    return `<tr>
+      <td class="idx">${i+1}</td>
+      <td><input class="cin" value="${esc(r.desc)}" oninput="updB('${r.id}','desc',this.value)" placeholder="Descrição / fase"></td>
+      <td><select class="cin" onchange="updB('${r.id}','barId',this.value)">${barOptions(r.barId)}</select></td>
+      <td class="r"><input class="cin num qt" value="${esc(r.comp)}" inputmode="decimal" oninput="updB('${r.id}','comp',this.value)"></td>
+      <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="updB('${r.id}','qtd',this.value)"></td>
+      <td class="kg">${o?fmtKg(peso)+' kg':'—'}<br><span class="amp">${o?o.amp+'A · '+fmtKg(o.kgm)+' kg/m':''}</span></td>
+      <td class="cust">${o?fmt(cust):'—'}</td>
+      <td class="r"><input class="cin num mk" value="${esc(r.markup)}" inputmode="decimal" oninput="updB('${r.id}','markup',this.value)"></td>
+      <td class="tot ${t?'':'z'}" id="tt_${r.id}">${fmt(t)}</td>
+      <td><button class="del" onclick="delB('${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+    </tr>`;
+  }).join('');
+  const empty=`<tr><td colspan="10" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhuma barra. Clique em “Adicionar barra”.</td></tr>`;
+  document.getElementById('blk_barras').innerHTML=`
+    <div class="blkhead">
+      <span class="ic cu"><span class="material-symbols-rounded">bolt</span></span>
+      <h2>Barramentos (cobre)</h2>
+      <span class="st" id="st_barras">Subtotal <b>${fmt(subBarras())}</b></span>
+    </div>
+    <div class="scroll"><table class="tbl"><thead><tr>
+      <th>#</th><th>Descrição</th><th>Barra (larg × esp)</th><th class="r">Compr. (m)</th><th class="r">Qtd</th>
+      <th class="r">Peso</th><th class="r">Custo cobre</th><th class="r">Mrk%</th><th class="r">Total</th><th></th>
+    </tr></thead><tbody>${rows.length?body:empty}</tbody></table></div>
+    <div class="addrow"><button onclick="addB()"><span class="material-symbols-rounded">add</span>Adicionar barra</button></div>
+    <div class="obs"><span class="material-symbols-rounded">info</span><textarea rows="2" oninput="updObs('barras',this.value)" placeholder="Observações do bloco…">${esc(S.obs.barras||'')}</textarea></div>`;
+}
+
+/* ---------- render: ISOLADORES ---------- */
+function isoTotal(r){ return num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100); }
+function subIso(){ return S.isoladores.reduce((a,r)=>a+isoTotal(r),0); }
+function renderIso(){
+  const rows=S.isoladores;
+  const body=rows.map((r,i)=>{
+    const o=ISOMAP[r.isoId]; const t=isoTotal(r);
+    return `<tr>
+      <td class="idx">${i+1}</td>
+      <td><select class="cin" onchange="updI('${r.id}','isoId',this.value)">${isoOptions(r.isoId)}</select></td>
+      <td class="kg">${o?('Ø'+o.d+'×'+o.l+'mm'):'—'}<br><span class="amp">${o?(esc(o.rosca)+' · '+o.cor):''}</span></td>
+      <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="updI('${r.id}','qtd',this.value)"></td>
+      <td class="r"><input class="cin num" value="${esc(r.vunit)}" inputmode="decimal" oninput="updI('${r.id}','vunit',this.value)"></td>
+      <td class="r"><input class="cin num mk" value="${esc(r.markup)}" inputmode="decimal" oninput="updI('${r.id}','markup',this.value)"></td>
+      <td class="tot ${t?'':'z'}" id="tt_${r.id}">${fmt(t)}</td>
+      <td><button class="del" onclick="delI('${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+    </tr>`;
+  }).join('');
+  const empty=`<tr><td colspan="8" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum isolador. Clique em “Adicionar isolador”.</td></tr>`;
+  document.getElementById('blk_isoladores').innerHTML=`
+    <div class="blkhead">
+      <span class="ic"><span class="material-symbols-rounded">settings_input_component</span></span>
+      <h2>Isoladores (SIBRATEC MNS)</h2>
+      <span class="st" id="st_isoladores">Subtotal <b>${fmt(subIso())}</b></span>
+    </div>
+    <div class="scroll"><table class="tbl"><thead><tr>
+      <th>#</th><th>Modelo (epóxi)</th><th>Dimensões</th><th class="r">Qtd</th><th class="r">V. unit.</th><th class="r">Mrk%</th><th class="r">Total</th><th></th>
+    </tr></thead><tbody>${rows.length?body:empty}</tbody></table></div>
+    <div class="addrow"><button onclick="addI()"><span class="material-symbols-rounded">add</span>Adicionar isolador</button></div>
+    <div class="obs"><span class="material-symbols-rounded">info</span><textarea rows="2" oninput="updObs('isoladores',this.value)" placeholder="Observações do bloco…">${esc(S.obs.isoladores||'')}</textarea></div>`;
+}
+function updI(id,field,val){
+  const r=S.isoladores.find(x=>x.id===id); if(!r)return;
+  r[field]=val;
+  if(field==='isoId'){ if(!num(r.vunit)) r.vunit=isoPrice(val); renderIso(); }
+  else { const c=document.getElementById('tt_'+id); const t=isoTotal(r);
+    if(c){c.textContent=fmt(t);c.className='tot '+(t?'':'z');} }
+  const st=document.getElementById('st_isoladores'); if(st) st.innerHTML='Subtotal <b>'+fmt(subIso())+'</b>';
+  recalc(); save();
+}
+function addI(){ S.isoladores.push(iRow("",4,0,25)); save(); renderIso(); recalc(); }
+function delI(id){ S.isoladores=S.isoladores.filter(x=>x.id!==id); save(); renderIso(); recalc(); }
+
+/* ---------- render: blocos com CADASTRO + item livre (parafusos / outros) ---------- */
+const CATBLK={
+  outros:{titulo:"Outros acessórios",icon:"category",cat:OUT,map:OUTMAP}
+};
+const catTotal=r=>num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100);
+const subCat=key=>S[key].reduce((a,r)=>a+catTotal(r),0);
+function renderCat(key){
+  const cfg=CATBLK[key], rows=S[key];
+  const body=rows.map((r,i)=>{
+    const o=cfg.map[r.catId]; const t=catTotal(r);
+    const descCell = o
+      ? `<span style="color:var(--tx2)">${esc(o.spec||'')}</span>`
+      : `<input class="cin" value="${esc(r.desc)}" oninput="updC('${key}','${r.id}','desc',this.value)" placeholder="Descreva o item específico">`;
+    const und = o ? o.und : r.und;
+    return `<tr>
+      <td class="idx">${i+1}</td>
+      <td><select class="cin" onchange="updC('${key}','${r.id}','catId',this.value)">${mkOptions(cfg.cat,r.catId)}</select></td>
+      <td>${descCell}</td>
+      <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="updC('${key}','${r.id}','qtd',this.value)"></td>
+      <td><input class="cin un" value="${esc(und)}" oninput="updC('${key}','${r.id}','und',this.value)"${o?' readonly':''}></td>
+      <td class="r"><input class="cin num" value="${esc(r.vunit)}" inputmode="decimal" oninput="updC('${key}','${r.id}','vunit',this.value)"></td>
+      <td class="r"><input class="cin num mk" value="${esc(r.markup)}" inputmode="decimal" oninput="updC('${key}','${r.id}','markup',this.value)"></td>
+      <td class="tot ${t?'':'z'}" id="tt_${r.id}">${fmt(t)}</td>
+      <td><button class="del" onclick="delC('${key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+    </tr>`;
+  }).join('');
+  const empty=`<tr><td colspan="9" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar”.</td></tr>`;
+  document.getElementById('blk_'+key).innerHTML=`
+    <div class="blkhead">
+      <span class="ic"><span class="material-symbols-rounded">${cfg.icon}</span></span>
+      <h2>${cfg.titulo}</h2>
+      <span class="st" id="st_${key}">Subtotal <b>${fmt(subCat(key))}</b></span>
+    </div>
+    <div class="scroll"><table class="tbl"><thead><tr>
+      <th>#</th><th>Item (cadastro)</th><th>Descrição / spec</th><th class="r">Qtd</th><th>Und</th><th class="r">V. unit.</th><th class="r">Mrk%</th><th class="r">Total</th><th></th>
+    </tr></thead><tbody>${rows.length?body:empty}</tbody></table></div>
+    <div class="addrow"><button onclick="addC('${key}')"><span class="material-symbols-rounded">add</span>Adicionar item</button></div>
+    <div class="obs"><span class="material-symbols-rounded">info</span><textarea rows="2" oninput="updObs('${key}',this.value)" placeholder="Observações do bloco…">${esc(S.obs[key]||'')}</textarea></div>`;
+}
+function updC(key,id,field,val){
+  const r=S[key].find(x=>x.id===id); if(!r)return;
+  r[field]=val;
+  if(field==='catId'){ const o=CATBLK[key].map[val]; if(o){ r.desc=o.nome; r.und=o.und; if(key==='outros' && !num(r.vunit) && PRECOS.outros[val]!=null) r.vunit=PRECOS.outros[val]; } renderCat(key); }
+  else { const c=document.getElementById('tt_'+id); const t=catTotal(r);
+    if(c){c.textContent=fmt(t);c.className='tot '+(t?'':'z');} }
+  const st=document.getElementById('st_'+key); if(st) st.innerHTML='Subtotal <b>'+fmt(subCat(key))+'</b>';
+  recalc(); save();
+}
+function addC(key){ S[key].push(cRow("","","PÇ",1,0,25)); save(); renderCat(key); recalc(); }
+function delC(key,id){ S[key]=S[key].filter(x=>x.id!==id); save(); renderCat(key); recalc(); }
+
+/* ---------- FIXAÇÃO (conjuntos — Formato B) ----------
+   Cada conjunto = parafuso + arruelas + porca por bitola. Peça selecionável (on/off).
+   custo/conjunto = Σ (peça on: qtd/cj × preço) ; total = custo/cj × nº conjuntos × (1+markup). */
+const BITS=['M6','M8','M10','M12'];
+const PRECO_BIT=PRECOS.fixacao;   // vem do cadastro de preços (ex_barra_precos)
+function defaultComp(bit){ const p=PRECO_BIT[bit]||PRECO_BIT.M8; return [
+  {key:'parafuso',label:'Parafuso '+bit+'×'+p.len,qtd:1,vunit:p.parafuso,on:true},
+  {key:'pressao', label:'Arruela pressão '+bit, qtd:1,vunit:p.pressao, on:true},
+  {key:'lisa',    label:'Arruela lisa '+bit,    qtd:2,vunit:p.lisa,    on:true},
+  {key:'porca',   label:'Porca '+bit,           qtd:1,vunit:p.porca,   on:true}
+];}
+function pCjto(nome,bit,qtdConj,markup){ return {id:uid(),nome,bitola:bit,qtdConj,markup:markup||0,comp:defaultComp(bit),exp:false}; }
+const cjIcon='<svg width="22" height="22" viewBox="0 0 24 24" fill="#fff" stroke="#7a3f16" stroke-width="1.4" stroke-linejoin="round"><path d="M8 3 h5 l2 2 v3 l-2 2 h-5 l-2 -2 v-3 z"/><rect x="9.4" y="10" width="4.8" height="9.5" rx="1"/><path d="M9.4 12.2 h4.8 M9.4 14.6 h4.8 M9.4 17 h4.8" stroke-width="1"/></svg>';
+
+const cjCustoUnit=cj=>cj.comp.reduce((a,c)=>a+(c.on?num(c.qtd)*num(c.vunit):0),0);
+const cjTotal=cj=>cjCustoUnit(cj)*num(cj.qtdConj)*(1+num(cj.markup)/100);
+const subParafusos=()=>S.parafusos.reduce((a,cj)=>a+cjTotal(cj),0);
+
+function renderParafusos(){
+  const rows=S.parafusos;
+  const cards=rows.map(cj=>{
+    const cu=cjCustoUnit(cj), t=cjTotal(cj);
+    const bitOpts=BITS.map(b=>`<option value="${b}"${b===cj.bitola?' selected':''}>${b}</option>`).join('');
+    const chips=cj.comp.map(c=>`<span class="cchip ${c.on?'on':''}" onclick="toggleComp('${cj.id}','${c.key}')" title="${c.on?'Tirar':'Pôr'} do conjunto">
+        <span class="cbox">${c.on?'<span class="material-symbols-rounded">check</span>':''}</span><b>${num(c.qtd)}×</b> ${esc(c.label)}</span>`).join('');
+    const edit=cj.exp?`<div class="cjedit">${cj.comp.map(c=>`<div class="cerow">
+        <span class="cename">${esc(c.label)}</span>
+        <label>qtd/cj <input class="cin num qt" value="${esc(c.qtd)}" inputmode="decimal" oninput="updComp('${cj.id}','${c.key}','qtd',this.value)"></label>
+        <label>R$/un <input class="cin num" value="${esc(c.vunit)}" inputmode="decimal" oninput="updComp('${cj.id}','${c.key}','vunit',this.value)"></label>
+      </div>`).join('')}</div>`:'';
+    return `<div class="cjto">
+      <div class="cjhead">
+        <span class="cjic">${cjIcon}</span>
+        <input class="cin cjnome" value="${esc(cj.nome)}" oninput="updCj('${cj.id}','nome',this.value)" placeholder="Nome do conjunto">
+        <select class="cin cjbit" onchange="setBitola('${cj.id}',this.value)">${bitOpts}</select>
+        <span class="cjx">×</span><input class="cin num qt" value="${esc(cj.qtdConj)}" inputmode="decimal" oninput="updCj('${cj.id}','qtdConj',this.value)" title="Nº de conjuntos"><span class="cjx">cj</span>
+        <span class="cju" id="cju_${cj.id}">custo/cj ${fmt(cu)}</span>
+        <label class="cjmk">mrk <input class="cin num mk" value="${esc(cj.markup)}" inputmode="decimal" oninput="updCj('${cj.id}','markup',this.value)">%</label>
+        <span class="cjt" id="cjt_${cj.id}">${fmt(t)}</span>
+        <button class="cjexp" onclick="toggleExp('${cj.id}')" title="Editar qtd/preço das peças"><span class="material-symbols-rounded">${cj.exp?'expand_less':'tune'}</span></button>
+        <button class="del" onclick="delCj('${cj.id}')" title="Remover conjunto"><span class="material-symbols-rounded">close</span></button>
+      </div>
+      <div class="cjchips">${chips}<span class="cjhint">clique numa peça pra tirar/pôr</span></div>
+      ${edit}
+    </div>`;
+  }).join('');
+  const empty=`<div style="color:var(--tx3);padding:8px 2px;font-size:12px">Nenhum conjunto. Clique em “Adicionar conjunto”.</div>`;
+  document.getElementById('blk_parafusos').innerHTML=`
+    <div class="blkhead">
+      <span class="ic"><span class="material-symbols-rounded">hardware</span></span>
+      <h2>Fixação (conjuntos)</h2>
+      <span class="st" id="st_parafusos">Subtotal <b>${fmt(subParafusos())}</b></span>
+    </div>
+    ${rows.length?cards:empty}
+    <div class="addrow"><button onclick="addCj()"><span class="material-symbols-rounded">add</span>Adicionar conjunto</button></div>
+    <div class="obs"><span class="material-symbols-rounded">info</span><textarea rows="2" oninput="updObs('parafusos',this.value)" placeholder="Observações do bloco…">${esc(S.obs.parafusos||'')}</textarea></div>`;
+}
+function refreshCj(cj){
+  const eu=document.getElementById('cju_'+cj.id); if(eu) eu.textContent='custo/cj '+fmt(cjCustoUnit(cj));
+  const et=document.getElementById('cjt_'+cj.id); if(et) et.textContent=fmt(cjTotal(cj));
+  const st=document.getElementById('st_parafusos'); if(st) st.innerHTML='Subtotal <b>'+fmt(subParafusos())+'</b>';
+  recalc();
+}
+function updCj(id,field,val){ const cj=S.parafusos.find(x=>x.id===id); if(!cj)return;
+  cj[field]=val; if(field==='qtdConj'||field==='markup') refreshCj(cj); save(); }
+function setBitola(id,bit){ const cj=S.parafusos.find(x=>x.id===id); if(!cj)return;
+  const onMap={}; cj.comp.forEach(c=>onMap[c.key]=c.on);
+  cj.bitola=bit; cj.comp=defaultComp(bit).map(c=>({...c,on:onMap[c.key]!==undefined?onMap[c.key]:c.on}));
+  save(); renderParafusos(); recalc(); }
+function toggleComp(id,key){ const cj=S.parafusos.find(x=>x.id===id); if(!cj)return;
+  const c=cj.comp.find(x=>x.key===key); if(c)c.on=!c.on; save(); renderParafusos(); recalc(); }
+function updComp(id,key,field,val){ const cj=S.parafusos.find(x=>x.id===id); if(!cj)return;
+  const c=cj.comp.find(x=>x.key===key); if(!c)return; c[field]=val; refreshCj(cj); save(); }
+function toggleExp(id){ const cj=S.parafusos.find(x=>x.id===id); if(!cj)return; cj.exp=!cj.exp; save(); renderParafusos(); }
+function addCj(){ S.parafusos.push(pCjto("Fixação","M8",1,25)); save(); renderParafusos(); recalc(); }
+function delCj(id){ S.parafusos=S.parafusos.filter(x=>x.id!==id); save(); renderParafusos(); recalc(); }
+
+/* ---------- render: bloco simples (fabricação) ---------- */
+const SIMPLE=[
+  {key:"fabricacao",titulo:"Fabricação",icon:"precision_manufacturing",mat:false}
+];
+function renderSimple(cfg){
+  const rows=S[cfg.key], sub=rows.reduce((a,r)=>a+lineTot(r),0);
+  const cols = cfg.mat
+    ? `<th>#</th><th>Item</th><th>Marca</th><th class="r">Qtd</th><th>Und</th><th class="r">V. unit.</th><th class="r">Mrk%</th><th class="r">Total</th><th></th>`
+    : `<th>#</th><th>Operação</th><th class="r">Qtd</th><th>Und</th><th class="r">V. unit.</th><th class="r">Mrk%</th><th class="r">Total</th><th></th>`;
+  const body=rows.map((r,i)=>{
+    const t=lineTot(r);
+    const marca = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="updS('${cfg.key}','${r.id}','marca',this.value)" placeholder="—"></td>`:'';
+    return `<tr>
+      <td class="idx">${i+1}</td>
+      <td><input class="cin" value="${esc(r.desc)}" oninput="updS('${cfg.key}','${r.id}','desc',this.value)"></td>
+      ${marca}
+      <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="updS('${cfg.key}','${r.id}','qtd',this.value)"></td>
+      <td><input class="cin un" value="${esc(r.und)}" oninput="updS('${cfg.key}','${r.id}','und',this.value)"></td>
+      <td class="r"><input class="cin num" value="${esc(r.vunit)}" inputmode="decimal" oninput="updS('${cfg.key}','${r.id}','vunit',this.value)"></td>
+      <td class="r"><input class="cin num mk" value="${esc(r.markup)}" inputmode="decimal" oninput="updS('${cfg.key}','${r.id}','markup',this.value)"></td>
+      <td class="tot ${t?'':'z'}" id="tt_${r.id}">${fmt(t)}</td>
+      <td><button class="del" onclick="delS('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+    </tr>`;
+  }).join('');
+  const empty=`<tr><td colspan="${cfg.mat?9:8}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar”.</td></tr>`;
+  document.getElementById('blk_'+cfg.key).innerHTML=`
+    <div class="blkhead">
+      <span class="ic"><span class="material-symbols-rounded">${cfg.icon}</span></span>
+      <h2>${cfg.titulo}</h2>
+      <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
+    </div>
+    <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody>${rows.length?body:empty}</tbody></table></div>
+    <div class="addrow"><button onclick="addS('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.mat?'item':'operação'}</button></div>
+    <div class="obs"><span class="material-symbols-rounded">info</span><textarea rows="2" oninput="updObs('${cfg.key}',this.value)" placeholder="Observações do bloco…">${esc(S.obs[cfg.key]||'')}</textarea></div>`;
+}
+
+/* ---------- edição: barras ---------- */
+function updB(id,field,val){
+  const r=S.barras.find(x=>x.id===id); if(!r)return;
+  r[field]= field==='desc' ? val : (field==='barId'? val : val);
+  if(field==='desc'){ save(); return; }
+  // recalcula linha + subtotal + resumo
+  const t=barTotal(r); const c=document.getElementById('tt_'+id);
+  if(c){c.textContent=fmt(t);c.className='tot '+(t?'':'z');}
+  if(field==='barId'){ renderBarras(); }  // peso/amperagem mudam: re-render linha via bloco
+  const st=document.getElementById('st_barras'); if(st) st.innerHTML='Subtotal <b>'+fmt(subBarras())+'</b>';
+  recalc(); save();
+}
+function addB(){ S.barras.push(bRow("","2\"x1/4\"",1,1,30)); save(); renderBarras(); recalc(); }
+function delB(id){ S.barras=S.barras.filter(x=>x.id!==id); save(); renderBarras(); recalc(); }
+
+/* ---------- edição: blocos simples ---------- */
+function updS(blk,id,field,val){
+  const r=S[blk].find(x=>x.id===id); if(!r)return;
+  r[field]=val;
+  if(['qtd','vunit','markup'].includes(field)){
+    const c=document.getElementById('tt_'+id); const t=lineTot(r);
+    if(c){c.textContent=fmt(t);c.className='tot '+(t?'':'z');}
+    const st=document.getElementById('st_'+blk); const sub=S[blk].reduce((a,r)=>a+lineTot(r),0);
+    if(st) st.innerHTML='Subtotal <b>'+fmt(sub)+'</b>';
+    recalc();
+  }
+  save();
+}
+function addS(blk){ const dflt=blk==='fabricacao'?'UND':'PÇ'; S[blk].push(row("",1,dflt,0,blk==='acessorios'?25:20)); save(); renderSimple(SIMPLE.find(b=>b.key===blk)); }
+function delS(blk,id){ S[blk]=S[blk].filter(x=>x.id!==id); save(); renderSimple(SIMPLE.find(b=>b.key===blk)); recalc(); }
+function updObs(blk,val){ S.obs[blk]=val; save(); }
+
+/* ---------- campos meta / fechamento ---------- */
+function bindFields(){
+  document.querySelectorAll('[data-m]').forEach(el=>{
+    const k=el.dataset.m; el.value=S[k]??'';
+    el.oninput=()=>{S[k]=el.value;save();};
+  });
+  document.querySelectorAll('[data-f]').forEach(el=>{
+    const k=el.dataset.f; el.value=S[k]??0;
+    el.oninput=()=>{S[k]=num(el.value);save();
+      if(k==='precoCobre'||k==='perdaPct'){ renderBarras(); }
+      recalc();};
+  });
+}
+
+/* ---------- fechamento ---------- */
+function recalc(){
+  const sb=subBarras(), sf=subFab(), si=subIso(), sp=subParafusos(), so=subCat('outros');
+  const bruto=sb+sf+si+sp+so;
+  const desc=bruto*num(S.descontoPct)/100;
+  const total=bruto-desc;
+  const imp=total*num(S.impostoPct)/100;
+  const custo=num(S.custoInterno);
+  const lucro=total-custo-imp;
+  const marg=total?lucro/total*100:0;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('s_barras',fmt(sb)); set('s_fab',fmt(sf)); set('s_iso',fmt(si)); set('s_par',fmt(sp)); set('s_out',fmt(so));
+  set('s_bruto',fmt(bruto)); set('s_desc','− '+fmt(desc));
+  set('s_total',fmt(total)); set('s_preco',fmt(total));
+  set('s_imp',fmt(imp));
+  const pt=pesoTotal(), cc=custoCobreTotal();
+  set('s_cobreinfo',fmtKg(pt)+' kg · '+fmt(cc));
+  const ro=document.getElementById('pesoTotalRO'); if(ro) ro.value=fmtKg(pt);
+  const lu=document.getElementById('s_lucro'), mg=document.getElementById('s_marg');
+  lu.textContent=fmt(lucro); mg.textContent=marg.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+  const neg=(custo>0&&lucro<0);
+  lu.className='val luc'+(neg?' neg':''); mg.className='val luc'+(neg?' neg':'');
+}
+
+/* ---------- modo ver/editar ---------- */
+function setMode(m){
+  document.body.classList.toggle('viewing',m==='view');
+  document.body.classList.toggle('editing',m==='edit');
+  document.getElementById('mView').classList.toggle('on',m==='view');
+  document.getElementById('mEdit').classList.toggle('on',m==='edit');
+}
+
+/* ---------- clientes do CRM (mesmo store ex_crm_v1 do eX_CRM) ---------- */
+function crmData(){ try{const r=localStorage.getItem('ex_crm_v1'); if(r){const d=JSON.parse(r); if(d&&Array.isArray(d.clientes)&&d.clientes.length) return d.clientes;}}catch(e){} return null; }
+function cliList(kind){ const crm=crmData(); if(!crm) return []; return crm.filter(c=> kind==='contratante'?c.tipo==='contratante':c.tipo==='contemplado'); }
+function cliFind(id){ const crm=crmData()||[]; return crm.find(x=>x.id===id); }
+function setM(f,v){ S[f]=v; const el=document.querySelector('[data-m="'+f+'"]'); if(el)el.value=v; }
+function pkRow(kind,id,nome,sub){ return `<button class="pkitem" onclick="pickHP('${kind}','${id}')"><span class="pknm">${esc(nome)}</span>${sub?`<span class="pkcusto">${esc(sub)}</span>`:''}</button>`; }
+function openHP(kind){
+  const title = kind==='contratante'?'Escolher cliente contratante':'Escolher cliente final / loja';
+  const lst=cliList(kind);
+  const html = lst.length ? lst.map(c=>pkRow(kind,c.id,c.nome,c.contato||c.endereco||'')).join('')
+    : '<div style="color:var(--tx3);padding:12px;font-size:12px">Nenhum cliente no CRM ainda. Cadastre no módulo <b>Clientes</b> (eX_CRM) — a base é a mesma.</div>';
+  document.getElementById('pickTitle').textContent=title;
+  document.getElementById('pickBody').innerHTML=html;
+  document.getElementById('pickModal').classList.add('open');
+}
+function pickHP(kind,id){
+  const c=cliFind(id);
+  if(c){ if(kind==='contratante'){ setM('cliNome',c.nome); setM('cliContato',c.contato||''); setM('cliFone',c.fone||''); setM('cliEmail',c.email||''); }
+         else { setM('finNome',c.nome); } }
+  save(); closePick();
+}
+function closePick(){ document.getElementById('pickModal').classList.remove('open'); }
+/* ponte CRM → barramento: cria/abre o orçamento da oportunidade (chave ex_orc_bar_prefill) */
+function applyPrefill(){
+  let p=null;
+  try{ const r=localStorage.getItem('ex_orc_bar_prefill'); if(r){ p=JSON.parse(r); localStorage.removeItem('ex_orc_bar_prefill'); } }catch(e){}
+  if(!p) return;
+  if(p.oppId){ const i=DB.orcs.findIndex(o=>o._oppId===p.oppId); if(i>=0){ DB.cur=i; S=DB.orcs[i]; save(); return; } } // já existe → abre
+  const s=ensureFields(demo()); s._oppId=p.oppId||null; s.numero='';
+  ['cliNome','cliContato','cliFone','cliEmail','finNome','solTitulo','solDesc'].forEach(k=>{ if(p[k]!=null&&p[k]!=='') s[k]=p[k]; });
+  DB.orcs.push(s); DB.cur=DB.orcs.length-1; S=s; save();
+}
+
+/* ---------- boot ---------- */
+function boot(){ applyPrefill(); renderOrcBar(); renderBarras(); SIMPLE.forEach(renderSimple); renderIso(); renderParafusos(); renderCat('outros'); bindFields(); recalc(); }
+load(); boot();
+</script>
+</body>
+</html>
