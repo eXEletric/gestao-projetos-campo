@@ -421,6 +421,17 @@ async function carregarCatalogo(){
     CATALOGO=g;
   }catch(e){ console.error('catalogo',e); }
 }
+// materiais vêm do ESTOQUE (tabela `materiais`) — fonte única; cadastro em Gestão › Materiais
+async function carregarMateriaisEstoque(){
+  try{ const {data,error}=await SB.from('materiais').select('id,descricao_padronizada,unidade,marca,custo_compra,preco_venda').is('deleted_at',null).order('descricao_padronizada');
+    if(error) throw error;
+    CATALOGO.materiais=(data||[]).map(m=>{
+      const cc=(m.custo_compra!=null)?m.custo_compra:null, pv=(m.preco_venda!=null)?m.preco_venda:null;
+      const custo=(cc!=null)?cc:(pv!=null?pv:0);
+      return { id:m.id, nome:m.descricao_padronizada||'(sem descrição)', custo, und:m.unidade||'UND', marca:m.marca||'', margem:(cc!=null?25:''), categoria:'' };
+    });
+  }catch(e){ console.error('materiais estoque',e); }
+}
 let CATEGORIAS={servicos:[],equip:[],despesas:[],materiais:[]};
 async function carregarCategorias(){
   try{ const {data,error}=await SB.from('orc_categorias').select('nome,tipo,ordem').eq('ativo',true).is('deleted_at',null).order('ordem');
@@ -465,7 +476,7 @@ async function initOrc(){
     if(session){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
       try{ const p=await SB.from('perfis').select('nome,email').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; } }catch(_){}
-      await carregarCatalogo(); await carregarCategorias();
+      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
     } else { cloudMsg('modo local (sem login)'); }
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
@@ -749,7 +760,7 @@ function renderBlk(cfg){
         ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
         : `<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)"></span>`;
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
-      const editCad = r.catId?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.catId}')" title="Editar o valor padrão deste item no cadastro"><span class="material-symbols-rounded">edit_note</span></button>`:'';
+      const editCad = (r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.catId}')" title="Editar o valor padrão deste item no cadastro"><span class="material-symbols-rounded">edit_note</span></button>`:'';
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div></td>
