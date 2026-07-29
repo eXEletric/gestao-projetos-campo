@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eX · Efetivo na obra — modelo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pri:#533ab7; --pri2:#6b52d6; --pri-bg:#efe9ff; --bg:#faf9f5; --surf:#fff; --surf2:#f4f2ec;
+  --tx:#26232f; --tx2:#5a5568; --tx3:#918c9e; --line:#e9e6df; --line2:#dcd8ce;
+  --green:#0f8f5b; --amber:#c47f0b; --red:#c0392b;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.45}
+.material-symbols-rounded{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;line-height:1;vertical-align:middle}
+.wrap{max-width:920px;margin:0 auto;padding:22px 18px 60px}
+
+.top{display:flex;align-items:center;gap:12px;margin-bottom:6px}
+.logo{font-weight:800;font-size:22px;color:var(--pri);letter-spacing:-.5px}
+.logo b{color:var(--tx)}
+.ttl{font-size:13px;font-weight:700;color:var(--tx2);display:flex;align-items:center;gap:6px}
+.ttl .material-symbols-rounded{color:var(--pri);font-size:20px}
+.sub{font-size:12.5px;color:var(--tx2);margin:4px 0 20px;max-width:720px}
+
+.switcher{display:inline-flex;background:var(--surf2);border-radius:11px;padding:4px;gap:2px;margin-bottom:18px}
+.switcher button{border:none;background:transparent;font:600 12.5px 'Inter';color:var(--tx2);padding:7px 15px;border-radius:8px;cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.switcher button.on{background:var(--surf);color:var(--pri);box-shadow:0 1px 3px rgba(0,0,0,.09)}
+.switcher .material-symbols-rounded{font-size:17px}
+
+/* bloco de serviços simulado */
+.blk{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:16px 17px;margin-bottom:18px;box-shadow:0 1px 2px rgba(20,10,50,.03)}
+.blkhead{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.blkhead .ic{width:30px;height:30px;border-radius:8px;background:var(--pri-bg);color:var(--pri);display:flex;align-items:center;justify-content:center}
+.blkhead h2{font-size:15px;margin:0;font-weight:700}
+.blkhead .st{margin-left:auto;font-size:12px;color:var(--tx2)}
+.blkhead .st b{color:var(--tx);font-size:14px}
+
+.rows{border-top:1px solid var(--line);margin-top:6px}
+.srow{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid var(--line);font-size:13px}
+.srow .idx{color:var(--tx3);font-size:11px;width:16px}
+.srow .nm{flex:1;color:var(--tx2)}
+.srow .pr{font-weight:700;color:var(--tx);font-variant-numeric:tabular-nums}
+
+/* ====== COMPONENTE EFETIVO — comum ====== */
+.efbar-title{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--pri);margin-bottom:10px}
+.efbar-title .material-symbols-rounded{font-size:18px}
+.efbar-title .cnt{margin-left:auto;display:inline-flex;align-items:center;gap:5px;background:var(--pri);color:#fff;border-radius:20px;padding:3px 11px;font-size:11px;letter-spacing:.02em}
+.efbar-title .cnt .material-symbols-rounded{font-size:15px;color:#fff}
+
+.stepper{display:inline-flex;align-items:center;gap:2px;background:var(--surf);border:1px solid var(--line2);border-radius:9px;padding:2px}
+.stepper button{width:24px;height:24px;border:none;background:transparent;color:var(--pri);cursor:pointer;border-radius:6px;display:flex;align-items:center;justify-content:center}
+.stepper button:hover{background:var(--pri-bg)}
+.stepper .n{min-width:24px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.stepper .material-symbols-rounded{font-size:18px}
+
+.addf{border:1px dashed var(--line2);background:transparent;color:var(--pri);font:600 12px 'Inter';border-radius:20px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.addf:hover{background:var(--pri-bg);border-color:var(--pri)}
+.addf .material-symbols-rounded{font-size:16px}
+
+.prazo{display:inline-flex;align-items:center;gap:7px;font-size:12px;color:var(--tx2);background:var(--surf2);border-radius:9px;padding:6px 11px}
+.prazo input{width:40px;border:1px solid var(--line2);border-radius:6px;padding:3px 4px;text-align:center;font:700 13px 'Inter';color:var(--tx);background:#fff}
+.prazo .material-symbols-rounded{font-size:16px;color:var(--amber)}
+
+.efres{margin-top:12px;font-size:12px;color:var(--tx2);display:flex;align-items:flex-start;gap:7px;background:var(--pri-bg);border-radius:9px;padding:9px 12px}
+.efres .material-symbols-rounded{font-size:16px;color:var(--pri)}
+.efres b{color:var(--tx)}
+
+/* ====== VARIANTE A: chips com contador ====== */
+.efA{background:linear-gradient(180deg,#fbfaff,#f6f4ff);border:1px solid #e3dcfa;border-radius:12px;padding:13px 14px;margin-bottom:14px}
+.chips{display:flex;flex-wrap:wrap;gap:9px;align-items:center}
+.fchip{display:flex;align-items:center;gap:9px;background:var(--surf);border:1px solid var(--line2);border-radius:11px;padding:7px 8px 7px 11px}
+.fchip .fic{width:26px;height:26px;border-radius:7px;background:var(--pri-bg);color:var(--pri);display:flex;align-items:center;justify-content:center}
+.fchip .fic .material-symbols-rounded{font-size:17px}
+.fchip .fnm{font-size:12.5px;font-weight:600;white-space:nowrap}
+.efA-foot{display:flex;align-items:center;gap:10px;margin-top:12px;flex-wrap:wrap}
+
+/* ====== VARIANTE B: cartão roster ====== */
+.efB{background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden;margin-bottom:14px}
+.efB-head{display:flex;align-items:center;gap:8px;padding:11px 14px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8}
+.efB-head .material-symbols-rounded{font-size:19px;color:var(--pri)}
+.efB-head h3{margin:0;font-size:13px;font-weight:800;color:var(--pri);text-transform:uppercase;letter-spacing:.04em}
+.efB-head .cnt{margin-left:auto;display:inline-flex;align-items:center;gap:5px;background:var(--pri);color:#fff;border-radius:20px;padding:3px 11px;font-size:11px}
+.efB-head .cnt .material-symbols-rounded{color:#fff;font-size:15px}
+.rrow{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--line)}
+.rrow:last-child{border-bottom:none}
+.rrow .av{width:34px;height:34px;border-radius:50%;background:var(--pri-bg);color:var(--pri);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.rrow .av .material-symbols-rounded{font-size:19px}
+.rrow .rf{flex:1}
+.rrow .rf .rn{font-weight:600;font-size:13.5px}
+.rrow .rf .rd{font-size:11px;color:var(--tx3)}
+.rrow .rm{color:var(--tx3);cursor:pointer;border:none;background:none;padding:6px;border-radius:6px}
+.rrow .rm:hover{background:#fbecec;color:var(--red)}
+.rrow .rm .material-symbols-rounded{font-size:17px}
+.efB-foot{display:flex;align-items:center;gap:10px;padding:12px 14px;flex-wrap:wrap;background:var(--surf2)}
+
+.note{font-size:12px;color:var(--tx2);background:var(--surf);border:1px solid var(--line);border-left:3px solid var(--pri);border-radius:9px;padding:11px 14px;margin-top:6px}
+.note b{color:var(--tx)}
+
+/* popover add função */
+.pop{position:fixed;inset:0;background:rgba(20,12,45,.28);display:none;align-items:center;justify-content:center;z-index:9;padding:20px}
+.pop.on{display:flex}
+.pop .card{background:var(--surf);border-radius:14px;padding:8px;max-width:300px;width:100%;box-shadow:0 20px 50px rgba(20,10,50,.3)}
+.pop .ph{font-size:12px;font-weight:700;color:var(--tx2);padding:9px 11px 6px}
+.pop .pi{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;padding:10px 11px;border-radius:9px;cursor:pointer;font:600 13px 'Inter';color:var(--tx);text-align:left}
+.pop .pi:hover{background:var(--pri-bg);color:var(--pri)}
+.pop .pi .material-symbols-rounded{font-size:19px;color:var(--pri)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><span class="logo"><b>e</b>X</span><span class="ttl"><span class="material-symbols-rounded">engineering</span>Efetivo na obra — modelo de decisão</span></div>
+  <div class="sub">Hoje o efetivo fica num campinho de texto lá no resumo. Aqui ele sobe para <b>o topo do bloco Serviços</b>, visível no decorrer do processo. Duas variações — mexa nos contadores e escolha a que preferir. A frase da proposta é gerada automaticamente.</div>
+
+  <div class="switcher">
+    <button id="btA" class="on" onclick="setVar('A')"><span class="material-symbols-rounded">badge</span>Opção A · chips com contador</button>
+    <button id="btB" onclick="setVar('B')"><span class="material-symbols-rounded">groups</span>Opção B · cartão-roster</button>
+  </div>
+
+  <!-- BLOCO SERVIÇOS SIMULADO -->
+  <div class="blk">
+    <div class="blkhead">
+      <span class="ic"><span class="material-symbols-rounded">build</span></span>
+      <h2>Serviços</h2>
+      <span class="st">Subtotal <b>R$ 37.510,20</b></span>
+    </div>
+
+    <!-- COMPONENTE EFETIVO (aqui, no topo do bloco) -->
+    <div id="slotA"></div>
+    <div id="slotB" style="display:none"></div>
+
+    <!-- linhas de serviço (contexto) -->
+    <div class="rows">
+      <div class="srow"><span class="idx">1</span><span class="nm">Instalação — QA automação — iluminação frente de caixa</span><span class="pr">R$ 6.970,60</span></div>
+      <div class="srow"><span class="idx">2</span><span class="nm">Instalação — QA automação — iluminação e energia</span><span class="pr">R$ 4.790,50</span></div>
+      <div class="srow"><span class="idx">3</span><span class="nm">Adequação de comando — automatizar QD iluminação</span><span class="pr">R$ 4.590,30</span></div>
+    </div>
+  </div>
+
+  <div class="note"><b>Onde fica:</b> no cabeçalho do bloco Serviços — a primeira coisa que se vê ao montar os serviços. Na impressão sai só a frase limpa (“Equipe: …”), sem os contadores. Depois plugamos no motor de tempo (efetivo × dias → horas) e no custo de mão de obra.</div>
+</div>
+
+<!-- popover adicionar função -->
+<div class="pop" id="pop" onclick="if(event.target===this)closePop()">
+  <div class="card"><div class="ph">Adicionar função</div><div id="popList"></div></div>
+</div>
+
+<script>
+const FUNCS=[
+  {f:'Encarregado',ic:'engineering'},
+  {f:'Eletrotécnico',ic:'electrical_services'},
+  {f:'Eletricista',ic:'bolt'},
+  {f:'Ajudante',ic:'person'},
+  {f:'Montador',ic:'handyman'},
+  {f:'Operacional',ic:'groups'},
+  {f:'Téc. de segurança',ic:'health_and_safety'},
+  {f:'Motorista',ic:'local_shipping'}
+];
+let crew=[
+  {f:'Encarregado',ic:'engineering',n:1},
+  {f:'Eletrotécnico',ic:'electrical_services',n:1},
+  {f:'Eletricista',ic:'bolt',n:2},
+  {f:'Ajudante',ic:'person',n:1}
+];
+let dias=5, variant='A';
+
+const icOf=f=>(FUNCS.find(x=>x.f===f)||{ic:'person'}).ic;
+const total=()=>crew.reduce((a,c)=>a+c.n,0);
+function plural(n,s){ return n+' '+s+(n>1?(s.endsWith('a')?'s':'s'):''); }
+function frase(){
+  const parts=crew.filter(c=>c.n>0).map(c=>c.n+' '+c.f+(c.n>1?'s':''));
+  return parts.join(' · ')||'—';
+}
+function resHtml(){
+  return `<div class="efres"><span class="material-symbols-rounded">description</span><div><b>Aparece na proposta:</b> Equipe: ${frase()} &nbsp;·&nbsp; prazo estimado ${dias} dia${dias>1?'s':''}.</div></div>`;
+}
+function stepper(i){
+  return `<div class="stepper"><button onclick="dec(${i})"><span class="material-symbols-rounded">remove</span></button><span class="n">${crew[i].n}</span><button onclick="inc(${i})"><span class="material-symbols-rounded">add</span></button></div>`;
+}
+function prazoHtml(){
+  return `<span class="prazo"><span class="material-symbols-rounded">event</span>Prazo estimado <input type="number" min="1" value="${dias}" oninput="setDias(this.value)"> dias</span>`;
+}
+
+function renderA(){
+  const chips=crew.map((c,i)=>`<div class="fchip"><span class="fic"><span class="material-symbols-rounded">${c.ic}</span></span><span class="fnm">${c.f}</span>${stepper(i)}</div>`).join('');
+  document.getElementById('slotA').innerHTML=`
+    <div class="efA">
+      <div class="efbar-title"><span class="material-symbols-rounded">engineering</span>Efetivo na obra
+        <span class="cnt"><span class="material-symbols-rounded">group</span>${total()} pessoas</span></div>
+      <div class="chips">${chips}<button class="addf" onclick="openPop()"><span class="material-symbols-rounded">add</span>função</button></div>
+      <div class="efA-foot">${prazoHtml()}</div>
+      ${resHtml()}
+    </div>`;
+}
+function renderB(){
+  const rows=crew.map((c,i)=>`<div class="rrow"><span class="av"><span class="material-symbols-rounded">${c.ic}</span></span>
+    <div class="rf"><div class="rn">${c.f}</div><div class="rd">função na equipe</div></div>
+    ${stepper(i)}<button class="rm" onclick="rm(${i})" title="Remover"><span class="material-symbols-rounded">close</span></button></div>`).join('');
+  document.getElementById('slotB').innerHTML=`
+    <div class="efB">
+      <div class="efB-head"><span class="material-symbols-rounded">engineering</span><h3>Efetivo na obra</h3>
+        <span class="cnt"><span class="material-symbols-rounded">group</span>${total()} pessoas</span></div>
+      ${rows}
+      <div class="efB-foot"><button class="addf" onclick="openPop()"><span class="material-symbols-rounded">add</span>função</button>${prazoHtml()}</div>
+    </div>
+    ${resHtml()}`;
+}
+function render(){ variant==='A'?renderA():renderB(); }
+function setVar(v){ variant=v; document.getElementById('btA').classList.toggle('on',v==='A'); document.getElementById('btB').classList.toggle('on',v==='B');
+  document.getElementById('slotA').style.display=v==='A'?'block':'none';
+  document.getElementById('slotB').style.display=v==='B'?'block':'none';
+  render(); }
+function inc(i){ crew[i].n++; render(); }
+function dec(i){ crew[i].n=Math.max(0,crew[i].n-1); if(crew[i].n===0) crew.splice(i,1); render(); }
+function rm(i){ crew.splice(i,1); render(); }
+function setDias(v){ dias=Math.max(1,parseInt(v)||1); }
+function openPop(){ const disp=FUNCS.filter(f=>!crew.some(c=>c.f===f.f));
+  document.getElementById('popList').innerHTML=disp.map(f=>`<button class="pi" onclick="addF('${f.f}')"><span class="material-symbols-rounded">${f.ic}</span>${f.f}</button>`).join('')||'<div style="padding:12px;color:#918c9e;font-size:12px">Todas as funções já estão na equipe.</div>';
+  document.getElementById('pop').classList.add('on'); }
+function closePop(){ document.getElementById('pop').classList.remove('on'); }
+function addF(f){ crew.push({f,ic:icOf(f),n:1}); closePop(); render(); }
+render();
+</script>
+</body>
+</html>
