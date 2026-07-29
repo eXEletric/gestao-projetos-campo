@@ -110,6 +110,7 @@ body.viewing .swp,body.viewing .dgrab{pointer-events:none;opacity:.4}
 .cin:focus{outline:none;border-color:var(--pri);background:#fff}
 .cin.num{text-align:right;font-variant-numeric:tabular-nums;width:74px}
 .cin.mk{width:64px}
+.edcad:hover{background:var(--pri-bg);color:var(--pri)}
 .cin.qt{width:60px}
 .cin.un{width:66px;color:var(--tx2)}
 .cin.mc{width:110px;color:var(--tx2)}
@@ -390,10 +391,10 @@ const TIPO_BLK={servico:'servicos',equipamento:'equip',despesa:'despesas',materi
 let CATALOGO={servicos:[],equip:[],despesas:[],materiais:[]};
 function catFor(blk){ return (CATALOGO[blk]&&CATALOGO[blk].length)?CATALOGO[blk]:(CAD[blk]||[]); }
 async function carregarCatalogo(){
-  try{ const {data,error}=await SB.from('orc_catalogo').select('id,tipo,nome,unidade,custo,margem,marca').is('deleted_at',null).eq('ativo',true).order('nome');
+  try{ const {data,error}=await SB.from('orc_catalogo').select('id,tipo,nome,unidade,custo,margem,marca,categoria').is('deleted_at',null).eq('ativo',true).order('nome');
     if(error) throw error;
     const g={servicos:[],equip:[],despesas:[],materiais:[]};
-    (data||[]).forEach(it=>{ const blk=TIPO_BLK[it.tipo]; if(blk) g[blk].push({id:it.id,nome:it.nome,custo:it.custo||0,und:it.unidade||'UND',margem:(it.margem==null?'':it.margem),marca:it.marca||''}); });
+    (data||[]).forEach(it=>{ const blk=TIPO_BLK[it.tipo]; if(blk) g[blk].push({id:it.id,nome:it.nome,custo:it.custo||0,und:it.unidade||'UND',margem:(it.margem==null?'':it.margem),marca:it.marca||'',categoria:it.categoria||''}); });
     CATALOGO=g;
   }catch(e){ console.error('catalogo',e); }
 }
@@ -685,11 +686,12 @@ function renderBlk(cfg){
       const propria=!(r.margem===''||r.margem==null);
       const custoCell = r.usarBase
         ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
-        : `<input class="cin num" value="${esc(r.custoAlt)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)">`;
+        : `<input class="cin num" value="${esc(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)">`;
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
+      const editCad = r.catId?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.catId}')" title="Editar o valor padrão deste item no cadastro"><span class="material-symbols-rounded">edit_note</span></button>`:'';
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
-        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: ${fmt(r.custoBase)}${r.catId?'':' · avulso'}</div></td>
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div></td>
         ${marcaCell}
         <td class="pint">
           <div class="swcell">
@@ -705,7 +707,7 @@ function renderBlk(cfg){
         <td class="r pint"><div class="mkwrap"><input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span>%</span></div><div class="mktag">${propria?'<span class="pd own">própria</span>':'<span class="pd">padrão</span>'}</div></td>
         <td class="r money preco" id="tp_${r.id}">${fmt(preco)}</td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
-        <td class="pint rowact"><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+        <td class="pint rowact">${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
@@ -788,6 +790,7 @@ function refreshRow(blk,r){
   const pe=document.getElementById('tp_'+r.id), le=document.getElementById('tl_'+r.id);
   if(pe){ const cu=custoUn(r), preco=num(r.qtd)*cu*(1+mgOf(r)/100), custo=num(r.qtd)*cu;
     pe.textContent=fmt(preco); if(le)le.textContent=fmt(preco-custo); }
+  const bv=document.getElementById('bsv_'+r.id); if(bv) bv.textContent=fmt(num(r.custoBase));   // legenda "base:" ao vivo
 }
 function togBase(blk,id){
   const r=S[blk].find(x=>x.id===id); if(!r)return;
@@ -832,9 +835,9 @@ function addAvulso(blk){
 }
 /* + Novo: cadastra no catálogo (orc_catalogo) e adiciona na folha */
 const BLK_TIPO={servicos:'servico',equip:'equipamento',despesas:'despesa',materiais:'material'};
-let _ncBlk=null;
+let _ncBlk=null, _ncEdit=null;   // _ncEdit = id do item do catálogo em edição (null = novo)
 function openNovoCat(blk){
-  PICK_TARGET=null; _ncBlk=blk; closePick();
+  PICK_TARGET=null; _ncBlk=blk; _ncEdit=null; closePick();
   const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
   document.getElementById('novoCatTitle').textContent='Novo '+sing+' — salva no catálogo';
   ['nc_nome','nc_custo','nc_margem','nc_cat'].forEach(id=>document.getElementById(id).value='');
@@ -842,7 +845,22 @@ function openNovoCat(blk){
   document.getElementById('novoCatModal').classList.add('open');
   setTimeout(()=>document.getElementById('nc_nome').focus(),40);
 }
-function closeNovoCat(){ document.getElementById('novoCatModal').classList.remove('open'); _ncBlk=null; }
+/* editar o VALOR PADRÃO no cadastro (a partir da linha) — não se edita solto na linha */
+function openEditCat(blk,catId){
+  const c=catFor(blk).find(x=>x.id===catId);
+  if(!c){ alert('Este item é avulso (sem cadastro). Use a chave “alterar” para ajustar o custo só neste orçamento.'); return; }
+  PICK_TARGET=null; _ncBlk=blk; _ncEdit=catId; closePick();
+  const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
+  document.getElementById('novoCatTitle').textContent='Editar '+sing+' no cadastro — valor padrão';
+  document.getElementById('nc_nome').value=c.nome||'';
+  document.getElementById('nc_und').value=c.und||UND_DFLT[blk]||'UND';
+  document.getElementById('nc_custo').value=(c.custo!=null?c.custo:'');
+  document.getElementById('nc_margem').value=(c.margem===''||c.margem==null?'':c.margem);
+  document.getElementById('nc_cat').value=c.categoria||'';
+  document.getElementById('novoCatModal').classList.add('open');
+  setTimeout(()=>document.getElementById('nc_custo').focus(),40);
+}
+function closeNovoCat(){ document.getElementById('novoCatModal').classList.remove('open'); _ncBlk=null; _ncEdit=null; }
 function saveNovoCat(){
   const blk=_ncBlk; if(!blk)return;
   const nome=document.getElementById('nc_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
@@ -850,6 +868,23 @@ function saveNovoCat(){
   const custo=num(document.getElementById('nc_custo').value);
   const mv=document.getElementById('nc_margem').value.trim(); const margem=mv===''?null:num(mv);
   const cat=document.getElementById('nc_cat').value.trim()||null;
+  if(_ncEdit){   // ATUALIZAR item existente do catálogo + refletir nas linhas que o usam
+    const applyLocal=()=>{
+      CATALOGO[blk]=CATALOGO[blk]||[];
+      let ci=CATALOGO[blk].find(x=>x.id===_ncEdit);
+      if(ci){ ci.nome=nome; ci.custo=custo; ci.und=und; ci.margem=(margem==null?'':margem); ci.categoria=cat||''; }
+      else CATALOGO[blk].push({id:_ncEdit,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||''});
+      (S[blk]||[]).forEach(r=>{ if(r.catId===_ncEdit){ r.desc=nome; r.custoBase=custo; if(r.usarBase) r.custoAlt=custo; } });
+      save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closeNovoCat();
+    };
+    if(CLOUD){
+      SB.from('orc_catalogo').update({nome,unidade:und,custo,margem,categoria:cat}).eq('id',_ncEdit).then(({error})=>{
+        if(error){ console.error(error); alert('Erro ao atualizar no catálogo: '+error.message); return; }
+        applyLocal();
+      });
+    } else applyLocal();
+    return;
+  }
   const finish=(id)=>{ CATALOGO[blk]=CATALOGO[blk]||[]; CATALOGO[blk].push({id:id||uid(),nome,custo,und,margem:(margem==null?'':margem),marca:''});
     S[blk].push(rowSvc(nome,1,und,custo,(margem==null?'':margem),(id||null),'')); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closeNovoCat(); };
   if(CLOUD){
