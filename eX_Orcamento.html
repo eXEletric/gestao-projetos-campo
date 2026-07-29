@@ -806,13 +806,15 @@ function renderBlk(cfg){
 
 function toggleModo(blk){
   const next = (S.modos[blk]||'unit')==='unit' ? 'geral' : 'unit';
-  if(next==='geral') S[blk].forEach(r=>{ if(r.geral===undefined||r.geral==='') r.geral=+(lineTot(r,'unit').toFixed(2)); });
+  // ao entrar em Geral, o valor por item reflete o preço REAL do momento (qtd × custo × margem) — evita valor defasado
+  if(next==='geral') S[blk].forEach(r=>{ r.geral=+(linePreco(r,'unit').toFixed(2)); });
   S.modos[blk]=next; save();
   renderBlk(BLKS.find(b=>b.key===blk)); recalc();
 }
 function toggleSoTotal(blk){
   const next=!S.soTotal[blk];
-  if(next && !num(S.blocoTotal[blk])) S.blocoTotal[blk]=+(S[blk].reduce((a,r)=>a+lineTot(r,'geral'),0).toFixed(2)); // parte da soma dos itens
+  // ao ligar "Só o total", a verba = subtotal REAL do momento (não um valor congelado antigo)
+  if(next) S.blocoTotal[blk]=+(S[blk].reduce((a,r)=>a+linePreco(r,'unit'),0).toFixed(2));
   S.soTotal[blk]=next; save();
   renderBlk(BLKS.find(b=>b.key===blk)); recalc();
 }
