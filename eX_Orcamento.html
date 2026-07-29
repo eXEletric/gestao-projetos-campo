@@ -93,7 +93,18 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .tbl th.r,.tbl td.r{text-align:right}
 .tbl td{padding:3px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
 .tbl tr:hover td{background:var(--surf2)}
-.tbl .idx{color:var(--tx3);font-variant-numeric:tabular-nums;width:26px;font-size:11px}
+.tbl .idx{color:var(--tx3);font-variant-numeric:tabular-nums;width:38px;font-size:11px;white-space:nowrap}
+.dgrab{cursor:grab;user-select:none}
+.dgrab:active{cursor:grabbing}
+.dgrab .gg{font-size:15px;color:var(--line2);vertical-align:middle;opacity:.45;transition:opacity .12s}
+.tbl tr:hover .dgrab .gg{opacity:1;color:var(--pri)}
+.dgrab .ixn{vertical-align:middle}
+.tbl tr.dragover td{border-top:2px solid var(--pri);background:var(--pri-bg)}
+.rowact{white-space:nowrap}
+.swp{width:26px;height:26px;border:1px solid transparent;border-radius:6px;background:none;color:var(--tx3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.swp:hover{background:var(--pri-bg);color:var(--pri)}
+.swp .material-symbols-rounded{font-size:16px}
+body.viewing .swp,body.viewing .dgrab{pointer-events:none;opacity:.4}
 .cin{width:100%;border:1px solid transparent;border-radius:6px;background:transparent;font-size:12px;color:var(--tx);padding:5px 6px}
 .cin:hover{border-color:var(--line)}
 .cin:focus{outline:none;border-color:var(--pri);background:#fff}
@@ -217,10 +228,15 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
 /* impressão */
 @media print{
   body{background:#fff}
-  .appbar .mode,.appbar .btn,.addrow,.del,.intbox,.obs textarea{display:none!important}
+  /* mecanismo interno — nunca vai pro cliente */
+  .appbar .mode,.appbar .btn,.addrow,.del,.intbox,.obs textarea,
+  .pint,.bs,.modosw,.oppbar,.fpick,.hintlbl,.dgrab{display:none!important}
   .side{position:static}
   .panel,.summ,.blk{break-inside:avoid}
   .app{padding:0}
+  /* campos viram texto limpo na proposta */
+  .in,.cin,.pin{border:none!important;background:transparent!important;box-shadow:none!important;padding-left:0!important;color:var(--tx)!important}
+  .scroll{overflow:visible!important}
 }
 .blk{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:15px 16px;margin-bottom:16px}
 .scroll{overflow-x:auto}
@@ -628,8 +644,8 @@ function renderBlk(cfg){
       : `<th>#</th><th>Descrição</th><th class="r">Qtd</th><th>Und</th><th class="r"></th><th></th>`;
     body=rows.map((r,i)=>{
       const marca = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
-      return `<tr>
-        <td class="idx">${i+1}</td>
+      return `<tr data-id="${r.id}">
+        <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"></td>
         ${marca}
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
@@ -649,8 +665,8 @@ function renderBlk(cfg){
       : `<th>#</th><th>Descrição</th><th class="r">Qtd</th><th>Und</th><th class="r">Valor (geral)</th><th></th>`;
     body=rows.map((r,i)=>{
       const marca = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
-      return `<tr>
-        <td class="idx">${i+1}</td>
+      return `<tr data-id="${r.id}">
+        <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"></td>
         ${marca}
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
@@ -663,7 +679,7 @@ function renderBlk(cfg){
   } else if(cfg.custo){
     // MODELO base+margem: custo (do cadastro, usar/alterar) → margem → preço e lucro
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
-    cols = `<th>#</th><th>${nomeLbl} (do cadastro)</th>${cfg.mat?'<th>Marca</th>':''}<th>Valor</th><th class="r">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r">Margem</th><th class="r">Preço</th><th class="r">Lucro</th><th></th>`;
+    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem</th><th class="r">Preço</th><th class="r pint">Lucro</th><th class="pint"></th>`;
     body=rows.map((r,i)=>{
       const cu=custoUn(r), preco=num(r.qtd)*cu*(1+mgOf(r)/100), custo=num(r.qtd)*cu, lucro=preco-custo;
       const propria=!(r.margem===''||r.margem==null);
@@ -671,11 +687,11 @@ function renderBlk(cfg){
         ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
         : `<input class="cin num" value="${esc(r.custoAlt)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)">`;
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
-      return `<tr>
-        <td class="idx">${i+1}</td>
+      return `<tr data-id="${r.id}">
+        <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: ${fmt(r.custoBase)}${r.catId?'':' · avulso'}</div></td>
         ${marcaCell}
-        <td>
+        <td class="pint">
           <div class="swcell">
             <div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar">
               <span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span>
@@ -683,13 +699,13 @@ function renderBlk(cfg){
             <span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'usar base':'alterar'}</span>
           </div>
         </td>
-        <td class="r money">${custoCell}</td>
+        <td class="r money pint">${custoCell}</td>
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
         <td><input class="cin un" value="${esc(r.und)}" oninput="upd('${cfg.key}','${r.id}','und',this.value)"></td>
-        <td class="r"><div class="mkwrap"><input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span>%</span></div><div class="mktag">${propria?'<span class="pd own">própria</span>':'<span class="pd">padrão</span>'}</div></td>
+        <td class="r pint"><div class="mkwrap"><input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span>%</span></div><div class="mktag">${propria?'<span class="pd own">própria</span>':'<span class="pd">padrão</span>'}</div></td>
         <td class="r money preco" id="tp_${r.id}">${fmt(preco)}</td>
-        <td class="r money lucro" id="tl_${r.id}">${fmt(lucro)}</td>
-        <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+        <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
+        <td class="pint rowact"><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
@@ -700,8 +716,8 @@ function renderBlk(cfg){
     body=rows.map((r,i)=>{
       const t=lineTot(r,'unit');
       const marca = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
-      return `<tr>
-        <td class="idx">${i+1}</td>
+      return `<tr data-id="${r.id}">
+        <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"></td>
         ${marca}
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
@@ -729,7 +745,7 @@ function renderBlk(cfg){
       </div>
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
-    <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody>${body}</tbody>${foot}</table></div>
+    <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="addrow"><button onclick="${cfg.custo?`openPick('${cfg.key}')`:`addRow('${cfg.key}')`}"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.custo?cfg.sing:(cfg.mat?'material':'item')}</button></div>
     ${obsHtml}`;
 }
@@ -783,24 +799,33 @@ function togBase(blk,id){
 
 /* ---------- picker do cadastro ---------- */
 const UND_DFLT={servicos:'UND',equip:'DIA',despesas:'UND',materiais:'PÇ'};
-function openPick(blk){
+let PICK_TARGET=null;   // id da linha sendo TROCADA (null = adicionar nova)
+function openPick(blk,target){
+  PICK_TARGET = target || null;
   const cfg=BLKS.find(b=>b.key===blk), cad=catFor(blk);
   const list=cad.map(c=>`<button class="pkitem" onclick="pickCad('${blk}','${c.id}')"><span class="pknm">${esc(c.nome)}${c.marca?' — '+esc(c.marca):''}</span><span class="pkcusto">custo ${fmt(c.custo)}/${esc(c.und||UND_DFLT[blk])}</span></button>`).join('');
   const isCat = !cfg.mat && cfg.custo;
   const avAction = (isCat && CLOUD) ? `openNovoCat('${blk}')` : `addAvulso('${blk}')`;
   const avLabel = cfg.mat ? 'Material genérico / avulso (sem preço fixo)' : ('+ Novo '+cfg.sing+((isCat&&CLOUD)?' (cadastrar no catálogo)':' (fora do cadastro)'));
   const avulso = `<button class="pkitem avulso" onclick="${avAction}"><span class="material-symbols-rounded">${(isCat&&CLOUD)?'note_add':'edit_note'}</span>${avLabel}</button>`;
-  document.getElementById('pickTitle').textContent='Adicionar '+cfg.sing;
+  document.getElementById('pickTitle').textContent=(PICK_TARGET?'Trocar '+cfg.sing+' (mantém a posição)':'Adicionar '+cfg.sing);
   document.getElementById('pickBody').innerHTML=(cad.length?list:'<div style="color:var(--tx3);padding:12px;font-size:12px">Cadastro vazio.</div>')+avulso;
   document.getElementById('pickModal').classList.add('open');
 }
-function closePick(){ document.getElementById('pickModal').classList.remove('open'); }
+function closePick(){ document.getElementById('pickModal').classList.remove('open'); PICK_TARGET=null; }
 function pickCad(blk,cid){
   const c=catFor(blk).find(x=>x.id===cid); if(!c)return;
+  if(PICK_TARGET){                                   // TROCA: substitui o item na mesma posição, mantendo a qtd
+    const r=S[blk].find(x=>x.id===PICK_TARGET);
+    if(r){ r.desc=c.nome; r.catId=c.id; r.custoBase=c.custo; r.usarBase=true; r.custoAlt=c.custo;
+           r.und=c.und||UND_DFLT[blk]; r.margem=(c.margem===undefined?'':c.margem); if('marca' in r) r.marca=c.marca||''; }
+    save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick(); return;
+  }
   S[blk].push(rowSvc(c.nome,1,c.und||UND_DFLT[blk],c.custo,(c.margem===undefined?'':c.margem),c.id,c.marca||''));
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
 }
 function addAvulso(blk){
+  PICK_TARGET=null;
   const r=rowSvc("",1,UND_DFLT[blk],0,'',null,''); r.usarBase=false; // avulso: sem base do cadastro → custo editável
   S[blk].push(r);
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
@@ -809,7 +834,7 @@ function addAvulso(blk){
 const BLK_TIPO={servicos:'servico',equip:'equipamento',despesas:'despesa',materiais:'material'};
 let _ncBlk=null;
 function openNovoCat(blk){
-  _ncBlk=blk; closePick();
+  PICK_TARGET=null; _ncBlk=blk; closePick();
   const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
   document.getElementById('novoCatTitle').textContent='Novo '+sing+' — salva no catálogo';
   ['nc_nome','nc_custo','nc_margem','nc_cat'].forEach(id=>document.getElementById(id).value='');
@@ -873,6 +898,27 @@ function pickHP(kind,id){
 function updObs(blk,val){ if(!S.obs)S.obs={}; S.obs[blk]=val; save(); }
 function addRow(blk){ const dflt=blk==='equip'?'DIA':blk==='materiais'?'PÇ':'UND'; S[blk].push(row("",1,dflt,0)); save(); renderBlk(BLKS.find(b=>b.key===blk)); }
 function delRow(blk,id){ S[blk]=S[blk].filter(x=>x.id!==id); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
+
+/* ---------- arrastar para reordenar (dentro do mesmo bloco) ---------- */
+let DRAG=null;
+function dragStart(e,blk,id){ DRAG={blk,id}; try{e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',id);}catch(_){}}
+function dragOver(e){ if(!DRAG)return; e.preventDefault(); try{e.dataTransfer.dropEffect='move';}catch(_){}
+  const tr=e.target.closest&&e.target.closest('tr');
+  document.querySelectorAll('.tbl tr.dragover').forEach(x=>x.classList.remove('dragover'));
+  if(tr&&tr.dataset.id&&tr.dataset.id!==DRAG.id) tr.classList.add('dragover');
+}
+function dragDrop(e,blk){
+  document.querySelectorAll('.tbl tr.dragover').forEach(x=>x.classList.remove('dragover'));
+  if(!DRAG||DRAG.blk!==blk){ DRAG=null; return; }   // só reordena dentro do mesmo bloco
+  e.preventDefault();
+  const arr=S[blk]; const from=arr.findIndex(x=>x.id===DRAG.id);
+  const tr=e.target.closest&&e.target.closest('tr');
+  let to = (tr&&tr.dataset.id)?arr.findIndex(x=>x.id===tr.dataset.id):arr.length-1;
+  DRAG=null;
+  if(from<0||to<0||from===to) return;
+  const [it]=arr.splice(from,1); arr.splice(to,0,it);
+  save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc();
+}
 
 /* campos meta (inputs data-m) e fechamento (data-f) */
 function bindFields(){
