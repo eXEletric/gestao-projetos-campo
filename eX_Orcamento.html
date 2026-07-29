@@ -131,6 +131,15 @@ select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 .obs textarea{flex:1;border:1px solid transparent;border-radius:6px;background:transparent;font-size:11px;color:var(--tx3);resize:vertical;font-family:inherit;padding:2px 4px;line-height:1.4}
 .obs textarea:hover{border-color:var(--line)}
 .obs textarea:focus{outline:none;border-color:var(--pri);background:#fff;color:var(--tx)}
+.obs{flex-direction:column;gap:5px}
+.obshd{display:flex;align-items:center;gap:6px;width:100%}
+.obshd .obslbl{font-weight:600;color:var(--tx2)}
+.obshd .material-symbols-rounded{font-size:15px;color:var(--amber)}
+.obstog{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;border:1px solid var(--line2);background:var(--surf);border-radius:20px;padding:3px 9px;cursor:pointer;color:var(--tx3)}
+.obstog .material-symbols-rounded{font-size:14px;color:inherit}
+.obstog.on{background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}
+.obs.obs-off .obshd .obslbl{text-decoration:line-through;opacity:.7}
+.obsprint{display:none;font-size:11px;color:var(--tx2);line-height:1.4}
 
 /* ===== RESUMO (direita, sticky) ===== */
 .side{position:sticky;top:16px}
@@ -241,7 +250,8 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
   /* mecanismo interno — nunca vai pro cliente */
   .appbar .mode,.appbar .btn,.addrow,.del,.intbox,.obs textarea,
   .pint,.bs,.modosw,.oppbar,.fpick,.hintlbl,.dgrab,
-  .sub,#cloudb,.noprint,.ln.zeroprint{display:none!important}
+  .sub,#cloudb,.noprint,.ln.zeroprint,.obs.obs-off{display:none!important}
+  .obsprint{display:block!important}
   .side{position:static}
   .panel,.summ,.blk{break-inside:avoid}
   .app{padding:0}
@@ -695,7 +705,8 @@ function sanitize(){
   if(!S.soTotal)S.soTotal={servicos:false,equip:false,despesas:false,materiais:false};
   if(!S.blocoTotal)S.blocoTotal={servicos:0,equip:0,despesas:0,materiais:0};
   if(!S.blocoOn)S.blocoOn={servicos:true,equip:true,despesas:true,materiais:true};
-  ['servicos','equip','despesas','materiais'].forEach(k=>{ if(S.blocoOn[k]===undefined)S.blocoOn[k]=true; });
+  if(!S.obsOn)S.obsOn={servicos:true,equip:true,despesas:true,materiais:true};
+  ['servicos','equip','despesas','materiais'].forEach(k=>{ if(S.blocoOn[k]===undefined)S.blocoOn[k]=true; if(S.obsOn[k]===undefined)S.obsOn[k]=true; });
   if(S.margemBase===undefined)S.margemBase=30;
   if(!S.status)S.status='rascunho';
 }
@@ -707,7 +718,7 @@ function resetDemo(){ if(OPP&&CLOUD){ if(confirm("Recarregar este orçamento do 
 /* ---------- blocos ---------- */
 const BLKS=[
   {key:"servicos",titulo:"Serviços",icon:"build",obs:true,mat:false,custo:true,soCad:true,sing:"serviço"},
-  {key:"equip",titulo:"Locação de equipamentos",icon:"construction",obs:false,mat:false,custo:true,soCad:true,sing:"equipamento"},
+  {key:"equip",titulo:"Locação de equipamentos",icon:"construction",obs:true,mat:false,custo:true,soCad:true,sing:"equipamento"},
   {key:"despesas",titulo:"Deslocamento & Despesas",icon:"local_shipping",obs:true,mat:false,custo:true,soCad:true,sing:"despesa"},
   {key:"materiais",titulo:"Materiais empregados",icon:"inventory_2",obs:true,mat:true,custo:true,soCad:false,sing:"material"}
 ];
@@ -791,7 +802,14 @@ function renderBlk(cfg){
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
   }
-  const obsHtml = cfg.obs?`<div class="obs"><span class="material-symbols-rounded">info</span><textarea rows="2" oninput="updObs('${cfg.key}',this.value)" placeholder="Observações do bloco…">${esc((S.obs&&S.obs[cfg.key])||'')}</textarea></div>`:'';
+  const obsTxt=(S.obs&&S.obs[cfg.key])||'';
+  const obsShow=!(S.obsOn&&S.obsOn[cfg.key]===false);
+  const obsHtml = cfg.obs?`<div class="obs${obsShow?'':' obs-off'}">
+      <div class="obshd noprint"><span class="material-symbols-rounded">info</span><span class="obslbl">Observações do bloco</span>
+        <button class="obstog ${obsShow?'on':'off'}" onclick="toggleObs('${cfg.key}')" title="${obsShow?'Aparece na proposta — clique para ocultar':'Oculta na proposta — clique para mostrar'}"><span class="material-symbols-rounded">${obsShow?'visibility':'visibility_off'}</span>${obsShow?'na proposta':'oculta'}</button></div>
+      <textarea class="noprint" rows="2" oninput="updObs('${cfg.key}',this.value)" placeholder="Observações do bloco… (aparecem na proposta se ligado)">${esc(obsTxt)}</textarea>
+      <div class="obsprint" id="obsp_${cfg.key}">${obsTxt?('Obs.: '+esc(obsTxt)):''}</div>
+    </div>`:'';
   document.getElementById('blk_'+cfg.key).innerHTML=`
     <div class="blkhead">
       <span class="ic"><span class="material-symbols-rounded">${cfg.icon}</span></span>
@@ -992,7 +1010,8 @@ function pickHP(kind,id){
   else if(kind==='resp'){ const u=CAD.usuarios.find(x=>x.id===id); if(u){ setM('respNome',u.nome); setM('respContato',(u.fone||'')+((u.fone&&u.email)?' · ':'')+(u.email||'')); } }
   save(); closePick();
 }
-function updObs(blk,val){ if(!S.obs)S.obs={}; S.obs[blk]=val; save(); }
+function updObs(blk,val){ if(!S.obs)S.obs={}; S.obs[blk]=val; const p=document.getElementById('obsp_'+blk); if(p)p.textContent=val?('Obs.: '+val):''; save(); }
+function toggleObs(blk){ if(!S.obsOn)S.obsOn={}; const on=S.obsOn[blk]!==false; S.obsOn[blk]=!on; save(); renderBlk(BLKS.find(b=>b.key===blk)); }
 function delRow(blk,id){ S[blk]=S[blk].filter(x=>x.id!==id); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
 
 /* ---------- arrastar para reordenar (dentro do mesmo bloco) ---------- */
