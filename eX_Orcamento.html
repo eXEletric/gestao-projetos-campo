@@ -322,7 +322,14 @@ const STORE=OPP?('ex_orc_v6__'+OPP):'ex_orc_v6';
 const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
 const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
-let CLOUD=false, EMPRESA_ID=null, ORC_ID=null, _saveT=null;
+let CLOUD=false, EMPRESA_ID=null, ORC_ID=null, _saveT=null, USER_NOME='', USER_EMAIL='';
+function hoje(){ const t=new Date(); const p=n=>String(n).padStart(2,'0'); return t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate()); }
+function maisDias(iso,d){ const t=new Date(iso+'T00:00:00'); t.setDate(t.getDate()+d); const p=n=>String(n).padStart(2,'0'); return t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate()); }
+function stampNovo(){ // orçamento novo: data de hoje + criador (usuário logado)
+  const d=hoje(); setM('dataISO',d); setM('validadeISO',maisDias(d,30));
+  if(USER_NOME){ setM('respNome',USER_NOME); if(USER_EMAIL)setM('respContato',USER_EMAIL); }
+  S.criadoPor=USER_NOME||S.respNome||''; S.criadoEm=d;
+}
 function cloudMsg(t){ let e=document.getElementById('cloudb'); if(!e){ e=document.createElement('span'); e.id='cloudb'; e.style.cssText='font-size:11px;color:var(--tx3)'; const bar=document.querySelector('.appbar'); if(bar)bar.appendChild(e); else return; } e.textContent=t; }
 function pushOrc(){
   if(!(OPP&&CLOUD))return;
@@ -341,7 +348,7 @@ async function carregarOrc(){
   const {data,error}=await SB.from('orcamentos').select('*').eq('oportunidade_id',OPP).is('deleted_at',null).order('created_at',{ascending:false}).limit(1);
   if(error) throw error;
   if(data&&data.length){ ORC_ID=data[0].id; if(data[0].dados) S=data[0].dados; else S=demo(); }
-  else { ORC_ID=null; S=demo(); }
+  else { ORC_ID=null; S=demo(); stampNovo(); }
   sanitize();
 }
 async function initOrc(){
@@ -349,6 +356,7 @@ async function initOrc(){
     const {data:{session}}=await SB.auth.getSession();
     if(session){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
+      try{ const p=await SB.from('perfis').select('nome,email').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; } }catch(_){}
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
     } else { cloudMsg('modo local (sem login)'); }
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
@@ -679,7 +687,8 @@ const UND_DFLT={servicos:'UND',equip:'DIA',despesas:'UND',materiais:'PÇ'};
 function openPick(blk){
   const cfg=BLKS.find(b=>b.key===blk), cad=CAD[blk]||[];
   const list=cad.map(c=>`<button class="pkitem" onclick="pickCad('${blk}','${c.id}')"><span class="pknm">${esc(c.nome)}${c.marca?' — '+esc(c.marca):''}</span><span class="pkcusto">custo ${fmt(c.custo)}/${esc(c.und||UND_DFLT[blk])}</span></button>`).join('');
-  const avulso = cfg.soCad ? '' : `<button class="pkitem avulso" onclick="addAvulso('${blk}')"><span class="material-symbols-rounded">edit_note</span>Material genérico / avulso (sem preço fixo)</button>`;
+  const avLabel = cfg.mat ? 'Material genérico / avulso (sem preço fixo)' : ('+ Novo '+cfg.sing+' (fora do cadastro)');
+  const avulso = `<button class="pkitem avulso" onclick="addAvulso('${blk}')"><span class="material-symbols-rounded">edit_note</span>${avLabel}</button>`;
   document.getElementById('pickTitle').textContent='Adicionar '+cfg.sing;
   document.getElementById('pickBody').innerHTML=(cad.length?list:'<div style="color:var(--tx3);padding:12px;font-size:12px">Cadastro vazio.</div>')+avulso;
   document.getElementById('pickModal').classList.add('open');
@@ -787,6 +796,7 @@ function applyPrefill(){
   try{ const r=localStorage.getItem('ex_orc_prefill'); if(!r)return; localStorage.removeItem('ex_orc_prefill');
     const p=JSON.parse(r);
     ['cliNome','cliContato','cliFone','cliEmail','finNome','finEnd','solTitulo','solDesc'].forEach(k=>{ if(p[k]!=null&&p[k]!=='') setM(k,p[k]); });
+    stampNovo(); // data de hoje + criador logado
     save();
   }catch(e){}
 }
