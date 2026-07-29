@@ -410,7 +410,7 @@ let curTipo = "ALTURA";
 let saveTimer;
 
 window.eXsst = {
-  setContext(ctx){ CTX = ctx || DEMO_CTX; capPool(); renderDynamic(); applyContext(true); renderCtxBar(); scheduleSave(); },
+  async setContext(ctx){ CTX = ctx || DEMO_CTX; dirty = new Set(); capPool(); renderDynamic(); applyContext(false); renderCtxBar(); await loadStored(); },
   getData(){ return collect(); },
   showDoc(t){ showDoc(t); }
 };
@@ -684,13 +684,16 @@ function applyStore(d){
   renderCtxBar();
 }
 
-async function load(){
-  capPool(); renderDynamic(); applyContext(false); renderCtxBar();
+async function loadStored(){
   try{
     const r=await ST.get(keyFor());
-    if(r&&r.value){ applyStore(JSON.parse(r.value)); ind("✓ carregado"); }
-    else ind("novo documento");
-  }catch(e){ ind("novo documento"); }
+    if(r&&r.value){ applyStore(JSON.parse(r.value)); ind("✓ carregado"); return true; }
+    ind("novo documento"); return false;
+  }catch(e){ ind("novo documento"); return false; }
+}
+async function load(){
+  capPool(); renderDynamic(); applyContext(false); renderCtxBar();
+  await loadStored();
 }
 
 function renderCtxBar(){
@@ -743,7 +746,15 @@ function bindAll(){
 
 window.addEventListener('beforeprint',()=>document.querySelectorAll('.doc.active textarea').forEach(autoGrow));
 
+/* ---------- ponte com o app (eX Controller) via postMessage ---------- */
+window.addEventListener('message',function(e){
+  var d=e.data||{};
+  if(d && d.type==='eXsst:setContext' && d.ctx){ window.eXsst.setContext(d.ctx); }
+});
+function sstAvisarPronto(){ try{ if(window.parent && window.parent!==window) window.parent.postMessage({type:'eXsst:ready'},'*'); }catch(e){} }
+
 load();
+sstAvisarPronto();
 </script>
 </body>
 </html>
