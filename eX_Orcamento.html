@@ -191,6 +191,9 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .swlbl{font-size:10.5px;font-weight:600}
 .swlbl.on{color:var(--green)}.swlbl.off{color:var(--amber)}
 .mkwrap{display:flex;align-items:center;gap:4px;justify-content:flex-end}
+.rsw{display:inline-flex;align-items:center;gap:3px;justify-content:flex-end}
+.rsw .rsl{color:var(--tx3);font-size:11px;font-weight:600}
+.rsw .cin.num{width:66px}
 .mktag{text-align:right;margin-top:3px}
 .pd{font-size:9px;color:var(--pri);background:var(--pri-bg);padding:2px 6px;border-radius:9px;white-space:nowrap}
 .pd.own{background:#faeeda;color:#854f0b}
@@ -696,7 +699,7 @@ function renderBlk(cfg){
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?7:6}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar” abaixo.</td></tr>`;
     foot=`<tfoot><tr class="ftot">
       <td></td><td class="ftl" colspan="${cfg.mat?4:3}">Total do bloco (verba)</td>
-      <td class="r"><input class="cin num" value="${moneyVal(S.blocoTotal[cfg.key])}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlurBloco(this,'${cfg.key}')" oninput="updBloco('${cfg.key}',this.value)" title="Digite o valor total; sobrescreve a soma dos itens"></td>
+      <td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(S.blocoTotal[cfg.key])}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlurBloco(this,'${cfg.key}')" oninput="updBloco('${cfg.key}',this.value)" title="Digite o valor total; sobrescreve a soma dos itens"></span></td>
       <td></td></tr></tfoot>`;
   } else if(modo==='geral'){
     cols = cfg.mat
@@ -710,7 +713,7 @@ function renderBlk(cfg){
         ${marca}
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
         <td>${undSelect(cfg.key,r.id,r.und)}</td>
-        <td class="r"><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></td>
+        <td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
         <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
@@ -724,7 +727,7 @@ function renderBlk(cfg){
       const propria=!(r.margem===''||r.margem==null);
       const custoCell = r.usarBase
         ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
-        : `<input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)">`;
+        : `<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)"></span>`;
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
       const editCad = r.catId?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.catId}')" title="Editar o valor padrão deste item no cadastro"><span class="material-symbols-rounded">edit_note</span></button>`:'';
       return `<tr data-id="${r.id}">
@@ -762,7 +765,7 @@ function renderBlk(cfg){
         ${marca}
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
         <td>${undSelect(cfg.key,r.id,r.und)}</td>
-        <td class="r"><input class="cin num" value="${moneyVal(r.vunit)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','vunit')" oninput="upd('${cfg.key}','${r.id}','vunit',this.value)"></td>
+        <td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.vunit)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','vunit')" oninput="upd('${cfg.key}','${r.id}','vunit',this.value)"></span></td>
         <td class="r"><input class="cin num mk" value="${esc(r.markup)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','markup',this.value)"></td>
         <td class="tot ${t?'':'z'}" id="tt_${r.id}">${fmt(t)}</td>
         <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
