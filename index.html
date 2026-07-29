@@ -446,6 +446,8 @@ body.papel-tecnico .adm-only{display:none !important}
         <div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6a5f95;padding:11px 15px 4px">Cadastros</div>
         <button class="sb-i" onclick="navView('clientes',this)"><span class="ic"><span class="msr">contacts</span></span><span class="lb">Clientes</span></button>
         <button class="sb-i" onclick="navView('catservico',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Serviços</span></button>
+        <button class="sb-i" onclick="navView('catequip',this)"><span class="ic"><span class="msr">construction</span></span><span class="lb">Equipamentos</span></button>
+        <button class="sb-i" onclick="navView('catdespesa',this)"><span class="ic"><span class="msr">local_shipping</span></span><span class="lb">Deslocamento &amp; Despesas</span></button>
       </div>
 
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">business_center</span></span><span class="lb">Gestão</span><span class="gchev">▶</span></div>
@@ -624,6 +626,14 @@ body.papel-tecnico .adm-only{display:none !important}
 
   <div class="view" id="v-catservico">
     <iframe id="catserv-frame" title="Catálogo de serviços" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
+  </div>
+
+  <div class="view" id="v-catequip">
+    <iframe id="catequip-frame" title="Catálogo de equipamentos" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
+  </div>
+
+  <div class="view" id="v-catdespesa">
+    <iframe id="catdespesa-frame" title="Catálogo de deslocamento &amp; despesas" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
   </div>
 
   <!-- PERFIL DA EMPRESA (página, só leitura) -->
@@ -2725,7 +2735,7 @@ function aplicarModoNav(){
 }
 function irLista(t){ S.emProjeto=false; save(); aplicarModoNav(); tab(t,document.getElementById(t==='modelos'?'nav-modelos-lbl':'nav-lista-lbl')); }
 function voltarProjetos(){ irLista('proj'); }
-function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='catservico')carregarCatServico();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();
+function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='catservico')carregarCatServico();if(t==='catequip')carregarCatEquip();if(t==='catdespesa')carregarCatDespesa();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();
   const cadBtn=document.getElementById('cad-btn');
   if(cadBtn&&!['colab','cat','mat','acessos','cfg'].includes(t)){cadBtn.classList.remove('active');cadBtn.innerHTML='Cadastros <span style="font-size:10px">▾</span>';document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.remove('active'));}
 }
@@ -2810,6 +2820,8 @@ function carregarOrcamento(){ const f=document.getElementById('orc-frame'); if(f
 function carregarClientes(){ const f=document.getElementById('cli-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_CRM.html?m=clientes'); }
 function carregarFunil(){ const f=document.getElementById('fun-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_CRM.html?m=funil'); }
 function carregarCatServico(){ const f=document.getElementById('catserv-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Catalogo.html?tipo=servico'); }
+function carregarCatEquip(){ const f=document.getElementById('catequip-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Catalogo.html?tipo=equipamento'); }
+function carregarCatDespesa(){ const f=document.getElementById('catdespesa-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Catalogo.html?tipo=despesa'); }
 function navObras(el){ setSbActive(el); _obranav(true); irLista('proj'); }
 async function navEmpresa(el){ navView('empresa',el); await _hubEnsureEmpresa(); renderEmpresaView(); }
 function renderEmpresaView(){
