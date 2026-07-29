@@ -141,6 +141,19 @@ select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 .obstog.on{background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}
 .obs.obs-off .obshd .obslbl{text-decoration:line-through;opacity:.7}
 .obsprint{display:none;font-size:11px;color:var(--tx2);line-height:1.4}
+/* chave de visibilidade (padrão eX: chavinha + olhinho aberto/fechado) */
+.vischave{display:inline-flex;align-items:center;gap:7px;border:none;background:transparent;cursor:pointer;padding:2px;font:600 11px inherit;color:var(--tx3)}
+.vsw{position:relative;width:34px;height:18px;border-radius:10px;flex-shrink:0;background:linear-gradient(#bbbeb7,#9a9d95);box-shadow:inset 0 1px 3px rgba(0,0,0,.34);transition:.16s}
+.vischave.on .vsw{background:linear-gradient(#2fcf88,#0f8f5b)}
+.vkb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:linear-gradient(#fff,#e2e2dd);box-shadow:0 1px 2px rgba(0,0,0,.4);transition:.16s}
+.vischave.on .vkb{left:18px}
+.vischave .eye{font-size:16px;color:var(--tx3);transition:.16s}
+.vischave.on .eye{color:var(--green)}
+.vischave .vtxt{white-space:nowrap}
+.vischave.on .vtxt{color:var(--green)}
+/* descrição geral */
+.descarea{width:100%;min-height:64px;resize:vertical;font-family:inherit;line-height:1.45}
+.descprint{display:none;font-size:12px;color:var(--tx2);line-height:1.5;white-space:pre-wrap}
 
 /* ===== RESUMO (direita, sticky) ===== */
 .side{position:sticky;top:16px}
@@ -251,8 +264,8 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
   /* mecanismo interno — nunca vai pro cliente */
   .appbar .mode,.appbar .btn,.addrow,.del,.intbox,.obs textarea,
   .pint,.bs,.modosw,.oppbar,.fpick,.hintlbl,.dgrab,
-  .sub,#cloudb,.noprint,.ln.zeroprint,.obs.obs-off{display:none!important}
-  .obsprint{display:block!important}
+  .sub,#cloudb,.noprint,.ln.zeroprint,.obs.obs-off,.panel.hideprint{display:none!important}
+  .obsprint,.descprint{display:block!important}
   .side{position:static}
   .panel,.summ,.blk{break-inside:avoid}
   .app{padding:0}
@@ -332,6 +345,13 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
           <div class="f full"><label>Loja / unidade <button class="fpick" onclick="openHP('final')"><span class="material-symbols-rounded">list</span>do CRM</button></label><input class="in" data-m="finNome" placeholder="Escolha a loja…"></div>
           <div class="f full"><label>Endereço</label><input class="in" data-m="finEnd"></div>
         </div>
+      </div>
+
+      <!-- DESCRIÇÃO GERAL (opcional) -->
+      <div class="panel" id="descGeralPanel">
+        <div class="phead"><span class="material-symbols-rounded">notes</span><h2>Descrição geral do orçamento</h2><span id="descGeralTog" class="noprint" style="margin-left:auto"></span></div>
+        <textarea class="in descarea noprint" id="descGeralTa" oninput="updDescGeral(this.value)" placeholder="Texto de apresentação / descrições gerais do orçamento (opcional). Aparece no topo da proposta quando a chave estiver na proposta."></textarea>
+        <div class="descprint" id="descGeralPrint"></div>
       </div>
 
       <!-- BLOCOS DE ITENS -->
@@ -615,6 +635,7 @@ function demo(){
     respNome:"André Camilo", respContato:"62 99392-2999 · aocinnet@gmail.com",
     equipe:"1 Eletrotécnico + 1 Eletricista + Operacional",
     prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho',
+    descGeral:"Proposta para execução dos serviços de automação de iluminação e substituição do controlador do ar-condicionado central, conforme escopo detalhado abaixo. Valores e condições conforme apresentado nesta cotação.", descGeralOn:true,
     modos:{servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'},
     soTotal:{servicos:false,equip:false,despesas:false,materiais:false},
     blocoTotal:{servicos:0,equip:0,despesas:0,materiais:0},
@@ -708,6 +729,8 @@ function sanitize(){
   if(!S.blocoOn)S.blocoOn={servicos:true,equip:true,despesas:true,materiais:true};
   if(!S.obsOn)S.obsOn={servicos:true,equip:true,despesas:true,materiais:true};
   ['servicos','equip','despesas','materiais'].forEach(k=>{ if(S.blocoOn[k]===undefined)S.blocoOn[k]=true; if(S.obsOn[k]===undefined)S.obsOn[k]=true; });
+  if(S.descGeral===undefined)S.descGeral='';
+  if(S.descGeralOn===undefined)S.descGeralOn=true;
   if(S.margemBase===undefined)S.margemBase=30;
   if(!S.status)S.status='rascunho';
 }
@@ -807,7 +830,7 @@ function renderBlk(cfg){
   const obsShow=!(S.obsOn&&S.obsOn[cfg.key]===false);
   const obsHtml = cfg.obs?`<div class="obs${obsShow?'':' obs-off'}">
       <div class="obshd noprint"><span class="material-symbols-rounded">info</span><span class="obslbl">Observações do bloco</span>
-        <button class="obstog ${obsShow?'on':'off'}" onclick="toggleObs('${cfg.key}')" title="${obsShow?'Aparece na proposta — clique para ocultar':'Oculta na proposta — clique para mostrar'}"><span class="material-symbols-rounded">${obsShow?'visibility':'visibility_off'}</span>${obsShow?'na proposta':'oculta'}</button></div>
+        <span style="margin-left:auto">${visChave(obsShow,"toggleObs('"+cfg.key+"')")}</span></div>
       <textarea class="noprint" rows="2" oninput="updObs('${cfg.key}',this.value)" placeholder="Observações do bloco… (aparecem na proposta se ligado)">${esc(obsTxt)}</textarea>
       <div class="obsprint" id="obsp_${cfg.key}">${obsTxt?('Obs.: '+esc(obsTxt)):''}</div>
     </div>`:'';
@@ -1013,6 +1036,20 @@ function pickHP(kind,id){
 }
 function updObs(blk,val){ if(!S.obs)S.obs={}; S.obs[blk]=val; const p=document.getElementById('obsp_'+blk); if(p)p.textContent=val?('Obs.: '+val):''; save(); }
 function toggleObs(blk){ if(!S.obsOn)S.obsOn={}; const on=S.obsOn[blk]!==false; S.obsOn[blk]=!on; save(); renderBlk(BLKS.find(b=>b.key===blk)); }
+/* chave de visibilidade padrão (chavinha + olhinho aberto/fechado) */
+function visChave(on,onclickStr){
+  return `<button class="vischave ${on?'on':'off'}" onclick="${onclickStr}" title="${on?'Visível na proposta — clique para ocultar':'Oculto na proposta — clique para mostrar'}"><span class="vsw"><span class="vkb"></span></span><span class="material-symbols-rounded eye">${on?'visibility':'visibility_off'}</span><span class="vtxt">${on?'na proposta':'oculto'}</span></button>`;
+}
+/* descrição geral do orçamento (opcional) */
+function renderDescGeral(){
+  const on=S.descGeralOn!==false;
+  const ta=document.getElementById('descGeralTa'); if(ta) ta.value=S.descGeral||'';
+  const tog=document.getElementById('descGeralTog'); if(tog) tog.innerHTML=visChave(on,"toggleDescGeral()");
+  const p=document.getElementById('descGeralPrint'); if(p) p.textContent=S.descGeral||'';
+  const panel=document.getElementById('descGeralPanel'); if(panel) panel.classList.toggle('hideprint',!on);
+}
+function toggleDescGeral(){ const on=S.descGeralOn!==false; S.descGeralOn=!on; save(); renderDescGeral(); }
+function updDescGeral(v){ S.descGeral=v; const p=document.getElementById('descGeralPrint'); if(p)p.textContent=v; save(); }
 function delRow(blk,id){ S[blk]=S[blk].filter(x=>x.id!==id); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
 
 /* ---------- arrastar para reordenar (dentro do mesmo bloco) ---------- */
@@ -1139,7 +1176,7 @@ function applyBlocoVis(){
 function toggleBloco(k){ S.blocoOn[k]=!blocoAtivo(k); save(); applyBlocoVis(); renderBlocosBar(); recalc(); }
 
 /* ---------- boot ---------- */
-function boot(){ BLKS.forEach(renderBlk); renderBlocosBar(); applyBlocoVis(); bindFields(); applyPrefill(); recalc(); renderBanner(); }
+function boot(){ BLKS.forEach(renderBlk); renderBlocosBar(); applyBlocoVis(); renderDescGeral(); bindFields(); applyPrefill(); recalc(); renderBanner(); }
 initOrc();
 </script>
 </body>
