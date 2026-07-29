@@ -332,6 +332,25 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
   </div>
 </div>
 
+<div class="modal-bg" id="novoCatModal">
+  <div class="modal">
+    <div class="mh"><span class="material-symbols-rounded">note_add</span><h3 id="novoCatTitle">Novo serviço</h3><button class="x" onclick="closeNovoCat()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div style="margin-bottom:12px"><label style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Nome</label><input id="nc_nome" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Unidade</label><input id="nc_und" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+        <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Custo (R$)</label><input id="nc_custo" inputmode="decimal" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+        <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Margem %</label><input id="nc_margem" inputmode="decimal" placeholder="padrão" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+      </div>
+      <div style="margin-top:12px"><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Categoria (opcional)</label><input id="nc_cat" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+    </div>
+    <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="closeNovoCat()">Cancelar</button>
+      <button class="btn" style="background:var(--pri);color:#fff;border-color:var(--pri)" onclick="saveNovoCat()"><span class="material-symbols-rounded">check</span>Salvar no catálogo</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 "use strict";
@@ -605,38 +624,42 @@ function renderBlk(cfg){
   if(modo==='geral' && soT){
     // Geral + só o total: itens sem valor, total do bloco editável (verba fechada)
     cols = cfg.mat
-      ? `<th>#</th><th>Material</th><th>Marca</th><th class="r"></th><th></th>`
-      : `<th>#</th><th>Descrição</th><th class="r"></th><th></th>`;
+      ? `<th>#</th><th>Material</th><th>Marca</th><th class="r">Qtd</th><th>Und</th><th class="r"></th><th></th>`
+      : `<th>#</th><th>Descrição</th><th class="r">Qtd</th><th>Und</th><th class="r"></th><th></th>`;
     body=rows.map((r,i)=>{
       const marca = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
       return `<tr>
         <td class="idx">${i+1}</td>
         <td><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"></td>
         ${marca}
+        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
+        <td><input class="cin un" value="${esc(r.und)}" oninput="upd('${cfg.key}','${r.id}','und',this.value)"></td>
         <td class="r"><span class="incl">incluso</span></td>
         <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
-    if(!rows.length) body=`<tr><td colspan="${cfg.mat?5:4}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar” abaixo.</td></tr>`;
+    if(!rows.length) body=`<tr><td colspan="${cfg.mat?7:6}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar” abaixo.</td></tr>`;
     foot=`<tfoot><tr class="ftot">
-      <td></td><td class="ftl" ${cfg.mat?'colspan="2"':''}>Total do bloco (verba)</td>
+      <td></td><td class="ftl" colspan="${cfg.mat?4:3}">Total do bloco (verba)</td>
       <td class="r"><input class="cin num" value="${esc(S.blocoTotal[cfg.key]??'')}" inputmode="decimal" oninput="updBloco('${cfg.key}',this.value)" title="Digite o valor total; sobrescreve a soma dos itens"></td>
       <td></td></tr></tfoot>`;
   } else if(modo==='geral'){
     cols = cfg.mat
-      ? `<th>#</th><th>Material</th><th>Marca</th><th class="r">Valor (geral)</th><th></th>`
-      : `<th>#</th><th>Descrição</th><th class="r">Valor (geral)</th><th></th>`;
+      ? `<th>#</th><th>Material</th><th>Marca</th><th class="r">Qtd</th><th>Und</th><th class="r">Valor (geral)</th><th></th>`
+      : `<th>#</th><th>Descrição</th><th class="r">Qtd</th><th>Und</th><th class="r">Valor (geral)</th><th></th>`;
     body=rows.map((r,i)=>{
       const marca = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
       return `<tr>
         <td class="idx">${i+1}</td>
         <td><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"></td>
         ${marca}
+        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
+        <td><input class="cin un" value="${esc(r.und)}" oninput="upd('${cfg.key}','${r.id}','und',this.value)"></td>
         <td class="r"><input class="cin num" value="${esc(r.geral??'')}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></td>
         <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
-    if(!rows.length) body=`<tr><td colspan="${cfg.mat?5:4}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar” abaixo.</td></tr>`;
+    if(!rows.length) body=`<tr><td colspan="${cfg.mat?7:6}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar” abaixo.</td></tr>`;
   } else if(cfg.custo){
     // MODELO base+margem: custo (do cadastro, usar/alterar) → margem → preço e lucro
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
@@ -763,8 +786,10 @@ const UND_DFLT={servicos:'UND',equip:'DIA',despesas:'UND',materiais:'PÇ'};
 function openPick(blk){
   const cfg=BLKS.find(b=>b.key===blk), cad=catFor(blk);
   const list=cad.map(c=>`<button class="pkitem" onclick="pickCad('${blk}','${c.id}')"><span class="pknm">${esc(c.nome)}${c.marca?' — '+esc(c.marca):''}</span><span class="pkcusto">custo ${fmt(c.custo)}/${esc(c.und||UND_DFLT[blk])}</span></button>`).join('');
-  const avLabel = cfg.mat ? 'Material genérico / avulso (sem preço fixo)' : ('+ Novo '+cfg.sing+' (fora do cadastro)');
-  const avulso = `<button class="pkitem avulso" onclick="addAvulso('${blk}')"><span class="material-symbols-rounded">edit_note</span>${avLabel}</button>`;
+  const isCat = !cfg.mat && cfg.custo;
+  const avAction = (isCat && CLOUD) ? `openNovoCat('${blk}')` : `addAvulso('${blk}')`;
+  const avLabel = cfg.mat ? 'Material genérico / avulso (sem preço fixo)' : ('+ Novo '+cfg.sing+((isCat&&CLOUD)?' (cadastrar no catálogo)':' (fora do cadastro)'));
+  const avulso = `<button class="pkitem avulso" onclick="${avAction}"><span class="material-symbols-rounded">${(isCat&&CLOUD)?'note_add':'edit_note'}</span>${avLabel}</button>`;
   document.getElementById('pickTitle').textContent='Adicionar '+cfg.sing;
   document.getElementById('pickBody').innerHTML=(cad.length?list:'<div style="color:var(--tx3);padding:12px;font-size:12px">Cadastro vazio.</div>')+avulso;
   document.getElementById('pickModal').classList.add('open');
@@ -779,6 +804,35 @@ function addAvulso(blk){
   const r=rowSvc("",1,UND_DFLT[blk],0,'',null,''); r.usarBase=false; // avulso: sem base do cadastro → custo editável
   S[blk].push(r);
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
+}
+/* + Novo: cadastra no catálogo (orc_catalogo) e adiciona na folha */
+const BLK_TIPO={servicos:'servico',equip:'equipamento',despesas:'despesa',materiais:'material'};
+let _ncBlk=null;
+function openNovoCat(blk){
+  _ncBlk=blk; closePick();
+  const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
+  document.getElementById('novoCatTitle').textContent='Novo '+sing+' — salva no catálogo';
+  ['nc_nome','nc_custo','nc_margem','nc_cat'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('nc_und').value=(UND_DFLT[blk]||'UND');
+  document.getElementById('novoCatModal').classList.add('open');
+  setTimeout(()=>document.getElementById('nc_nome').focus(),40);
+}
+function closeNovoCat(){ document.getElementById('novoCatModal').classList.remove('open'); _ncBlk=null; }
+function saveNovoCat(){
+  const blk=_ncBlk; if(!blk)return;
+  const nome=document.getElementById('nc_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
+  const und=document.getElementById('nc_und').value.trim()||'UND';
+  const custo=num(document.getElementById('nc_custo').value);
+  const mv=document.getElementById('nc_margem').value.trim(); const margem=mv===''?null:num(mv);
+  const cat=document.getElementById('nc_cat').value.trim()||null;
+  const finish=(id)=>{ CATALOGO[blk]=CATALOGO[blk]||[]; CATALOGO[blk].push({id:id||uid(),nome,custo,und,margem:(margem==null?'':margem),marca:''});
+    S[blk].push(rowSvc(nome,1,und,custo,(margem==null?'':margem),(id||null),'')); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closeNovoCat(); };
+  if(CLOUD){
+    SB.from('orc_catalogo').insert({empresa_id:EMPRESA_ID,tipo:BLK_TIPO[blk],nome,unidade:und,custo,margem,categoria:cat,ativo:true}).select('id').then(({data,error})=>{
+      if(error){ console.error(error); alert('Erro ao salvar no catálogo: '+error.message); return; }
+      finish(data&&data[0]&&data[0].id);
+    });
+  } else { finish(null); }
 }
 
 /* ---------- picker do cabeçalho (solução, cliente, responsável) ---------- */
