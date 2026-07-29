@@ -296,23 +296,30 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
           <div class="f noprint"><label>ID externo <span class="hintlbl">opcional · ex: Pipefy</span></label><input class="in mono" data-m="idpipe" placeholder="—"></div>
           <div class="f"><label>Data</label><input class="in" type="date" data-m="dataISO"></div>
           <div class="f"><label>Validade <span class="valwarn noprint" id="valWarn"></span></label><input class="in" type="date" data-m="validadeISO" onchange="checkValidade()"></div>
+          <div class="f"><label>Responsável pela proposta <button class="fpick" onclick="openHP('resp')"><span class="material-symbols-rounded">list</span>usuários</button></label><input class="in" data-m="respNome" placeholder="Escolha o responsável…"></div>
+          <div class="f"><label>Fone / e-mail do responsável</label><input class="in" data-m="respContato"></div>
           <div class="f full"><label>Solução <button class="fpick" onclick="openHP('solucao')"><span class="material-symbols-rounded">list</span>escolher do cadastro</button></label><input class="in" data-m="solTitulo" placeholder="Escolha uma solução…"></div>
           <div class="f full"><label>Descrição do escopo <span class="hintlbl">vem da solução · editável</span></label><input class="in" data-m="solDesc"></div>
         </div>
       </div>
 
-      <!-- CLIENTE -->
+      <!-- CLIENTE CONTRATANTE -->
       <div class="panel">
-        <div class="phead"><span class="material-symbols-rounded">business</span><h2>Cliente & destino</h2></div>
+        <div class="phead"><span class="material-symbols-rounded">business</span><h2>Cliente contratante</h2></div>
         <div class="fgrid">
-          <div class="f"><label>Cliente (contratante) <button class="fpick" onclick="openHP('contratante')"><span class="material-symbols-rounded">list</span>do CRM</button></label><input class="in" data-m="cliNome" placeholder="Escolha o cliente…"></div>
+          <div class="f full"><label>Empresa / contratante <button class="fpick" onclick="openHP('contratante')"><span class="material-symbols-rounded">list</span>do CRM</button></label><input class="in" data-m="cliNome" placeholder="Escolha o cliente…"></div>
           <div class="f"><label>Contato</label><input class="in" data-m="cliContato"></div>
           <div class="f"><label>Fone</label><input class="in" data-m="cliFone"></div>
-          <div class="f"><label>E-mail</label><input class="in" data-m="cliEmail"></div>
-          <div class="f"><label>Cliente final / loja <button class="fpick" onclick="openHP('final')"><span class="material-symbols-rounded">list</span>do CRM</button></label><input class="in" data-m="finNome" placeholder="Escolha a loja…"></div>
-          <div class="f"><label>Endereço</label><input class="in" data-m="finEnd"></div>
-          <div class="f"><label>Responsável eX <button class="fpick" onclick="openHP('resp')"><span class="material-symbols-rounded">list</span>usuários</button></label><input class="in" data-m="respNome" placeholder="Escolha o responsável…"></div>
-          <div class="f"><label>Fone / e-mail eX</label><input class="in" data-m="respContato"></div>
+          <div class="f full"><label>E-mail</label><input class="in" data-m="cliEmail"></div>
+        </div>
+      </div>
+
+      <!-- CLIENTE FINAL / DESTINO -->
+      <div class="panel">
+        <div class="phead"><span class="material-symbols-rounded">storefront</span><h2>Cliente final / destino</h2></div>
+        <div class="fgrid">
+          <div class="f full"><label>Loja / unidade <button class="fpick" onclick="openHP('final')"><span class="material-symbols-rounded">list</span>do CRM</button></label><input class="in" data-m="finNome" placeholder="Escolha a loja…"></div>
+          <div class="f full"><label>Endereço</label><input class="in" data-m="finEnd"></div>
         </div>
       </div>
 
