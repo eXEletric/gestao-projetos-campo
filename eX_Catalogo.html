@@ -83,8 +83,7 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
         <div class="fg"><label class="fl">Custo (R$)</label><input class="fi" id="f_custo" inputmode="decimal"></div>
         <div class="fg"><label class="fl">Margem %</label><input class="fi" id="f_margem" inputmode="decimal" placeholder="padrão"><div class="hint">vazio = margem base do orçamento</div></div>
       </div>
-      <div class="fg"><label class="fl">Categoria</label><input class="fi" id="f_categoria" list="catlist" placeholder="escolha ou digite…">
-        <datalist id="catlist"><option>Automação</option><option>Elétrica</option><option>Instalação</option><option>Comando</option><option>Refrigeração</option><option>Infraestrutura</option><option>Supervisório</option><option>Comunicação / BUS</option><option>Mão de obra</option><option>Locação</option><option>Deslocamento</option><option>Material</option></datalist></div>
+      <div class="fg"><label class="fl">Categoria</label><select class="fi" id="f_categoria" onchange="onCategSel(this.value)"></select></div>
       <div class="fg"><label class="fl">Detalhes</label><textarea class="fi" id="f_detalhes" rows="3" placeholder="Descrição do serviço, o que está incluso…" style="resize:vertical"></textarea></div>
       <div class="fg" id="fg_marca" style="display:none"><label class="fl">Marca</label><input class="fi" id="f_marca"></div>
     </div>
@@ -104,7 +103,7 @@ const LBL={servico:['Serviços','build','serviço'],equipamento:['Equipamentos',
 const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
 const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
-let ITENS=[], EDIT=null, CLOUD=false, EMPRESA_ID=null;
+let ITENS=[], EDIT=null, CLOUD=false, EMPRESA_ID=null, CATEGS=[], _prevCateg='';
 const uid=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);});
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const num=v=>{if(typeof v==='number')return isNaN(v)?0:v;let s=String(v||'').trim();if(!s)return 0;if(s.indexOf(',')>-1)s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?0:n;};
@@ -128,7 +127,7 @@ async function init(){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
       const {data,error}=await SB.from('orc_catalogo').select('*').eq('tipo',TIPO).is('deleted_at',null).order('nome');
       if(error) throw error;
-      ITENS=data||[]; CLOUD=true; cloudMsg('nuvem ✓');
+      ITENS=data||[]; await carregarCategs(); CLOUD=true; cloudMsg('nuvem ✓');
     } else cloudMsg('faça login');
   }catch(e){ console.error(e); cloudMsg('erro nuvem'); } }
   render();
@@ -151,6 +150,28 @@ function render(){
     </div></td>
   </tr>`).join('');
 }
+async function carregarCategs(){
+  try{ const {data,error}=await SB.from('orc_categorias').select('id,nome').eq('tipo',TIPO).eq('ativo',true).is('deleted_at',null).order('ordem'); if(!error) CATEGS=data||[]; }catch(e){ console.error(e); }
+}
+function populaCategSelect(current){
+  const sel=document.getElementById('f_categoria');
+  let o='<option value="">— sem categoria —</option>';
+  CATEGS.forEach(c=>{ o+=`<option value="${esc(c.nome)}">${esc(c.nome)}</option>`; });
+  if(current && !CATEGS.some(c=>c.nome===current)) o+=`<option value="${esc(current)}">${esc(current)} (fora da lista)</option>`;
+  o+='<option value="__new">+ Nova categoria…</option>';
+  sel.innerHTML=o; sel.value=current||''; _prevCateg=current||'';
+}
+function onCategSel(val){
+  if(val==='__new'){
+    const nm=prompt('Nova categoria:');
+    if(nm&&nm.trim()){ const nome=nm.trim();
+      SB.from('orc_categorias').insert({empresa_id:EMPRESA_ID,tipo:TIPO,nome,ordem:CATEGS.length+1}).select('id').then(({data,error})=>{
+        if(error){ alert('Erro ao criar categoria: '+error.message); populaCategSelect(_prevCateg); return; }
+        CATEGS.push({id:data&&data[0]&&data[0].id,nome}); populaCategSelect(nome);
+      });
+    } else populaCategSelect(_prevCateg);
+  } else _prevCateg=val;
+}
 function openItem(id){
   if(!CLOUD){ alert('Entre com login pra cadastrar.'); return; }
   EDIT=id||null;
@@ -162,7 +183,7 @@ function openItem(id){
   uSel.value=uv;
   document.getElementById('f_custo').value=it?(it.custo??''):'';
   document.getElementById('f_margem').value=(it&&it.margem!=null)?it.margem:'';
-  document.getElementById('f_categoria').value=it?(it.categoria||''):'';
+  populaCategSelect(it?(it.categoria||''):'');
   document.getElementById('f_detalhes').value=it?(it.detalhes||''):'';
   document.getElementById('f_marca').value=it?(it.marca||''):'';
   document.getElementById('mDel').style.display=id?'inline-flex':'none';
@@ -177,7 +198,7 @@ function saveItem(){
     unidade:document.getElementById('f_unidade').value.trim()||'UND',
     custo:num(document.getElementById('f_custo').value),
     margem:mv===''?null:num(mv),
-    categoria:document.getElementById('f_categoria').value.trim()||null,
+    categoria:(function(){const c=document.getElementById('f_categoria').value;return (c&&c!=='__new')?c:null;})(),
     detalhes:document.getElementById('f_detalhes').value.trim()||null,
     marca:(TIPO==='material')?(document.getElementById('f_marca').value.trim()||null):null };
   if(EDIT){ row.id=EDIT; } else { row.id=uid(); }
