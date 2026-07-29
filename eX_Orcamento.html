@@ -113,6 +113,9 @@ body.viewing .swp,body.viewing .dgrab{pointer-events:none;opacity:.4}
 .edcad:hover{background:var(--pri-bg);color:var(--pri)}
 .cin.qt{width:60px}
 .cin.un{width:66px;color:var(--tx2)}
+select.cin.un{width:auto;min-width:58px;max-width:88px;cursor:pointer;padding:5px 4px;background:transparent}
+select.cin.un:hover{border-color:var(--line)}
+select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 .cin.mc{width:110px;color:var(--tx2)}
 .tot{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--tx);white-space:nowrap;padding-right:6px}
 .tot.z{color:var(--tx3);font-weight:400}
@@ -240,6 +243,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
   .app{padding:0}
   /* campos viram texto limpo na proposta */
   .in,.cin,.pin{border:none!important;background:transparent!important;box-shadow:none!important;padding-left:0!important;color:var(--tx)!important}
+  select.cin{-webkit-appearance:none;appearance:none;text-align:center}
   .scroll{overflow:visible!important}
 }
 .blk{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:15px 16px;margin-bottom:16px}
@@ -358,8 +362,8 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
     <div class="mb">
       <div style="margin-bottom:12px"><label style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Nome</label><input id="nc_nome" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
-        <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Unidade</label><input id="nc_und" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
-        <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Custo (R$)</label><input id="nc_custo" inputmode="decimal" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+        <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Unidade</label><select id="nc_und" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></select></div>
+        <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Custo (R$)</label><input id="nc_custo" inputmode="decimal" onfocus="this.select()" onblur="this.value=this.value.trim()===''?'':fmtN(this.value)" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
         <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Margem %</label><input id="nc_margem" inputmode="decimal" placeholder="padrão" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
       </div>
       <div style="margin-top:12px"><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Categoria (opcional)</label><input id="nc_cat" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
@@ -489,7 +493,21 @@ const num=v=>{
   const n=parseFloat(s);return isNaN(n)?0:n;
 };
 const fmt=n=>'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtN=v=>num(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});  // só o número, padrão financeiro
+const moneyVal=v=>(v===''||v==null)?'':fmtN(v);                                                   // valor inicial do campo (formatado)
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+/* unidades — lista suspensa (evita digitação livre) */
+const UNIDADES=['UND','PÇ','CJ','KIT','M','M²','M³','KM','KG','L','H','DIA','MÊS','VB','PT','LOTE'];
+function undSelect(blk,id,val){
+  const cur=String(val||'').trim(); const opts=UNIDADES.slice(); if(cur && opts.indexOf(cur)<0) opts.unshift(cur);
+  return `<select class="cin un" onchange="upd('${blk}','${id}','und',this.value)">`
+    + opts.map(u=>`<option value="${esc(u)}"${u===cur?' selected':''}>${esc(u)}</option>`).join('') + `</select>`;
+}
+function fillUnd(sel,val){ if(!sel)return; const cur=String(val||'').trim(); const opts=UNIDADES.slice(); if(cur && opts.indexOf(cur)<0) opts.unshift(cur);
+  sel.innerHTML=opts.map(u=>`<option value="${esc(u)}"${u===cur?' selected':''}>${esc(u)}</option>`).join(''); sel.value=cur||opts[0]; }
+/* formata o campo de valor ao sair (padrão financeiro) */
+function moneyBlur(el,blk,id,field){ const v=el.value.trim(); el.value=(v===''?'':fmtN(v)); upd(blk,id,field,el.value); }
+function moneyBlurBloco(el,blk){ const v=el.value.trim(); el.value=(v===''?'':fmtN(v)); updBloco(blk,el.value); }
 // modelo base+margem (custo): custo usado, margem herdada/própria
 const isCusto=r=>r.custoBase!==undefined;
 const custoUn=r=>num(r.usarBase?r.custoBase:r.custoAlt);
@@ -653,7 +671,7 @@ function renderBlk(cfg){
         <td><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"></td>
         ${marca}
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
-        <td><input class="cin un" value="${esc(r.und)}" oninput="upd('${cfg.key}','${r.id}','und',this.value)"></td>
+        <td>${undSelect(cfg.key,r.id,r.und)}</td>
         <td class="r"><span class="incl">incluso</span></td>
         <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
@@ -661,7 +679,7 @@ function renderBlk(cfg){
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?7:6}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar” abaixo.</td></tr>`;
     foot=`<tfoot><tr class="ftot">
       <td></td><td class="ftl" colspan="${cfg.mat?4:3}">Total do bloco (verba)</td>
-      <td class="r"><input class="cin num" value="${esc(S.blocoTotal[cfg.key]??'')}" inputmode="decimal" oninput="updBloco('${cfg.key}',this.value)" title="Digite o valor total; sobrescreve a soma dos itens"></td>
+      <td class="r"><input class="cin num" value="${moneyVal(S.blocoTotal[cfg.key])}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlurBloco(this,'${cfg.key}')" oninput="updBloco('${cfg.key}',this.value)" title="Digite o valor total; sobrescreve a soma dos itens"></td>
       <td></td></tr></tfoot>`;
   } else if(modo==='geral'){
     cols = cfg.mat
@@ -674,8 +692,8 @@ function renderBlk(cfg){
         <td><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"></td>
         ${marca}
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
-        <td><input class="cin un" value="${esc(r.und)}" oninput="upd('${cfg.key}','${r.id}','und',this.value)"></td>
-        <td class="r"><input class="cin num" value="${esc(r.geral??'')}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></td>
+        <td>${undSelect(cfg.key,r.id,r.und)}</td>
+        <td class="r"><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></td>
         <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
@@ -689,7 +707,7 @@ function renderBlk(cfg){
       const propria=!(r.margem===''||r.margem==null);
       const custoCell = r.usarBase
         ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
-        : `<input class="cin num" value="${esc(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)">`;
+        : `<input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)">`;
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
       const editCad = r.catId?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.catId}')" title="Editar o valor padrão deste item no cadastro"><span class="material-symbols-rounded">edit_note</span></button>`:'';
       return `<tr data-id="${r.id}">
@@ -706,7 +724,7 @@ function renderBlk(cfg){
         </td>
         <td class="r money pint">${custoCell}</td>
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
-        <td><input class="cin un" value="${esc(r.und)}" oninput="upd('${cfg.key}','${r.id}','und',this.value)"></td>
+        <td>${undSelect(cfg.key,r.id,r.und)}</td>
         <td class="r pint"><div class="mkwrap"><input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span>%</span></div><div class="mktag">${propria?'<span class="pd own">própria</span>':'<span class="pd">padrão</span>'}</div></td>
         <td class="r money preco" id="tp_${r.id}">${fmt(preco)}</td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
@@ -726,8 +744,8 @@ function renderBlk(cfg){
         <td><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"></td>
         ${marca}
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
-        <td><input class="cin un" value="${esc(r.und)}" oninput="upd('${cfg.key}','${r.id}','und',this.value)"></td>
-        <td class="r"><input class="cin num" value="${esc(r.vunit)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','vunit',this.value)"></td>
+        <td>${undSelect(cfg.key,r.id,r.und)}</td>
+        <td class="r"><input class="cin num" value="${moneyVal(r.vunit)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','vunit')" oninput="upd('${cfg.key}','${r.id}','vunit',this.value)"></td>
         <td class="r"><input class="cin num mk" value="${esc(r.markup)}" inputmode="decimal" oninput="upd('${cfg.key}','${r.id}','markup',this.value)"></td>
         <td class="tot ${t?'':'z'}" id="tt_${r.id}">${fmt(t)}</td>
         <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
@@ -844,7 +862,7 @@ function openNovoCat(blk){
   const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
   document.getElementById('novoCatTitle').textContent='Novo '+sing+' — salva no catálogo';
   ['nc_nome','nc_custo','nc_margem','nc_cat'].forEach(id=>document.getElementById(id).value='');
-  document.getElementById('nc_und').value=(UND_DFLT[blk]||'UND');
+  fillUnd(document.getElementById('nc_und'),(UND_DFLT[blk]||'UND'));
   document.getElementById('novoCatModal').classList.add('open');
   setTimeout(()=>document.getElementById('nc_nome').focus(),40);
 }
@@ -856,8 +874,8 @@ function openEditCat(blk,catId){
   const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
   document.getElementById('novoCatTitle').textContent='Editar '+sing+' no cadastro — valor padrão';
   document.getElementById('nc_nome').value=c.nome||'';
-  document.getElementById('nc_und').value=c.und||UND_DFLT[blk]||'UND';
-  document.getElementById('nc_custo').value=(c.custo!=null?c.custo:'');
+  fillUnd(document.getElementById('nc_und'), c.und||UND_DFLT[blk]||'UND');
+  document.getElementById('nc_custo').value=(c.custo!=null?moneyVal(c.custo):'');
   document.getElementById('nc_margem').value=(c.margem===''||c.margem==null?'':c.margem);
   document.getElementById('nc_cat').value=c.categoria||'';
   document.getElementById('novoCatModal').classList.add('open');
