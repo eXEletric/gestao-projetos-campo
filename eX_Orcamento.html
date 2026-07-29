@@ -366,7 +366,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
         <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Custo (R$)</label><input id="nc_custo" inputmode="decimal" onfocus="this.select()" onblur="this.value=this.value.trim()===''?'':fmtN(this.value)" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
         <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Margem %</label><input id="nc_margem" inputmode="decimal" placeholder="padrão" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
       </div>
-      <div style="margin-top:12px"><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Categoria (opcional)</label><input id="nc_cat" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+      <div style="margin-top:12px"><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Categoria (opcional)</label><select id="nc_cat" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></select></div>
     </div>
     <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px">
       <button class="btn" onclick="closeNovoCat()">Cancelar</button>
@@ -405,6 +405,23 @@ async function carregarCatalogo(){
     CATALOGO=g;
   }catch(e){ console.error('catalogo',e); }
 }
+let CATEGORIAS={servicos:[],equip:[],despesas:[],materiais:[]};
+async function carregarCategorias(){
+  try{ const {data,error}=await SB.from('orc_categorias').select('nome,tipo,ordem').eq('ativo',true).is('deleted_at',null).order('ordem');
+    if(error) throw error;
+    const g={servicos:[],equip:[],despesas:[],materiais:[]};
+    (data||[]).forEach(c=>{ const blk=TIPO_BLK[c.tipo]; if(blk) g[blk].push(c.nome); });
+    CATEGORIAS=g;
+  }catch(e){ console.error('categorias',e); }
+}
+function fillCateg(sel,blk,current){
+  if(!sel)return; current=String(current||'').trim();
+  const list=(CATEGORIAS[blk]||[]).slice();
+  let o='<option value="">— sem categoria —</option>';
+  list.forEach(n=>{ o+=`<option value="${esc(n)}"${n===current?' selected':''}>${esc(n)}</option>`; });
+  if(current && list.indexOf(current)<0) o+=`<option value="${esc(current)}" selected>${esc(current)} (fora da lista)</option>`;
+  sel.innerHTML=o; sel.value=current;
+}
 function pushOrc(){
   if(!(OPP&&CLOUD))return;
   const p={ empresa_id:EMPRESA_ID, oportunidade_id:OPP, numero:S.numero||null, status:S.status||'rascunho',
@@ -432,7 +449,7 @@ async function initOrc(){
     if(session){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
       try{ const p=await SB.from('perfis').select('nome,email').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; } }catch(_){}
-      await carregarCatalogo();
+      await carregarCatalogo(); await carregarCategorias();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
     } else { cloudMsg('modo local (sem login)'); }
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
@@ -861,8 +878,9 @@ function openNovoCat(blk){
   PICK_TARGET=null; _ncBlk=blk; _ncEdit=null; closePick();
   const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
   document.getElementById('novoCatTitle').textContent='Novo '+sing+' — salva no catálogo';
-  ['nc_nome','nc_custo','nc_margem','nc_cat'].forEach(id=>document.getElementById(id).value='');
+  ['nc_nome','nc_custo','nc_margem'].forEach(id=>document.getElementById(id).value='');
   fillUnd(document.getElementById('nc_und'),(UND_DFLT[blk]||'UND'));
+  fillCateg(document.getElementById('nc_cat'),blk,'');
   document.getElementById('novoCatModal').classList.add('open');
   setTimeout(()=>document.getElementById('nc_nome').focus(),40);
 }
@@ -877,7 +895,7 @@ function openEditCat(blk,catId){
   fillUnd(document.getElementById('nc_und'), c.und||UND_DFLT[blk]||'UND');
   document.getElementById('nc_custo').value=(c.custo!=null?moneyVal(c.custo):'');
   document.getElementById('nc_margem').value=(c.margem===''||c.margem==null?'':c.margem);
-  document.getElementById('nc_cat').value=c.categoria||'';
+  fillCateg(document.getElementById('nc_cat'),blk,c.categoria||'');
   document.getElementById('novoCatModal').classList.add('open');
   setTimeout(()=>document.getElementById('nc_custo').focus(),40);
 }
