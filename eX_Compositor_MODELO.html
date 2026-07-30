@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>eX · Compositor de serviço — modelo v2</title>
+<title>eX · Compositor de serviço — modelo v3</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap" rel="stylesheet">
@@ -12,61 +12,65 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.45}
 .material-symbols-rounded{font-family:'Material Symbols Rounded';line-height:1;vertical-align:middle}
-.wrap{max-width:1040px;margin:0 auto;padding:22px 18px 70px}
-.top{display:flex;align-items:center;gap:11px;margin-bottom:4px}
+.wrap{max-width:1040px;margin:0 auto;padding:20px 18px 70px}
+.top{display:flex;align-items:center;gap:11px;margin-bottom:4px;flex-wrap:wrap}
 .logo{font-weight:800;font-size:22px;color:var(--pri)}.logo b{color:var(--tx)}
 .ttl{font-size:13px;font-weight:700;color:var(--tx2);display:flex;align-items:center;gap:6px}.ttl .material-symbols-rounded{color:var(--pri);font-size:20px}
-.sub{font-size:12.5px;color:var(--tx2);margin:4px 0 16px;max-width:860px}
-.svcname{display:flex;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin-bottom:14px}
+.perfil{margin-left:auto;display:inline-flex;align-items:center;gap:8px;font-size:11.5px;font-weight:600;color:var(--tx2)}
+.perfil .seg{display:inline-flex;background:var(--surf2);border-radius:8px;padding:3px}
+.perfil .seg button{border:none;background:transparent;font:600 11px 'Inter';color:var(--tx2);padding:4px 10px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.perfil .seg button.on{background:var(--pri);color:#fff}
+.perfil .seg .material-symbols-rounded{font-size:14px}
+.sub{font-size:12.5px;color:var(--tx2);margin:6px 0 16px;max-width:860px}
+.svcname{display:flex;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin-bottom:16px}
 .svcname .material-symbols-rounded{color:var(--pri);font-size:22px}
 .svcname input{flex:1;border:none;font:700 16px 'Inter';color:var(--tx);background:transparent}.svcname input:focus{outline:none}
-/* barra de config (chaves) */
-.cfgbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:16px}
-.cfg{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--tx2);font-weight:600}
-.cfg .seg{display:inline-flex;background:var(--surf2);border-radius:9px;padding:3px}
-.cfg .seg button{border:none;background:transparent;font:600 11.5px 'Inter';color:var(--tx2);padding:5px 11px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
-.cfg .seg button.on{background:var(--surf);color:var(--pri);box-shadow:0 1px 2px rgba(0,0,0,.1)}
-.cfg .seg .material-symbols-rounded{font-size:15px}
-.vsw{position:relative;width:34px;height:18px;border-radius:10px;background:linear-gradient(#bbbeb7,#9a9d95);box-shadow:inset 0 1px 3px rgba(0,0,0,.34);cursor:pointer;flex-shrink:0}
-.vsw.on{background:linear-gradient(#2fcf88,#0f8f5b)}
-.vkb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:linear-gradient(#fff,#e2e2dd);box-shadow:0 1px 2px rgba(0,0,0,.4);transition:.15s}
-.vsw.on .vkb{left:18px}
-.divv{width:1px;height:22px;background:var(--line)}
 .cols{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start}
 @media(max-width:840px){.cols{grid-template-columns:1fr}}
 .card{background:var(--surf);border:1px solid var(--line);border-radius:13px;margin-bottom:16px;overflow:hidden}
 .chd{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,#f6f4ff,#fbfaff)}
 .chd .material-symbols-rounded{color:var(--pri);font-size:19px}.chd h3{margin:0;font-size:12.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)}
-.chd .sm{margin-left:auto;font-size:11px;color:var(--tx3)}
+.chd .rgt{margin-left:auto;display:inline-flex;align-items:center;gap:8px}
+.seg{display:inline-flex;background:var(--surf2);border-radius:8px;padding:3px}
+.seg button{border:none;background:transparent;font:600 11px 'Inter';color:var(--tx2);padding:5px 10px;border-radius:6px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.seg button.on{background:var(--surf);color:var(--pri);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.seg .material-symbols-rounded{font-size:14px;color:inherit}
+.vsw{position:relative;width:34px;height:18px;border-radius:10px;background:linear-gradient(#bbbeb7,#9a9d95);box-shadow:inset 0 1px 3px rgba(0,0,0,.34);cursor:pointer;flex-shrink:0}
+.vsw.on{background:linear-gradient(#2fcf88,#0f8f5b)}
+.vkb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:linear-gradient(#fff,#e2e2dd);box-shadow:0 1px 2px rgba(0,0,0,.4);transition:.15s}.vsw.on .vkb{left:18px}
+.swlbl{font-size:11px;font-weight:600;color:var(--tx3)}.vsw.on ~ .swlbl,.on+.swlbl{color:var(--green)}
 table{width:100%;border-collapse:collapse;font-size:13px}
 th{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:700;text-align:left;padding:8px 8px 6px}th.r,td.r{text-align:right}th.c,td.c{text-align:center}
-td{padding:5px 8px;border-top:1px solid var(--line);vertical-align:middle}tr:first-child td{border-top:none}
+td{padding:5px 6px;border-top:1px solid var(--line);vertical-align:middle}tr:first-child td{border-top:none}
 select,input.cin{border:1px solid transparent;border-radius:7px;background:transparent;font:inherit;font-size:13px;color:var(--tx);padding:5px 6px;width:100%}
 select:hover,input.cin:hover{border-color:var(--line2)}select:focus,input.cin:focus{outline:none;border-color:var(--pri);background:#fff}
-input.cin.num{text-align:center;width:56px;font-variant-numeric:tabular-nums}
+input.cin.num{text-align:center;width:52px;font-variant-numeric:tabular-nums}input.cin.num.pct{width:46px}
+.profcell{display:flex;align-items:center;gap:2px}.profcell select{flex:1}
+.edit{border:none;background:none;color:var(--tx3);cursor:pointer;padding:4px;border-radius:6px;flex-shrink:0}.edit:hover{background:var(--pri-bg);color:var(--pri)}.edit .material-symbols-rounded{font-size:16px}
 .money{font-variant-numeric:tabular-nums;white-space:nowrap}
 .del{border:none;background:none;color:var(--tx3);cursor:pointer;padding:4px;border-radius:6px}.del:hover{background:#fbecec;color:var(--red)}
 .addr{padding:9px 12px;border-top:1px solid var(--line)}
 .addr button{border:1px dashed var(--line2);background:transparent;color:var(--pri);font:600 12px 'Inter';border-radius:20px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}.addr button:hover{background:var(--pri-bg);border-color:var(--pri)}
-/* dificuldade geral + legenda */
+/* sub-bloco dentro do card */
+.subblk{border-top:1px solid var(--line);background:var(--surf2)}
+.subhd{display:flex;align-items:center;gap:7px;padding:9px 14px 4px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--tx2)}
+.subhd .material-symbols-rounded{font-size:15px;color:var(--pri)}
+.subhd .sm{margin-left:auto;font-weight:500;text-transform:none;letter-spacing:0;font-size:11px;color:var(--tx3)}
 /* abrangência */
-.rd{display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid var(--line2);vertical-align:middle}
+.abr td{border-color:#e6e2f5}
+.rd{display:inline-block;width:15px;height:15px;border-radius:50%;border:2px solid var(--line2);vertical-align:middle}
 .rd.on{border-color:var(--pri);background:radial-gradient(var(--pri) 42%,#fff 46%)}
 tr.selabr{background:var(--pri-bg)}
-tr.selabr td{border-color:#ded3fb}
-input.cin.num.pct{width:48px}
-.abrBody tr{cursor:pointer}
-.difgeral{padding:11px 14px;background:var(--surf2);display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--tx2)}
+.difgeral{padding:9px 14px 12px;display:flex;align-items:center;gap:9px;flex-wrap:wrap;font-size:12.5px;color:var(--tx2)}
 .difgeral select{width:auto;min-width:150px;border-color:var(--line2);background:#fff;font-weight:600}
-.legenda{margin-top:12px}
+.matoff{padding:16px 14px;color:var(--tx3);font-size:12.5px;text-align:center;font-style:italic}
 .legrow{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:9px;font-size:12px}
 .legrow .badge{flex-shrink:0;width:64px;text-align:center;font-weight:800;font-size:11px;padding:3px 6px;border-radius:7px}
 .lv0 .badge{background:#e7f6ee;color:#0f8f5b}.lv1 .badge{background:#fdf3e0;color:#c47f0b}.lv2 .badge{background:#fdeee0;color:#b5570b}.lv3 .badge{background:#fbe6e4;color:#c0392b}
 .legrow .lx b{color:var(--tx)}.legrow .mult{margin-left:auto;color:var(--tx3);font-weight:700;white-space:nowrap}
 /* resultado */
 .res{position:sticky;top:14px}
-.rescap{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;border-radius:13px 13px 0 0;padding:15px 17px}
-.rescap .l{font-size:11px;text-transform:uppercase;letter-spacing:.05em;opacity:.85}.rescap .v{font-size:27px;font-weight:800;margin-top:3px}
+.rescap{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;border-radius:13px 13px 0 0;padding:15px 17px}.rescap .l{font-size:11px;text-transform:uppercase;letter-spacing:.05em;opacity:.85}.rescap .v{font-size:27px;font-weight:800;margin-top:3px}
 .resbody{background:var(--surf);border:1px solid var(--line);border-top:none;border-radius:0 0 13px 13px;padding:13px 16px}
 .ln{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;border-bottom:1px dashed var(--line)}.ln:last-child{border-bottom:none}
 .ln .lb{color:var(--tx2);display:flex;align-items:center;gap:6px}.ln .lb .material-symbols-rounded{font-size:16px;color:var(--tx3)}
@@ -76,53 +80,60 @@ input.cin.num.pct{width:48px}
 .tempo .row{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}.tempo input{width:44px;border:1px solid var(--line2);border-radius:6px;padding:4px;text-align:center;font:700 13px 'Inter';background:#fff}
 .dias{font-size:19px;font-weight:800;color:var(--pri)}
 .note{font-size:12px;color:var(--tx2);background:var(--surf);border:1px solid var(--line);border-left:3px solid var(--pri);border-radius:9px;padding:12px 15px;margin-top:14px}.note b{color:var(--tx)}
-.pop{position:fixed;inset:0;background:rgba(20,12,45,.28);display:none;align-items:center;justify-content:center;z-index:9;padding:20px}.pop.on{display:flex}
-.pop .cardp{background:var(--surf);border-radius:14px;padding:8px;max-width:440px;width:100%;max-height:70vh;overflow:auto;box-shadow:0 20px 50px rgba(20,10,50,.3)}
-.pop .ph{font-size:12px;font-weight:700;color:var(--tx2);padding:9px 11px 6px}
-.pop .pi{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;padding:9px 11px;border-radius:9px;cursor:pointer;font:500 13px 'Inter';color:var(--tx);text-align:left}.pop .pi:hover{background:var(--pri-bg)}.pop .pi .pv{margin-left:auto;color:var(--tx3);font-size:12px}
+/* modal / pop */
+.pop{position:fixed;inset:0;background:rgba(20,12,45,.32);display:none;align-items:center;justify-content:center;z-index:9;padding:20px}.pop.on{display:flex}
+.modal{background:var(--surf);border-radius:15px;max-width:440px;width:100%;box-shadow:0 24px 60px rgba(20,10,50,.32);overflow:hidden}
+.mh{display:flex;align-items:center;gap:9px;padding:14px 17px;border-bottom:1px solid var(--line)}.mh .material-symbols-rounded{color:var(--pri)}.mh h3{margin:0;font-size:14px;font-weight:700}.mh .x{margin-left:auto;border:none;background:none;color:var(--tx3);cursor:pointer}
+.mb{padding:15px 17px}
+.frow{display:flex;justify-content:space-between;padding:7px 0;border-bottom:1px dashed var(--line);font-size:13px}.frow:last-child{border-bottom:none}.frow .fl{color:var(--tx2)}.frow .fv{font-weight:700}
+.lockmsg{display:flex;gap:9px;align-items:center;background:#fdf3e0;color:#8a5a08;border-radius:9px;padding:10px 12px;font-size:12.5px;margin-top:12px}
+.mfoot{padding:12px 17px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.btn{border:1px solid var(--line2);background:var(--surf);border-radius:8px;padding:8px 13px;font:600 12.5px 'Inter';cursor:pointer;display:inline-flex;align-items:center;gap:6px;color:var(--tx2)}
+.btn.pri{background:var(--pri);color:#fff;border-color:var(--pri)}.btn:disabled{opacity:.45;cursor:not-allowed}
+.pi{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;padding:9px 11px;border-radius:9px;cursor:pointer;font:500 13px 'Inter';color:var(--tx);text-align:left}.pi:hover{background:var(--pri-bg)}.pi .pv{margin-left:auto;color:var(--tx3);font-size:12px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="top"><span class="logo"><b>e</b>X</span><span class="ttl"><span class="material-symbols-rounded">precision_manufacturing</span>Compositor de serviço — modelo v2</span></div>
-  <div class="sub">Refeito com a sua estrutura: <b>tipo de profissional</b> (do cadastro, com custo/hora por <b>abrangência</b>: local · estadual · nacional), <b>quantas pessoas × quanto tempo</b>, <b>grau de dificuldade</b> (geral ou por profissional) com <b>legenda</b>, e <b>material</b> que entra ou não (chave). Mexa nos campos.</div>
+  <div class="top"><span class="logo"><b>e</b>X</span><span class="ttl"><span class="material-symbols-rounded">precision_manufacturing</span>Compositor de serviço — modelo v3</span>
+    <span class="perfil">Perfil de acesso: <span class="seg"><button id="pf_master" class="on" onclick="setMaster(true)"><span class="material-symbols-rounded">shield_person</span>Master</button><button id="pf_pad" onclick="setMaster(false)">Padrão</button></span></span>
+  </div>
+  <div class="sub">O <b>lápis</b> em cada profissional e material leva ao <b>cadastro base</b> (editar salário/hora, preço). Só quem tem <b>acesso Master</b> altera a base — troque o perfil ali em cima pra ver. A <b>abrangência</b> ficou dentro da Mão de obra; a <b>chave do material</b> ficou no card do Material.</div>
 
   <div class="svcname"><span class="material-symbols-rounded">build_circle</span><input id="svc" value="Fabricação e instalação de String Box 4e/2s"></div>
 
-  <!-- CONFIG (chaves) -->
-  <div class="cfgbar">
-    <span class="cfg"><span class="material-symbols-rounded" style="color:var(--amber)">tune</span>Dificuldade:
-      <span class="seg"><button id="dif_ger" class="on" onclick="setDifModo('geral')">Geral</button><button id="dif_prof" onclick="setDifModo('prof')">Por profissional</button></span></span>
-    <span class="divv"></span>
-    <span class="cfg"><span class="vsw on" id="matSw" onclick="toggleMat()"><span class="vkb"></span></span>Material entra na composição</span>
-  </div>
-
   <div class="cols">
     <div>
-      <!-- ABRANGÊNCIA (deslocamento) -->
+      <!-- MÃO DE OBRA (com abrangência e dificuldade dentro) -->
       <div class="card">
-        <div class="chd"><span class="material-symbols-rounded">distance</span><h3>Abrangência da obra (deslocamento)</h3><span class="sm">ajusta custo/hora e tempo</span></div>
-        <table><thead><tr><th></th><th>Nível</th><th class="r">+ custo/hora</th><th class="r">+ tempo (deslocamento)</th></tr></thead><tbody id="abrBody"></tbody></table>
-        <div style="padding:8px 14px 11px;font-size:11.5px;color:var(--tx3)">Clique num nível para aplicar. Os percentuais são <b>ajustáveis</b> — refletem que, viajando pra longe, a hora custa mais <b>e</b> o deslocamento consome mais tempo.</div>
-      </div>
-
-      <!-- MÃO DE OBRA -->
-      <div class="card">
-        <div class="chd"><span class="material-symbols-rounded">badge</span><h3>Mão de obra (por tipo de profissional)</h3><span class="sm" id="moHoras">0 h</span></div>
+        <div class="chd"><span class="material-symbols-rounded">badge</span><h3>Mão de obra</h3>
+          <span class="rgt"><span class="seg"><button id="dif_ger" class="on" onclick="setDifModo('geral')">Dificuldade geral</button><button id="dif_prof" onclick="setDifModo('prof')">Por profissional</button></span></span></div>
         <table><thead><tr><th>Tipo de profissional</th><th class="c">Pessoas</th><th class="c">Tempo (h) cada</th><th class="dcol c">Dificuldade</th><th class="r">R$/h</th><th class="r">Custo</th><th></th></tr></thead><tbody id="moBody"></tbody></table>
         <div class="addr"><button onclick="moAdd()"><span class="material-symbols-rounded">add</span>profissional</button></div>
-        <div class="difgeral" id="difGeralBox"><span class="material-symbols-rounded" style="color:var(--amber);font-size:18px">tune</span>Grau de dificuldade geral:
-          <select id="difGeral" onchange="render()"></select><span id="difGeralDesc" style="color:var(--tx3)"></span></div>
+        <!-- dificuldade geral -->
+        <div class="difgeral" id="difGeralBox"><span class="material-symbols-rounded" style="color:var(--amber);font-size:17px">tune</span>Grau de dificuldade geral:
+          <select id="difGeral" onchange="render()"></select><span id="difGeralDesc" style="color:var(--tx3);font-size:11.5px"></span></div>
+        <!-- abrangência (dentro da mão de obra) -->
+        <div class="subblk abr">
+          <div class="subhd"><span class="material-symbols-rounded">distance</span>Abrangência da obra (deslocamento)<span class="sm">+ custo/hora e + tempo, ajustáveis</span></div>
+          <table><thead><tr><th></th><th>Nível</th><th class="r">+ custo/hora</th><th class="r">+ tempo (desloc.)</th></tr></thead><tbody id="abrBody"></tbody></table>
+        </div>
       </div>
-      <!-- MATERIAIS -->
-      <div class="card" id="matCard">
-        <div class="chd"><span class="material-symbols-rounded">inventory_2</span><h3>Materiais do serviço</h3><span class="sm">catálogo (estoque)</span></div>
-        <table><thead><tr><th>Material</th><th class="c">Qtd</th><th class="r">R$ unit.</th><th class="r">Total</th><th></th></tr></thead><tbody id="matBody"></tbody></table>
-        <div class="addr"><button onclick="matAdd()"><span class="material-symbols-rounded">add</span>material</button></div>
+
+      <!-- MATERIAIS (chave dentro do card) -->
+      <div class="card">
+        <div class="chd"><span class="material-symbols-rounded">inventory_2</span><h3>Materiais do serviço</h3>
+          <span class="rgt"><span class="swlbl" id="matLbl">entra no preço</span><span class="vsw on" id="matSw" onclick="toggleMat()"><span class="vkb"></span></span></span></div>
+        <div id="matContent">
+          <table><thead><tr><th>Material</th><th class="c">Qtd</th><th class="r">R$ unit.</th><th class="r">Total</th><th></th></tr></thead><tbody id="matBody"></tbody></table>
+          <div class="addr"><button onclick="matAdd()"><span class="material-symbols-rounded">add</span>material do banco</button></div>
+        </div>
+        <div class="matoff" id="matOff" style="display:none">Material desligado — não entra no preço deste serviço. (a lista continua aqui; é só religar a chave)</div>
       </div>
+
       <!-- LEGENDA -->
       <div class="card"><div class="chd"><span class="material-symbols-rounded">help</span><h3>Legenda dos graus de dificuldade</h3></div>
-        <div class="legenda" id="legenda" style="padding:6px 10px 12px"></div></div>
+        <div id="legenda" style="padding:6px 10px 12px"></div></div>
     </div>
 
     <!-- RESULTADO -->
@@ -134,38 +145,40 @@ input.cin.num.pct{width:48px}
         <div class="ln big"><span class="lb">Custo total</span><span class="vv money" id="rCusto">—</span></div>
         <div class="ln"><span class="lb marg">Margem <input id="margem" type="number" min="0" value="40">%</span><span class="vv money luc" id="rLucro">—</span></div>
         <div class="tempo">
-          <div><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri);vertical-align:middle">schedule</span> Tempo de execução: <b id="tHoras">0 h</b> <span style="color:var(--tx3)">(homem-hora, já com dificuldade)</span></div>
+          <div><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri);vertical-align:middle">schedule</span> Tempo de execução: <b id="tHoras">0 h</b></div>
           <div class="row">com <input id="efet" type="number" min="1" value="2"> pessoas · <input id="hdia" type="number" min="1" value="8"> h/dia → <span class="dias" id="tDias">0 dias</span></div>
         </div>
       </div>
-      <div class="note"><b>Como pluga:</b> o <b>custo total</b> vira o custo base do serviço (motor base+margem) e o <b>tempo</b> alimenta o cartão Efetivo→dias. Tipos de profissional e R$/h vêm do cadastro (aba DADOS da sua planilha). Há ainda um <b>fator segurança do trabalho</b> na sua planilha — dá pra somar como um nível a mais. Multiplicadores da dificuldade são calibráveis aos seus números exatos.</div>
+      <div class="note"><b>Como pluga:</b> custo total → custo base do serviço (motor base+margem); tempo → Efetivo→dias. Profissionais e materiais vêm dos <b>cadastros</b> (DADOS / banco de materiais). Edição da base = <b>acesso Master</b>.</div>
     </div>
   </div>
 </div>
 
-<div class="pop" id="pop" onclick="if(event.target===this)closePop()"><div class="cardp"><div class="ph" id="popH">Escolher</div><div id="popList"></div></div></div>
+<!-- modal cadastro -->
+<div class="pop" id="pop" onclick="if(event.target===this)closePop()">
+  <div class="modal">
+    <div class="mh"><span class="material-symbols-rounded" id="mIcon">edit</span><h3 id="mTitle">Cadastro</h3><button class="x" onclick="closePop()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb" id="mBody"></div>
+    <div class="mfoot" id="mFoot"></div>
+  </div>
+</div>
+<!-- pop escolher material -->
+<div class="pop" id="popMat" onclick="if(event.target===this)closeMatPop()"><div class="modal" style="max-width:440px"><div class="mh"><span class="material-symbols-rounded">inventory_2</span><h3 id="popMatH">Material do banco</h3><button class="x" onclick="closeMatPop()"><span class="material-symbols-rounded">close</span></button></div><div class="mb" id="popMatList" style="max-height:56vh;overflow:auto"></div></div></div>
 
 <script>
 const fmt=n=>'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-// TIPOS DE PROFISSIONAL (aba DADOS: valor-hora = salário c/ encargos ÷ 192). Viagem = ilustrativo (a cadastrar).
-// tipo de profissional: taxa BASE (aba DADOS: salário c/ encargos ÷ 192). A abrangência aplica % por cima.
 const PROF=[
-  {t:'Eng. automação',sal:10000,base:52.08},
-  {t:'Eletrotécnico',sal:6000,base:31.25},
-  {t:'Eletricista comando',sal:5000,base:26.04},
-  {t:'Eletricista instalação',sal:2500,base:13.02},
-  {t:'Eletricista montagem',sal:2500,base:13.02},
-  {t:'Ajudante eletricista',sal:1800,base:9.38},
+  {t:'Eng. automação',sal:10000,base:52.08},{t:'Eletrotécnico',sal:6000,base:31.25},
+  {t:'Eletricista comando',sal:5000,base:26.04},{t:'Eletricista instalação',sal:2500,base:13.02},
+  {t:'Eletricista montagem',sal:2500,base:13.02},{t:'Ajudante eletricista',sal:1800,base:9.38},
   {t:'Téc. refrigeração',sal:4000,base:20.83}
 ];
-// ABRANGÊNCIA = percentuais AJUSTÁVEIS: +% no custo/hora e +% no tempo (deslocamento)
-const ABRANG={ local:{nm:'Local',custo:0,tempo:0}, estadual:{nm:'Estadual',custo:35,tempo:15}, nacional:{nm:'Nacional',custo:80,tempo:30} };
-// GRAUS DE DIFICULDADE (predeterminados + legenda). mult = multiplica o tempo.
+const ABRANG={local:{nm:'Local',custo:0,tempo:0},estadual:{nm:'Estadual',custo:35,tempo:15},nacional:{nm:'Nacional',custo:80,tempo:30}};
 const DIF=[
   {n:'Normal',mult:1.00,desc:'Local acessível, horário livre, sem restrição de segurança especial.'},
   {n:'Moderada',mult:1.25,desc:'Altura moderada, horário comercial restrito, espaço apertado, NR-10 básica.'},
   {n:'Alta',mult:1.50,desc:'Trabalho noturno, plataforma elevatória, acesso controlado, NR-35 (altura).'},
-  {n:'Severa',mult:2.00,desc:'Grande porte / ambiente crítico (offshore, plataforma de petróleo), múltiplas NRs, janela mínima de execução.'}
+  {n:'Severa',mult:2.00,desc:'Grande porte / ambiente crítico (offshore, plataforma de petróleo), múltiplas NRs, janela mínima.'}
 ];
 const MATERIAIS=[
   {m:'Armário/caixa string box (gabinete)',v:180.00},{m:'Barramento cobre kit distribuição',v:120.00},
@@ -174,79 +187,87 @@ const MATERIAIS=[
 ];
 let MO=[{pi:2,pes:1,h:3,di:0},{pi:3,pes:1,h:1.5,di:0},{pi:0,pes:1,h:0.5,di:0}];
 let MAT=[{mi:0,q:1},{mi:1,q:1},{mi:2,q:1},{mi:4,q:2},{mi:5,q:4}];
-let ESCOPO='local', DIFMODO='geral', MATON=true, DIFGERAL=0;
+let ESCOPO='local', DIFMODO='geral', MATON=true, DIFGERAL=0, MASTER=true;
 
-const rate=p=>p.base*(1+(ABRANG[ESCOPO].custo||0)/100);          // custo/hora com o + da abrangência
-const abrTempo=()=>1+(ABRANG[ESCOPO].tempo||0)/100;              // fator de tempo (deslocamento)
+const rate=p=>p.base*(1+(ABRANG[ESCOPO].custo||0)/100);
+const abrTempo=()=>1+(ABRANG[ESCOPO].tempo||0)/100;
 function setEscopo(e){ESCOPO=e;render();}
+function setMaster(v){MASTER=v;document.getElementById('pf_master').classList.toggle('on',v);document.getElementById('pf_pad').classList.toggle('on',!v);}
+function setDifModo(m){DIFMODO=m;document.getElementById('dif_ger').classList.toggle('on',m==='geral');document.getElementById('dif_prof').classList.toggle('on',m==='prof');document.getElementById('difGeralBox').style.display=m==='geral'?'flex':'none';render();}
+function toggleMat(){MATON=!MATON;document.getElementById('matSw').classList.toggle('on',MATON);document.getElementById('matContent').style.display=MATON?'':'none';document.getElementById('matOff').style.display=MATON?'none':'block';document.getElementById('matLbl').textContent=MATON?'entra no preço':'fora do preço';document.getElementById('matLbl').style.color=MATON?'var(--green)':'var(--tx3)';document.getElementById('lnMat').style.display=MATON?'':'none';render();}
+
 function renderAbr(){
   document.getElementById('abrBody').innerHTML=Object.keys(ABRANG).map(k=>{
-    const a=ABRANG[k], sel=ESCOPO===k, base=k==='local';
-    return `<tr class="${sel?'selabr':''}" onclick="setEscopo('${k}')">
+    const a=ABRANG[k],sel=ESCOPO===k,base=k==='local';
+    return `<tr class="${sel?'selabr':''}" onclick="setEscopo('${k}')" style="cursor:pointer">
       <td class="c"><span class="rd ${sel?'on':''}"></span></td><td><b>${a.nm}</b></td>
       <td class="r"><input class="cin num pct" ${base?'disabled':''} type="number" min="0" value="${a.custo}" onclick="event.stopPropagation()" oninput="ABRANG['${k}'].custo=+this.value||0;render()"> %</td>
       <td class="r"><input class="cin num pct" ${base?'disabled':''} type="number" min="0" value="${a.tempo}" onclick="event.stopPropagation()" oninput="ABRANG['${k}'].tempo=+this.value||0;render()"> %</td></tr>`;
   }).join('');
 }
-function setDifModo(m){DIFMODO=m;document.getElementById('dif_ger').classList.toggle('on',m==='geral');document.getElementById('dif_prof').classList.toggle('on',m==='prof');
-  document.getElementById('difGeralBox').style.display=m==='geral'?'flex':'none';
-  document.querySelectorAll('.dcol').forEach(e=>e.style.display=m==='prof'?'':'none');render();}
-function toggleMat(){MATON=!MATON;document.getElementById('matSw').classList.toggle('on',MATON);document.getElementById('matCard').style.display=MATON?'':'none';document.getElementById('lnMat').style.display=MATON?'':'none';render();}
-
 function difSel(val,onch){return `<select onchange="${onch}">`+DIF.map((d,j)=>`<option value="${j}" ${j===val?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('')+`</select>`;}
 function moRow(r,i){
   const opt=PROF.map((p,j)=>`<option value="${j}" ${j===r.pi?'selected':''}>${p.t}</option>`).join('');
-  const p=PROF[r.pi], mult=DIFMODO==='prof'?DIF[r.di].mult:DIF[DIFGERAL].mult;
-  const custo=r.pes*r.h*mult*abrTempo()*rate(p);
+  const p=PROF[r.pi],mult=DIFMODO==='prof'?DIF[r.di].mult:DIF[DIFGERAL].mult,custo=r.pes*r.h*mult*abrTempo()*rate(p);
   return `<tr>
-    <td><select onchange="MO[${i}].pi=+this.value;render()">${opt}</select></td>
+    <td><div class="profcell"><select onchange="MO[${i}].pi=+this.value;render()">${opt}</select><button class="edit" title="Editar cadastro do profissional" onclick="openProf(${r.pi})"><span class="material-symbols-rounded">edit_note</span></button></div></td>
     <td class="c"><input class="cin num" type="number" min="0" step="1" value="${r.pes}" oninput="MO[${i}].pes=+this.value||0;render()"></td>
     <td class="c"><input class="cin num" type="number" min="0" step="0.25" value="${r.h}" oninput="MO[${i}].h=+this.value||0;render()"></td>
     <td class="dcol c" style="${DIFMODO==='prof'?'':'display:none'}">${difSel(r.di,'MO['+i+'].di=+this.value;render()')}</td>
-    <td class="r money" style="color:var(--tx3)">${fmt(rate(p))}</td>
-    <td class="r money">${fmt(custo)}</td>
+    <td class="r money" style="color:var(--tx3)">${fmt(rate(p))}</td><td class="r money">${fmt(custo)}</td>
     <td><button class="del" onclick="MO.splice(${i},1);render()"><span class="material-symbols-rounded" style="font-size:16px">close</span></button></td></tr>`;
 }
 function matRow(r,i){const nm=MATERIAIS[r.mi];return `<tr>
-    <td><button class="cin" style="text-align:left;cursor:pointer;border-color:var(--line)" onclick="openMat(${i})">${nm.m}</button></td>
+    <td><div class="profcell"><button class="cin" style="text-align:left;cursor:pointer;border-color:var(--line);flex:1" onclick="openMatPick(${i})">${nm.m}</button><button class="edit" title="Editar no banco de materiais" onclick="openMatCad(${r.mi})"><span class="material-symbols-rounded">edit_note</span></button></div></td>
     <td class="c"><input class="cin num" type="number" min="0" value="${r.q}" oninput="MAT[${i}].q=+this.value||0;render()"></td>
     <td class="r money" style="color:var(--tx3)">${fmt(nm.v)}</td><td class="r money">${fmt(r.q*nm.v)}</td>
     <td><button class="del" onclick="MAT.splice(${i},1);render()"><span class="material-symbols-rounded" style="font-size:16px">close</span></button></td></tr>`;}
-
 function render(){
   renderAbr();
-  // selects de dificuldade geral + legenda (uma vez)
   const dg=document.getElementById('difGeral');
-  if(dg.options.length!==DIF.length){ dg.innerHTML=DIF.map((d,j)=>`<option value="${j}">${d.n} (×${d.mult.toFixed(2)})</option>`).join(''); }
-  DIFGERAL=+dg.value||0;
-  document.getElementById('difGeralDesc').textContent='— '+DIF[DIFGERAL].desc;
-  document.getElementById('legenda').innerHTML=DIF.map((d,j)=>`<div class="legrow lv${j}"><span class="badge">${d.n}</span><span class="lx"><b>${d.n}</b> — ${d.desc}</span><span class="mult">× ${d.mult.toFixed(2)} no tempo</span></div>`).join('');
+  if(dg.options.length!==DIF.length) dg.innerHTML=DIF.map((d,j)=>`<option value="${j}">${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
+  DIFGERAL=+dg.value||0; document.getElementById('difGeralDesc').textContent='— '+DIF[DIFGERAL].desc;
+  document.getElementById('legenda').innerHTML=DIF.map((d,j)=>`<div class="legrow lv${j}"><span class="badge">${d.n}</span><span class="lx"><b>${d.n}</b> — ${d.desc}</span><span class="mult">× ${d.mult.toFixed(2)} tempo</span></div>`).join('');
   document.getElementById('moBody').innerHTML=MO.map(moRow).join('')||'<tr><td colspan="7" style="color:var(--tx3);padding:10px">Sem mão de obra.</td></tr>';
   document.getElementById('matBody').innerHTML=MAT.map(matRow).join('')||'<tr><td colspan="5" style="color:var(--tx3);padding:10px">Sem materiais.</td></tr>';
-  let mo=0,horas=0;
-  MO.forEach(r=>{const p=PROF[r.pi];const mult=DIFMODO==='prof'?DIF[r.di].mult:DIF[DIFGERAL].mult;const h=r.pes*r.h*mult*abrTempo();horas+=h;mo+=h*rate(p);});
-  let mat=0; if(MATON) MAT.forEach(r=>mat+=r.q*MATERIAIS[r.mi].v);
-  const custo=mo+mat, margem=Math.max(0,+document.getElementById('margem').value||0), preco=custo*(1+margem/100), lucro=preco-custo;
-  document.getElementById('moHoras').textContent=horas.toLocaleString('pt-BR',{maximumFractionDigits:2})+' h';
-  document.getElementById('rMo').textContent=fmt(mo);
-  document.getElementById('rMat').textContent=fmt(mat);
-  document.getElementById('rCusto').textContent=fmt(custo);
-  document.getElementById('rPreco').textContent=fmt(preco);
+  let mo=0,horas=0;MO.forEach(r=>{const p=PROF[r.pi];const mult=DIFMODO==='prof'?DIF[r.di].mult:DIF[DIFGERAL].mult;const h=r.pes*r.h*mult*abrTempo();horas+=h;mo+=h*rate(p);});
+  let mat=0;if(MATON)MAT.forEach(r=>mat+=r.q*MATERIAIS[r.mi].v);
+  const custo=mo+mat,margem=Math.max(0,+document.getElementById('margem').value||0),preco=custo*(1+margem/100),lucro=preco-custo;
+  document.getElementById('rMo').textContent=fmt(mo);document.getElementById('rMat').textContent=fmt(mat);
+  document.getElementById('rCusto').textContent=fmt(custo);document.getElementById('rPreco').textContent=fmt(preco);
   document.getElementById('rLucro').textContent=fmt(lucro);
   document.getElementById('tHoras').textContent=horas.toLocaleString('pt-BR',{maximumFractionDigits:2})+' h';
   const ef=Math.max(1,+document.getElementById('efet').value||1),hd=Math.max(1,+document.getElementById('hdia').value||1);
   document.getElementById('tDias').textContent=(horas/(ef*hd)).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+' dias';
 }
 function moAdd(){MO.push({pi:3,pes:1,h:1,di:DIFGERAL});render();}
-function matAdd(){openMat(-1);}
-let _mt=null;
-function openMat(i){_mt=i;document.getElementById('popH').textContent=i>=0?'Trocar material':'Adicionar material';
-  document.getElementById('popList').innerHTML=MATERIAIS.map((m,j)=>`<button class="pi" onclick="pickMat(${j})">${m.m}<span class="pv">${fmt(m.v)}</span></button>`).join('');
-  document.getElementById('pop').classList.add('on');}
+/* cadastros (gated por Master) */
+function openProf(pi){const p=PROF[pi];
+  document.getElementById('mIcon').textContent='badge';document.getElementById('mTitle').textContent='Cadastro do profissional';
+  document.getElementById('mBody').innerHTML=`<div class="frow"><span class="fl">Tipo de profissional</span><span class="fv">${p.t}</span></div>
+    <div class="frow"><span class="fl">Salário base c/ encargos</span><span class="fv">${fmt(p.sal)}</span></div>
+    <div class="frow"><span class="fl">Valor-hora (base ÷ 192)</span><span class="fv">${fmt(p.base)}</span></div>
+    <div class="frow"><span class="fl">Abrangência</span><span class="fv">+% custo e +% tempo por nível</span></div>`+
+    (MASTER?'':`<div class="lockmsg"><span class="material-symbols-rounded">lock</span>Somente <b>&nbsp;acesso Master&nbsp;</b> pode editar a base do profissional.</div>`);
+  document.getElementById('mFoot').innerHTML=`<button class="btn" onclick="closePop()">Fechar</button><button class="btn pri" ${MASTER?'':'disabled'} onclick="alert('Abriria a página de cadastro/edição do profissional (DADOS).')"><span class="material-symbols-rounded">open_in_new</span>Ir para o cadastro</button>`;
+  document.getElementById('pop').classList.add('on');
+}
+function openMatCad(mi){const m=MATERIAIS[mi];
+  document.getElementById('mIcon').textContent='inventory_2';document.getElementById('mTitle').textContent='Material no banco (estoque)';
+  document.getElementById('mBody').innerHTML=`<div class="frow"><span class="fl">Material</span><span class="fv">${m.m}</span></div>
+    <div class="frow"><span class="fl">Preço unitário</span><span class="fv">${fmt(m.v)}</span></div>
+    <div class="frow"><span class="fl">Origem</span><span class="fv">Banco de materiais (estoque)</span></div>`+
+    (MASTER?'':`<div class="lockmsg"><span class="material-symbols-rounded">lock</span>Somente <b>&nbsp;acesso Master&nbsp;</b> pode ajustar o preço no banco.</div>`);
+  document.getElementById('mFoot').innerHTML=`<button class="btn" onclick="closePop()">Fechar</button><button class="btn pri" ${MASTER?'':'disabled'} onclick="alert('Abriria o cadastro do material no banco/estoque.')"><span class="material-symbols-rounded">open_in_new</span>Ir para o banco</button>`;
+  document.getElementById('pop').classList.add('on');
+}
 function closePop(){document.getElementById('pop').classList.remove('on');}
-function pickMat(j){if(_mt>=0)MAT[_mt].mi=j;else MAT.push({mi:j,q:1});closePop();render();}
+let _mt=null;
+function openMatPick(i){_mt=i;document.getElementById('popMatList').innerHTML=MATERIAIS.map((m,j)=>`<button class="pi" onclick="pickMat(${j})">${m.m}<span class="pv">${fmt(m.v)}</span></button>`).join('');document.getElementById('popMat').classList.add('on');}
+function matAdd(){openMatPick(-1);}
+function pickMat(j){if(_mt>=0)MAT[_mt].mi=j;else MAT.push({mi:j,q:1});closeMatPop();render();}
+function closeMatPop(){document.getElementById('popMat').classList.remove('on');}
 ['margem','efet','hdia'].forEach(id=>document.getElementById(id).addEventListener('input',render));
-document.querySelectorAll('.dcol').forEach(e=>e.style.display='none');
 render();
 </script>
 </body>
