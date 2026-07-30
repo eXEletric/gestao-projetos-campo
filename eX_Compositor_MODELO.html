@@ -78,14 +78,14 @@ input.cin.num{text-align:center;width:56px;font-variant-numeric:tabular-nums}
 <body>
 <div class="wrap">
   <div class="top"><span class="logo"><b>e</b>X</span><span class="ttl"><span class="material-symbols-rounded">precision_manufacturing</span>Compositor de serviço — modelo v2</span></div>
-  <div class="sub">Refeito com a sua estrutura: <b>tipo de profissional</b> (do cadastro, com custo <b>local</b> e <b>com viagem</b>), <b>quantas pessoas × quanto tempo</b>, <b>grau de dificuldade</b> (geral ou por profissional) com <b>legenda</b>, e <b>material</b> que entra ou não (chave). Mexa nos campos.</div>
+  <div class="sub">Refeito com a sua estrutura: <b>tipo de profissional</b> (do cadastro, com custo/hora por <b>abrangência</b>: local · estadual · nacional), <b>quantas pessoas × quanto tempo</b>, <b>grau de dificuldade</b> (geral ou por profissional) com <b>legenda</b>, e <b>material</b> que entra ou não (chave). Mexa nos campos.</div>
 
   <div class="svcname"><span class="material-symbols-rounded">build_circle</span><input id="svc" value="Fabricação e instalação de String Box 4e/2s"></div>
 
   <!-- CONFIG (chaves) -->
   <div class="cfgbar">
-    <span class="cfg"><span class="material-symbols-rounded" style="color:var(--pri)">flight</span>Custo/hora:
-      <span class="seg"><button id="loc_local" class="on" onclick="setViagem(false)">Local</button><button id="loc_viag" onclick="setViagem(true)"><span class="material-symbols-rounded">flight_takeoff</span>Com viagem</button></span></span>
+    <span class="cfg"><span class="material-symbols-rounded" style="color:var(--pri)">distance</span>Abrangência (custo/hora):
+      <span class="seg"><button id="esc_local" class="on" onclick="setEscopo('local')"><span class="material-symbols-rounded">home_pin</span>Local</button><button id="esc_est" onclick="setEscopo('estadual')"><span class="material-symbols-rounded">map</span>Estadual</button><button id="esc_nac" onclick="setEscopo('nacional')"><span class="material-symbols-rounded">public</span>Nacional</button></span></span>
     <span class="divv"></span>
     <span class="cfg"><span class="material-symbols-rounded" style="color:var(--amber)">tune</span>Dificuldade:
       <span class="seg"><button id="dif_ger" class="on" onclick="setDifModo('geral')">Geral</button><button id="dif_prof" onclick="setDifModo('prof')">Por profissional</button></span></span>
@@ -137,14 +137,15 @@ input.cin.num{text-align:center;width:56px;font-variant-numeric:tabular-nums}
 <script>
 const fmt=n=>'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 // TIPOS DE PROFISSIONAL (aba DADOS: valor-hora = salário c/ encargos ÷ 192). Viagem = ilustrativo (a cadastrar).
+// abrangência: local (base = salário/192), estadual (~×1,35), nacional (~×1,8) — ilustrativo, a cadastrar
 const PROF=[
-  {t:'Eng. automação',sal:10000,local:52.08,viagem:78.00},
-  {t:'Eletrotécnico',sal:6000,local:31.25,viagem:47.00},
-  {t:'Eletricista comando',sal:5000,local:26.04,viagem:39.00},
-  {t:'Eletricista instalação',sal:2500,local:13.02,viagem:20.00},
-  {t:'Eletricista montagem',sal:2500,local:13.02,viagem:20.00},
-  {t:'Ajudante eletricista',sal:1800,local:9.38,viagem:15.00},
-  {t:'Téc. refrigeração',sal:4000,local:20.83,viagem:31.00}
+  {t:'Eng. automação',sal:10000,local:52.08,estadual:70.31,nacional:93.74},
+  {t:'Eletrotécnico',sal:6000,local:31.25,estadual:42.19,nacional:56.25},
+  {t:'Eletricista comando',sal:5000,local:26.04,estadual:35.15,nacional:46.87},
+  {t:'Eletricista instalação',sal:2500,local:13.02,estadual:17.58,nacional:23.44},
+  {t:'Eletricista montagem',sal:2500,local:13.02,estadual:17.58,nacional:23.44},
+  {t:'Ajudante eletricista',sal:1800,local:9.38,estadual:12.66,nacional:16.88},
+  {t:'Téc. refrigeração',sal:4000,local:20.83,estadual:28.12,nacional:37.49}
 ];
 // GRAUS DE DIFICULDADE (predeterminados + legenda). mult = multiplica o tempo.
 const DIF=[
@@ -160,10 +161,13 @@ const MATERIAIS=[
 ];
 let MO=[{pi:2,pes:1,h:3,di:0},{pi:3,pes:1,h:1.5,di:0},{pi:0,pes:1,h:0.5,di:0}];
 let MAT=[{mi:0,q:1},{mi:1,q:1},{mi:2,q:1},{mi:4,q:2},{mi:5,q:4}];
-let VIAGEM=false, DIFMODO='geral', MATON=true, DIFGERAL=0;
+let ESCOPO='local', DIFMODO='geral', MATON=true, DIFGERAL=0;
 
-const rate=p=>VIAGEM?p.viagem:p.local;
-function setViagem(v){VIAGEM=v;document.getElementById('loc_local').classList.toggle('on',!v);document.getElementById('loc_viag').classList.toggle('on',v);render();}
+const rate=p=>p[ESCOPO]||p.local;
+function setEscopo(e){ESCOPO=e;
+  document.getElementById('esc_local').classList.toggle('on',e==='local');
+  document.getElementById('esc_est').classList.toggle('on',e==='estadual');
+  document.getElementById('esc_nac').classList.toggle('on',e==='nacional');render();}
 function setDifModo(m){DIFMODO=m;document.getElementById('dif_ger').classList.toggle('on',m==='geral');document.getElementById('dif_prof').classList.toggle('on',m==='prof');
   document.getElementById('difGeralBox').style.display=m==='geral'?'flex':'none';
   document.querySelectorAll('.dcol').forEach(e=>e.style.display=m==='prof'?'':'none');render();}
