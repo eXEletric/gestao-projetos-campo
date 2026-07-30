@@ -49,6 +49,13 @@ input.cin.num{text-align:center;width:56px;font-variant-numeric:tabular-nums}
 .addr{padding:9px 12px;border-top:1px solid var(--line)}
 .addr button{border:1px dashed var(--line2);background:transparent;color:var(--pri);font:600 12px 'Inter';border-radius:20px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}.addr button:hover{background:var(--pri-bg);border-color:var(--pri)}
 /* dificuldade geral + legenda */
+/* abrangência */
+.rd{display:inline-block;width:16px;height:16px;border-radius:50%;border:2px solid var(--line2);vertical-align:middle}
+.rd.on{border-color:var(--pri);background:radial-gradient(var(--pri) 42%,#fff 46%)}
+tr.selabr{background:var(--pri-bg)}
+tr.selabr td{border-color:#ded3fb}
+input.cin.num.pct{width:48px}
+.abrBody tr{cursor:pointer}
 .difgeral{padding:11px 14px;background:var(--surf2);display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--tx2)}
 .difgeral select{width:auto;min-width:150px;border-color:var(--line2);background:#fff;font-weight:600}
 .legenda{margin-top:12px}
@@ -84,9 +91,6 @@ input.cin.num{text-align:center;width:56px;font-variant-numeric:tabular-nums}
 
   <!-- CONFIG (chaves) -->
   <div class="cfgbar">
-    <span class="cfg"><span class="material-symbols-rounded" style="color:var(--pri)">distance</span>Abrangência (custo/hora):
-      <span class="seg"><button id="esc_local" class="on" onclick="setEscopo('local')"><span class="material-symbols-rounded">home_pin</span>Local</button><button id="esc_est" onclick="setEscopo('estadual')"><span class="material-symbols-rounded">map</span>Estadual</button><button id="esc_nac" onclick="setEscopo('nacional')"><span class="material-symbols-rounded">public</span>Nacional</button></span></span>
-    <span class="divv"></span>
     <span class="cfg"><span class="material-symbols-rounded" style="color:var(--amber)">tune</span>Dificuldade:
       <span class="seg"><button id="dif_ger" class="on" onclick="setDifModo('geral')">Geral</button><button id="dif_prof" onclick="setDifModo('prof')">Por profissional</button></span></span>
     <span class="divv"></span>
@@ -95,6 +99,13 @@ input.cin.num{text-align:center;width:56px;font-variant-numeric:tabular-nums}
 
   <div class="cols">
     <div>
+      <!-- ABRANGÊNCIA (deslocamento) -->
+      <div class="card">
+        <div class="chd"><span class="material-symbols-rounded">distance</span><h3>Abrangência da obra (deslocamento)</h3><span class="sm">ajusta custo/hora e tempo</span></div>
+        <table><thead><tr><th></th><th>Nível</th><th class="r">+ custo/hora</th><th class="r">+ tempo (deslocamento)</th></tr></thead><tbody id="abrBody"></tbody></table>
+        <div style="padding:8px 14px 11px;font-size:11.5px;color:var(--tx3)">Clique num nível para aplicar. Os percentuais são <b>ajustáveis</b> — refletem que, viajando pra longe, a hora custa mais <b>e</b> o deslocamento consome mais tempo.</div>
+      </div>
+
       <!-- MÃO DE OBRA -->
       <div class="card">
         <div class="chd"><span class="material-symbols-rounded">badge</span><h3>Mão de obra (por tipo de profissional)</h3><span class="sm" id="moHoras">0 h</span></div>
@@ -137,16 +148,18 @@ input.cin.num{text-align:center;width:56px;font-variant-numeric:tabular-nums}
 <script>
 const fmt=n=>'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 // TIPOS DE PROFISSIONAL (aba DADOS: valor-hora = salário c/ encargos ÷ 192). Viagem = ilustrativo (a cadastrar).
-// abrangência: local (base = salário/192), estadual (~×1,35), nacional (~×1,8) — ilustrativo, a cadastrar
+// tipo de profissional: taxa BASE (aba DADOS: salário c/ encargos ÷ 192). A abrangência aplica % por cima.
 const PROF=[
-  {t:'Eng. automação',sal:10000,local:52.08,estadual:70.31,nacional:93.74},
-  {t:'Eletrotécnico',sal:6000,local:31.25,estadual:42.19,nacional:56.25},
-  {t:'Eletricista comando',sal:5000,local:26.04,estadual:35.15,nacional:46.87},
-  {t:'Eletricista instalação',sal:2500,local:13.02,estadual:17.58,nacional:23.44},
-  {t:'Eletricista montagem',sal:2500,local:13.02,estadual:17.58,nacional:23.44},
-  {t:'Ajudante eletricista',sal:1800,local:9.38,estadual:12.66,nacional:16.88},
-  {t:'Téc. refrigeração',sal:4000,local:20.83,estadual:28.12,nacional:37.49}
+  {t:'Eng. automação',sal:10000,base:52.08},
+  {t:'Eletrotécnico',sal:6000,base:31.25},
+  {t:'Eletricista comando',sal:5000,base:26.04},
+  {t:'Eletricista instalação',sal:2500,base:13.02},
+  {t:'Eletricista montagem',sal:2500,base:13.02},
+  {t:'Ajudante eletricista',sal:1800,base:9.38},
+  {t:'Téc. refrigeração',sal:4000,base:20.83}
 ];
+// ABRANGÊNCIA = percentuais AJUSTÁVEIS: +% no custo/hora e +% no tempo (deslocamento)
+const ABRANG={ local:{nm:'Local',custo:0,tempo:0}, estadual:{nm:'Estadual',custo:35,tempo:15}, nacional:{nm:'Nacional',custo:80,tempo:30} };
 // GRAUS DE DIFICULDADE (predeterminados + legenda). mult = multiplica o tempo.
 const DIF=[
   {n:'Normal',mult:1.00,desc:'Local acessível, horário livre, sem restrição de segurança especial.'},
@@ -163,11 +176,18 @@ let MO=[{pi:2,pes:1,h:3,di:0},{pi:3,pes:1,h:1.5,di:0},{pi:0,pes:1,h:0.5,di:0}];
 let MAT=[{mi:0,q:1},{mi:1,q:1},{mi:2,q:1},{mi:4,q:2},{mi:5,q:4}];
 let ESCOPO='local', DIFMODO='geral', MATON=true, DIFGERAL=0;
 
-const rate=p=>p[ESCOPO]||p.local;
-function setEscopo(e){ESCOPO=e;
-  document.getElementById('esc_local').classList.toggle('on',e==='local');
-  document.getElementById('esc_est').classList.toggle('on',e==='estadual');
-  document.getElementById('esc_nac').classList.toggle('on',e==='nacional');render();}
+const rate=p=>p.base*(1+(ABRANG[ESCOPO].custo||0)/100);          // custo/hora com o + da abrangência
+const abrTempo=()=>1+(ABRANG[ESCOPO].tempo||0)/100;              // fator de tempo (deslocamento)
+function setEscopo(e){ESCOPO=e;render();}
+function renderAbr(){
+  document.getElementById('abrBody').innerHTML=Object.keys(ABRANG).map(k=>{
+    const a=ABRANG[k], sel=ESCOPO===k, base=k==='local';
+    return `<tr class="${sel?'selabr':''}" onclick="setEscopo('${k}')">
+      <td class="c"><span class="rd ${sel?'on':''}"></span></td><td><b>${a.nm}</b></td>
+      <td class="r"><input class="cin num pct" ${base?'disabled':''} type="number" min="0" value="${a.custo}" onclick="event.stopPropagation()" oninput="ABRANG['${k}'].custo=+this.value||0;render()"> %</td>
+      <td class="r"><input class="cin num pct" ${base?'disabled':''} type="number" min="0" value="${a.tempo}" onclick="event.stopPropagation()" oninput="ABRANG['${k}'].tempo=+this.value||0;render()"> %</td></tr>`;
+  }).join('');
+}
 function setDifModo(m){DIFMODO=m;document.getElementById('dif_ger').classList.toggle('on',m==='geral');document.getElementById('dif_prof').classList.toggle('on',m==='prof');
   document.getElementById('difGeralBox').style.display=m==='geral'?'flex':'none';
   document.querySelectorAll('.dcol').forEach(e=>e.style.display=m==='prof'?'':'none');render();}
@@ -177,7 +197,7 @@ function difSel(val,onch){return `<select onchange="${onch}">`+DIF.map((d,j)=>`<
 function moRow(r,i){
   const opt=PROF.map((p,j)=>`<option value="${j}" ${j===r.pi?'selected':''}>${p.t}</option>`).join('');
   const p=PROF[r.pi], mult=DIFMODO==='prof'?DIF[r.di].mult:DIF[DIFGERAL].mult;
-  const custo=r.pes*r.h*mult*rate(p);
+  const custo=r.pes*r.h*mult*abrTempo()*rate(p);
   return `<tr>
     <td><select onchange="MO[${i}].pi=+this.value;render()">${opt}</select></td>
     <td class="c"><input class="cin num" type="number" min="0" step="1" value="${r.pes}" oninput="MO[${i}].pes=+this.value||0;render()"></td>
@@ -194,6 +214,7 @@ function matRow(r,i){const nm=MATERIAIS[r.mi];return `<tr>
     <td><button class="del" onclick="MAT.splice(${i},1);render()"><span class="material-symbols-rounded" style="font-size:16px">close</span></button></td></tr>`;}
 
 function render(){
+  renderAbr();
   // selects de dificuldade geral + legenda (uma vez)
   const dg=document.getElementById('difGeral');
   if(dg.options.length!==DIF.length){ dg.innerHTML=DIF.map((d,j)=>`<option value="${j}">${d.n} (×${d.mult.toFixed(2)})</option>`).join(''); }
@@ -203,7 +224,7 @@ function render(){
   document.getElementById('moBody').innerHTML=MO.map(moRow).join('')||'<tr><td colspan="7" style="color:var(--tx3);padding:10px">Sem mão de obra.</td></tr>';
   document.getElementById('matBody').innerHTML=MAT.map(matRow).join('')||'<tr><td colspan="5" style="color:var(--tx3);padding:10px">Sem materiais.</td></tr>';
   let mo=0,horas=0;
-  MO.forEach(r=>{const p=PROF[r.pi];const mult=DIFMODO==='prof'?DIF[r.di].mult:DIF[DIFGERAL].mult;const h=r.pes*r.h*mult;horas+=h;mo+=h*rate(p);});
+  MO.forEach(r=>{const p=PROF[r.pi];const mult=DIFMODO==='prof'?DIF[r.di].mult:DIF[DIFGERAL].mult;const h=r.pes*r.h*mult*abrTempo();horas+=h;mo+=h*rate(p);});
   let mat=0; if(MATON) MAT.forEach(r=>mat+=r.q*MATERIAIS[r.mi].v);
   const custo=mo+mat, margem=Math.max(0,+document.getElementById('margem').value||0), preco=custo*(1+margem/100), lucro=preco-custo;
   document.getElementById('moHoras').textContent=horas.toLocaleString('pt-BR',{maximumFractionDigits:2})+' h';
