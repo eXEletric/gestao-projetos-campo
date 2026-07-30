@@ -154,6 +154,36 @@ select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 /* descrição geral */
 .descarea{width:100%;min-height:64px;resize:vertical;font-family:inherit;line-height:1.45}
 .descprint{display:none;font-size:12px;color:var(--tx2);line-height:1.5;white-space:pre-wrap}
+/* efetivo na obra — cartão-roster */
+.efcard{background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden;margin:0 0 14px}
+.efhd{display:flex;align-items:center;gap:8px;padding:10px 13px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8}
+.efhd .material-symbols-rounded{font-size:19px;color:var(--pri)}
+.efhd h3{margin:0;font-size:12px;font-weight:800;color:var(--pri);text-transform:uppercase;letter-spacing:.04em}
+.efcnt{margin-left:auto;display:inline-flex;align-items:center;gap:5px;background:var(--pri);color:#fff;border-radius:20px;padding:3px 10px;font-size:11px}
+.efcnt .material-symbols-rounded{color:#fff;font-size:15px}
+.efrow{display:flex;align-items:center;gap:11px;padding:9px 13px;border-bottom:1px solid var(--line)}
+.efav{width:32px;height:32px;border-radius:50%;background:var(--pri-bg);color:var(--pri);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.efav .material-symbols-rounded{font-size:18px}
+.eff{flex:1;min-width:0}
+.eff .efn{font-weight:600;font-size:13px}
+.eff .efd{font-size:10.5px;color:var(--tx3)}
+.efstep{display:inline-flex;align-items:center;gap:2px;background:var(--surf);border:1px solid var(--line2);border-radius:8px;padding:2px}
+.efstep button{width:22px;height:22px;border:none;background:transparent;color:var(--pri);cursor:pointer;border-radius:5px;display:flex;align-items:center;justify-content:center}
+.efstep button:hover{background:var(--pri-bg)}
+.efstep .efqt{min-width:22px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums;font-size:13px}
+.efstep .material-symbols-rounded{font-size:17px}
+.efrm{border:none;background:none;color:var(--tx3);cursor:pointer;padding:5px;border-radius:6px}
+.efrm:hover{background:#fbecec;color:var(--red)}
+.efrm .material-symbols-rounded{font-size:16px}
+.effoot{display:flex;align-items:center;gap:12px;padding:10px 13px;flex-wrap:wrap;background:var(--surf2)}
+.efadd{border:1px dashed var(--line2);background:transparent;color:var(--pri);font:600 12px inherit;border-radius:20px;padding:5px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.efadd:hover{background:var(--pri-bg);border-color:var(--pri)}
+.efadd .material-symbols-rounded{font-size:16px}
+.efprazo{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--tx2)}
+.efprazo input{width:44px;border:1px solid var(--line2);border-radius:6px;padding:3px;text-align:center;font:700 13px inherit;color:var(--tx);background:#fff}
+.efprazo .material-symbols-rounded{font-size:15px;color:var(--amber)}
+.efempty{padding:12px 13px;color:var(--tx3);font-size:12px}
+body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;opacity:.5}
 
 /* ===== RESUMO (direita, sticky) ===== */
 .side{position:sticky;top:16px}
@@ -391,7 +421,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
           <div class="hr"></div>
           <div class="meta">
             <div class="m"><span class="material-symbols-rounded">schedule</span>Prazo estimado: <input class="pin" style="width:44px" data-f="prazoDias" inputmode="numeric"> dias</div>
-            <div class="m"><span class="material-symbols-rounded">groups</span><input class="in" style="padding:2px 0;font-size:12px" data-m="equipe"></div>
+            <div class="m"><span class="material-symbols-rounded">groups</span><input class="in" readonly title="Definido no Efetivo na obra (topo dos Serviços)" style="width:100%;padding:2px 0;font-size:12px" data-m="equipe"></div>
           </div>
         </div>
       </div>
@@ -633,7 +663,8 @@ function demo(){
     cliNome:"COPELAND", cliContato:"Denis Ferraz", cliFone:"11 98950-4477", cliEmail:"denis.ferraz@copeland.com",
     finNome:"ASSAÍ NACIONAL", finEnd:"Nacional",
     respNome:"André Camilo", respContato:"62 99392-2999 · aocinnet@gmail.com",
-    equipe:"1 Eletrotécnico + 1 Eletricista + Operacional",
+    equipe:"1 Eletrotécnico · 1 Eletricista · 1 Operacional",
+    efetivo:[{f:'Eletrotécnico',ic:'electrical_services',n:1},{f:'Eletricista',ic:'bolt',n:1},{f:'Operacional',ic:'groups',n:1}],
     prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho',
     descGeral:"Proposta para execução dos serviços de automação de iluminação e substituição do controlador do ar-condicionado central, conforme escopo detalhado abaixo. Valores e condições conforme apresentado nesta cotação.", descGeralOn:true,
     modos:{servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'},
@@ -720,6 +751,8 @@ usuarios:[
   {id:uid(),nome:"Gustavo Neves",papel:"comercial",fone:"",email:"gustavoneves@exautomacao.com.br"},
   {id:uid(),nome:"José Arnaldo",papel:"tecnico",fone:"",email:""}
 ]};
+/* ids ESTÁVEIS pro semente (não mudam a cada carga) — evita item virar "avulso" após recarregar */
+['servicos','equip','despesas','materiais'].forEach(k=>{ (CAD[k]||[]).forEach((it,i)=>{ it.id='sd_'+k+'_'+i; }); });
 
 /* ---------- carga / persistência ---------- */
 function sanitize(){
@@ -731,6 +764,7 @@ function sanitize(){
   ['servicos','equip','despesas','materiais'].forEach(k=>{ if(S.blocoOn[k]===undefined)S.blocoOn[k]=true; if(S.obsOn[k]===undefined)S.obsOn[k]=true; });
   if(S.descGeral===undefined)S.descGeral='';
   if(S.descGeralOn===undefined)S.descGeralOn=true;
+  if(!Array.isArray(S.efetivo))S.efetivo=[{f:'Eletrotécnico',ic:'electrical_services',n:1},{f:'Eletricista',ic:'bolt',n:1}];
   if(S.margemBase===undefined)S.margemBase=30;
   if(!S.status)S.status='rascunho';
 }
@@ -802,7 +836,7 @@ function renderBlk(cfg){
         ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
         : `<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)"></span>`;
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
-      const editCad = (r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.catId}')" title="Editar o valor padrão deste item no cadastro"><span class="material-symbols-rounded">edit_note</span></button>`:'';
+      const editCad = (r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'';
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div></td>
@@ -848,10 +882,52 @@ function renderBlk(cfg){
       </div>
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
+    ${cfg.key==='servicos'?efetivoHtml():''}
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button></div>
     ${obsHtml}`;
 }
+
+/* ---------- efetivo na obra (cartão-roster, topo do bloco Serviços) ---------- */
+const FUNCS=[
+  {f:'Encarregado',ic:'engineering'},
+  {f:'Eletrotécnico',ic:'electrical_services'},
+  {f:'Eletricista',ic:'bolt'},
+  {f:'Ajudante',ic:'person'},
+  {f:'Montador',ic:'handyman'},
+  {f:'Operacional',ic:'groups'},
+  {f:'Téc. de segurança',ic:'health_and_safety'},
+  {f:'Motorista',ic:'local_shipping'}
+];
+const efTotal=()=>(S.efetivo||[]).reduce((a,c)=>a+(+c.n||0),0);
+function efFrase(){ const p=(S.efetivo||[]).filter(c=>+c.n>0).map(c=>c.n+' '+c.f+(c.n>1?'s':'')); return p.join(' · '); }
+function efetivoHtml(){
+  const crew=S.efetivo||[];
+  const rows=crew.map((c,i)=>`<div class="efrow"><span class="efav"><span class="material-symbols-rounded">${c.ic||'person'}</span></span>
+      <div class="eff"><div class="efn">${esc(c.f)}</div><div class="efd">função na equipe</div></div>
+      <div class="efstep"><button onclick="efDec(${i})" title="−"><span class="material-symbols-rounded">remove</span></button><span class="efqt">${c.n}</span><button onclick="efInc(${i})" title="+"><span class="material-symbols-rounded">add</span></button></div>
+      <button class="efrm" onclick="efRm(${i})" title="Remover função"><span class="material-symbols-rounded">close</span></button></div>`).join('');
+  return `<div class="efcard noprint">
+    <div class="efhd"><span class="material-symbols-rounded">engineering</span><h3>Efetivo na obra</h3><span class="efcnt"><span class="material-symbols-rounded">group</span>${efTotal()} pessoas</span></div>
+    ${rows||'<div class="efempty">Sem funções definidas. Adicione abaixo.</div>'}
+    <div class="effoot"><button class="efadd" onclick="efAddOpen()"><span class="material-symbols-rounded">add</span>função</button>
+      <span class="efprazo"><span class="material-symbols-rounded">event</span>Prazo estimado <input type="number" min="1" value="${num(S.prazoDias)||1}" oninput="efSetDias(this.value)"> dias</span></div>
+  </div>`;
+}
+function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m="equipe"]'); if(el)el.value=S.equipe; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function efInc(i){ if(!S.efetivo[i])return; S.efetivo[i].n=(+S.efetivo[i].n||0)+1; efApply(); }
+function efDec(i){ if(!S.efetivo[i])return; S.efetivo[i].n=Math.max(0,(+S.efetivo[i].n||0)-1); if(S.efetivo[i].n===0)S.efetivo.splice(i,1); efApply(); }
+function efRm(i){ S.efetivo.splice(i,1); efApply(); }
+function efSetDias(v){ S.prazoDias=Math.max(1,parseInt(v)||1); const el=document.querySelector('[data-f="prazoDias"]'); if(el)el.value=S.prazoDias; save(); }
+function efAddOpen(){
+  const have=new Set((S.efetivo||[]).map(c=>c.f));
+  const disp=FUNCS.filter(f=>!have.has(f.f));
+  PICK_TARGET=null;
+  document.getElementById('pickTitle').textContent='Adicionar função ao efetivo';
+  document.getElementById('pickBody').innerHTML=disp.length?disp.map(f=>`<button class="pkitem" onclick="efAdd('${f.f}')"><span class="pknm"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;color:var(--pri);margin-right:7px">${f.ic}</span>${f.f}</span></button>`).join(''):'<div style="color:var(--tx3);padding:12px;font-size:12px">Todas as funções já estão na equipe.</div>';
+  document.getElementById('pickModal').classList.add('open');
+}
+function efAdd(f){ const ic=(FUNCS.find(x=>x.f===f)||{}).ic||'person'; if(!Array.isArray(S.efetivo))S.efetivo=[]; S.efetivo.push({f,ic,n:1}); closePick(); efApply(); }
 
 function toggleModo(blk){
   const next = (S.modos[blk]||'unit')==='unit' ? 'geral' : 'unit';
@@ -938,9 +1014,9 @@ function addAvulso(blk){
 }
 /* + Novo: cadastra no catálogo (orc_catalogo) e adiciona na folha */
 const BLK_TIPO={servicos:'servico',equip:'equipamento',despesas:'despesa',materiais:'material'};
-let _ncBlk=null, _ncEdit=null;   // _ncEdit = id do item do catálogo em edição (null = novo)
+let _ncBlk=null, _ncEdit=null, _ncEditRow=null;   // _ncEdit = id do item real do catálogo; _ncEditRow = linha a religar
 function openNovoCat(blk){
-  PICK_TARGET=null; _ncBlk=blk; _ncEdit=null; closePick();
+  PICK_TARGET=null; _ncBlk=blk; _ncEdit=null; _ncEditRow=null; closePick();
   const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
   document.getElementById('novoCatTitle').textContent='Novo '+sing+' — salva no catálogo';
   ['nc_nome','nc_custo','nc_margem'].forEach(id=>document.getElementById(id).value='');
@@ -949,22 +1025,26 @@ function openNovoCat(blk){
   document.getElementById('novoCatModal').classList.add('open');
   setTimeout(()=>document.getElementById('nc_nome').focus(),40);
 }
-/* editar o VALOR PADRÃO no cadastro (a partir da linha) — não se edita solto na linha */
-function openEditCat(blk,catId){
-  const c=catFor(blk).find(x=>x.id===catId);
-  if(!c){ alert('Este item é avulso (sem cadastro). Use a chave “alterar” para ajustar o custo só neste orçamento.'); return; }
-  PICK_TARGET=null; _ncBlk=blk; _ncEdit=catId; closePick();
+/* editar o VALOR PADRÃO no cadastro (a partir da linha). Se o item ainda não tem cadastro real
+   (semente/avulso/id defasado), abre pré-preenchido para CADASTRAR e religa a linha ao salvar. */
+function openEditCat(blk,rowId){
+  const r=(S[blk]||[]).find(x=>x.id===rowId); if(!r)return;
+  const c = r.catId ? catFor(blk).find(x=>x.id===r.catId) : null;              // real, semente ou nada
+  const realCat = !!(c && (CATALOGO[blk]||[]).some(x=>x.id===r.catId));        // existe no catálogo da nuvem?
+  PICK_TARGET=null; _ncBlk=blk; _ncEditRow=rowId; _ncEdit = realCat ? r.catId : null; // null => vai CRIAR
+  closePick();
   const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
-  document.getElementById('novoCatTitle').textContent='Editar '+sing+' no cadastro — valor padrão';
-  document.getElementById('nc_nome').value=c.nome||'';
-  fillUnd(document.getElementById('nc_und'), c.und||UND_DFLT[blk]||'UND');
-  document.getElementById('nc_custo').value=(c.custo!=null?moneyVal(c.custo):'');
-  document.getElementById('nc_margem').value=(c.margem===''||c.margem==null?'':c.margem);
-  fillCateg(document.getElementById('nc_cat'),blk,c.categoria||'');
+  const src = c || {nome:r.desc, custo:(r.usarBase?r.custoBase:num(r.custoAlt)), und:r.und, margem:r.margem, categoria:''};
+  document.getElementById('novoCatTitle').textContent = realCat ? ('Editar '+sing+' no cadastro — valor padrão') : ('Cadastrar '+sing+' no catálogo');
+  document.getElementById('nc_nome').value=src.nome||'';
+  fillUnd(document.getElementById('nc_und'), src.und||UND_DFLT[blk]||'UND');
+  document.getElementById('nc_custo').value=(src.custo!=null&&src.custo!==''?moneyVal(src.custo):'');
+  document.getElementById('nc_margem').value=(src.margem===''||src.margem==null?'':src.margem);
+  fillCateg(document.getElementById('nc_cat'),blk,src.categoria||'');
   document.getElementById('novoCatModal').classList.add('open');
   setTimeout(()=>document.getElementById('nc_custo').focus(),40);
 }
-function closeNovoCat(){ document.getElementById('novoCatModal').classList.remove('open'); _ncBlk=null; _ncEdit=null; }
+function closeNovoCat(){ document.getElementById('novoCatModal').classList.remove('open'); _ncBlk=null; _ncEdit=null; _ncEditRow=null; }
 function saveNovoCat(){
   const blk=_ncBlk; if(!blk)return;
   const nome=document.getElementById('nc_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
@@ -989,8 +1069,15 @@ function saveNovoCat(){
     } else applyLocal();
     return;
   }
-  const finish=(id)=>{ CATALOGO[blk]=CATALOGO[blk]||[]; CATALOGO[blk].push({id:id||uid(),nome,custo,und,margem:(margem==null?'':margem),marca:''});
-    S[blk].push(rowSvc(nome,1,und,custo,(margem==null?'':margem),(id||null),'')); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closeNovoCat(); };
+  // CRIAR no catálogo — item novo OU promover semente/avulso de uma linha existente
+  const rowId=_ncEditRow;
+  const oldCat = rowId ? ((S[blk].find(x=>x.id===rowId)||{}).catId||null) : null;
+  const finish=(id)=>{ id=id||uid();
+    CATALOGO[blk]=CATALOGO[blk]||[]; CATALOGO[blk].push({id,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||''});
+    if(rowId){ // religa a linha (e irmãs com o mesmo catId antigo) ao cadastro criado
+      (S[blk]||[]).forEach(r=>{ if(r.id===rowId || (oldCat && r.catId===oldCat)){ r.catId=id; r.desc=nome; r.custoBase=custo; r.und=und; r.margem=(margem==null?'':margem); if(r.usarBase) r.custoAlt=custo; } });
+    } else { S[blk].push(rowSvc(nome,1,und,custo,(margem==null?'':margem),id,'')); }
+    save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closeNovoCat(); };
   if(CLOUD){
     SB.from('orc_catalogo').insert({empresa_id:EMPRESA_ID,tipo:BLK_TIPO[blk],nome,unidade:und,custo,margem,categoria:cat,ativo:true}).select('id').then(({data,error})=>{
       if(error){ console.error(error); alert('Erro ao salvar no catálogo: '+error.message); return; }
