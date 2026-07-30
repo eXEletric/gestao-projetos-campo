@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>eX · Compositor de serviço — modelo</title>
+<title>eX · Compositor de serviço — modelo v2</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap" rel="stylesheet">
@@ -12,110 +12,122 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.45}
 .material-symbols-rounded{font-family:'Material Symbols Rounded';line-height:1;vertical-align:middle}
-.wrap{max-width:1000px;margin:0 auto;padding:22px 18px 70px}
+.wrap{max-width:1040px;margin:0 auto;padding:22px 18px 70px}
 .top{display:flex;align-items:center;gap:11px;margin-bottom:4px}
 .logo{font-weight:800;font-size:22px;color:var(--pri)}.logo b{color:var(--tx)}
-.ttl{font-size:13px;font-weight:700;color:var(--tx2);display:flex;align-items:center;gap:6px}
-.ttl .material-symbols-rounded{color:var(--pri);font-size:20px}
-.sub{font-size:12.5px;color:var(--tx2);margin:4px 0 18px;max-width:820px}
-.svcname{display:flex;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin-bottom:16px}
+.ttl{font-size:13px;font-weight:700;color:var(--tx2);display:flex;align-items:center;gap:6px}.ttl .material-symbols-rounded{color:var(--pri);font-size:20px}
+.sub{font-size:12.5px;color:var(--tx2);margin:4px 0 16px;max-width:860px}
+.svcname{display:flex;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:12px 15px;margin-bottom:14px}
 .svcname .material-symbols-rounded{color:var(--pri);font-size:22px}
-.svcname input{flex:1;border:none;font:700 16px 'Inter';color:var(--tx);background:transparent}
-.svcname input:focus{outline:none}
+.svcname input{flex:1;border:none;font:700 16px 'Inter';color:var(--tx);background:transparent}.svcname input:focus{outline:none}
+/* barra de config (chaves) */
+.cfgbar{display:flex;flex-wrap:wrap;gap:10px;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:16px}
+.cfg{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--tx2);font-weight:600}
+.cfg .seg{display:inline-flex;background:var(--surf2);border-radius:9px;padding:3px}
+.cfg .seg button{border:none;background:transparent;font:600 11.5px 'Inter';color:var(--tx2);padding:5px 11px;border-radius:7px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.cfg .seg button.on{background:var(--surf);color:var(--pri);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+.cfg .seg .material-symbols-rounded{font-size:15px}
+.vsw{position:relative;width:34px;height:18px;border-radius:10px;background:linear-gradient(#bbbeb7,#9a9d95);box-shadow:inset 0 1px 3px rgba(0,0,0,.34);cursor:pointer;flex-shrink:0}
+.vsw.on{background:linear-gradient(#2fcf88,#0f8f5b)}
+.vkb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:linear-gradient(#fff,#e2e2dd);box-shadow:0 1px 2px rgba(0,0,0,.4);transition:.15s}
+.vsw.on .vkb{left:18px}
+.divv{width:1px;height:22px;background:var(--line)}
 .cols{display:grid;grid-template-columns:1fr 340px;gap:16px;align-items:start}
-@media(max-width:820px){.cols{grid-template-columns:1fr}}
+@media(max-width:840px){.cols{grid-template-columns:1fr}}
 .card{background:var(--surf);border:1px solid var(--line);border-radius:13px;margin-bottom:16px;overflow:hidden}
 .chd{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,#f6f4ff,#fbfaff)}
-.chd .material-symbols-rounded{color:var(--pri);font-size:19px}
-.chd h3{margin:0;font-size:12.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)}
+.chd .material-symbols-rounded{color:var(--pri);font-size:19px}.chd h3{margin:0;font-size:12.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)}
 .chd .sm{margin-left:auto;font-size:11px;color:var(--tx3)}
 table{width:100%;border-collapse:collapse;font-size:13px}
-th{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:700;text-align:left;padding:8px 8px 6px}
-th.r,td.r{text-align:right}
-td{padding:5px 8px;border-top:1px solid var(--line);vertical-align:middle}
-tr:first-child td{border-top:none}
+th{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:700;text-align:left;padding:8px 8px 6px}th.r,td.r{text-align:right}th.c,td.c{text-align:center}
+td{padding:5px 8px;border-top:1px solid var(--line);vertical-align:middle}tr:first-child td{border-top:none}
 select,input.cin{border:1px solid transparent;border-radius:7px;background:transparent;font:inherit;font-size:13px;color:var(--tx);padding:5px 6px;width:100%}
-select:hover,input.cin:hover{border-color:var(--line2)}
-select:focus,input.cin:focus{outline:none;border-color:var(--pri);background:#fff}
-input.cin.num{text-align:right;width:74px;font-variant-numeric:tabular-nums}
-input.cin.h{width:64px}
+select:hover,input.cin:hover{border-color:var(--line2)}select:focus,input.cin:focus{outline:none;border-color:var(--pri);background:#fff}
+input.cin.num{text-align:center;width:56px;font-variant-numeric:tabular-nums}
 .money{font-variant-numeric:tabular-nums;white-space:nowrap}
-.del{border:none;background:none;color:var(--tx3);cursor:pointer;padding:4px;border-radius:6px}
-.del:hover{background:#fbecec;color:var(--red)}
+.del{border:none;background:none;color:var(--tx3);cursor:pointer;padding:4px;border-radius:6px}.del:hover{background:#fbecec;color:var(--red)}
 .addr{padding:9px 12px;border-top:1px solid var(--line)}
-.addr button{border:1px dashed var(--line2);background:transparent;color:var(--pri);font:600 12px 'Inter';border-radius:20px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
-.addr button:hover{background:var(--pri-bg);border-color:var(--pri)}
-.fator{display:flex;align-items:center;gap:10px;padding:11px 14px;background:var(--surf2);font-size:12.5px;color:var(--tx2)}
-.fator input{width:60px;border:1px solid var(--line2);border-radius:7px;padding:5px;text-align:center;font:700 14px 'Inter';background:#fff}
-.fator .material-symbols-rounded{color:var(--amber);font-size:18px}
+.addr button{border:1px dashed var(--line2);background:transparent;color:var(--pri);font:600 12px 'Inter';border-radius:20px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}.addr button:hover{background:var(--pri-bg);border-color:var(--pri)}
+/* dificuldade geral + legenda */
+.difgeral{padding:11px 14px;background:var(--surf2);display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12.5px;color:var(--tx2)}
+.difgeral select{width:auto;min-width:150px;border-color:var(--line2);background:#fff;font-weight:600}
+.legenda{margin-top:12px}
+.legrow{display:flex;gap:10px;align-items:flex-start;padding:8px 10px;border-radius:9px;font-size:12px}
+.legrow .badge{flex-shrink:0;width:64px;text-align:center;font-weight:800;font-size:11px;padding:3px 6px;border-radius:7px}
+.lv0 .badge{background:#e7f6ee;color:#0f8f5b}.lv1 .badge{background:#fdf3e0;color:#c47f0b}.lv2 .badge{background:#fdeee0;color:#b5570b}.lv3 .badge{background:#fbe6e4;color:#c0392b}
+.legrow .lx b{color:var(--tx)}.legrow .mult{margin-left:auto;color:var(--tx3);font-weight:700;white-space:nowrap}
 /* resultado */
 .res{position:sticky;top:14px}
 .rescap{background:linear-gradient(135deg,var(--pri),var(--pri2));color:#fff;border-radius:13px 13px 0 0;padding:15px 17px}
-.rescap .l{font-size:11px;text-transform:uppercase;letter-spacing:.05em;opacity:.85}
-.rescap .v{font-size:27px;font-weight:800;margin-top:3px}
+.rescap .l{font-size:11px;text-transform:uppercase;letter-spacing:.05em;opacity:.85}.rescap .v{font-size:27px;font-weight:800;margin-top:3px}
 .resbody{background:var(--surf);border:1px solid var(--line);border-top:none;border-radius:0 0 13px 13px;padding:13px 16px}
-.ln{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;border-bottom:1px dashed var(--line)}
-.ln:last-child{border-bottom:none}
-.ln .lb{color:var(--tx2);display:flex;align-items:center;gap:6px}
-.ln .lb .material-symbols-rounded{font-size:16px;color:var(--tx3)}
-.ln .vv{font-weight:700;font-variant-numeric:tabular-nums}
-.ln.big .vv{font-size:16px}
-.ln .vv.luc{color:var(--green)}
-.tempo{background:var(--pri-bg);border-radius:10px;padding:11px 13px;margin-top:12px;font-size:12.5px;color:var(--tx2)}
-.tempo b{color:var(--pri)}
-.tempo .row{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
-.tempo input{width:44px;border:1px solid var(--line2);border-radius:6px;padding:4px;text-align:center;font:700 13px 'Inter';background:#fff}
+.ln{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:13px;border-bottom:1px dashed var(--line)}.ln:last-child{border-bottom:none}
+.ln .lb{color:var(--tx2);display:flex;align-items:center;gap:6px}.ln .lb .material-symbols-rounded{font-size:16px;color:var(--tx3)}
+.ln .vv{font-weight:700;font-variant-numeric:tabular-nums}.ln.big .vv{font-size:16px}.ln .vv.luc{color:var(--green)}
+.marg{display:flex;align-items:center;gap:6px}.marg input{width:52px;border:1px solid var(--line2);border-radius:6px;padding:4px;text-align:center;font:700 13px 'Inter';background:#fff}
+.tempo{background:var(--pri-bg);border-radius:10px;padding:11px 13px;margin-top:12px;font-size:12.5px;color:var(--tx2)}.tempo b{color:var(--pri)}
+.tempo .row{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}.tempo input{width:44px;border:1px solid var(--line2);border-radius:6px;padding:4px;text-align:center;font:700 13px 'Inter';background:#fff}
 .dias{font-size:19px;font-weight:800;color:var(--pri)}
-.note{font-size:12px;color:var(--tx2);background:var(--surf);border:1px solid var(--line);border-left:3px solid var(--pri);border-radius:9px;padding:12px 15px;margin-top:4px}
-.note b{color:var(--tx)}
-.pop{position:fixed;inset:0;background:rgba(20,12,45,.28);display:none;align-items:center;justify-content:center;z-index:9;padding:20px}
-.pop.on{display:flex}
-.pop .cardp{background:var(--surf);border-radius:14px;padding:8px;max-width:420px;width:100%;max-height:70vh;overflow:auto;box-shadow:0 20px 50px rgba(20,10,50,.3)}
+.note{font-size:12px;color:var(--tx2);background:var(--surf);border:1px solid var(--line);border-left:3px solid var(--pri);border-radius:9px;padding:12px 15px;margin-top:14px}.note b{color:var(--tx)}
+.pop{position:fixed;inset:0;background:rgba(20,12,45,.28);display:none;align-items:center;justify-content:center;z-index:9;padding:20px}.pop.on{display:flex}
+.pop .cardp{background:var(--surf);border-radius:14px;padding:8px;max-width:440px;width:100%;max-height:70vh;overflow:auto;box-shadow:0 20px 50px rgba(20,10,50,.3)}
 .pop .ph{font-size:12px;font-weight:700;color:var(--tx2);padding:9px 11px 6px}
-.pop .pi{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;padding:9px 11px;border-radius:9px;cursor:pointer;font:500 13px 'Inter';color:var(--tx);text-align:left}
-.pop .pi:hover{background:var(--pri-bg)}
-.pop .pi .pv{margin-left:auto;color:var(--tx3);font-size:12px;font-variant-numeric:tabular-nums}
+.pop .pi{display:flex;align-items:center;gap:10px;width:100%;border:none;background:none;padding:9px 11px;border-radius:9px;cursor:pointer;font:500 13px 'Inter';color:var(--tx);text-align:left}.pop .pi:hover{background:var(--pri-bg)}.pop .pi .pv{margin-left:auto;color:var(--tx3);font-size:12px}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <div class="top"><span class="logo"><b>e</b>X</span><span class="ttl"><span class="material-symbols-rounded">precision_manufacturing</span>Compositor de serviço — modelo</span></div>
-  <div class="sub">Cada serviço nasce de uma <b>composição</b>, não de um chute: <b>mão de obra</b> (horas × função, com o seu R$/h real) + <b>materiais</b>, com um <b>fator</b> de dificuldade. Sai o <b>custo</b>, o <b>preço sugerido</b> e o <b>tempo</b> — que vira dias conforme o efetivo. Mexa nos campos. (Números de hora vindos da sua planilha PRO-W.)</div>
+  <div class="top"><span class="logo"><b>e</b>X</span><span class="ttl"><span class="material-symbols-rounded">precision_manufacturing</span>Compositor de serviço — modelo v2</span></div>
+  <div class="sub">Refeito com a sua estrutura: <b>tipo de profissional</b> (do cadastro, com custo <b>local</b> e <b>com viagem</b>), <b>quantas pessoas × quanto tempo</b>, <b>grau de dificuldade</b> (geral ou por profissional) com <b>legenda</b>, e <b>material</b> que entra ou não (chave). Mexa nos campos.</div>
 
   <div class="svcname"><span class="material-symbols-rounded">build_circle</span><input id="svc" value="Fabricação e instalação de String Box 4e/2s"></div>
+
+  <!-- CONFIG (chaves) -->
+  <div class="cfgbar">
+    <span class="cfg"><span class="material-symbols-rounded" style="color:var(--pri)">flight</span>Custo/hora:
+      <span class="seg"><button id="loc_local" class="on" onclick="setViagem(false)">Local</button><button id="loc_viag" onclick="setViagem(true)"><span class="material-symbols-rounded">flight_takeoff</span>Com viagem</button></span></span>
+    <span class="divv"></span>
+    <span class="cfg"><span class="material-symbols-rounded" style="color:var(--amber)">tune</span>Dificuldade:
+      <span class="seg"><button id="dif_ger" class="on" onclick="setDifModo('geral')">Geral</button><button id="dif_prof" onclick="setDifModo('prof')">Por profissional</button></span></span>
+    <span class="divv"></span>
+    <span class="cfg"><span class="vsw on" id="matSw" onclick="toggleMat()"><span class="vkb"></span></span>Material entra na composição</span>
+  </div>
 
   <div class="cols">
     <div>
       <!-- MÃO DE OBRA -->
       <div class="card">
-        <div class="chd"><span class="material-symbols-rounded">engineering</span><h3>Mão de obra</h3><span class="sm" id="moHoras">0 h</span></div>
-        <table><thead><tr><th>Função</th><th class="r">Horas</th><th class="r">R$/h custo</th><th class="r">Custo</th><th></th></tr></thead><tbody id="moBody"></tbody></table>
-        <div class="addr"><button onclick="moAdd()"><span class="material-symbols-rounded">add</span>função</button></div>
+        <div class="chd"><span class="material-symbols-rounded">badge</span><h3>Mão de obra (por tipo de profissional)</h3><span class="sm" id="moHoras">0 h</span></div>
+        <table><thead><tr><th>Tipo de profissional</th><th class="c">Pessoas</th><th class="c">Tempo (h) cada</th><th class="dcol c">Dificuldade</th><th class="r">R$/h</th><th class="r">Custo</th><th></th></tr></thead><tbody id="moBody"></tbody></table>
+        <div class="addr"><button onclick="moAdd()"><span class="material-symbols-rounded">add</span>profissional</button></div>
+        <div class="difgeral" id="difGeralBox"><span class="material-symbols-rounded" style="color:var(--amber);font-size:18px">tune</span>Grau de dificuldade geral:
+          <select id="difGeral" onchange="render()"></select><span id="difGeralDesc" style="color:var(--tx3)"></span></div>
       </div>
       <!-- MATERIAIS -->
-      <div class="card">
-        <div class="chd"><span class="material-symbols-rounded">inventory_2</span><h3>Materiais do serviço</h3><span class="sm">catálogo PRO-W</span></div>
-        <table><thead><tr><th>Material</th><th class="r">Qtd</th><th class="r">R$ unit.</th><th class="r">Total</th><th></th></tr></thead><tbody id="matBody"></tbody></table>
+      <div class="card" id="matCard">
+        <div class="chd"><span class="material-symbols-rounded">inventory_2</span><h3>Materiais do serviço</h3><span class="sm">catálogo (estoque)</span></div>
+        <table><thead><tr><th>Material</th><th class="c">Qtd</th><th class="r">R$ unit.</th><th class="r">Total</th><th></th></tr></thead><tbody id="matBody"></tbody></table>
         <div class="addr"><button onclick="matAdd()"><span class="material-symbols-rounded">add</span>material</button></div>
-        <div class="fator"><span class="material-symbols-rounded">tune</span>Fator de dificuldade (multiplica as horas) <input id="fator" type="number" step="0.05" min="1" value="1.0"> ×</div>
       </div>
+      <!-- LEGENDA -->
+      <div class="card"><div class="chd"><span class="material-symbols-rounded">help</span><h3>Legenda dos graus de dificuldade</h3></div>
+        <div class="legenda" id="legenda" style="padding:6px 10px 12px"></div></div>
     </div>
 
     <!-- RESULTADO -->
     <div class="res">
       <div class="rescap"><div class="l">Preço sugerido do serviço</div><div class="v" id="rPreco">R$ 0,00</div></div>
       <div class="resbody">
-        <div class="ln"><span class="lb"><span class="material-symbols-rounded">engineering</span>Mão de obra (custo)</span><span class="vv money" id="rMoCusto">—</span></div>
-        <div class="ln"><span class="lb"><span class="material-symbols-rounded">inventory_2</span>Materiais (custo)</span><span class="vv money" id="rMatCusto">—</span></div>
+        <div class="ln"><span class="lb"><span class="material-symbols-rounded">badge</span>Mão de obra</span><span class="vv money" id="rMo">—</span></div>
+        <div class="ln" id="lnMat"><span class="lb"><span class="material-symbols-rounded">inventory_2</span>Materiais</span><span class="vv money" id="rMat">—</span></div>
         <div class="ln big"><span class="lb">Custo total</span><span class="vv money" id="rCusto">—</span></div>
-        <div class="ln"><span class="lb">Lucro</span><span class="vv money luc" id="rLucro">—</span></div>
-        <div class="ln"><span class="lb">Margem</span><span class="vv luc" id="rMarg">—</span></div>
+        <div class="ln"><span class="lb marg">Margem <input id="margem" type="number" min="0" value="40">%</span><span class="vv money luc" id="rLucro">—</span></div>
         <div class="tempo">
-          <div><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri);vertical-align:middle">schedule</span> Tempo de execução: <b id="tHoras">0 h</b></div>
+          <div><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri);vertical-align:middle">schedule</span> Tempo de execução: <b id="tHoras">0 h</b> <span style="color:var(--tx3)">(homem-hora, já com dificuldade)</span></div>
           <div class="row">com <input id="efet" type="number" min="1" value="2"> pessoas · <input id="hdia" type="number" min="1" value="8"> h/dia → <span class="dias" id="tDias">0 dias</span></div>
         </div>
       </div>
-      <div class="note" style="margin-top:14px"><b>Como pluga no orçamento:</b> o <b>custo total</b> vira o “custo base” do serviço (entra no motor base+margem que já existe) e o <b>tempo</b> alimenta o cartão <b>Efetivo na obra → dias</b>. Você compõe uma vez; o serviço fica pronto pra reusar.</div>
+      <div class="note"><b>Como pluga:</b> o <b>custo total</b> vira o custo base do serviço (motor base+margem) e o <b>tempo</b> alimenta o cartão Efetivo→dias. Tipos de profissional e R$/h vêm do cadastro (aba DADOS da sua planilha). Há ainda um <b>fator segurança do trabalho</b> na sua planilha — dá pra somar como um nível a mais. Multiplicadores da dificuldade são calibráveis aos seus números exatos.</div>
     </div>
   </div>
 </div>
@@ -124,83 +136,92 @@ input.cin.h{width:64px}
 
 <script>
 const fmt=n=>'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-// funções e R$/h reais (aba HH da planilha PRO-W): hora-custo = diária/8; hora-cobrada = 2× custo
-const FUNCOES=[
-  {f:'Engenharia',custo:62.50,cobr:125.00},
-  {f:'Eletricista responsável',custo:25.00,cobr:50.00},
-  {f:'Eletricista solar',custo:18.75,cobr:37.50},
-  {f:'Eletricista predial',custo:18.75,cobr:37.50},
-  {f:'Ajudante eletricista',custo:15.00,cobr:30.00},
-  {f:'Estagiário',custo:12.50,cobr:25.00},
-  {f:'Oficina / bancada',custo:30.00,cobr:60.00},
-  {f:'Controle de qualidade',custo:45.22,cobr:90.44}
+// TIPOS DE PROFISSIONAL (aba DADOS: valor-hora = salário c/ encargos ÷ 192). Viagem = ilustrativo (a cadastrar).
+const PROF=[
+  {t:'Eng. automação',sal:10000,local:52.08,viagem:78.00},
+  {t:'Eletrotécnico',sal:6000,local:31.25,viagem:47.00},
+  {t:'Eletricista comando',sal:5000,local:26.04,viagem:39.00},
+  {t:'Eletricista instalação',sal:2500,local:13.02,viagem:20.00},
+  {t:'Eletricista montagem',sal:2500,local:13.02,viagem:20.00},
+  {t:'Ajudante eletricista',sal:1800,local:9.38,viagem:15.00},
+  {t:'Téc. refrigeração',sal:4000,local:20.83,viagem:31.00}
 ];
-// amostra do catálogo de materiais (aba MAT_PDR)
+// GRAUS DE DIFICULDADE (predeterminados + legenda). mult = multiplica o tempo.
+const DIF=[
+  {n:'Normal',mult:1.00,desc:'Local acessível, horário livre, sem restrição de segurança especial.'},
+  {n:'Moderada',mult:1.25,desc:'Altura moderada, horário comercial restrito, espaço apertado, NR-10 básica.'},
+  {n:'Alta',mult:1.50,desc:'Trabalho noturno, plataforma elevatória, acesso controlado, NR-35 (altura).'},
+  {n:'Severa',mult:2.00,desc:'Grande porte / ambiente crítico (offshore, plataforma de petróleo), múltiplas NRs, janela mínima de execução.'}
+];
 const MATERIAIS=[
-  {m:'Armário/caixa string box (gabinete)',v:180.00},
-  {m:'Barramento cobre kit distribuição',v:120.00},
-  {m:'Bloco de distribuição 4 barramentos 7 furos',v:80.00},
-  {m:'Disjuntor DC / chave seccionadora',v:95.00},
-  {m:'DPS fotovoltaico (proteção surto)',v:110.00},
-  {m:'Fusível + porta-fusível string',v:18.00},
-  {m:'Conector MC4 (par)',v:9.00},
-  {m:'Borne / terminais e acessórios',v:6.00},
-  {m:'Cabo solar 6mm² (m)',v:7.50},
-  {m:'Prensa-cabo / eletroduto e fixação',v:12.00}
+  {m:'Armário/caixa string box (gabinete)',v:180.00},{m:'Barramento cobre kit distribuição',v:120.00},
+  {m:'Bloco de distribuição 4 barr. 7 furos',v:80.00},{m:'Disjuntor DC / seccionadora',v:95.00},
+  {m:'DPS fotovoltaico',v:110.00},{m:'Fusível + porta-fusível string',v:18.00},{m:'Conector MC4 (par)',v:9.00}
 ];
-let MO=[{fi:6,h:3},{fi:2,h:1.5},{fi:0,h:0.5}];   // oficina 3h, eletricista solar 1,5h, engenharia 0,5h
+let MO=[{pi:2,pes:1,h:3,di:0},{pi:3,pes:1,h:1.5,di:0},{pi:0,pes:1,h:0.5,di:0}];
 let MAT=[{mi:0,q:1},{mi:1,q:1},{mi:2,q:1},{mi:4,q:2},{mi:5,q:4}];
-let MATMK=25; // markup materiais % (compra→venda)
+let VIAGEM=false, DIFMODO='geral', MATON=true, DIFGERAL=0;
 
+const rate=p=>VIAGEM?p.viagem:p.local;
+function setViagem(v){VIAGEM=v;document.getElementById('loc_local').classList.toggle('on',!v);document.getElementById('loc_viag').classList.toggle('on',v);render();}
+function setDifModo(m){DIFMODO=m;document.getElementById('dif_ger').classList.toggle('on',m==='geral');document.getElementById('dif_prof').classList.toggle('on',m==='prof');
+  document.getElementById('difGeralBox').style.display=m==='geral'?'flex':'none';
+  document.querySelectorAll('.dcol').forEach(e=>e.style.display=m==='prof'?'':'none');render();}
+function toggleMat(){MATON=!MATON;document.getElementById('matSw').classList.toggle('on',MATON);document.getElementById('matCard').style.display=MATON?'':'none';document.getElementById('lnMat').style.display=MATON?'':'none';render();}
+
+function difSel(val,onch){return `<select onchange="${onch}">`+DIF.map((d,j)=>`<option value="${j}" ${j===val?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('')+`</select>`;}
 function moRow(r,i){
-  const opt=FUNCOES.map((f,j)=>`<option value="${j}" ${j===r.fi?'selected':''}>${f.f}</option>`).join('');
-  const cst=FUNCOES[r.fi].custo;
+  const opt=PROF.map((p,j)=>`<option value="${j}" ${j===r.pi?'selected':''}>${p.t}</option>`).join('');
+  const p=PROF[r.pi], mult=DIFMODO==='prof'?DIF[r.di].mult:DIF[DIFGERAL].mult;
+  const custo=r.pes*r.h*mult*rate(p);
   return `<tr>
-    <td><select onchange="MO[${i}].fi=+this.value;render()">${opt}</select></td>
-    <td class="r"><input class="cin num h" type="number" step="0.25" min="0" value="${r.h}" oninput="MO[${i}].h=+this.value||0;render()"></td>
-    <td class="r money" style="color:var(--tx3)">${fmt(cst)}</td>
-    <td class="r money">${fmt(r.h*cst)}</td>
+    <td><select onchange="MO[${i}].pi=+this.value;render()">${opt}</select></td>
+    <td class="c"><input class="cin num" type="number" min="0" step="1" value="${r.pes}" oninput="MO[${i}].pes=+this.value||0;render()"></td>
+    <td class="c"><input class="cin num" type="number" min="0" step="0.25" value="${r.h}" oninput="MO[${i}].h=+this.value||0;render()"></td>
+    <td class="dcol c" style="${DIFMODO==='prof'?'':'display:none'}">${difSel(r.di,'MO['+i+'].di=+this.value;render()')}</td>
+    <td class="r money" style="color:var(--tx3)">${fmt(rate(p))}</td>
+    <td class="r money">${fmt(custo)}</td>
     <td><button class="del" onclick="MO.splice(${i},1);render()"><span class="material-symbols-rounded" style="font-size:16px">close</span></button></td></tr>`;
 }
-function matRow(r,i){
-  const nm=MATERIAIS[r.mi];
-  return `<tr>
+function matRow(r,i){const nm=MATERIAIS[r.mi];return `<tr>
     <td><button class="cin" style="text-align:left;cursor:pointer;border-color:var(--line)" onclick="openMat(${i})">${nm.m}</button></td>
-    <td class="r"><input class="cin num h" type="number" step="1" min="0" value="${r.q}" oninput="MAT[${i}].q=+this.value||0;render()"></td>
-    <td class="r money" style="color:var(--tx3)">${fmt(nm.v)}</td>
-    <td class="r money">${fmt(r.q*nm.v)}</td>
-    <td><button class="del" onclick="MAT.splice(${i},1);render()"><span class="material-symbols-rounded" style="font-size:16px">close</span></button></td></tr>`;
-}
+    <td class="c"><input class="cin num" type="number" min="0" value="${r.q}" oninput="MAT[${i}].q=+this.value||0;render()"></td>
+    <td class="r money" style="color:var(--tx3)">${fmt(nm.v)}</td><td class="r money">${fmt(r.q*nm.v)}</td>
+    <td><button class="del" onclick="MAT.splice(${i},1);render()"><span class="material-symbols-rounded" style="font-size:16px">close</span></button></td></tr>`;}
+
 function render(){
-  const fator=Math.max(1,+document.getElementById('fator').value||1);
-  document.getElementById('moBody').innerHTML=MO.map(moRow).join('')||'<tr><td colspan="5" style="color:var(--tx3);padding:10px">Sem mão de obra.</td></tr>';
+  // selects de dificuldade geral + legenda (uma vez)
+  const dg=document.getElementById('difGeral');
+  if(dg.options.length!==DIF.length){ dg.innerHTML=DIF.map((d,j)=>`<option value="${j}">${d.n} (×${d.mult.toFixed(2)})</option>`).join(''); }
+  DIFGERAL=+dg.value||0;
+  document.getElementById('difGeralDesc').textContent='— '+DIF[DIFGERAL].desc;
+  document.getElementById('legenda').innerHTML=DIF.map((d,j)=>`<div class="legrow lv${j}"><span class="badge">${d.n}</span><span class="lx"><b>${d.n}</b> — ${d.desc}</span><span class="mult">× ${d.mult.toFixed(2)} no tempo</span></div>`).join('');
+  document.getElementById('moBody').innerHTML=MO.map(moRow).join('')||'<tr><td colspan="7" style="color:var(--tx3);padding:10px">Sem mão de obra.</td></tr>';
   document.getElementById('matBody').innerHTML=MAT.map(matRow).join('')||'<tr><td colspan="5" style="color:var(--tx3);padding:10px">Sem materiais.</td></tr>';
-  let moCusto=0,moCobr=0,horas=0;
-  MO.forEach(r=>{const f=FUNCOES[r.fi];const h=r.h*fator;horas+=h;moCusto+=h*f.custo;moCobr+=h*f.cobr;});
-  let matCusto=0;MAT.forEach(r=>matCusto+=r.q*MATERIAIS[r.mi].v);
-  const matPreco=matCusto*(1+MATMK/100);
-  const custo=moCusto+matCusto, preco=moCobr+matPreco, lucro=preco-custo, marg=preco?lucro/preco*100:0;
+  let mo=0,horas=0;
+  MO.forEach(r=>{const p=PROF[r.pi];const mult=DIFMODO==='prof'?DIF[r.di].mult:DIF[DIFGERAL].mult;const h=r.pes*r.h*mult;horas+=h;mo+=h*rate(p);});
+  let mat=0; if(MATON) MAT.forEach(r=>mat+=r.q*MATERIAIS[r.mi].v);
+  const custo=mo+mat, margem=Math.max(0,+document.getElementById('margem').value||0), preco=custo*(1+margem/100), lucro=preco-custo;
   document.getElementById('moHoras').textContent=horas.toLocaleString('pt-BR',{maximumFractionDigits:2})+' h';
-  document.getElementById('rMoCusto').textContent=fmt(moCusto);
-  document.getElementById('rMatCusto').textContent=fmt(matCusto);
+  document.getElementById('rMo').textContent=fmt(mo);
+  document.getElementById('rMat').textContent=fmt(mat);
   document.getElementById('rCusto').textContent=fmt(custo);
   document.getElementById('rPreco').textContent=fmt(preco);
   document.getElementById('rLucro').textContent=fmt(lucro);
-  document.getElementById('rMarg').textContent=marg.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
   document.getElementById('tHoras').textContent=horas.toLocaleString('pt-BR',{maximumFractionDigits:2})+' h';
-  const ef=Math.max(1,+document.getElementById('efet').value||1), hd=Math.max(1,+document.getElementById('hdia').value||1);
-  const dias=horas/(ef*hd);
-  document.getElementById('tDias').textContent=dias.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+' dias';
+  const ef=Math.max(1,+document.getElementById('efet').value||1),hd=Math.max(1,+document.getElementById('hdia').value||1);
+  document.getElementById('tDias').textContent=(horas/(ef*hd)).toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+' dias';
 }
-function moAdd(){MO.push({fi:4,h:1});render();}
+function moAdd(){MO.push({pi:3,pes:1,h:1,di:DIFGERAL});render();}
 function matAdd(){openMat(-1);}
-let _matTarget=null;
-function openMat(i){_matTarget=i;document.getElementById('popH').textContent=i>=0?'Trocar material':'Adicionar material';
+let _mt=null;
+function openMat(i){_mt=i;document.getElementById('popH').textContent=i>=0?'Trocar material':'Adicionar material';
   document.getElementById('popList').innerHTML=MATERIAIS.map((m,j)=>`<button class="pi" onclick="pickMat(${j})">${m.m}<span class="pv">${fmt(m.v)}</span></button>`).join('');
   document.getElementById('pop').classList.add('on');}
 function closePop(){document.getElementById('pop').classList.remove('on');}
-function pickMat(j){if(_matTarget>=0)MAT[_matTarget].mi=j;else MAT.push({mi:j,q:1});closePop();render();}
-['fator','efet','hdia'].forEach(id=>document.getElementById(id).addEventListener('input',render));
+function pickMat(j){if(_mt>=0)MAT[_mt].mi=j;else MAT.push({mi:j,q:1});closePop();render();}
+['margem','efet','hdia'].forEach(id=>document.getElementById(id).addEventListener('input',render));
+document.querySelectorAll('.dcol').forEach(e=>e.style.display='none');
 render();
 </script>
 </body>
