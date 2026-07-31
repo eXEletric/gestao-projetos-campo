@@ -1424,6 +1424,36 @@ function fmtH(h){ const tot=Math.round((Number(h)||0)*60); if(tot<=0) return '0h
 function toH(val,unit){ val=parseFloat(val)||0; return unit==='min'?val/60:val; }
 function _trim(s,n){ s=String(s||''); return s.length>n ? s.slice(0,n-1).trim()+'…' : s; }
 function aplicarPapel(){ const tec=!!(window._PERFIL && window._PERFIL.papel==='tecnico'); document.body.classList.toggle('papel-tecnico',tec); }
+/* ===== GATING por Kits (barra lê v_colaborador_modulos) — Camada 2 ===== */
+function _gatingTag(){
+  var MAP={'Painel Inicial':'painel','Tarefas':'tarefas','Agenda':'agenda','Chat':'chat','Operação':'operacao','Segurança do Trabalho':'sst','Comercial':'comercial','Gestão':'gestao','Almoxarifado':'almoxarifado','Configurações':'config'};
+  var nav=document.querySelector('.sb-nav'); if(!nav)return;
+  var els=[].slice.call(nav.children).filter(function(c){return c.classList&&c.classList.contains('sb-i');});
+  els=els.concat([].slice.call(nav.querySelectorAll('.sb-grp:not(.sb-grp-nest)')));
+  els.forEach(function(el){ var lb=el.querySelector('.lb'); if(!lb)return; var slug=MAP[lb.textContent.trim()]; if(slug&&!el.getAttribute('data-mod'))el.setAttribute('data-mod',slug); });
+}
+function _gatingApply(allowed,papel){
+  _gatingTag();
+  var tudo=(allowed===null)||papel==='adm'||papel==='fundador';
+  [].slice.call(document.querySelectorAll('.sb-nav [data-mod]')).forEach(function(el){
+    var ok=tudo||(allowed.indexOf(el.getAttribute('data-mod'))>=0);
+    el.style.display=ok?'':'none';
+    if(el.classList.contains('sb-grp')){ var sub=el.nextElementSibling; if(sub&&sub.classList&&sub.classList.contains('sb-sub'))sub.style.display=ok?'':'none'; }
+  });
+}
+async function aplicarGating(){
+  var P=(typeof _PERFIL!=='undefined'&&_PERFIL)||window._PERFIL||null;
+  var papel=(P&&P.papel)||'';
+  if(!P||papel==='adm'||papel==='fundador'){ _gatingApply(null,papel); return; }   // trava: admin/fundador vê tudo
+  var cid=P.colaborador_id;
+  var sb=(typeof SB!=='undefined'&&SB)||window.SB||null;
+  if(!cid||!sb){ _gatingApply(null,papel); return; }                                 // sem colaborador/nuvem → não trava
+  try{
+    var r=await sb.from('v_colaborador_modulos').select('modulo_id').eq('colaborador_id',cid);
+    if(r.error||!(r.data&&r.data.length)){ _gatingApply(null,papel); return; }       // erro OU sem kit → não trava (fail-open)
+    _gatingApply(r.data.map(function(x){return x.modulo_id;}),papel);                 // filtra pelo que os kits abrem
+  }catch(e){ _gatingApply(null,papel); }
+}
 
 const CATALOGO_BASE=[
   {id:"infra_alimentador",nome:"Infra de interligação (alimentador)",cat:"SUPERVISORIO",un:"M",vars:[["Conexão pré-existente",0.25],["Confecção nova",0.333]]},
@@ -2810,7 +2840,7 @@ function pintarUsuario(){ const box=document.getElementById('user-box'); if(!box
     const logo=window._EMPRESA&&window._EMPRESA.logo_url; const ini=(empNome||'eX').trim().slice(0,2)||'eX';
     ['avatar-btn','um-av'].forEach(id=>{const el=document.getElementById(id);if(!el)return; if(logo){el.style.backgroundImage='url("'+logo+'")';el.textContent='';}else{el.style.backgroundImage='';el.textContent=ini;}});
   } else box.style.display='none';
-  aplicarPapel(); }
+  aplicarPapel(); aplicarGating(); }
 function toggleUserMenu(e){ if(e)e.stopPropagation(); const m=document.getElementById('user-menu'); if(m) m.classList.toggle('open'); }
 function umGo(t){ const m=document.getElementById('user-menu'); if(m)m.classList.remove('open'); if(t==='empresa') openEmpresa(); }
 function abrirDev(){ const m=document.getElementById('user-menu'); if(m)m.classList.remove('open'); const f=document.getElementById('dev-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Fluxo_Menu.html'); document.getElementById('dev-ov').classList.add('open'); }
