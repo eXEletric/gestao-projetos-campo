@@ -12,7 +12,7 @@
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
 body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .material-symbols-rounded{font-family:'Material Symbols Rounded';line-height:1;vertical-align:middle;font-size:20px}
-.app{max-width:1080px;margin:0 auto;padding:16px 18px 60px}
+.app{max-width:1000px;margin:0 auto;padding:16px 18px 60px}
 .appbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
 .logo{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--pri)}.logo b{color:var(--tx)}
 .modtag{font-size:12px;font-weight:600;color:var(--tx2);background:var(--surf2);padding:4px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px}
@@ -26,28 +26,42 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .ch{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--surf2)}
 .ch .material-symbols-rounded{font-size:18px;color:var(--pri)}.ch b{font-size:12.5px}.ch .sm{color:var(--tx3);font-size:11px;font-weight:400}
 .scroll{overflow-x:auto}
-/* matriz função × nível */
 .mtx{width:100%;border-collapse:collapse;font-size:12.5px}
-.mtx th{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:600;padding:9px 10px;border-bottom:1px solid var(--line2);text-align:center;white-space:nowrap}
-.mtx th.fn{text-align:left}
-.mtx td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:center}
-.mtx td.fn{text-align:left;font-weight:600;white-space:nowrap}
+.mtx th{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:600;padding:9px 12px;border-bottom:1px solid var(--line2);text-align:right;white-space:nowrap}
+.mtx th.fn{text-align:left}.mtx th.cfg{text-align:center;width:44px}
+.mtx td{padding:8px 12px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mtx td.fn{text-align:left;font-weight:600}
+.mtx td.vh{color:var(--tx)}.mtx td.vh.z{color:var(--tx3)}
+.mtx td.cfg{text-align:center}
 .mtx tr:hover td{background:var(--surf2)}
-.vhwrap{display:inline-flex;align-items:center;gap:3px;justify-content:center}
-.vhwrap .rs{color:var(--tx3);font-size:11px}
-.vhin{width:66px;padding:5px 6px;border:1px solid var(--line2);border-radius:6px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums;background:var(--surf)}
-.vhin:focus{outline:none;border-color:var(--pri);background:#fff}
-.vhin::placeholder{color:var(--line2)}
+.gearb{width:28px;height:28px;border:1px solid var(--line);border-radius:7px;background:var(--surf);color:var(--pri);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.gearb:hover{background:var(--pri-bg);border-color:var(--pri)}.gearb .material-symbols-rounded{font-size:17px}
 .empty{padding:26px;text-align:center;color:var(--tx3);font-size:13px}
-/* abrangência */
+.hintbar{font-size:11.5px;color:var(--tx3);padding:9px 14px;background:var(--surf2);border-top:1px solid var(--line)}.hintbar b{color:var(--tx2)}
 .abr-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
 .abr-tbl th{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:600;text-align:left;padding:8px 12px 6px}
 .abr-tbl th.r,.abr-tbl td.r{text-align:right}
 .abr-tbl td{padding:7px 12px;border-top:1px solid var(--line)}.abr-tbl .lvl{font-weight:600}
 .pctin{width:60px;padding:5px 7px;border:1px solid var(--line2);border-radius:6px;text-align:right;font-size:13px}
 .pctin:disabled{background:var(--surf2);color:var(--tx3)}.pctin:focus{outline:none;border-color:var(--pri)}
-.hintbar{font-size:11.5px;color:var(--tx3);padding:9px 14px;background:var(--surf2);border-top:1px solid var(--line)}
-.hintbar b{color:var(--tx2)}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
+.modal-bg.show{display:flex}
+.modal{background:var(--surf);border-radius:13px;width:500px;max-width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.mh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.mh b{font-size:15px;font-weight:700}.mh .x{cursor:pointer;color:var(--tx3);background:none;border:none;display:flex}
+.mb{padding:16px 18px;overflow-y:auto}
+.mf{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.fg{margin-bottom:14px}.fl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);margin-bottom:5px;display:block}
+.fi{width:120px;padding:8px 11px;border:1px solid var(--line2);border-radius:7px;font-size:14px;text-align:right;font-variant-numeric:tabular-nums}
+.fi:focus{outline:none;border-color:var(--pri)}
+.hint{font-size:10px;color:var(--tx3);margin-top:4px}
+.nvhd{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);display:grid;grid-template-columns:1fr 130px 90px;gap:10px;padding:0 2px 6px;border-bottom:1px solid var(--line)}
+.nvrow{display:grid;grid-template-columns:1fr 130px 90px;gap:10px;align-items:center;padding:9px 2px;border-bottom:1px solid var(--line)}
+.nvrow .nm{font-weight:600;font-size:13px}
+.nvrow .msin{width:100%;padding:7px 10px;border:1px solid var(--line2);border-radius:7px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums}
+.nvrow .msin:focus{outline:none;border-color:var(--pri)}
+.nvrow .vh{text-align:right;font-weight:700;color:var(--pri);font-variant-numeric:tabular-nums}
 </style>
 </head>
 <body>
@@ -56,22 +70,30 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
     <span class="logo"><b>e</b>X</span>
     <span class="modtag"><span class="material-symbols-rounded">badge</span>Mão de obra · valor-hora por função × nível</span>
     <span id="cloudb" style="font-size:11px;color:var(--tx3)"></span>
-    <span class="spacer"></span>
-    <button class="btn btn-p" onclick="saveMatriz()"><span class="material-symbols-rounded">save</span>Salvar valores</button>
   </div>
-  <div class="sub"><b>Fonte única</b> do R$/h: reusa as <b>funções</b> e os <b>níveis</b> do cadastro de equipe. Esta é a <b>referência</b> que o orçamento usa; o colaborador herda ou tem valor próprio.</div>
+  <div class="sub"><b>Fonte única</b> do R$/h: reusa as <b>funções</b> e <b>níveis</b> da Equipe. O valor-hora é <b>derivado</b> do valor mensal ÷ horas/mês — configure na engrenagem de cada função.</div>
 
-  <!-- MATRIZ FUNÇÃO × NÍVEL -->
   <div class="card">
-    <div class="ch"><span class="material-symbols-rounded">table_chart</span><b>Valor-hora de referência (R$/h)</b><span class="sm">— função nas linhas, nível nas colunas</span></div>
+    <div class="ch"><span class="material-symbols-rounded">table_chart</span><b>Valor-hora de referência (R$/h)</b><span class="sm">— derivado; clique na engrenagem para configurar a função</span></div>
     <div class="scroll"><table class="mtx"><thead id="mtxHead"></thead><tbody id="mtxBody"></tbody></table></div>
-    <div class="hintbar">As <b>funções</b> e <b>níveis</b> se cadastram em <b>Equipe › Colaboradores</b> (fonte única). Aqui você só define o valor-hora de referência de cada combinação.</div>
+    <div class="hintbar">Funções e níveis se cadastram em <b>Equipe › Colaboradores</b> (fonte única). O colaborador herda esta referência ou tem valor próprio.</div>
   </div>
 
-  <!-- ABRANGÊNCIA -->
   <div class="card">
-    <div class="ch"><span class="material-symbols-rounded">distance</span><b>Abrangência (deslocamento)</b><span class="sm">— % que soma no custo/hora e no tempo por nível</span><span class="spacer"></span><button class="btn btn-p" style="padding:5px 11px;font-size:12px" onclick="saveAbr()"><span class="material-symbols-rounded">save</span>Salvar %</button></div>
+    <div class="ch"><span class="material-symbols-rounded">distance</span><b>Abrangência (deslocamento)</b><span class="sm">— % no custo/hora e no tempo por nível</span><span class="spacer"></span><button class="btn btn-p" style="padding:5px 11px;font-size:12px" onclick="saveAbr()"><span class="material-symbols-rounded">save</span>Salvar %</button></div>
     <div class="scroll"><table class="abr-tbl"><thead><tr><th>Nível de abrangência</th><th class="r">+ custo/hora %</th><th class="r">+ tempo % (deslocamento)</th></tr></thead><tbody id="abrRows"></tbody></table></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="cfg">
+  <div class="modal">
+    <div class="mh"><b id="cfgTitle">Configurar função</b><button class="x" onclick="closeCfg()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Horas / mês (desta função)</label><input class="fi" id="cfg_horas" inputmode="decimal" value="192" oninput="cfgCalc()"><div class="hint">Valor-hora = valor mensal ÷ horas/mês. Ex.: engenharia às vezes rende menos horas de campo.</div></div>
+      <div class="nvhd"><span>Nível</span><span style="text-align:right">Valor mensal (R$)</span><span style="text-align:right">R$/h</span></div>
+      <div id="cfgNiveis"></div>
+    </div>
+    <div class="mf"><button class="btn" onclick="closeCfg()">Cancelar</button><button class="btn btn-p" onclick="saveCfg()"><span class="material-symbols-rounded">check</span>Salvar</button></div>
   </div>
 </div>
 
@@ -81,9 +103,10 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
 const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
-let FUNCOES=[], NIVEIS=[], REF={}, ABR=[], CLOUD=false, EMPRESA_ID=null;
+let FUNCOES=[], NIVEIS=[], REF={}, ABR=[], CLOUD=false, EMPRESA_ID=null, CFG_FUNC=null;
 const num=v=>{if(typeof v==='number')return isNaN(v)?0:v;let s=String(v||'').trim();if(!s)return 0;if(s.indexOf(',')>-1)s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?0:n;};
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const fmt=n=>'R$ '+(Math.round((+n||0)*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 function cloudMsg(t){ const e=document.getElementById('cloudb'); if(e)e.textContent=t; }
 const key=(f,n)=>f+'|'+n;
 const ABR_DEFAULT=[{nivel:'local',rotulo:'Local',ordem:1,custo_pct:0,tempo_pct:0},{nivel:'estadual',rotulo:'Estadual',ordem:2,custo_pct:35,tempo_pct:15},{nivel:'nacional',rotulo:'Nacional',ordem:3,custo_pct:80,tempo_pct:30}];
@@ -103,37 +126,63 @@ async function carregar(){
   const [f,n,r]=await Promise.all([
     SB.from('funcoes').select('id,nome,ordem').is('deleted_at',null).order('ordem',{nullsFirst:false}).order('nome'),
     SB.from('niveis').select('id,nome,ordem').is('deleted_at',null).order('ordem',{nullsFirst:false}).order('nome'),
-    SB.from('mao_obra_ref').select('funcao_id,nivel_id,valor_hora')
+    SB.from('mao_obra_ref').select('funcao_id,nivel_id,valor_mensal,horas_mes,valor_hora')
   ]);
   FUNCOES=f.data||[]; NIVEIS=n.data||[];
-  REF={}; (r.data||[]).forEach(x=>{ REF[key(x.funcao_id,x.nivel_id)]=x.valor_hora; });
+  REF={}; (r.data||[]).forEach(x=>{ REF[key(x.funcao_id,x.nivel_id)]={mensal:x.valor_mensal,horas:x.horas_mes,vh:x.valor_hora}; });
   const a=await SB.from('orc_abrangencia').select('*').order('ordem');
   ABR=(a.data&&a.data.length)?a.data:ABR_DEFAULT.map(x=>({...x}));
 }
 function render(){
-  if(!CLOUD){ document.getElementById('mtxBody').innerHTML='<tr><td class="empty" colspan="4">Entre com login para ver e editar os valores.</td></tr>'; return; }
-  if(!FUNCOES.length||!NIVEIS.length){ document.getElementById('mtxBody').innerHTML='<tr><td class="empty" colspan="4">Cadastre funções e níveis em Equipe › Colaboradores.</td></tr>'; return; }
-  document.getElementById('mtxHead').innerHTML='<tr><th class="fn">Função</th>'+NIVEIS.map(n=>`<th>${esc(n.nome)}</th>`).join('')+'</tr>';
+  if(!CLOUD){ document.getElementById('mtxBody').innerHTML='<tr><td class="empty" colspan="5">Entre com login para ver e configurar.</td></tr>'; return; }
+  if(!FUNCOES.length||!NIVEIS.length){ document.getElementById('mtxBody').innerHTML='<tr><td class="empty" colspan="5">Cadastre funções e níveis em Equipe › Colaboradores.</td></tr>'; return; }
+  document.getElementById('mtxHead').innerHTML='<tr><th class="fn">Função</th>'+NIVEIS.map(n=>`<th>${esc(n.nome)}</th>`).join('')+'<th class="cfg"></th></tr>';
   document.getElementById('mtxBody').innerHTML=FUNCOES.map(f=>`<tr><td class="fn">${esc(f.nome)}</td>`+NIVEIS.map(n=>{
-    const v=REF[key(f.id,n.id)]; const val=(v==null||v==='')?'':num(v);
-    return `<td><span class="vhwrap"><span class="rs">R$</span><input class="vhin" inputmode="decimal" placeholder="—" value="${val}" oninput="setCell('${f.id}','${n.id}',this.value)"></span></td>`;
-  }).join('')+'</tr>').join('');
+    const c=REF[key(f.id,n.id)]; const vh=c?num(c.vh):0;
+    return `<td class="vh ${vh?'':'z'}">${vh?fmt(vh):'—'}</td>`;
+  }).join('')+`<td class="cfg"><button class="gearb" title="Configurar" onclick="openCfg('${f.id}')"><span class="material-symbols-rounded">settings</span></button></td></tr>`).join('');
 }
-function setCell(f,n,v){ const t=String(v).trim(); if(t==='') delete REF[key(f,n)]; else REF[key(f,n)]=num(v); }
 function renderAbr(){
   document.getElementById('abrRows').innerHTML=ABR.map((a,i)=>{const base=a.nivel==='local';return `<tr>
     <td class="lvl">${esc(a.rotulo)}</td>
     <td class="r"><input class="pctin" type="number" min="0" value="${num(a.custo_pct)}" ${base?'disabled':''} oninput="ABR[${i}].custo_pct=+this.value||0"> %</td>
     <td class="r"><input class="pctin" type="number" min="0" value="${num(a.tempo_pct)}" ${base?'disabled':''} oninput="ABR[${i}].tempo_pct=+this.value||0"> %</td></tr>`;}).join('');
 }
-async function saveMatriz(){
+/* caixa de configuração POR FUNÇÃO */
+function openCfg(fid){
+  CFG_FUNC=fid; const f=FUNCOES.find(x=>x.id===fid);
+  document.getElementById('cfgTitle').textContent='Configurar · '+(f?f.nome:'');
+  // horas: pega de qualquer nível já salvo dessa função, senão 192
+  let horas=192; for(const n of NIVEIS){ const c=REF[key(fid,n.id)]; if(c&&c.horas){ horas=c.horas; break; } }
+  document.getElementById('cfg_horas').value=horas;
+  document.getElementById('cfgNiveis').innerHTML=NIVEIS.map(n=>{ const c=REF[key(fid,n.id)]; const mensal=(c&&c.mensal!=null)?num(c.mensal):'';
+    return `<div class="nvrow"><span class="nm">${esc(n.nome)}</span>
+      <input class="msin" data-niv="${n.id}" inputmode="decimal" placeholder="—" value="${mensal}" oninput="cfgCalc()">
+      <span class="vh" id="vh_${n.id}">—</span></div>`;
+  }).join('');
+  cfgCalc();
+  document.getElementById('cfg').classList.add('show');
+}
+function cfgCalc(){
+  const horas=num(document.getElementById('cfg_horas').value);
+  document.querySelectorAll('#cfgNiveis .msin').forEach(inp=>{
+    const nid=inp.getAttribute('data-niv'), mensal=num(inp.value);
+    const vh=(horas>0&&mensal>0)?mensal/horas:0;
+    const el=document.getElementById('vh_'+nid); if(el) el.textContent=vh?fmt(vh):'—';
+  });
+}
+function closeCfg(){ document.getElementById('cfg').classList.remove('show'); CFG_FUNC=null; }
+async function saveCfg(){
   if(!CLOUD){ alert('Entre com login para salvar.'); return; }
+  const horas=num(document.getElementById('cfg_horas').value)||192;
   const rows=[];
-  FUNCOES.forEach(f=>NIVEIS.forEach(n=>{ const v=REF[key(f.id,n.id)]; if(v!=null&&v!=='') rows.push({empresa_id:EMPRESA_ID,funcao_id:f.id,nivel_id:n.id,valor_hora:num(v)}); }));
-  if(!rows.length){ alert('Preencha ao menos um valor-hora.'); return; }
+  document.querySelectorAll('#cfgNiveis .msin').forEach(inp=>{
+    const nid=inp.getAttribute('data-niv'); const t=String(inp.value).trim();
+    rows.push({empresa_id:EMPRESA_ID,funcao_id:CFG_FUNC,nivel_id:nid,valor_mensal:(t===''?null:num(t)),horas_mes:horas});
+  });
   const r=await SB.from('mao_obra_ref').upsert(rows,{onConflict:'empresa_id,funcao_id,nivel_id'});
   if(r.error){ alert('Erro ao salvar: '+r.error.message); return; }
-  cloudMsg('nuvem ✓ · valores salvos'); await carregar(); render();
+  closeCfg(); cloudMsg('nuvem ✓ · função salva'); await carregar(); render();
 }
 async function saveAbr(){
   if(!CLOUD){ alert('Entre com login para salvar.'); return; }
