@@ -458,7 +458,7 @@ body.papel-tecnico .adm-only{display:none !important}
         <button class="sb-i fut" onclick="navSoon('Frota',this)"><span class="ic"><span class="msr">local_shipping</span></span><span class="lb">Frota</span><span class="br">em breve</span></button>
       </div>
 
-      <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">inventory_2</span></span><span class="lb">Estoque</span><span class="gchev">▶</span></div>
+      <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">warehouse</span></span><span class="lb">Almoxarifado</span><span class="gchev">▶</span></div>
       <div class="sb-sub">
         <button class="sb-i" onclick="navView('mat',this)"><span class="ic"><span class="msr">category</span></span><span class="lb">Materiais</span></button>
         <button class="sb-i fut" onclick="navSoon('Ferramentas',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Ferramentas</span><span class="br">em breve</span></button>
@@ -3657,7 +3657,8 @@ var KT_MODULOS_DEFAULT=[
  {id:'agenda',nome:'Agenda',icone:'calendar_month',area:'principal',ordem:30,papel_min:'tecnico'},
  {id:'obras',nome:'Obras',icone:'account_tree',area:'operacao',ordem:40,papel_min:'tecnico'},
  {id:'diario',nome:'Diário de Obra',icone:'history_edu',area:'operacao',ordem:50,papel_min:'tecnico'},
- {id:'estoque',nome:'Estoque',icone:'inventory_2',area:'gestao',ordem:60,papel_min:'tecnico'},
+ {id:'almoxarifado',nome:'Almoxarifado',icone:'warehouse',area:'gestao',ordem:60,papel_min:'tecnico'},
+ {id:'estoque',nome:'Estoque (vendável)',icone:'sell',area:'gestao',ordem:65,papel_min:'adm',futuro:true},
  {id:'sst',nome:'SST',icone:'health_and_safety',area:'gestao',ordem:70,papel_min:'tecnico'},
  {id:'equipe',nome:'Equipe',icone:'groups',area:'gestao',ordem:80,papel_min:'adm'},
  {id:'clientes',nome:'Clientes',icone:'contacts',area:'gestao',ordem:90,papel_min:'adm'},
@@ -3667,9 +3668,9 @@ var KT_MODULOS_DEFAULT=[
 ];
 var KT_AREA_LBL={principal:'Principal',operacao:'Operação',gestao:'Gestão',config:'Configuração'};
 var KT_SUGERIDOS=[
- {nome:'Campo',icone:'construction',cor:'#22d27f',mods:['painel','tarefas','agenda','obras','diario','estoque','sst']},
+ {nome:'Campo',icone:'construction',cor:'#22d27f',mods:['painel','tarefas','agenda','obras','diario','almoxarifado','sst']},
  {nome:'Escritório',icone:'business_center',cor:'#533ab7',mods:['painel','tarefas','agenda','clientes','financeiro','atividades']},
- {nome:'Supervisor',icone:'verified_user',cor:'#ba7517',mods:['painel','tarefas','agenda','obras','diario','estoque','sst','equipe','clientes','atividades']}
+ {nome:'Supervisor',icone:'verified_user',cor:'#ba7517',mods:['painel','tarefas','agenda','obras','diario','almoxarifado','sst','equipe','clientes','atividades']}
 ];
 var KT_ICONES=['construction','business_center','verified_user','groups','engineering','badge','shield','handyman','apartment','key'];
 var KT_CORES=['#22d27f','#533ab7','#ba7517','#2f6fed','#a32d2d','#0ea5a5','#e0699f','#475569'];
@@ -3836,7 +3837,8 @@ var INI_SECS=[
  ]},
  {t:'Time & Recursos',items:[
    {id:'equipe',nm:'Equipe',ic:'groups'},
-   {id:'estoque',nm:'Estoque',ic:'inventory_2'},
+   {id:'almoxarifado',nm:'Almoxarifado',ic:'warehouse'},
+   {id:'estoque',nm:'Estoque (vendável)',ic:'sell',soon:1},
    {id:'frota',nm:'Frota',ic:'local_shipping',soon:1},
    {id:'atividades',nm:'Atividades',ic:'history',soon:1}
  ]},
@@ -3908,7 +3910,7 @@ function iniGo(id){
     else if(id==='diario'){ iniDiario(); }
     else if(id==='sst'){ navSST('painel',null); }
     else if(id==='equipe'){ navView('colab',null); }
-    else if(id==='estoque'){ navView('mat',null); }
+    else if(id==='almoxarifado'){ navView('mat',null); }
     else if(id==='kits'){ navKits(null); }
     else if(id==='politica'){ navPolitica(null); }
     else if(id==='config'){ navEmpresa(null); }
