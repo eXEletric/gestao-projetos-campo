@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eX · Ciclo do serviço + painel de aprendizado</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap" rel="stylesheet">
+<style>
+:root{--pri:#533ab7;--pri2:#6b52d6;--pri-bg:#efe9ff;--bg:#faf9f5;--surf:#fff;--surf2:#f4f2ec;--tx:#26232f;--tx2:#5a5568;--tx3:#918c9e;--line:#e9e6df;--line2:#dcd8ce;
+  --good:#0f8f5b;--good-bg:#e7f6ee;--warn:#c47f0b;--warn-bg:#fdf3e0;--crit:#c0392b;--crit-bg:#fbe6e4;--blue:#2563b5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5}
+.material-symbols-rounded{font-family:'Material Symbols Rounded';vertical-align:middle;line-height:1}
+.wrap{max-width:980px;margin:0 auto;padding:22px 18px 60px}
+.top{display:flex;align-items:center;gap:11px;margin-bottom:4px}
+.logo{font-weight:800;font-size:22px;color:var(--pri)}.logo b{color:var(--tx)}
+.ttl{font-size:13px;font-weight:700;color:var(--tx2);display:flex;align-items:center;gap:6px}.ttl .material-symbols-rounded{color:var(--pri);font-size:20px}
+.sub{font-size:13px;color:var(--tx2);margin:6px 0 8px;max-width:800px}
+.ilus{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;color:var(--warn);background:var(--warn-bg);border-radius:20px;padding:4px 11px;margin-bottom:20px}
+h3.sec{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin:28px 0 12px;display:flex;align-items:center;gap:7px}
+h3.sec .material-symbols-rounded{color:var(--pri);font-size:17px}
+/* 3 camadas */
+.layers{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:800px){.layers{grid-template-columns:1fr}}
+.lay{background:var(--surf);border:1px solid var(--line);border-radius:13px;overflow:hidden}
+.lay .lh{padding:11px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--line)}
+.lay .lh .material-symbols-rounded{font-size:19px}.lay .lh h4{margin:0;font-size:13px;font-weight:800}
+.lay .lh .tag{margin-left:auto;font-size:9.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:3px 8px;border-radius:6px}
+.lay.base .lh{background:#f2eeff}.lay.base .material-symbols-rounded{color:var(--pri)}.lay.base .tag{background:#ece7fb;color:var(--pri)}
+.lay.orc .lh{background:#eef3fb}.lay.orc .material-symbols-rounded{color:var(--blue)}.lay.orc .tag{background:#e0e9f7;color:var(--blue)}
+.lay.exe .lh{background:#eef8f2}.lay.exe .material-symbols-rounded{color:var(--good)}.lay.exe .tag{background:var(--good-bg);color:var(--good)}
+.lay ul{margin:0;padding:10px 14px 12px;list-style:none;font-size:12px}
+.lay li{padding:4px 0;color:var(--tx2);display:flex;gap:7px;align-items:baseline}
+.lay li code{font-family:ui-monospace,monospace;font-size:11px;color:var(--tx);background:var(--surf2);padding:1px 5px;border-radius:4px}
+.lay li b{color:var(--tx)}
+.loopbar{display:flex;align-items:center;gap:10px;justify-content:center;background:var(--surf);border:1px dashed var(--line2);border-radius:11px;padding:11px 14px;margin-top:12px;font-size:12.5px;color:var(--tx2);flex-wrap:wrap}
+.loopbar b{color:var(--tx)}.loopbar .material-symbols-rounded{color:var(--pri);font-size:19px}
+.loopbar .gv{color:var(--pri);font-weight:700}
+/* painel */
+.tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+@media(max-width:800px){.tiles{grid-template-columns:1fr 1fr}}
+.tile{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+.tile .k{font-size:11px;color:var(--tx3);font-weight:600;display:flex;align-items:center;gap:5px}
+.tile .k .material-symbols-rounded{font-size:15px}
+.tile .n{font-size:26px;font-weight:800;margin-top:5px;font-variant-numeric:tabular-nums}
+.tile .d{font-size:11px;color:var(--tx3);margin-top:2px}
+.tile .n.g{color:var(--good)}.tile .n.w{color:var(--warn)}
+.panel{background:var(--surf);border:1px solid var(--line);border-radius:13px;padding:14px 16px;margin-top:12px}
+.panel h5{margin:0 0 3px;font-size:13.5px}.panel .cap{font-size:11.5px;color:var(--tx3);margin-bottom:12px}
+/* barras divergentes de desvio */
+.drow{display:grid;grid-template-columns:190px 1fr 96px;align-items:center;gap:10px;padding:7px 0;border-top:1px solid var(--line)}
+.drow:first-of-type{border-top:none}
+.dname{font-size:12.5px;color:var(--tx);font-weight:600}.dname small{display:block;color:var(--tx3);font-weight:400;font-size:10.5px}
+.dtrack{position:relative;height:22px;background:linear-gradient(90deg,var(--good-bg),#fbfbf9 48%,#fbfbf9 52%,var(--warn-bg));border-radius:6px}
+.dmid{position:absolute;left:50%;top:-3px;bottom:-3px;width:2px;background:var(--line2);transform:translateX(-1px)}
+.dbar{position:absolute;top:3px;height:16px;border-radius:4px}
+.dbar.over{left:50%;background:var(--warn)}
+.dbar.under{right:50%;background:var(--good)}
+.dval{text-align:right;font-weight:800;font-variant-numeric:tabular-nums;font-size:13px}
+.dval.over{color:var(--warn)}.dval.under{color:var(--good)}
+.flag{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--crit);background:var(--crit-bg);border-radius:20px;padding:2px 7px;margin-left:6px}
+.flag .material-symbols-rounded{font-size:12px}
+.axis{display:flex;justify-content:space-between;font-size:10px;color:var(--tx3);margin-top:4px;padding:0 96px 0 190px}
+/* motivos */
+.mrow{display:grid;grid-template-columns:210px 1fr 44px;align-items:center;gap:10px;padding:6px 0}
+.mtrack{height:14px;background:var(--surf2);border-radius:7px;overflow:hidden}
+.mfill{height:100%;background:var(--pri);border-radius:7px}
+.mval{text-align:right;font-weight:700;font-size:12px;font-variant-numeric:tabular-nums;color:var(--tx2)}
+.mname{font-size:12px;color:var(--tx2)}
+.legendln{font-size:11px;color:var(--tx3);margin-top:10px;display:flex;gap:16px;flex-wrap:wrap}
+.legendln span{display:inline-flex;align-items:center;gap:5px}.sw{width:11px;height:11px;border-radius:3px;display:inline-block}
+.note{font-size:12px;color:var(--tx2);background:var(--surf);border:1px solid var(--line);border-left:3px solid var(--pri);border-radius:9px;padding:12px 15px;margin-top:16px}.note b{color:var(--tx)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><span class="logo"><b>e</b>X</span><span class="ttl"><span class="material-symbols-rounded">cycle</span>Ciclo do serviço + painel de aprendizado</span></div>
+  <div class="sub">A estrutura de dados que faz o serviço-base nascer no orçamento e a execução <b>somar realidade por cima</b> — e um painel que, no futuro, cruza <b>orçado × executado</b> pra recalibrar a base.</div>
+  <div class="ilus"><span class="material-symbols-rounded">visibility</span>Números ilustrativos — só para visualizar o conceito. Nada operacional aqui.</div>
+
+  <h3 class="sec"><span class="material-symbols-rounded">database</span>1 · Estrutura — três camadas do mesmo serviço</h3>
+  <div class="layers">
+    <div class="lay base">
+      <div class="lh"><span class="material-symbols-rounded">inventory</span><h4>BASE / PADRÃO</h4><span class="tag">congela lento</span></div>
+      <ul>
+        <li><code>servico_id</code> · nome · categoria</li>
+        <li>composição-padrão <small>(tipo prof × horas-base)</small></li>
+        <li><b>tempo_base</b> (condições normais)</li>
+        <li>custo_base · und</li>
+        <li><code>versao</code> + histórico</li>
+        <li><b>atualizado_por</b> = Master · quando</li>
+      </ul>
+    </div>
+    <div class="lay orc">
+      <div class="lh"><span class="material-symbols-rounded">request_quote</span><h4>ORÇADO</h4><span class="tag">congela ao enviar</span></div>
+      <ul>
+        <li><code>orcamento_id</code> → <code>servico_id</code></li>
+        <li>snapshot da composição</li>
+        <li>dificuldade · abrangência aplicadas</li>
+        <li><b>tempo_orcado</b> · custo_orcado</li>
+        <li>preço · margem</li>
+        <li>base_versao <small>(qual padrão usou)</small></li>
+      </ul>
+    </div>
+    <div class="lay exe">
+      <div class="lh"><span class="material-symbols-rounded">construction</span><h4>EXECUTADO</h4><span class="tag">ao vivo, no campo</span></div>
+      <ul>
+        <li><code>obra_id</code> → mesmo <code>servico_id</code></li>
+        <li><b>tempo_real</b> · equipe_real</li>
+        <li>materiais_reais · custo_real</li>
+        <li>data_ini · data_fim</li>
+        <li><b>desvio</b> (auto: real − orçado)</li>
+        <li><b>motivo_desvio</b> <small>(código)</small> · responsável</li>
+      </ul>
+    </div>
+  </div>
+  <div class="loopbar"><span class="material-symbols-rounded">construction</span>Executado <span class="material-symbols-rounded">arrow_forward</span> <span class="gv">revisão do Master</span> <span class="material-symbols-rounded">arrow_forward</span> recalibra a <b>BASE</b> — só por <b>tendência</b> (várias obras) e por decisão, <b>nunca</b> automático de uma obra só.</div>
+
+  <h3 class="sec"><span class="material-symbols-rounded">monitoring</span>2 · Painel de aprendizado — orçado × executado</h3>
+  <div class="tiles">
+    <div class="tile"><div class="k"><span class="material-symbols-rounded">target</span>Aderência ao orçado</div><div class="n">62<span style="font-size:16px">%</span></div><div class="d">obras dentro de ±10%</div></div>
+    <div class="tile"><div class="k"><span class="material-symbols-rounded">schedule</span>Desvio médio de tempo</div><div class="n w">+11<span style="font-size:16px">%</span></div><div class="d">real acima do orçado</div></div>
+    <div class="tile"><div class="k"><span class="material-symbols-rounded">payments</span>Desvio médio de custo</div><div class="n w">+8<span style="font-size:16px">%</span></div><div class="d">come a margem</div></div>
+    <div class="tile"><div class="k"><span class="material-symbols-rounded">history_edu</span>Base de dados</div><div class="n">49</div><div class="d">execuções · 5 serviços</div></div>
+  </div>
+
+  <div class="panel">
+    <h5>Desvio de tempo por serviço <span style="font-weight:400;color:var(--tx3);font-size:12px">(média executado vs. orçado)</span></h5>
+    <div class="cap">Barra pra <b style="color:var(--warn)">direita = estourou</b> (real maior); pra <b style="color:var(--good)">esquerda = economizou</b>. Desvio alto e consistente = candidato a recalibrar a base.</div>
+    <div id="desvios"></div>
+    <div class="axis"><span>−50%</span><span>0 (orçado)</span><span>+50%</span></div>
+    <div class="legendln"><span><span class="sw" style="background:var(--good)"></span>Economizou (abaixo do orçado)</span><span><span class="sw" style="background:var(--warn)"></span>Estourou (acima do orçado)</span><span><span class="material-symbols-rounded" style="font-size:13px;color:var(--crit)">bolt</span>Recalibrar base</span></div>
+  </div>
+
+  <div class="panel">
+    <h5>Por que estoura — motivos do desvio</h5>
+    <div class="cap">Sem o motivo, o desvio é lixo. Com ele, você sabe se recalibra a <b>base</b> ou o <b>fator</b> (dificuldade/abrangência).</div>
+    <div id="motivos"></div>
+  </div>
+
+  <div class="note"><b>Como ler isto:</b> o painel não opera nada — é a <b>visão do valor</b>. Quando a execução começar a registrar tempo real + motivo, esses números viram reais e o Master decide, por tendência, quando subir/baixar a base. Aí seus próximos orçamentos param de ser chute. <b>Registrado: não é pra desenvolver estatística agora</b> — é só pra você enxergar aonde isso leva.</div>
+</div>
+
+<script>
+const DES=[
+  {s:'Instalação String Box 4e/2s',n:8,d:24,flag:true},
+  {s:'Substituição controlador AC',n:5,d:42,flag:true},
+  {s:'Instalação BUS — automação',n:15,d:3},
+  {s:'Cabeamento estruturado',n:9,d:-5},
+  {s:'Adequação de comando QD',n:12,d:-8}
+];
+const MAX=50;
+document.getElementById('desvios').innerHTML=DES.map(r=>{
+  const over=r.d>=0, w=Math.min(Math.abs(r.d),MAX)/MAX*50;
+  const bar=over?`<div class="dbar over" style="width:${w}%"></div>`:`<div class="dbar under" style="width:${w}%"></div>`;
+  return `<div class="drow"><div class="dname">${r.s}<small>${r.n} obras</small></div>
+    <div class="dtrack" title="${over?'+':''}${r.d}% vs orçado"><div class="dmid"></div>${bar}</div>
+    <div class="dval ${over?'over':'under'}">${over?'+':''}${r.d}%${r.flag?'<span class="flag"><span class="material-symbols-rounded">bolt</span></span>':''}</div></div>`;
+}).join('');
+const MOT=[['Acesso/local pior que previsto',34],['Liberação/cliente atrasou',25],['Escopo cresceu (aditivo)',19],['Equipe nova / curva de aprendizado',14],['Outros',8]];
+const mmax=Math.max(...MOT.map(m=>m[1]));
+document.getElementById('motivos').innerHTML=MOT.map(([nm,v])=>`<div class="mrow"><div class="mname">${nm}</div><div class="mtrack"><div class="mfill" style="width:${v/mmax*100}%"></div></div><div class="mval">${v}%</div></div>`).join('');
+</script>
+</body>
+</html>
