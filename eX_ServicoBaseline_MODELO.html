@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eX · 1 serviço, 2 camadas (orçado × executado)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap" rel="stylesheet">
+<style>
+:root{--pri:#533ab7;--pri2:#6b52d6;--pri-bg:#efe9ff;--bg:#faf9f5;--surf:#fff;--surf2:#f4f2ec;--tx:#26232f;--tx2:#5a5568;--tx3:#918c9e;--line:#e9e6df;--line2:#dcd8ce;--green:#0f8f5b;--amber:#c47f0b;--red:#c0392b;--blue:#2563b5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font-family:'Inter',system-ui,sans-serif;font-size:14px;line-height:1.5}
+.wrap{max-width:900px;margin:0 auto;padding:22px 18px 60px}
+.top{display:flex;align-items:center;gap:11px;margin-bottom:4px}
+.logo{font-weight:800;font-size:22px;color:var(--pri)}.logo b{color:var(--tx)}
+.ttl{font-size:13px;font-weight:700;color:var(--tx2);display:flex;align-items:center;gap:6px}.ttl .material-symbols-rounded{color:var(--pri);font-size:20px;vertical-align:middle}
+.sub{font-size:13px;color:var(--tx2);margin:6px 0 20px;max-width:760px}
+.material-symbols-rounded{font-family:'Material Symbols Rounded';vertical-align:middle;line-height:1}
+/* fluxo */
+.flow{display:flex;align-items:stretch;gap:0;flex-wrap:wrap;margin-bottom:22px}
+.step{flex:1;min-width:150px;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:13px 14px;position:relative}
+.step .ic{width:30px;height:30px;border-radius:8px;display:flex;align-items:center;justify-content:center;margin-bottom:8px}
+.step h4{margin:0 0 3px;font-size:13px}.step p{margin:0;font-size:11.5px;color:var(--tx3)}
+.arr{display:flex;align-items:center;justify-content:center;color:var(--tx3);padding:0 4px}
+.arr .material-symbols-rounded{font-size:22px}
+.s1 .ic{background:var(--pri-bg);color:var(--pri)}
+.s2 .ic{background:#e7edf9;color:var(--blue)}
+.s3 .ic{background:#e7f6ee;color:var(--green)}
+.s4 .ic{background:#fdf3e0;color:var(--amber)}
+.badge{display:inline-block;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:6px;margin-top:7px}
+.bcong{background:#ece7fb;color:var(--pri)}.breal{background:#e7f6ee;color:var(--green)}
+/* ficha do serviço */
+.ficha{background:var(--surf);border:1px solid var(--line);border-radius:14px;overflow:hidden;box-shadow:0 1px 3px rgba(20,10,50,.05)}
+.fhd{display:flex;align-items:center;gap:10px;padding:13px 16px;background:linear-gradient(90deg,#f2eeff,#fbfaff);border-bottom:1px solid var(--line)}
+.fhd .material-symbols-rounded{color:var(--pri);font-size:20px}
+.fhd b{font-size:15px}.fhd .one{margin-left:auto;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--pri);background:var(--pri-bg);padding:4px 10px;border-radius:20px}
+.grid{display:grid;grid-template-columns:1.4fr 1fr 1fr;font-size:13px}
+.grid>div{padding:10px 14px;border-bottom:1px solid var(--line)}
+.grid .h{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:700;background:var(--surf2)}
+.grid .lbl{color:var(--tx2)}
+.col-orc{background:#faf8ff}.col-exe{background:#f6fbf8}
+.v{font-weight:700;font-variant-numeric:tabular-nums;text-align:right}
+.delta{font-size:11px;font-weight:700;margin-left:6px}.up{color:var(--red)}.dn{color:var(--green)}.eq{color:var(--tx3)}
+.chp{display:inline-flex;align-items:center;gap:5px;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:20px}
+.chp.orc{background:#ece7fb;color:var(--pri)}.chp.exe{background:#e7f6ee;color:var(--green)}
+.chp .material-symbols-rounded{font-size:13px}
+.alert{display:flex;gap:9px;align-items:center;padding:11px 16px;background:#fdf3e0;color:#8a5a08;font-size:12.5px;font-weight:600}
+.alert .material-symbols-rounded{color:var(--amber);font-size:19px}
+.rule{display:flex;gap:11px;align-items:flex-start;background:var(--surf);border:1px solid var(--line);border-left:3px solid var(--pri);border-radius:10px;padding:13px 16px;margin-top:18px;font-size:13px;color:var(--tx2)}
+.rule .material-symbols-rounded{color:var(--pri);font-size:20px}.rule b{color:var(--tx)}
+.bad{display:flex;gap:11px;align-items:flex-start;background:#fbeceb;border:1px solid #f2cfcb;border-radius:10px;padding:12px 15px;margin:16px 0;font-size:12.5px;color:#8a2b22}
+.bad .material-symbols-rounded{color:var(--red)}
+h3.sec{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin:26px 0 10px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top"><span class="logo"><b>e</b>X</span><span class="ttl"><span class="material-symbols-rounded">link</span>Um serviço, duas camadas — orçado × executado</span></div>
+  <div class="sub">O medo é real: se o orçamento é <b>um registro</b> e a execução é <b>outro</b>, eles descolam e você volta pro relatório post-mortem. A solução: <b>é o mesmo serviço</b> — ele nasce no orçamento e só ganha uma <b>camada de realidade</b> na execução. Não são dois; é um só, com duas leituras.</div>
+
+  <div class="bad"><span class="material-symbols-rounded">warning</span><div><b>O jeito que dá problema (o que você intuiu):</b> orçamento cria o serviço → “gerar obra” faz uma <b>cópia</b> → campo edita a cópia. Agora existem 2 verdades que divergem e ninguém sabe qual vale.</div></div>
+
+  <h3 class="sec">O caminho certo — mesma entidade do começo ao fim</h3>
+  <div class="flow">
+    <div class="step s1"><div class="ic"><span class="material-symbols-rounded">calculate</span></div><h4>Compositor</h4><p>monta o serviço (profissionais, horas, dificuldade)</p></div>
+    <div class="arr"><span class="material-symbols-rounded">arrow_forward</span></div>
+    <div class="step s2"><div class="ic"><span class="material-symbols-rounded">request_quote</span></div><h4>Orçamento</h4><p>vira o <b>ORÇADO</b> — o que foi vendido</p><span class="badge bcong">congelado</span></div>
+    <div class="arr"><span class="material-symbols-rounded">arrow_forward</span></div>
+    <div class="step s3"><div class="ic"><span class="material-symbols-rounded">construction</span></div><h4>Execução</h4><p>o <b>mesmo</b> serviço ganha o <b>REAL</b> (campo preenche)</p><span class="badge breal">ao vivo</span></div>
+    <div class="arr"><span class="material-symbols-rounded">arrow_forward</span></div>
+    <div class="step s4"><div class="ic"><span class="material-symbols-rounded">balance</span></div><h4>Comparação</h4><p>orçado × real, no mesmo item = alerta</p></div>
+  </div>
+
+  <h3 class="sec">A ficha do serviço (é UMA só)</h3>
+  <div class="ficha">
+    <div class="fhd"><span class="material-symbols-rounded">build_circle</span><b>Instalação de String Box 4e/2s</b><span class="one">1 registro · 2 camadas</span></div>
+    <div class="grid">
+      <div class="h lbl"></div><div class="h col-orc"><span class="chp orc"><span class="material-symbols-rounded">lock</span>Orçado</span></div><div class="h col-exe"><span class="chp exe"><span class="material-symbols-rounded">bolt</span>Executado</span></div>
+
+      <div class="lbl">Equipe</div><div class="col-orc v" style="font-weight:600">2 (comando + inst.)</div><div class="col-exe v" style="font-weight:600">3 (entrou 1 ajudante)</div>
+      <div class="lbl">Horas</div><div class="col-orc v">5,0 h</div><div class="col-exe v">6,5 h<span class="delta up">+1,5</span></div>
+      <div class="lbl">Dias</div><div class="col-orc v">0,3</div><div class="col-exe v">0,5<span class="delta up">+0,2</span></div>
+      <div class="lbl">Materiais</div><div class="col-orc v">R$ 672,00</div><div class="col-exe v">R$ 705,00<span class="delta up">+33</span></div>
+      <div class="lbl">Custo</div><div class="col-orc v">R$ 821,38</div><div class="col-exe v">R$ 928,00<span class="delta up">+106</span></div>
+      <div class="lbl" style="border-bottom:none">Preço (vendido)</div><div class="col-orc v" style="border-bottom:none">R$ 1.149,00</div><div class="col-exe v" style="border-bottom:none;color:var(--tx3)">— fixo —</div>
+    </div>
+    <div class="alert"><span class="material-symbols-rounded">notifications_active</span>Executado 13% acima do orçado — margem caindo. Alerta enquanto dá pra agir (não no fim da obra).</div>
+  </div>
+
+  <div class="rule"><span class="material-symbols-rounded">shield</span><div><b>Regra de ouro:</b> o <b>orçado é congelado</b> (foi o que o cliente aprovou/pagou). A execução <b>nunca sobrescreve</b> o orçado — ela registra o <b>real ao lado</b>. Imprevistos e aditivos entram como “real a mais”, sem apagar o que foi vendido. Assim divergência vira <b>comparação viva</b>, não descolamento.</div></div>
+
+  <div class="rule" style="border-left-color:var(--green)"><span class="material-symbols-rounded" style="color:var(--green)">insights</span><div><b>O que isso te dá:</b> o serviço-base começa no orçamento (uma verdade só), a execução herda tudo pronto (equipe, horas, materiais já sugeridos), e você enxerga <b>orçado × real</b> item a item — o alerta precoce que você queria desde o começo. Execução tem mais variáveis? Sim — mas elas <b>somam</b> sobre a base, não criam uma segunda base.</div></div>
+</div>
+</body>
+</html>
