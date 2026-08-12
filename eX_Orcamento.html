@@ -1130,11 +1130,17 @@ function saveNovoCat(){
 }
 
 /* ---------- picker do cabeçalho (solução, cliente, responsável) ---------- */
-// clientes: nuvem (tabela clientes) > CRM localStorage (ex_crm_v1) > seed local
-let CLIENTES=null;
+// clientes: contratantes da tabela `clientes`; lojas/contemplados da tabela `lojas` (mesma fonte do CRM)
+let CLIENTES=null, LOJAS=null;
 async function carregarClientes(){
-  try{ const {data,error}=await SB.from('clientes').select('id,tipo,nome,contato,fone,email,endereco,cnpj,pai_id').is('deleted_at',null).order('nome');
-    if(!error) CLIENTES=data||[]; }catch(e){ console.error('clientes',e); }
+  try{
+    const [c,l]=await Promise.all([
+      SB.from('clientes').select('id,tipo,nome,contato,fone,email,endereco,cnpj,pai_id').is('deleted_at',null).order('nome'),
+      SB.from('lojas').select('id,nome,endereco,contato,fone,email,cnpj').is('deleted_at',null).order('nome')
+    ]);
+    if(!c.error) CLIENTES=c.data||[];
+    if(!l.error) LOJAS=(l.data||[]).map(x=>({id:x.id,tipo:'contemplado',nome:x.nome,contato:x.contato,endereco:x.endereco,fone:x.fone,email:x.email,cnpj:x.cnpj}));
+  }catch(e){ console.error('clientes/lojas',e); }
 }
 // mão de obra de referência (função×nível→R$/h) e abrangência — pro compositor de serviço
 let MAOOBRA=[], ABRANGENCIA=[];
@@ -1199,8 +1205,13 @@ function compAplicar(){
 }
 function crmData(){ try{const r=localStorage.getItem('ex_crm_v1'); if(r){const d=JSON.parse(r); if(d&&Array.isArray(d.clientes)&&d.clientes.length) return d.clientes;}}catch(e){} return null; }
 function cliSrc(){ return (CLIENTES&&CLIENTES.length)?CLIENTES:(crmData()||CAD.clientes); }
-function cliList(kind){ return cliSrc().filter(c=> kind==='contratante'?c.tipo==='contratante':c.tipo==='contemplado'); }
-function cliFind(id){ return cliSrc().find(x=>x.id===id); }
+function cliList(kind){
+  if(kind==='contratante') return cliSrc().filter(c=>c.tipo==='contratante');
+  // cliente final / loja: fonte = tabela `lojas` (mesma do CRM); fallback = clientes tipo=contemplado
+  if(LOJAS&&LOJAS.length) return LOJAS;
+  return cliSrc().filter(c=>c.tipo==='contemplado');
+}
+function cliFind(id){ return (LOJAS||[]).find(x=>x.id===id) || cliSrc().find(x=>x.id===id); }
 function setM(f,v){ S[f]=v; const el=document.querySelector('[data-m="'+f+'"]'); if(el)el.value=v; }
 function pkRow(kind,id,nome,sub){ return `<button class="pkitem" onclick="pickHP('${kind}','${id}')"><span class="pknm">${esc(nome)}</span>${sub?`<span class="pkcusto">${esc(sub)}</span>`:''}</button>`; }
 let HP_KIND=null, HP_LIST=[];
