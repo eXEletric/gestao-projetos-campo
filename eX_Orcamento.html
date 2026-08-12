@@ -1136,10 +1136,10 @@ async function carregarClientes(){
   try{
     const [c,l]=await Promise.all([
       SB.from('clientes').select('id,tipo,nome,contato,fone,email,endereco,cnpj,pai_id').is('deleted_at',null).order('nome'),
-      SB.from('lojas').select('id,nome,endereco,contato,fone,email,cnpj').is('deleted_at',null).order('nome')
+      SB.from('lojas').select('id,nome,grupo,numero,endereco,contato,fone,email,cnpj').is('deleted_at',null).order('nome')
     ]);
     if(!c.error) CLIENTES=c.data||[];
-    if(!l.error) LOJAS=(l.data||[]).map(x=>({id:x.id,tipo:'contemplado',nome:x.nome,contato:x.contato,endereco:x.endereco,fone:x.fone,email:x.email,cnpj:x.cnpj}));
+    if(!l.error) LOJAS=(l.data||[]).map(x=>({id:x.id,tipo:'contemplado',nome:x.nome,grupo:x.grupo,numero:x.numero,contato:x.contato,endereco:x.endereco,fone:x.fone,email:x.email,cnpj:x.cnpj}));
   }catch(e){ console.error('clientes/lojas',e); }
 }
 // mão de obra de referência (função×nível→R$/h) e abrangência — pro compositor de serviço
@@ -1217,9 +1217,10 @@ function pkRow(kind,id,nome,sub){ return `<button class="pkitem" onclick="pickHP
 let HP_KIND=null, HP_LIST=[];
 function hpFilter(q){
   q=(q||'').toLowerCase().trim();
-  const rows=HP_LIST.filter(c=>!q||((c.nome||'')+' '+(c.contato||'')+' '+(c.endereco||'')+' '+(c.cnpj||'')).toLowerCase().includes(q));
+  const rows=HP_LIST.filter(c=>!q||((c.nome||'')+' '+(c.numero||'')+' '+(c.grupo||'')+' '+(c.contato||'')+' '+(c.endereco||'')+' '+(c.cnpj||'')).toLowerCase().includes(q));
   const el=document.getElementById('hpList'); if(!el)return;
-  el.innerHTML=rows.length?rows.map(c=>pkRow(HP_KIND,c.id,c.nome,c.contato||c.endereco||'')).join('')
+  const hpSub=c=>[c.grupo,c.numero?('nº '+c.numero):'',c.endereco||c.contato].filter(Boolean).join(' · ');
+  el.innerHTML=rows.length?rows.map(c=>pkRow(HP_KIND,c.id,c.nome,HP_KIND==='final'?(hpSub(c)||''):(c.contato||c.endereco||''))).join('')
     :`<div style="color:var(--tx3);padding:14px;font-size:12px;text-align:center">${HP_LIST.length?'Nada encontrado.':'Nenhum cliente no CRM ainda.'}</div>`;
 }
 function openHP(kind){
@@ -1232,7 +1233,7 @@ function openHP(kind){
     title = kind==='contratante'?'Escolher cliente contratante':'Escolher cliente final / loja';
     HP_KIND=kind; HP_LIST=cliList(kind);
     document.getElementById('pickTitle').textContent=title;
-    document.getElementById('pickBody').innerHTML=`<div class="hpsrch"><span class="material-symbols-rounded">search</span><input id="hpq" placeholder="Buscar por nome, contato, endereço…" oninput="hpFilter(this.value)"></div><div id="hpList" class="hplist"></div>`;
+    document.getElementById('pickBody').innerHTML=`<div class="hpsrch"><span class="material-symbols-rounded">search</span><input id="hpq" placeholder="Buscar por nome, nº, rede, contato…" oninput="hpFilter(this.value)"></div><div id="hpList" class="hplist"></div>`;
     hpFilter('');
     document.getElementById('pickModal').classList.add('open');
     setTimeout(()=>{const q=document.getElementById('hpq'); if(q)q.focus();},60);

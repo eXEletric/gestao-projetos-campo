@@ -246,11 +246,12 @@ select.fi{appearance:auto;cursor:pointer}
   <div class="modal">
     <div class="mh"><b id="lTitle">Loja</b><button class="x" onclick="closeLoja()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div class="fg"><label class="fl">Nome da loja / unidade</label><input class="fi" id="l_nome"></div>
+      <div class="fg"><label class="fl">Nome / apelido da loja</label><input class="fi" id="l_nome" placeholder="Ex.: Assaí Nacional"></div>
       <div class="frow">
-        <div class="fg"><label class="fl">Grupo / bandeira</label><input class="fi" id="l_grupo"></div>
-        <div class="fg"><label class="fl">CNPJ</label><input class="fi" id="l_cnpj"></div>
+        <div class="fg"><label class="fl">Rede / bandeira</label><input class="fi" id="l_grupo" placeholder="Ex.: Assaí"></div>
+        <div class="fg"><label class="fl">Nº da unidade</label><input class="fi" id="l_numero" placeholder="Ex.: 1234"></div>
       </div>
+      <div class="fg"><label class="fl">CNPJ</label><input class="fi" id="l_cnpj"></div>
       <div class="fg"><label class="fl">Endereço</label><input class="fi" id="l_endereco"></div>
       <div class="fg"><label class="fl">Coordenada / link de mapa</label><input class="fi" id="l_coordenada"></div>
       <div class="frow">
@@ -276,7 +277,7 @@ select.fi{appearance:auto;cursor:pointer}
     <div class="mh"><b>Vincular loja ao contratante</b><button class="x" onclick="closeVinc()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
       <div class="fg"><label class="fl">Serviço / escopo deste vínculo (opcional)</label><input class="fi" id="vPapel" placeholder="Ex.: refrigeração, energia"></div>
-      <div class="fg"><label class="fl">Buscar loja no banco</label><input class="fi" id="vBusca" oninput="renderVincList()" placeholder="nome ou endereço…"></div>
+      <div class="fg"><label class="fl">Buscar loja no banco</label><input class="fi" id="vBusca" oninput="renderVincList()" placeholder="nome, nº ou rede…"></div>
       <div id="vList" style="max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:8px"></div>
     </div>
     <div class="mf">
@@ -300,7 +301,7 @@ function cloudMsg(t){ const e=document.getElementById('cloudb'); if(e)e.textCont
 const mCli=c=>({id:c.id,empresa_id:EMPRESA_ID,tipo:c.tipo,pai_id:c.paiId||null,nome:c.nome,cnpj:c.cnpj||null,contato:c.contato||null,fone:c.fone||null,email:c.email||null,endereco:c.endereco||null,obs:c.obs||null});
 const mFase=(f,ord)=>({id:f.id,empresa_id:EMPRESA_ID,nome:f.nome,ordem:ord,tipo:f.fim?'final':'ativa'});
 const mOpp=o=>({id:o.id,empresa_id:EMPRESA_ID,contratante_id:o.contratanteId||null,contemplado_id:o.contempladoId||null,fase_id:o.colId||null,objeto:o.objeto||null,temperatura:o.temperatura||'Morno',data_limite:o.dataLimite||null,obs:o.obs||null});
-const mLoja=l=>({id:l.id,empresa_id:EMPRESA_ID,nome:l.nome,grupo:l.grupo||null,endereco:l.endereco||null,cnpj:l.cnpj||null,coordenada:l.coordenada||null,codigo_externo:l.codigo||null,contato:l.contato||null,fone:l.fone||null,email:l.email||null,obs:l.obs||null});
+const mLoja=l=>({id:l.id,empresa_id:EMPRESA_ID,nome:l.nome,grupo:l.grupo||null,numero:l.numero||null,endereco:l.endereco||null,cnpj:l.cnpj||null,coordenada:l.coordenada||null,codigo_externo:l.codigo||null,contato:l.contato||null,fone:l.fone||null,email:l.email||null,obs:l.obs||null});
 const mVinc=v=>({id:v.id,empresa_id:EMPRESA_ID,loja_id:v.lojaId,contratante_id:v.contratanteId,papel:v.papel||null,obs:v.obs||null});
 function cUp(table,row){ if(!CLOUD)return; SB.from(table).upsert(row).then(({error})=>{ if(error){console.error('cloud up',table,error);cloudMsg('erro ao salvar na nuvem');} }); }
 function cDel(table,id){ if(!CLOUD)return; SB.from(table).update({deleted_at:new Date().toISOString()}).eq('id',id).then(({error})=>{ if(error)console.error('cloud del',table,error); }); }
@@ -317,7 +318,7 @@ async function carregarNuvem(){
   S={ v:3,
     colunas:(fa.data||[]).map(f=>({id:f.id,nome:f.nome,fim:f.tipo==='final'})),
     clientes:(cl.data||[]).map(c=>({id:c.id,nome:c.nome,tipo:c.tipo,paiId:c.pai_id,cnpj:c.cnpj,contato:c.contato,fone:c.fone,email:c.email,endereco:c.endereco,obs:c.obs})),
-    lojas:((lj&&lj.data)||[]).map(l=>({id:l.id,nome:l.nome,grupo:l.grupo,endereco:l.endereco,cnpj:l.cnpj,coordenada:l.coordenada,codigo:l.codigo_externo,contato:l.contato,fone:l.fone,email:l.email,obs:l.obs})),
+    lojas:((lj&&lj.data)||[]).map(l=>({id:l.id,nome:l.nome,grupo:l.grupo,numero:l.numero,endereco:l.endereco,cnpj:l.cnpj,coordenada:l.coordenada,codigo:l.codigo_externo,contato:l.contato,fone:l.fone,email:l.email,obs:l.obs})),
     vinculos:((vc&&vc.data)||[]).map(v=>({id:v.id,lojaId:v.loja_id,contratanteId:v.contratante_id,papel:v.papel,obs:v.obs})),
     oportunidades:(op.data||[]).map(o=>({id:o.id,contratanteId:o.contratante_id,contempladoId:o.contemplado_id,objeto:o.objeto,temperatura:o.temperatura,dataLimite:o.data_limite||'',colId:o.fase_id,obs:o.obs}))
   };
@@ -401,6 +402,7 @@ const filhos=id=>S.clientes.filter(c=>c.tipo==="contemplado"&&c.paiId===id);
 /* ===== LOJAS (banco unico) + VINCULOS (m:n) ===== */
 const loja=id=>S.lojas.find(x=>x.id===id);
 const contempl=id=>loja(id)||cli(id);   // contemplado = LOJA (fonte única); fallback cli p/ dado antigo
+const ljSub=l=>[l.grupo,l.numero?('nº '+l.numero):'',l.endereco].filter(Boolean).join(' · ')||'—';  // legenda: rede · nº · endereço
 const vincsDoContratante=ctId=>S.vinculos.filter(v=>v.contratanteId===ctId);
 const lojasDoContratante=ctId=>vincsDoContratante(ctId).map(v=>loja(v.lojaId)).filter(Boolean);
 const contratantesDaLoja=ljId=>S.vinculos.filter(v=>v.lojaId===ljId).map(v=>cli(v.contratanteId)).filter(Boolean);
@@ -541,11 +543,12 @@ function closeOppPick(){ document.getElementById('oppPick').classList.remove('sh
 function renderOppPick(){
   const q=(document.getElementById('opq').value||'').toLowerCase().trim();
   const base = OPICK==='contratante' ? contratantes() : lojasDoContratante(_oc);
-  const rows = base.filter(x=>!q || ((x.nome||'')+' '+(x.endereco||'')+' '+(x.contato||'')).toLowerCase().includes(q));
+  const rows = base.filter(x=>!q || ((x.nome||'')+' '+(x.numero||'')+' '+(x.grupo||'')+' '+(x.endereco||'')+' '+(x.contato||'')).toLowerCase().includes(q));
   const novo = OPICK==='contratante'
     ? `<button class="pk new" onclick="pickOppNew('contratante')"><span class="material-symbols-rounded">add</span>Cadastrar novo contratante…</button>`
     : `<button class="pk new" onclick="pickOppNew('contemplado')"><span class="material-symbols-rounded">add</span>Nova loja…</button>`;
-  const list = rows.length ? rows.map(x=>`<button class="pk" onclick="pickOpp('${x.id}')"><span class="nm">${esc(x.nome)}</span>${(x.endereco||x.contato)?`<span class="mt">${esc(x.endereco||x.contato)}</span>`:''}</button>`).join('')
+  const sub = x => OPICK==='contemplado' ? ljSub(x) : (x.endereco||x.contato||'');
+  const list = rows.length ? rows.map(x=>`<button class="pk" onclick="pickOpp('${x.id}')"><span class="nm">${esc(x.nome)}</span>${sub(x)&&sub(x)!=='—'?`<span class="mt">${esc(sub(x))}</span>`:''}</button>`).join('')
     : `<div class="empty">${base.length?'Nada encontrado.':(OPICK==='contemplado'?'Nenhuma loja vinculada a este contratante.':'Nenhum contratante.')}</div>`;
   document.getElementById('opList').innerHTML=list;
   document.getElementById('opNew').innerHTML=novo;
@@ -618,14 +621,14 @@ function gerarObra(id){
 function renderClist(){
   const q=(document.getElementById('q').value||'').toLowerCase().trim();
   // lojas que casam com a busca (nome ou endereço)
-  const lojasMatch = q ? S.lojas.filter(l=>((l.nome||'')+' '+(l.endereco||'')).toLowerCase().includes(q)) : [];
+  const lojasMatch = q ? S.lojas.filter(l=>((l.nome||'')+' '+(l.numero||'')+' '+(l.grupo||'')+' '+(l.endereco||'')).toLowerCase().includes(q)) : [];
   const lojasMatchIds = new Set(lojasMatch.map(l=>l.id));
   // contratantes: casam por nome OU têm loja que casa
   const lst = contratantes().filter(c=> !q || c.nome.toLowerCase().includes(q) || vincsDoContratante(c.id).some(v=>lojasMatchIds.has(v.lojaId)) );
   let html='';
   if(q && lojasMatch.length){
     html += `<div class="lojas-found"><div class="lf-h"><span class="material-symbols-rounded">storefront</span>Lojas encontradas (${lojasMatch.length})</div>`+
-      lojasMatch.slice(0,50).map(l=>{ const ct=contratantesDaLoja(l.id)[0]; return `<div class="lf-item" onclick="selLoja('${l.id}')"><div class="nm">${esc(l.nome)}</div><div class="mt">${esc(l.endereco||'—')}${ct?' · <b>'+esc(ct.nome)+'</b>':''}</div></div>`;}).join('')+
+      lojasMatch.slice(0,50).map(l=>{ const ct=contratantesDaLoja(l.id)[0]; return `<div class="lf-item" onclick="selLoja('${l.id}')"><div class="nm">${esc(l.nome)}</div><div class="mt">${esc(ljSub(l))}${ct?' · <b>'+esc(ct.nome)+'</b>':''}</div></div>`;}).join('')+
       (lojasMatch.length>50?`<div class="mt" style="padding:6px 10px;color:var(--tx3)">…refine a busca (${lojasMatch.length} no total)</div>`:'')+`</div>`;
   }
   html += lst.length?lst.map(c=>`
@@ -659,8 +662,8 @@ function renderCdetail(){
       return `<div class="subc"><div class="acts">
         <button class="iconb" title="Editar loja" onclick="openLoja('${l.id}')"><span class="material-symbols-rounded">edit</span></button>
         <button class="iconb del" title="Desvincular deste contratante" onclick="desvincular('${v.id}')"><span class="material-symbols-rounded">link_off</span></button></div>
-        <div class="nm">${esc(l.nome)}</div>
-        <div class="mt">${esc(l.endereco||l.contato||'—')}</div>
+        <div class="nm">${esc(l.nome)}${l.numero?` <span style="font-weight:600;color:var(--pri)">#${esc(l.numero)}</span>`:''}</div>
+        <div class="mt">${esc(ljSub(l))}</div>
         ${v.papel?`<div class="mt" style="color:var(--pri)">Serviço: ${esc(v.papel)}</div>`:''}
         ${outros.length?`<div class="mt" style="font-size:11px">Também de: ${esc(outros.map(o=>o.nome).join(', '))}</div>`:''}
       </div>`;}).join('')}</div>`:'<div class="empty" style="padding:14px">Nenhuma loja vinculada. Use "Nova loja" (cria no banco e vincula) ou "Vincular loja" (reaproveita do banco).</div>'}
@@ -715,7 +718,7 @@ function openLoja(id, linkAfterSave){
   EDITL=id||null; _linkAfterSave=!!linkAfterSave;
   const l=id?loja(id):null;
   document.getElementById('lTitle').textContent=(id?'Editar loja':'Nova loja');
-  ['nome','grupo','cnpj','endereco','coordenada','contato','fone','email','obs'].forEach(f=>{const el=document.getElementById('l_'+f); if(el)el.value=l?(l[f]||''):'';});
+  ['nome','grupo','numero','cnpj','endereco','coordenada','contato','fone','email','obs'].forEach(f=>{const el=document.getElementById('l_'+f); if(el)el.value=l?(l[f]||''):'';});
   document.getElementById('lDel').style.display=id?'inline-flex':'none';
   document.getElementById('modalLoja').classList.add('show');
 }
@@ -723,7 +726,7 @@ function closeLoja(){ document.getElementById('modalLoja').classList.remove('sho
 function saveLoja(){
   const g=f=>{const el=document.getElementById('l_'+f); return el?el.value.trim():'';};
   const nome=g('nome'); if(!nome){ alert('Informe o nome da loja.'); return; }
-  const data={nome,grupo:g('grupo'),cnpj:g('cnpj'),endereco:g('endereco'),coordenada:g('coordenada'),contato:g('contato'),fone:g('fone'),email:g('email'),obs:g('obs')};
+  const data={nome,grupo:g('grupo'),numero:g('numero'),cnpj:g('cnpj'),endereco:g('endereco'),coordenada:g('coordenada'),contato:g('contato'),fone:g('fone'),email:g('email'),obs:g('obs')};
   let alvo;
   if(EDITL){ alvo=loja(EDITL); Object.assign(alvo,data); }
   else { alvo={id:uid(),...data}; S.lojas.push(alvo); }
@@ -760,9 +763,9 @@ function closeVinc(){ document.getElementById('modalVinc').classList.remove('sho
 function renderVincList(){
   const q=(document.getElementById('vBusca').value||'').toLowerCase();
   const jaIds=new Set(vincsDoContratante(SELC).map(v=>v.lojaId));
-  const lst=S.lojas.filter(l=>l.nome.toLowerCase().includes(q)||(l.endereco||'').toLowerCase().includes(q)).sort((a,b)=>a.nome.localeCompare(b.nome));
+  const lst=S.lojas.filter(l=>l.nome.toLowerCase().includes(q)||(l.numero||'').toLowerCase().includes(q)||(l.grupo||'').toLowerCase().includes(q)||(l.endereco||'').toLowerCase().includes(q)).sort((a,b)=>a.nome.localeCompare(b.nome));
   document.getElementById('vList').innerHTML= lst.length?lst.map(l=>{const ja=jaIds.has(l.id);
-    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="nm">${esc(l.nome)}</div><div class="mt">${esc(l.endereco||'—')}</div></div>
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="nm">${esc(l.nome)}</div><div class="mt">${esc(ljSub(l))}</div></div>
       ${ja?'<span style="font-size:11px;color:var(--tx3)">já vinculada</span>':`<button class="btn btn-s btn-p" onclick="vincularLoja('${l.id}')"><span class="material-symbols-rounded">link</span>Vincular</button>`}</div>`;}).join('')
     :'<div class="empty" style="padding:12px">Nenhuma loja no banco. Crie uma nova.</div>';
 }
