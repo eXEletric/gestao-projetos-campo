@@ -269,6 +269,22 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .hpsrch input{border:none;outline:none;background:none;font-size:13px;width:100%;color:var(--tx)}
 .hpsrch .material-symbols-rounded{font-size:18px;color:var(--tx3)}
 .hplist{max-height:54vh;overflow-y:auto}
+/* compositor de custo do serviço */
+.cmpsec{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin:2px 0 8px}
+.cmphd{display:grid;grid-template-columns:1fr 62px 62px 68px 28px;gap:8px;font-size:9.5px;font-weight:700;text-transform:uppercase;color:var(--tx3);padding:0 2px 5px;text-align:center}
+.cmphd span:first-child{text-align:left}
+.cmprow{display:grid;grid-template-columns:1fr 62px 62px 68px 28px;gap:8px;align-items:center;padding:4px 0}
+.cmprow select{width:100%;padding:6px 7px;border:1px solid var(--line2);border-radius:7px;font-size:12.5px;background:var(--surf);color:var(--tx)}
+.cmprow .cmpn{width:100%;padding:6px;border:1px solid var(--line2);border-radius:7px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
+.cmprow .cmpvh{text-align:right;font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums}
+.cmprow .cmpdel{border:none;background:none;color:var(--tx3);cursor:pointer;padding:3px;border-radius:6px}
+.cmprow .cmpdel:hover{background:#fcebeb;color:var(--red)}.cmprow .cmpdel .material-symbols-rounded{font-size:16px}
+.cmpadd{border:1px dashed var(--line2);background:transparent;color:var(--pri);font:600 12px inherit;border-radius:20px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin-top:6px}
+.cmpadd:hover{background:var(--pri-bg);border-color:var(--pri)}.cmpadd .material-symbols-rounded{font-size:16px}
+.cmplbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);margin-bottom:5px;display:block}
+.cmpsel{width:100%;padding:8px 10px;border:1px solid var(--line2);border-radius:7px;font-size:13px;background:var(--surf);color:var(--tx)}
+.cmpres{margin-top:16px;background:var(--surf2);border-radius:10px;padding:12px 14px;display:flex;gap:26px}
+.cmpres .cr{display:flex;flex-direction:column;gap:2px}.cmpres .cr span{font-size:11px;color:var(--tx3)}.cmpres .cr b{font-size:19px;font-variant-numeric:tabular-nums}
 .pkitem.avulso{color:var(--pri);border-style:dashed;margin-top:4px}
 .pkitem.avulso .material-symbols-rounded{font-size:17px}
 .fpick{font-size:10px;font-weight:600;color:var(--pri);background:var(--pri-bg);border:none;border-radius:20px;padding:2px 9px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;margin-left:6px;vertical-align:middle;text-transform:none;letter-spacing:0}
@@ -463,6 +479,29 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
   </div>
 </div>
 
+<div class="modal-bg" id="compModal">
+  <div class="modal" style="width:600px;max-width:100%">
+    <div class="mh"><span class="material-symbols-rounded">precision_manufacturing</span><h3 id="compTitle">Compor custo do serviço</h3><button class="x" onclick="closeComp()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div class="cmpsec">Mão de obra <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— função · nível (R$/h da referência) × pessoas × horas</span></div>
+      <div id="compMO"></div>
+      <button class="cmpadd" onclick="compAddMO()"><span class="material-symbols-rounded">add</span>profissional</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+        <div><label class="cmplbl">Dificuldade</label><select id="comp_dif" class="cmpsel" onchange="compCalc()"></select></div>
+        <div><label class="cmplbl">Abrangência</label><select id="comp_abr" class="cmpsel" onchange="compCalc()"></select></div>
+      </div>
+      <div class="cmpres">
+        <div class="cr"><span>Custo do serviço</span><b id="comp_custo">R$ 0,00</b></div>
+        <div class="cr"><span>Tempo de execução</span><b id="comp_tempo" style="color:var(--pri)">0 h</b></div>
+      </div>
+    </div>
+    <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="closeComp()">Cancelar</button>
+      <button class="btn" style="background:var(--pri);color:#fff;border-color:var(--pri)" onclick="compAplicar()"><span class="material-symbols-rounded">check</span>Aplicar ao serviço</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 "use strict";
@@ -548,7 +587,7 @@ async function initOrc(){
     if(session){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
       try{ const p=await SB.from('perfis').select('nome,email').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; } }catch(_){}
-      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes();
+      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarMaoObra(); await carregarAbrangencia();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
     } else { cloudMsg('modo local (sem login)'); }
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
@@ -859,7 +898,7 @@ function renderBlk(cfg){
         <td class="r pint"><div class="mkwrap"><input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span>%</span></div><div class="mktag">${propria?'<span class="pd own">própria</span>':'<span class="pd">padrão</span>'}</div></td>
         <td class="r money preco" id="tp_${r.id}">${fmt(preco)}</td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
-        <td class="pint rowact">${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+        <td class="pint rowact">${cfg.key==='servicos'?`<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Compor custo por mão de obra"><span class="material-symbols-rounded">precision_manufacturing</span></button>`:''}${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
@@ -1096,6 +1135,67 @@ let CLIENTES=null;
 async function carregarClientes(){
   try{ const {data,error}=await SB.from('clientes').select('id,tipo,nome,contato,fone,email,endereco,cnpj,pai_id').is('deleted_at',null).order('nome');
     if(!error) CLIENTES=data||[]; }catch(e){ console.error('clientes',e); }
+}
+// mão de obra de referência (função×nível→R$/h) e abrangência — pro compositor de serviço
+let MAOOBRA=[], ABRANGENCIA=[];
+async function carregarMaoObra(){
+  try{ const {data,error}=await SB.from('mao_obra_ref').select('valor_hora, funcao:funcoes(nome), nivel:niveis(nome)');
+    if(!error) MAOOBRA=(data||[]).filter(x=>x.funcao&&x.nivel&&x.valor_hora!=null).map(x=>({funcao:x.funcao.nome,nivel:x.nivel.nome,vh:num(x.valor_hora)}));
+  }catch(e){ console.error('maoobra',e); }
+}
+async function carregarAbrangencia(){
+  try{ const {data,error}=await SB.from('orc_abrangencia').select('nivel,rotulo,ordem,custo_pct,tempo_pct').order('ordem');
+    if(!error && data && data.length) ABRANGENCIA=data;
+  }catch(e){ console.error('abrangencia',e); }
+  if(!ABRANGENCIA.length) ABRANGENCIA=[{nivel:'local',rotulo:'Local',custo_pct:0,tempo_pct:0},{nivel:'estadual',rotulo:'Estadual',custo_pct:35,tempo_pct:15},{nivel:'nacional',rotulo:'Nacional',custo_pct:80,tempo_pct:30}];
+}
+// escala fixa de dificuldade (multiplica o tempo)
+const DIFIC=[{n:'Normal',mult:1.00},{n:'Moderada',mult:1.25},{n:'Alta',mult:1.50},{n:'Severa',mult:2.00}];
+/* ---------- compositor de custo do serviço (mão de obra × dificuldade × abrangência) ---------- */
+let COMP={blk:null,rowId:null,mo:[],dif:0,abr:0,_custo:0,_tempo:0};
+function openComp(blk,rowId){
+  const r=(S[blk]||[]).find(x=>x.id===rowId); if(!r)return;
+  if(!MAOOBRA.length){ alert('Configure os valores de mão de obra em Gestão › Mão de obra (função × nível) antes de compor.'); return; }
+  COMP={blk,rowId,mo:[],dif:0,abr:0,_custo:0,_tempo:0};
+  if(r.composicao){ COMP.mo=(r.composicao.mo||[]).map(x=>({...x})); COMP.dif=r.composicao.dif||0; COMP.abr=r.composicao.abr||0; }
+  if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1,h:1}];
+  document.getElementById('compTitle').textContent='Compor custo · '+(r.desc||'serviço');
+  document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
+  document.getElementById('comp_abr').innerHTML=ABRANGENCIA.map((a,j)=>`<option value="${j}" ${j===COMP.abr?'selected':''}>${esc(a.rotulo)}</option>`).join('');
+  compRenderMO(); compCalc();
+  document.getElementById('compModal').classList.add('open');
+}
+function compMORow(r,i){
+  const opts=MAOOBRA.map((m,j)=>`<option value="${j}" ${j===r.fn?'selected':''}>${esc(m.funcao)} · ${esc(m.nivel)} (${fmt(m.vh)}/h)</option>`).join('');
+  const m=MAOOBRA[r.fn]||{vh:0};
+  return `<div class="cmprow">
+    <select onchange="COMP.mo[${i}].fn=+this.value;compRenderMO();compCalc()">${opts}</select>
+    <input class="cmpn" type="number" min="0" step="1" value="${r.pes}" oninput="COMP.mo[${i}].pes=+this.value||0;compCalc()">
+    <input class="cmpn" type="number" min="0" step="0.25" value="${r.h}" oninput="COMP.mo[${i}].h=+this.value||0;compCalc()">
+    <span class="cmpvh">${fmt(m.vh)}</span>
+    <button class="cmpdel" onclick="COMP.mo.splice(${i},1);compRenderMO();compCalc()"><span class="material-symbols-rounded">close</span></button></div>`;
+}
+function compRenderMO(){ document.getElementById('compMO').innerHTML='<div class="cmphd"><span>Função · nível</span><span>Pessoas</span><span>Horas</span><span>R$/h</span><span></span></div>'+COMP.mo.map(compMORow).join(''); }
+function compAddMO(){ COMP.mo.push({fn:0,pes:1,h:1}); compRenderMO(); compCalc(); }
+function compCalc(){
+  const dif=DIFIC[+document.getElementById('comp_dif').value||0]||DIFIC[0];
+  const abr=ABRANGENCIA[+document.getElementById('comp_abr').value||0]||{custo_pct:0,tempo_pct:0};
+  const abrC=1+num(abr.custo_pct)/100, abrT=1+num(abr.tempo_pct)/100;
+  let custo=0,tempo=0;
+  COMP.mo.forEach(r=>{ const m=MAOOBRA[r.fn]; if(!m)return; const h=num(r.pes)*num(r.h)*dif.mult*abrT; tempo+=h; custo+=h*num(m.vh)*abrC; });
+  document.getElementById('comp_custo').textContent=fmt(custo);
+  document.getElementById('comp_tempo').textContent=tempo.toLocaleString('pt-BR',{maximumFractionDigits:2})+' h';
+  COMP._custo=custo; COMP._tempo=tempo;
+}
+function closeComp(){ document.getElementById('compModal').classList.remove('open'); }
+function compAplicar(){
+  const r=(S[COMP.blk]||[]).find(x=>x.id===COMP.rowId); if(!r){closeComp();return;}
+  COMP.dif=+document.getElementById('comp_dif').value||0; COMP.abr=+document.getElementById('comp_abr').value||0;
+  compCalc();
+  r.custoBase=+(COMP._custo.toFixed(2)); r.usarBase=true; r.custoAlt=r.custoBase;
+  r.composicao={mo:COMP.mo.map(x=>({...x})),dif:COMP.dif,abr:COMP.abr};
+  r.compTempo=+(COMP._tempo.toFixed(2));
+  save(); renderBlk(BLKS.find(b=>b.key===COMP.blk)); recalc(); closeComp();
 }
 function crmData(){ try{const r=localStorage.getItem('ex_crm_v1'); if(r){const d=JSON.parse(r); if(d&&Array.isArray(d.clientes)&&d.clientes.length) return d.clientes;}}catch(e){} return null; }
 function cliSrc(){ return (CLIENTES&&CLIENTES.length)?CLIENTES:(crmData()||CAD.clientes); }
