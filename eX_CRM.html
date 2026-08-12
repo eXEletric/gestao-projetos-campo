@@ -110,6 +110,13 @@ select.fi{appearance:auto;cursor:pointer}
 .ccard .nm{font-size:14px;font-weight:700}.ccard .mt{font-size:11px;color:var(--tx3);margin-top:2px}
 .ccard .cnt{font-size:11px;color:var(--pri);font-weight:600;margin-top:5px;display:inline-flex;align-items:center;gap:4px}
 .ccard .cnt .material-symbols-rounded{font-size:14px}
+.lojas-found{background:var(--pri-bg);border:1px solid #d9d3f7;border-radius:11px;padding:6px;margin-bottom:12px}
+.lojas-found .lf-h{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--pri);padding:6px 8px 4px;display:flex;align-items:center;gap:5px}
+.lojas-found .lf-h .material-symbols-rounded{font-size:15px}
+.lf-item{background:var(--surf);border-radius:8px;padding:8px 10px;cursor:pointer;margin:4px}
+.lf-item:hover{background:#faf9ff;box-shadow:0 0 0 1px var(--pri) inset}
+.lf-item .nm{font-size:13px;font-weight:600}.lf-item .mt{font-size:11px;color:var(--tx3);margin-top:1px}
+.lf-item .mt b{color:var(--tx2);font-weight:600}
 
 /* modal */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
@@ -383,7 +390,9 @@ function titulo(o){ const ct=cli(o.contratanteId), cp=contempl(o.contempladoId);
 function matchQ(o){ const q=(document.getElementById('q').value||'').toLowerCase(); if(!q)return true; return titulo(o).toLowerCase().includes(q); }
 
 function setTab(t){ TAB=t; document.getElementById('tab-funil').classList.toggle('on',t==='funil'); document.getElementById('tab-clientes').classList.toggle('on',t==='clientes');
-  document.getElementById('v-funil').classList.toggle('on',t==='funil'); document.getElementById('v-clientes').classList.toggle('on',t==='clientes'); render(); }
+  document.getElementById('v-funil').classList.toggle('on',t==='funil'); document.getElementById('v-clientes').classList.toggle('on',t==='clientes');
+  const qi=document.getElementById('q'); if(qi)qi.placeholder=(t==='clientes'?'Buscar contratante ou loja…':'Buscar oportunidade…');
+  render(); }
 function render(){ if(TAB==='funil'){ renderBoard(); renderOppDetail(); } else { renderClist(); renderCdetail(); } }
 
 /* ===== FUNIL ===== */
@@ -553,16 +562,28 @@ function gerarObra(id){
 
 /* ===== CLIENTES (banco) ===== */
 function renderClist(){
-  const q=(document.getElementById('q').value||'').toLowerCase();
-  const lst=contratantes().filter(c=>c.nome.toLowerCase().includes(q));
-  document.getElementById('clist').innerHTML= lst.length?lst.map(c=>`
+  const q=(document.getElementById('q').value||'').toLowerCase().trim();
+  // lojas que casam com a busca (nome ou endereço)
+  const lojasMatch = q ? S.lojas.filter(l=>((l.nome||'')+' '+(l.endereco||'')).toLowerCase().includes(q)) : [];
+  const lojasMatchIds = new Set(lojasMatch.map(l=>l.id));
+  // contratantes: casam por nome OU têm loja que casa
+  const lst = contratantes().filter(c=> !q || c.nome.toLowerCase().includes(q) || vincsDoContratante(c.id).some(v=>lojasMatchIds.has(v.lojaId)) );
+  let html='';
+  if(q && lojasMatch.length){
+    html += `<div class="lojas-found"><div class="lf-h"><span class="material-symbols-rounded">storefront</span>Lojas encontradas (${lojasMatch.length})</div>`+
+      lojasMatch.slice(0,50).map(l=>{ const ct=contratantesDaLoja(l.id)[0]; return `<div class="lf-item" onclick="selLoja('${l.id}')"><div class="nm">${esc(l.nome)}</div><div class="mt">${esc(l.endereco||'—')}${ct?' · <b>'+esc(ct.nome)+'</b>':''}</div></div>`;}).join('')+
+      (lojasMatch.length>50?`<div class="mt" style="padding:6px 10px;color:var(--tx3)">…refine a busca (${lojasMatch.length} no total)</div>`:'')+`</div>`;
+  }
+  html += lst.length?lst.map(c=>`
     <div class="ccard ${SELC===c.id?'sel':''}" onclick="selCli('${c.id}')">
       <div class="nm">${esc(c.nome)}</div>
       <div class="mt">${esc(c.contato||'—')}</div>
       <div class="cnt"><span class="material-symbols-rounded">storefront</span>${lojasDoContratante(c.id).length} loja(s)</div>
-    </div>`).join('') : '<div class="empty">Nenhum contratante.</div>';
+    </div>`).join('') : (q?'':'<div class="empty">Nenhum contratante.</div>');
+  document.getElementById('clist').innerHTML= html || '<div class="empty">Nada encontrado.</div>';
 }
 function selCli(id){ SELC=id; render(); }
+function selLoja(lojaId){ const ct=contratantesDaLoja(lojaId)[0]; if(ct){ SELC=ct.id; } render(); }
 function renderCdetail(){
   const el=document.getElementById('cdetail');
   const c=SELC&&S.clientes.find(x=>x.id===SELC);
