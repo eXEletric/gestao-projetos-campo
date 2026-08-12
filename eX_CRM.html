@@ -110,6 +110,10 @@ select.fi{appearance:auto;cursor:pointer}
 .ccard .nm{font-size:14px;font-weight:700}.ccard .mt{font-size:11px;color:var(--tx3);margin-top:2px}
 .ccard .cnt{font-size:11px;color:var(--pri);font-weight:600;margin-top:5px;display:inline-flex;align-items:center;gap:4px}
 .ccard .cnt .material-symbols-rounded{font-size:14px}
+.seg{display:inline-flex;background:var(--pri-bg);border:1px solid var(--line);border-radius:10px;padding:3px;gap:2px}
+.seg button{display:inline-flex;align-items:center;gap:6px;border:none;background:transparent;padding:7px 13px;border-radius:8px;font:inherit;font-size:13px;font-weight:600;color:var(--tx2);cursor:pointer}
+.seg button.on{background:var(--surf);color:var(--pri);box-shadow:0 1px 3px rgba(0,0,0,.09)}
+.seg button .material-symbols-rounded{font-size:17px}
 .lojas-found{background:var(--pri-bg);border:1px solid #d9d3f7;border-radius:11px;padding:6px;margin-bottom:12px}
 .lojas-found .lf-h{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--pri);padding:6px 8px 4px;display:flex;align-items:center;gap:5px}
 .lojas-found .lf-h .material-symbols-rounded{font-size:15px}
@@ -173,9 +177,16 @@ select.fi{appearance:auto;cursor:pointer}
 
   <!-- CLIENTES -->
   <div class="view" id="v-clientes">
-    <div style="margin-bottom:12px"><button class="btn btn-p" onclick="openCli('contratante')"><span class="material-symbols-rounded">add</span>Novo contratante</button></div>
+    <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:12px">
+      <div class="seg">
+        <button id="seg-ct" class="on" onclick="setCSub('contratantes')"><span class="material-symbols-rounded">business</span>Contratantes</button>
+        <button id="seg-lj" onclick="setCSub('lojas')"><span class="material-symbols-rounded">storefront</span>Contemplados (lojas)</button>
+      </div>
+      <span style="flex:1"></span>
+      <button class="btn btn-p" id="cliAddBtn" onclick="addFromCSub()"><span class="material-symbols-rounded">add</span>Novo contratante</button>
+    </div>
     <div class="cgrid">
-      <div><div class="col-h"><span class="material-symbols-rounded">business</span>Contratantes</div><div id="clist"></div></div>
+      <div><div class="col-h" id="colHleft"><span class="material-symbols-rounded">business</span>Contratantes</div><div id="clist"></div></div>
       <div><div class="col-h"><span class="material-symbols-rounded">badge</span>Detalhe</div><div id="cdetail"></div></div>
     </div>
   </div>
@@ -344,7 +355,7 @@ async function initCRM(){
 }
 const TEMPS=["Frio","Morno","Quente"];
 const MODE=(new URLSearchParams(location.search)).get('m'); // 'clientes' | 'funil' | null(ambos)
-let S=null, TAB=(MODE||'funil'), SELO=null, SELC=null, EDITO=null, EDITC=null, _drag=null, _oc=null, _op=null, _ot='Morno', _ts='', _fromPipe=null;
+let S=null, TAB=(MODE||'funil'), CSUB='contratantes', SELO=null, SELC=null, SELL=null, EDITO=null, EDITC=null, _drag=null, _oc=null, _op=null, _ot='Morno', _ts='', _fromPipe=null;
 function applyMode(){
   if(!MODE) return;
   const tb=document.querySelector('.tabs'); if(tb)tb.style.display='none';
@@ -416,7 +427,45 @@ function setTab(t){ TAB=t; document.getElementById('tab-funil').classList.toggle
   document.getElementById('v-funil').classList.toggle('on',t==='funil'); document.getElementById('v-clientes').classList.toggle('on',t==='clientes');
   const qi=document.getElementById('q'); if(qi)qi.placeholder=(t==='clientes'?'Buscar contratante ou loja…':'Buscar oportunidade…');
   render(); }
-function render(){ if(TAB==='funil'){ renderBoard(); renderOppDetail(); } else { renderClist(); renderCdetail(); } }
+function render(){ if(TAB==='funil'){ renderBoard(); renderOppDetail(); } else if(CSUB==='lojas'){ renderLojaList(); renderLojaDetail(); } else { renderClist(); renderCdetail(); } }
+function setCSub(sub){ CSUB=sub; SELC=null; SELL=null;
+  document.getElementById('seg-ct').classList.toggle('on',sub==='contratantes');
+  document.getElementById('seg-lj').classList.toggle('on',sub==='lojas');
+  const b=document.getElementById('cliAddBtn'), h=document.getElementById('colHleft'), qi=document.getElementById('q');
+  if(sub==='lojas'){ b.innerHTML='<span class="material-symbols-rounded">add</span>Nova loja'; h.innerHTML='<span class="material-symbols-rounded">storefront</span>Contemplados / lojas'; if(qi)qi.placeholder='Buscar loja por nome, nº, rede…'; }
+  else { b.innerHTML='<span class="material-symbols-rounded">add</span>Novo contratante'; h.innerHTML='<span class="material-symbols-rounded">business</span>Contratantes'; if(qi)qi.placeholder='Buscar contratante ou loja…'; }
+  render();
+}
+function addFromCSub(){ if(CSUB==='lojas') openLoja(null,false); else openCli('contratante'); }
+function selLojaDetail(id){ SELL=id; render(); }
+function renderLojaList(){
+  const q=(document.getElementById('q').value||'').toLowerCase().trim();
+  const lst=S.lojas.filter(l=>!q||((l.nome||'')+' '+(l.numero||'')+' '+(l.grupo||'')+' '+(l.endereco||'')+' '+(l.cnpj||'')).toLowerCase().includes(q)).sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
+  document.getElementById('clist').innerHTML= lst.length?lst.map(l=>`
+    <div class="ccard ${SELL===l.id?'sel':''}" onclick="selLojaDetail('${l.id}')">
+      <div class="nm">${esc(l.nome)}${l.numero?` <span style="color:var(--pri);font-weight:800">#${esc(l.numero)}</span>`:''}</div>
+      <div class="mt">${esc(ljSub(l))}</div>
+      <div class="cnt"><span class="material-symbols-rounded">link</span>${contratantesDaLoja(l.id).length} contratante(s)</div>
+    </div>`).join('') : `<div class="empty" style="padding:14px">${q?'Nenhuma loja encontrada.':'Nenhuma loja no banco. Use "Nova loja".'}</div>`;
+}
+function renderLojaDetail(){
+  const el=document.getElementById('cdetail');
+  const l=SELL&&loja(SELL);
+  if(!l){ el.innerHTML='<div class="empty">Selecione uma loja / contemplado.</div>'; if(SELL)SELL=null; return; }
+  const cts=contratantesDaLoja(l.id);
+  const di=(lb,v)=>`<div class="di"><span class="l">${lb}</span><span class="v ${v?'':'empty'}">${v?esc(v):'—'}</span></div>`;
+  el.innerHTML=`<div class="detail" style="margin-top:0">
+    <div class="dhead">
+      <div class="davatar">${ini(l.nome)}</div>
+      <div class="dt"><h2>${esc(l.nome)}${l.numero?` <span style="color:var(--pri)">#${esc(l.numero)}</span>`:''}</h2><div class="sub">${esc(l.grupo||'Contemplado / loja')}</div></div>
+      <button class="btn btn-s" onclick="openLoja('${l.id}')"><span class="material-symbols-rounded">edit</span>Editar</button>
+    </div>
+    <div class="dinfo">${di('Rede / bandeira',l.grupo)} ${di('Nº da unidade',l.numero)} ${di('CNPJ',l.cnpj)} ${di('Contato',l.contato)} ${di('Fone',l.fone)} ${di('E-mail',l.email)} ${di('Endereço',l.endereco)}</div>
+    ${l.obs?`<div class="dobs">${esc(l.obs)}</div>`:''}
+    <div class="sec2"><span class="material-symbols-rounded">business</span>Contratantes vinculados (${cts.length})</div>
+    ${cts.length?`<div class="subcards">${cts.map(c=>`<div class="subc"><div class="nm">${esc(c.nome)}</div><div class="mt">${esc(c.contato||c.cnpj||'—')}</div></div>`).join('')}</div>`:'<div class="empty" style="padding:14px">Nenhum contratante vinculado ainda.</div>'}
+  </div>`;
+}
 
 /* ===== FUNIL ===== */
 function renderBoard(){
