@@ -127,6 +127,9 @@ select.fi{appearance:auto;cursor:pointer}
 .chip{font-size:12px;padding:6px 11px;border-radius:17px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer}
 .chip:hover{border-color:var(--pri)}.chip.sel{background:var(--pri-bg);border-color:var(--pri);color:var(--pri);font-weight:600}
 .chip.dim{opacity:.4}
+.chip.ts{display:inline-flex;align-items:center;gap:5px}
+.chip.ts .material-symbols-rounded{font-size:15px}
+.chip.soon{opacity:.55;cursor:default}
 </style>
 </head>
 <body>
@@ -170,6 +173,7 @@ select.fi{appearance:auto;cursor:pointer}
       <div class="fg"><label class="fl">Cliente contratante</label><select class="fi" id="o_contratante_sel" onchange="onContratante(this.value)"></select></div>
       <div class="fg"><label class="fl">Cliente contemplado / loja</label><select class="fi" id="o_contemplado_sel" onchange="onContemplado(this.value)"></select></div>
       <div class="fg"><label class="fl">Objeto da demanda</label><input class="fi" id="o_objeto" placeholder="Ex.: Automação de iluminação — 4 QDs"></div>
+      <div class="fg"><label class="fl">Tipo de serviço</label><div class="chips" id="o_tipo"></div></div>
       <div class="frow">
         <div class="fg"><label class="fl">Temperatura</label><div class="chips" id="o_temp"></div></div>
         <div class="fg"><label class="fl">Data limite p/ orçamento</label><input class="fi" id="o_data" type="date"></div>
@@ -209,6 +213,52 @@ select.fi{appearance:auto;cursor:pointer}
   </div>
 </div>
 
+<!-- MODAL LOJA (banco unico) -->
+<div class="modal-bg" id="modalLoja">
+  <div class="modal">
+    <div class="mh"><b id="lTitle">Loja</b><button class="x" onclick="closeLoja()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Nome da loja / unidade</label><input class="fi" id="l_nome"></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Grupo / bandeira</label><input class="fi" id="l_grupo"></div>
+        <div class="fg"><label class="fl">CNPJ</label><input class="fi" id="l_cnpj"></div>
+      </div>
+      <div class="fg"><label class="fl">Endereço</label><input class="fi" id="l_endereco"></div>
+      <div class="fg"><label class="fl">Coordenada / link de mapa</label><input class="fi" id="l_coordenada"></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Contato</label><input class="fi" id="l_contato"></div>
+        <div class="fg"><label class="fl">Fone</label><input class="fi" id="l_fone"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="fl">E-mail</label><input class="fi" id="l_email"></div>
+        <div class="fg"><label class="fl">Observações</label><input class="fi" id="l_obs"></div>
+      </div>
+    </div>
+    <div class="mf">
+      <button class="btn" id="lDel" onclick="delLojaBtn()" style="color:var(--red)"><span class="material-symbols-rounded">delete</span>Excluir</button>
+      <span class="spacer"></span>
+      <button class="btn btn-p" onclick="saveLoja()"><span class="material-symbols-rounded">check</span>Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL VINCULAR LOJA EXISTENTE -->
+<div class="modal-bg" id="modalVinc">
+  <div class="modal">
+    <div class="mh"><b>Vincular loja ao contratante</b><button class="x" onclick="closeVinc()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Serviço / escopo deste vínculo (opcional)</label><input class="fi" id="vPapel" placeholder="Ex.: refrigeração, energia"></div>
+      <div class="fg"><label class="fl">Buscar loja no banco</label><input class="fi" id="vBusca" oninput="renderVincList()" placeholder="nome ou endereço…"></div>
+      <div id="vList" style="max-height:320px;overflow:auto;border:1px solid var(--line);border-radius:8px"></div>
+    </div>
+    <div class="mf">
+      <button class="btn" onclick="closeVinc();openLoja(null,true)"><span class="material-symbols-rounded">add</span>Nova loja</button>
+      <span class="spacer"></span>
+      <button class="btn btn-p" onclick="closeVinc()"><span class="material-symbols-rounded">check</span>Concluir</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 "use strict";
@@ -222,19 +272,25 @@ function cloudMsg(t){ const e=document.getElementById('cloudb'); if(e)e.textCont
 const mCli=c=>({id:c.id,empresa_id:EMPRESA_ID,tipo:c.tipo,pai_id:c.paiId||null,nome:c.nome,cnpj:c.cnpj||null,contato:c.contato||null,fone:c.fone||null,email:c.email||null,endereco:c.endereco||null,obs:c.obs||null});
 const mFase=(f,ord)=>({id:f.id,empresa_id:EMPRESA_ID,nome:f.nome,ordem:ord,tipo:f.fim?'final':'ativa'});
 const mOpp=o=>({id:o.id,empresa_id:EMPRESA_ID,contratante_id:o.contratanteId||null,contemplado_id:o.contempladoId||null,fase_id:o.colId||null,objeto:o.objeto||null,temperatura:o.temperatura||'Morno',data_limite:o.dataLimite||null,obs:o.obs||null});
+const mLoja=l=>({id:l.id,empresa_id:EMPRESA_ID,nome:l.nome,grupo:l.grupo||null,endereco:l.endereco||null,cnpj:l.cnpj||null,coordenada:l.coordenada||null,codigo_externo:l.codigo||null,contato:l.contato||null,fone:l.fone||null,email:l.email||null,obs:l.obs||null});
+const mVinc=v=>({id:v.id,empresa_id:EMPRESA_ID,loja_id:v.lojaId,contratante_id:v.contratanteId,papel:v.papel||null,obs:v.obs||null});
 function cUp(table,row){ if(!CLOUD)return; SB.from(table).upsert(row).then(({error})=>{ if(error){console.error('cloud up',table,error);cloudMsg('erro ao salvar na nuvem');} }); }
 function cDel(table,id){ if(!CLOUD)return; SB.from(table).update({deleted_at:new Date().toISOString()}).eq('id',id).then(({error})=>{ if(error)console.error('cloud del',table,error); }); }
 function cFases(){ if(!CLOUD)return; SB.from('crm_fases').upsert(S.colunas.map((f,i)=>mFase(f,i))).then(({error})=>{ if(error)console.error('cloud fases',error); }); }
 async function carregarNuvem(){
-  const [cl,fa,op]=await Promise.all([
+  const [cl,fa,op,lj,vc]=await Promise.all([
     SB.from('clientes').select('*').is('deleted_at',null),
     SB.from('crm_fases').select('*').is('deleted_at',null).order('ordem'),
-    SB.from('oportunidades').select('*').is('deleted_at',null)
+    SB.from('oportunidades').select('*').is('deleted_at',null),
+    SB.from('lojas').select('*').is('deleted_at',null),
+    SB.from('vinculos').select('*').is('deleted_at',null)
   ]);
   if(cl.error||fa.error||op.error) throw (cl.error||fa.error||op.error);
   S={ v:3,
     colunas:(fa.data||[]).map(f=>({id:f.id,nome:f.nome,fim:f.tipo==='final'})),
     clientes:(cl.data||[]).map(c=>({id:c.id,nome:c.nome,tipo:c.tipo,paiId:c.pai_id,cnpj:c.cnpj,contato:c.contato,fone:c.fone,email:c.email,endereco:c.endereco,obs:c.obs})),
+    lojas:((lj&&lj.data)||[]).map(l=>({id:l.id,nome:l.nome,grupo:l.grupo,endereco:l.endereco,cnpj:l.cnpj,coordenada:l.coordenada,codigo:l.codigo_externo,contato:l.contato,fone:l.fone,email:l.email,obs:l.obs})),
+    vinculos:((vc&&vc.data)||[]).map(v=>({id:v.id,lojaId:v.loja_id,contratanteId:v.contratante_id,papel:v.papel,obs:v.obs})),
     oportunidades:(op.data||[]).map(o=>({id:o.id,contratanteId:o.contratante_id,contempladoId:o.contemplado_id,objeto:o.objeto,temperatura:o.temperatura,dataLimite:o.data_limite||'',colId:o.fase_id,obs:o.obs}))
   };
   if(!S.colunas.length) await seedFases();
@@ -259,7 +315,7 @@ async function initCRM(){
 }
 const TEMPS=["Frio","Morno","Quente"];
 const MODE=(new URLSearchParams(location.search)).get('m'); // 'clientes' | 'funil' | null(ambos)
-let S=null, TAB=(MODE||'funil'), SELO=null, SELC=null, EDITO=null, EDITC=null, _drag=null, _oc=null, _op=null, _ot='Morno', _fromPipe=null;
+let S=null, TAB=(MODE||'funil'), SELO=null, SELC=null, EDITO=null, EDITC=null, _drag=null, _oc=null, _op=null, _ot='Morno', _ts='', _fromPipe=null;
 function applyMode(){
   if(!MODE) return;
   const tb=document.querySelector('.tabs'); if(tb)tb.style.display='none';
@@ -291,6 +347,7 @@ function demo(){ return { v:3,
     {id:"dosce",nome:"DOSCE SABOR",tipo:"contratante",paiId:null,obs:""},
     {id:"ds_f1",nome:"FÁBRICA 01",tipo:"contemplado",paiId:"dosce",endereco:""}
   ],
+  lojas:[], vinculos:[],
   oportunidades:[
     {id:uid(),contratanteId:"gy",contempladoId:"gy_var",objeto:"Planilha de valores de manutenção",temperatura:"Morno",dataLimite:"",colId:"leads",obs:""},
     {id:uid(),contratanteId:"dosce",contempladoId:"ds_f1",objeto:"Solução de distribuição e controle",temperatura:"Frio",dataLimite:"",colId:"leads",obs:""},
@@ -302,6 +359,8 @@ function demo(){ return { v:3,
 function load(){
   try{const r=localStorage.getItem(STORE);S=r?JSON.parse(r):demo();}catch(e){S=demo();}
   if(!S||!Array.isArray(S.clientes)||!Array.isArray(S.colunas)||!Array.isArray(S.oportunidades)) S=demo();
+  if(!Array.isArray(S.lojas)) S.lojas=[];
+  if(!Array.isArray(S.vinculos)) S.vinculos=[];
   const first=S.colunas[0].id;
   S.oportunidades.forEach(o=>{ if(!S.colunas.find(k=>k.id===o.colId)) o.colId=first; });
   save();
@@ -311,10 +370,16 @@ function resetDemo(){ if(CLOUD){ if(confirm("Recarregar do banco (nuvem)?")){ ca
 
 const contratantes=()=>S.clientes.filter(c=>c.tipo==="contratante");
 const filhos=id=>S.clientes.filter(c=>c.tipo==="contemplado"&&c.paiId===id);
+/* ===== LOJAS (banco unico) + VINCULOS (m:n) ===== */
+const loja=id=>S.lojas.find(x=>x.id===id);
+const contempl=id=>loja(id)||cli(id);   // contemplado = LOJA (fonte única); fallback cli p/ dado antigo
+const vincsDoContratante=ctId=>S.vinculos.filter(v=>v.contratanteId===ctId);
+const lojasDoContratante=ctId=>vincsDoContratante(ctId).map(v=>loja(v.lojaId)).filter(Boolean);
+const contratantesDaLoja=ljId=>S.vinculos.filter(v=>v.lojaId===ljId).map(v=>cli(v.contratanteId)).filter(Boolean);
 const oppsIn=colId=>S.oportunidades.filter(o=>o.colId===colId);
 const colIdx=id=>S.colunas.findIndex(k=>k.id===id);
 const colNome=id=>{const k=S.colunas.find(x=>x.id===id);return k?k.nome:'';};
-function titulo(o){ const ct=cli(o.contratanteId), cp=cli(o.contempladoId); return [ct?ct.nome:'—', cp?cp.nome:null, o.objeto||null].filter(Boolean).join(' · '); }
+function titulo(o){ const ct=cli(o.contratanteId), cp=contempl(o.contempladoId); return [ct?ct.nome:'—', cp?cp.nome:null, o.objeto||null].filter(Boolean).join(' · '); }
 function matchQ(o){ const q=(document.getElementById('q').value||'').toLowerCase(); if(!q)return true; return titulo(o).toLowerCase().includes(q); }
 
 function setTab(t){ TAB=t; document.getElementById('tab-funil').classList.toggle('on',t==='funil'); document.getElementById('tab-clientes').classList.toggle('on',t==='clientes');
@@ -347,7 +412,7 @@ function oppCardHTML(o,ci){
   const ct=cli(o.contratanteId), tc=(o.temperatura||'Morno').toLowerCase(), oc=orcIndex()[o.id];
   return `<div class="kcard ${SELO===o.id?'sel':''}" draggable="true" ondragstart="dragStart(event,'${o.id}')" ondragend="_drag=null" onclick="selOpp('${o.id}')">
     <div class="kcard-nm">${esc(o.objeto||'(sem objeto)')}</div>
-    <div class="kcard-cli"><span class="material-symbols-rounded">business</span>${esc(ct?ct.nome:'—')}${o.contempladoId&&cli(o.contempladoId)?' · '+esc(cli(o.contempladoId).nome):''}</div>
+    <div class="kcard-cli"><span class="material-symbols-rounded">business</span>${esc(ct?ct.nome:'—')}${o.contempladoId&&contempl(o.contempladoId)?' · '+esc(contempl(o.contempladoId).nome):''}</div>
     ${oc?`<div class="orcb ${esc(oc.status||'rascunho')}"><span class="material-symbols-rounded">request_quote</span>${fmtBRL(oc.total)} · ${esc(oc.status||'rascunho')}</div>`:''}
     <div class="kcard-foot">
       <span class="temp ${tc}">${esc(o.temperatura||'Morno')}</span>
@@ -373,19 +438,22 @@ function renderOppDetail(){
   const el=document.getElementById('oppDetail');
   const o=SELO&&S.oportunidades.find(x=>x.id===SELO);
   if(!o){ el.innerHTML=''; if(SELO)SELO=null; return; }
-  const ct=cli(o.contratanteId), cp=cli(o.contempladoId), tc=(o.temperatura||'Morno').toLowerCase(), oc=orcIndex()[o.id];
+  const ct=cli(o.contratanteId), cp=contempl(o.contempladoId), tc=(o.temperatura||'Morno').toLowerCase(), oc=orcIndex()[o.id];
+  const ts=o.tipoServ||''; const TSL={barramento:'Fab. de barramento',quadros:'Fab. de quadros',pecas:'Fab. de peças'};
   const di=(l,v)=>`<div class="di"><span class="l">${l}</span><span class="v ${v?'':'empty'}">${v?esc(v):'—'}</span></div>`;
   el.innerHTML=`<div class="detail">
     <div class="dhead">
       <div class="davatar">${ini(ct?ct.nome:'?')}</div>
       <div class="dt"><h2>${esc(titulo(o))}</h2><div class="sub">Oportunidade · fase <b>${esc(colNome(o.colId))}</b></div>
-        <div class="chiprow"><span class="temp ${tc}">${esc(o.temperatura||'Morno')}</span></div></div>
+        <div class="chiprow"><span class="temp ${tc}">${esc(o.temperatura||'Morno')}</span>${ts?`<span class="temp" style="background:var(--pri-bg);color:var(--pri)">${esc(TSL[ts]||ts)}</span>`:''}</div></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">
         <button class="btn btn-s" onclick="openOpp('${o.id}')"><span class="material-symbols-rounded">edit</span>Editar</button>
-        <button class="btn btn-s btn-p" onclick="gerarOrcamento('${o.id}')"><span class="material-symbols-rounded">request_quote</span>${oc?'Abrir orçamento':'Gerar orçamento'}</button>
-        <button class="btn btn-s" onclick="gerarOrcBarramento('${o.id}')" title="Gerar/abrir orçamento de barramento (fabricação de cobre)"><span class="material-symbols-rounded">bolt</span>Barramento</button>
+        ${ts==='barramento'
+          ? `<button class="btn btn-s btn-p" onclick="gerarOrcBarramento('${o.id}')" title="Esteira de Fabricação"><span class="material-symbols-rounded">bolt</span>Gerar orçamento de barramento</button>`
+          : `<button class="btn btn-s btn-p" onclick="gerarOrcamento('${o.id}')"><span class="material-symbols-rounded">request_quote</span>${oc?'Abrir orçamento':'Gerar orçamento'}</button>
+        <button class="btn btn-s" onclick="gerarOrcBarramento('${o.id}')" title="Orçamento de barramento (fabricação)"><span class="material-symbols-rounded">bolt</span>Barramento</button>
         ${oc?`<button class="btn btn-s" onclick="duplicarOpp('${o.id}')" title="Cria uma cópia da oportunidade com o orçamento junto"><span class="material-symbols-rounded">content_copy</span>Duplicar</button>`:''}
-        ${oc?`<button class="btn btn-s" onclick="gerarObra('${o.id}')" title="Cria a obra no Cronograma com os serviços do orçamento virando tarefas"><span class="material-symbols-rounded">engineering</span>Gerar obra</button>`:''}
+        ${oc?`<button class="btn btn-s" onclick="gerarObra('${o.id}')" title="Cria a obra no Cronograma com os serviços do orçamento virando tarefas"><span class="material-symbols-rounded">engineering</span>Gerar obra</button>`:''}`}
       </div>
     </div>
     <div class="dinfo">
@@ -406,7 +474,7 @@ function novaOpp(colId){ openOpp(null, colId); }
 function openOpp(id,colId){
   const o=id?S.oportunidades.find(x=>x.id===id):null;
   EDITO={id:id||null, colId:(o?o.colId:(colId||S.colunas[0].id))};
-  _oc=o?o.contratanteId:null; _op=o?o.contempladoId:null; _ot=o?(o.temperatura||'Morno'):'Morno'; _fromPipe=null;
+  _oc=o?o.contratanteId:null; _op=o?o.contempladoId:null; _ot=o?(o.temperatura||'Morno'):'Morno'; _ts=o?(o.tipoServ||''):''; _fromPipe=null;
   document.getElementById('oTitle').textContent=id?'Editar oportunidade':'Nova oportunidade';
   document.getElementById('o_objeto').value=o?(o.objeto||''):'';
   document.getElementById('o_obs').value=o?(o.obs||''):'';
@@ -419,18 +487,23 @@ function renderOppSelects(){
   const ctSel=document.getElementById('o_contratante_sel');
   ctSel.innerHTML=`<option value="">— escolher contratante —</option>`+contratantes().map(c=>`<option value="${c.id}" ${_oc===c.id?'selected':''}>${esc(c.nome)}</option>`).join('')+`<option value="__new">+ Cadastrar novo contratante…</option>`;
   const cpSel=document.getElementById('o_contemplado_sel');
-  const subs=_oc?filhos(_oc):[];
-  cpSel.innerHTML=`<option value="">${_oc?'— (opcional) —':'escolha o contratante primeiro'}</option>`+subs.map(s=>`<option value="${s.id}" ${_op===s.id?'selected':''}>${esc(s.nome)}</option>`).join('')+(_oc?`<option value="__new">+ Cadastrar novo contemplado…</option>`:'');
+  const subs=_oc?lojasDoContratante(_oc):[];
+  cpSel.innerHTML=`<option value="">${_oc?'— (opcional) —':'escolha o contratante primeiro'}</option>`+subs.map(s=>`<option value="${s.id}" ${_op===s.id?'selected':''}>${esc(s.nome)}</option>`).join('')+(_oc?`<option value="__new">+ Nova loja…</option>`:'');
   document.getElementById('o_temp').innerHTML=TEMPS.map(t=>`<span class="chip ${_ot===t?'sel':''}" onclick="pickTemp('${t}')">${t}</span>`).join('');
+  document.getElementById('o_tipo').innerHTML=
+    `<span class="chip ts ${_ts==='barramento'?'sel':''}" onclick="pickTipo('barramento')"><span class="material-symbols-rounded">bolt</span>Fabricação de barramento</span>`+
+    `<span class="chip ts soon" title="Em breve"><span class="material-symbols-rounded">dashboard</span>Fab. de quadros · em breve</span>`+
+    `<span class="chip ts soon" title="Em breve"><span class="material-symbols-rounded">widgets</span>Fab. de peças · em breve</span>`;
 }
-function onContratante(val){ if(val==='__new'){ document.getElementById('o_contratante_sel').value=_oc||''; openCliFromPipe('contratante'); return; } _oc=val||null; if(_op&&(!_oc||!filhos(_oc).find(s=>s.id===_op)))_op=null; renderOppSelects(); }
-function onContemplado(val){ if(val==='__new'){ document.getElementById('o_contemplado_sel').value=_op||''; if(!_oc){alert('Escolha o contratante primeiro.');return;} openCliFromPipe('contemplado'); return; } _op=val||null; }
+function onContratante(val){ if(val==='__new'){ document.getElementById('o_contratante_sel').value=_oc||''; openCliFromPipe('contratante'); return; } _oc=val||null; if(_op&&(!_oc||!lojasDoContratante(_oc).find(s=>s.id===_op)))_op=null; renderOppSelects(); }
+function onContemplado(val){ if(val==='__new'){ document.getElementById('o_contemplado_sel').value=_op||''; if(!_oc){alert('Escolha o contratante primeiro.');return;} SELC=_oc; openLoja(null,true); return; } _op=val||null; }
 function pickTemp(t){ _ot=t; renderOppSelects(); }
+function pickTipo(t){ _ts=(_ts===t?'':t); renderOppSelects(); }
 function openCliFromPipe(tipo){ _fromPipe=tipo; openCli(tipo,null); }
 function closeOpp(){ document.getElementById('modalOpp').classList.remove('show'); EDITO=null; }
 function saveOpp(){
   if(!_oc){ alert('Escolha o cliente contratante.'); return; }
-  const data={contratanteId:_oc, contempladoId:_op, objeto:document.getElementById('o_objeto').value.trim(), temperatura:_ot, dataLimite:document.getElementById('o_data').value, obs:document.getElementById('o_obs').value.trim()};
+  const data={contratanteId:_oc, contempladoId:_op, objeto:document.getElementById('o_objeto').value.trim(), temperatura:_ot, tipoServ:_ts, dataLimite:document.getElementById('o_data').value, obs:document.getElementById('o_obs').value.trim()};
   let alvo;
   if(EDITO.id){ alvo=S.oportunidades.find(x=>x.id===EDITO.id); Object.assign(alvo, data); }
   else{ alvo={id:uid(),colId:EDITO.colId,...data}; S.oportunidades.push(alvo); SELO=alvo.id; }
@@ -451,7 +524,7 @@ function duplicarOpp(id){
 function gerarOrcamento(id){
   const o=S.oportunidades.find(x=>x.id===id); if(!o)return;
   if(!orcIndex()[id]){   // 1ª vez: manda o pré-preenchimento
-    const ct=cli(o.contratanteId), cp=cli(o.contempladoId);
+    const ct=cli(o.contratanteId), cp=contempl(o.contempladoId);
     const prefill={ oppId:o.id, cliNome:ct?ct.nome:'', cliContato:ct?(ct.contato||''):'', cliFone:ct?(ct.fone||''):'', cliEmail:ct?(ct.email||''):'',
       finNome:cp?cp.nome:'', finEnd:cp?(cp.endereco||''):'', solTitulo:o.objeto||'', solDesc:o.obs||'' };
     try{ localStorage.setItem('ex_orc_prefill', JSON.stringify(prefill)); }catch(e){}
@@ -460,7 +533,7 @@ function gerarOrcamento(id){
 }
 function gerarOrcBarramento(id){
   const o=S.oportunidades.find(x=>x.id===id); if(!o)return;
-  const ct=cli(o.contratanteId), cp=cli(o.contempladoId);
+  const ct=cli(o.contratanteId), cp=contempl(o.contempladoId);
   const prefill={ oppId:o.id, cliNome:ct?ct.nome:'', cliContato:ct?(ct.contato||''):'', cliFone:ct?(ct.fone||''):'', cliEmail:ct?(ct.email||''):'',
     finNome:cp?cp.nome:'', solTitulo:o.objeto||'', solDesc:o.obs||'' };
   try{ localStorage.setItem('ex_orc_bar_prefill', JSON.stringify(prefill)); }catch(e){}
@@ -470,7 +543,7 @@ function gerarObra(id){
   const o=S.oportunidades.find(x=>x.id===id); if(!o)return;
   let orc=null; try{ orc=JSON.parse(localStorage.getItem('ex_orc_v6__'+id)||'null'); }catch(e){}
   if(!orc){ alert('Gere o orçamento desta oportunidade primeiro.'); return; }
-  const ct=cli(o.contratanteId), cp=cli(o.contempladoId);
+  const ct=cli(o.contratanteId), cp=contempl(o.contempladoId);
   const servicos=(orc.servicos||[]).filter(s=>s&&s.desc).map(s=>({nome:s.desc, qtd:(+s.qtd||1)}));
   if(!servicos.length){ if(!confirm('O orçamento não tem serviços. Criar a obra mesmo assim (vazia)?'))return; }
   const payload={ oppId:o.id, numero:orc.numero||'', nome:o.objeto||titulo(o), contratante:ct?ct.nome:'', contemplado:cp?cp.nome:'', obs:o.obs||'', servicos };
@@ -486,7 +559,7 @@ function renderClist(){
     <div class="ccard ${SELC===c.id?'sel':''}" onclick="selCli('${c.id}')">
       <div class="nm">${esc(c.nome)}</div>
       <div class="mt">${esc(c.contato||'—')}</div>
-      <div class="cnt"><span class="material-symbols-rounded">account_tree</span>${filhos(c.id).length} contemplado(s)</div>
+      <div class="cnt"><span class="material-symbols-rounded">storefront</span>${lojasDoContratante(c.id).length} loja(s)</div>
     </div>`).join('') : '<div class="empty">Nenhum contratante.</div>';
 }
 function selCli(id){ SELC=id; render(); }
@@ -494,7 +567,7 @@ function renderCdetail(){
   const el=document.getElementById('cdetail');
   const c=SELC&&S.clientes.find(x=>x.id===SELC);
   if(!c){ el.innerHTML='<div class="empty">Selecione um contratante.</div>'; if(SELC)SELC=null; return; }
-  const subs=filhos(c.id);
+  const vincs=vincsDoContratante(c.id);
   const di=(l,v)=>`<div class="di"><span class="l">${l}</span><span class="v ${v?'':'empty'}">${v?esc(v):'—'}</span></div>`;
   el.innerHTML=`<div class="detail" style="margin-top:0">
     <div class="dhead">
@@ -504,14 +577,18 @@ function renderCdetail(){
     </div>
     <div class="dinfo">${di('CNPJ',c.cnpj)} ${di('Contato',c.contato)} ${di('Fone',c.fone)} ${di('E-mail',c.email)} ${di('Endereço',c.endereco)}</div>
     ${c.obs?`<div class="dobs">${esc(c.obs)}</div>`:''}
-    <div class="sec2"><span class="material-symbols-rounded">account_tree</span>Contemplados / lojas<span class="spacer"></span>
-      <button class="btn btn-s btn-p" onclick="openCli('contemplado')"><span class="material-symbols-rounded">add</span>Novo contemplado</button></div>
-    ${subs.length?`<div class="subcards">${subs.map(s=>`
-      <div class="subc"><div class="acts">
-        <button class="iconb" onclick="openCli('contemplado','${s.id}')"><span class="material-symbols-rounded">edit</span></button>
-        <button class="iconb del" onclick="delCliDireto('${s.id}')"><span class="material-symbols-rounded">close</span></button></div>
-        <div class="nm">${esc(s.nome)}</div><div class="mt">${esc(s.endereco||s.contato||'—')}</div>
-      </div>`).join('')}</div>`:'<div class="empty" style="padding:14px">Nenhum contemplado.</div>'}
+    <div class="sec2"><span class="material-symbols-rounded">storefront</span>Lojas vinculadas (${vincs.length})<span class="spacer"></span>
+      <button class="btn btn-s" onclick="abrirVincular()"><span class="material-symbols-rounded">link</span>Vincular loja</button>
+      <button class="btn btn-s btn-p" onclick="openLoja(null,true)"><span class="material-symbols-rounded">add</span>Nova loja</button></div>
+    ${vincs.length?`<div class="subcards">${vincs.map(v=>{const l=loja(v.lojaId); if(!l)return ''; const outros=contratantesDaLoja(l.id).filter(x=>x.id!==c.id);
+      return `<div class="subc"><div class="acts">
+        <button class="iconb" title="Editar loja" onclick="openLoja('${l.id}')"><span class="material-symbols-rounded">edit</span></button>
+        <button class="iconb del" title="Desvincular deste contratante" onclick="desvincular('${v.id}')"><span class="material-symbols-rounded">link_off</span></button></div>
+        <div class="nm">${esc(l.nome)}</div>
+        <div class="mt">${esc(l.endereco||l.contato||'—')}</div>
+        ${v.papel?`<div class="mt" style="color:var(--pri)">Serviço: ${esc(v.papel)}</div>`:''}
+        ${outros.length?`<div class="mt" style="font-size:11px">Também de: ${esc(outros.map(o=>o.nome).join(', '))}</div>`:''}
+      </div>`;}).join('')}</div>`:'<div class="empty" style="padding:14px">Nenhuma loja vinculada. Use "Nova loja" (cria no banco e vincula) ou "Vincular loja" (reaproveita do banco).</div>'}
   </div>`;
 }
 function openCli(tipo,id){
@@ -547,13 +624,74 @@ function delCliDireto(id,fromModal){
   S.clientes=S.clientes.filter(x=>x.id!==id && x.paiId!==id);
   if(c.tipo==='contratante'){ S.oportunidades=S.oportunidades.filter(o=>o.contratanteId!==id); }
   else { S.oportunidades.forEach(o=>{ if(o.contempladoId===id)o.contempladoId=null; }); }
+  let vincsRemovidos=[];
+  if(c.tipo==='contratante'){ vincsRemovidos=S.vinculos.filter(v=>v.contratanteId===id).map(v=>v.id); S.vinculos=S.vinculos.filter(v=>v.contratanteId!==id); }
   if(SELC===id)SELC=null;
   save();
-  cDel('clientes',id); filhosIds.forEach(fid=>cDel('clientes',fid));
+  cDel('clientes',id); filhosIds.forEach(fid=>cDel('clientes',fid)); vincsRemovidos.forEach(vid=>cDel('vinculos',vid));
   oppsRemovidas.forEach(oid=>cDel('oportunidades',oid));
   oppsAtualizadas.forEach(o=>cUp('oportunidades',mOpp(o)));
   if(fromModal)closeCli(); render();
 }
+
+/* ===== LOJAS + VINCULOS (funcoes) ===== */
+let EDITL=null, _linkAfterSave=false;
+function openLoja(id, linkAfterSave){
+  EDITL=id||null; _linkAfterSave=!!linkAfterSave;
+  const l=id?loja(id):null;
+  document.getElementById('lTitle').textContent=(id?'Editar loja':'Nova loja');
+  ['nome','grupo','cnpj','endereco','coordenada','contato','fone','email','obs'].forEach(f=>{const el=document.getElementById('l_'+f); if(el)el.value=l?(l[f]||''):'';});
+  document.getElementById('lDel').style.display=id?'inline-flex':'none';
+  document.getElementById('modalLoja').classList.add('show');
+}
+function closeLoja(){ document.getElementById('modalLoja').classList.remove('show'); EDITL=null; _linkAfterSave=false; }
+function saveLoja(){
+  const g=f=>{const el=document.getElementById('l_'+f); return el?el.value.trim():'';};
+  const nome=g('nome'); if(!nome){ alert('Informe o nome da loja.'); return; }
+  const data={nome,grupo:g('grupo'),cnpj:g('cnpj'),endereco:g('endereco'),coordenada:g('coordenada'),contato:g('contato'),fone:g('fone'),email:g('email'),obs:g('obs')};
+  let alvo;
+  if(EDITL){ alvo=loja(EDITL); Object.assign(alvo,data); }
+  else { alvo={id:uid(),...data}; S.lojas.push(alvo); }
+  cUp('lojas',mLoja(alvo));
+  if(!EDITL && _linkAfterSave && SELC){ criarVinculo(SELC, alvo.id, ''); }
+  const fromOpp = !EDITL && document.getElementById('modalOpp') && document.getElementById('modalOpp').classList.contains('show');
+  if(fromOpp){ _op=alvo.id; }
+  save(); closeLoja(); render();
+  if(fromOpp) renderOppSelects();
+}
+function delLojaBtn(){ if(EDITL) delLoja(EDITL,true); }
+function delLoja(id,fromModal){
+  const l=loja(id); if(!l)return;
+  const vs=S.vinculos.filter(v=>v.lojaId===id);
+  if(!confirm(`Excluir a loja "${l.nome}"? Ela sai de TODOS os contratantes (${vs.length} vinculo(s)).`))return;
+  S.lojas=S.lojas.filter(x=>x.id!==id);
+  S.vinculos=S.vinculos.filter(v=>v.lojaId!==id);
+  cDel('lojas',id); vs.forEach(v=>cDel('vinculos',v.id));
+  save(); if(fromModal)closeLoja(); render();
+}
+function criarVinculo(ctId, ljId, papel){
+  if(S.vinculos.find(v=>v.contratanteId===ctId&&v.lojaId===ljId)) return;
+  const v={id:uid(),contratanteId:ctId,lojaId:ljId,papel:papel||'',obs:''};
+  S.vinculos.push(v); cUp('vinculos',mVinc(v)); save();
+}
+function desvincular(vincId){
+  const v=S.vinculos.find(x=>x.id===vincId); if(!v)return;
+  const l=loja(v.lojaId);
+  if(!confirm(`Desvincular "${l?l.nome:'loja'}" deste contratante? (a loja continua no banco)`))return;
+  S.vinculos=S.vinculos.filter(x=>x.id!==vincId); cDel('vinculos',vincId); save(); render();
+}
+function abrirVincular(){ if(!SELC){alert('Selecione um contratante.');return;} document.getElementById('vPapel').value=''; document.getElementById('vBusca').value=''; document.getElementById('modalVinc').classList.add('show'); renderVincList(); }
+function closeVinc(){ document.getElementById('modalVinc').classList.remove('show'); }
+function renderVincList(){
+  const q=(document.getElementById('vBusca').value||'').toLowerCase();
+  const jaIds=new Set(vincsDoContratante(SELC).map(v=>v.lojaId));
+  const lst=S.lojas.filter(l=>l.nome.toLowerCase().includes(q)||(l.endereco||'').toLowerCase().includes(q)).sort((a,b)=>a.nome.localeCompare(b.nome));
+  document.getElementById('vList').innerHTML= lst.length?lst.map(l=>{const ja=jaIds.has(l.id);
+    return `<div style="display:flex;align-items:center;gap:10px;padding:8px 10px;border-bottom:1px solid var(--line)"><div style="flex:1;min-width:0"><div class="nm">${esc(l.nome)}</div><div class="mt">${esc(l.endereco||'—')}</div></div>
+      ${ja?'<span style="font-size:11px;color:var(--tx3)">já vinculada</span>':`<button class="btn btn-s btn-p" onclick="vincularLoja('${l.id}')"><span class="material-symbols-rounded">link</span>Vincular</button>`}</div>`;}).join('')
+    :'<div class="empty" style="padding:12px">Nenhuma loja no banco. Crie uma nova.</div>';
+}
+function vincularLoja(ljId){ const papel=document.getElementById('vPapel').value.trim(); criarVinculo(SELC,ljId,papel); renderVincList(); render(); }
 
 initCRM();
 </script>
