@@ -265,6 +265,10 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .pkitem:hover{background:var(--pri-bg);border-color:var(--pri)}
 .pkitem .pknm{flex:1;min-width:0}
 .pkitem .pkcusto{font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.hpsrch{display:flex;align-items:center;gap:7px;border:1px solid var(--line2);border-radius:8px;padding:8px 11px;margin-bottom:9px;position:sticky;top:0;background:var(--surf);z-index:1}
+.hpsrch input{border:none;outline:none;background:none;font-size:13px;width:100%;color:var(--tx)}
+.hpsrch .material-symbols-rounded{font-size:18px;color:var(--tx3)}
+.hplist{max-height:54vh;overflow-y:auto}
 .pkitem.avulso{color:var(--pri);border-style:dashed;margin-top:4px}
 .pkitem.avulso .material-symbols-rounded{font-size:17px}
 .fpick{font-size:10px;font-weight:600;color:var(--pri);background:var(--pri-bg);border:none;border-radius:20px;padding:2px 9px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;margin-left:6px;vertical-align:middle;text-transform:none;letter-spacing:0}
@@ -544,7 +548,7 @@ async function initOrc(){
     if(session){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
       try{ const p=await SB.from('perfis').select('nome,email').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; } }catch(_){}
-      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias();
+      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
     } else { cloudMsg('modo local (sem login)'); }
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
@@ -1087,12 +1091,26 @@ function saveNovoCat(){
 }
 
 /* ---------- picker do cabeçalho (solução, cliente, responsável) ---------- */
-// clientes vêm do CRM (ex_crm_v1, mesmo domínio) se existir; senão do seed local
+// clientes: nuvem (tabela clientes) > CRM localStorage (ex_crm_v1) > seed local
+let CLIENTES=null;
+async function carregarClientes(){
+  try{ const {data,error}=await SB.from('clientes').select('id,tipo,nome,contato,fone,email,endereco,cnpj,pai_id').is('deleted_at',null).order('nome');
+    if(!error) CLIENTES=data||[]; }catch(e){ console.error('clientes',e); }
+}
 function crmData(){ try{const r=localStorage.getItem('ex_crm_v1'); if(r){const d=JSON.parse(r); if(d&&Array.isArray(d.clientes)&&d.clientes.length) return d.clientes;}}catch(e){} return null; }
-function cliList(kind){ const crm=crmData(); if(crm) return crm.filter(c=> kind==='contratante'?c.tipo==='contratante':c.tipo==='contemplado'); return CAD.clientes; }
-function cliFind(id){ const crm=crmData(); const src=crm||CAD.clientes; return src.find(x=>x.id===id); }
+function cliSrc(){ return (CLIENTES&&CLIENTES.length)?CLIENTES:(crmData()||CAD.clientes); }
+function cliList(kind){ return cliSrc().filter(c=> kind==='contratante'?c.tipo==='contratante':c.tipo==='contemplado'); }
+function cliFind(id){ return cliSrc().find(x=>x.id===id); }
 function setM(f,v){ S[f]=v; const el=document.querySelector('[data-m="'+f+'"]'); if(el)el.value=v; }
 function pkRow(kind,id,nome,sub){ return `<button class="pkitem" onclick="pickHP('${kind}','${id}')"><span class="pknm">${esc(nome)}</span>${sub?`<span class="pkcusto">${esc(sub)}</span>`:''}</button>`; }
+let HP_KIND=null, HP_LIST=[];
+function hpFilter(q){
+  q=(q||'').toLowerCase().trim();
+  const rows=HP_LIST.filter(c=>!q||((c.nome||'')+' '+(c.contato||'')+' '+(c.endereco||'')+' '+(c.cnpj||'')).toLowerCase().includes(q));
+  const el=document.getElementById('hpList'); if(!el)return;
+  el.innerHTML=rows.length?rows.map(c=>pkRow(HP_KIND,c.id,c.nome,c.contato||c.endereco||'')).join('')
+    :`<div style="color:var(--tx3);padding:14px;font-size:12px;text-align:center">${HP_LIST.length?'Nada encontrado.':'Nenhum cliente no CRM ainda.'}</div>`;
+}
 function openHP(kind){
   let title='', html='';
   if(kind==='solucao'){
@@ -1101,9 +1119,13 @@ function openHP(kind){
       +`<button class="pkitem avulso" onclick="pickHP('solucao','__gen')"><span class="material-symbols-rounded">edit_note</span>Solução genérica / manual</button>`;
   } else if(kind==='contratante'||kind==='final'){
     title = kind==='contratante'?'Escolher cliente contratante':'Escolher cliente final / loja';
-    const lst=cliList(kind);
-    html=lst.length?lst.map(c=>pkRow(kind,c.id,c.nome,c.contato||c.endereco||'')).join('')
-      :'<div style="color:var(--tx3);padding:12px;font-size:12px">Nenhum cliente no CRM ainda.</div>';
+    HP_KIND=kind; HP_LIST=cliList(kind);
+    document.getElementById('pickTitle').textContent=title;
+    document.getElementById('pickBody').innerHTML=`<div class="hpsrch"><span class="material-symbols-rounded">search</span><input id="hpq" placeholder="Buscar por nome, contato, endereço…" oninput="hpFilter(this.value)"></div><div id="hpList" class="hplist"></div>`;
+    hpFilter('');
+    document.getElementById('pickModal').classList.add('open');
+    setTimeout(()=>{const q=document.getElementById('hpq'); if(q)q.focus();},60);
+    return;
   } else if(kind==='resp'){
     title='Escolher responsável (comercial)';
     html=CAD.usuarios.filter(u=>u.papel==='comercial').map(u=>pkRow('resp',u.id,u.nome,u.email||u.fone||'')).join('');
