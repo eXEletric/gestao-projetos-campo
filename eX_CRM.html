@@ -121,10 +121,10 @@ select.fi{appearance:auto;cursor:pointer}
 .selbtn::after{content:'';position:absolute;right:12px;top:50%;transform:translateY(-25%);border:5px solid transparent;border-top-color:var(--tx3)}
 .selbtn.placeholder{color:var(--tx3)}
 .selbtn:hover{border-color:var(--tx3)}
-#opList .pk{display:flex;flex-direction:column;gap:1px;width:100%;text-align:left;border:1px solid var(--line);border-radius:9px;background:var(--surf);cursor:pointer;padding:9px 12px;margin-bottom:6px}
-#opList .pk:hover{background:var(--pri-bg);border-color:var(--pri)}
+#opList .pk,#opNew .pk{display:flex;flex-direction:column;gap:1px;width:100%;text-align:left;border:1px solid var(--line);border-radius:9px;background:var(--surf);cursor:pointer;padding:9px 12px;margin-bottom:6px}
+#opList .pk:hover,#opNew .pk:hover{background:var(--pri-bg);border-color:var(--pri)}
 #opList .pk .nm{font-size:13px;font-weight:600}#opList .pk .mt{font-size:11px;color:var(--tx3)}
-#opList .pk.new{border-style:dashed;color:var(--pri);font-weight:600;flex-direction:row;align-items:center;gap:6px}
+#opNew .pk.new,#opList .pk.new{border-style:dashed;color:var(--pri);font-weight:600;flex-direction:row;align-items:center;gap:6px;margin-bottom:0;justify-content:center}
 #opList .empty{padding:14px;text-align:center;color:var(--tx3);font-size:12px}
 
 /* modal */
@@ -210,8 +210,9 @@ select.fi{appearance:auto;cursor:pointer}
     <div class="mh"><b id="opTitle">Escolher</b><button class="x" onclick="closeOppPick()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
       <div class="search" style="margin-bottom:10px"><span class="material-symbols-rounded">search</span><input id="opq" placeholder="Buscar digitando o nome…" oninput="renderOppPick()"></div>
-      <div id="opList" style="max-height:56vh;overflow:auto"></div>
+      <div id="opList" style="max-height:46vh;overflow:auto"></div>
     </div>
+    <div class="mf"><div id="opNew" style="width:100%"></div></div>
   </div>
 </div>
 
@@ -546,7 +547,8 @@ function renderOppPick(){
     : `<button class="pk new" onclick="pickOppNew('contemplado')"><span class="material-symbols-rounded">add</span>Nova loja…</button>`;
   const list = rows.length ? rows.map(x=>`<button class="pk" onclick="pickOpp('${x.id}')"><span class="nm">${esc(x.nome)}</span>${(x.endereco||x.contato)?`<span class="mt">${esc(x.endereco||x.contato)}</span>`:''}</button>`).join('')
     : `<div class="empty">${base.length?'Nada encontrado.':(OPICK==='contemplado'?'Nenhuma loja vinculada a este contratante.':'Nenhum contratante.')}</div>`;
-  document.getElementById('opList').innerHTML=list+novo;
+  document.getElementById('opList').innerHTML=list;
+  document.getElementById('opNew').innerHTML=novo;
 }
 function pickOpp(id){
   if(OPICK==='contratante'){ _oc=id; if(_op&&!lojasDoContratante(_oc).find(s=>s.id===_op))_op=null; }
