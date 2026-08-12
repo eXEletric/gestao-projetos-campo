@@ -117,6 +117,15 @@ select.fi{appearance:auto;cursor:pointer}
 .lf-item:hover{background:#faf9ff;box-shadow:0 0 0 1px var(--pri) inset}
 .lf-item .nm{font-size:13px;font-weight:600}.lf-item .mt{font-size:11px;color:var(--tx3);margin-top:1px}
 .lf-item .mt b{color:var(--tx2);font-weight:600}
+.selbtn{text-align:left;cursor:pointer;position:relative;padding-right:26px;background:var(--surf)}
+.selbtn::after{content:'';position:absolute;right:12px;top:50%;transform:translateY(-25%);border:5px solid transparent;border-top-color:var(--tx3)}
+.selbtn.placeholder{color:var(--tx3)}
+.selbtn:hover{border-color:var(--tx3)}
+#opList .pk{display:flex;flex-direction:column;gap:1px;width:100%;text-align:left;border:1px solid var(--line);border-radius:9px;background:var(--surf);cursor:pointer;padding:9px 12px;margin-bottom:6px}
+#opList .pk:hover{background:var(--pri-bg);border-color:var(--pri)}
+#opList .pk .nm{font-size:13px;font-weight:600}#opList .pk .mt{font-size:11px;color:var(--tx3)}
+#opList .pk.new{border-style:dashed;color:var(--pri);font-weight:600;flex-direction:row;align-items:center;gap:6px}
+#opList .empty{padding:14px;text-align:center;color:var(--tx3);font-size:12px}
 
 /* modal */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
@@ -177,8 +186,8 @@ select.fi{appearance:auto;cursor:pointer}
   <div class="modal">
     <div class="mh"><b id="oTitle">Oportunidade</b><button class="x" onclick="closeOpp()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div class="fg"><label class="fl">Cliente contratante</label><select class="fi" id="o_contratante_sel" onchange="onContratante(this.value)"></select></div>
-      <div class="fg"><label class="fl">Cliente contemplado / loja</label><select class="fi" id="o_contemplado_sel" onchange="onContemplado(this.value)"></select></div>
+      <div class="fg"><label class="fl">Cliente contratante</label><button type="button" class="fi selbtn placeholder" id="o_contratante_btn" onclick="openOppPick('contratante')">— escolher contratante —</button></div>
+      <div class="fg"><label class="fl">Cliente contemplado / loja</label><button type="button" class="fi selbtn placeholder" id="o_contemplado_btn" onclick="openOppPick('contemplado')">escolha o contratante primeiro</button></div>
       <div class="fg"><label class="fl">Objeto da demanda</label><input class="fi" id="o_objeto" placeholder="Ex.: Automação de iluminação — 4 QDs"></div>
       <div class="fg"><label class="fl">Tipo de serviço</label><div class="chips" id="o_tipo"></div></div>
       <div class="frow">
@@ -191,6 +200,17 @@ select.fi{appearance:auto;cursor:pointer}
       <button class="btn" id="oDel" onclick="delOpp()" style="color:var(--red)"><span class="material-symbols-rounded">delete</span>Excluir</button>
       <span class="spacer"></span>
       <button class="btn btn-p" onclick="saveOpp()"><span class="material-symbols-rounded">check</span>Salvar</button>
+    </div>
+  </div>
+</div>
+
+<!-- PICKER COM BUSCA (contratante / loja) -->
+<div class="modal-bg" id="oppPick">
+  <div class="modal" style="max-width:440px">
+    <div class="mh"><b id="opTitle">Escolher</b><button class="x" onclick="closeOppPick()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div class="search" style="margin-bottom:10px"><span class="material-symbols-rounded">search</span><input id="opq" placeholder="Buscar digitando o nome…" oninput="renderOppPick()"></div>
+      <div id="opList" style="max-height:56vh;overflow:auto"></div>
     </div>
   </div>
 </div>
@@ -493,19 +513,51 @@ function openOpp(id,colId){
   document.getElementById('modalOpp').classList.add('show');
 }
 function renderOppSelects(){
-  const ctSel=document.getElementById('o_contratante_sel');
-  ctSel.innerHTML=`<option value="">— escolher contratante —</option>`+contratantes().map(c=>`<option value="${c.id}" ${_oc===c.id?'selected':''}>${esc(c.nome)}</option>`).join('')+`<option value="__new">+ Cadastrar novo contratante…</option>`;
-  const cpSel=document.getElementById('o_contemplado_sel');
-  const subs=_oc?lojasDoContratante(_oc):[];
-  cpSel.innerHTML=`<option value="">${_oc?'— (opcional) —':'escolha o contratante primeiro'}</option>`+subs.map(s=>`<option value="${s.id}" ${_op===s.id?'selected':''}>${esc(s.nome)}</option>`).join('')+(_oc?`<option value="__new">+ Nova loja…</option>`:'');
+  updateOppBtns();
   document.getElementById('o_temp').innerHTML=TEMPS.map(t=>`<span class="chip ${_ot===t?'sel':''}" onclick="pickTemp('${t}')">${t}</span>`).join('');
   document.getElementById('o_tipo').innerHTML=
     `<span class="chip ts ${_ts==='barramento'?'sel':''}" onclick="pickTipo('barramento')"><span class="material-symbols-rounded">bolt</span>Fabricação de barramento</span>`+
     `<span class="chip ts soon" title="Em breve"><span class="material-symbols-rounded">dashboard</span>Fab. de quadros · em breve</span>`+
     `<span class="chip ts soon" title="Em breve"><span class="material-symbols-rounded">widgets</span>Fab. de peças · em breve</span>`;
 }
-function onContratante(val){ if(val==='__new'){ document.getElementById('o_contratante_sel').value=_oc||''; openCliFromPipe('contratante'); return; } _oc=val||null; if(_op&&(!_oc||!lojasDoContratante(_oc).find(s=>s.id===_op)))_op=null; renderOppSelects(); }
-function onContemplado(val){ if(val==='__new'){ document.getElementById('o_contemplado_sel').value=_op||''; if(!_oc){alert('Escolha o contratante primeiro.');return;} SELC=_oc; openLoja(null,true); return; } _op=val||null; }
+function updateOppBtns(){
+  const ct=_oc?cli(_oc):null, lo=_op?loja(_op):null;
+  const cb=document.getElementById('o_contratante_btn'), pb=document.getElementById('o_contemplado_btn');
+  if(cb){ cb.textContent=ct?ct.nome:'— escolher contratante —'; cb.classList.toggle('placeholder',!ct); }
+  if(pb){ pb.textContent=lo?lo.nome:(_oc?'— (opcional) escolher loja —':'escolha o contratante primeiro'); pb.classList.toggle('placeholder',!lo); }
+}
+/* picker COM BUSCA (contratante / loja) */
+let OPICK=null;
+function openOppPick(kind){
+  if(kind==='contemplado'&&!_oc){ alert('Escolha o contratante primeiro.'); return; }
+  OPICK=kind;
+  document.getElementById('opTitle').textContent=kind==='contratante'?'Escolher contratante':'Escolher loja / contemplado';
+  document.getElementById('opq').value=''; renderOppPick();
+  document.getElementById('oppPick').classList.add('show');
+  setTimeout(()=>{const q=document.getElementById('opq'); if(q)q.focus();},60);
+}
+function closeOppPick(){ document.getElementById('oppPick').classList.remove('show'); }
+function renderOppPick(){
+  const q=(document.getElementById('opq').value||'').toLowerCase().trim();
+  const base = OPICK==='contratante' ? contratantes() : lojasDoContratante(_oc);
+  const rows = base.filter(x=>!q || ((x.nome||'')+' '+(x.endereco||'')+' '+(x.contato||'')).toLowerCase().includes(q));
+  const novo = OPICK==='contratante'
+    ? `<button class="pk new" onclick="pickOppNew('contratante')"><span class="material-symbols-rounded">add</span>Cadastrar novo contratante…</button>`
+    : `<button class="pk new" onclick="pickOppNew('contemplado')"><span class="material-symbols-rounded">add</span>Nova loja…</button>`;
+  const list = rows.length ? rows.map(x=>`<button class="pk" onclick="pickOpp('${x.id}')"><span class="nm">${esc(x.nome)}</span>${(x.endereco||x.contato)?`<span class="mt">${esc(x.endereco||x.contato)}</span>`:''}</button>`).join('')
+    : `<div class="empty">${base.length?'Nada encontrado.':(OPICK==='contemplado'?'Nenhuma loja vinculada a este contratante.':'Nenhum contratante.')}</div>`;
+  document.getElementById('opList').innerHTML=list+novo;
+}
+function pickOpp(id){
+  if(OPICK==='contratante'){ _oc=id; if(_op&&!lojasDoContratante(_oc).find(s=>s.id===_op))_op=null; }
+  else { _op=id; }
+  closeOppPick(); updateOppBtns();
+}
+function pickOppNew(kind){
+  closeOppPick();
+  if(kind==='contratante'){ openCliFromPipe('contratante'); }
+  else { if(!_oc){alert('Escolha o contratante primeiro.');return;} SELC=_oc; openLoja(null,true); }
+}
 function pickTemp(t){ _ot=t; renderOppSelects(); }
 function pickTipo(t){ _ts=(_ts===t?'':t); renderOppSelects(); }
 function openCliFromPipe(tipo){ _fromPipe=tipo; openCli(tipo,null); }
