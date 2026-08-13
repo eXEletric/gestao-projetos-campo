@@ -343,6 +343,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
 .scrn-only-badge{font-size:9px;font-weight:700;color:var(--pri);background:var(--pri-bg);border:1px solid var(--pri);border-radius:8px;padding:1px 6px;margin-left:6px;white-space:nowrap;vertical-align:middle}
 .sotot-hint{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--pri);background:var(--pri-bg);border:1px dashed var(--pri);border-radius:9px;padding:6px 10px;margin:0 0 10px}
 .sotot-hint .material-symbols-rounded{font-size:16px}
+.mgimp{font-size:12px;font-weight:600;color:var(--tx2)}   /* margem implícita (só leitura) no modo valor geral */
 </style>
 </head>
 <body class="editing">
@@ -866,22 +867,41 @@ function renderBlk(cfg){
       <td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(effBlocoTotal(cfg.key))}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlurBloco(this,'${cfg.key}')" oninput="updBloco('${cfg.key}',this.value)" title="Acompanha a soma dos itens; digite um valor para sobrescrever"></span></td>
       <td></td></tr></tfoot>`;
   } else if(modo==='geral'){
-    cols = cfg.mat
-      ? `<th>#</th><th>Material</th><th>Marca</th><th class="r">Qtd</th><th>Und</th><th class="r">Valor (geral)</th><th></th>`
-      : `<th>#</th><th>Descrição</th><th class="r">Qtd</th><th>Und</th><th class="r">Valor (geral)</th><th></th>`;
+    // Valor geral: você digita o valor final por item. Na EDIÇÃO mostra o detalhe interno (custo/margem/lucro, classe .pint);
+    // na IMPRESSÃO some tudo isso e o cliente vê só Descrição · Qtd · Und · Preço (= valor geral).
+    const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
+    const fmtMg=m=>(m==null?'—':String(m).replace('.',',')+'%');
+    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem</th><th class="r"><span class="pint">Valor (geral)</span><span class="printonly">Preço</span></th><th class="r pint">Lucro</th><th class="pint"></th>`;
     body=rows.map((r,i)=>{
-      const marca = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
+      const cu=custoUn(r), custo=num(r.qtd)*cu, preco=num(r.geral), lucro=preco-custo;
+      const margImpl = custo>0?(Math.round((preco/custo-1)*1000)/10):null;
+      const custoCell = r.usarBase
+        ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
+        : `<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)"></span>`;
+      const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
+      const editCad = (r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'';
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
-        <td><input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)"></td>
-        ${marca}
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div></td>
+        ${marcaCell}
+        <td class="pint">
+          <div class="swcell">
+            <div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar">
+              <span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span>
+            </div>
+            <span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'usar base':'alterar'}</span>
+          </div>
+        </td>
+        <td class="r money pint">${custoCell}</td>
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
         <td>${undSelect(cfg.key,r.id,r.und)}</td>
+        <td class="r pint"><span class="mgimp" id="tm_${r.id}">${fmtMg(margImpl)}</span></td>
         <td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
-        <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+        <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
+        <td class="pint rowact">${cfg.key==='servicos'?`<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Compor custo por mão de obra"><span class="material-symbols-rounded">precision_manufacturing</span></button>`:''}${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
-    if(!rows.length) body=`<tr><td colspan="${cfg.mat?7:6}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar” abaixo.</td></tr>`;
+    if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
   } else if(cfg.custo){
     // MODELO base+margem: custo (do cadastro, usar/alterar) → margem → preço e lucro
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
@@ -1027,8 +1047,13 @@ function refreshRow(blk,r){
   const modo=S.modos[blk]||'unit';
   const c=document.getElementById('tt_'+r.id);
   if(c){const t=lineTot(r,modo); c.textContent=fmt(t); c.className='tot '+(t?'':'z');}
-  const pe=document.getElementById('tp_'+r.id), le=document.getElementById('tl_'+r.id);
-  if(pe){ const cu=custoUn(r), preco=num(r.qtd)*cu*(1+mgOf(r)/100), custo=num(r.qtd)*cu;
+  const cu=custoUn(r), custo=num(r.qtd)*cu;
+  const pe=document.getElementById('tp_'+r.id), le=document.getElementById('tl_'+r.id), me=document.getElementById('tm_'+r.id);
+  if(modo==='geral'){   // valor geral: preço = valor digitado; margem e lucro são derivados (ao vivo)
+    const preco=num(r.geral), marg=custo>0?(Math.round((preco/custo-1)*1000)/10):null;
+    if(le) le.textContent=fmt(preco-custo);
+    if(me) me.textContent=(marg==null?'—':String(marg).replace('.',',')+'%');
+  } else if(pe){ const preco=num(r.qtd)*cu*(1+mgOf(r)/100);
     pe.textContent=fmt(preco); if(le)le.textContent=fmt(preco-custo); }
   const bv=document.getElementById('bsv_'+r.id); if(bv) bv.textContent=fmt(num(r.custoBase));   // legenda "base:" ao vivo
 }
