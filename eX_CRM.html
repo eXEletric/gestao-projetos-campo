@@ -659,7 +659,15 @@ function gerarObra(id){
   let orc=null; try{ orc=JSON.parse(localStorage.getItem('ex_orc_v6__'+id)||'null'); }catch(e){}
   if(!orc){ alert('Gere o orçamento desta oportunidade primeiro.'); return; }
   const ct=cli(o.contratanteId), cp=contempl(o.contempladoId);
-  const servicos=(orc.servicos||[]).filter(s=>s&&s.desc).map(s=>({nome:s.desc, qtd:(+s.qtd||1)}));
+  // congela o ORÇADO por serviço (baseline Decisão 2): custo, preço (c/ margem) e horas da composição
+  const _n=v=>{ if(v==null||v==='')return 0; if(typeof v==='number')return v; let s=(''+v).replace(/[R$\s]/g,''); if(s.indexOf(',')>-1)s=s.replace(/\./g,'').replace(',','.'); return parseFloat(s)||0; };
+  const mB=_n(orc.margemBase);
+  const _cu=s=>_n(s.usarBase===false?s.custoAlt:s.custoBase);
+  const _mg=s=>(s.margem===''||s.margem==null)?mB:_n(s.margem);
+  const servicos=(orc.servicos||[]).filter(s=>s&&s.desc).map(s=>{
+    const q=_n(s.qtd)||1, cu=_cu(s), tUnit=_n(s.compTempo);
+    return { nome:s.desc, qtd:q, orc:{ custo:+(q*cu).toFixed(2), preco:+(q*cu*(1+_mg(s)/100)).toFixed(2), horas:+(q*tUnit).toFixed(2), tempoUnit:+tUnit.toFixed(2) } };
+  });
   if(!servicos.length){ if(!confirm('O orçamento não tem serviços. Criar a obra mesmo assim (vazia)?'))return; }
   const payload={ oppId:o.id, numero:orc.numero||'', nome:o.objeto||titulo(o), contratante:ct?ct.nome:'', contemplado:cp?cp.nome:'', obs:o.obs||'', servicos };
   try{ localStorage.setItem('ex_obra_pending', JSON.stringify(payload)); }catch(e){}
