@@ -974,15 +974,15 @@ function efAdd(f){ const ic=(FUNCS.find(x=>x.f===f)||{}).ic||'person'; if(!Array
 
 function toggleModo(blk){
   const next = (S.modos[blk]||'unit')==='unit' ? 'geral' : 'unit';
-  // ao entrar em Geral, o valor por item reflete o preço REAL do momento (qtd × custo × margem) — evita valor defasado
-  if(next==='geral') S[blk].forEach(r=>{ r.geral=+(linePreco(r,'unit').toFixed(2)); });
+  // ao entrar em Geral: semeia com o preço REAL do momento SÓ nos itens ainda não ajustados à mão (preserva edições do usuário)
+  if(next==='geral') S[blk].forEach(r=>{ if(!r.geralEdited) r.geral=+(linePreco(r,'unit').toFixed(2)); });
   S.modos[blk]=next; save();
   renderBlk(BLKS.find(b=>b.key===blk)); recalc();
 }
 function toggleSoTotal(blk){
   const next=!S.soTotal[blk];
-  // ao ligar "Só o total", a verba = subtotal REAL do momento (não um valor congelado antigo)
-  if(next) S.blocoTotal[blk]=+(S[blk].reduce((a,r)=>a+linePreco(r,'unit'),0).toFixed(2));
+  // ao ligar "Só o total", a verba = subtotal do momento: usa o valor ajustado à mão quando existe, senão o preço calculado
+  if(next) S.blocoTotal[blk]=+(S[blk].reduce((a,r)=>a+(r.geralEdited?num(r.geral):linePreco(r,'unit')),0).toFixed(2));
   S.soTotal[blk]=next; save();
   renderBlk(BLKS.find(b=>b.key===blk)); recalc();
 }
@@ -997,6 +997,8 @@ function updBloco(blk,val){
 function upd(blk,id,field,val){
   const r=S[blk].find(x=>x.id===id); if(!r)return;
   r[field]=val;
+  // marca que o "valor geral" foi ajustado à mão (vazio = volta a acompanhar o preço calculado)
+  if(field==='geral') r.geralEdited = (val!==''&&val!=null);
   if(['qtd','vunit','markup','geral','custoAlt','margem'].includes(field)){
     refreshRow(blk,r);
     const st=document.getElementById('st_'+blk);
