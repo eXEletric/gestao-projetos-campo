@@ -849,7 +849,7 @@ function renderBlk(cfg){
   const modo=S.modos[cfg.key]||'unit';
   const soT = modo==='geral' && S.soTotal[cfg.key];
   const rows=S[cfg.key], sub=blkSub(cfg.key);
-  let cols, body, foot='', groupedPrint='', scrollCls='';
+  let cols, body, foot='';
   if(modo==='geral'){
     // Valor geral: você digita o valor final por item. Na EDIÇÃO mostra o detalhe interno (custo/margem/lucro, classe .pint);
     // na IMPRESSÃO some tudo isso e o cliente vê só Descrição · Qtd · Und · Preço (= valor geral).
@@ -880,16 +880,14 @@ function renderBlk(cfg){
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
         <td>${undSelect(cfg.key,r.id,r.und)}</td>
         <td class="r pint"><span class="mgimp" id="tm_${r.id}">${fmtMg(margImpl)}</span></td>
-        <td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
+        <td class="r">${soT?`<span class="incl printonly">incluso</span>`:''}<span class="rsw${soT?' noprint':''}"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
         <td class="pint rowact">${cfg.key==='servicos'?`<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Compor custo por mão de obra"><span class="material-symbols-rounded">precision_manufacturing</span></button>`:''}${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
-    if(soT){   // "Só o total": edição idêntica; na impressão a tabela some e sai só o valor agrupado do bloco
+    if(soT){   // "Só o total": edição idêntica aos outros modos; na IMPRESSÃO os itens saem (Desc/Qtd/Und) com "incluso" no valor + o total agrupado do bloco no fim
       foot=`<tfoot><tr class="ftot"><td class="ftl" colspan="${cfg.mat?8:7}">Total do bloco (agrupado)</td><td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(effBlocoTotal(cfg.key))}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlurBloco(this,'${cfg.key}')" oninput="updBloco('${cfg.key}',this.value)" title="Acompanha a soma dos itens; digite um valor para sobrescrever"></span></td><td colspan="2"></td></tr></tfoot>`;
-      groupedPrint=`<div class="printonly grouped-print"><div class="gp-l">Valor deste bloco (agrupado)</div><div class="gp-v">${fmt(effBlocoTotal(cfg.key))}</div><div class="gp-n">Valor fechado do bloco — não detalhado por item.</div></div>`;
-      scrollCls=' noprint';
     }
   } else if(cfg.custo){
     // MODELO base+margem: custo (do cadastro, usar/alterar) → margem → preço e lucro
@@ -949,9 +947,8 @@ function renderBlk(cfg){
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
     ${cfg.key==='servicos'?efetivoHtml():''}
-    ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: a edição é igual (você vê e ajusta cada item), mas na <b>impressão / envio da proposta</b> o cliente vê só o <b>valor agrupado</b> deste bloco — não item por item.</span></div>`:''}
-    ${groupedPrint}
-    <div class="scroll${scrollCls}"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
+    ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: a edição é igual (você vê e ajusta cada item), mas na <b>impressão / envio da proposta</b> os itens saem como <b>“incluso”</b> e o valor aparece só no <b>total agrupado</b> do bloco — não item por item.</span></div>`:''}
+    <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button></div>
     ${obsHtml}`;
 }
