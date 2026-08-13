@@ -685,14 +685,20 @@ function lineCusto(r,modo){
 }
 const lineTot=(r,modo)=>linePreco(r,modo);           // alias p/ compat
 // subtotal do bloco (PREÇO): no Geral+"só o total" usa o valor manual; senão soma
+// "Só o total": honra o valor digitado à mão SÓ se foi editado (blocoEdited); senão acompanha a soma viva dos itens
+// (evita total congelado que fica defasado quando os itens mudam depois)
+function effBlocoTotal(blk){
+  if(S.blocoEdited && S.blocoEdited[blk]) return num(S.blocoTotal[blk]);
+  return +(S[blk].reduce((a,r)=>a+(r.geralEdited?num(r.geral):linePreco(r,'unit')),0).toFixed(2));
+}
 function blkSub(blk){
   const modo=S.modos[blk]||'unit';
-  if(modo==='geral' && S.soTotal[blk]) return num(S.blocoTotal[blk]);
+  if(modo==='geral' && S.soTotal[blk]) return effBlocoTotal(blk);
   return S[blk].reduce((a,r)=>a+linePreco(r,modo),0);
 }
 function blkCusto(blk){
   const modo=S.modos[blk]||'unit';
-  if(modo==='geral' && S.soTotal[blk]) return num(S.blocoTotal[blk]);
+  if(modo==='geral' && S.soTotal[blk]) return effBlocoTotal(blk);
   return S[blk].reduce((a,r)=>a+lineCusto(r,modo),0);
 }
 
@@ -712,6 +718,7 @@ function demo(){
     descGeral:"Proposta para execução dos serviços de automação de iluminação e substituição do controlador do ar-condicionado central, conforme escopo detalhado abaixo. Valores e condições conforme apresentado nesta cotação.", descGeralOn:true,
     modos:{servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'},
     soTotal:{servicos:false,equip:false,despesas:false,materiais:false},
+    blocoEdited:{servicos:false,equip:false,despesas:false,materiais:false},
     blocoTotal:{servicos:0,equip:0,despesas:0,materiais:0},
     obs:{
       servicos:"Não inclui: controladores, componentes eletrônicos, sensores; programação de controladores; material de infraestrutura 100% dedicada.",
@@ -801,6 +808,7 @@ usuarios:[
 function sanitize(){
   if(!S.modos)S.modos={servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'};
   if(!S.soTotal)S.soTotal={servicos:false,equip:false,despesas:false,materiais:false};
+  if(!S.blocoEdited)S.blocoEdited={servicos:false,equip:false,despesas:false,materiais:false};
   if(!S.blocoTotal)S.blocoTotal={servicos:0,equip:0,despesas:0,materiais:0};
   if(!S.blocoOn)S.blocoOn={servicos:true,equip:true,despesas:true,materiais:true};
   if(!S.obsOn)S.obsOn={servicos:true,equip:true,despesas:true,materiais:true};
@@ -849,7 +857,7 @@ function renderBlk(cfg){
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?7:6}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar” abaixo.</td></tr>`;
     foot=`<tfoot><tr class="ftot">
       <td></td><td class="ftl" colspan="${cfg.mat?4:3}">Total do bloco (verba)</td>
-      <td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(S.blocoTotal[cfg.key])}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlurBloco(this,'${cfg.key}')" oninput="updBloco('${cfg.key}',this.value)" title="Digite o valor total; sobrescreve a soma dos itens"></span></td>
+      <td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(effBlocoTotal(cfg.key))}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlurBloco(this,'${cfg.key}')" oninput="updBloco('${cfg.key}',this.value)" title="Acompanha a soma dos itens; digite um valor para sobrescrever"></span></td>
       <td></td></tr></tfoot>`;
   } else if(modo==='geral'){
     cols = cfg.mat
@@ -981,13 +989,14 @@ function toggleModo(blk){
 }
 function toggleSoTotal(blk){
   const next=!S.soTotal[blk];
-  // ao ligar "Só o total", a verba = subtotal do momento: usa o valor ajustado à mão quando existe, senão o preço calculado
-  if(next) S.blocoTotal[blk]=+(S[blk].reduce((a,r)=>a+(r.geralEdited?num(r.geral):linePreco(r,'unit')),0).toFixed(2));
+  // ao ligar "Só o total", começa acompanhando a soma dos itens (blocoEdited=false); só vira travado se o usuário digitar um valor
+  if(next){ (S.blocoEdited||(S.blocoEdited={}))[blk]=false; S.blocoTotal[blk]=effBlocoTotal(blk); }
   S.soTotal[blk]=next; save();
   renderBlk(BLKS.find(b=>b.key===blk)); recalc();
 }
 function updBloco(blk,val){
   S.blocoTotal[blk]=val;
+  (S.blocoEdited||(S.blocoEdited={}))[blk]=true;   // usuário digitou um total à mão → sobrescreve a soma dos itens
   const st=document.getElementById('st_'+blk);
   if(st) st.innerHTML='Subtotal <b>'+fmt(blkSub(blk))+'</b>';
   recalc(); save();
