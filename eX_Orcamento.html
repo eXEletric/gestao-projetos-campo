@@ -337,6 +337,12 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
 .bbchip.off .ck{color:var(--tx3)}
 .valwarn{font-size:10px;font-weight:700;color:var(--red);background:#fcebeb;padding:1px 7px;border-radius:9px;display:none}
 .valwarn.on{display:inline-block}
+/* "Só o total": valores dos itens só na tela (some na impressão); "incluso" só na impressão */
+.printonly{display:none}
+@media print{.printonly{display:inline!important}}
+.scrn-only-badge{font-size:9px;font-weight:700;color:var(--pri);background:var(--pri-bg);border:1px solid var(--pri);border-radius:8px;padding:1px 6px;margin-left:6px;white-space:nowrap;vertical-align:middle}
+.sotot-hint{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--pri);background:var(--pri-bg);border:1px dashed var(--pri);border-radius:9px;padding:6px 10px;margin:0 0 10px}
+.sotot-hint .material-symbols-rounded{font-size:16px}
 </style>
 </head>
 <body class="editing">
@@ -840,8 +846,8 @@ function renderBlk(cfg){
   if(modo==='geral' && soT){
     // Geral + só o total: itens sem valor, total do bloco editável (verba fechada)
     cols = cfg.mat
-      ? `<th>#</th><th>Material</th><th>Marca</th><th class="r">Qtd</th><th>Und</th><th class="r"></th><th></th>`
-      : `<th>#</th><th>Descrição</th><th class="r">Qtd</th><th>Und</th><th class="r"></th><th></th>`;
+      ? `<th>#</th><th>Material</th><th>Marca</th><th class="r">Qtd</th><th>Und</th><th class="r">Valor<span class="scrn-only-badge noprint">só na tela</span></th><th></th>`
+      : `<th>#</th><th>Descrição</th><th class="r">Qtd</th><th>Und</th><th class="r">Valor<span class="scrn-only-badge noprint">só na tela</span></th><th></th>`;
     body=rows.map((r,i)=>{
       const marca = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
       return `<tr data-id="${r.id}">
@@ -850,7 +856,7 @@ function renderBlk(cfg){
         ${marca}
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
         <td>${undSelect(cfg.key,r.id,r.und)}</td>
-        <td class="r"><span class="incl">incluso</span></td>
+        <td class="r"><span class="incl printonly">incluso</span><span class="rsw noprint"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
         <td><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
@@ -934,6 +940,7 @@ function renderBlk(cfg){
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
     ${cfg.key==='servicos'?efetivoHtml():''}
+    ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: você vê e edita o valor de cada item aqui, mas na <b>impressão</b> o cliente vê só o total do bloco — os itens saem como “incluso”.</span></div>`:''}
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button></div>
     ${obsHtml}`;
