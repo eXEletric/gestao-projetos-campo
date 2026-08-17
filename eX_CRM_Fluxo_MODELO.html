@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eX CRM · Fluxo de fases (modelo)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+<style>
+:root{--pri:#533ab7;--pri-bg:#efeafc;--bg:#faf9f5;--surf:#fff;--surf2:#f4f2ee;--tx:#211d33;--tx2:#54506a;--tx3:#8b8798;--line:#eceaf2;--line2:#ddd9ea;--green:#1d9e75;--green-bg:#e7f6ef;--amber:#b26a00;--amber-bg:#fff5e6;--red:#c0392b;--red-bg:#fcebeb}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45;padding:18px;max-width:1180px;margin:0 auto}
+.material-symbols-rounded{font-variation-settings:'FILL' 0,'wght' 400,'opsz' 20;vertical-align:middle}
+h1{font-size:19px;font-weight:800}.sub{color:var(--tx3);font-size:12.5px}
+.top{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
+.logo{font-weight:800;font-size:20px;color:var(--pri)}.logo b{color:var(--tx)}
+.tag{display:inline-flex;align-items:center;gap:6px;background:var(--pri-bg);color:var(--pri);font-weight:700;font-size:12px;padding:5px 11px;border-radius:20px}
+.spacer{flex:1}
+/* chave Master */
+.mchave{display:inline-flex;align-items:center;gap:9px;background:var(--surf);border:1px solid var(--line2);border-radius:12px;padding:7px 12px}
+.mchave .sw{position:relative;width:46px;height:24px;border-radius:14px;background:var(--line2);cursor:pointer;transition:.18s}
+.mchave .sw.on{background:var(--pri)}
+.mchave .sw i{position:absolute;top:2px;left:2px;width:20px;height:20px;border-radius:50%;background:#fff;transition:.18s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
+.mchave .sw.on i{left:24px}
+.mchave .lb{font-size:12px;font-weight:700}.mchave .lb .r{color:var(--tx3);font-weight:600}
+.led{width:8px;height:8px;border-radius:50%;background:var(--tx3);display:inline-block}.led.on{background:var(--green);box-shadow:0 0 6px var(--green)}
+.grid{display:grid;grid-template-columns:1fr;gap:14px}
+@media(min-width:940px){.grid{grid-template-columns:300px 1fr}}
+.panel{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:14px}
+.panel h2{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin-bottom:10px;display:flex;align-items:center;gap:6px}
+/* funil mini */
+.fase{border:1px solid var(--line);border-radius:10px;padding:9px 10px;margin-bottom:7px;cursor:pointer;transition:.14s}
+.fase:hover{border-color:var(--pri)}
+.fase.cur{border-color:var(--pri);background:var(--pri-bg)}
+.fase .fn{font-weight:700;font-size:13px;display:flex;align-items:center;gap:6px}
+.fase .fp{font-size:10.5px;color:var(--tx3);text-transform:uppercase;letter-spacing:.02em;margin-top:2px;display:flex;align-items:center;gap:4px}
+.fase .fp .material-symbols-rounded{font-size:13px;color:var(--pri)}
+.gate{display:inline-flex;align-items:center;gap:2px;margin-left:auto;padding:1px 6px;border-radius:8px;font-size:9.5px;font-weight:700;text-transform:none;letter-spacing:0}
+.gate .material-symbols-rounded{font-size:11px}
+.gate.suave{background:var(--amber-bg);color:var(--amber)}.gate.rigida{background:var(--red-bg);color:var(--red)}.gate.nenhuma{color:var(--tx3)}
+/* card */
+.card-h{display:flex;align-items:flex-start;gap:12px;margin-bottom:4px}
+.avatar{width:40px;height:40px;border-radius:11px;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;flex:0 0 auto}
+.card-h h3{font-size:16px;font-weight:800;line-height:1.25}
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
+.chip{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:11px;background:var(--surf2);color:var(--tx2);display:inline-flex;align-items:center;gap:4px}
+.chip.pri{background:var(--pri-bg);color:var(--pri)}.chip.hot{background:var(--red-bg);color:var(--red)}
+.chip .material-symbols-rounded{font-size:13px}
+.sec{margin-top:16px}
+.sec-t{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);font-weight:800;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.sec-t .adm{margin-left:auto;font-size:9.5px;color:var(--pri);background:var(--pri-bg);border-radius:8px;padding:1px 7px;display:inline-flex;align-items:center;gap:3px}
+.sec-t .adm .material-symbols-rounded{font-size:12px}
+/* form da fase */
+.fld{margin-bottom:11px}
+.fld label{display:block;font-size:11.5px;font-weight:700;color:var(--tx2);margin-bottom:4px}
+.fld label .req{color:var(--red)}
+.fld input[type=text],.fld input[type=date],.fld input[type=number],.fld textarea{width:100%;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)}
+.fld textarea{min-height:52px;resize:vertical}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{font-size:12px;padding:6px 11px;border-radius:9px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer}
+.opt.on{background:var(--pri-bg);border-color:var(--pri);color:var(--pri);font-weight:700}
+.sn{display:flex;gap:6px}
+.sn .opt.yes.on{background:var(--green-bg);border-color:var(--green);color:var(--green)}
+.formempty{color:var(--tx3);font-size:12px;font-style:italic;padding:6px 0}
+/* mover */
+.mv{display:flex;flex-direction:column;gap:6px}
+.mvbtn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:1px solid var(--line2);background:var(--surf);border-radius:10px;padding:9px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:.14s;color:var(--tx)}
+.mvbtn:hover:not(:disabled){border-color:var(--pri);background:var(--pri-bg)}
+.mvbtn .ar{color:var(--pri)}
+.mvbtn.back{color:var(--tx2)}.mvbtn.back .ar{color:var(--tx3)}
+.mvbtn:disabled{opacity:.5;cursor:not-allowed}
+.mvbtn .warn{margin-left:auto;font-size:10px;color:var(--amber);display:inline-flex;align-items:center;gap:3px}
+.mvbtn .blk{margin-left:auto;font-size:10px;color:var(--red);display:inline-flex;align-items:center;gap:3px}
+.mvbtn .material-symbols-rounded{font-size:17px}
+.hint{font-size:11px;color:var(--tx3);margin-top:8px;display:flex;align-items:flex-start;gap:6px}
+.hint .material-symbols-rounded{font-size:14px;color:var(--pri)}
+/* ações gated */
+.acts{display:flex;flex-wrap:wrap;gap:7px}
+.btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--surf);color:var(--tx);border-radius:9px;padding:8px 12px;font:inherit;font-size:12.5px;font-weight:700;cursor:pointer}
+.btn.pri{background:var(--pri);color:#fff;border-color:var(--pri)}
+.btn .material-symbols-rounded{font-size:16px}
+/* admin: configurar mover cards */
+.admbox{border:1px dashed var(--pri);background:var(--pri-bg);border-radius:11px;padding:11px;margin-top:8px}
+.tgrow{display:flex;align-items:center;gap:10px;padding:7px 2px;border-bottom:1px solid #e3ddf5}
+.tgrow:last-child{border-bottom:none}
+.tgrow .nm{font-weight:700;font-size:13px;flex:1}
+.tgrow .cur-lbl{font-size:10px;color:var(--pri);font-weight:700}
+.tg{position:relative;width:40px;height:22px;border-radius:12px;background:var(--line2);cursor:pointer;transition:.16s;flex:0 0 auto}
+.tg.on{background:var(--pri)}
+.tg i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;transition:.16s}
+.tg.on i{left:20px}
+.selrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.mini{font-size:11px;color:var(--tx3);margin:2px 0 8px}
+.addfld{font-size:12px;color:var(--pri);font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:4px;margin-top:6px}
+.flditem{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:5px 0;border-bottom:1px solid #e3ddf5}
+.flditem .ft{color:var(--tx3);font-size:11px}
+.flditem .rq{color:var(--red);font-weight:700;font-size:11px}
+.lockmsg{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--tx3);font-style:italic;margin-top:6px}
+.note{background:var(--surf2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--tx2);margin-top:14px}
+.note b{color:var(--tx)}
+.legenda{display:flex;gap:14px;flex-wrap:wrap;font-size:11px;color:var(--tx3);margin-top:10px}
+.legenda span{display:inline-flex;align-items:center;gap:4px}
+</style>
+</head>
+<body>
+<div class="top">
+  <span class="logo"><b>e</b>X</span>
+  <span class="tag"><span class="material-symbols-rounded">account_tree</span>CRM · Estruturação de fluxo (modelo)</span>
+  <span class="spacer"></span>
+  <div class="mchave">
+    <span class="led" id="led"></span>
+    <div class="sw" id="msw" onclick="toggleMaster()"><i></i></div>
+    <span class="lb" id="mlb">Operador <span class="r">(vê o permitido)</span></span>
+  </div>
+</div>
+
+<div class="grid">
+  <!-- FUNIL -->
+  <div class="panel">
+    <h2><span class="material-symbols-rounded">view_kanban</span>Fases do funil</h2>
+    <div id="funil"></div>
+    <div class="legenda">
+      <span><span class="material-symbols-rounded" style="font-size:13px;color:var(--pri)">label</span>papel</span>
+      <span><span class="gate suave" style="padding:1px 5px"><span class="material-symbols-rounded">lock</span>suave</span></span>
+      <span><span class="gate rigida" style="padding:1px 5px"><span class="material-symbols-rounded">lock</span>rígida</span></span>
+    </div>
+  </div>
+
+  <!-- CARD ABERTO -->
+  <div class="panel">
+    <div class="card-h">
+      <div class="avatar">CP</div>
+      <div style="flex:1;min-width:0">
+        <h3>Copeland · Atacadão Salvador Iguatemi (920)</h3>
+        <div class="sub">Automação AC · Lote 03 — oportunidade</div>
+        <div class="chips">
+          <span class="chip pri" id="c-fase"><span class="material-symbols-rounded">flag</span>—</span>
+          <span class="chip hot"><span class="material-symbols-rounded">local_fire_department</span>Urgente</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- FORMULÁRIO DA FASE -->
+    <div class="sec">
+      <div class="sec-t"><span class="material-symbols-rounded">assignment</span>Formulário desta fase<span class="adm" id="adm-form" style="display:none"><span class="material-symbols-rounded">shield_person</span>admin edita</span></div>
+      <div id="form"></div>
+      <div id="form-builder"></div>
+    </div>
+
+    <!-- MOVER CARD -->
+    <div class="sec">
+      <div class="sec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase<span class="adm" id="adm-mv" style="display:none"><span class="material-symbols-rounded">shield_person</span>admin configura</span></div>
+      <div class="mv" id="mover"></div>
+      <div class="hint" id="mv-hint"></div>
+      <div id="mv-config"></div>
+    </div>
+
+    <!-- AÇÕES POR PAPEL -->
+    <div class="sec">
+      <div class="sec-t"><span class="material-symbols-rounded">bolt</span>Ações desta fase (pelo papel)</div>
+      <div class="acts" id="acts"></div>
+    </div>
+
+    <div class="note" id="note"></div>
+  </div>
+</div>
+
+<script>
+"use strict";
+const PAPEL={captacao:{n:'Captação',ic:'person_add'},visita:{n:'Visita técnica',ic:'engineering'},proposta:{n:'Proposta',ic:'request_quote'},negociacao:{n:'Negociação',ic:'handshake'},execucao:{n:'Execução / Obra',ic:'construction'},ganho:{n:'Ganho',ic:'verified'},pausa:{n:'Geladeira / Pausa',ic:'ac_unit'},perdido:{n:'Perdido',ic:'do_not_disturb_on'}};
+const GATE={nenhuma:'Sem trava',suave:'Suave',rigida:'Rígida'};
+
+let FASES=[
+ {id:'leads',nome:'Leads',papel:'captacao',gate:'nenhuma',destinos:['visita','geladeira'],campos:[{id:'orig',nome:'Origem do lead',tipo:'opcao',ops:['Indicação','Site','Feira'],obr:true}]},
+ {id:'visita',nome:'Visita técnica',papel:'visita',gate:'rigida',destinos:['proposta','geladeira'],campos:[
+    {id:'data',nome:'Data da visita',tipo:'data',obr:true},
+    {id:'resp',nome:'Responsável pela visita',tipo:'opcao',ops:['André','Equipe A','Equipe B'],obr:true},
+    {id:'cond',nome:'Condições do local',tipo:'texto',obr:false},
+    {id:'and',nome:'Precisa de andaime / plataforma?',tipo:'simnao',obr:false}]},
+ {id:'proposta',nome:'Gerando proposta',papel:'proposta',gate:'suave',destinos:['negoc','geladeira'],campos:[{id:'prazo',nome:'Prazo de entrega (dias)',tipo:'num',obr:false}]},
+ {id:'negoc',nome:'Em negociação',papel:'negociacao',gate:'suave',destinos:['obra','declinado','geladeira'],campos:[
+    {id:'envio',nome:'Principal forma de envio',tipo:'opcao',ops:['Entregue em mão','WhatsApp','Email'],obr:true},
+    {id:'receb',nome:'Confirmação de recebimento',tipo:'simnao',obr:true},
+    {id:'obs',nome:'Observações',tipo:'texto',obr:false}]},
+ {id:'obra',nome:'Obra / execução',papel:'execucao',gate:'nenhuma',destinos:['concluido'],campos:[]},
+ {id:'concluido',nome:'Concluído',papel:'ganho',gate:'nenhuma',destinos:[],campos:[]},
+ {id:'geladeira',nome:'Geladeira',papel:'pausa',gate:'nenhuma',destinos:[],campos:[]},
+ {id:'declinado',nome:'Declinado',papel:'perdido',gate:'nenhuma',destinos:[],campos:[{id:'motivo',nome:'Motivo da perda',tipo:'opcao',ops:['Preço','Prazo','Concorrente','Sem verba'],obr:true}]}
+];
+let CARD={faseId:'visita',dados:{}};
+let MASTER=false;
+
+const fase=id=>FASES.find(f=>f.id===id);
+const idx=id=>FASES.findIndex(f=>f.id===id);
+const curFase=()=>fase(CARD.faseId);
+
+function toggleMaster(){ MASTER=!MASTER; document.getElementById('msw').classList.toggle('on',MASTER);
+  document.getElementById('led').classList.toggle('on',MASTER);
+  document.getElementById('mlb').innerHTML=MASTER?'Master <span class="r">(configura tudo)</span>':'Operador <span class="r">(vê o permitido)</span>';
+  render(); }
+
+function preenchido(f,c){ const v=(CARD.dados[f.id]||{})[c.id]; return v!==undefined&&v!==''&&v!==null; }
+function faltamObr(f){ return f.campos.filter(c=>c.obr&&!preenchido(f,c)); }
+
+function render(){ renderFunil(); renderCard(); }
+
+function renderFunil(){
+  document.getElementById('funil').innerHTML=FASES.map(f=>{
+    const g=f.gate;
+    return `<div class="fase ${f.id===CARD.faseId?'cur':''}" onclick="CARD.faseId='${f.id}';render()">
+      <div class="fn">${f.id===CARD.faseId?'<span class="material-symbols-rounded" style="font-size:15px;color:var(--pri)">radio_button_checked</span>':''}${f.nome}</div>
+      <div class="fp"><span class="material-symbols-rounded">${PAPEL[f.papel].ic}</span>${PAPEL[f.papel].n}
+        ${g!=='nenhuma'?`<span class="gate ${g}"><span class="material-symbols-rounded">lock</span>${GATE[g]}</span>`:''}</div>
+    </div>`;
+  }).join('');
+}
+
+function renderCard(){
+  const f=curFase();
+  document.getElementById('c-fase').innerHTML=`<span class="material-symbols-rounded">flag</span>${f.nome} · ${PAPEL[f.papel].n}`;
+  document.getElementById('adm-form').style.display=MASTER?'inline-flex':'none';
+  document.getElementById('adm-mv').style.display=MASTER?'inline-flex':'none';
+  renderForm(f); renderFormBuilder(f); renderMover(f); renderMvConfig(f); renderActs(f); renderNote(f);
+}
+
+/* ---- formulário da fase (preenchível) ---- */
+function renderForm(f){
+  const el=document.getElementById('form');
+  if(!f.campos.length){ el.innerHTML='<div class="formempty">Esta fase não tem campos de processo.</div>'; return; }
+  const d=CARD.dados[f.id]||(CARD.dados[f.id]={});
+  el.innerHTML=f.campos.map(c=>{
+    const req=c.obr?' <span class="req">*</span>':'';
+    let inp='';
+    if(c.tipo==='texto') inp=`<textarea onchange="setVal('${f.id}','${c.id}',this.value)" placeholder="Digite…">${d[c.id]||''}</textarea>`;
+    else if(c.tipo==='data') inp=`<input type="date" value="${d[c.id]||''}" onchange="setVal('${f.id}','${c.id}',this.value)">`;
+    else if(c.tipo==='num') inp=`<input type="number" value="${d[c.id]||''}" onchange="setVal('${f.id}','${c.id}',this.value)" placeholder="0">`;
+    else if(c.tipo==='opcao') inp=`<div class="opts">${c.ops.map(o=>`<button class="opt ${d[c.id]===o?'on':''}" onclick="setVal('${f.id}','${c.id}','${o}')">${o}</button>`).join('')}</div>`;
+    else if(c.tipo==='simnao') inp=`<div class="sn"><button class="opt yes ${d[c.id]==='Sim'?'on':''}" onclick="setVal('${f.id}','${c.id}','Sim')">Sim</button><button class="opt ${d[c.id]==='Não'?'on':''}" onclick="setVal('${f.id}','${c.id}','Não')">Não</button></div>`;
+    else inp=`<input type="text" value="${d[c.id]||''}" onchange="setVal('${f.id}','${c.id}',this.value)">`;
+    return `<div class="fld"><label>${c.nome}${req}</label>${inp}</div>`;
+  }).join('');
+}
+function setVal(fid,cid,v){ (CARD.dados[fid]||(CARD.dados[fid]={}))[cid]=v; render(); }
+
+/* ---- construtor de campos (só Master) ---- */
+function renderFormBuilder(f){
+  const el=document.getElementById('form-builder'); if(!MASTER){ el.innerHTML=''; return; }
+  el.innerHTML=`<div class="admbox">
+    <div class="mini"><b style="color:var(--pri)">Admin</b> · campos que definem o processo desta fase</div>
+    ${f.campos.map(c=>`<div class="flditem"><span class="material-symbols-rounded" style="font-size:15px;color:var(--tx3)">drag_indicator</span><span style="flex:1">${c.nome}</span><span class="ft">${({texto:'texto',data:'data',num:'número',opcao:'opção',simnao:'sim/não'})[c.tipo]||c.tipo}</span>${c.obr?'<span class="rq">obrigatório</span>':''}</div>`).join('')||'<div class="mini">Sem campos ainda.</div>'}
+    <div class="addfld" onclick="addCampoDemo()"><span class="material-symbols-rounded">add</span>Adicionar campo</div>
+  </div>`;
+}
+function addCampoDemo(){ const f=curFase(); f.campos.push({id:'c'+Date.now(),nome:'Novo campo',tipo:'texto',obr:false}); render(); }
+
+/* ---- mover card ---- */
+function renderMover(f){
+  const el=document.getElementById('mover'); const ci=idx(f.id);
+  const dests=f.destinos.map(fase).filter(Boolean);
+  if(!dests.length){ el.innerHTML='<div class="formempty">Fase final — sem movimentação.</div>'; document.getElementById('mv-hint').innerHTML=''; return; }
+  const falt=faltamObr(f);
+  el.innerHTML=dests.map(d=>{
+    const forward=idx(d.id)>ci;
+    let block='',dis='';
+    if(falt.length){ if(f.gate==='rigida'){ block=`<span class="blk"><span class="material-symbols-rounded" style="font-size:13px">lock</span>trava rígida</span>`; dis='disabled'; }
+      else if(f.gate==='suave'){ block=`<span class="warn"><span class="material-symbols-rounded" style="font-size:13px">warning</span>avisa</span>`; } }
+    return `<button class="mvbtn ${forward?'':'back'}" ${dis} onclick="mover('${d.id}')">
+      <span class="ar material-symbols-rounded">${forward?'east':'west'}</span>${d.nome}${block}</button>`;
+  }).join('');
+  const h=document.getElementById('mv-hint');
+  if(falt.length&&f.gate!=='nenhuma') h.innerHTML=`<span class="material-symbols-rounded">info</span>Faltam campos obrigatórios: <b style="margin-left:3px">${falt.map(c=>c.nome).join(', ')}</b>. ${f.gate==='rigida'?'A trava rígida bloqueia o avanço.':'A trava suave avisa mas deixa avançar.'}`;
+  else h.innerHTML='';
+}
+function mover(destId){ const f=curFase(); const falt=faltamObr(f);
+  if(falt.length&&f.gate==='rigida'){ alert('Trava RÍGIDA: preencha '+falt.map(c=>c.nome).join(', ')+' antes de avançar.'); return; }
+  if(falt.length&&f.gate==='suave'){ if(!confirm('Faltam campos obrigatórios ('+falt.map(c=>c.nome).join(', ')+'). Avançar mesmo assim?')) return; }
+  CARD.faseId=destId; render();
+}
+
+/* ---- configurar mover cards (só Master) ---- */
+function renderMvConfig(f){
+  const el=document.getElementById('mv-config'); if(!MASTER){ el.innerHTML=''; return; }
+  el.innerHTML=`<div class="admbox">
+    <div class="mini"><b style="color:var(--pri)">Admin</b> · para quais fases o card pode ser movido a partir de <b>${f.nome}</b></div>
+    ${FASES.filter(x=>x.id!==f.id).map(x=>`<div class="tgrow"><span class="nm">${x.nome}</span>
+      <span class="tg ${f.destinos.includes(x.id)?'on':''}" onclick="togDest('${x.id}')"><i></i></span></div>`).join('')}
+    <div class="lockmsg"><span class="material-symbols-rounded" style="font-size:14px">lock</span>Só o Master reconfigura. O operador move dentro do liberado.</div>
+  </div>`;
+}
+function togDest(id){ const f=curFase(); const i=f.destinos.indexOf(id); if(i<0)f.destinos.push(id); else f.destinos.splice(i,1); render(); }
+
+/* ---- ações por papel ---- */
+function renderActs(f){
+  const p=f.papel; let a=`<button class="btn"><span class="material-symbols-rounded">edit</span>Editar</button>`;
+  if(p==='proposta') a+=`<button class="btn pri"><span class="material-symbols-rounded">request_quote</span>Gerar orçamento</button><button class="btn"><span class="material-symbols-rounded">bolt</span>Barramento</button>`;
+  else if(p==='negociacao'||p==='ganho') a+=`<button class="btn"><span class="material-symbols-rounded">request_quote</span>Abrir orçamento</button><button class="btn"><span class="material-symbols-rounded">content_copy</span>Duplicar</button>`;
+  else if(p==='execucao') a+=`<button class="btn"><span class="material-symbols-rounded">request_quote</span>Abrir orçamento</button><button class="btn pri"><span class="material-symbols-rounded">engineering</span>Gerar obra</button>`;
+  document.getElementById('acts').innerHTML=a;
+}
+
+function renderNote(f){
+  document.getElementById('note').innerHTML=`<b>Como ler:</b> a fase <b>${f.nome}</b> tem papel <b>${PAPEL[f.papel].n}</b> (define as ações abaixo), trava <b>${GATE[f.gate]}</b> e ${f.campos.length?('<b>'+f.campos.length+'</b> campo(s) de processo'):'nenhum campo'}. Ligue a chave <b>Master</b> (canto superior) para ver o que o administrador configura: os campos da fase e para onde o card pode ir.`;
+}
+
+render();
+</script>
+</body>
+</html>
