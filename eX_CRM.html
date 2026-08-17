@@ -150,6 +150,19 @@ select.fi{appearance:auto;cursor:pointer}
 .chip.ts{display:inline-flex;align-items:center;gap:5px}
 .chip.ts .material-symbols-rounded{font-size:15px}
 .chip.soon{opacity:.55;cursor:default}
+/* config de fase (papel + gate) */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chipsel{display:inline-flex;align-items:center;gap:5px;font-size:12px;padding:6px 11px;border-radius:9px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer;font:inherit;font-size:12px}
+.chipsel:hover{border-color:var(--pri)}
+.chipsel.on{background:var(--pri-bg);border-color:var(--pri);color:var(--pri);font-weight:700}
+.chipsel .material-symbols-rounded{font-size:16px}
+.fz-req{display:flex;align-items:center;gap:6px;margin-top:8px;font-size:11.5px;color:var(--tx2);background:var(--pri-bg);border:1px dashed var(--pri);border-radius:8px;padding:7px 9px}
+.fz-req .material-symbols-rounded{font-size:15px;color:var(--pri)}
+.kcol-papel{display:flex;align-items:center;gap:4px;padding:0 6px 8px;font-size:10.5px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.02em}
+.kcol-papel .material-symbols-rounded{font-size:13px;color:var(--pri)}
+.kgate{display:inline-flex;align-items:center;gap:2px;margin-left:auto;padding:1px 6px;border-radius:8px;text-transform:none;letter-spacing:0}
+.kgate .material-symbols-rounded{font-size:12px}
+.kgate.suave{background:#fff5e6;color:#b26a00}.kgate.rigida{background:#fcebeb;color:var(--red)}
 </style>
 </head>
 <body>
@@ -299,6 +312,23 @@ select.fi{appearance:auto;cursor:pointer}
   </div>
 </div>
 
+<!-- MODAL CONFIGURAR FASE (papel + gate, base Pipefy) -->
+<div class="modal-bg" id="modalFase">
+  <div class="modal">
+    <div class="mh"><b id="fzTitle">Fase</b><button class="x" onclick="closeFaseCfg()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Nome da fase</label><input class="fi" id="fz_nome" placeholder="Ex.: Gerando proposta"></div>
+      <div class="fg"><label class="fl">Papel da fase — define as ações que aparecem no card</label><div class="chips" id="fz_papeis"></div></div>
+      <div class="fg"><label class="fl">Trava pra avançar (gate)</label><div class="chips" id="fz_gates"></div><div class="fz-req" id="fz_req"></div></div>
+    </div>
+    <div class="mf">
+      <button class="btn" id="fzDel" onclick="delFaseFromCfg()" style="color:var(--red)"><span class="material-symbols-rounded">delete</span>Excluir</button>
+      <span class="spacer"></span>
+      <button class="btn btn-p" onclick="saveFaseCfg()"><span class="material-symbols-rounded">check</span>Salvar</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 "use strict";
@@ -310,10 +340,34 @@ const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):n
 let CLOUD=false, EMPRESA_ID=null;
 function cloudMsg(t){ const e=document.getElementById('cloudb'); if(e)e.textContent=t; }
 const mCli=c=>({id:c.id,empresa_id:EMPRESA_ID,tipo:c.tipo,pai_id:c.paiId||null,nome:c.nome,cnpj:c.cnpj||null,contato:c.contato||null,fone:c.fone||null,email:c.email||null,endereco:c.endereco||null,obs:c.obs||null});
-const mFase=(f,ord)=>({id:f.id,empresa_id:EMPRESA_ID,nome:f.nome,ordem:ord,tipo:f.fim?'final':'ativa'});
+const mFase=(f,ord)=>({id:f.id,empresa_id:EMPRESA_ID,nome:f.nome,ordem:ord,tipo:f.fim?'final':'ativa',papel:f.papel||null,gate:f.gate||'nenhuma'});
 const mOpp=o=>({id:o.id,empresa_id:EMPRESA_ID,contratante_id:o.contratanteId||null,contemplado_id:o.contempladoId||null,fase_id:o.colId||null,objeto:o.objeto||null,temperatura:o.temperatura||'Morno',data_limite:o.dataLimite||null,obs:o.obs||null});
 const mLoja=l=>({id:l.id,empresa_id:EMPRESA_ID,nome:l.nome,grupo:l.grupo||null,numero:l.numero||null,endereco:l.endereco||null,cnpj:l.cnpj||null,coordenada:l.coordenada||null,codigo_externo:l.codigo||null,contato:l.contato||null,fone:l.fone||null,email:l.email||null,obs:l.obs||null});
 const mVinc=v=>({id:v.id,empresa_id:EMPRESA_ID,loja_id:v.lojaId,contratante_id:v.contratanteId,papel:v.papel||null,obs:v.obs||null});
+/* ===== PAPÉIS de fase (base Pipefy) — o papel define as AÇÕES liberadas no card + o REQUISITO da fase ===== */
+const PAPEL_DEF={
+  captacao:  {nome:'Captação',         ic:'person_add',        orc:false,  obra:false, req:'contratante'},
+  visita:    {nome:'Visita técnica',   ic:'engineering',       orc:false,  obra:false, req:null},
+  proposta:  {nome:'Proposta',         ic:'request_quote',     orc:true,   obra:false, req:'orcamento'},
+  negociacao:{nome:'Negociação',       ic:'handshake',         orc:'open', obra:false, req:'enviado'},
+  execucao:  {nome:'Execução / Obra',  ic:'construction',      orc:'open', obra:true,  req:null},
+  ganho:     {nome:'Ganho',            ic:'verified',          orc:'open', obra:false, req:null},
+  pausa:     {nome:'Geladeira / Pausa',ic:'ac_unit',           orc:false,  obra:false, req:null},
+  perdido:   {nome:'Perdido',          ic:'do_not_disturb_on', orc:false,  obra:false, req:null}
+};
+const PAPEL_ORDER=['captacao','visita','proposta','negociacao','execucao','ganho','pausa','perdido'];
+const GATES={nenhuma:'Sem trava',suave:'Suave (avisa)',rigida:'Rígida (bloqueia)'};
+const colPapel=id=>{const k=S.colunas.find(x=>x.id===id);return (k&&k.papel)||'captacao';};
+const colGate =id=>{const k=S.colunas.find(x=>x.id===id);return (k&&k.gate)||'nenhuma';};
+function reqOK(o,papel){ const req=(PAPEL_DEF[papel]||{}).req; if(!req)return true;
+  if(req==='contratante') return !!o.contratanteId;
+  if(req==='orcamento')   return !!orcIndex()[o.id];
+  if(req==='enviado'){ const oc=orcIndex()[o.id]; return !!oc && ['enviado','aprovado'].includes((oc.status||'').toLowerCase()); }
+  return true; }
+function reqLabel(papel){ const req=(PAPEL_DEF[papel]||{}).req;
+  return req==='contratante'?'definir o cliente contratante'
+       : req==='orcamento'?'gerar o orçamento'
+       : req==='enviado'?'marcar o orçamento como enviado/aprovado':''; }
 function cUp(table,row){ if(!CLOUD)return; SB.from(table).upsert(row).then(({error})=>{ if(error){console.error('cloud up',table,error);cloudMsg('erro ao salvar na nuvem');} }); }
 function cDel(table,id){ if(!CLOUD)return; SB.from(table).update({deleted_at:new Date().toISOString()}).eq('id',id).then(({error})=>{ if(error)console.error('cloud del',table,error); }); }
 function cFases(){ if(!CLOUD)return; SB.from('crm_fases').upsert(S.colunas.map((f,i)=>mFase(f,i))).then(({error})=>{ if(error)console.error('cloud fases',error); }); }
@@ -327,7 +381,7 @@ async function carregarNuvem(){
   ]);
   if(cl.error||fa.error||op.error) throw (cl.error||fa.error||op.error);
   S={ v:3,
-    colunas:(fa.data||[]).map(f=>({id:f.id,nome:f.nome,fim:f.tipo==='final'})),
+    colunas:(fa.data||[]).map(f=>({id:f.id,nome:f.nome,fim:f.tipo==='final',papel:f.papel||null,gate:f.gate||'nenhuma'})),
     clientes:(cl.data||[]).map(c=>({id:c.id,nome:c.nome,tipo:c.tipo,paiId:c.pai_id,cnpj:c.cnpj,contato:c.contato,fone:c.fone,email:c.email,endereco:c.endereco,obs:c.obs})),
     lojas:((lj&&lj.data)||[]).map(l=>({id:l.id,nome:l.nome,grupo:l.grupo,numero:l.numero,endereco:l.endereco,cnpj:l.cnpj,coordenada:l.coordenada,codigo:l.codigo_externo,contato:l.contato,fone:l.fone,email:l.email,obs:l.obs})),
     vinculos:((vc&&vc.data)||[]).map(v=>({id:v.id,lojaId:v.loja_id,contratanteId:v.contratante_id,papel:v.papel,obs:v.obs})),
@@ -336,11 +390,11 @@ async function carregarNuvem(){
   if(!S.colunas.length) await seedFases();
 }
 async function seedFases(){
-  const pad=[['Leads',0,'ativa'],['Visita técnica',1,'ativa'],['Gerando proposta',2,'ativa'],['Em negociação',3,'ativa'],['Obra / execução',4,'ativa'],['Concluído',5,'final'],['Geladeira',6,'ativa'],['Declinado',7,'ativa']];
-  const rows=pad.map(p=>({id:uid(),empresa_id:EMPRESA_ID,nome:p[0],ordem:p[1],tipo:p[2]}));
+  const pad=[['Leads',0,'ativa','captacao','nenhuma'],['Visita técnica',1,'ativa','visita','nenhuma'],['Gerando proposta',2,'ativa','proposta','suave'],['Em negociação',3,'ativa','negociacao','nenhuma'],['Obra / execução',4,'ativa','execucao','suave'],['Concluído',5,'final','ganho','nenhuma'],['Geladeira',6,'ativa','pausa','nenhuma'],['Declinado',7,'ativa','perdido','nenhuma']];
+  const rows=pad.map(p=>({id:uid(),empresa_id:EMPRESA_ID,nome:p[0],ordem:p[1],tipo:p[2],papel:p[3],gate:p[4]}));
   const {error}=await SB.from('crm_fases').insert(rows);
   if(error){console.error('seed fases',error);return;}
-  S.colunas=rows.map(r=>({id:r.id,nome:r.nome,fim:r.tipo==='final'}));
+  S.colunas=rows.map(r=>({id:r.id,nome:r.nome,fim:r.tipo==='final',papel:r.papel,gate:r.gate}));
 }
 async function initCRM(){
   if(SB){ try{
@@ -372,9 +426,9 @@ function orcIndex(){ try{return JSON.parse(localStorage.getItem('ex_orc_index')|
 
 function demo(){ return { v:3,
   colunas:[
-    {id:"leads",nome:"Leads"},{id:"visita",nome:"Visita técnica"},{id:"proposta",nome:"Gerando proposta"},
-    {id:"negoc",nome:"Em negociação"},{id:"obra",nome:"Obra / execução"},{id:"concluido",nome:"Concluído",fim:true},
-    {id:"geladeira",nome:"Geladeira"},{id:"declinado",nome:"Declinado"}
+    {id:"leads",nome:"Leads",papel:"captacao",gate:"nenhuma"},{id:"visita",nome:"Visita técnica",papel:"visita",gate:"nenhuma"},{id:"proposta",nome:"Gerando proposta",papel:"proposta",gate:"suave"},
+    {id:"negoc",nome:"Em negociação",papel:"negociacao",gate:"nenhuma"},{id:"obra",nome:"Obra / execução",papel:"execucao",gate:"suave"},{id:"concluido",nome:"Concluído",fim:true,papel:"ganho",gate:"nenhuma"},
+    {id:"geladeira",nome:"Geladeira",papel:"pausa",gate:"nenhuma"},{id:"declinado",nome:"Declinado",papel:"perdido",gate:"nenhuma"}
   ],
   clientes:[
     {id:"gy",nome:"GREENYELLOW",tipo:"contratante",paiId:null,cnpj:"",contato:"",fone:"",email:"",endereco:"",obs:"Integrador de sistemas; contratante recorrente."},
@@ -474,14 +528,16 @@ function renderBoard(){
     return `<div class="kcol ${col.fim?'fim':''}" ondragover="allow(event,this)" ondragleave="this.classList.remove('dragover')" ondrop="drop(event,'${col.id}',this)">
       <div class="kcol-h">
         ${col.fim?'<span class="material-symbols-rounded" style="font-size:15px;color:var(--green)">check_circle</span>':''}
-        <span class="kcol-nm" title="Renomear" onclick="renameColuna('${col.id}')">${esc(col.nome)}</span>
+        <span class="kcol-nm" title="Configurar fase (papel e trava)" onclick="openFaseCfg('${col.id}')">${esc(col.nome)}</span>
         <span class="kcol-ct">${cards.length}</span>
         <span class="kcol-acts">
+          <button class="ib" onclick="openFaseCfg('${col.id}')" title="Configurar fase (papel e trava)"><span class="material-symbols-rounded">tune</span></button>
           <button class="ib" onclick="moveColuna('${col.id}',-1)" ${ci===0?'disabled':''}><span class="material-symbols-rounded">chevron_left</span></button>
           <button class="ib" onclick="moveColuna('${col.id}',1)" ${ci===S.colunas.length-1?'disabled':''}><span class="material-symbols-rounded">chevron_right</span></button>
           <button class="ib del" onclick="delColuna('${col.id}')" ${S.colunas.length<=1?'disabled':''}><span class="material-symbols-rounded">delete</span></button>
         </span>
       </div>
+      <div class="kcol-papel"><span class="material-symbols-rounded">${(PAPEL_DEF[col.papel||'captacao']||{}).ic||'label'}</span>${esc((PAPEL_DEF[col.papel||'captacao']||{}).nome||'')}${colGate(col.id)!=='nenhuma'?`<span class="kgate ${colGate(col.id)}" title="trava ${colGate(col.id)}"><span class="material-symbols-rounded">lock</span>${colGate(col.id)==='rigida'?'rígida':'suave'}</span>`:''}</div>
       <div class="kcol-body">
         ${cards.map(o=>oppCardHTML(o,ci)).join('')}
         <button class="kadd" onclick="novaOpp('${col.id}')">+ oportunidade</button>
@@ -506,12 +562,47 @@ function oppCardHTML(o,ci){
 }
 function dragStart(e,id){ _drag=id; try{e.dataTransfer.setData('text/plain',id);e.dataTransfer.effectAllowed='move';}catch(_){} }
 function allow(e,el){ e.preventDefault(); if(el)el.classList.add('dragover'); }
-function drop(e,colId,el){ e.preventDefault(); if(el)el.classList.remove('dragover'); const id=_drag||(e.dataTransfer&&e.dataTransfer.getData('text/plain')); const o=id&&S.oportunidades.find(x=>x.id===id); if(o){ o.colId=colId; save(); cUp('oportunidades',mOpp(o)); render(); } _drag=null; }
-function moveOpp(id,dir){ const o=S.oportunidades.find(x=>x.id===id); if(!o)return; const i=colIdx(o.colId)+dir; if(i<0||i>=S.colunas.length)return; o.colId=S.colunas[i].id; save(); cUp('oportunidades',mOpp(o)); render(); }
+// trava pra SAIR da fase atual (base Pipefy): nenhuma=passa; suave=avisa e deixa; rígida=bloqueia
+function passaGate(o,fromColId){
+  const papel=colPapel(fromColId), gate=colGate(fromColId);
+  if(gate==='nenhuma'||reqOK(o,papel)) return true;
+  const msg=`Para sair de "${colNome(fromColId)}" falta: ${reqLabel(papel)||'concluir a etapa'}.`;
+  if(gate==='rigida'){ alert(msg+'\n\nEsta fase tem trava RÍGIDA — conclua isso antes de avançar.'); return false; }
+  return confirm(msg+'\n\nAvançar mesmo assim?');   // suave
+}
+function drop(e,colId,el){ e.preventDefault(); if(el)el.classList.remove('dragover'); const id=_drag||(e.dataTransfer&&e.dataTransfer.getData('text/plain')); const o=id&&S.oportunidades.find(x=>x.id===id); if(o){ const from=colIdx(o.colId), to=colIdx(colId); if(to>from && !passaGate(o,o.colId)){ _drag=null; render(); return; } o.colId=colId; save(); cUp('oportunidades',mOpp(o)); render(); } _drag=null; }
+function moveOpp(id,dir){ const o=S.oportunidades.find(x=>x.id===id); if(!o)return; const i=colIdx(o.colId)+dir; if(i<0||i>=S.colunas.length)return; if(dir>0 && !passaGate(o,o.colId)) return; o.colId=S.colunas[i].id; save(); cUp('oportunidades',mOpp(o)); render(); }
 function selOpp(id){ SELO=id; render(); const d=document.getElementById('oppDetail'); if(d)d.scrollIntoView({behavior:'smooth',block:'nearest'}); }
 
-function addColuna(){ const nm=prompt('Nome da nova fase:'); if(nm&&nm.trim()){ S.colunas.push({id:uid(),nome:nm.trim()}); save(); cFases(); render(); } }
-function renameColuna(id){ const k=S.colunas.find(x=>x.id===id); if(!k)return; const nm=prompt('Renomear fase:',k.nome); if(nm&&nm.trim()){ k.nome=nm.trim(); save(); cFases(); render(); } }
+function addColuna(){ openFaseCfg(null); }
+function renameColuna(id){ openFaseCfg(id); }
+/* ===== configuração da fase (papel + gate) ===== */
+let _faseEdit=null,_faseP='captacao',_faseG='nenhuma';
+function openFaseCfg(id){
+  const k=id?S.colunas.find(x=>x.id===id):null;
+  _faseEdit=id||null; _faseP=k?(k.papel||'captacao'):'captacao'; _faseG=k?(k.gate||'nenhuma'):'nenhuma';
+  document.getElementById('fzTitle').textContent=id?'Configurar fase':'Nova fase';
+  document.getElementById('fz_nome').value=k?k.nome:'';
+  document.getElementById('fzDel').style.display=(id&&S.colunas.length>1)?'inline-flex':'none';
+  renderFaseCfg();
+  document.getElementById('modalFase').classList.add('show');
+}
+function renderFaseCfg(){
+  document.getElementById('fz_papeis').innerHTML=PAPEL_ORDER.map(p=>`<button class="chipsel ${_faseP===p?'on':''}" onclick="_faseP='${p}';renderFaseCfg()"><span class="material-symbols-rounded">${PAPEL_DEF[p].ic}</span>${PAPEL_DEF[p].nome}</button>`).join('');
+  document.getElementById('fz_gates').innerHTML=Object.keys(GATES).map(g=>`<button class="chipsel ${_faseG===g?'on':''}" onclick="_faseG='${g}';renderFaseCfg()">${GATES[g]}</button>`).join('');
+  const rq=reqLabel(_faseP);
+  document.getElementById('fz_req').innerHTML = rq
+    ? `<span class="material-symbols-rounded">info</span>Exige: <b>${rq}</b> — ${_faseG==='nenhuma'?'só informativo (sem trava)':_faseG==='suave'?'avisa ao avançar sem cumprir':'bloqueia ao avançar sem cumprir'}.`
+    : `<span class="material-symbols-rounded">info</span>Sem requisito específico nesta fase.`;
+}
+function closeFaseCfg(){ document.getElementById('modalFase').classList.remove('show'); _faseEdit=null; }
+function saveFaseCfg(){
+  const nm=(document.getElementById('fz_nome').value||'').trim(); if(!nm){ alert('Dê um nome à fase.'); return; }
+  if(_faseEdit){ const k=S.colunas.find(x=>x.id===_faseEdit); if(k){ k.nome=nm; k.papel=_faseP; k.gate=_faseG; k.fim=(_faseP==='ganho'); } }
+  else { S.colunas.push({id:uid(),nome:nm,papel:_faseP,gate:_faseG,fim:(_faseP==='ganho')}); }
+  save(); cFases(); closeFaseCfg(); render();
+}
+function delFaseFromCfg(){ const id=_faseEdit; closeFaseCfg(); if(id) delColuna(id); }
 function moveColuna(id,dir){ const i=colIdx(id), j=i+dir; if(j<0||j>=S.colunas.length)return; const a=S.colunas;[a[i],a[j]]=[a[j],a[i]]; save(); cFases(); render(); }
 function delColuna(id){ if(S.colunas.length<=1)return; const n=oppsIn(id).length; const dest=S.colunas.find(k=>k.id!==id); if(!confirm(`Excluir a fase "${colNome(id)}"?`+(n?` As ${n} oportunidade(s) vão para "${dest.nome}".`:'')))return; const movidas=S.oportunidades.filter(o=>o.colId===id); S.oportunidades.forEach(o=>{if(o.colId===id)o.colId=dest.id;}); S.colunas=S.colunas.filter(k=>k.id!==id); save(); cDel('crm_fases',id); movidas.forEach(o=>cUp('oportunidades',mOpp(o))); cFases(); render(); }
 
@@ -522,20 +613,23 @@ function renderOppDetail(){
   const ct=cli(o.contratanteId), cp=contempl(o.contempladoId), tc=(o.temperatura||'Morno').toLowerCase(), oc=orcIndex()[o.id];
   const ts=o.tipoServ||''; const TSL={barramento:'Fab. de barramento',quadros:'Fab. de quadros',pecas:'Fab. de peças'};
   const di=(l,v)=>`<div class="di"><span class="l">${l}</span><span class="v ${v?'':'empty'}">${v?esc(v):'—'}</span></div>`;
+  // AÇÕES conforme o PAPEL da fase (base Pipefy) — a ação nasce na fase certa
+  const papel=colPapel(o.colId), cap=PAPEL_DEF[papel]||{};
+  let acts=`<button class="btn btn-s" onclick="openOpp('${o.id}')"><span class="material-symbols-rounded">edit</span>Editar</button>`;
+  if(ts==='barramento'){
+    if(cap.orc) acts+=`<button class="btn btn-s btn-p" onclick="gerarOrcBarramento('${o.id}')" title="Esteira de Fabricação"><span class="material-symbols-rounded">bolt</span>${oc?'Abrir':'Gerar'} orçamento de barramento</button>`;
+  } else {
+    if(cap.orc===true) acts+=`<button class="btn btn-s btn-p" onclick="gerarOrcamento('${o.id}')"><span class="material-symbols-rounded">request_quote</span>${oc?'Abrir orçamento':'Gerar orçamento'}</button><button class="btn btn-s" onclick="gerarOrcBarramento('${o.id}')" title="Orçamento de barramento (fabricação)"><span class="material-symbols-rounded">bolt</span>Barramento</button>`;
+    else if(cap.orc==='open' && oc) acts+=`<button class="btn btn-s btn-p" onclick="gerarOrcamento('${o.id}')"><span class="material-symbols-rounded">request_quote</span>Abrir orçamento</button>`;
+    if(oc && (papel==='negociacao'||papel==='execucao'||papel==='ganho')) acts+=`<button class="btn btn-s" onclick="duplicarOpp('${o.id}')" title="Cria uma cópia da oportunidade com o orçamento junto"><span class="material-symbols-rounded">content_copy</span>Duplicar</button>`;
+    if(cap.obra && oc) acts+=`<button class="btn btn-s" onclick="gerarObra('${o.id}')" title="Cria a obra no Cronograma com os serviços do orçamento virando tarefas"><span class="material-symbols-rounded">engineering</span>Gerar obra</button>`;
+  }
   el.innerHTML=`<div class="detail">
     <div class="dhead">
       <div class="davatar">${ini(ct?ct.nome:'?')}</div>
-      <div class="dt"><h2>${esc(titulo(o))}</h2><div class="sub">Oportunidade · fase <b>${esc(colNome(o.colId))}</b></div>
+      <div class="dt"><h2>${esc(titulo(o))}</h2><div class="sub">Oportunidade · fase <b>${esc(colNome(o.colId))}</b> <span style="color:var(--tx3)">· ${esc((PAPEL_DEF[papel]||{}).nome||papel)}</span></div>
         <div class="chiprow"><span class="temp ${tc}">${esc(o.temperatura||'Morno')}</span>${ts?`<span class="temp" style="background:var(--pri-bg);color:var(--pri)">${esc(TSL[ts]||ts)}</span>`:''}</div></div>
-      <div style="display:flex;gap:6px;flex-wrap:wrap">
-        <button class="btn btn-s" onclick="openOpp('${o.id}')"><span class="material-symbols-rounded">edit</span>Editar</button>
-        ${ts==='barramento'
-          ? `<button class="btn btn-s btn-p" onclick="gerarOrcBarramento('${o.id}')" title="Esteira de Fabricação"><span class="material-symbols-rounded">bolt</span>Gerar orçamento de barramento</button>`
-          : `<button class="btn btn-s btn-p" onclick="gerarOrcamento('${o.id}')"><span class="material-symbols-rounded">request_quote</span>${oc?'Abrir orçamento':'Gerar orçamento'}</button>
-        <button class="btn btn-s" onclick="gerarOrcBarramento('${o.id}')" title="Orçamento de barramento (fabricação)"><span class="material-symbols-rounded">bolt</span>Barramento</button>
-        ${oc?`<button class="btn btn-s" onclick="duplicarOpp('${o.id}')" title="Cria uma cópia da oportunidade com o orçamento junto"><span class="material-symbols-rounded">content_copy</span>Duplicar</button>`:''}
-        ${oc?`<button class="btn btn-s" onclick="gerarObra('${o.id}')" title="Cria a obra no Cronograma com os serviços do orçamento virando tarefas"><span class="material-symbols-rounded">engineering</span>Gerar obra</button>`:''}`}
-      </div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${acts}</div>
     </div>
     <div class="dinfo">
       ${di('Cliente contratante',ct?ct.nome:'')}
