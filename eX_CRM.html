@@ -204,6 +204,19 @@ select.fi{appearance:auto;cursor:pointer}
 .tg.on{background:var(--pri)}
 .tg i{position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:#fff;transition:.16s}
 .tg.on i{left:19px}
+/* detalhe em 2 colunas (mover à direita, estilo Pipefy) */
+.detail-grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:4px}
+@media(min-width:820px){.detail-grid{grid-template-columns:1fr 270px}}
+.detail-side .dsec{margin-top:0;border-top:none;background:var(--surf2);border:1px solid var(--line);border-radius:12px;padding:12px}
+@media(min-width:820px){.detail-side{position:sticky;top:10px;align-self:start}}
+.dmv-cfg{margin-top:12px;border-top:1px dashed var(--line2);padding-top:10px}
+.dmv-cfg-t{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri);font-weight:800;display:flex;align-items:center;gap:5px;margin-bottom:6px}
+.dmv-cfg-t .material-symbols-rounded{font-size:15px}
+.dmv-adm{margin-left:auto;font-size:9px;background:var(--pri-bg);border-radius:7px;padding:1px 6px}
+.dmv-tgrow{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:5px 0}
+.dmv-tgrow span:first-child{flex:1}
+.dmv-cfg-n{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--tx3);font-style:italic;margin-top:5px}
+.dmv-cfg-n .material-symbols-rounded{font-size:13px}
 </style>
 </head>
 <body>
@@ -422,10 +435,14 @@ function destinosDe(id){ const k=S.colunas.find(x=>x.id===id); const outras=S.co
   if(!k||k.destinos==null) return outras;            // não configurado = todas
   return k.destinos.filter(d=>outras.includes(d)); } // configurado = exatamente as marcadas
 const campoVal=(o,faseId,campoId)=>{ const d=o.faseDados&&o.faseDados[faseId]; return d?d[campoId]:undefined; };
+const campoCheio=v=>!(v===undefined||v===null||v===''||(Array.isArray(v)&&v.length===0));
 function setCampo(oid,faseId,campoId,v){ const o=S.oportunidades.find(x=>x.id===oid); if(!o)return;
   if(!o.faseDados)o.faseDados={}; if(!o.faseDados[faseId])o.faseDados[faseId]={}; o.faseDados[faseId][campoId]=v;
   save(); cUp('oportunidades',mOpp(o)); renderOppDetail(); }
-function camposFaltando(o,faseId){ return colCampos(faseId).filter(c=>c.obr && !(campoVal(o,faseId,c.id)!==undefined&&campoVal(o,faseId,c.id)!=='')); }
+function setCampoMulti(oid,faseId,campoId,op){ const o=S.oportunidades.find(x=>x.id===oid); if(!o)return;
+  const cur=(campoVal(o,faseId,campoId)||[]).slice(); const i=cur.indexOf(op); if(i<0)cur.push(op); else cur.splice(i,1);
+  setCampo(oid,faseId,campoId,cur); }
+function camposFaltando(o,faseId){ return colCampos(faseId).filter(c=>c.obr && !campoCheio(campoVal(o,faseId,c.id))); }
 // tudo o que falta pra SAIR da fase: requisito do papel + campos obrigatórios
 function faltaParaSair(o,faseId){ const miss=[]; const papel=colPapel(faseId);
   if(!reqOK(o,papel)){ const l=reqLabel(papel); if(l)miss.push(l); }
@@ -464,8 +481,10 @@ async function initCRM(){
     if(session){
       try{ const emp=await SB.rpc('empresa_atual'); EMPRESA_ID=(emp&&emp.data)||null; }catch(e){}
       await carregarNuvem(); CLOUD=true; cloudMsg('nuvem ✓');
+      try{ const cb=await SB.from('colaboradores').select('nome').eq('ativo',true).order('nome'); if(!cb.error)COLABS=(cb.data||[]).map(c=>c.nome).filter(Boolean); }catch(e){}
     } else { cloudMsg('modo local (sem login)'); }
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
+  if(!COLABS.length) COLABS=['André Camilo','João Silva','Equipe A','Equipe B','Carlos Souza'];  // fallback/local
   if(!CLOUD){ load(); }
   applyMode(); setTab(TAB);
 }
@@ -473,7 +492,9 @@ const TEMPS=["Frio","Morno","Quente"];
 const MODE=(new URLSearchParams(location.search)).get('m'); // 'clientes' | 'funil' | null(ambos)
 let S=null, TAB=(MODE||'funil'), CSUB='contratantes', SELO=null, SELC=null, SELL=null, EDITO=null, EDITC=null, _drag=null, _oc=null, _op=null, _ot='Morno', _ts='', _fromPipe=null;
 let MASTER=false;  // acesso admin (provisório; liga no motor de acesso real depois)
-const TIPO_CAMPO={texto:'Texto curto',textolongo:'Texto longo',num:'Número',moeda:'Moeda (R$)',data:'Data',opcao:'Opção única',simnao:'Sim/Não'};
+const TIPO_CAMPO={texto:'Texto curto',textolongo:'Texto longo',num:'Número',moeda:'Moeda (R$)',data:'Data',opcao:'Opção única',multi:'Múltipla escolha',simnao:'Sim/Não',colaborador:'Colaborador (ativo)',endereco:'Endereço',localizacao:'Localização (mapa)',anexo:'Anexo (link)'};
+const TIPO_COM_OPS=['opcao','multi'];   // tipos que precisam de lista de opções configurável
+let COLABS=[];                           // colaboradores ativos (p/ campo "colaborador")
 function applyMode(){
   if(!MODE) return;
   const tb=document.querySelector('.tabs'); if(tb)tb.style.display='none';
@@ -491,7 +512,15 @@ function orcIndex(){ try{return JSON.parse(localStorage.getItem('ex_orc_index')|
 function demo(){ return { v:3,
   colunas:[
     {id:"leads",nome:"Leads",papel:"captacao",gate:"nenhuma",campos:[{id:"orig",nome:"Origem do lead",tipo:"opcao",obr:true,ops:["Indicação","Site","Feira","Cliente atual"]}],destinos:null},
-    {id:"visita",nome:"Visita técnica",papel:"visita",gate:"rigida",campos:[{id:"data",nome:"Data da visita",tipo:"data",obr:true},{id:"resp",nome:"Responsável pela visita",tipo:"opcao",obr:true,ops:["André","Equipe A","Equipe B"]},{id:"cond",nome:"Condições do local",tipo:"textolongo",obr:false},{id:"and",nome:"Precisa de andaime / plataforma?",tipo:"simnao",obr:false}],destinos:["proposta","geladeira"]},
+    {id:"visita",nome:"Visita técnica",papel:"visita",gate:"rigida",campos:[
+      {id:"data",nome:"Data da visita",tipo:"data",obr:true},
+      {id:"resp",nome:"Responsável pela visita",tipo:"colaborador",obr:true},
+      {id:"end",nome:"Endereço da unidade",tipo:"endereco",obr:false},
+      {id:"local",nome:"Localização (mapa)",tipo:"localizacao",obr:false},
+      {id:"desc",nome:"Descrição do local a visitar",tipo:"textolongo",obr:false},
+      {id:"nec",nome:"Necessidades da visita",tipo:"multi",obr:false,ops:["Andaime","Plataforma elevatória","EPI especial (NR-35)","Acesso restrito / autorização","Energização / desligamento","Equipe de segurança"]},
+      {id:"anexo",nome:"Anexo (documento)",tipo:"anexo",obr:false}
+    ],destinos:["proposta","geladeira"]},
     {id:"proposta",nome:"Gerando proposta",papel:"proposta",gate:"suave",campos:[],destinos:null},
     {id:"negoc",nome:"Em negociação",papel:"negociacao",gate:"nenhuma",campos:[{id:"envio",nome:"Principal forma de envio",tipo:"opcao",obr:true,ops:["Entregue em mão","WhatsApp","Email"]},{id:"receb",nome:"Confirmação de recebimento",tipo:"simnao",obr:true}],destinos:null},
     {id:"obra",nome:"Obra / execução",papel:"execucao",gate:"suave",campos:[],destinos:null},{id:"concluido",nome:"Concluído",fim:true,papel:"ganho",gate:"nenhuma",campos:[],destinos:null},
@@ -681,7 +710,8 @@ function renderFzCampos(){
     h+=`<div class="fzc-add">
       <input class="fi" id="fzc_nome" placeholder="Nome do campo (ex.: Data da visita)" value="${esc(_fzcNome||'')}" oninput="_fzcNome=this.value">
       <div class="chips" style="margin:7px 0">${Object.keys(TIPO_CAMPO).map(t=>`<button class="chipsel ${_fzcTipo===t?'on':''}" onclick="_fzcTipo='${t}';renderFzCampos()">${TIPO_CAMPO[t]}</button>`).join('')}</div>
-      ${_fzcTipo==='opcao'?`<input class="fi" id="fzc_ops" placeholder="Opções separadas por vírgula (ex.: WhatsApp, Email)" value="${esc(_fzcOps||'')}" oninput="_fzcOps=this.value">`:''}
+      ${TIPO_COM_OPS.includes(_fzcTipo)?`<input class="fi" id="fzc_ops" placeholder="Opções separadas por vírgula (ex.: Andaime, Plataforma, EPI especial)" value="${esc(_fzcOps||'')}" oninput="_fzcOps=this.value">`:''}
+      ${_fzcTipo==='colaborador'?`<div style="font-size:11px;color:var(--tx3);margin-bottom:6px">As opções vêm dos colaboradores ativos (não precisa digitar).</div>`:''}
       <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;margin:8px 0"><input type="checkbox" ${_fzcObr?'checked':''} onchange="_fzcObr=this.checked"> Campo obrigatório (entra na trava)</label>
       <div style="display:flex;gap:6px"><button class="btn btn-p btn-s" onclick="fzAddCampoConfirm()"><span class="material-symbols-rounded">check</span>Adicionar</button><button class="btn btn-s" onclick="_addCampoOpen=false;renderFzCampos()">Cancelar</button></div>
     </div>`;
@@ -694,7 +724,7 @@ let _fzcNome='',_fzcOps='';
 function fzAddCampoConfirm(){
   const nome=(_fzcNome||'').trim(); if(!nome){ alert('Dê um nome ao campo.'); return; }
   const c={id:'c'+Math.random().toString(36).slice(2,8),nome,tipo:_fzcTipo,obr:!!_fzcObr};
-  if(_fzcTipo==='opcao'){ const raw=(_fzcOps||'').split(',').map(s=>s.trim()).filter(Boolean); c.ops=raw.length?raw:['Opção 1','Opção 2']; }
+  if(TIPO_COM_OPS.includes(_fzcTipo)){ const raw=(_fzcOps||'').split(',').map(s=>s.trim()).filter(Boolean); c.ops=raw.length?raw:['Opção 1','Opção 2']; }
   _faseCampos.push(c); _addCampoOpen=false; _fzcNome=''; _fzcOps=''; _fzcTipo='texto'; _fzcObr=false; renderFzCampos();
 }
 function fzMoveCampo(i,d){ const j=i+d; if(j<0||j>=_faseCampos.length)return; const a=_faseCampos;[a[i],a[j]]=[a[j],a[i]]; renderFzCampos(); }
@@ -735,7 +765,8 @@ function renderOppDetail(){
   if(ts==='barramento'){
     if(cap.orc) acts+=`<button class="btn btn-s btn-p" onclick="gerarOrcBarramento('${o.id}')" title="Esteira de Fabricação"><span class="material-symbols-rounded">bolt</span>${oc?'Abrir':'Gerar'} orçamento de barramento</button>`;
   } else {
-    if(cap.orc===true) acts+=`<button class="btn btn-s btn-p" onclick="gerarOrcamento('${o.id}')"><span class="material-symbols-rounded">request_quote</span>${oc?'Abrir orçamento':'Gerar orçamento'}</button><button class="btn btn-s" onclick="gerarOrcBarramento('${o.id}')" title="Orçamento de barramento (fabricação)"><span class="material-symbols-rounded">bolt</span>Barramento</button>`;
+    if(cap.orc===true) acts+=`<button class="btn btn-s btn-p" onclick="gerarOrcamento('${o.id}')"><span class="material-symbols-rounded">request_quote</span>${oc?'Abrir orçamento':'Gerar orçamento'}</button>`;
+    // Barramento removido daqui (13/08): a fabricação de barramento fica só no sistema de barramentos, ainda não integrado aqui.
     else if(cap.orc==='open' && oc) acts+=`<button class="btn btn-s btn-p" onclick="gerarOrcamento('${o.id}')"><span class="material-symbols-rounded">request_quote</span>Abrir orçamento</button>`;
     if(oc && (papel==='negociacao'||papel==='execucao'||papel==='ganho')) acts+=`<button class="btn btn-s" onclick="duplicarOpp('${o.id}')" title="Cria uma cópia da oportunidade com o orçamento junto"><span class="material-symbols-rounded">content_copy</span>Duplicar</button>`;
     if(cap.obra && oc) acts+=`<button class="btn btn-s" onclick="gerarObra('${o.id}')" title="Cria a obra no Cronograma com os serviços do orçamento virando tarefas"><span class="material-symbols-rounded">engineering</span>Gerar obra</button>`;
@@ -747,18 +778,24 @@ function renderOppDetail(){
         <div class="chiprow"><span class="temp ${tc}">${esc(o.temperatura||'Morno')}</span>${ts?`<span class="temp" style="background:var(--pri-bg);color:var(--pri)">${esc(TSL[ts]||ts)}</span>`:''}</div></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">${acts}</div>
     </div>
-    <div class="dinfo">
-      ${di('Cliente contratante',ct?ct.nome:'')}
-      ${di('Cliente contemplado',cp?cp.nome:'')}
-      ${di('Objeto da demanda',o.objeto)}
-      ${di('Contato',ct?ct.contato:'')}
-      ${di('Fone · e-mail',[ct&&ct.fone,ct&&ct.email].filter(Boolean).join(' · '))}
-      ${di('Data limite p/ orçamento',o.dataLimite?o.dataLimite.split('-').reverse().join('/'):'')}
-      ${oc?di('Orçamento',fmtBRL(oc.total)+' · '+(oc.status||'rascunho')):''}
+    <div class="detail-grid">
+      <div class="detail-main">
+        <div class="dinfo">
+          ${di('Cliente contratante',ct?ct.nome:'')}
+          ${di('Cliente contemplado',cp?cp.nome:'')}
+          ${di('Objeto da demanda',o.objeto)}
+          ${di('Contato',ct?ct.contato:'')}
+          ${di('Fone · e-mail',[ct&&ct.fone,ct&&ct.email].filter(Boolean).join(' · '))}
+          ${di('Data limite p/ orçamento',o.dataLimite?o.dataLimite.split('-').reverse().join('/'):'')}
+          ${oc?di('Orçamento',fmtBRL(oc.total)+' · '+(oc.status||'rascunho')):''}
+        </div>
+        ${o.obs?`<div class="dobs">${esc(o.obs)}</div>`:''}
+        ${oppFormHTML(o)}
+      </div>
+      <div class="detail-side">
+        ${oppMoverHTML(o)}
+      </div>
     </div>
-    ${o.obs?`<div class="dobs">${esc(o.obs)}</div>`:''}
-    ${oppFormHTML(o)}
-    ${oppMoverHTML(o)}
   </div>`;
 }
 const _js=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
@@ -767,12 +804,17 @@ function oppFormHTML(o){
   const fid=o.colId, campos=colCampos(fid); if(!campos.length) return '';
   const d=(o.faseDados&&o.faseDados[fid])||{};
   const rows=campos.map(c=>{ const v=d[c.id]!==undefined?d[c.id]:''; const req=c.obr?' <span style="color:var(--red)">*</span>':''; let inp='';
-    if(c.tipo==='textolongo') inp=`<textarea class="fi" onchange="setCampo('${o.id}','${fid}','${c.id}',this.value)" placeholder="Digite…">${esc(v)}</textarea>`;
-    else if(c.tipo==='data') inp=`<input class="fi" type="date" value="${esc(v)}" onchange="setCampo('${o.id}','${fid}','${c.id}',this.value)">`;
-    else if(c.tipo==='num'||c.tipo==='moeda') inp=`<input class="fi" type="number" step="0.01" value="${esc(v)}" onchange="setCampo('${o.id}','${fid}','${c.id}',this.value)" placeholder="${c.tipo==='moeda'?'R$ 0,00':'0'}">`;
+    const set=`setCampo('${o.id}','${fid}','${c.id}',this.value)`;
+    if(c.tipo==='textolongo') inp=`<textarea class="fi" onchange="${set}" placeholder="Digite…">${esc(v)}</textarea>`;
+    else if(c.tipo==='data') inp=`<input class="fi" type="date" value="${esc(v)}" onchange="${set}">`;
+    else if(c.tipo==='num'||c.tipo==='moeda') inp=`<input class="fi" type="number" step="0.01" value="${esc(v)}" onchange="${set}" placeholder="${c.tipo==='moeda'?'R$ 0,00':'0'}">`;
     else if(c.tipo==='opcao') inp=`<div class="opts">${(c.ops||[]).map(op=>`<button class="opt ${v===op?'on':''}" onclick="setCampo('${o.id}','${fid}','${c.id}','${_js(op)}')">${esc(op)}</button>`).join('')}</div>`;
+    else if(c.tipo==='colaborador') inp=`<div class="opts">${(COLABS||[]).map(op=>`<button class="opt ${v===op?'on':''}" onclick="setCampo('${o.id}','${fid}','${c.id}','${_js(op)}')">${esc(op)}</button>`).join('')||'<span class="dmv-empty">Nenhum colaborador ativo.</span>'}</div>`;
+    else if(c.tipo==='multi'){ const arr=Array.isArray(v)?v:[]; inp=`<div class="opts">${(c.ops||[]).map(op=>`<button class="opt ${arr.includes(op)?'on':''}" onclick="setCampoMulti('${o.id}','${fid}','${c.id}','${_js(op)}')"><span class="material-symbols-rounded" style="font-size:14px">${arr.includes(op)?'check_box':'check_box_outline_blank'}</span>${esc(op)}</button>`).join('')}</div>`; }
     else if(c.tipo==='simnao') inp=`<div class="opts"><button class="opt yes ${v==='Sim'?'on':''}" onclick="setCampo('${o.id}','${fid}','${c.id}','Sim')">Sim</button><button class="opt ${v==='Não'?'on':''}" onclick="setCampo('${o.id}','${fid}','${c.id}','Não')">Não</button></div>`;
-    else inp=`<input class="fi" type="text" value="${esc(v)}" onchange="setCampo('${o.id}','${fid}','${c.id}',this.value)">`;
+    else if(c.tipo==='localizacao') inp=`<div style="display:flex;gap:6px"><input class="fi" type="text" value="${esc(v)}" onchange="${set}" placeholder="Link do mapa ou coordenada (lat,long)">${v?`<a class="btn btn-s" href="${esc(v.startsWith&&v.startsWith('http')?v:'https://www.google.com/maps?q='+encodeURIComponent(v))}" target="_blank" title="Abrir no mapa"><span class="material-symbols-rounded">location_on</span></a>`:''}</div>`;
+    else if(c.tipo==='anexo') inp=`<div style="display:flex;gap:6px"><input class="fi" type="text" value="${esc(v)}" onchange="${set}" placeholder="Link do documento (Drive, PDF…)">${v?`<a class="btn btn-s" href="${esc(v)}" target="_blank" title="Abrir anexo"><span class="material-symbols-rounded">open_in_new</span></a>`:''}</div>`;
+    else inp=`<input class="fi" type="text" value="${esc(v)}" onchange="${set}" placeholder="${c.tipo==='endereco'?'Rua, nº, bairro, cidade/UF':''}">`;
     return `<div class="ffld"><label class="fl">${esc(c.nome)}${req}</label>${inp}</div>`;
   }).join('');
   return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">assignment</span>Formulário — ${esc(colNome(fid))}</div>${rows}</div>`;
@@ -786,8 +828,18 @@ function oppMoverHTML(o){
     return `<button class="dmvbtn ${fwd?'':'back'}" ${dis} onclick="moverOppPara('${o.id}','${did}')"><span class="material-symbols-rounded ar">${fwd?'east':'west'}</span>${esc(colNome(did))}${tag}</button>`;
   }).join('');
   const hint=(falta.length&&gate!=='nenhuma')?`<div class="dmv-hint"><span class="material-symbols-rounded">info</span>Falta: <b>${esc(falta.join(', '))}</b>. ${gate==='rigida'?'A trava rígida bloqueia o avanço.':'A trava suave avisa mas deixa avançar.'}</div>`:'';
-  return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv">${btns}</div>${hint}</div>`;
+  // chave (Master) de habilitar destinos — direto no painel, estilo Pipefy "Configurar mover cards"
+  const k=S.colunas.find(x=>x.id===fid); const perm=(k&&k.destinos!=null)?k.destinos:null;
+  const cfg=MASTER?`<div class="dmv-cfg"><div class="dmv-cfg-t"><span class="material-symbols-rounded">tune</span>Configurar mover cards <span class="dmv-adm">Master</span></div>
+    ${S.colunas.filter(x=>x.id!==fid).map(x=>{ const on=(perm==null)||perm.includes(x.id); return `<div class="dmv-tgrow"><span>${esc(x.nome)}</span><span class="tg ${on?'on':''}" onclick="togDestFase('${fid}','${x.id}')"><i></i></span></div>`;}).join('')}
+    <div class="dmv-cfg-n"><span class="material-symbols-rounded">lock</span>Só o Master libera/bloqueia destinos.</div></div>`:'';
+  return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv">${btns}</div>${hint}${cfg}</div>`;
 }
+// liga/desliga um destino a partir de uma fase (só Master) — direto do painel do card
+function togDestFase(fromId,destId){ if(!MASTER)return; const k=S.colunas.find(x=>x.id===fromId); if(!k)return;
+  if(k.destinos==null) k.destinos=S.colunas.filter(x=>x.id!==fromId).map(x=>x.id);
+  const i=k.destinos.indexOf(destId); if(i<0)k.destinos.push(destId); else k.destinos.splice(i,1);
+  save(); cFases(); render(); }
 
 /* modal oportunidade */
 function novaOpp(colId){ openOpp(null, colId); }
