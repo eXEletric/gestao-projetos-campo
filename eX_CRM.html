@@ -211,6 +211,8 @@ select.fi{appearance:auto;cursor:pointer}
 @media(min-width:820px){.detail-side{position:sticky;top:10px;align-self:start}}
 .dmv-cfglink{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:8px 0 2px;background:none;border:none;font:inherit;font-size:12.5px;font-weight:700;color:var(--pri);cursor:pointer}
 .dmv-cfglink .material-symbols-rounded{font-size:16px}
+.dmv-lock{display:inline-flex;align-items:center;gap:2px;font-size:9px;color:var(--tx3);background:var(--surf2);border-radius:7px;padding:1px 6px;font-weight:700}
+.dmv-lock .material-symbols-rounded{font-size:11px}
 .dc-row{display:flex;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid var(--line)}
 .dc-row:last-child{border-bottom:none}
 .dc-row .nm{flex:1;font-weight:600}
@@ -842,13 +844,13 @@ function oppMoverHTML(o){
     return `<button class="dmvbtn ${fwd?'':'back'}" ${dis} onclick="moverOppPara('${o.id}','${did}')"><span class="material-symbols-rounded ar">${fwd?'east':'west'}</span>${esc(colNome(did))}${tag}</button>`;
   }).join('');
   const hint=(falta.length&&gate!=='nenhuma')?`<div class="dmv-hint"><span class="material-symbols-rounded">info</span>Falta: <b>${esc(falta.join(', '))}</b>. ${gate==='rigida'?'A trava rígida bloqueia o avanço.':'A trava suave avisa mas deixa avançar.'}</div>`:'';
-  // link "Configurar mover cards" (só administrador/Master) → abre modal, estilo Pipefy
-  const cfg=MASTER?`<button class="dmv-cfglink" onclick="openDestinosCfg('${fid}')"><span class="material-symbols-rounded">tune</span>Configurar mover cards</button>`:'';
+  // link "Configurar mover cards" — SEMPRE visível (estilo Pipefy); a ação é gated por Master (avisa se não for admin)
+  const cfg=`<button class="dmv-cfglink" onclick="openDestinosCfg('${fid}')"><span class="material-symbols-rounded">tune</span>Configurar mover cards${MASTER?'':' <span class="dmv-lock"><span class="material-symbols-rounded">lock</span>admin</span>'}</button>`;
   return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv">${btns}</div>${hint}${cfg}</div>`;
 }
 /* ===== modal "Configurar mover cards" (destinos permitidos a partir da fase) — só Master ===== */
 let _destFase=null,_destTmp=null;
-function openDestinosCfg(fromId){ if(!MASTER)return; const k=S.colunas.find(x=>x.id===fromId); if(!k)return;
+function openDestinosCfg(fromId){ if(!MASTER){ alert('Configurar mover cards é restrito ao administrador (Master). Ligue a chave Master no topo, à direita.'); return; } const k=S.colunas.find(x=>x.id===fromId); if(!k)return;
   _destFase=fromId; _destTmp=(k.destinos==null)?S.colunas.filter(x=>x.id!==fromId).map(x=>x.id):k.destinos.slice();
   document.getElementById('dcSub').textContent='Escolha para quais fases os cards podem ser movidos a partir de "'+colNome(fromId)+'".';
   renderDestinosCfg(); document.getElementById('modalDest').classList.add('show'); }
