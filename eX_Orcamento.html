@@ -335,6 +335,19 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
 .bbchip.off{opacity:.65}
 .bbchip.off .nm{text-decoration:line-through}
 .bbchip.off .ck{color:var(--tx3)}
+/* chave liga/desliga do BLOCO, no cabeçalho */
+.blktog{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--surf);border-radius:20px;padding:3px 11px 3px 4px;cursor:pointer;font:inherit;font-size:11px;font-weight:700;color:var(--tx2);flex:0 0 auto}
+.blktog-sw{position:relative;width:32px;height:18px;border-radius:11px;background:var(--line2);transition:.15s;flex:0 0 auto}
+.blktog-sw i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.15s}
+.blktog.on{border-color:var(--pri);color:var(--pri);background:var(--pri-bg)}
+.blktog.on .blktog-sw{background:var(--pri)}
+.blktog.on .blktog-sw i{left:16px}
+.blktog.off .blktog-lb{color:var(--tx3)}
+/* bloco desligado: some o conteúdo na tela (cabeçalho/chave ficam p/ religar); some inteiro na impressão */
+.blk-off{opacity:.72}
+.blk-off > :not(.blkhead){display:none!important}
+.blk-off .blkhead .modosw,.blk-off .blkhead .st{display:none!important}
+@media print{.blk-off{display:none!important}}
 .valwarn{font-size:10px;font-weight:700;color:var(--red);background:#fcebeb;padding:1px 7px;border-radius:9px;display:none}
 .valwarn.on{display:inline-block}
 /* "Só o total": valores dos itens só na tela (some na impressão); "incluso" só na impressão */
@@ -417,8 +430,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
         <div class="descprint" id="descGeralPrint"></div>
       </div>
 
-      <!-- BLOCOS DE ITENS -->
-      <div id="blocosBar" class="blocosbar noprint"></div>
+      <!-- BLOCOS DE ITENS (liga/desliga fica no cabeçalho de cada bloco) -->
       <div class="blk" id="blk_servicos"></div>
       <div class="blk" id="blk_equip"></div>
       <div class="blk" id="blk_despesas"></div>
@@ -952,8 +964,10 @@ function renderBlk(cfg){
       <textarea class="noprint" rows="2" oninput="updObs('${cfg.key}',this.value)" placeholder="Observações do bloco… (aparecem na proposta se ligado)">${esc(obsTxt)}</textarea>
       <div class="obsprint" id="obsp_${cfg.key}">${obsTxt?('Obs.: '+esc(obsTxt)):''}</div>
     </div>`:'';
+  const bOn=blocoAtivo(cfg.key);
   document.getElementById('blk_'+cfg.key).innerHTML=`
     <div class="blkhead">
+      <button class="blktog ${bOn?'on':'off'}" onclick="toggleBloco('${cfg.key}')" title="${bOn?'Bloco incluído na proposta — clique para remover':'Bloco removido — clique para incluir'}"><span class="blktog-sw"><i></i></span><span class="blktog-lb">${bOn?'na proposta':'removido'}</span></button>
       <span class="ic"><span class="material-symbols-rounded">${cfg.icon}</span></span>
       <h2>${cfg.titulo}</h2>
       <div class="modosw">
@@ -1443,14 +1457,14 @@ function renderBlocosBar(){
 }
 function applyBlocoVis(){
   BLKS.forEach(b=>{ const on=blocoAtivo(b.key);
-    const c=document.getElementById('blk_'+b.key); if(c) c.style.display=on?'':'none';
+    const c=document.getElementById('blk_'+b.key); if(c){ c.style.display=''; c.classList.toggle('blk-off',!on); } // off: recolhe na tela (chave fica) + some na impressão
     const ln=document.getElementById('ln_'+b.key); if(ln) ln.style.display=on?'':'none';
   });
 }
-function toggleBloco(k){ S.blocoOn[k]=!blocoAtivo(k); save(); applyBlocoVis(); renderBlocosBar(); recalc(); }
+function toggleBloco(k){ S.blocoOn[k]=!blocoAtivo(k); save(); renderBlk(BLKS.find(b=>b.key===k)); applyBlocoVis(); recalc(); }
 
 /* ---------- boot ---------- */
-function boot(){ BLKS.forEach(renderBlk); renderBlocosBar(); applyBlocoVis(); renderDescGeral(); bindFields(); applyPrefill(); recalc(); renderBanner(); }
+function boot(){ BLKS.forEach(renderBlk); applyBlocoVis(); renderDescGeral(); bindFields(); applyPrefill(); recalc(); renderBanner(); }
 initOrc();
 </script>
 </body>
