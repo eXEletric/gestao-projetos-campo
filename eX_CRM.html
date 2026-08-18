@@ -668,11 +668,21 @@ function passaGate(o,fromColId){
   return confirm(msg+'\n\nAvançar mesmo assim?');   // suave
 }
 // mover a opp direto pra uma fase-destino (menu dentro do card), respeitando o gate
+// destino permitido a partir da fase atual? (respeita o bloqueio configurado)
+const podeMoverPara=(o,destId)=>destId===o.colId || destinosDe(o.colId).includes(destId);
 function moverOppPara(oid,destId){ const o=S.oportunidades.find(x=>x.id===oid); if(!o)return;
+  if(!podeMoverPara(o,destId)){ alert('Destino bloqueado a partir de "'+colNome(o.colId)+'". Libere a chave na frente para permitir.'); return; }
   const to=colIdx(destId); if(to>colIdx(o.colId) && !passaGate(o,o.colId)) return;
   o.colId=destId; save(); cUp('oportunidades',mOpp(o)); render(); }
-function drop(e,colId,el){ e.preventDefault(); if(el)el.classList.remove('dragover'); const id=_drag||(e.dataTransfer&&e.dataTransfer.getData('text/plain')); const o=id&&S.oportunidades.find(x=>x.id===id); if(o){ const from=colIdx(o.colId), to=colIdx(colId); if(to>from && !passaGate(o,o.colId)){ _drag=null; render(); return; } o.colId=colId; save(); cUp('oportunidades',mOpp(o)); render(); } _drag=null; }
-function moveOpp(id,dir){ const o=S.oportunidades.find(x=>x.id===id); if(!o)return; const i=colIdx(o.colId)+dir; if(i<0||i>=S.colunas.length)return; if(dir>0 && !passaGate(o,o.colId)) return; o.colId=S.colunas[i].id; save(); cUp('oportunidades',mOpp(o)); render(); }
+function drop(e,colId,el){ e.preventDefault(); if(el)el.classList.remove('dragover'); const id=_drag||(e.dataTransfer&&e.dataTransfer.getData('text/plain')); const o=id&&S.oportunidades.find(x=>x.id===id);
+  if(o && colId!==o.colId){
+    if(!podeMoverPara(o,colId)){ alert('Destino bloqueado a partir de "'+colNome(o.colId)+'".'); _drag=null; render(); return; }
+    const from=colIdx(o.colId), to=colIdx(colId); if(to>from && !passaGate(o,o.colId)){ _drag=null; render(); return; }
+    o.colId=colId; save(); cUp('oportunidades',mOpp(o)); render(); }
+  _drag=null; }
+function moveOpp(id,dir){ const o=S.oportunidades.find(x=>x.id===id); if(!o)return; const i=colIdx(o.colId)+dir; if(i<0||i>=S.colunas.length)return; const destId=S.colunas[i].id;
+  if(!podeMoverPara(o,destId)){ alert('Destino bloqueado a partir desta fase. Libere na configuração (chave na frente).'); return; }
+  if(dir>0 && !passaGate(o,o.colId)) return; o.colId=destId; save(); cUp('oportunidades',mOpp(o)); render(); }
 function selOpp(id){ SELO=id; render(); const d=document.getElementById('oppDetail'); if(d)d.scrollIntoView({behavior:'smooth',block:'nearest'}); }
 function toggleMaster(){ MASTER=!MASTER;
   const sw=document.getElementById('msw'), led=document.getElementById('mled'), lb=document.getElementById('mlb');
