@@ -589,8 +589,8 @@ function saveOrc(){ if(!(OPP&&CLOUD))return; clearTimeout(_saveT); _saveT=setTim
 async function carregarOrc(){
   const {data,error}=await SB.from('orcamentos').select('*').eq('oportunidade_id',OPP).is('deleted_at',null).order('created_at',{ascending:false}).limit(1);
   if(error) throw error;
-  if(data&&data.length){ ORC_ID=data[0].id; if(data[0].dados) S=data[0].dados; else S=demo(); }
-  else { ORC_ID=null; S=demo(); stampNovo(); }
+  if(data&&data.length){ ORC_ID=data[0].id; if(data[0].dados) S=data[0].dados; else S=orcVazio(); }
+  else { ORC_ID=null; S=orcVazio(); stampNovo(); }   // orçamento novo nasce EM BRANCO (sem escopo/obs herdados do exemplo)
   sanitize();
 }
 async function initOrc(){
@@ -752,6 +752,26 @@ function demo(){
     materiais:[]
   };
 }
+// ORÇAMENTO EM BRANCO — usado em todo orçamento NOVO (nada de escopo/obs/descrição pré-preenchidos, que induziam a erro)
+function orcVazio(){
+  return {
+    numero:"", idpipe:"",
+    dataISO:"", validadeISO:"",
+    solTitulo:"", solDesc:"",
+    cliNome:"", cliContato:"", cliFone:"", cliEmail:"",
+    finNome:"", finEnd:"",
+    respNome:"", respContato:"",
+    equipe:"", efetivo:[],
+    prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho',
+    descGeral:"", descGeralOn:true,
+    modos:{servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'},
+    soTotal:{servicos:false,equip:false,despesas:false,materiais:false},
+    blocoEdited:{servicos:false,equip:false,despesas:false,materiais:false},
+    blocoTotal:{servicos:0,equip:0,despesas:0,materiais:0},
+    obs:{},
+    servicos:[], equip:[], despesas:[], materiais:[]
+  };
+}
 // linha do modelo base+margem (custo). margem '' = herda a margem base
 function rowSvc(desc,qtd,und,custo,margem,catId,marca){return{id:uid(),desc,qtd,und,custoBase:custo,usarBase:true,custoAlt:custo,margem:(margem===undefined||margem===null?'':margem),catId:catId||null,marca:marca||""};}
 
@@ -833,7 +853,7 @@ function sanitize(){
   if(!S.status)S.status='rascunho';
 }
 const blocoAtivo=k=>S.blocoOn[k]!==false;
-function load(){ try{const r=localStorage.getItem(STORE);S=r?JSON.parse(r):demo();}catch(e){S=demo();} sanitize(); }
+function load(){ try{const r=localStorage.getItem(STORE);S=r?JSON.parse(r):orcVazio();}catch(e){S=orcVazio();} sanitize(); }
 function save(){ try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){} saveOrc(); }
 function resetDemo(){ if(OPP&&CLOUD){ if(confirm("Recarregar este orçamento do banco (nuvem)?")){ carregarOrc().then(()=>boot()).catch(e=>console.error(e)); } return; } if(confirm("Recarregar o exemplo Copeland/Assaí? As edições atuais serão perdidas.")){S=demo();save();boot();} }
 
@@ -1390,7 +1410,8 @@ function applyPrefill(){
   if(ORC_ID){ localStorage.removeItem('ex_orc_prefill'); return; } // orçamento já existe na nuvem → não sobrescreve
   try{ const r=localStorage.getItem('ex_orc_prefill'); if(!r)return; localStorage.removeItem('ex_orc_prefill');
     const p=JSON.parse(r);
-    ['cliNome','cliContato','cliFone','cliEmail','finNome','finEnd','solTitulo','solDesc'].forEach(k=>{ if(p[k]!=null&&p[k]!=='') setM(k,p[k]); });
+    // NÃO pré-preenche a "Descrição do escopo" (solDesc) — vinha da obs da oportunidade e induzia a erro; o escopo é digitado/escolhido da solução
+    ['cliNome','cliContato','cliFone','cliEmail','finNome','finEnd','solTitulo'].forEach(k=>{ if(p[k]!=null&&p[k]!=='') setM(k,p[k]); });
     stampNovo(); // data de hoje + criador logado
     save();
   }catch(e){}
