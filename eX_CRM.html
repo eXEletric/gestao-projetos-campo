@@ -209,14 +209,12 @@ select.fi{appearance:auto;cursor:pointer}
 @media(min-width:820px){.detail-grid{grid-template-columns:1fr 270px}}
 .detail-side .dsec{margin-top:0;border-top:none;background:var(--surf2);border:1px solid var(--line);border-radius:12px;padding:12px}
 @media(min-width:820px){.detail-side{position:sticky;top:10px;align-self:start}}
-.dmv-cfglink{display:inline-flex;align-items:center;gap:6px;margin-top:12px;padding:8px 0 2px;background:none;border:none;font:inherit;font-size:12.5px;font-weight:700;color:var(--pri);cursor:pointer}
-.dmv-cfglink .material-symbols-rounded{font-size:16px}
-.dmv-lock{display:inline-flex;align-items:center;gap:2px;font-size:9px;color:var(--tx3);background:var(--surf2);border-radius:7px;padding:1px 6px;font-weight:700}
-.dmv-lock .material-symbols-rounded{font-size:11px}
-.dc-row{display:flex;align-items:center;gap:10px;padding:12px 2px;border-bottom:1px solid var(--line)}
-.dc-row:last-child{border-bottom:none}
-.dc-row .nm{flex:1;font-weight:600}
-.dc-cur{font-size:11px;color:var(--pri);font-weight:700;background:var(--pri-bg);border-radius:8px;padding:2px 8px}
+.dmv-cfg{margin-top:12px;border-top:1px dashed var(--line2);padding-top:10px}
+.dmv-cfg-t{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri);font-weight:800;display:flex;align-items:center;gap:5px;margin-bottom:4px}
+.dmv-cfg-t .material-symbols-rounded{font-size:15px}
+.dmv-adm{margin-left:auto;font-size:9px;background:var(--pri-bg);border-radius:7px;padding:1px 6px}
+.dmv-tgrow{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:5px 0}
+.dmv-tgrow span:first-child{flex:1}
 </style>
 </head>
 <body>
@@ -386,22 +384,6 @@ select.fi{appearance:auto;cursor:pointer}
       <button class="btn" id="fzDel" onclick="delFaseFromCfg()" style="color:var(--red)"><span class="material-symbols-rounded">delete</span>Excluir</button>
       <span class="spacer"></span>
       <button class="btn btn-p" onclick="saveFaseCfg()"><span class="material-symbols-rounded">check</span>Salvar</button>
-    </div>
-  </div>
-</div>
-
-<!-- MODAL CONFIGURAR MOVER CARDS (destinos permitidos) — só Master -->
-<div class="modal-bg" id="modalDest">
-  <div class="modal">
-    <div class="mh"><b>Configurar mover cards</b><button class="x" onclick="closeDestinosCfg()"><span class="material-symbols-rounded">close</span></button></div>
-    <div class="mb">
-      <div id="dcSub" style="font-size:12.5px;color:var(--tx2);margin-bottom:10px"></div>
-      <div id="dcList"></div>
-    </div>
-    <div class="mf">
-      <span class="spacer"></span>
-      <button class="btn" onclick="closeDestinosCfg()">Cancelar</button>
-      <button class="btn btn-p" onclick="saveDestinosCfg()"><span class="material-symbols-rounded">check</span>Salvar</button>
     </div>
   </div>
 </div>
@@ -844,27 +826,22 @@ function oppMoverHTML(o){
     return `<button class="dmvbtn ${fwd?'':'back'}" ${dis} onclick="moverOppPara('${o.id}','${did}')"><span class="material-symbols-rounded ar">${fwd?'east':'west'}</span>${esc(colNome(did))}${tag}</button>`;
   }).join('');
   const hint=(falta.length&&gate!=='nenhuma')?`<div class="dmv-hint"><span class="material-symbols-rounded">info</span>Falta: <b>${esc(falta.join(', '))}</b>. ${gate==='rigida'?'A trava rígida bloqueia o avanço.':'A trava suave avisa mas deixa avançar.'}</div>`:'';
-  // link "Configurar mover cards" — SEMPRE visível (estilo Pipefy); a ação é gated por Master (avisa se não for admin)
-  const cfg=`<button class="dmv-cfglink" onclick="openDestinosCfg('${fid}')"><span class="material-symbols-rounded">tune</span>Configurar mover cards${MASTER?'':' <span class="dmv-lock"><span class="material-symbols-rounded">lock</span>admin</span>'}</button>`;
+  // "Configurar mover cards" — INLINE, na mesma tela do card; só quem TEM ACESSO (Master) vê as chaves liga/desliga
+  const k=S.colunas.find(x=>x.id===fid); const perm=(k&&k.destinos!=null)?k.destinos:null;
+  const cfg=MASTER?`<div class="dmv-cfg">
+      <div class="dmv-cfg-t"><span class="material-symbols-rounded">tune</span>Configurar mover cards <span class="dmv-adm">admin</span></div>
+      ${S.colunas.filter(x=>x.id!==fid).map(x=>{ const on=(perm==null)||perm.includes(x.id); return `<div class="dmv-tgrow"><span>${esc(x.nome)}</span><span class="tg ${on?'on':''}" onclick="togDestFase('${fid}','${x.id}')"><i></i></span></div>`;}).join('')}
+    </div>`:'';
   return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv">${btns}</div>${hint}${cfg}</div>`;
 }
-/* ===== modal "Configurar mover cards" (destinos permitidos a partir da fase) — só Master ===== */
-let _destFase=null,_destTmp=null;
-function openDestinosCfg(fromId){ if(!MASTER){ alert('Configurar mover cards é restrito ao administrador (Master). Ligue a chave Master no topo, à direita.'); return; } const k=S.colunas.find(x=>x.id===fromId); if(!k)return;
-  _destFase=fromId; _destTmp=(k.destinos==null)?S.colunas.filter(x=>x.id!==fromId).map(x=>x.id):k.destinos.slice();
-  document.getElementById('dcSub').textContent='Escolha para quais fases os cards podem ser movidos a partir de "'+colNome(fromId)+'".';
-  renderDestinosCfg(); document.getElementById('modalDest').classList.add('show'); }
-function renderDestinosCfg(){ const fromId=_destFase;
-  document.getElementById('dcList').innerHTML=S.colunas.map(x=>{
-    if(x.id===fromId) return `<div class="dc-row"><span class="nm">${esc(x.nome)}</span><span class="dc-cur">Fase atual</span></div>`;
-    const on=_destTmp.includes(x.id);
-    return `<div class="dc-row"><span class="nm">${esc(x.nome)}</span><span class="tg ${on?'on':''}" onclick="togDestTmp('${x.id}')"><i></i></span></div>`;
-  }).join(''); }
-function togDestTmp(id){ const i=_destTmp.indexOf(id); if(i<0)_destTmp.push(id); else _destTmp.splice(i,1); renderDestinosCfg(); }
-function closeDestinosCfg(){ document.getElementById('modalDest').classList.remove('show'); _destFase=null; _destTmp=null; }
-function saveDestinosCfg(){ const k=S.colunas.find(x=>x.id===_destFase); if(k){ const outras=S.colunas.filter(x=>x.id!==_destFase).map(x=>x.id);
-    k.destinos=(_destTmp.length===outras.length)?null:_destTmp.slice(); }   // todas marcadas = null (sem restrição)
-  save(); cFases(); closeDestinosCfg(); render(); }
+// liga/desliga um destino a partir da fase (só quem tem acesso) — direto na tela do card
+function togDestFase(fromId,destId){ if(!MASTER){ alert('Sem acesso: ligar/desligar destinos é do administrador.'); return; }
+  const k=S.colunas.find(x=>x.id===fromId); if(!k)return;
+  if(k.destinos==null) k.destinos=S.colunas.filter(x=>x.id!==fromId).map(x=>x.id);
+  const i=k.destinos.indexOf(destId); if(i<0)k.destinos.push(destId); else k.destinos.splice(i,1);
+  const outras=S.colunas.filter(x=>x.id!==fromId).map(x=>x.id);
+  if(k.destinos.length===outras.length) k.destinos=null;   // todas marcadas = sem restrição
+  save(); cFases(); render(); }
 
 /* modal oportunidade */
 function novaOpp(colId){ openOpp(null, colId); }
