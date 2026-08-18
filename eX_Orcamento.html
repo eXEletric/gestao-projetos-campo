@@ -439,13 +439,13 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
           <div class="ln" id="ln_materiais"><span class="lbl"><span class="material-symbols-rounded">inventory_2</span>Materiais</span><span class="val" id="s_mat">—</span></div>
           <div class="ln"><span class="lbl">Subtotal</span><span class="val" id="s_bruto">—</span></div>
           <div class="ln" id="ln_desc"><span class="lbl">Desconto <input class="pin" style="width:52px" data-f="descontoPct" inputmode="decimal">%</span><span class="val" id="s_desc">—</span></div>
+          <div class="ln" id="ln_imp"><span class="lbl">Impostos <input class="pin" style="width:52px" data-f="impostoPct" inputmode="decimal">%</span><span class="val" id="s_imp">—</span></div>
           <div class="ln tt"><span class="lbl">Total</span><span class="val" id="s_total">R$ 0,00</span></div>
 
           <!-- VISÃO INTERNA -->
           <div class="intbox">
             <div class="ih"><span class="material-symbols-rounded">lock</span>Visão interna — não vai pro cliente</div>
             <div class="iln"><span class="lbl">Margem base <input class="pin" style="width:52px" data-f="margemBase" inputmode="decimal">%</span><span class="val" style="color:var(--tx3);font-size:11px;font-weight:400">padrão das linhas</span></div>
-            <div class="iln"><span class="lbl">Imposto <input class="pin" style="width:52px" data-f="impostoPct" inputmode="decimal">%</span><span class="val" id="s_imp">—</span></div>
             <div class="iln"><span class="lbl">Custo real <span style="color:var(--tx3);font-weight:400">(auto)</span></span><span class="val" id="s_custo">—</span></div>
             <div class="iln"><span class="lbl">Lucro líquido</span><span class="val luc" id="s_lucro">—</span></div>
             <div class="iln"><span class="lbl">Margem de lucro</span><span class="val luc" id="s_marg">—</span></div>
@@ -1344,22 +1344,24 @@ function recalc(){
   BLKS.forEach(b=>{ const on=blocoAtivo(b.key); preco[b.key]=on?blkSub(b.key):0; cst[b.key]=on?blkCusto(b.key):0; });
   const bruto=preco.servicos+preco.equip+preco.despesas+preco.materiais;
   const desc=bruto*num(S.descontoPct)/100;
-  const total=bruto-desc;
-  const imp=total*num(S.impostoPct)/100;
+  const liquido=bruto-desc;                                 // valor antes do imposto
+  const imp=liquido*num(S.impostoPct)/100;
+  const total=liquido+imp;                                  // imposto SOMA ao total (repasse ao cliente)
   const custo=cst.servicos+cst.equip+cst.despesas+cst.materiais;   // custo real (auto)
-  const lucro=total-custo-imp;
-  const marg=total?lucro/total*100:0;
+  const lucro=liquido-custo;                                // imposto é repasse — NÃO reduz o lucro
+  const marg=liquido?lucro/liquido*100:0;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   set('s_serv',fmt(preco.servicos)); set('s_equip',fmt(preco.equip));
   set('s_desp',fmt(preco.despesas)); set('s_mat',fmt(preco.materiais));
   set('s_bruto',fmt(bruto)); set('s_desc','− '+fmt(desc));
   set('s_total',fmt(total)); set('s_preco',fmt(total));
-  set('s_imp',fmt(imp)); set('s_custo',fmt(custo));
+  set('s_imp','+ '+fmt(imp)); set('s_custo',fmt(custo));
   const lu=document.getElementById('s_lucro'), mg=document.getElementById('s_marg');
   if(lu)lu.textContent=fmt(lucro); if(mg)mg.textContent=marg.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
   const neg=(lucro<0);
   if(lu)lu.className='val luc'+(neg?' neg':''); if(mg)mg.className='val luc'+(neg?' neg':'');
   const lnd=document.getElementById('ln_desc'); if(lnd) lnd.classList.toggle('zeroprint', num(S.descontoPct)<=0);  // desconto 0% some na proposta
+  const lni=document.getElementById('ln_imp'); if(lni) lni.classList.toggle('zeroprint', num(S.impostoPct)<=0);   // imposto 0% some na proposta
   checkValidade();
   S._total=total; S._custo=custo; S._lucro=lucro;
   writeback(total);
