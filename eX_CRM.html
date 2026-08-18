@@ -209,12 +209,15 @@ select.fi{appearance:auto;cursor:pointer}
 @media(min-width:820px){.detail-grid{grid-template-columns:1fr 270px}}
 .detail-side .dsec{margin-top:0;border-top:none;background:var(--surf2);border:1px solid var(--line);border-radius:12px;padding:12px}
 @media(min-width:820px){.detail-side{position:sticky;top:10px;align-self:start}}
-.dmv-cfg{margin-top:12px;border-top:1px dashed var(--line2);padding-top:10px}
-.dmv-cfg-t{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri);font-weight:800;display:flex;align-items:center;gap:5px;margin-bottom:4px}
-.dmv-cfg-t .material-symbols-rounded{font-size:15px}
-.dmv-adm{margin-left:auto;font-size:9px;background:var(--pri-bg);border-radius:7px;padding:1px 6px}
-.dmv-tgrow{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:5px 0}
-.dmv-tgrow span:first-child{flex:1}
+.dmvrow{display:flex;align-items:center;gap:9px}
+.dmvrow .dmvbtn{flex:1;width:auto}
+.tg.sm{width:32px;height:18px}
+.tg.sm i{width:14px;height:14px}
+.tg.sm.on i{left:16px}
+.dmvbtn.off{opacity:.5;background:var(--surf2);color:var(--tx3);text-decoration:line-through}
+.dmvbtn.off .ar{color:var(--tx3)}
+.dmv-anota{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--tx3);font-style:italic;margin-top:8px}
+.dmv-anota .material-symbols-rounded{font-size:13px;color:var(--pri)}
 </style>
 </head>
 <body>
@@ -817,22 +820,23 @@ function oppFormHTML(o){
   }).join('');
   return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">assignment</span>Formulário — ${esc(colNome(fid))}</div>${rows}</div>`;
 }
-// menu "mover card para fase" (por dentro do card), respeitando destinos permitidos + gate
+// menu "mover card para fase" (por dentro do card) — a CHAVE (liga/desliga destino, só admin) fica NA FRENTE de cada botão de mover
 function oppMoverHTML(o){
-  const fid=o.colId, ci=colIdx(fid), dests=destinosDe(fid), gate=colGate(fid), falta=faltaParaSair(o,fid);
-  if(!dests.length) return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv-empty">Fase final — sem movimentação.</div></div>`;
-  const btns=dests.map(did=>{ const fwd=colIdx(did)>ci; let tag='',dis='';
-    if(falta.length && fwd){ if(gate==='rigida'){ tag=`<span class="dmv-blk"><span class="material-symbols-rounded">lock</span>trava rígida</span>`; dis='disabled'; } else if(gate==='suave'){ tag=`<span class="dmv-warn"><span class="material-symbols-rounded">warning</span>avisa</span>`; } }
-    return `<button class="dmvbtn ${fwd?'':'back'}" ${dis} onclick="moverOppPara('${o.id}','${did}')"><span class="material-symbols-rounded ar">${fwd?'east':'west'}</span>${esc(colNome(did))}${tag}</button>`;
+  const fid=o.colId, ci=colIdx(fid), gate=colGate(fid), falta=faltaParaSair(o,fid);
+  const k=S.colunas.find(x=>x.id===fid), perm=(k&&k.destinos!=null)?k.destinos:null;
+  const allowed=id=>(perm==null)||perm.includes(id);
+  const outras=S.colunas.filter(x=>x.id!==fid);
+  const lista=MASTER?outras:outras.filter(x=>allowed(x.id));   // admin vê todas (p/ ligar/desligar); operador só as liberadas
+  if(!lista.length) return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv-empty">Fase final — sem movimentação.</div></div>`;
+  const rows=lista.map(x=>{ const on=allowed(x.id), fwd=colIdx(x.id)>ci; let tag='',dis='';
+    if(!on){ dis='disabled'; }
+    else if(falta.length && fwd){ if(gate==='rigida'){ tag=`<span class="dmv-blk"><span class="material-symbols-rounded">lock</span>trava rígida</span>`; dis='disabled'; } else if(gate==='suave'){ tag=`<span class="dmv-warn"><span class="material-symbols-rounded">warning</span>avisa</span>`; } }
+    const chave=MASTER?`<span class="tg sm ${on?'on':''}" title="${on?'destino liberado — clique p/ bloquear':'destino bloqueado — clique p/ liberar'}" onclick="togDestFase('${fid}','${x.id}')"><i></i></span>`:'';
+    return `<div class="dmvrow">${chave}<button class="dmvbtn ${fwd?'':'back'} ${on?'':'off'}" ${dis} onclick="moverOppPara('${o.id}','${x.id}')"><span class="material-symbols-rounded ar">${fwd?'east':'west'}</span>${esc(x.nome)}${tag}</button></div>`;
   }).join('');
   const hint=(falta.length&&gate!=='nenhuma')?`<div class="dmv-hint"><span class="material-symbols-rounded">info</span>Falta: <b>${esc(falta.join(', '))}</b>. ${gate==='rigida'?'A trava rígida bloqueia o avanço.':'A trava suave avisa mas deixa avançar.'}</div>`:'';
-  // "Configurar mover cards" — INLINE, na mesma tela do card; só quem TEM ACESSO (Master) vê as chaves liga/desliga
-  const k=S.colunas.find(x=>x.id===fid); const perm=(k&&k.destinos!=null)?k.destinos:null;
-  const cfg=MASTER?`<div class="dmv-cfg">
-      <div class="dmv-cfg-t"><span class="material-symbols-rounded">tune</span>Configurar mover cards <span class="dmv-adm">admin</span></div>
-      ${S.colunas.filter(x=>x.id!==fid).map(x=>{ const on=(perm==null)||perm.includes(x.id); return `<div class="dmv-tgrow"><span>${esc(x.nome)}</span><span class="tg ${on?'on':''}" onclick="togDestFase('${fid}','${x.id}')"><i></i></span></div>`;}).join('')}
-    </div>`:'';
-  return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv">${btns}</div>${hint}${cfg}</div>`;
+  const nota=MASTER?`<div class="dmv-anota"><span class="material-symbols-rounded">tune</span>A chave na frente libera/bloqueia o destino (admin).</div>`:'';
+  return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv">${rows}</div>${hint}${nota}</div>`;
 }
 // liga/desliga um destino a partir da fase (só quem tem acesso) — direto na tela do card
 function togDestFase(fromId,destId){ if(!MASTER){ alert('Sem acesso: ligar/desligar destinos é do administrador.'); return; }
