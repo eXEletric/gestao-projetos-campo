@@ -163,6 +163,47 @@ select.fi{appearance:auto;cursor:pointer}
 .kgate{display:inline-flex;align-items:center;gap:2px;margin-left:auto;padding:1px 6px;border-radius:8px;text-transform:none;letter-spacing:0}
 .kgate .material-symbols-rounded{font-size:12px}
 .kgate.suave{background:#fff5e6;color:#b26a00}.kgate.rigida{background:#fcebeb;color:var(--red)}
+/* chave Master (acesso admin, provisório) */
+.mchave{display:inline-flex;align-items:center;gap:7px;background:var(--surf);border:1px solid var(--line2);border-radius:11px;padding:5px 10px;cursor:pointer;user-select:none}
+.mchave .led{width:8px;height:8px;border-radius:50%;background:var(--tx3)}
+.mchave .led.on{background:var(--green,#1d9e75);box-shadow:0 0 6px var(--green,#1d9e75)}
+.mchave .msw{position:relative;width:38px;height:21px;border-radius:12px;background:var(--line2);transition:.16s;flex:0 0 auto}
+.mchave .msw.on{background:var(--pri)}
+.mchave .msw i{position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:#fff;transition:.16s;box-shadow:0 1px 2px rgba(0,0,0,.25)}
+.mchave .msw.on i{left:19px}
+.mchave .mlb{font-size:12px;font-weight:700;color:var(--tx2)}
+/* seções no detalhe da opp */
+.dsec{margin-top:15px;border-top:1px solid var(--line);padding-top:12px}
+.dsec-t{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);font-weight:800;margin-bottom:9px;display:flex;align-items:center;gap:6px}
+.dsec-t .material-symbols-rounded{font-size:16px;color:var(--pri)}
+.ffld{margin-bottom:10px}
+.ffld .fl{display:block;font-size:11.5px;font-weight:700;color:var(--tx2);margin-bottom:4px}
+.opts{display:flex;flex-wrap:wrap;gap:6px}
+.opt{font-size:12px;padding:6px 11px;border-radius:9px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer;font:inherit;font-size:12px}
+.opt.on{background:var(--pri-bg);border-color:var(--pri);color:var(--pri);font-weight:700}
+.opt.yes.on{background:#e7f6ef;border-color:var(--green,#1d9e75);color:var(--green,#1d9e75)}
+/* menu mover card */
+.dmv{display:flex;flex-direction:column;gap:6px}
+.dmvbtn{display:flex;align-items:center;gap:8px;width:100%;text-align:left;border:1px solid var(--line2);background:var(--surf);border-radius:10px;padding:9px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;color:var(--tx)}
+.dmvbtn:hover:not(:disabled){border-color:var(--pri);background:var(--pri-bg)}
+.dmvbtn .ar{color:var(--pri);font-size:17px}
+.dmvbtn.back{color:var(--tx2)}.dmvbtn.back .ar{color:var(--tx3)}
+.dmvbtn:disabled{opacity:.5;cursor:not-allowed}
+.dmvbtn .dmv-warn{margin-left:auto;font-size:10px;color:#b26a00;display:inline-flex;align-items:center;gap:3px}
+.dmvbtn .dmv-blk{margin-left:auto;font-size:10px;color:var(--red);display:inline-flex;align-items:center;gap:3px}
+.dmvbtn .dmv-warn .material-symbols-rounded,.dmvbtn .dmv-blk .material-symbols-rounded{font-size:13px}
+.dmv-empty{color:var(--tx3);font-size:12px;font-style:italic}
+.dmv-hint{font-size:11px;color:var(--tx3);margin-top:8px;display:flex;align-items:flex-start;gap:6px}
+.dmv-hint .material-symbols-rounded{font-size:14px;color:var(--pri)}
+/* construtor de campos + destinos (config) */
+.fzc-item{display:flex;align-items:center;gap:6px;font-size:12.5px;padding:6px 2px;border-bottom:1px solid var(--line)}
+.fzc-item:last-of-type{border-bottom:none}
+.fzc-add{background:var(--pri-bg);border:1px dashed var(--pri);border-radius:9px;padding:10px;margin-top:8px}
+.addlink{display:inline-flex;align-items:center;gap:4px;font-size:12.5px;color:var(--pri);font-weight:700;cursor:pointer;background:none;border:none;padding:8px 0 2px;font:inherit;font-weight:700;color:var(--pri)}
+.tg{position:relative;width:38px;height:21px;border-radius:12px;background:var(--line2);cursor:pointer;transition:.16s;flex:0 0 auto}
+.tg.on{background:var(--pri)}
+.tg i{position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:#fff;transition:.16s}
+.tg.on i{left:19px}
 </style>
 </head>
 <body>
@@ -172,6 +213,11 @@ select.fi{appearance:auto;cursor:pointer}
     <span class="modtag"><span class="material-symbols-rounded">sell</span>Comercial (CRM)</span>
     <span id="cloudb" style="font-size:11px;color:var(--tx3)"></span>
     <span class="spacer"></span>
+    <div class="mchave" onclick="toggleMaster()" title="Acesso administrador (provisório) — configura fases, campos e destinos">
+      <span class="led" id="mled"></span>
+      <span class="msw" id="msw"><i></i></span>
+      <span class="mlb" id="mlb">Operador</span>
+    </div>
     <div class="search"><span class="material-symbols-rounded">search</span><input id="q" placeholder="Buscar…" oninput="render()"></div>
     <button class="btn" onclick="resetDemo()" title="Recarregar exemplo"><span class="material-symbols-rounded">restart_alt</span></button>
   </div>
@@ -320,6 +366,8 @@ select.fi{appearance:auto;cursor:pointer}
       <div class="fg"><label class="fl">Nome da fase</label><input class="fi" id="fz_nome" placeholder="Ex.: Gerando proposta"></div>
       <div class="fg"><label class="fl">Papel da fase — define as ações que aparecem no card</label><div class="chips" id="fz_papeis"></div></div>
       <div class="fg"><label class="fl">Trava pra avançar (gate)</label><div class="chips" id="fz_gates"></div><div class="fz-req" id="fz_req"></div></div>
+      <div class="fg" id="fz_camposWrap"><label class="fl">Formulário desta fase — campos do processo</label><div id="fz_campos"></div></div>
+      <div class="fg" id="fz_destWrap"><label class="fl">Destinos permitidos — para quais fases o card pode ir</label><div id="fz_destinos"></div></div>
     </div>
     <div class="mf">
       <button class="btn" id="fzDel" onclick="delFaseFromCfg()" style="color:var(--red)"><span class="material-symbols-rounded">delete</span>Excluir</button>
@@ -340,8 +388,8 @@ const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):n
 let CLOUD=false, EMPRESA_ID=null;
 function cloudMsg(t){ const e=document.getElementById('cloudb'); if(e)e.textContent=t; }
 const mCli=c=>({id:c.id,empresa_id:EMPRESA_ID,tipo:c.tipo,pai_id:c.paiId||null,nome:c.nome,cnpj:c.cnpj||null,contato:c.contato||null,fone:c.fone||null,email:c.email||null,endereco:c.endereco||null,obs:c.obs||null});
-const mFase=(f,ord)=>({id:f.id,empresa_id:EMPRESA_ID,nome:f.nome,ordem:ord,tipo:f.fim?'final':'ativa',papel:f.papel||null,gate:f.gate||'nenhuma'});
-const mOpp=o=>({id:o.id,empresa_id:EMPRESA_ID,contratante_id:o.contratanteId||null,contemplado_id:o.contempladoId||null,fase_id:o.colId||null,objeto:o.objeto||null,temperatura:o.temperatura||'Morno',data_limite:o.dataLimite||null,obs:o.obs||null});
+const mFase=(f,ord)=>({id:f.id,empresa_id:EMPRESA_ID,nome:f.nome,ordem:ord,tipo:f.fim?'final':'ativa',papel:f.papel||null,gate:f.gate||'nenhuma',campos:f.campos||[],destinos:(f.destinos!==undefined?f.destinos:null)});
+const mOpp=o=>({id:o.id,empresa_id:EMPRESA_ID,contratante_id:o.contratanteId||null,contemplado_id:o.contempladoId||null,fase_id:o.colId||null,objeto:o.objeto||null,temperatura:o.temperatura||'Morno',data_limite:o.dataLimite||null,obs:o.obs||null,fase_dados:o.faseDados||{}});
 const mLoja=l=>({id:l.id,empresa_id:EMPRESA_ID,nome:l.nome,grupo:l.grupo||null,numero:l.numero||null,endereco:l.endereco||null,cnpj:l.cnpj||null,coordenada:l.coordenada||null,codigo_externo:l.codigo||null,contato:l.contato||null,fone:l.fone||null,email:l.email||null,obs:l.obs||null});
 const mVinc=v=>({id:v.id,empresa_id:EMPRESA_ID,loja_id:v.lojaId,contratante_id:v.contratanteId,papel:v.papel||null,obs:v.obs||null});
 /* ===== PAPÉIS de fase (base Pipefy) — o papel define as AÇÕES liberadas no card + o REQUISITO da fase ===== */
@@ -368,6 +416,20 @@ function reqLabel(papel){ const req=(PAPEL_DEF[papel]||{}).req;
   return req==='contratante'?'definir o cliente contratante'
        : req==='orcamento'?'gerar o orçamento'
        : req==='enviado'?'marcar o orçamento como enviado/aprovado':''; }
+/* ===== destinos permitidos + campos de fase (Pipefy) ===== */
+const colCampos=id=>{const k=S.colunas.find(x=>x.id===id);return (k&&Array.isArray(k.campos))?k.campos:[];};
+function destinosDe(id){ const k=S.colunas.find(x=>x.id===id); const outras=S.colunas.filter(x=>x.id!==id).map(x=>x.id);
+  if(!k||k.destinos==null) return outras;            // não configurado = todas
+  return k.destinos.filter(d=>outras.includes(d)); } // configurado = exatamente as marcadas
+const campoVal=(o,faseId,campoId)=>{ const d=o.faseDados&&o.faseDados[faseId]; return d?d[campoId]:undefined; };
+function setCampo(oid,faseId,campoId,v){ const o=S.oportunidades.find(x=>x.id===oid); if(!o)return;
+  if(!o.faseDados)o.faseDados={}; if(!o.faseDados[faseId])o.faseDados[faseId]={}; o.faseDados[faseId][campoId]=v;
+  save(); cUp('oportunidades',mOpp(o)); renderOppDetail(); }
+function camposFaltando(o,faseId){ return colCampos(faseId).filter(c=>c.obr && !(campoVal(o,faseId,c.id)!==undefined&&campoVal(o,faseId,c.id)!=='')); }
+// tudo o que falta pra SAIR da fase: requisito do papel + campos obrigatórios
+function faltaParaSair(o,faseId){ const miss=[]; const papel=colPapel(faseId);
+  if(!reqOK(o,papel)){ const l=reqLabel(papel); if(l)miss.push(l); }
+  camposFaltando(o,faseId).forEach(c=>miss.push(c.nome)); return miss; }
 function cUp(table,row){ if(!CLOUD)return; SB.from(table).upsert(row).then(({error})=>{ if(error){console.error('cloud up',table,error);cloudMsg('erro ao salvar na nuvem');} }); }
 function cDel(table,id){ if(!CLOUD)return; SB.from(table).update({deleted_at:new Date().toISOString()}).eq('id',id).then(({error})=>{ if(error)console.error('cloud del',table,error); }); }
 function cFases(){ if(!CLOUD)return; SB.from('crm_fases').upsert(S.colunas.map((f,i)=>mFase(f,i))).then(({error})=>{ if(error)console.error('cloud fases',error); }); }
@@ -381,20 +443,20 @@ async function carregarNuvem(){
   ]);
   if(cl.error||fa.error||op.error) throw (cl.error||fa.error||op.error);
   S={ v:3,
-    colunas:(fa.data||[]).map(f=>({id:f.id,nome:f.nome,fim:f.tipo==='final',papel:f.papel||null,gate:f.gate||'nenhuma'})),
+    colunas:(fa.data||[]).map(f=>({id:f.id,nome:f.nome,fim:f.tipo==='final',papel:f.papel||null,gate:f.gate||'nenhuma',campos:Array.isArray(f.campos)?f.campos:[],destinos:(f.destinos===undefined?null:f.destinos)})),
     clientes:(cl.data||[]).map(c=>({id:c.id,nome:c.nome,tipo:c.tipo,paiId:c.pai_id,cnpj:c.cnpj,contato:c.contato,fone:c.fone,email:c.email,endereco:c.endereco,obs:c.obs})),
     lojas:((lj&&lj.data)||[]).map(l=>({id:l.id,nome:l.nome,grupo:l.grupo,numero:l.numero,endereco:l.endereco,cnpj:l.cnpj,coordenada:l.coordenada,codigo:l.codigo_externo,contato:l.contato,fone:l.fone,email:l.email,obs:l.obs})),
     vinculos:((vc&&vc.data)||[]).map(v=>({id:v.id,lojaId:v.loja_id,contratanteId:v.contratante_id,papel:v.papel,obs:v.obs})),
-    oportunidades:(op.data||[]).map(o=>({id:o.id,contratanteId:o.contratante_id,contempladoId:o.contemplado_id,objeto:o.objeto,temperatura:o.temperatura,dataLimite:o.data_limite||'',colId:o.fase_id,obs:o.obs}))
+    oportunidades:(op.data||[]).map(o=>({id:o.id,contratanteId:o.contratante_id,contempladoId:o.contemplado_id,objeto:o.objeto,temperatura:o.temperatura,dataLimite:o.data_limite||'',colId:o.fase_id,obs:o.obs,faseDados:(o.fase_dados&&typeof o.fase_dados==='object'?o.fase_dados:{})}))
   };
   if(!S.colunas.length) await seedFases();
 }
 async function seedFases(){
   const pad=[['Leads',0,'ativa','captacao','nenhuma'],['Visita técnica',1,'ativa','visita','nenhuma'],['Gerando proposta',2,'ativa','proposta','suave'],['Em negociação',3,'ativa','negociacao','nenhuma'],['Obra / execução',4,'ativa','execucao','suave'],['Concluído',5,'final','ganho','nenhuma'],['Geladeira',6,'ativa','pausa','nenhuma'],['Declinado',7,'ativa','perdido','nenhuma']];
-  const rows=pad.map(p=>({id:uid(),empresa_id:EMPRESA_ID,nome:p[0],ordem:p[1],tipo:p[2],papel:p[3],gate:p[4]}));
+  const rows=pad.map(p=>({id:uid(),empresa_id:EMPRESA_ID,nome:p[0],ordem:p[1],tipo:p[2],papel:p[3],gate:p[4],campos:[],destinos:null}));
   const {error}=await SB.from('crm_fases').insert(rows);
   if(error){console.error('seed fases',error);return;}
-  S.colunas=rows.map(r=>({id:r.id,nome:r.nome,fim:r.tipo==='final',papel:r.papel,gate:r.gate}));
+  S.colunas=rows.map(r=>({id:r.id,nome:r.nome,fim:r.tipo==='final',papel:r.papel,gate:r.gate,campos:[],destinos:null}));
 }
 async function initCRM(){
   if(SB){ try{
@@ -410,6 +472,8 @@ async function initCRM(){
 const TEMPS=["Frio","Morno","Quente"];
 const MODE=(new URLSearchParams(location.search)).get('m'); // 'clientes' | 'funil' | null(ambos)
 let S=null, TAB=(MODE||'funil'), CSUB='contratantes', SELO=null, SELC=null, SELL=null, EDITO=null, EDITC=null, _drag=null, _oc=null, _op=null, _ot='Morno', _ts='', _fromPipe=null;
+let MASTER=false;  // acesso admin (provisório; liga no motor de acesso real depois)
+const TIPO_CAMPO={texto:'Texto curto',textolongo:'Texto longo',num:'Número',moeda:'Moeda (R$)',data:'Data',opcao:'Opção única',simnao:'Sim/Não'};
 function applyMode(){
   if(!MODE) return;
   const tb=document.querySelector('.tabs'); if(tb)tb.style.display='none';
@@ -426,9 +490,12 @@ function orcIndex(){ try{return JSON.parse(localStorage.getItem('ex_orc_index')|
 
 function demo(){ return { v:3,
   colunas:[
-    {id:"leads",nome:"Leads",papel:"captacao",gate:"nenhuma"},{id:"visita",nome:"Visita técnica",papel:"visita",gate:"nenhuma"},{id:"proposta",nome:"Gerando proposta",papel:"proposta",gate:"suave"},
-    {id:"negoc",nome:"Em negociação",papel:"negociacao",gate:"nenhuma"},{id:"obra",nome:"Obra / execução",papel:"execucao",gate:"suave"},{id:"concluido",nome:"Concluído",fim:true,papel:"ganho",gate:"nenhuma"},
-    {id:"geladeira",nome:"Geladeira",papel:"pausa",gate:"nenhuma"},{id:"declinado",nome:"Declinado",papel:"perdido",gate:"nenhuma"}
+    {id:"leads",nome:"Leads",papel:"captacao",gate:"nenhuma",campos:[{id:"orig",nome:"Origem do lead",tipo:"opcao",obr:true,ops:["Indicação","Site","Feira","Cliente atual"]}],destinos:null},
+    {id:"visita",nome:"Visita técnica",papel:"visita",gate:"rigida",campos:[{id:"data",nome:"Data da visita",tipo:"data",obr:true},{id:"resp",nome:"Responsável pela visita",tipo:"opcao",obr:true,ops:["André","Equipe A","Equipe B"]},{id:"cond",nome:"Condições do local",tipo:"textolongo",obr:false},{id:"and",nome:"Precisa de andaime / plataforma?",tipo:"simnao",obr:false}],destinos:["proposta","geladeira"]},
+    {id:"proposta",nome:"Gerando proposta",papel:"proposta",gate:"suave",campos:[],destinos:null},
+    {id:"negoc",nome:"Em negociação",papel:"negociacao",gate:"nenhuma",campos:[{id:"envio",nome:"Principal forma de envio",tipo:"opcao",obr:true,ops:["Entregue em mão","WhatsApp","Email"]},{id:"receb",nome:"Confirmação de recebimento",tipo:"simnao",obr:true}],destinos:null},
+    {id:"obra",nome:"Obra / execução",papel:"execucao",gate:"suave",campos:[],destinos:null},{id:"concluido",nome:"Concluído",fim:true,papel:"ganho",gate:"nenhuma",campos:[],destinos:null},
+    {id:"geladeira",nome:"Geladeira",papel:"pausa",gate:"nenhuma",campos:[],destinos:null},{id:"declinado",nome:"Declinado",papel:"perdido",gate:"nenhuma",campos:[{id:"motivo",nome:"Motivo da perda",tipo:"opcao",obr:true,ops:["Preço","Prazo","Concorrente","Sem verba"]}],destinos:null}
   ],
   clientes:[
     {id:"gy",nome:"GREENYELLOW",tipo:"contratante",paiId:null,cnpj:"",contato:"",fone:"",email:"",endereco:"",obs:"Integrador de sistemas; contratante recorrente."},
@@ -564,23 +631,34 @@ function dragStart(e,id){ _drag=id; try{e.dataTransfer.setData('text/plain',id);
 function allow(e,el){ e.preventDefault(); if(el)el.classList.add('dragover'); }
 // trava pra SAIR da fase atual (base Pipefy): nenhuma=passa; suave=avisa e deixa; rígida=bloqueia
 function passaGate(o,fromColId){
-  const papel=colPapel(fromColId), gate=colGate(fromColId);
-  if(gate==='nenhuma'||reqOK(o,papel)) return true;
-  const msg=`Para sair de "${colNome(fromColId)}" falta: ${reqLabel(papel)||'concluir a etapa'}.`;
+  const gate=colGate(fromColId), falta=faltaParaSair(o,fromColId);
+  if(gate==='nenhuma'||!falta.length) return true;
+  const msg=`Para sair de "${colNome(fromColId)}" falta: ${falta.join(', ')}.`;
   if(gate==='rigida'){ alert(msg+'\n\nEsta fase tem trava RÍGIDA — conclua isso antes de avançar.'); return false; }
   return confirm(msg+'\n\nAvançar mesmo assim?');   // suave
 }
+// mover a opp direto pra uma fase-destino (menu dentro do card), respeitando o gate
+function moverOppPara(oid,destId){ const o=S.oportunidades.find(x=>x.id===oid); if(!o)return;
+  const to=colIdx(destId); if(to>colIdx(o.colId) && !passaGate(o,o.colId)) return;
+  o.colId=destId; save(); cUp('oportunidades',mOpp(o)); render(); }
 function drop(e,colId,el){ e.preventDefault(); if(el)el.classList.remove('dragover'); const id=_drag||(e.dataTransfer&&e.dataTransfer.getData('text/plain')); const o=id&&S.oportunidades.find(x=>x.id===id); if(o){ const from=colIdx(o.colId), to=colIdx(colId); if(to>from && !passaGate(o,o.colId)){ _drag=null; render(); return; } o.colId=colId; save(); cUp('oportunidades',mOpp(o)); render(); } _drag=null; }
 function moveOpp(id,dir){ const o=S.oportunidades.find(x=>x.id===id); if(!o)return; const i=colIdx(o.colId)+dir; if(i<0||i>=S.colunas.length)return; if(dir>0 && !passaGate(o,o.colId)) return; o.colId=S.colunas[i].id; save(); cUp('oportunidades',mOpp(o)); render(); }
 function selOpp(id){ SELO=id; render(); const d=document.getElementById('oppDetail'); if(d)d.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+function toggleMaster(){ MASTER=!MASTER;
+  const sw=document.getElementById('msw'), led=document.getElementById('mled'), lb=document.getElementById('mlb');
+  if(sw)sw.classList.toggle('on',MASTER); if(led)led.classList.toggle('on',MASTER); if(lb)lb.textContent=MASTER?'Master':'Operador';
+  render(); }
 
 function addColuna(){ openFaseCfg(null); }
 function renameColuna(id){ openFaseCfg(id); }
-/* ===== configuração da fase (papel + gate) ===== */
-let _faseEdit=null,_faseP='captacao',_faseG='nenhuma';
+/* ===== configuração da fase (papel + gate + campos + destinos) — só Master ===== */
+let _faseEdit=null,_faseP='captacao',_faseG='nenhuma',_faseCampos=[],_faseDest=null,_addCampoOpen=false,_fzcTipo='texto',_fzcObr=false;
 function openFaseCfg(id){
+  if(!MASTER){ alert('Configurar fases é restrito ao administrador (Master). Ligue a chave Master no topo.'); return; }
   const k=id?S.colunas.find(x=>x.id===id):null;
   _faseEdit=id||null; _faseP=k?(k.papel||'captacao'):'captacao'; _faseG=k?(k.gate||'nenhuma'):'nenhuma';
+  _faseCampos=k&&Array.isArray(k.campos)?JSON.parse(JSON.stringify(k.campos)):[];
+  _faseDest=k?(k.destinos==null?null:k.destinos.slice()):null; _addCampoOpen=false; _fzcTipo='texto'; _fzcObr=false;
   document.getElementById('fzTitle').textContent=id?'Configurar fase':'Nova fase';
   document.getElementById('fz_nome').value=k?k.nome:'';
   document.getElementById('fzDel').style.display=(id&&S.colunas.length>1)?'inline-flex':'none';
@@ -594,12 +672,50 @@ function renderFaseCfg(){
   document.getElementById('fz_req').innerHTML = rq
     ? `<span class="material-symbols-rounded">info</span>Exige: <b>${rq}</b> — ${_faseG==='nenhuma'?'só informativo (sem trava)':_faseG==='suave'?'avisa ao avançar sem cumprir':'bloqueia ao avançar sem cumprir'}.`
     : `<span class="material-symbols-rounded">info</span>Sem requisito específico nesta fase.`;
+  renderFzCampos(); renderFzDestinos();
 }
-function closeFaseCfg(){ document.getElementById('modalFase').classList.remove('show'); _faseEdit=null; }
+function renderFzCampos(){
+  const el=document.getElementById('fz_campos'); if(!el)return;
+  let h=_faseCampos.length?_faseCampos.map((c,i)=>`<div class="fzc-item"><span style="flex:1"><b>${esc(c.nome)}</b> <span style="color:var(--tx3);font-size:11px">· ${TIPO_CAMPO[c.tipo]||c.tipo}${c.obr?' · <b style="color:var(--red)">obrigatório</b>':''}</span></span><button class="ib" onclick="fzMoveCampo(${i},-1)" ${i===0?'disabled':''}><span class="material-symbols-rounded">expand_less</span></button><button class="ib" onclick="fzMoveCampo(${i},1)" ${i===_faseCampos.length-1?'disabled':''}><span class="material-symbols-rounded">expand_more</span></button><button class="ib del" onclick="fzDelCampo(${i})"><span class="material-symbols-rounded">close</span></button></div>`).join(''):'<div style="color:var(--tx3);font-size:12px;padding:3px 0">Sem campos ainda.</div>';
+  if(_addCampoOpen){
+    h+=`<div class="fzc-add">
+      <input class="fi" id="fzc_nome" placeholder="Nome do campo (ex.: Data da visita)" value="${esc(_fzcNome||'')}" oninput="_fzcNome=this.value">
+      <div class="chips" style="margin:7px 0">${Object.keys(TIPO_CAMPO).map(t=>`<button class="chipsel ${_fzcTipo===t?'on':''}" onclick="_fzcTipo='${t}';renderFzCampos()">${TIPO_CAMPO[t]}</button>`).join('')}</div>
+      ${_fzcTipo==='opcao'?`<input class="fi" id="fzc_ops" placeholder="Opções separadas por vírgula (ex.: WhatsApp, Email)" value="${esc(_fzcOps||'')}" oninput="_fzcOps=this.value">`:''}
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;margin:8px 0"><input type="checkbox" ${_fzcObr?'checked':''} onchange="_fzcObr=this.checked"> Campo obrigatório (entra na trava)</label>
+      <div style="display:flex;gap:6px"><button class="btn btn-p btn-s" onclick="fzAddCampoConfirm()"><span class="material-symbols-rounded">check</span>Adicionar</button><button class="btn btn-s" onclick="_addCampoOpen=false;renderFzCampos()">Cancelar</button></div>
+    </div>`;
+  } else {
+    h+=`<button class="addlink" onclick="_addCampoOpen=true;renderFzCampos()"><span class="material-symbols-rounded">add</span>Adicionar campo</button>`;
+  }
+  el.innerHTML=h;
+}
+let _fzcNome='',_fzcOps='';
+function fzAddCampoConfirm(){
+  const nome=(_fzcNome||'').trim(); if(!nome){ alert('Dê um nome ao campo.'); return; }
+  const c={id:'c'+Math.random().toString(36).slice(2,8),nome,tipo:_fzcTipo,obr:!!_fzcObr};
+  if(_fzcTipo==='opcao'){ const raw=(_fzcOps||'').split(',').map(s=>s.trim()).filter(Boolean); c.ops=raw.length?raw:['Opção 1','Opção 2']; }
+  _faseCampos.push(c); _addCampoOpen=false; _fzcNome=''; _fzcOps=''; _fzcTipo='texto'; _fzcObr=false; renderFzCampos();
+}
+function fzMoveCampo(i,d){ const j=i+d; if(j<0||j>=_faseCampos.length)return; const a=_faseCampos;[a[i],a[j]]=[a[j],a[i]]; renderFzCampos(); }
+function fzDelCampo(i){ _faseCampos.splice(i,1); renderFzCampos(); }
+function renderFzDestinos(){
+  const el=document.getElementById('fz_destinos'); if(!el)return;
+  const outras=S.colunas.filter(x=>x.id!==_faseEdit); const todas=_faseDest==null;
+  el.innerHTML=`<div style="font-size:11px;color:var(--tx3);margin-bottom:6px">${todas?'Todas liberadas (padrão) — marque para restringir.':'Só as fases marcadas abaixo.'}</div>`+
+   outras.map(x=>{ const on=todas||(_faseDest&&_faseDest.includes(x.id)); return `<div class="fzc-item"><span style="flex:1">${esc(x.nome)}</span><span class="tg ${on?'on':''}" onclick="fzTogDest('${x.id}')"><i></i></span></div>`;}).join('');
+}
+function fzTogDest(id){
+  if(_faseDest==null) _faseDest=S.colunas.filter(x=>x.id!==_faseEdit).map(x=>x.id);
+  const i=_faseDest.indexOf(id); if(i<0)_faseDest.push(id); else _faseDest.splice(i,1);
+  renderFzDestinos();
+}
+function closeFaseCfg(){ document.getElementById('modalFase').classList.remove('show'); _faseEdit=null; _addCampoOpen=false; }
 function saveFaseCfg(){
   const nm=(document.getElementById('fz_nome').value||'').trim(); if(!nm){ alert('Dê um nome à fase.'); return; }
-  if(_faseEdit){ const k=S.colunas.find(x=>x.id===_faseEdit); if(k){ k.nome=nm; k.papel=_faseP; k.gate=_faseG; k.fim=(_faseP==='ganho'); } }
-  else { S.colunas.push({id:uid(),nome:nm,papel:_faseP,gate:_faseG,fim:(_faseP==='ganho')}); }
+  const dest=(_faseDest==null)?null:_faseDest.slice(), campos=_faseCampos.slice();
+  if(_faseEdit){ const k=S.colunas.find(x=>x.id===_faseEdit); if(k){ k.nome=nm; k.papel=_faseP; k.gate=_faseG; k.fim=(_faseP==='ganho'); k.campos=campos; k.destinos=dest; } }
+  else { S.colunas.push({id:uid(),nome:nm,papel:_faseP,gate:_faseG,fim:(_faseP==='ganho'),campos:campos,destinos:dest}); }
   save(); cFases(); closeFaseCfg(); render();
 }
 function delFaseFromCfg(){ const id=_faseEdit; closeFaseCfg(); if(id) delColuna(id); }
@@ -641,7 +757,36 @@ function renderOppDetail(){
       ${oc?di('Orçamento',fmtBRL(oc.total)+' · '+(oc.status||'rascunho')):''}
     </div>
     ${o.obs?`<div class="dobs">${esc(o.obs)}</div>`:''}
+    ${oppFormHTML(o)}
+    ${oppMoverHTML(o)}
   </div>`;
+}
+const _js=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+// formulário de processo da fase atual (campos configuráveis, base Pipefy)
+function oppFormHTML(o){
+  const fid=o.colId, campos=colCampos(fid); if(!campos.length) return '';
+  const d=(o.faseDados&&o.faseDados[fid])||{};
+  const rows=campos.map(c=>{ const v=d[c.id]!==undefined?d[c.id]:''; const req=c.obr?' <span style="color:var(--red)">*</span>':''; let inp='';
+    if(c.tipo==='textolongo') inp=`<textarea class="fi" onchange="setCampo('${o.id}','${fid}','${c.id}',this.value)" placeholder="Digite…">${esc(v)}</textarea>`;
+    else if(c.tipo==='data') inp=`<input class="fi" type="date" value="${esc(v)}" onchange="setCampo('${o.id}','${fid}','${c.id}',this.value)">`;
+    else if(c.tipo==='num'||c.tipo==='moeda') inp=`<input class="fi" type="number" step="0.01" value="${esc(v)}" onchange="setCampo('${o.id}','${fid}','${c.id}',this.value)" placeholder="${c.tipo==='moeda'?'R$ 0,00':'0'}">`;
+    else if(c.tipo==='opcao') inp=`<div class="opts">${(c.ops||[]).map(op=>`<button class="opt ${v===op?'on':''}" onclick="setCampo('${o.id}','${fid}','${c.id}','${_js(op)}')">${esc(op)}</button>`).join('')}</div>`;
+    else if(c.tipo==='simnao') inp=`<div class="opts"><button class="opt yes ${v==='Sim'?'on':''}" onclick="setCampo('${o.id}','${fid}','${c.id}','Sim')">Sim</button><button class="opt ${v==='Não'?'on':''}" onclick="setCampo('${o.id}','${fid}','${c.id}','Não')">Não</button></div>`;
+    else inp=`<input class="fi" type="text" value="${esc(v)}" onchange="setCampo('${o.id}','${fid}','${c.id}',this.value)">`;
+    return `<div class="ffld"><label class="fl">${esc(c.nome)}${req}</label>${inp}</div>`;
+  }).join('');
+  return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">assignment</span>Formulário — ${esc(colNome(fid))}</div>${rows}</div>`;
+}
+// menu "mover card para fase" (por dentro do card), respeitando destinos permitidos + gate
+function oppMoverHTML(o){
+  const fid=o.colId, ci=colIdx(fid), dests=destinosDe(fid), gate=colGate(fid), falta=faltaParaSair(o,fid);
+  if(!dests.length) return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv-empty">Fase final — sem movimentação.</div></div>`;
+  const btns=dests.map(did=>{ const fwd=colIdx(did)>ci; let tag='',dis='';
+    if(falta.length && fwd){ if(gate==='rigida'){ tag=`<span class="dmv-blk"><span class="material-symbols-rounded">lock</span>trava rígida</span>`; dis='disabled'; } else if(gate==='suave'){ tag=`<span class="dmv-warn"><span class="material-symbols-rounded">warning</span>avisa</span>`; } }
+    return `<button class="dmvbtn ${fwd?'':'back'}" ${dis} onclick="moverOppPara('${o.id}','${did}')"><span class="material-symbols-rounded ar">${fwd?'east':'west'}</span>${esc(colNome(did))}${tag}</button>`;
+  }).join('');
+  const hint=(falta.length&&gate!=='nenhuma')?`<div class="dmv-hint"><span class="material-symbols-rounded">info</span>Falta: <b>${esc(falta.join(', '))}</b>. ${gate==='rigida'?'A trava rígida bloqueia o avanço.':'A trava suave avisa mas deixa avançar.'}</div>`:'';
+  return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv">${btns}</div>${hint}</div>`;
 }
 
 /* modal oportunidade */
