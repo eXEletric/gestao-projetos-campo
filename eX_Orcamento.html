@@ -460,7 +460,8 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
             <div class="ph-sub2">Responsável<button class="fpick noprint" onclick="openHP('resp')"><span class="material-symbols-rounded">list</span>usuários</button></div>
             <div class="ph-kv2">
               <label>Nome</label><input class="in" data-m="respNome" placeholder="Responsável…">
-              <label>Fone / e-mail</label><input class="in" data-m="respContato">
+              <label>Fone</label><input class="in" data-m="respFone" placeholder="—">
+              <label>E-mail</label><input class="in" data-m="respEmail" placeholder="—">
             </div>
           </div>
         </div>
@@ -590,8 +591,16 @@ function hoje(){ const t=new Date(); const p=n=>String(n).padStart(2,'0'); retur
 function maisDias(iso,d){ const t=new Date(iso+'T00:00:00'); t.setDate(t.getDate()+d); const p=n=>String(n).padStart(2,'0'); return t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate()); }
 function stampNovo(){ // orçamento novo: data de hoje + criador (usuário logado)
   const d=hoje(); setM('dataISO',d); setM('validadeISO',maisDias(d,30));
-  if(USER_NOME){ setM('respNome',USER_NOME); if(USER_EMAIL)setM('respContato',USER_EMAIL); }
+  if(USER_NOME){ setM('respNome',USER_NOME); if(USER_EMAIL)setM('respEmail',USER_EMAIL); }
   S.criadoPor=USER_NOME||S.respNome||''; S.criadoEm=d;
+}
+// número automático e ÚNICO: ORÇ-<ano>-<sequência>, tomando o maior nº já usado no ano
+async function proximoNumero(){
+  const ano=new Date().getFullYear(), pref='ORÇ-'+ano+'-';
+  try{ if(SB){ const {data}=await SB.from('orcamentos').select('numero').ilike('numero',pref+'%').is('deleted_at',null);
+    let mx=0; (data||[]).forEach(r=>{ const m=(r.numero||'').match(/(\d+)\s*$/); if(m){ const n=+m[1]; if(n>mx)mx=n; } });
+    return pref+String(mx+1).padStart(4,'0'); } }catch(e){}
+  return pref+'0001';
 }
 function cloudMsg(t){ let e=document.getElementById('cloudb'); if(!e){ e=document.createElement('span'); e.id='cloudb'; e.style.cssText='font-size:11px;color:var(--tx3)'; const bar=document.querySelector('.appbar'); if(bar)bar.appendChild(e); else return; } e.textContent=t; }
 /* catálogo real do orçamento (tabela orc_catalogo); fallback = semente CAD */
@@ -651,7 +660,7 @@ async function carregarOrc(){
   const {data,error}=await SB.from('orcamentos').select('*').eq('oportunidade_id',OPP).is('deleted_at',null).order('created_at',{ascending:false}).limit(1);
   if(error) throw error;
   if(data&&data.length){ ORC_ID=data[0].id; if(data[0].dados) S=data[0].dados; else S=orcVazio(); }
-  else { ORC_ID=null; S=orcVazio(); stampNovo(); }   // orçamento novo nasce EM BRANCO (sem escopo/obs herdados do exemplo)
+  else { ORC_ID=null; S=orcVazio(); S.numero=await proximoNumero(); stampNovo(); }   // orçamento novo nasce EM BRANCO + número automático único
   sanitize();
 }
 async function initOrc(){
@@ -785,7 +794,7 @@ function demo(){
     solDesc:"Lojas 2022 (Olimpo) — Iluminação (4 QDs) + substituição do controlador do ar-condicionado central.",
     cliNome:"COPELAND", cliContato:"Denis Ferraz", cliFone:"11 98950-4477", cliEmail:"denis.ferraz@copeland.com",
     finNome:"ASSAÍ NACIONAL", finRede:"Assaí", finNum:"256", finEnd:"Av. Vasco da Gama, s/nº — Salvador/BA",
-    respNome:"André Camilo", respContato:"62 99392-2999 · aocinnet@gmail.com",
+    respNome:"André Camilo", respFone:"62 99392-2999", respEmail:"aocinnet@gmail.com",
     equipe:"1 Eletrotécnico · 1 Eletricista · 1 Operacional",
     efetivo:[{f:'Eletrotécnico',ic:'electrical_services',n:1},{f:'Eletricista',ic:'bolt',n:1},{f:'Operacional',ic:'groups',n:1}],
     prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho',
@@ -821,7 +830,7 @@ function orcVazio(){
     solTitulo:"", solDesc:"",
     cliNome:"", cliContato:"", cliFone:"", cliEmail:"",
     finNome:"", finRede:"", finNum:"", finEnd:"",
-    respNome:"", respContato:"",
+    respNome:"", respFone:"", respEmail:"",
     equipe:"", efetivo:[],
     prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho',
     descGeral:"", descGeralOn:true,
@@ -900,6 +909,10 @@ usuarios:[
 
 /* ---------- carga / persistência ---------- */
 function sanitize(){
+  // migra orçamentos antigos: respContato combinado → Fone + E-mail separados; e rede/nº do cliente final
+  if(S.respFone===undefined)S.respFone=''; if(S.respEmail===undefined)S.respEmail='';
+  if(S.respContato && !S.respFone && !S.respEmail){ const p=S.respContato.split(/·|\||;/).map(s=>s.trim()).filter(Boolean); p.forEach(x=>{ if(x.indexOf('@')>-1)S.respEmail=x; else if(!S.respFone)S.respFone=x; }); if(!S.respFone&&!S.respEmail){ if(S.respContato.indexOf('@')>-1)S.respEmail=S.respContato; else S.respFone=S.respContato; } }
+  if(S.finRede===undefined)S.finRede=''; if(S.finNum===undefined)S.finNum='';
   if(!S.modos)S.modos={servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'};
   if(!S.soTotal)S.soTotal={servicos:false,equip:false,despesas:false,materiais:false};
   if(!S.blocoEdited)S.blocoEdited={servicos:false,equip:false,despesas:false,materiais:false};
@@ -1365,7 +1378,7 @@ function pickHP(kind,id){
     else{ const s=CAD.solucoes.find(x=>x.id===id); if(s){ setM('solTitulo',s.nome); setM('solDesc',s.escopo||''); } }
   } else if(kind==='contratante'){ const c=cliFind(id); if(c){ setM('cliNome',c.nome); setM('cliContato',c.contato||''); setM('cliFone',c.fone||''); setM('cliEmail',c.email||''); } }
   else if(kind==='final'){ const c=cliFind(id); if(c){ setM('finNome',c.nome); setM('finRede',c.grupo||''); setM('finNum',c.numero||''); setM('finEnd',c.endereco||''); } }
-  else if(kind==='resp'){ const u=CAD.usuarios.find(x=>x.id===id); if(u){ setM('respNome',u.nome); setM('respContato',(u.fone||'')+((u.fone&&u.email)?' · ':'')+(u.email||'')); } }
+  else if(kind==='resp'){ const u=CAD.usuarios.find(x=>x.id===id); if(u){ setM('respNome',u.nome); setM('respFone',u.fone||''); setM('respEmail',u.email||''); } }
   save(); closePick();
 }
 function updObs(blk,val){ if(!S.obs)S.obs={}; S.obs[blk]=val; const p=document.getElementById('obsp_'+blk); if(p)p.textContent=val?('Obs.: '+val):''; save(); }
