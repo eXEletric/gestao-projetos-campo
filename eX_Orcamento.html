@@ -1611,7 +1611,13 @@ function renderBanner(){ const el=document.getElementById('oppBanner'); if(!el)r
     <button class="btn btn-s" onclick="voltarFunil()"><span class="material-symbols-rounded">arrow_back</span>Funil</button>
   </div>`;
 }
-function setStatus(s){ S.status=s; save(); recalc(); renderBanner(); }
+function setStatus(s){ S.status=s;
+  try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){}   // local sempre
+  try{recalc();}catch(e){} writeback(S._total||0);               // atualiza o índice local do funil
+  // status é AÇÃO explícita: grava só o status na nuvem NA HORA (não arrasta edições de conteúdo não salvas)
+  if(OPP&&CLOUD&&ORC_ID){ SB.from('orcamentos').update({status:s}).eq('id',ORC_ID).then(({error})=>{ if(error)console.error('status',error); }); }
+  else if(OPP&&CLOUD){ saveOrc(); }   // proposta nova ainda sem id: o insert automático leva o status
+  renderBanner(); }
 // volta ao funil SEMPRE pelo shell (que tem o menu lateral): embutido → avisa o shell; avulso → abre o shell no funil
 function voltarFunil(){ try{ if(window.top!==window.self){ parent.postMessage({type:'exNav',view:'funil'},'*'); return; } }catch(e){} location.href='index.html#funil'; }
 

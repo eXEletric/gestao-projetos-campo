@@ -399,7 +399,7 @@ const STORE="ex_crm_v1";
 const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
 const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
-let CLOUD=false, EMPRESA_ID=null;
+let CLOUD=false, EMPRESA_ID=null, ORC_CLOUD={};
 function cloudMsg(t){ const e=document.getElementById('cloudb'); if(e)e.textContent=t; }
 const mCli=c=>({id:c.id,empresa_id:EMPRESA_ID,tipo:c.tipo,pai_id:c.paiId||null,nome:c.nome,cnpj:c.cnpj||null,contato:c.contato||null,fone:c.fone||null,email:c.email||null,endereco:c.endereco||null,obs:c.obs||null});
 const mFase=(f,ord)=>({id:f.id,empresa_id:EMPRESA_ID,nome:f.nome,ordem:ord,tipo:f.fim?'final':'ativa',papel:f.papel||null,gate:f.gate||'nenhuma',campos:f.campos||[],destinos:(f.destinos!==undefined?f.destinos:null)});
@@ -462,14 +462,17 @@ function cUp(table,row){ if(!CLOUD)return; SB.from(table).upsert(row).then(({err
 function cDel(table,id){ if(!CLOUD)return; SB.from(table).update({deleted_at:new Date().toISOString()}).eq('id',id).then(({error})=>{ if(error)console.error('cloud del',table,error); }); }
 function cFases(){ if(!CLOUD)return; SB.from('crm_fases').upsert(S.colunas.map((f,i)=>mFase(f,i))).then(({error})=>{ if(error)console.error('cloud fases',error); }); }
 async function carregarNuvem(){
-  const [cl,fa,op,lj,vc]=await Promise.all([
+  const [cl,fa,op,lj,vc,oc]=await Promise.all([
     SB.from('clientes').select('*').is('deleted_at',null),
     SB.from('crm_fases').select('*').is('deleted_at',null).order('ordem'),
     SB.from('oportunidades').select('*').is('deleted_at',null),
     SB.from('lojas').select('*').is('deleted_at',null),
-    SB.from('vinculos').select('*').is('deleted_at',null)
+    SB.from('vinculos').select('*').is('deleted_at',null),
+    SB.from('orcamentos').select('oportunidade_id,status,total,numero').is('deleted_at',null).order('created_at',{ascending:true})
   ]);
   if(cl.error||fa.error||op.error) throw (cl.error||fa.error||op.error);
+  // orçamentos da nuvem (fonte da verdade do status/total do funil) — o mais recente por oportunidade vence
+  ORC_CLOUD={}; ((oc&&oc.data)||[]).forEach(r=>{ if(r.oportunidade_id) ORC_CLOUD[r.oportunidade_id]={status:(r.status||'rascunho'),total:(r.total||0),numero:(r.numero||'')}; });
   S={ v:3,
     colunas:(fa.data||[]).map(f=>({id:f.id,nome:f.nome,fim:f.tipo==='final',papel:f.papel||null,gate:f.gate||'nenhuma',campos:Array.isArray(f.campos)?f.campos:[],destinos:(f.destinos===undefined?null:f.destinos)})),
     clientes:(cl.data||[]).map(c=>({id:c.id,nome:c.nome,tipo:c.tipo,paiId:c.pai_id,cnpj:c.cnpj,contato:c.contato,fone:c.fone,email:c.email,endereco:c.endereco,obs:c.obs})),
@@ -518,7 +521,11 @@ const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 const ini=n=>String(n||'?').trim().slice(0,2).toUpperCase();
 const cli=id=>S.clientes.find(x=>x.id===id);
 const fmtBRL=n=>'R$ '+(Math.round((+n||0)*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
-function orcIndex(){ try{return JSON.parse(localStorage.getItem('ex_orc_index')||'{}');}catch(e){return {};} }
+function orcIndex(){ let loc={}; try{loc=JSON.parse(localStorage.getItem('ex_orc_index')||'{}');}catch(e){} return Object.assign({},loc,ORC_CLOUD); }
+// re-lê os orçamentos da nuvem (status/total) — chamado quando o funil volta ao foco, p/ pegar mudança feita na aba da proposta
+async function refreshOrcCloud(){ if(!CLOUD||!SB)return; try{ const {data}=await SB.from('orcamentos').select('oportunidade_id,status,total,numero').is('deleted_at',null).order('created_at',{ascending:true}); if(data){ const m={}; data.forEach(r=>{ if(r.oportunidade_id) m[r.oportunidade_id]={status:(r.status||'rascunho'),total:(r.total||0),numero:(r.numero||'')}; }); ORC_CLOUD=m; render(); } }catch(e){} }
+document.addEventListener('visibilitychange',function(){ if(!document.hidden) refreshOrcCloud(); });
+window.addEventListener('focus',refreshOrcCloud);
 
 function demo(){ return { v:3,
   colunas:[
