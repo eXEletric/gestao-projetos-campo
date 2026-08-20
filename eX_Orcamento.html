@@ -393,6 +393,10 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
 .ph-esc label{font-size:10.5px;color:var(--tx3);font-weight:600}
 .ph-esc .in{font-size:12.5px!important;padding:3px 6px!important;border:1px solid transparent!important;background:transparent!important;border-radius:5px!important;box-shadow:none!important}
 .prophead .fpick{font-size:10px;margin-left:6px;padding:2px 7px}
+.ph-canal{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line2)}
+.ph-canal-t{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#b26a00;font-weight:800;display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.ph-canal-t .material-symbols-rounded{font-size:13px}
+.ph-canal .cline{font-size:12px;font-weight:700;color:var(--tx2);font-family:ui-monospace,monospace}
 @media(max-width:720px){.ph-grid{grid-template-columns:1fr}.ph-right{border-left:none;border-top:1px solid var(--line2)}}
 /* impressão: cartão com borda visível + fundo roxo forçado; inputs viram texto limpo */
 @media print{
@@ -463,6 +467,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
               <label>Fone</label><input class="in" data-m="respFone" placeholder="—">
               <label>E-mail</label><input class="in" data-m="respEmail" placeholder="—">
             </div>
+            <div id="phCanal"></div>
           </div>
         </div>
         <!-- SOLUÇÃO + ESCOPO -->
@@ -674,7 +679,7 @@ async function initOrc(){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
       USER_ID=session.user.id;
       try{ const p=await SB.from('perfis').select('nome,email,telefone,colaborador_id').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; USER_TELEFONE=p.data[0].telefone||''; USER_COLAB_ID=p.data[0].colaborador_id||null; } }catch(_){}
-      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarUsuarios(); await carregarMaoObra(); await carregarAbrangencia();
+      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
       // vínculo: pega contratante/loja da OPORTUNIDADE (pra puxar dados ao vivo do CRM, mesmo em orçamentos antigos)
       if(OPP && !S.contratanteId){ try{ const {data}=await SB.from('oportunidades').select('contratante_id,contemplado_id').eq('id',OPP).limit(1); if(data&&data[0]){ if(data[0].contratante_id)S.contratanteId=data[0].contratante_id; if(data[0].contemplado_id)S.lojaId=data[0].contemplado_id; } }catch(_){} }
@@ -1277,11 +1282,22 @@ async function carregarClientes(){
   }catch(e){ console.error('clientes/lojas',e); }
 }
 // RESPONSÁVEIS = colaboradores (Gestão › Equipe) com FUNÇÃO COMERCIAL delegada (ex.: "Comercial / Vendas")
+// Cascata (B): e-mail/telefone COMERCIAL do vendedor → se vazio, o geral do colaborador
 async function carregarUsuarios(){
-  try{ const {data,error}=await SB.from('colaboradores').select('id,nome,email,telefone,cargo,colaborador_funcoes(funcoes(nome))').is('deleted_at',null).eq('ativo',true).order('nome');
+  try{ const {data,error}=await SB.from('colaboradores').select('id,nome,email,email_comercial,telefone,telefone_comercial,cargo,colaborador_funcoes(funcoes(nome))').is('deleted_at',null).eq('ativo',true).order('nome');
     if(!error) USUARIOS=(data||[]).filter(c=>c.nome && (c.colaborador_funcoes||[]).some(cf=>cf.funcoes && /comercial|vendas/i.test(cf.funcoes.nome||'')))
-      .map(c=>({id:c.id,nome:c.nome,email:c.email||'',fone:c.telefone||'',cargo:c.cargo||''})); }catch(e){ console.error('colaboradores comercial',e); }
+      .map(c=>({id:c.id,nome:c.nome,email:(c.email_comercial||c.email||''),fone:(c.telefone_comercial||c.telefone||''),cargo:c.cargo||''})); }catch(e){ console.error('colaboradores comercial',e); }
 }
+// CANAL comercial da empresa (C) — institucional
+let CANAL={email:'',fone:'',mostrar:false};
+async function carregarEmpresaCanal(){
+  try{ if(!EMPRESA_ID)return; const {data,error}=await SB.from('empresas').select('email_comercial,telefone_comercial,mostrar_canal_comercial').eq('id',EMPRESA_ID).limit(1);
+    if(!error && data && data[0]) CANAL={email:data[0].email_comercial||'',fone:data[0].telefone_comercial||'',mostrar:data[0].mostrar_canal_comercial!==false}; }catch(e){ console.error('canal empresa',e); }
+}
+function renderCanal(){ const el=document.getElementById('phCanal'); if(!el)return;
+  if(CANAL.mostrar && (CANAL.email||CANAL.fone))
+    el.innerHTML=`<div class="ph-canal"><div class="ph-canal-t"><span class="material-symbols-rounded">domain</span>Canal comercial</div>${CANAL.email?`<div class="cline">${esc(CANAL.email)}</div>`:''}${CANAL.fone?`<div class="cline">${esc(CANAL.fone)}</div>`:''}</div>`;
+  else el.innerHTML=''; }
 // puxa AO VIVO os dados do contratante/loja/RESPONSÁVEL pelo vínculo (id) — a proposta reflete o cadastro sempre que abrir
 function refreshClienteLive(){
   if(S.contratanteId && CLIENTES){ const c=CLIENTES.find(x=>x.id===S.contratanteId);
@@ -1552,7 +1568,7 @@ function applyBlocoVis(){
 function toggleBloco(k){ S.blocoOn[k]=!blocoAtivo(k); save(); renderBlk(BLKS.find(b=>b.key===k)); applyBlocoVis(); recalc(); }
 
 /* ---------- boot ---------- */
-function boot(){ BLKS.forEach(renderBlk); applyBlocoVis(); renderDescGeral(); bindFields(); applyPrefill(); recalc(); renderBanner(); }
+function boot(){ BLKS.forEach(renderBlk); applyBlocoVis(); renderDescGeral(); bindFields(); applyPrefill(); recalc(); renderBanner(); renderCanal(); }
 initOrc();
 </script>
 </body>
