@@ -672,6 +672,9 @@ async function initOrc(){
       try{ const p=await SB.from('perfis').select('nome,email').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; } }catch(_){}
       await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarMaoObra(); await carregarAbrangencia();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
+      // vínculo: pega contratante/loja da OPORTUNIDADE (pra puxar dados ao vivo do CRM, mesmo em orçamentos antigos)
+      if(OPP && !S.contratanteId){ try{ const {data}=await SB.from('oportunidades').select('contratante_id,contemplado_id').eq('id',OPP).limit(1); if(data&&data[0]){ if(data[0].contratante_id)S.contratanteId=data[0].contratante_id; if(data[0].contemplado_id)S.lojaId=data[0].contemplado_id; } }catch(_){} }
+      refreshClienteLive();
     } else { cloudMsg('modo local (sem login)'); }
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
   if(!CLOUD){ load(); }
@@ -828,6 +831,7 @@ function orcVazio(){
     numero:"", idpipe:"",
     dataISO:"", validadeISO:"",
     solTitulo:"", solDesc:"",
+    contratanteId:null, lojaId:null,
     cliNome:"", cliContato:"", cliFone:"", cliEmail:"",
     finNome:"", finRede:"", finNum:"", finEnd:"",
     respNome:"", respFone:"", respEmail:"",
@@ -1268,6 +1272,13 @@ async function carregarClientes(){
     if(!l.error) LOJAS=(l.data||[]).map(x=>({id:x.id,tipo:'contemplado',nome:x.nome,grupo:x.grupo,numero:x.numero,contato:x.contato,endereco:x.endereco,fone:x.fone,email:x.email,cnpj:x.cnpj}));
   }catch(e){ console.error('clientes/lojas',e); }
 }
+// puxa AO VIVO os dados do contratante/loja do CRM pelo vínculo (id) — a proposta reflete o cadastro sempre que abrir
+function refreshClienteLive(){
+  if(S.contratanteId && CLIENTES){ const c=CLIENTES.find(x=>x.id===S.contratanteId);
+    if(c){ S.cliNome=c.nome||''; S.cliContato=c.contato||''; S.cliFone=c.fone||''; S.cliEmail=c.email||''; } }
+  if(S.lojaId && LOJAS){ const l=LOJAS.find(x=>x.id===S.lojaId);
+    if(l){ S.finNome=l.nome||''; S.finRede=l.grupo||''; S.finNum=l.numero||''; S.finEnd=l.endereco||''; } }
+}
 // mão de obra de referência (função×nível→R$/h) e abrangência — pro compositor de serviço
 let MAOOBRA=[], ABRANGENCIA=[];
 async function carregarMaoObra(){
@@ -1376,8 +1387,8 @@ function pickHP(kind,id){
   if(kind==='solucao'){
     if(id==='__gen'){ setM('solTitulo',''); setM('solDesc',''); }
     else{ const s=CAD.solucoes.find(x=>x.id===id); if(s){ setM('solTitulo',s.nome); setM('solDesc',s.escopo||''); } }
-  } else if(kind==='contratante'){ const c=cliFind(id); if(c){ setM('cliNome',c.nome); setM('cliContato',c.contato||''); setM('cliFone',c.fone||''); setM('cliEmail',c.email||''); } }
-  else if(kind==='final'){ const c=cliFind(id); if(c){ setM('finNome',c.nome); setM('finRede',c.grupo||''); setM('finNum',c.numero||''); setM('finEnd',c.endereco||''); } }
+  } else if(kind==='contratante'){ const c=cliFind(id); if(c){ S.contratanteId=id; setM('cliNome',c.nome); setM('cliContato',c.contato||''); setM('cliFone',c.fone||''); setM('cliEmail',c.email||''); } }
+  else if(kind==='final'){ const c=cliFind(id); if(c){ S.lojaId=id; setM('finNome',c.nome); setM('finRede',c.grupo||''); setM('finNum',c.numero||''); setM('finEnd',c.endereco||''); } }
   else if(kind==='resp'){ const u=CAD.usuarios.find(x=>x.id===id); if(u){ setM('respNome',u.nome); setM('respFone',u.fone||''); setM('respEmail',u.email||''); } }
   save(); closePick();
 }
