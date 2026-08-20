@@ -350,6 +350,10 @@ body.papel-tecnico .adm-only{display:none !important}
 .sb-i .br{font-size:9.5px;color:#8a7fbf;border:1px solid #3a3268;border-radius:9px;padding:0 6px;white-space:nowrap}
 .main{flex:1;min-width:0;display:flex;flex-direction:column}
 .topbar2{height:52px;background:var(--surf);border:1px solid var(--line);border-radius:12px;display:flex;align-items:center;padding:0 14px;gap:10px;margin-bottom:14px}
+.tb-home{display:inline-flex;align-items:center;gap:6px;background:var(--pri-bg,#efeafc);color:var(--pri,#533ab7);border:1px solid var(--line2,#ddd9ea);border-radius:9px;padding:7px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0}
+.tb-home:hover{background:var(--pri,#533ab7);color:#fff}
+.tb-home .msr{font-size:18px}
+@media(max-width:640px){.tb-home-lb{display:none}}
 .tb-emp{display:flex;align-items:center;gap:8px}
 .tb-eav{width:30px;height:30px;border-radius:8px;background:var(--pri);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .tb-enm{font-size:14px;color:var(--tx);font-weight:600;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -513,6 +517,7 @@ body.papel-tecnico .adm-only{display:none !important}
   </aside>
   <div class="main">
     <div class="topbar2">
+      <button class="tb-home" onclick="navInicio()" title="Voltar ao Painel Inicial"><span class="msr">home</span><span class="tb-home-lb">Início</span></button>
       <div class="tb-emp"><span class="tb-eav">EE</span><span class="tb-enm" id="topbar-emp">eX Eletric</span><span class="tb-lock" title="empresa fixa">🔒</span></div>
       <div class="tb-right">
       <span class="cloud-badge load" id="cloud-badge">iniciando…</span><span id="user-box"><button id="avatar-btn" onclick="toggleUserMenu(event)" title="Menu do usuário">eX</button>
@@ -1319,8 +1324,15 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="fg"><label class="fl">UF padrão</label><input class="fi" id="emp-uf" maxlength="2" placeholder="BA"></div>
     </div>
     <div class="fg"><label class="fl">Localização padrão (coordenadas ou link do mapa)</label><input class="fi" id="emp-loc"></div>
-    <div class="fg"><label class="fl">Logo da empresa (URL da imagem)</label><input class="fi" id="emp-logo" placeholder="https://… (link de uma imagem do logo)"></div>
-    <div class="note">Cidade/UF e localização padrão <b>pré-preenchem novas obras</b>. O logo aparece no menu/topo. <i>(Enviar arquivo direto virá com o Storage — por enquanto, cole o link de uma imagem.)</i></div>
+    <div class="fg"><label class="fl">Logo da empresa</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input class="fi" id="emp-logo" placeholder="cole um link OU envie uma imagem →" style="flex:1">
+        <input type="file" id="emp-logo-file" accept="image/png,image/jpeg,image/webp,image/svg+xml" style="display:none" onchange="uploadLogo(this)">
+        <button class="btn btn-s" type="button" onclick="document.getElementById('emp-logo-file').click()"><span class="msr">upload</span>Enviar imagem</button>
+      </div>
+      <div id="emp-logo-prev" style="margin-top:8px"></div>
+    </div>
+    <div class="note">Cidade/UF e localização padrão <b>pré-preenchem novas obras</b>. O logo aparece no menu/topo. <b>Enviar imagem</b> faz upload direto (PNG/JPG/WEBP/SVG, até 3MB); ou cole um link.</div>
     </div>
   </div>
   <div class="mf" id="hub-foot"><button class="btn" onclick="closeHub()">Fechar</button><button class="btn btn-p" id="hub-save" onclick="hubSave()">Salvar</button></div>
@@ -3455,13 +3467,29 @@ async function openHub(tab, ro){
     g('emp-email-com',_EMPRESA.email_comercial); g('emp-tel-com',_EMPRESA.telefone_comercial);
     var ck=document.getElementById('emp-canal-on'); if(ck)ck.checked=(_EMPRESA.mostrar_canal_comercial!==false);
     g('emp-cidade',_EMPRESA.cidade_padrao); g('emp-uf',_EMPRESA.uf_padrao); g('emp-loc',_EMPRESA.localizacao_padrao);
-    g('emp-logo',_EMPRESA.logo_url);
+    g('emp-logo',_EMPRESA.logo_url); logoPreview(_EMPRESA.logo_url);
   }
   hubSetMode(!!ro); hubTab(tab||'perfil');
   document.getElementById('modalEmp').classList.add('show');
 }
 function openMeuPerfil(){ openHub('perfil', false); }
 function openEmpresa(){ openHub('empresa', false); }
+function logoPreview(url){ const p=document.getElementById('emp-logo-prev'); if(p)p.innerHTML=url?`<img src="${url}" alt="logo" style="max-height:56px;max-width:200px;border:1px solid var(--line);border-radius:8px;padding:5px;background:#fff">`:''; }
+async function uploadLogo(inp){
+  const f=inp.files&&inp.files[0]; if(!f)return;
+  if(!SB||!_EMPRESA){ alert('Sem dados da empresa. Salve a empresa primeiro.'); inp.value=''; return; }
+  if(f.size>3*1024*1024){ alert('Imagem muito grande (máx 3MB).'); inp.value=''; return; }
+  const ext=((f.name.split('.').pop()||'png')+'').toLowerCase().replace(/[^a-z0-9]/g,'')||'png';
+  const path='logos/'+_EMPRESA.id+'-'+(new Date().getTime())+'.'+ext;
+  const btn=inp.parentElement.querySelector('button'); const _h=btn?btn.innerHTML:''; if(btn){btn.disabled=true;btn.innerHTML='<span class="msr">hourglass_top</span>Enviando…';}
+  try{
+    const up=await SB.storage.from('publico').upload(path,f,{upsert:true,contentType:f.type||'image/png'});
+    if(up.error) throw up.error;
+    const url=SB.storage.from('publico').getPublicUrl(path).data.publicUrl;
+    document.getElementById('emp-logo').value=url; logoPreview(url);
+  }catch(e){ alert('Falha no upload do logo: '+(e.message||e)); }
+  if(btn){btn.disabled=false;btn.innerHTML=_h;} inp.value='';
+}
 function hubSave(){ if(_HUB_TAB==='empresa') saveEmpresa(); else saveMeuPerfil(); }
 async function saveEmpresa(){
   if(!SB||!_EMPRESA){ alert('Sem dados da empresa.'); return; }
