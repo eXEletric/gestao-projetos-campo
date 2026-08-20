@@ -1310,6 +1310,11 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="fg" style="grid-column:span 2"><label class="fl">E-mail</label><input class="fi" id="emp-email" type="email"></div>
     </div>
     <div class="frow">
+      <div class="fg" style="grid-column:span 2"><label class="fl">E-mail comercial <span style="color:var(--tx3);font-weight:400">(canal de vendas — aparece na proposta)</span></label><input class="fi" id="emp-email-com" type="email" placeholder="comercial@empresa.com"></div>
+      <div class="fg"><label class="fl">Telefone comercial</label><input class="fi" id="emp-tel-com" placeholder="(00) 0000-0000"></div>
+    </div>
+    <div class="fg"><label class="fl" style="display:flex;align-items:center;gap:8px;cursor:pointer"><input type="checkbox" id="emp-canal-on" style="width:16px;height:16px"> Mostrar o canal comercial na proposta</label></div>
+    <div class="frow">
       <div class="fg" style="grid-column:span 2"><label class="fl">Cidade padrão</label><input class="fi" id="emp-cidade" placeholder="Ilhéus"></div>
       <div class="fg"><label class="fl">UF padrão</label><input class="fi" id="emp-uf" maxlength="2" placeholder="BA"></div>
     </div>
@@ -3447,6 +3452,8 @@ async function openHub(tab, ro){
   if(_EMPRESA){
     g('emp-nome',_EMPRESA.nome); g('emp-cnpj',_EMPRESA.cnpj); g('emp-razao',_EMPRESA.razao_social);
     g('emp-tel',_EMPRESA.telefone); g('emp-email',_EMPRESA.email);
+    g('emp-email-com',_EMPRESA.email_comercial); g('emp-tel-com',_EMPRESA.telefone_comercial);
+    var ck=document.getElementById('emp-canal-on'); if(ck)ck.checked=(_EMPRESA.mostrar_canal_comercial!==false);
     g('emp-cidade',_EMPRESA.cidade_padrao); g('emp-uf',_EMPRESA.uf_padrao); g('emp-loc',_EMPRESA.localizacao_padrao);
     g('emp-logo',_EMPRESA.logo_url);
   }
@@ -3459,8 +3466,10 @@ function hubSave(){ if(_HUB_TAB==='empresa') saveEmpresa(); else saveMeuPerfil()
 async function saveEmpresa(){
   if(!SB||!_EMPRESA){ alert('Sem dados da empresa.'); return; }
   const v=id=>{const e=document.getElementById(id);return e?e.value.trim():'';};
+  const ck=document.getElementById('emp-canal-on');
   const row={ nome:v('emp-nome')||_EMPRESA.nome, cnpj:v('emp-cnpj')||null, razao_social:v('emp-razao')||null,
     telefone:v('emp-tel')||null, email:v('emp-email')||null,
+    email_comercial:v('emp-email-com')||null, telefone_comercial:v('emp-tel-com')||null, mostrar_canal_comercial:ck?ck.checked:true,
     cidade_padrao:v('emp-cidade')||null, uf_padrao:(v('emp-uf')||'').toUpperCase()||null, localizacao_padrao:v('emp-loc')||null,
     logo_url:v('emp-logo')||null };
   const r=await SB.from('empresas').update(row).eq('id',_EMPRESA.id);
