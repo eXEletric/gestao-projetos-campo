@@ -516,7 +516,7 @@ body.papel-tecnico .adm-only{display:none !important}
   </aside>
   <div class="main">
     <div class="topbar2">
-      <button class="tb-burger" onclick="toggleSidebar()" title="Abrir menu" aria-label="Abrir menu"><span class="msr">menu</span></button>
+      <button class="tb-burger" onclick="toggleDrawer()" title="Abrir menu" aria-label="Abrir menu"><span class="msr">menu</span></button>
       <div class="tb-emp"><span class="tb-eav">EE</span><span class="tb-enm" id="topbar-emp">eX Eletric</span><span class="tb-lock" title="empresa fixa">🔒</span></div>
       <div class="tb-right">
       <span class="cloud-badge load" id="cloud-badge">iniciando…</span><span id="user-box"><button id="avatar-btn" onclick="toggleUserMenu(event)" title="Menu do usuário">eX</button>
@@ -857,7 +857,7 @@ body.papel-tecnico .adm-only{display:none !important}
     </div>
   </div>
   <div class="ini-toast" id="ini-toast"></div>
-  <div class="sb-backdrop" id="sbBackdrop" onclick="closeSidebar()"></div>
+  <div class="sb-backdrop" id="sbBackdrop" onclick="closeDrawer()"></div>
   <div id="mtab">
     <div class="b" data-m="inicio" onclick="mtabGo('inicio')"><span class="msr">space_dashboard</span><span>Início</span></div>
     <div class="b" data-m="tarefas" onclick="mtabGo('tarefas')"><span class="msr">checklist</span><span>Tarefas</span></div>
@@ -3053,7 +3053,7 @@ function renderEmpresaView(){
   box.innerHTML = row('Nome fantasia',e.nome)+row('CNPJ',e.cnpj)+row('Razão social',e.razao_social)+row('Telefone / WhatsApp',e.telefone)+row('E-mail',e.email)+row('Cidade padrão',e.cidade_padrao)+row('UF padrão',e.uf_padrao)+row('Localização padrão',e.localizacao_padrao)+row('Logo (URL)',e.logo_url);
 }
 function navSoon(name,el){ setSbActive(el); _obranav(false); document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var t=document.getElementById('soon-title'); if(t)t.textContent=name; var v=document.getElementById('v-soon'); if(v)v.classList.add('active'); }
-function toggleSidebar(){ document.getElementById('sidebar').classList.toggle('mini'); }
+function toggleSidebar(){ var sb=document.getElementById('sidebar'); if(!sb)return; if(window.innerWidth<=640){ closeDrawer(); } else { sb.classList.toggle('mini'); } }
 function trocarEmpresa(){ var m=document.getElementById('user-menu'); if(m)m.classList.remove('open'); if(confirm('Trocar de empresa faz um NOVO LOGIN: você sai desta e entra com a outra empresa (carregando os dados dela). Deseja continuar?')){ if(typeof sair==='function')sair(); } }
 function toggleObraCfg(e){ if(e)e.stopPropagation(); var m=document.getElementById('obracfg-menu'); if(m)m.classList.toggle('open'); }
 function obraCfgGo(t){ var m=document.getElementById('obracfg-menu'); if(m)m.classList.remove('open'); tab(t,null); }
@@ -4099,9 +4099,9 @@ var INI_BAR=[['inicio','Início','space_dashboard'],['tarefas','Tarefas','checkl
 function _iniEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function _iniPapel(){ return (window._PERFIL && window._PERFIL.papel) || ''; }
 function _iniModoEfetivo(){ return _iniPapel()==='tecnico' ? 'tecnico' : INI_MODO; }
-function toggleSidebar(){ var sb=document.getElementById('sidebar'),bd=document.getElementById('sbBackdrop'); if(!sb)return; if(sb.classList.contains('drawer')){ closeSidebar(); } else { sb.classList.remove('mini'); sb.classList.add('drawer'); if(bd)bd.classList.add('on'); } }
-function closeSidebar(){ var sb=document.getElementById('sidebar'),bd=document.getElementById('sbBackdrop'); if(sb)sb.classList.remove('drawer'); if(bd)bd.classList.remove('on'); }
-document.addEventListener('click',function(e){ if(window.innerWidth<=640 && e.target.closest && e.target.closest('#sidebar .sb-i')) closeSidebar(); });
+function toggleDrawer(){ var sb=document.getElementById('sidebar'),bd=document.getElementById('sbBackdrop'); if(!sb)return; if(sb.classList.contains('drawer')){ closeDrawer(); } else { sb.classList.remove('mini'); sb.classList.add('drawer'); if(bd)bd.classList.add('on'); } }
+function closeDrawer(){ var sb=document.getElementById('sidebar'),bd=document.getElementById('sbBackdrop'); if(sb)sb.classList.remove('drawer'); if(bd)bd.classList.remove('on'); }
+document.addEventListener('click',function(e){ if(window.innerWidth<=640 && e.target.closest && e.target.closest('#sidebar .sb-i')) closeDrawer(); });
 function navInicio(el){ if(el&&typeof setSbActive==='function')setSbActive(el); if(typeof _obranav==='function')_obranav(false); document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var v=document.getElementById('v-inicio'); if(v)v.classList.add('active'); renderInicio(); try{mtabSync();}catch(e){} }
 function mtabSync(){
   var v=(document.querySelector('.view.active')||{}).id||'';
