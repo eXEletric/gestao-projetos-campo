@@ -309,11 +309,28 @@ body.viewing .chip{pointer-events:none;opacity:.55}
 .tbl tfoot .cin.num{font-weight:700;color:var(--pri);width:100px}
 .incl{color:var(--tx3);font-size:11px;font-style:italic}
 
-/* editar x ver */
-body.viewing .cin:hover,body.viewing .in:hover{border-color:transparent}
-body.viewing .del,body.viewing .addrow{display:none}
-body.viewing .cin,body.viewing .in{pointer-events:none}
-body.viewing .pin{pointer-events:none;border-color:transparent;background:transparent}
+/* ===== VER COMO O CLIENTE — prévia FIEL ao papel (espelha o @media print) ===== */
+body.viewing{background:#e9e7f0}
+body.viewing .app{max-width:900px;background:#fff;padding:30px 34px 40px;margin:0 auto 40px;box-shadow:0 6px 30px rgba(30,20,70,.16);border-radius:6px}
+body.viewing .appbar,
+body.viewing .del,body.viewing .addrow,body.viewing .intbox,body.viewing .obs textarea,
+body.viewing .pint,body.viewing .bs,body.viewing .modosw,body.viewing .oppbar,body.viewing .fpick,body.viewing .hintlbl,body.viewing .dgrab,body.viewing .blktog,
+body.viewing .sub,body.viewing #cloudb,body.viewing .noprint,body.viewing .ln.zeroprint,body.viewing .obs.obs-off,body.viewing .panel.hideprint,body.viewing .blk-off{display:none!important}
+body.viewing .obsprint,body.viewing .descprint{display:block!important}
+body.viewing .side{position:static}
+body.viewing .in,body.viewing .cin,body.viewing .pin{border:none!important;background:transparent!important;box-shadow:none!important;padding-left:0!important;color:var(--tx)!important;pointer-events:none}
+body.viewing .in:hover,body.viewing .cin:hover{border-color:transparent}
+body.viewing input[type=date]::-webkit-calendar-picker-indicator{display:none!important}
+body.viewing select.cin{-webkit-appearance:none;appearance:none}
+/* barra de prévia (escura, no topo) — só no modo Ver; nunca imprime */
+#previewBar{display:none}
+body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50;background:#2b2440;color:#fff;padding:10px 16px;flex-wrap:wrap;margin-bottom:16px}
+#previewBar .pv-lbl{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600}
+#previewBar .pv-lbl .material-symbols-rounded{font-size:18px}
+#previewBar .pv-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;border-radius:8px;padding:7px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+#previewBar .pv-btn:hover{background:rgba(255,255,255,.18)}
+#previewBar .pv-print{background:#fff;color:#2b2440;border-color:#fff}
+@media print{#previewBar{display:none!important}}
 
 /* impressão */
 @media print{
@@ -417,6 +434,12 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
 </style>
 </head>
 <body class="editing">
+<div id="previewBar">
+  <span class="pv-lbl"><span class="material-symbols-rounded">visibility</span>Prévia — é assim que o cliente recebe</span>
+  <span style="flex:1"></span>
+  <button class="pv-btn" onclick="setMode('edit')"><span class="material-symbols-rounded">edit</span>Voltar a editar</button>
+  <button class="pv-btn pv-print" onclick="window.print()"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
+</div>
 <div class="app">
 
   <!-- ===== BARRA SUPERIOR ===== -->
