@@ -1429,6 +1429,7 @@ function _emp(){ return (window._PERFIL && window._PERFIL.empresa_id) || null; }
 /* --- write-through: colaboradores --- */
 async function pushColab(c){ if(!SB||!c) return; const nz=(v)=>(v===''||v===undefined?null:v);
   _pr(await SB.from('colaboradores').upsert({id:c.id,nome:c.nome,gera_custo:!!c.custo,ativo:c.ativo!==false,email:c.email||null,telefone:c.telefone||null,empresa_id:_emp(),
+    email_comercial:nz(c.emailComercial),telefone_comercial:nz(c.telComercial),
     tipo:nz(c.tipo),cargo:nz(c.cargo),empresa:nz(c.empresa),empresa_cnpj:nz(c.empresaCnpj),admissao:nz(c.admissao),nascimento:nz(c.nascimento),cpf:nz(c.cpf),rg:nz(c.rg),cnh_cat:nz(c.cnhCat),cnh_venc:nz(c.cnhVenc),endereco:nz(c.endereco),emerg_nome:nz(c.emergNome),emerg_tel:nz(c.emergTel),obs:nz(c.obs),fin_meio:nz(c.finMeio),fin_inst:nz(c.finInst),fin_cod:nz(c.finCod),fin_benef:nz(c.finBenef),medidas:c.medidas||{}}),'pushColab'); }
 async function pushLinha(c,l){ if(!SB||!c||!l) return; if(!l._id)l._id=uid();
   _pr(await SB.from('colaborador_funcoes').upsert({id:l._id,colaborador_id:c.id,funcao_id:window._FUNC_ID[l.funcao]||null,nivel_id:window._NIV_ID[l.nivel]||null,valor_hora:(l.vh===''||l.vh==null?null:l.vh),base:l.base||'hora'}),'pushLinha'); }
@@ -1542,6 +1543,7 @@ async function carregarDaNuvem(){
   const varById={}; svR.data.forEach(v=>varById[v.id]=v.nome);
   const colab = coR.data.map(c=>({
     id:c.id, nome:c.nome, custo:c.gera_custo, ativo:c.ativo, email:c.email||'', telefone:c.telefone||'',
+    emailComercial:c.email_comercial||'', telComercial:c.telefone_comercial||'',
     tipo:c.tipo||'', cargo:c.cargo||'', empresa:c.empresa||'', empresaCnpj:c.empresa_cnpj||'',
     admissao:c.admissao||'', nascimento:c.nascimento||'', cpf:c.cpf||'', rg:c.rg||'',
     cnhCat:c.cnh_cat||'', cnhVenc:c.cnh_venc||'', endereco:c.endereco||'',
@@ -2296,8 +2298,12 @@ function cModalRender(ci){
         <div class="fg"><label class="fl">CNH cat · venc</label><div style="display:flex;gap:6px"><input class="fi" style="width:52px" value="${V('cnhCat')}" placeholder="cat" onchange="setCF(${ci},'cnhCat',this.value)"><input class="fi" type="date" value="${V('cnhVenc')}" onchange="setCF(${ci},'cnhVenc',this.value)"></div></div>
       </div>
       <div class="frow">
-        <div class="fg" style="grid-column:span 2"><label class="fl">E-mail (login / acesso ao app)</label><input class="fi" type="email" value="${V('email')}" placeholder="✉ e-mail do colaborador" onchange="setColabEmail(${ci},this.value)"></div>
+        <div class="fg" style="grid-column:span 2"><label class="fl">E-mail (contato profissional)</label><input class="fi" type="email" value="${V('email')}" placeholder="✉ e-mail do colaborador" onchange="setColabEmail(${ci},this.value)"></div>
         <div class="fg"><label class="fl">Telefone</label><input class="fi" value="${V('telefone')}" placeholder="(00) 00000-0000" onchange="setColabTel(${ci},this.value)"></div>
+      </div>
+      <div class="frow">
+        <div class="fg" style="grid-column:span 2"><label class="fl">E-mail comercial <span style="color:var(--tx3);font-weight:400">(aparece na proposta; vazio = usa o de contato)</span></label><input class="fi" type="email" value="${V('emailComercial')}" placeholder="ex.: vendas.nome@empresa.com" onchange="setCF(${ci},'emailComercial',this.value)"></div>
+        <div class="fg"><label class="fl">Telefone comercial</label><input class="fi" value="${V('telComercial')}" placeholder="(00) 0000-0000" onchange="setCF(${ci},'telComercial',this.value)"></div>
       </div>
       <div class="fg"><label class="fl">Endereço</label><input class="fi" value="${V('endereco')}" onchange="setCF(${ci},'endereco',this.value)"></div>
     </div>

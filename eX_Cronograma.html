@@ -215,6 +215,32 @@ table.db td{padding:7px 10px;border-bottom:1px solid var(--line);vertical-align:
 .chip.amb.sel{background:#faeeda;border-color:#ef9f27;color:#633806}
 .chip .h{font-family:ui-monospace,monospace;font-size:10px;opacity:.8;margin-left:5px}
 .frow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+/* FICHA DO COLABORADOR (modalC estendido) */
+#modalC .modal{width:670px}
+.csec{border-top:1px solid var(--line);margin-top:15px;padding-top:14px}
+.csec.first{border-top:none;margin-top:0;padding-top:0}
+.csec-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin-bottom:12px;display:flex;align-items:center;gap:7px}
+.csec-h .msr{font-size:17px}
+.csec-h small{margin-left:auto;font-weight:400;text-transform:none;letter-spacing:0;font-size:11px;color:var(--tx3)}
+.cchips{display:flex;flex-wrap:wrap;gap:7px}
+.cchip{font-size:12px;padding:6px 12px;border:1px solid var(--line2);border-radius:20px;background:var(--surf);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.cchip:hover{background:var(--surf2)}
+.cchip.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.cchip .msr{font-size:15px}
+.cchip.on .msr{-webkit-text-fill-color:#fff;color:#fff;background:none}
+.cnote{font-size:12px;color:var(--tx2);background:var(--pri-bg);border-radius:8px;padding:9px 12px;line-height:1.5;display:flex;gap:8px;align-items:flex-start;margin-top:10px}
+.cnote .msr{font-size:16px;flex-shrink:0;margin-top:1px}
+.cmed{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:10px}
+.vlinks{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.vlink{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:9px;padding:8px 10px;background:var(--surf)}
+.vlink .li{width:28px;height:28px;border-radius:7px;background:var(--surf2);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.vlink .li .msr{font-size:16px}
+.vlink .lt{font-size:12px;font-weight:600;flex:1;min-width:0;line-height:1.2}
+.vlink .lt small{display:block;font-weight:400;color:var(--tx3);font-size:10.5px}
+.vlink .st{font-size:10px;font-weight:600;padding:2px 7px;border-radius:8px;white-space:nowrap}
+.vlink .st.on{background:#eaf3de;color:var(--green)}
+.vlink .st.soon{background:var(--surf2);color:var(--tx3)}
+@media(max-width:560px){.vlinks{grid-template-columns:1fr}}
 .qbtns{display:flex;align-items:center;gap:6px}
 .qb{width:30px;height:34px;border:1px solid var(--line2);border-radius:6px;background:var(--surf);font-size:16px;cursor:pointer;color:var(--tx2)}
 .qb:hover{background:var(--surf2)}
@@ -444,7 +470,7 @@ body.papel-tecnico .adm-only{display:none !important}
         <button class="sb-i" onclick="navView('funil',this)"><span class="ic"><span class="msr">view_kanban</span></span><span class="lb">Funil</span></button>
         <button class="sb-i fut" onclick="navSoon('Propostas',this)"><span class="ic"><span class="msr">description</span></span><span class="lb">Propostas</span><span class="br">em breve</span></button>
         <button class="sb-i" onclick="navView('orcamento',this)"><span class="ic"><span class="msr">request_quote</span></span><span class="lb">Orçamentos</span></button>
-        <button class="sb-i fut" onclick="navSoon('Orçamento de barramento',this)"><span class="ic"><span class="msr">bolt</span></span><span class="lb">Orç. de barramento</span><span class="br">em breve</span></button>
+        <button class="sb-i" onclick="navView('barramento',this);carregarBarramento()"><span class="ic"><span class="msr">bolt</span></span><span class="lb">Orç. de barramento</span></button>
         <div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6a5f95;padding:11px 15px 4px">Cadastros</div>
         <button class="sb-i" onclick="navView('clientes',this)"><span class="ic"><span class="msr">contacts</span></span><span class="lb">Clientes</span></button>
         <button class="sb-i" onclick="navView('catservico',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Serviços</span></button>
@@ -918,6 +944,7 @@ body.papel-tecnico .adm-only{display:none !important}
   .dia-qsel .qsub{font-size:10px;color:var(--tx3);width:100%;margin-top:1px}
   </style>
   <div class="view" id="v-diario"></div>
+  <div class="view" id="v-barramento"><iframe id="bar-frame" title="Orçamento de barramento" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe></div>
   <div class="view" id="v-chat"><div class="soon-wrap"><div class="soon-ic">🚧</div><div class="soon-t">Chat interno</div><div class="soon-d">Slot reservado — em construção. Conversas da equipe e por obra + o canal <b>Assistente eX (IA)</b>, que tira dúvidas na hora e vai sintetizando problemas e soluções num banco de conhecimento. Feito para <b>apoiar o campo</b>, não fiscalizar. 👷</div></div></div>
     </div>
   </div>
@@ -1402,6 +1429,7 @@ function _emp(){ return (window._PERFIL && window._PERFIL.empresa_id) || null; }
 /* --- write-through: colaboradores --- */
 async function pushColab(c){ if(!SB||!c) return; const nz=(v)=>(v===''||v===undefined?null:v);
   _pr(await SB.from('colaboradores').upsert({id:c.id,nome:c.nome,gera_custo:!!c.custo,ativo:c.ativo!==false,email:c.email||null,telefone:c.telefone||null,empresa_id:_emp(),
+    email_comercial:nz(c.emailComercial),telefone_comercial:nz(c.telComercial),
     tipo:nz(c.tipo),cargo:nz(c.cargo),empresa:nz(c.empresa),empresa_cnpj:nz(c.empresaCnpj),admissao:nz(c.admissao),nascimento:nz(c.nascimento),cpf:nz(c.cpf),rg:nz(c.rg),cnh_cat:nz(c.cnhCat),cnh_venc:nz(c.cnhVenc),endereco:nz(c.endereco),emerg_nome:nz(c.emergNome),emerg_tel:nz(c.emergTel),obs:nz(c.obs),fin_meio:nz(c.finMeio),fin_inst:nz(c.finInst),fin_cod:nz(c.finCod),fin_benef:nz(c.finBenef),medidas:c.medidas||{}}),'pushColab'); }
 async function pushLinha(c,l){ if(!SB||!c||!l) return; if(!l._id)l._id=uid();
   _pr(await SB.from('colaborador_funcoes').upsert({id:l._id,colaborador_id:c.id,funcao_id:window._FUNC_ID[l.funcao]||null,nivel_id:window._NIV_ID[l.nivel]||null,valor_hora:(l.vh===''||l.vh==null?null:l.vh),base:l.base||'hora'}),'pushLinha'); }
@@ -1515,6 +1543,7 @@ async function carregarDaNuvem(){
   const varById={}; svR.data.forEach(v=>varById[v.id]=v.nome);
   const colab = coR.data.map(c=>({
     id:c.id, nome:c.nome, custo:c.gera_custo, ativo:c.ativo, email:c.email||'', telefone:c.telefone||'',
+    emailComercial:c.email_comercial||'', telComercial:c.telefone_comercial||'',
     tipo:c.tipo||'', cargo:c.cargo||'', empresa:c.empresa||'', empresaCnpj:c.empresa_cnpj||'',
     admissao:c.admissao||'', nascimento:c.nascimento||'', cpf:c.cpf||'', rg:c.rg||'',
     cnhCat:c.cnh_cat||'', cnhVenc:c.cnh_venc||'', endereco:c.endereco||'',
@@ -1608,7 +1637,7 @@ function demo(){
     padroes:[],
     catalogo:JSON.parse(JSON.stringify(CATALOGO_BASE)),
     colab:[
-      {id:"andre",nome:"André Camilo",custo:true,linhas:[{funcao:"Engenheiro",nivel:"Sênior",vh:85}]},
+      {id:"andre",nome:"André Camilo",custo:true,tipo:"socio",cargo:"Eletrotécnico",empresa:"Pro-W Energia Eficiente (PW)",admissao:"2024-09-17",nascimento:"1980-02-09",cpf:"886.830.791-04",rg:"41572208 DGPC GO",cnhCat:"D",cnhVenc:"2035-08-11",telefone:"+55 62 98122-2739",endereco:"Tv. Marcílio Dias, 40, Centro",linhas:[{funcao:"Engenheiro",nivel:"Sênior",vh:85}]},
       {id:"joel",nome:"Joel",custo:true,linhas:[{funcao:"Téc. Automação",nivel:"Pleno",vh:45}]},
       {id:"elvis",nome:"Elvis",custo:true,linhas:[{funcao:"Téc. Automação",nivel:"Pleno",vh:45},{funcao:"Refrigerista",nivel:"Sênior",vh:58}]},
       {id:"ednael",nome:"Ednael",custo:true,linhas:[{funcao:"Ajudante",nivel:"Júnior",vh:30}]},
@@ -2248,18 +2277,87 @@ function openColab(ci){ CIDX=ci; cModalRender(ci); document.getElementById('moda
 function closeColab(){ document.getElementById('modalC').classList.remove('show'); CIDX=-1; }
 function cModalRender(ci){
   const c=S.colab[ci];
+  const V=(k)=>_frEsc(c[k]||'');
+  const M=(k)=>_frEsc((c.medidas&&c.medidas[k])||'');
   document.getElementById('c-body').innerHTML=`
-    <div class="frow">
-      <div class="fg" style="grid-column:span 2"><label class="fl">Nome</label><input class="fi" value="${c.nome||''}" onchange="setColabNome(${ci},this.value)"></div>
-      <div class="fg"><label class="fl">Status</label><div style="display:flex;flex-direction:column;gap:4px;padding-top:4px"><label style="font-size:13px;color:var(--tx2);display:flex;align-items:center;gap:6px"><input type="checkbox" ${c.custo?'checked':''} onchange="toggleCusto(${ci},this.checked)"> gera custo</label><label style="font-size:13px;color:var(--tx2);display:flex;align-items:center;gap:6px"><input type="checkbox" ${c.ativo!==false?'checked':''} onchange="setColabAtivo(${ci},this.checked)"> ativo</label></div></div>
+    <div class="csec first">
+      <div class="csec-h"><span class="msr">person</span> Identidade <small>o núcleo — digitado aqui</small></div>
+      <div class="frow">
+        <div class="fg" style="grid-column:span 2"><label class="fl">Nome</label><input class="fi" value="${V('nome')}" onchange="setColabNome(${ci},this.value)"></div>
+        <div class="fg"><label class="fl">Status</label><div style="display:flex;flex-direction:column;gap:4px;padding-top:4px"><label style="font-size:13px;color:var(--tx2);display:flex;align-items:center;gap:6px"><input type="checkbox" ${c.custo?'checked':''} onchange="toggleCusto(${ci},this.checked)"> gera custo</label><label style="font-size:13px;color:var(--tx2);display:flex;align-items:center;gap:6px"><input type="checkbox" ${c.ativo!==false?'checked':''} onchange="setColabAtivo(${ci},this.checked)"> ativo</label></div></div>
+      </div>
+      <div class="fg"><label class="fl">Tipo de contratação</label><div class="cchips" id="c-tipo"></div></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Cargo / função</label><input class="fi" value="${V('cargo')}" placeholder="ex.: Eletricista" onchange="setCF(${ci},'cargo',this.value)"></div>
+        <div class="fg"><label class="fl">Admissão</label><input class="fi" type="date" value="${V('admissao')}" onchange="setCF(${ci},'admissao',this.value)"></div>
+        <div class="fg"><label class="fl">Nascimento</label><input class="fi" type="date" value="${V('nascimento')}" onchange="setCF(${ci},'nascimento',this.value)"></div>
+      </div>
+      <div class="frow">
+        <div class="fg"><label class="fl">CPF</label><input class="fi" value="${V('cpf')}" placeholder="000.000.000-00" onchange="setCF(${ci},'cpf',this.value)"></div>
+        <div class="fg"><label class="fl">RG + órgão</label><input class="fi" value="${V('rg')}" onchange="setCF(${ci},'rg',this.value)"></div>
+        <div class="fg"><label class="fl">CNH cat · venc</label><div style="display:flex;gap:6px"><input class="fi" style="width:52px" value="${V('cnhCat')}" placeholder="cat" onchange="setCF(${ci},'cnhCat',this.value)"><input class="fi" type="date" value="${V('cnhVenc')}" onchange="setCF(${ci},'cnhVenc',this.value)"></div></div>
+      </div>
+      <div class="frow">
+        <div class="fg" style="grid-column:span 2"><label class="fl">E-mail (contato profissional)</label><input class="fi" type="email" value="${V('email')}" placeholder="✉ e-mail do colaborador" onchange="setColabEmail(${ci},this.value)"></div>
+        <div class="fg"><label class="fl">Telefone</label><input class="fi" value="${V('telefone')}" placeholder="(00) 00000-0000" onchange="setColabTel(${ci},this.value)"></div>
+      </div>
+      <div class="frow">
+        <div class="fg" style="grid-column:span 2"><label class="fl">E-mail comercial <span style="color:var(--tx3);font-weight:400">(aparece na proposta; vazio = usa o de contato)</span></label><input class="fi" type="email" value="${V('emailComercial')}" placeholder="ex.: vendas.nome@empresa.com" onchange="setCF(${ci},'emailComercial',this.value)"></div>
+        <div class="fg"><label class="fl">Telefone comercial</label><input class="fi" value="${V('telComercial')}" placeholder="(00) 0000-0000" onchange="setCF(${ci},'telComercial',this.value)"></div>
+      </div>
+      <div class="fg"><label class="fl">Endereço</label><input class="fi" value="${V('endereco')}" onchange="setCF(${ci},'endereco',this.value)"></div>
     </div>
-    <div class="frow">
-      <div class="fg" style="grid-column:span 2"><label class="fl">E-mail (login / acesso ao app)</label><input class="fi" type="email" value="${c.email||''}" placeholder="✉ e-mail do colaborador" onchange="setColabEmail(${ci},this.value)"></div>
-      <div class="fg"><label class="fl">Telefone</label><input class="fi" value="${c.telefone||''}" placeholder="(00) 00000-0000" onchange="setColabTel(${ci},this.value)"></div>
+
+    <div class="csec">
+      <div class="csec-h"><span class="msr">domain</span> Empresa vinculada <small>muda com o tipo de contratação</small></div>
+      <div id="c-empresa"></div>
     </div>
-    <div class="fg" id="c-func-wrap"><label class="fl">Funções — função · nível · R$/h</label><div class="flines" id="c-flines"></div><div class="addfline" onclick="addLine(${ci})">+ adicionar função</div></div>
-    <div class="fg"><label class="fl">Acesso por obra</label><div id="c-acesso"></div></div>`;
-  cModalLines(ci); cModalAcesso(ci); cModalCustoVis(ci);
+
+    <div class="csec" id="c-func-wrap">
+      <div class="csec-h"><span class="msr">engineering</span> Funções <small>função · nível · R$/h (custo)</small></div>
+      <div class="flines" id="c-flines"></div><div class="addfline" onclick="addLine(${ci})">+ adicionar função</div>
+    </div>
+
+    <div class="csec">
+      <div class="csec-h"><span class="msr">straighten</span> Medidas de EPI &amp; uniforme</div>
+      <div class="cmed">
+        <div class="fg" style="margin:0"><label class="fl">Camisa</label><input class="fi" value="${M('camisa')}" onchange="setMed(${ci},'camisa',this.value)"></div>
+        <div class="fg" style="margin:0"><label class="fl">Calça</label><input class="fi" value="${M('calca')}" onchange="setMed(${ci},'calca',this.value)"></div>
+        <div class="fg" style="margin:0"><label class="fl">Botina</label><input class="fi" value="${M('botina')}" onchange="setMed(${ci},'botina',this.value)"></div>
+        <div class="fg" style="margin:0"><label class="fl">Luva</label><input class="fi" value="${M('luva')}" onchange="setMed(${ci},'luva',this.value)"></div>
+        <div class="fg" style="margin:0"><label class="fl">Capacete</label><input class="fi" value="${M('capacete')}" onchange="setMed(${ci},'capacete',this.value)"></div>
+      </div>
+    </div>
+
+    <div class="csec">
+      <div class="csec-h"><span class="msr">emergency</span> Emergência &amp; observações</div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Contato de emergência</label><input class="fi" value="${V('emergNome')}" onchange="setCF(${ci},'emergNome',this.value)"></div>
+        <div class="fg"><label class="fl">Telefone do contato</label><input class="fi" value="${V('emergTel')}" onchange="setCF(${ci},'emergTel',this.value)"></div>
+        <div class="fg"><label class="fl">Observações</label><input class="fi" value="${V('obs')}" onchange="setCF(${ci},'obs',this.value)"></div>
+      </div>
+    </div>
+
+    <div class="csec">
+      <div class="csec-h"><span class="msr">payments</span> Financeiro <small>bloco sensível</small></div>
+      <div class="frow">
+        <div class="fg"><label class="fl">Meio de pagamento</label><input class="fi" value="${V('finMeio')}" placeholder="NF / PIX / TED" onchange="setCF(${ci},'finMeio',this.value)"></div>
+        <div class="fg"><label class="fl">Instituição</label><input class="fi" value="${V('finInst')}" onchange="setCF(${ci},'finInst',this.value)"></div>
+        <div class="fg"><label class="fl">Código / chave</label><input class="fi" value="${V('finCod')}" onchange="setCF(${ci},'finCod',this.value)"></div>
+      </div>
+    </div>
+
+    <div class="csec">
+      <div class="csec-h"><span class="msr">hub</span> Vínculos <small>conecta — não redigita</small></div>
+      <div class="vlinks" id="c-vlinks"></div>
+      <div class="cnote"><span class="msr">lightbulb</span><div>Estes dados não se digitam aqui: cada vínculo abre o módulo dono. A estrutura já existe; a ligação real acende quando o módulo estiver de pé (e após rodar o SQL de vínculos).</div></div>
+    </div>
+
+    <div class="csec">
+      <div class="csec-h"><span class="msr">key</span> Acesso ao app</div>
+      <div id="c-acesso"></div>
+    </div>`;
+  cModalTipo(ci); cModalEmpresa(ci); cModalLines(ci); cModalVlinks(ci); cModalAcesso(ci); cModalCustoVis(ci);
 }
 function cModalLines(ci){
   const box=document.getElementById('c-flines'); if(!box) return; const c=S.colab[ci];
@@ -2296,15 +2394,39 @@ function colabAcessoHtml(c){
   }
   return `<div class="acc-sec"><div class="acc-sec-h">🔑 Acesso ao app</div><span class="acc-hint">Nenhuma conta de login livre. Crie um técnico (por ora no painel) e ele aparecerá aqui para vincular.</span></div>`;
 }
+const C_TIPOS=[['socio','Sócio','handshake'],['clt','CLT','badge'],['mei','MEI próprio','store'],['pj','PJ terceiro','groups']];
+const C_VLINKS=[['health_and_safety','SST · NRs, ASO, PGR','aptidão da equipe'],['folder_shared','Documentos','RG, CNH, certificados'],['masks','EPI · Ficha NR-6','entrega + verif.'],['inventory_2','Ferramentas & uniformes','estoque'],['local_shipping','Veículos','frota'],['contract','Contratos','registro / aditivos'],['apartment','Obras & alocação','onde atua'],['badge','Empresa / PJ','vínculo societário']];
+function cModalTipo(ci){ const box=document.getElementById('c-tipo'); if(!box)return; const c=S.colab[ci];
+  box.innerHTML=C_TIPOS.map(t=>`<button class="cchip ${c.tipo===t[0]?'on':''}" onclick="setColabTipo(${ci},'${t[0]}')"><span class="msr">${t[2]}</span>${t[1]}</button>`).join(''); }
+function setColabTipo(ci,k){ const c=S.colab[ci]; c.tipo=k; save(); pushColab(c); cModalTipo(ci); cModalEmpresa(ci); }
+function cModalEmpresa(ci){ const box=document.getElementById('c-empresa'); if(!box)return; const c=S.colab[ci];
+  const emp=_frEsc(c.empresa||''), cnpj=_frEsc(c.empresaCnpj||''); let h='';
+  if(c.tipo==='mei'){
+    h=`<div class="cnote"><span class="msr">store</span><div>Nesta modalidade o colaborador <b>é a própria empresa</b> (MEI) — o CNPJ é dele.</div></div>
+       <div class="fg" style="margin:10px 0 0"><label class="fl">CNPJ da MEI</label><input class="fi" value="${cnpj}" placeholder="00.000.000/0001-00" onchange="setCF(${ci},'empresaCnpj',this.value)"></div>`;
+  } else if(c.tipo==='pj'){
+    h=`<div class="frow"><div class="fg" style="grid-column:span 2;margin:0"><label class="fl">Empresa contratada (externa)</label><input class="fi" value="${emp}" placeholder="razão social do terceiro" onchange="setCF(${ci},'empresa',this.value)"></div>
+       <div class="fg" style="margin:0"><label class="fl">CNPJ</label><input class="fi" value="${cnpj}" onchange="setCF(${ci},'empresaCnpj',this.value)"></div></div>`;
+  } else if(c.tipo==='socio'||c.tipo==='clt'){
+    h=`<div class="frow"><div class="fg" style="grid-column:span 2;margin:0"><label class="fl">Empresa do grupo</label><input class="fi" list="c-emp-list" value="${emp}" placeholder="empresa do grupo" onchange="setCF(${ci},'empresa',this.value)"><datalist id="c-emp-list"><option>eX Automação e Controle</option><option>Pro-W Energia Eficiente (PW)</option><option>DIEL Service</option></datalist></div>
+       <div class="fg" style="margin:0"><label class="fl">CNPJ</label><input class="fi" value="${cnpj}" onchange="setCF(${ci},'empresaCnpj',this.value)"></div></div>`;
+  } else {
+    h=`<div class="cnote"><span class="msr">arrow_upward</span><div>Escolha o <b>tipo de contratação</b> acima — o campo de empresa se ajusta a ele.</div></div>`;
+  }
+  box.innerHTML=h; }
+function cModalVlinks(ci){ const box=document.getElementById('c-vlinks'); if(!box)return;
+  box.innerHTML=C_VLINKS.map(v=>`<div class="vlink"><span class="li"><span class="msr">${v[0]}</span></span><span class="lt">${v[1]}<small>${v[2]}</small></span><span class="st soon">em breve</span></div>`).join(''); }
+function setCF(ci,field,v){ const c=S.colab[ci]; c[field]=(typeof v==='string'?v.trim():v); save(); pushColab(c); }
+function setMed(ci,k,v){ const c=S.colab[ci]; if(!c.medidas)c.medidas={}; c.medidas[k]=(v||'').trim(); save(); pushColab(c); }
 function setColabNome(ci,v){const c=S.colab[ci];c.nome=v;save();pushColab(c);renderColab();}
 function setColabEmail(ci,v){const c=S.colab[ci];c.email=(v||'').trim();save();pushColab(c);renderColab();if(modalCOpen())cModalAcesso(ci);}
 function setColabTel(ci,v){const c=S.colab[ci];c.telefone=(v||'').trim();save();pushColab(c);}
 function toggleCusto(ci,v){const c=S.colab[ci];c.custo=v;let nova=null;if(v&&!c.linhas.length){nova={funcao:S.funcoes[0],nivel:S.niveis[0],vh:null};c.linhas.push(nova);}save();pushColab(c);if(nova)pushLinha(c,nova);renderColab();if(modalCOpen()){cModalLines(ci);cModalCustoVis(ci);}}
 function setLine(ci,li,campo,v){const c=S.colab[ci];c.linhas[li][campo]=(campo==='vh'?(parseFloat(v)||0):v);save();pushLinha(c,c.linhas[li]);renderColab();if(modalCOpen()&&campo==='base')cModalLines(ci);}
-function addFuncInline(){const v=(prompt('Nome da nova função:')||'').trim();if(!v)return null;if(!S.funcoes.includes(v)){S.funcoes.push(v);save();if(typeof renderCfg==='function')renderCfg();pushFunc(v,S.funcoes.length-1);}return v;}
-function addNivInline(){const v=(prompt('Nome do novo nível:')||'').trim();if(!v)return null;if(!S.niveis.includes(v)){S.niveis.push(v);save();if(typeof renderCfg==='function')renderCfg();pushNiv(v,S.niveis.length-1);}return v;}
-function cSetFunc(ci,i,v){ if(v==='__nova__'){ const nv=addFuncInline(); if(nv)setLine(ci,i,'funcao',nv); cModalLines(ci); return; } setLine(ci,i,'funcao',v); absorverRef(ci,i); }
-function cSetNiv(ci,i,v){ if(v==='__nova__'){ const nv=addNivInline(); if(nv)setLine(ci,i,'nivel',nv); cModalLines(ci); return; } setLine(ci,i,'nivel',v); absorverRef(ci,i); }
+async function addFuncInline(){const v=(prompt('Nome da nova função:')||'').trim();if(!v)return null;if(!S.funcoes.includes(v)){S.funcoes.push(v);save();if(typeof renderCfg==='function')renderCfg();await pushFunc(v,S.funcoes.length-1);}return v;}
+async function addNivInline(){const v=(prompt('Nome do novo nível:')||'').trim();if(!v)return null;if(!S.niveis.includes(v)){S.niveis.push(v);save();if(typeof renderCfg==='function')renderCfg();await pushNiv(v,S.niveis.length-1);}return v;}
+async function cSetFunc(ci,i,v){ if(v==='__nova__'){ const nv=await addFuncInline(); if(nv)setLine(ci,i,'funcao',nv); cModalLines(ci); return; } setLine(ci,i,'funcao',v); absorverRef(ci,i); }
+async function cSetNiv(ci,i,v){ if(v==='__nova__'){ const nv=await addNivInline(); if(nv)setLine(ci,i,'nivel',nv); cModalLines(ci); return; } setLine(ci,i,'nivel',v); absorverRef(ci,i); }
 /* colaborador ABSORVE a vh de referência (Configuração de valores) ao ter função+nível definidos */
 function absorverRef(ci,i){
   const c=S.colab[ci]; const li=c&&c.linhas[i]; if(!li||!li.funcao||!li.nivel) return;
@@ -2892,6 +3014,7 @@ function carregarOrcamento(){ const f=document.getElementById('orc-frame'); if(f
 function carregarClientes(){ const f=document.getElementById('cli-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_CRM.html?m=clientes'); }
 function carregarFunil(){ const f=document.getElementById('fun-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_CRM.html?m=funil'); }
 function carregarCatServico(){ const f=document.getElementById('catserv-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Catalogo.html?tipo=servico'); }
+function carregarBarramento(){ const f=document.getElementById('bar-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Orcamento_Barramento.html'); }
 function carregarCatEquip(){ const f=document.getElementById('catequip-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Catalogo.html?tipo=equipamento'); }
 function carregarCatDespesa(){ const f=document.getElementById('catdespesa-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Catalogo.html?tipo=despesa'); }
 function carregarCatMaoObra(){ const f=document.getElementById('catmaobra-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_MaoObra.html'); }
