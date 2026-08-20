@@ -19,7 +19,8 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .app{max-width:1220px;margin:0 auto;padding:16px 18px 80px}
 
 /* ===== TOPO ===== */
-.appbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.appbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px;position:sticky;top:0;z-index:30;background:var(--bg,#f6f5fb);padding:8px 0 7px;border-bottom:1px solid var(--line2,#e2ddf0)}
+.appbar .applogo-img{height:26px;max-width:120px;object-fit:contain;display:block}
 .logo{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--pri)}
 .logo b{color:var(--tx)}
 .modtag{font-size:12px;font-weight:600;color:var(--tx2);background:var(--surf2);padding:4px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px}
@@ -312,6 +313,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
 @media print{
   body{background:#fff}
   /* mecanismo interno — nunca vai pro cliente */
+  .appbar,
   .appbar .mode,.appbar .btn,.addrow,.del,.intbox,.obs textarea,
   .pint,.bs,.modosw,.oppbar,.fpick,.hintlbl,.dgrab,.blktog,
   .sub,#cloudb,.noprint,.ln.zeroprint,.obs.obs-off,.panel.hideprint{display:none!important}
@@ -413,7 +415,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
 
   <!-- ===== BARRA SUPERIOR ===== -->
   <div class="appbar">
-    <span class="logo"><b>e</b>X</span>
+    <span class="logo" id="appLogo"><b>e</b>X</span>
     <span class="modtag"><span class="material-symbols-rounded">request_quote</span>Orçamento</span>
     <span class="spacer"></span>
     <div class="mode">
@@ -1295,10 +1297,14 @@ async function carregarEmpresaCanal(){
   try{ if(!EMPRESA_ID)return; const {data,error}=await SB.from('empresas').select('nome,logo_url,email_comercial,telefone_comercial,mostrar_canal_comercial').eq('id',EMPRESA_ID).limit(1);
     if(!error && data && data[0]){ CANAL={email:data[0].email_comercial||'',fone:data[0].telefone_comercial||'',mostrar:data[0].mostrar_canal_comercial!==false}; EMP={logo:data[0].logo_url||'',nome:data[0].nome||''}; } }catch(e){ console.error('canal empresa',e); }
 }
-function renderBrand(){ const el=document.getElementById('phBrand'); if(!el)return;
+function renderBrand(){ const el=document.getElementById('phBrand');
   const nome=EMP.nome||'eX Eletric';
-  const mark=EMP.logo?`<img src="${esc(EMP.logo)}" alt="logo ${esc(nome)}" class="ph-logo-img">`:`<span class="ph-lg"><b>e</b>X</span>`;
-  el.innerHTML=`${mark}<span class="ph-co">${esc(nome)}<br>Automação &amp; Elétrica</span>`;
+  if(el){
+    const mark=EMP.logo?`<img src="${esc(EMP.logo)}" alt="logo ${esc(nome)}" class="ph-logo-img">`:`<span class="ph-lg"><b>e</b>X</span>`;
+    el.innerHTML=`${mark}<span class="ph-co">${esc(nome)}<br>Automação &amp; Elétrica</span>`;
+  }
+  const al=document.getElementById('appLogo');
+  if(al) al.innerHTML=EMP.logo?`<img src="${esc(EMP.logo)}" alt="logo ${esc(nome)}" class="applogo-img">`:`<b>e</b>X`;
 }
 function renderCanal(){ const el=document.getElementById('phCanal'); if(!el)return;
   if(CANAL.mostrar && (CANAL.email||CANAL.fone))
