@@ -21,6 +21,12 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 /* ===== TOPO ===== */
 .appbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px;position:sticky;top:0;z-index:30;background:var(--bg,#f6f5fb);padding:8px 0 7px;border-bottom:1px solid var(--line2,#e2ddf0)}
 .appbar .applogo-img{height:26px;max-width:120px;object-fit:contain;display:block}
+.savestate{font-size:12px;padding:5px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.savestate .material-symbols-rounded{font-size:15px}
+.savestate.ok{background:#eaf3de;color:#3b6d11}
+.savestate.warn{background:#faeeda;color:#854f0b}
+.btn.btnsalvar{border-color:#d9d3ee;background:#efeafc;color:var(--pri)}
+.btn.btnsalvar.on{background:var(--pri);color:#fff;border-color:var(--pri)}
 .logo{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--pri)}
 .logo b{color:var(--tx)}
 .modtag{font-size:12px;font-weight:600;color:var(--tx2);background:var(--surf2);padding:4px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px}
@@ -419,9 +425,11 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
     <span class="modtag"><span class="material-symbols-rounded">request_quote</span>Orçamento</span>
     <span class="spacer"></span>
     <div class="mode">
-      <button id="mView" onclick="setMode('view')"><span class="material-symbols-rounded">visibility</span>Ver</button>
       <button id="mEdit" class="on" onclick="setMode('edit')"><span class="material-symbols-rounded">edit</span>Editar</button>
+      <button id="mView" onclick="setMode('view')"><span class="material-symbols-rounded">visibility</span>Ver como o cliente</button>
     </div>
+    <span id="saveState" class="savestate"></span>
+    <button class="btn btnsalvar" id="btnSalvar" onclick="salvarManual()"><span class="material-symbols-rounded">save</span>Salvar</button>
     <button class="btn" onclick="window.print()"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
   </div>
   <div class="sub">Folha de cotação.</div>
@@ -594,6 +602,9 @@ const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
 const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
 let CLOUD=false, EMPRESA_ID=null, ORC_ID=null, _saveT=null, USER_NOME='', USER_EMAIL='', USER_ID='', USER_TELEFONE='', USER_COLAB_ID=null;
+// salvamento: MANUAL=true quando a proposta JÁ existia ao abrir (alterar depois exige clicar Salvar). Nova = auto (nasce sozinha). DIRTY=alteração pendente.
+let MANUAL=false, DIRTY=false, _lastSaved='';
+function _hhmm(){ const d=new Date(); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
 let USUARIOS=[];   // COLABORADORES comerciais (Gestão › Equipe c/ função "Comercial / Vendas") — responsáveis da proposta
 function hoje(){ const t=new Date(); const p=n=>String(n).padStart(2,'0'); return t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate()); }
 function maisDias(iso,d){ const t=new Date(iso+'T00:00:00'); t.setDate(t.getDate()+d); const p=n=>String(n).padStart(2,'0'); return t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate()); }
@@ -683,6 +694,7 @@ async function initOrc(){
       try{ const p=await SB.from('perfis').select('nome,email,telefone,colaborador_id').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; USER_TELEFONE=p.data[0].telefone||''; USER_COLAB_ID=p.data[0].colaborador_id||null; } }catch(_){}
       await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
+      MANUAL = !!ORC_ID;   // já existia ao abrir → alterações exigem clicar Salvar; nova (ORC_ID null) → auto até nascer
       // vínculo: pega contratante/loja da OPORTUNIDADE (pra puxar dados ao vivo do CRM, mesmo em orçamentos antigos)
       if(OPP && !S.contratanteId){ try{ const {data}=await SB.from('oportunidades').select('contratante_id,contemplado_id').eq('id',OPP).limit(1); if(data&&data[0]){ if(data[0].contratante_id)S.contratanteId=data[0].contratante_id; if(data[0].contemplado_id)S.lojaId=data[0].contemplado_id; } }catch(_){} }
       refreshClienteLive();
@@ -943,7 +955,24 @@ function sanitize(){
 }
 const blocoAtivo=k=>S.blocoOn[k]!==false;
 function load(){ try{const r=localStorage.getItem(STORE);S=r?JSON.parse(r):orcVazio();}catch(e){S=orcVazio();} sanitize(); }
-function save(){ try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){} saveOrc(); }
+function save(){ try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){}   // localStorage = rede de segurança, sempre
+  if(MANUAL){ DIRTY=true; renderSaveState(); }   // proposta existente: só marca pendente; nuvem/funil só no botão Salvar
+  else { saveOrc(); }                            // proposta nova (ou modo local): salva sozinha
+}
+function salvarManual(){
+  if(!(OPP&&CLOUD)){ DIRTY=false; renderSaveState(); return; }
+  clearTimeout(_saveT); try{recalc();}catch(e){} pushOrc();
+  DIRTY=false; _lastSaved=_hhmm(); renderSaveState();
+}
+function renderSaveState(){
+  const st=document.getElementById('saveState'), bt=document.getElementById('btnSalvar');
+  if(!st||!bt) return;
+  if(!MANUAL){ st.className='savestate ok'; st.innerHTML='<span class="material-symbols-rounded">cloud_done</span>Salvo automaticamente'; bt.style.display='none'; return; }
+  bt.style.display='';
+  if(DIRTY){ st.className='savestate warn'; st.innerHTML='<span class="material-symbols-rounded">warning</span>Alterações não salvas'; bt.classList.add('on'); }
+  else { st.className='savestate ok'; st.innerHTML='<span class="material-symbols-rounded">check_circle</span>Salvo'+(_lastSaved?(' às '+_lastSaved):''); bt.classList.remove('on'); }
+}
+window.addEventListener('beforeunload',function(e){ if(MANUAL&&DIRTY){ e.preventDefault(); e.returnValue=''; } });
 function resetDemo(){ if(OPP&&CLOUD){ if(confirm("Recarregar este orçamento do banco (nuvem)?")){ carregarOrc().then(()=>boot()).catch(e=>console.error(e)); } return; } if(confirm("Recarregar o exemplo Copeland/Assaí? As edições atuais serão perdidas.")){S=demo();save();boot();} }
 
 /* ---------- blocos ---------- */
@@ -1582,7 +1611,7 @@ function applyBlocoVis(){
 function toggleBloco(k){ S.blocoOn[k]=!blocoAtivo(k); save(); renderBlk(BLKS.find(b=>b.key===k)); applyBlocoVis(); recalc(); }
 
 /* ---------- boot ---------- */
-function boot(){ BLKS.forEach(renderBlk); applyBlocoVis(); renderDescGeral(); bindFields(); applyPrefill(); recalc(); renderBanner(); renderCanal(); renderBrand(); }
+function boot(){ BLKS.forEach(renderBlk); applyBlocoVis(); renderDescGeral(); bindFields(); applyPrefill(); recalc(); renderBanner(); renderCanal(); renderBrand(); if(MANUAL&&_lastSaved==='')_lastSaved=_hhmm(); renderSaveState(); }
 initOrc();
 </script>
 </body>
