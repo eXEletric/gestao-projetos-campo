@@ -2998,7 +2998,9 @@ function importObra(){
 }
 function renderAll(){refreshHeaders();render();renderAcomp();renderProjetos();aplicarModoNav();checkObraPendente();}
 renderAll(); // render local primeiro (instantâneo)
-try{ navInicio(null); }catch(e){}  // landing: o app abre na apresentação inicial
+function navFromHash(){ var h=(location.hash||'').replace('#','').trim().toLowerCase(); if(!h) return false; var map={funil:'funil',orcamento:'orcamento',orc:'orcamento',clientes:'clientes',crm:'clientes',obras:'proj',inicio:'__inicio'}; var t=map[h]; if(!t) return false; if(t==='__inicio'){ navInicio(null); return true; } try{ navView(t,null); }catch(e){ return false; } return true; }
+window.addEventListener('hashchange',function(){ try{ navFromHash(); }catch(e){} });
+try{ if(!navFromHash()) navInicio(null); }catch(e){ try{navInicio(null);}catch(_){} }  // landing: apresentação inicial, ou a rota vinda do hash (#funil, #orcamento…)
 async function bootNuvem(){
   if(!SB){ nuvemStatus('modo local','err'); return; }
   nuvemStatus('conectando…','load');
@@ -3154,6 +3156,7 @@ function renderFrente(){
 window.addEventListener('message',function(e){
   var d=e.data||{};
   if(d && d.type==='eXsst:ready'){ _frenteReady=true; frentePushCtx(); }
+  if(d && d.type==='exNav' && d.view){ try{ navView(d.view,null); }catch(_){} }
 });
 
 /* ----- SST Fase 1: Responsável técnico (SESMT) ----- */

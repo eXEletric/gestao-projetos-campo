@@ -1550,10 +1550,12 @@ function renderBanner(){ const el=document.getElementById('oppBanner'); if(!el)r
     <span class="material-symbols-rounded">link</span>
     <div class="ob-txt"><b>Orçamento da oportunidade:</b> ${info?esc(info.titulo):esc(OPP)}${info&&info.fase?` <span class="ob-fase">${esc(info.fase)}</span>`:''}</div>
     <div class="ob-st">${['rascunho','enviado','aprovado'].map(s=>`<button class="obst ${st===s?'on':''}" onclick="setStatus('${s}')">${s}</button>`).join('')}</div>
-    <button class="btn btn-s" onclick="location.href='eX_CRM.html?m=funil'"><span class="material-symbols-rounded">arrow_back</span>Funil</button>
+    <button class="btn btn-s" onclick="voltarFunil()"><span class="material-symbols-rounded">arrow_back</span>Funil</button>
   </div>`;
 }
 function setStatus(s){ S.status=s; save(); recalc(); renderBanner(); }
+// volta ao funil SEMPRE pelo shell (que tem o menu lateral): embutido → avisa o shell; avulso → abre o shell no funil
+function voltarFunil(){ try{ if(window.top!==window.self){ parent.postMessage({type:'exNav',view:'funil'},'*'); return; } }catch(e){} location.href='index.html#funil'; }
 
 /* ---------- blocos: liga/desliga ---------- */
 function renderBlocosBar(){
