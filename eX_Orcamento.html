@@ -371,6 +371,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
 .ph-right{padding:15px 17px;background:var(--pri-bg);border-left:1px solid var(--line2);-webkit-print-color-adjust:exact;print-color-adjust:exact}
 .ph-brand{display:flex;align-items:center;gap:9px;margin-bottom:10px}
 .ph-lg{font-weight:800;font-size:22px;color:var(--pri)}.ph-lg b{color:var(--tx)}
+.ph-logo-img{max-height:44px;max-width:160px;object-fit:contain;display:block}
 .ph-co{font-size:11px;color:var(--tx3);line-height:1.3}
 .ph-cap{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri);font-weight:800;margin:8px 0 2px;display:flex;align-items:center;gap:5px}
 .ph-cap .material-symbols-rounded{font-size:14px}
@@ -435,7 +436,7 @@ body.viewing .pin{pointer-events:none;border-color:transparent;background:transp
         <div class="ph-grid">
           <!-- ESQUERDA: quem recebe -->
           <div class="ph-left">
-            <div class="ph-brand"><span class="ph-lg"><b>e</b>X</span><span class="ph-co">eX Eletric<br>Automação &amp; Elétrica</span></div>
+            <div class="ph-brand" id="phBrand"><span class="ph-lg"><b>e</b>X</span><span class="ph-co">eX Eletric<br>Automação &amp; Elétrica</span></div>
             <div class="ph-cap"><span class="material-symbols-rounded">business</span>Contratante<button class="fpick noprint" onclick="openHP('contratante')"><span class="material-symbols-rounded">list</span>CRM</button></div>
             <input class="in ph-nm" data-m="cliNome" placeholder="Empresa / contratante…">
             <div class="ph-kv">
@@ -1290,9 +1291,15 @@ async function carregarUsuarios(){
 }
 // CANAL comercial da empresa (C) — institucional
 let CANAL={email:'',fone:'',mostrar:false};
+let EMP={logo:'',nome:''};
 async function carregarEmpresaCanal(){
-  try{ if(!EMPRESA_ID)return; const {data,error}=await SB.from('empresas').select('email_comercial,telefone_comercial,mostrar_canal_comercial').eq('id',EMPRESA_ID).limit(1);
-    if(!error && data && data[0]) CANAL={email:data[0].email_comercial||'',fone:data[0].telefone_comercial||'',mostrar:data[0].mostrar_canal_comercial!==false}; }catch(e){ console.error('canal empresa',e); }
+  try{ if(!EMPRESA_ID)return; const {data,error}=await SB.from('empresas').select('nome,logo_url,email_comercial,telefone_comercial,mostrar_canal_comercial').eq('id',EMPRESA_ID).limit(1);
+    if(!error && data && data[0]){ CANAL={email:data[0].email_comercial||'',fone:data[0].telefone_comercial||'',mostrar:data[0].mostrar_canal_comercial!==false}; EMP={logo:data[0].logo_url||'',nome:data[0].nome||''}; } }catch(e){ console.error('canal empresa',e); }
+}
+function renderBrand(){ const el=document.getElementById('phBrand'); if(!el)return;
+  const nome=EMP.nome||'eX Eletric';
+  const mark=EMP.logo?`<img src="${esc(EMP.logo)}" alt="logo ${esc(nome)}" class="ph-logo-img">`:`<span class="ph-lg"><b>e</b>X</span>`;
+  el.innerHTML=`${mark}<span class="ph-co">${esc(nome)}<br>Automação &amp; Elétrica</span>`;
 }
 function renderCanal(){ const el=document.getElementById('phCanal'); if(!el)return;
   if(CANAL.mostrar && (CANAL.email||CANAL.fone))
@@ -1568,7 +1575,7 @@ function applyBlocoVis(){
 function toggleBloco(k){ S.blocoOn[k]=!blocoAtivo(k); save(); renderBlk(BLKS.find(b=>b.key===k)); applyBlocoVis(); recalc(); }
 
 /* ---------- boot ---------- */
-function boot(){ BLKS.forEach(renderBlk); applyBlocoVis(); renderDescGeral(); bindFields(); applyPrefill(); recalc(); renderBanner(); renderCanal(); }
+function boot(){ BLKS.forEach(renderBlk); applyBlocoVis(); renderDescGeral(); bindFields(); applyPrefill(); recalc(); renderBanner(); renderCanal(); renderBrand(); }
 initOrc();
 </script>
 </body>

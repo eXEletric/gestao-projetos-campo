@@ -350,10 +350,9 @@ body.papel-tecnico .adm-only{display:none !important}
 .sb-i .br{font-size:9.5px;color:#8a7fbf;border:1px solid #3a3268;border-radius:9px;padding:0 6px;white-space:nowrap}
 .main{flex:1;min-width:0;display:flex;flex-direction:column}
 .topbar2{height:52px;background:var(--surf);border:1px solid var(--line);border-radius:12px;display:flex;align-items:center;padding:0 14px;gap:10px;margin-bottom:14px}
-.tb-home{display:inline-flex;align-items:center;gap:6px;background:var(--pri-bg,#efeafc);color:var(--pri,#533ab7);border:1px solid var(--line2,#ddd9ea);border-radius:9px;padding:7px 12px;font:inherit;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0}
-.tb-home:hover{background:var(--pri,#533ab7);color:#fff}
-.tb-home .msr{font-size:18px}
-@media(max-width:640px){.tb-home-lb{display:none}}
+.tb-burger{display:none;align-items:center;justify-content:center;background:var(--pri-bg,#efeafc);color:var(--pri,#533ab7);border:1px solid var(--line2,#ddd9ea);border-radius:9px;width:40px;height:38px;cursor:pointer;flex-shrink:0}
+.tb-burger:hover{background:var(--pri,#533ab7);color:#fff}
+.tb-burger .msr{font-size:22px}
 .tb-emp{display:flex;align-items:center;gap:8px}
 .tb-eav{width:30px;height:30px;border-radius:8px;background:var(--pri);color:#fff;font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .tb-enm{font-size:14px;color:var(--tx);font-weight:600;max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
@@ -517,7 +516,7 @@ body.papel-tecnico .adm-only{display:none !important}
   </aside>
   <div class="main">
     <div class="topbar2">
-      <button class="tb-home" onclick="navInicio()" title="Voltar ao Painel Inicial"><span class="msr">home</span><span class="tb-home-lb">Início</span></button>
+      <button class="tb-burger" onclick="toggleSidebar()" title="Abrir menu" aria-label="Abrir menu"><span class="msr">menu</span></button>
       <div class="tb-emp"><span class="tb-eav">EE</span><span class="tb-enm" id="topbar-emp">eX Eletric</span><span class="tb-lock" title="empresa fixa">🔒</span></div>
       <div class="tb-right">
       <span class="cloud-badge load" id="cloud-badge">iniciando…</span><span id="user-box"><button id="avatar-btn" onclick="toggleUserMenu(event)" title="Menu do usuário">eX</button>
@@ -832,7 +831,16 @@ body.papel-tecnico .adm-only{display:none !important}
   #mtab .b.on::before{content:"";position:absolute;top:0;width:26px;height:3px;border-radius:2px;background:var(--pri)}
   /* ===== SHELL MOBILE: no celular o app vira o eX mobile (sem chrome de desktop) ===== */
   @media(max-width:640px){
-    #sidebar{display:none!important}
+    .tb-burger{display:inline-flex}
+    #sidebar{position:fixed;top:0;left:0;bottom:0;height:100vh;width:82vw;max-width:290px;z-index:1200;transform:translateX(-100%);transition:transform .25s ease;border-radius:0;box-shadow:6px 0 28px rgba(0,0,0,.35)}
+    #sidebar.drawer{transform:translateX(0)}
+    #sidebar.mini{width:82vw;max-width:290px}
+    #sidebar .sb-nav{flex-direction:column;flex-wrap:nowrap;overflow:auto}
+    #sidebar .sb-cap{display:block}
+    #sidebar .sb-i{width:100%;white-space:nowrap;border-left:3px solid transparent;border-bottom:none}
+    #sidebar .sb-i.on{border-left:3px solid #7d68e0;border-bottom:none}
+    .sb-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:1150;opacity:0;pointer-events:none;transition:opacity .25s}
+    .sb-backdrop.on{opacity:1;pointer-events:auto}
     .topbar2 .tb-emp{display:none}
     #mtab{display:flex}
     .main{padding-bottom:72px}
@@ -849,6 +857,7 @@ body.papel-tecnico .adm-only{display:none !important}
     </div>
   </div>
   <div class="ini-toast" id="ini-toast"></div>
+  <div class="sb-backdrop" id="sbBackdrop" onclick="closeSidebar()"></div>
   <div id="mtab">
     <div class="b" data-m="inicio" onclick="mtabGo('inicio')"><span class="msr">space_dashboard</span><span>Início</span></div>
     <div class="b" data-m="tarefas" onclick="mtabGo('tarefas')"><span class="msr">checklist</span><span>Tarefas</span></div>
@@ -4090,6 +4099,9 @@ var INI_BAR=[['inicio','Início','space_dashboard'],['tarefas','Tarefas','checkl
 function _iniEsc(s){ return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];}); }
 function _iniPapel(){ return (window._PERFIL && window._PERFIL.papel) || ''; }
 function _iniModoEfetivo(){ return _iniPapel()==='tecnico' ? 'tecnico' : INI_MODO; }
+function toggleSidebar(){ var sb=document.getElementById('sidebar'),bd=document.getElementById('sbBackdrop'); if(!sb)return; if(sb.classList.contains('drawer')){ closeSidebar(); } else { sb.classList.remove('mini'); sb.classList.add('drawer'); if(bd)bd.classList.add('on'); } }
+function closeSidebar(){ var sb=document.getElementById('sidebar'),bd=document.getElementById('sbBackdrop'); if(sb)sb.classList.remove('drawer'); if(bd)bd.classList.remove('on'); }
+document.addEventListener('click',function(e){ if(window.innerWidth<=640 && e.target.closest && e.target.closest('#sidebar .sb-i')) closeSidebar(); });
 function navInicio(el){ if(el&&typeof setSbActive==='function')setSbActive(el); if(typeof _obranav==='function')_obranav(false); document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var v=document.getElementById('v-inicio'); if(v)v.classList.add('active'); renderInicio(); try{mtabSync();}catch(e){} }
 function mtabSync(){
   var v=(document.querySelector('.view.active')||{}).id||'';
