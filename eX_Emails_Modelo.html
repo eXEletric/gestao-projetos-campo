@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eX · e-mails do responsável (modelo)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
+<style>
+:root{--pri:#533ab7;--pri-bg:#efeafc;--ink:#211d33;--tx2:#54506a;--tx3:#8b8798;--line:#e6e3f0;--line2:#d7d2e8;--bg:#f2f0ea;--green:#1d9e75;--green-bg:#e7f6ef;--amber:#b26a00;--amber-bg:#fff5e6;--red:#c0392b;--surf:#fff;--surf2:#f5f3ef}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.45;padding:22px 16px 60px}
+.material-symbols-rounded{font-variation-settings:'FILL' 0,'wght' 400,'opsz' 20;vertical-align:middle}
+.wrap{max-width:940px;margin:0 auto}
+h1{font-size:20px;font-weight:800}.lead{color:var(--tx2);font-size:13.5px;margin-top:4px}
+h2{font-size:15px;font-weight:800;margin:26px 0 12px;display:flex;align-items:center;gap:8px}
+h2 .n{background:var(--pri);color:#fff;width:24px;height:24px;border-radius:7px;display:inline-flex;align-items:center;justify-content:center;font-size:13px}
+/* papéis */
+.roles{display:grid;grid-template-columns:1fr;gap:12px}
+@media(min-width:760px){.roles{grid-template-columns:1fr 1fr 1fr}}
+.role{background:var(--surf);border:1px solid var(--line);border-radius:13px;padding:15px;position:relative}
+.role .tag{position:absolute;top:-10px;left:14px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:3px 9px;border-radius:20px}
+.role.r1 .tag{background:#eef;color:#4b4bd8}.role.r2 .tag{background:var(--green-bg);color:var(--green)}.role.r3 .tag{background:var(--amber-bg);color:var(--amber)}
+.role .ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;margin:6px 0 8px}
+.role.r1 .ic{background:#eef;color:#4b4bd8}.role.r2 .ic{background:var(--green-bg);color:var(--green)}.role.r3 .ic{background:var(--amber-bg);color:var(--amber)}
+.role .ic .material-symbols-rounded{font-size:22px}
+.role h3{font-size:14px;font-weight:800}
+.role p{font-size:12px;color:var(--tx2);margin-top:3px}
+.role .mail{font-family:ui-monospace,monospace;font-size:12px;background:var(--surf2);border:1px solid var(--line);border-radius:7px;padding:5px 8px;margin-top:8px;word-break:break-all}
+.role .show{margin-top:8px;font-size:11px;font-weight:700;display:flex;align-items:center;gap:5px}
+.role .show.no{color:var(--red)}.role .show.yes{color:var(--green)}
+.role .show .material-symbols-rounded{font-size:15px}
+.golden{display:flex;gap:9px;align-items:flex-start;background:var(--pri-bg);border:1px solid var(--pri);border-radius:11px;padding:12px 14px;margin-top:14px;font-size:13px}
+.golden .material-symbols-rounded{color:var(--pri);font-size:19px}
+.golden b{color:var(--pri)}
+/* opções */
+.opt{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:0;overflow:hidden;margin-bottom:14px}
+.opt-h{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line)}
+.opt-h .badge{width:30px;height:30px;border-radius:9px;background:var(--pri);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:15px;flex:0 0 auto}
+.opt.rec .opt-h .badge{background:var(--green)}
+.opt-h .t{font-size:15px;font-weight:800}.opt-h .s{font-size:12px;color:var(--tx3)}
+.opt-h .rectag{margin-left:auto;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--green);background:var(--green-bg);border-radius:20px;padding:3px 10px}
+.opt-body{display:grid;grid-template-columns:1fr;gap:0}
+@media(min-width:640px){.opt-body{grid-template-columns:1fr 1fr}}
+.pane{padding:14px 16px}
+.pane+.pane{border-top:1px solid var(--line)}
+@media(min-width:640px){.pane+.pane{border-top:none;border-left:1px solid var(--line)}}
+.pane .cap{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin-bottom:8px;display:flex;align-items:center;gap:5px}
+.pane .cap .material-symbols-rounded{font-size:14px}
+/* mini cadastro */
+.field{margin-bottom:7px}
+.field label{font-size:10.5px;color:var(--tx3);font-weight:700;display:block;margin-bottom:2px}
+.field .inp{border:1px solid var(--line2);border-radius:7px;padding:6px 9px;font-size:12.5px;background:var(--surf);font-family:ui-monospace,monospace}
+.field .inp.opt-field{border-style:dashed;color:var(--tx2)}
+.field .hint{font-size:10px;color:var(--tx3);margin-top:2px;font-style:italic}
+.chip-fn{display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:700;background:var(--pri-bg);color:var(--pri);border-radius:8px;padding:2px 8px;margin-top:2px}
+/* mini proposta */
+.prop{border:1px solid var(--line2);border-radius:9px;overflow:hidden;font-size:11.5px}
+.prop-h{background:var(--pri-bg);padding:7px 10px;font-weight:800;color:var(--pri);font-size:10px;text-transform:uppercase;letter-spacing:.04em}
+.prop-row{display:flex;justify-content:space-between;gap:8px;padding:5px 10px;border-top:1px solid var(--line)}
+.prop-row .k{color:var(--tx3)}.prop-row .v{font-weight:700;font-family:ui-monospace,monospace;text-align:right;word-break:break-all}
+.prop-row .v.hl{color:var(--pri)}
+.note{font-size:11.5px;color:var(--tx2);padding:0 16px 14px;display:flex;align-items:center;gap:6px}
+.note .material-symbols-rounded{font-size:15px;color:var(--pri)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>E-mails do responsável — como organizar</h1>
+  <p class="lead">O "falho" que você sentiu é 1 e-mail fazendo o papel de 3. Separando os papéis, some o conflito. Depois, 3 caminhos pro "e-mail comercial".</p>
+
+  <h2><span class="n">1</span>Os 3 papéis de e-mail (cada um no seu lugar)</h2>
+  <div class="roles">
+    <div class="role r1"><span class="tag">Login</span>
+      <div class="ic"><span class="material-symbols-rounded">key</span></div>
+      <h3>Credencial de acesso</h3>
+      <p>Só serve pra ENTRAR no sistema. Pode ser um gmail pessoal.</p>
+      <div class="mail">aocinnet@gmail.com</div>
+      <div class="show no"><span class="material-symbols-rounded">visibility_off</span>Nunca aparece pro cliente</div>
+    </div>
+    <div class="role r2"><span class="tag">Pessoa</span>
+      <div class="ic"><span class="material-symbols-rounded">badge</span></div>
+      <h3>Contato do responsável</h3>
+      <p>O e-mail profissional do vendedor — o cliente fala com ele por aqui.</p>
+      <div class="mail">ex@exeletric.com.br</div>
+      <div class="show yes"><span class="material-symbols-rounded">check_circle</span>Aparece na proposta</div>
+    </div>
+    <div class="role r3"><span class="tag">Empresa</span>
+      <div class="ic"><span class="material-symbols-rounded">domain</span></div>
+      <h3>Canal comercial (opcional)</h3>
+      <p>Uma caixa de vendas da empresa, igual pra todas as propostas.</p>
+      <div class="mail">comercial@exeletric.com.br</div>
+      <div class="show yes"><span class="material-symbols-rounded">check_circle</span>Aparece se você ligar</div>
+    </div>
+  </div>
+  <div class="golden"><span class="material-symbols-rounded">verified</span><div><b>Regra de ouro:</b> a proposta sempre mostra o <b>Contato do responsável</b> (pessoa). O login (chave) nunca aparece. Já está assim no sistema.</div></div>
+
+  <h2><span class="n">2</span>As 3 opções pro "e-mail comercial"</h2>
+
+  <!-- A -->
+  <div class="opt rec">
+    <div class="opt-h"><span class="badge">A</span><div><div class="t">Simples — o e-mail do colaborador já é o comercial</div><div class="s">Zero campo novo · resolve hoje</div></div><span class="rectag">Recomendado agora</span></div>
+    <div class="opt-body">
+      <div class="pane"><div class="cap"><span class="material-symbols-rounded">badge</span>No cadastro do colaborador</div>
+        <div class="field"><label>Nome</label><div class="inp" style="font-family:inherit">André Camilo</div></div>
+        <div class="field"><label>E-mail (profissional)</label><div class="inp">ex@exeletric.com.br</div></div>
+        <div class="field"><label>Telefone</label><div class="inp">62 98122-2739</div></div>
+        <span class="chip-fn"><span class="material-symbols-rounded" style="font-size:12px">sell</span>Comercial / Vendas</span>
+      </div>
+      <div class="pane"><div class="cap"><span class="material-symbols-rounded">description</span>Como sai na proposta</div>
+        <div class="prop"><div class="prop-h">Responsável</div>
+          <div class="prop-row"><span class="k">Nome</span><span class="v" style="font-family:inherit">André Camilo</span></div>
+          <div class="prop-row"><span class="k">E-mail</span><span class="v hl">ex@exeletric.com.br</span></div>
+          <div class="prop-row"><span class="k">Fone</span><span class="v">62 98122-2739</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><span class="material-symbols-rounded">info</span>O vendedor coloca no e-mail dele o que quer que o cliente veja. O login (gmail) fica separado, invisível.</div>
+  </div>
+
+  <!-- B -->
+  <div class="opt">
+    <div class="opt-h"><span class="badge">B</span><div><div class="t">E-mail comercial dedicado por vendedor</div><div class="s">1 campo opcional a mais no colaborador comercial</div></div></div>
+    <div class="opt-body">
+      <div class="pane"><div class="cap"><span class="material-symbols-rounded">badge</span>No cadastro do colaborador</div>
+        <div class="field"><label>E-mail (geral/interno)</label><div class="inp">andre.rh@exeletric.com.br</div></div>
+        <div class="field"><label>E-mail comercial <span style="color:var(--pri)">(só p/ propostas)</span></label><div class="inp opt-field">vendas.andre@exeletric.com.br</div><div class="hint">se vazio, usa o e-mail geral</div></div>
+        <span class="chip-fn"><span class="material-symbols-rounded" style="font-size:12px">sell</span>Comercial / Vendas</span>
+      </div>
+      <div class="pane"><div class="cap"><span class="material-symbols-rounded">description</span>Como sai na proposta</div>
+        <div class="prop"><div class="prop-h">Responsável</div>
+          <div class="prop-row"><span class="k">Nome</span><span class="v" style="font-family:inherit">André Camilo</span></div>
+          <div class="prop-row"><span class="k">E-mail</span><span class="v hl">vendas.andre@exeletric.com.br</span></div>
+          <div class="prop-row"><span class="k">Fone</span><span class="v">62 98122-2739</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><span class="material-symbols-rounded">info</span>Útil quando o e-mail interno do vendedor é diferente do que ele mostra ao cliente.</div>
+  </div>
+
+  <!-- C -->
+  <div class="opt">
+    <div class="opt-h"><span class="badge">C</span><div><div class="t">Canal comercial da empresa</div><div class="s">Config única da empresa · uma caixa de vendas p/ todas as propostas</div></div></div>
+    <div class="opt-body">
+      <div class="pane"><div class="cap"><span class="material-symbols-rounded">domain</span>Configuração da empresa</div>
+        <div class="field"><label>E-mail comercial da empresa</label><div class="inp">comercial@exeletric.com.br</div></div>
+        <div class="field"><label>Telefone comercial</label><div class="inp">62 3000-0000</div></div>
+        <div class="hint" style="margin-top:6px">Vale pra todas as propostas, independente de quem fez.</div>
+      </div>
+      <div class="pane"><div class="cap"><span class="material-symbols-rounded">description</span>Como sai na proposta</div>
+        <div class="prop"><div class="prop-h">Responsável</div>
+          <div class="prop-row"><span class="k">Nome</span><span class="v" style="font-family:inherit">André Camilo</span></div>
+          <div class="prop-row"><span class="k">E-mail</span><span class="v">ex@exeletric.com.br</span></div>
+        </div>
+        <div class="prop" style="margin-top:7px"><div class="prop-h" style="background:var(--amber-bg);color:var(--amber)">Comercial (empresa)</div>
+          <div class="prop-row"><span class="k">E-mail</span><span class="v hl">comercial@exeletric.com.br</span></div>
+          <div class="prop-row"><span class="k">Fone</span><span class="v">62 3000-0000</span></div>
+        </div>
+      </div>
+    </div>
+    <div class="note"><span class="material-symbols-rounded">info</span>Bom quando você quer uma caixa de vendas unificada — sozinha ou junto do responsável.</div>
+  </div>
+
+  <div class="golden" style="margin-top:18px"><span class="material-symbols-rounded">lightbulb</span><div><b>Recomendação:</b> começar com <b>A</b> (já funciona). <b>B</b> e <b>C</b> ficam prontos pra somar quando surgir a necessidade — não são excludentes: dá pra ter B e C juntos depois.</div></div>
+</div>
+</body>
+</html>
