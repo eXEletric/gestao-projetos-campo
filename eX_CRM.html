@@ -414,7 +414,7 @@ const PAPEL_DEF={
   negociacao:{nome:'Negociação',       ic:'handshake',         orc:'open', obra:false, req:'enviado'},
   execucao:  {nome:'Execução / Obra',  ic:'construction',      orc:'open', obra:true,  req:null},
   ganho:     {nome:'Ganho',            ic:'verified',          orc:'open', obra:false, req:null},
-  pausa:     {nome:'Geladeira / Pausa',ic:'ac_unit',           orc:false,  obra:false, req:null},
+  pausa:     {nome:'Geladeira / Pausa',ic:'ac_unit',           orc:false,  obra:false, req:null, reqEntrada:'orcamento'},
   perdido:   {nome:'Perdido',          ic:'do_not_disturb_on', orc:false,  obra:false, req:null}
 };
 const PAPEL_ORDER=['captacao','visita','proposta','negociacao','execucao','ganho','pausa','perdido'];
@@ -430,6 +430,16 @@ function reqLabel(papel){ const req=(PAPEL_DEF[papel]||{}).req;
   return req==='contratante'?'definir o cliente contratante'
        : req==='orcamento'?'gerar o orçamento'
        : req==='enviado'?'marcar o orçamento como enviado/aprovado':''; }
+// requisito de ENTRADA numa fase (ex.: Geladeira só recebe quem já tem proposta) — o gate normal só checa a SAÍDA
+function reqEntradaOK(o,destColId){ const req=(PAPEL_DEF[colPapel(destColId)]||{}).reqEntrada; if(!req)return true;
+  if(req==='orcamento') return !!orcIndex()[o.id];
+  if(req==='enviado'){ const oc=orcIndex()[o.id]; return !!oc && ['enviado','aprovado'].includes((oc.status||'').toLowerCase()); }
+  return true; }
+function checaEntrada(o,destColId){ if(reqEntradaOK(o,destColId))return '';
+  const req=(PAPEL_DEF[colPapel(destColId)]||{}).reqEntrada, alvo=colNome(destColId);
+  return req==='orcamento'
+    ? 'Sem proposta feita não dá pra mandar para "'+alvo+'" — não existe orçamento para congelar. Gere o orçamento primeiro.'
+    : 'Falta cumprir o requisito para entrar em "'+alvo+'".'; }
 /* ===== destinos permitidos + campos de fase (Pipefy) ===== */
 const colCampos=id=>{const k=S.colunas.find(x=>x.id===id);return (k&&Array.isArray(k.campos))?k.campos:[];};
 function destinosDe(id){ const k=S.colunas.find(x=>x.id===id); const outras=S.colunas.filter(x=>x.id!==id).map(x=>x.id);
@@ -673,16 +683,20 @@ const podeMoverPara=(o,destId)=>destId===o.colId || destinosDe(o.colId).includes
 function moverOppPara(oid,destId){ const o=S.oportunidades.find(x=>x.id===oid); if(!o)return;
   if(!podeMoverPara(o,destId)){ alert('Destino bloqueado a partir de "'+colNome(o.colId)+'". Libere a chave na frente para permitir.'); return; }
   const to=colIdx(destId); if(to>colIdx(o.colId) && !passaGate(o,o.colId)) return;
+  { const em=checaEntrada(o,destId); if(em){ alert(em); return; } }
   o.colId=destId; save(); cUp('oportunidades',mOpp(o)); render(); }
 function drop(e,colId,el){ e.preventDefault(); if(el)el.classList.remove('dragover'); const id=_drag||(e.dataTransfer&&e.dataTransfer.getData('text/plain')); const o=id&&S.oportunidades.find(x=>x.id===id);
   if(o && colId!==o.colId){
     if(!podeMoverPara(o,colId)){ alert('Destino bloqueado a partir de "'+colNome(o.colId)+'".'); _drag=null; render(); return; }
     const from=colIdx(o.colId), to=colIdx(colId); if(to>from && !passaGate(o,o.colId)){ _drag=null; render(); return; }
+    { const em=checaEntrada(o,colId); if(em){ alert(em); _drag=null; render(); return; } }
     o.colId=colId; save(); cUp('oportunidades',mOpp(o)); render(); }
   _drag=null; }
 function moveOpp(id,dir){ const o=S.oportunidades.find(x=>x.id===id); if(!o)return; const i=colIdx(o.colId)+dir; if(i<0||i>=S.colunas.length)return; const destId=S.colunas[i].id;
   if(!podeMoverPara(o,destId)){ alert('Destino bloqueado a partir desta fase. Libere na configuração (chave na frente).'); return; }
-  if(dir>0 && !passaGate(o,o.colId)) return; o.colId=destId; save(); cUp('oportunidades',mOpp(o)); render(); }
+  if(dir>0 && !passaGate(o,o.colId)) return;
+  { const em=checaEntrada(o,destId); if(em){ alert(em); return; } }
+  o.colId=destId; save(); cUp('oportunidades',mOpp(o)); render(); }
 function selOpp(id){ SELO=id; render(); const d=document.getElementById('oppDetail'); if(d)d.scrollIntoView({behavior:'smooth',block:'nearest'}); }
 function toggleMaster(){ MASTER=!MASTER;
   const sw=document.getElementById('msw'), led=document.getElementById('mled'), lb=document.getElementById('mlb');
