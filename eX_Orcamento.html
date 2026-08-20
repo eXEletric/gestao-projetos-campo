@@ -586,12 +586,13 @@ const STORE=OPP?('ex_orc_v6__'+OPP):'ex_orc_v6';
 const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
 const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
-let CLOUD=false, EMPRESA_ID=null, ORC_ID=null, _saveT=null, USER_NOME='', USER_EMAIL='';
+let CLOUD=false, EMPRESA_ID=null, ORC_ID=null, _saveT=null, USER_NOME='', USER_EMAIL='', USER_ID='', USER_TELEFONE='';
+let USUARIOS=[];   // responsáveis reais (tabela perfis) — pra puxar ao vivo
 function hoje(){ const t=new Date(); const p=n=>String(n).padStart(2,'0'); return t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate()); }
 function maisDias(iso,d){ const t=new Date(iso+'T00:00:00'); t.setDate(t.getDate()+d); const p=n=>String(n).padStart(2,'0'); return t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate()); }
 function stampNovo(){ // orçamento novo: data de hoje + criador (usuário logado)
   const d=hoje(); setM('dataISO',d); setM('validadeISO',maisDias(d,30));
-  if(USER_NOME){ setM('respNome',USER_NOME); if(USER_EMAIL)setM('respEmail',USER_EMAIL); }
+  if(USER_NOME){ S.respId=USER_ID||S.respId||null; setM('respNome',USER_NOME); if(USER_EMAIL)setM('respEmail',USER_EMAIL); if(USER_TELEFONE)setM('respFone',USER_TELEFONE); }
   S.criadoPor=USER_NOME||S.respNome||''; S.criadoEm=d;
 }
 // número automático e ÚNICO: ORÇ-<ano>-<sequência>, tomando o maior nº já usado no ano
@@ -669,8 +670,9 @@ async function initOrc(){
     const {data:{session}}=await SB.auth.getSession();
     if(session){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
-      try{ const p=await SB.from('perfis').select('nome,email').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; } }catch(_){}
-      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarMaoObra(); await carregarAbrangencia();
+      USER_ID=session.user.id;
+      try{ const p=await SB.from('perfis').select('nome,email,telefone').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; USER_TELEFONE=p.data[0].telefone||''; } }catch(_){}
+      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarUsuarios(); await carregarMaoObra(); await carregarAbrangencia();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
       // vínculo: pega contratante/loja da OPORTUNIDADE (pra puxar dados ao vivo do CRM, mesmo em orçamentos antigos)
       if(OPP && !S.contratanteId){ try{ const {data}=await SB.from('oportunidades').select('contratante_id,contemplado_id').eq('id',OPP).limit(1); if(data&&data[0]){ if(data[0].contratante_id)S.contratanteId=data[0].contratante_id; if(data[0].contemplado_id)S.lojaId=data[0].contemplado_id; } }catch(_){} }
@@ -831,7 +833,7 @@ function orcVazio(){
     numero:"", idpipe:"",
     dataISO:"", validadeISO:"",
     solTitulo:"", solDesc:"",
-    contratanteId:null, lojaId:null,
+    contratanteId:null, lojaId:null, respId:null,
     cliNome:"", cliContato:"", cliFone:"", cliEmail:"",
     finNome:"", finRede:"", finNum:"", finEnd:"",
     respNome:"", respFone:"", respEmail:"",
@@ -1272,12 +1274,21 @@ async function carregarClientes(){
     if(!l.error) LOJAS=(l.data||[]).map(x=>({id:x.id,tipo:'contemplado',nome:x.nome,grupo:x.grupo,numero:x.numero,contato:x.contato,endereco:x.endereco,fone:x.fone,email:x.email,cnpj:x.cnpj}));
   }catch(e){ console.error('clientes/lojas',e); }
 }
-// puxa AO VIVO os dados do contratante/loja do CRM pelo vínculo (id) — a proposta reflete o cadastro sempre que abrir
+// responsáveis reais (tabela perfis) — nome/telefone/email/papel
+async function carregarUsuarios(){
+  try{ const {data,error}=await SB.from('perfis').select('user_id,nome,email,telefone,papel,ativo').is('ativo',true).order('nome');
+    if(!error) USUARIOS=(data||[]).filter(u=>u.nome).map(u=>({id:u.user_id,nome:u.nome,email:u.email||'',fone:u.telefone||'',papel:u.papel||''})); }catch(e){ console.error('usuarios',e); }
+}
+// puxa AO VIVO os dados do contratante/loja/RESPONSÁVEL pelo vínculo (id) — a proposta reflete o cadastro sempre que abrir
 function refreshClienteLive(){
   if(S.contratanteId && CLIENTES){ const c=CLIENTES.find(x=>x.id===S.contratanteId);
     if(c){ S.cliNome=c.nome||''; S.cliContato=c.contato||''; S.cliFone=c.fone||''; S.cliEmail=c.email||''; } }
   if(S.lojaId && LOJAS){ const l=LOJAS.find(x=>x.id===S.lojaId);
     if(l){ S.finNome=l.nome||''; S.finRede=l.grupo||''; S.finNum=l.numero||''; S.finEnd=l.endereco||''; } }
+  // orçamentos antigos (sem respId): tenta casar por e-mail/nome pra vincular ao usuário real
+  if(!S.respId && USUARIOS.length && (S.respEmail||S.respNome)){ const u=USUARIOS.find(x=>(S.respEmail&&x.email&&x.email.toLowerCase()===(S.respEmail||'').toLowerCase())||(S.respNome&&x.nome===S.respNome)); if(u)S.respId=u.id; }
+  if(S.respId && USUARIOS.length){ const u=USUARIOS.find(x=>x.id===S.respId);
+    if(u){ S.respNome=u.nome||''; S.respFone=u.fone||''; S.respEmail=u.email||''; } }
 }
 // mão de obra de referência (função×nível→R$/h) e abrangência — pro compositor de serviço
 let MAOOBRA=[], ABRANGENCIA=[];
@@ -1377,7 +1388,8 @@ function openHP(kind){
     return;
   } else if(kind==='resp'){
     title='Escolher responsável (comercial)';
-    html=CAD.usuarios.filter(u=>u.papel==='comercial').map(u=>pkRow('resp',u.id,u.nome,u.email||u.fone||'')).join('');
+    const lista=USUARIOS.length?USUARIOS:CAD.usuarios.filter(u=>u.papel==='comercial');
+    html=lista.map(u=>pkRow('resp',u.id,u.nome,u.email||u.fone||'')).join('')||'<div style="color:var(--tx3);padding:12px;font-size:12px">Nenhum usuário cadastrado.</div>';
   }
   document.getElementById('pickTitle').textContent=title;
   document.getElementById('pickBody').innerHTML=html;
@@ -1389,7 +1401,7 @@ function pickHP(kind,id){
     else{ const s=CAD.solucoes.find(x=>x.id===id); if(s){ setM('solTitulo',s.nome); setM('solDesc',s.escopo||''); } }
   } else if(kind==='contratante'){ const c=cliFind(id); if(c){ S.contratanteId=id; setM('cliNome',c.nome); setM('cliContato',c.contato||''); setM('cliFone',c.fone||''); setM('cliEmail',c.email||''); } }
   else if(kind==='final'){ const c=cliFind(id); if(c){ S.lojaId=id; setM('finNome',c.nome); setM('finRede',c.grupo||''); setM('finNum',c.numero||''); setM('finEnd',c.endereco||''); } }
-  else if(kind==='resp'){ const u=CAD.usuarios.find(x=>x.id===id); if(u){ setM('respNome',u.nome); setM('respFone',u.fone||''); setM('respEmail',u.email||''); } }
+  else if(kind==='resp'){ const u=(USUARIOS.find(x=>x.id===id))||CAD.usuarios.find(x=>x.id===id); if(u){ S.respId=id; setM('respNome',u.nome); setM('respFone',u.fone||''); setM('respEmail',u.email||''); } }
   save(); closePick();
 }
 function updObs(blk,val){ if(!S.obs)S.obs={}; S.obs[blk]=val; const p=document.getElementById('obsp_'+blk); if(p)p.textContent=val?('Obs.: '+val):''; save(); }
