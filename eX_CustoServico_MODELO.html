@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>eX · Custo do serviço (modelo C)</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--pri:#533ab7;--pri-bg:#efeafc;--tx:#221d33;--tx2:#4a4560;--tx3:#8a84a0;--line:#e7e3f3;--line2:#d9d3ec;--surf:#fff;--surf2:#f6f5fb;--bg:#f2f0f8;--green:#3b6d11;--green-bg:#eaf3de;--amber:#854f0b;--amber-bg:#faeeda;--red:#a32d2d}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,sans-serif;background:var(--bg);color:var(--tx);font-size:14px;line-height:1.4}
+.material-symbols-rounded{font-variation-settings:'FILL' 0,'wght' 500,'GRAD' 0,'opsz' 24;vertical-align:middle}
+.wrap{max-width:820px;margin:0 auto;padding:16px 16px 80px}
+.appbar{display:flex;align-items:center;gap:11px;margin-bottom:6px;flex-wrap:wrap}
+.logo{font-size:22px;font-weight:800;color:var(--pri)}.logo b{color:var(--tx)}
+.tag{font-size:12px;font-weight:600;color:var(--tx2);background:var(--surf2);padding:4px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px}
+.tag .material-symbols-rounded{font-size:16px}
+.note{font-size:12.5px;color:var(--tx3);background:#fff;border:1px solid var(--line);border-left:3px solid var(--pri);border-radius:8px;padding:9px 12px;margin:8px 0 16px;line-height:1.5}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:14px 15px;margin-bottom:14px}
+.cardh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.cap{font-size:11px;text-transform:uppercase;letter-spacing:.04em;font-weight:800;color:var(--pri);display:inline-flex;align-items:center;gap:6px}
+.cap .material-symbols-rounded{font-size:17px}
+.eq-glob{background:var(--pri-bg);border-color:transparent}
+.row{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:8px 11px;margin-bottom:6px;font-size:13px}
+.row .nm{flex:1;min-width:0}
+.in{font:inherit;font-size:13px;border:1px solid var(--line2);border-radius:7px;padding:6px 8px;background:#fff;color:var(--tx);width:100%}
+.in:focus{outline:none;border-color:var(--pri);box-shadow:0 0 0 2px var(--pri-bg)}
+.in.vh{width:92px;text-align:right}
+.in.nmwide{min-width:0}
+.stepper{display:inline-flex;align-items:center;gap:2px;border:1px solid var(--line2);border-radius:7px;overflow:hidden}
+.stepper button{border:none;background:#fff;color:var(--pri);width:26px;height:28px;cursor:pointer;font-size:15px;font-weight:700}
+.stepper button:hover{background:var(--pri-bg)}
+.stepper .v{min-width:26px;text-align:center;font-weight:600}
+.ic-btn{border:1px solid var(--line2);background:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;color:var(--tx2);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.ic-btn:hover{background:var(--surf2)}
+.ic-btn.del:hover{color:var(--red);border-color:#e0b4b4}
+.ic-btn .material-symbols-rounded{font-size:18px}
+.linkbtn{border:none;background:none;color:var(--pri);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;padding:4px 2px;display:inline-flex;align-items:center;gap:4px}
+.linkbtn .material-symbols-rounded{font-size:17px}
+.btn{border:1px solid var(--line2);background:#fff;color:var(--tx2);border-radius:8px;padding:7px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.btn:hover{background:var(--surf2)}
+.btn.p{background:var(--pri);color:#fff;border-color:var(--pri)}
+.btn.p:hover{filter:brightness(1.08)}
+.btn .material-symbols-rounded{font-size:17px}
+.svc-h{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:10px}
+.svc-nm{font-size:14px;font-weight:600;flex:1;min-width:140px;border:1px solid transparent;background:transparent;padding:3px 4px;border-radius:6px}
+.svc-nm:focus{outline:none;border-color:var(--line2);background:#fff}
+.seg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden;font-size:12px}
+.seg button{border:none;background:#fff;color:var(--tx2);font:inherit;font-size:12px;padding:6px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.seg button.on{background:var(--pri);color:#fff}
+.seg .material-symbols-rounded{font-size:15px}
+.chip{font-size:11.5px;border-radius:20px;padding:3px 10px;display:inline-flex;align-items:center;gap:5px;font-weight:600}
+.chip .material-symbols-rounded{font-size:15px}
+.chip.base{background:var(--green-bg);color:var(--green)}
+.chip.adj{background:var(--amber-bg);color:var(--amber)}
+.subcap{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;font-weight:700;color:var(--tx3);margin:12px 0 6px;display:flex;align-items:center;gap:6px}
+.subcap .material-symbols-rounded{font-size:15px}
+.crewrow{display:flex;align-items:center;gap:9px;background:#fff;border:1px solid var(--line);border-radius:9px;padding:7px 10px;margin-bottom:6px;font-size:12.5px;flex-wrap:wrap}
+.crewrow.extra{border-color:var(--amber-bg);background:#fffdf8}
+.crewrow .nm{flex:1;min-width:120px}
+.crewrow .vh{color:var(--tx3);font-size:12px}
+.crewrow .val{font-weight:600;min-width:82px;text-align:right}
+.dsprow{display:flex;align-items:center;gap:8px;margin-bottom:6px}
+.dsprow .in.dn{flex:1}
+.dsprow .in.dv{width:110px;text-align:right}
+.custo-bar{display:flex;align-items:center;gap:9px;background:var(--pri-bg);border-radius:9px;padding:9px 12px;margin-top:10px;font-size:12.5px}
+.custo-bar .lbl{color:var(--tx2)}
+.custo-bar .v{margin-left:auto;font-weight:700;color:var(--pri);font-size:16px}
+.tab-in{display:flex;align-items:center;gap:8px;margin-top:8px}
+.tab-in .in{width:130px;text-align:right}
+.total{background:var(--pri);color:#fff;border-radius:12px;padding:14px 16px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.total .tl{font-size:12px;opacity:.85}
+.total .tv{font-size:20px;font-weight:800}
+.total .seg2{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:12px}
+.total .in{width:70px;text-align:right;background:rgba(255,255,255,.15);border-color:rgba(255,255,255,.35);color:#fff}
+.picker-bg{position:fixed;inset:0;background:rgba(20,14,45,.4);display:none;align-items:center;justify-content:center;padding:18px;z-index:50}
+.picker-bg.open{display:flex}
+.picker{background:#fff;border-radius:14px;max-width:400px;width:100%;padding:16px;box-shadow:0 20px 50px rgba(0,0,0,.3)}
+.picker h3{margin:0 0 10px;font-size:15px}
+.pick-item{display:flex;align-items:center;gap:9px;border:1px solid var(--line);border-radius:9px;padding:9px 11px;margin-bottom:6px;cursor:pointer;font-size:13px}
+.pick-item:hover{border-color:var(--pri);background:var(--pri-bg)}
+.pick-item .vh{margin-left:auto;color:var(--tx3);font-size:12px}
+.muted{color:var(--tx3);font-size:12px}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="appbar">
+    <span class="logo"><b>e</b>X</span>
+    <span class="tag"><span class="material-symbols-rounded">science</span>Modelo de custo — teste</span>
+    <span class="tag" style="color:var(--green);background:var(--green-bg)"><span class="material-symbols-rounded">shield_lock</span>não afeta o orçamento real</span>
+  </div>
+  <div class="note"><b>Protótipo paralelo (modelo C).</b> Aqui a gente valida o motor de custo — <b>dois modos</b> (tabelado × montado por equipe+tempo+despesas), <b>equipe global</b> que os serviços herdam e podem ajustar, e recálculo <b>ao vivo</b>. Mexa à vontade: nada aqui toca no app que já está rodando.</div>
+
+  <!-- EQUIPE GLOBAL -->
+  <div class="card eq-glob">
+    <div class="cardh">
+      <span class="cap"><span class="material-symbols-rounded">groups</span>Equipe do orçamento</span>
+      <span class="chip base" style="margin-left:auto"><span class="material-symbols-rounded">arrow_downward</span>herdada pelos serviços</span>
+    </div>
+    <div id="equipe"></div>
+    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-top:6px">
+      <button class="linkbtn" onclick="addGlob()"><span class="material-symbols-rounded">add</span>adicionar profissional</button>
+      <span class="muted"><span class="material-symbols-rounded" style="font-size:14px">database</span> R$/h viria do cadastro de colaboradores (fonte única)</span>
+      <span class="muted" style="margin-left:auto">Jornada <input class="in" id="jornada" style="width:56px;text-align:center" value="8" inputmode="decimal" oninput="setJornada(this.value)"> h/dia</span>
+    </div>
+  </div>
+
+  <!-- SERVIÇOS -->
+  <div id="servicos"></div>
+  <div style="margin:2px 0 16px"><button class="btn p" onclick="addServico()"><span class="material-symbols-rounded">add</span>Novo serviço</button></div>
+
+  <!-- TOTAL -->
+  <div class="total">
+    <div><div class="tl">Custo total dos serviços</div><div class="tv" id="tCusto">R$ 0,00</div></div>
+    <div class="seg2"><span>margem</span><input class="in" id="margem" value="30" inputmode="decimal" oninput="render()"><span>%</span>&nbsp;→&nbsp;<span>preço</span> <b id="tPreco" style="font-size:18px">R$ 0,00</b></div>
+  </div>
+</div>
+
+<!-- PICKER -->
+<div class="picker-bg" id="pickBg" onclick="if(event.target===this)closePick()">
+  <div class="picker">
+    <h3 id="pickTitle">Acrescentar profissional</h3>
+    <div id="pickList"></div>
+    <div style="text-align:right;margin-top:6px"><button class="btn" onclick="closePick()">Fechar</button></div>
+  </div>
+</div>
+
+<script>
+const uid=()=>Math.random().toString(36).slice(2,9);
+const num=v=>{ if(typeof v==='number') return isNaN(v)?0:v; v=String(v).trim(); if(v.indexOf(',')>=0) v=v.replace(/\./g,'').replace(',','.'); const n=parseFloat(v); return isNaN(n)?0:n; };
+const brl=n=>'R$ '+(Math.round(n*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+
+let S={
+  jornada:8, margem:30,
+  equipe:[{id:'e1',nome:'Eletrotécnico · Pleno',vh:18.75},{id:'e2',nome:'Ajudante',vh:15}],
+  catalogo:[{nome:'Técnico de refrigeração',vh:22},{nome:'Eletricista responsável',vh:25},{nome:'Engenheiro',vh:62.5},{nome:'Estagiário',vh:12.5}],
+  servicos:[
+    {id:uid(),nome:'Instalação de automação — 4 QDs',modo:'montado',m:{tv:3,un:'dias',removidos:[],pes:{},extras:[],despesas:[{id:uid(),nome:'Deslocamento',valor:360},{id:uid(),nome:'Hospedagem',valor:360},{id:uid(),nome:'Alimentação',valor:240}]},tab:0},
+    {id:uid(),nome:'Adequação em câmara fria',modo:'montado',m:{tv:8,un:'horas',removidos:[],pes:{},extras:[{id:uid(),nome:'Técnico de refrigeração',vh:22,pes:1}],despesas:[{id:uid(),nome:'Alimentação',valor:120}]},tab:0},
+    {id:uid(),nome:'Disjuntor tripolar 100A — fornecimento',modo:'tabelado',m:{tv:1,un:'dias',removidos:[],pes:{},extras:[],despesas:[]},tab:320}
+  ]
+};
+
+/* ---- cálculo ---- */
+function horasDe(m){ return m.un==='dias' ? num(m.tv)*num(S.jornada) : num(m.tv); }
+function baseCrew(m){ return S.equipe.filter(e=>!m.removidos.includes(e.id)).map(e=>({id:e.id,nome:e.nome,vh:e.vh,pes:(m.pes[e.id]!=null?m.pes[e.id]:1),base:true})); }
+function fullCrew(m){ return baseCrew(m).concat((m.extras||[]).map(x=>({id:x.id,nome:x.nome,vh:x.vh,pes:x.pes,base:false}))); }
+function ajustado(m){ return (m.removidos&&m.removidos.length)||(m.extras&&m.extras.length)||Object.keys(m.pes||{}).some(k=>m.pes[k]!==1); }
+function custoMO(m){ const h=horasDe(m); return fullCrew(m).reduce((a,c)=>a+num(c.pes)*h*num(c.vh),0); }
+function custoDesp(m){ return (m.despesas||[]).reduce((a,d)=>a+num(d.valor),0); }
+function custoServ(s){ return s.modo==='tabelado'?num(s.tab):(custoMO(s.m)+custoDesp(s.m)); }
+
+/* ---- equipe global ---- */
+function renderEquipe(){
+  document.getElementById('equipe').innerHTML=S.equipe.map((e,i)=>`
+    <div class="row">
+      <input class="in nmwide nm" value="${esc(e.nome)}" oninput="S.equipe[${i}].nome=this.value">
+      <span class="material-symbols-rounded" style="color:var(--tx3);font-size:16px">payments</span>
+      <input class="in vh" value="${String(e.vh).replace('.',',')}" inputmode="decimal" oninput="S.equipe[${i}].vh=num(this.value);render()">/h
+      <button class="ic-btn del" title="Remover" onclick="delGlob(${i})"><span class="material-symbols-rounded">delete</span></button>
+    </div>`).join('') || '<div class="muted" style="padding:4px 2px">Sem profissionais — adicione ao menos um.</div>';
+}
+function addGlob(){ S.equipe.push({id:uid(),nome:'Novo profissional',vh:0}); render(); }
+function delGlob(i){ S.equipe.splice(i,1); render(); }
+function setJornada(v){ S.jornada=num(v); render(); }
+
+/* ---- serviços ---- */
+function renderServicos(){
+  document.getElementById('servicos').innerHTML=S.servicos.map((s,si)=>{
+    const isMont=s.modo==='montado';
+    let body='';
+    if(isMont){
+      const m=s.m, h=horasDe(m), adj=ajustado(m);
+      const crewRows=fullCrew(m).map(c=>{
+        const val=num(c.pes)*h*num(c.vh);
+        const stepper=c.base
+          ? `<span class="stepper"><button onclick="pes('${s.id}','${c.id}',-1)">−</button><span class="v">${c.pes}</span><button onclick="pes('${s.id}','${c.id}',1)">+</button></span>`
+          : `<span class="stepper"><button onclick="pesExtra('${s.id}','${c.id}',-1)">−</button><span class="v">${c.pes}</span><button onclick="pesExtra('${s.id}','${c.id}',1)">+</button></span>`;
+        const rm=c.base
+          ? `<button class="ic-btn del" title="Tirar deste serviço" onclick="rmBase('${s.id}','${c.id}')"><span class="material-symbols-rounded">close</span></button>`
+          : `<button class="ic-btn del" title="Remover" onclick="rmExtra('${s.id}','${c.id}')"><span class="material-symbols-rounded">close</span></button>`;
+        return `<div class="crewrow ${c.base?'':'extra'}">
+          <span class="nm">${esc(c.nome)} ${c.base?'':'<span class="chip adj" style="margin-left:4px"><span class="material-symbols-rounded">add</span>extra</span>'}</span>
+          <span class="vh">${brl(c.vh)}/h</span>${stepper}<span class="muted">× ${h.toLocaleString('pt-BR',{maximumFractionDigits:2})}h</span>
+          <span class="val">${brl(val)}</span>${rm}</div>`;
+      }).join('');
+      const dspRows=(m.despesas||[]).map(d=>`
+        <div class="dsprow">
+          <input class="in dn" value="${esc(d.nome)}" oninput="setDesp('${s.id}','${d.id}','nome',this.value)">
+          <input class="in dv" value="${String(d.valor).replace('.',',')}" inputmode="decimal" oninput="setDesp('${s.id}','${d.id}','valor',this.value)">
+          <button class="ic-btn del" onclick="rmDesp('${s.id}','${d.id}')"><span class="material-symbols-rounded">close</span></button>
+        </div>`).join('');
+      body=`
+        <div style="display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-bottom:4px">
+          <span class="chip base"><span class="material-symbols-rounded">arrow_downward</span>herda a equipe base</span>
+          ${adj?'<span class="chip adj"><span class="material-symbols-rounded">tune</span>ajustado neste serviço</span>':''}
+          ${adj?`<button class="linkbtn" onclick="restaurar('${s.id}')"><span class="material-symbols-rounded">restart_alt</span>restaurar base</button>`:''}
+          <span style="margin-left:auto;display:inline-flex;align-items:center;gap:6px">
+            <input class="in" style="width:64px;text-align:center" value="${m.tv}" inputmode="decimal" oninput="setTempo('${s.id}',this.value)">
+            <span class="seg"><button class="${m.un==='dias'?'on':''}" onclick="setUn('${s.id}','dias')">dias</button><button class="${m.un==='horas'?'on':''}" onclick="setUn('${s.id}','horas')">horas</button></span>
+          </span>
+        </div>
+        <div class="subcap"><span class="material-symbols-rounded">engineering</span>Equipe (mão de obra) · ${h.toLocaleString('pt-BR',{maximumFractionDigits:2})}h cada</div>
+        ${crewRows}
+        <button class="linkbtn" onclick="openPick('${s.id}')"><span class="material-symbols-rounded">person_add</span>acrescentar profissional a este serviço</button>
+        <div class="subcap"><span class="material-symbols-rounded">receipt_long</span>Despesas da execução</div>
+        ${dspRows||'<div class="muted" style="margin-bottom:4px">Sem despesas.</div>'}
+        <button class="linkbtn" onclick="addDesp('${s.id}')"><span class="material-symbols-rounded">add</span>despesa</button>
+        <div class="custo-bar"><span class="lbl">mão de obra ${brl(custoMO(m))} + despesas ${brl(custoDesp(m))}</span><span class="v">${brl(custoServ(s))}</span></div>`;
+    } else {
+      body=`<div class="tab-in"><span class="muted"><span class="material-symbols-rounded" style="font-size:15px;color:var(--pri)">sell</span> Valor do catálogo (sem montar equipe)</span>
+        <span style="margin-left:auto">R$ <input class="in" value="${String(s.tab).replace('.',',')}" inputmode="decimal" oninput="S.servicos[${si}].tab=num(this.value);render()"></span></div>
+        <div class="custo-bar"><span class="lbl">custo tabelado</span><span class="v">${brl(custoServ(s))}</span></div>`;
+    }
+    return `<div class="card">
+      <div class="svc-h">
+        <input class="svc-nm" value="${esc(s.nome)}" oninput="S.servicos[${si}].nome=this.value">
+        <span class="seg">
+          <button class="${!isMont?'on':''}" onclick="setModo('${s.id}','tabelado')"><span class="material-symbols-rounded">sell</span>Tabelado</button>
+          <button class="${isMont?'on':''}" onclick="setModo('${s.id}','montado')"><span class="material-symbols-rounded">groups</span>Montado</button>
+        </span>
+        <button class="ic-btn del" title="Excluir serviço" onclick="delServ('${s.id}')"><span class="material-symbols-rounded">delete</span></button>
+      </div>
+      ${body}
+    </div>`;
+  }).join('');
+}
+function svc(id){ return S.servicos.find(x=>x.id===id); }
+function setModo(id,mo){ const s=svc(id); if(s){s.modo=mo;render();} }
+function delServ(id){ if(confirm('Excluir este serviço?')){ S.servicos=S.servicos.filter(x=>x.id!==id); render(); } }
+function addServico(){ S.servicos.push({id:uid(),nome:'Novo serviço',modo:'montado',m:{tv:1,un:'dias',removidos:[],pes:{},extras:[],despesas:[]},tab:0}); render(); }
+function setTempo(id,v){ const s=svc(id); if(s){s.m.tv=num(v);render();} }
+function setUn(id,u){ const s=svc(id); if(s){s.m.un=u;render();} }
+function pes(id,eid,d){ const s=svc(id); if(!s)return; const cur=(s.m.pes[eid]!=null?s.m.pes[eid]:1)+d; if(cur<=0){ s.m.pes[eid]=0; } else { s.m.pes[eid]=cur; } if(s.m.pes[eid]===1) delete s.m.pes[eid]; render(); }
+function rmBase(id,eid){ const s=svc(id); if(!s)return; if(!s.m.removidos.includes(eid))s.m.removidos.push(eid); delete s.m.pes[eid]; render(); }
+function restaurar(id){ const s=svc(id); if(!s)return; s.m.removidos=[]; s.m.pes={}; s.m.extras=[]; render(); }
+function pesExtra(id,xid,d){ const s=svc(id); if(!s)return; const x=(s.m.extras||[]).find(e=>e.id===xid); if(!x)return; x.pes=Math.max(0,num(x.pes)+d); if(x.pes===0)s.m.extras=s.m.extras.filter(e=>e.id!==xid); render(); }
+function rmExtra(id,xid){ const s=svc(id); if(!s)return; s.m.extras=(s.m.extras||[]).filter(e=>e.id!==xid); render(); }
+function addDesp(id){ const s=svc(id); if(!s)return; s.m.despesas.push({id:uid(),nome:'Nova despesa',valor:0}); render(); }
+function setDesp(id,did,f,v){ const s=svc(id); if(!s)return; const d=s.m.despesas.find(x=>x.id===did); if(!d)return; d[f]=(f==='valor'?num(v):v); if(f==='valor')render(); }
+function rmDesp(id,did){ const s=svc(id); if(!s)return; s.m.despesas=s.m.despesas.filter(x=>x.id!==did); render(); }
+
+/* ---- picker (acrescentar profissional) ---- */
+let _pickSvc=null;
+function openPick(id){ _pickSvc=id; const s=svc(id); if(!s)return;
+  const jaBase=new Set(baseCrew(s.m).map(c=>c.nome));
+  const removidos=S.equipe.filter(e=>s.m.removidos.includes(e.id));
+  const itens=[];
+  removidos.forEach(e=>itens.push({nome:e.nome,vh:e.vh,reAdd:e.id}));
+  S.catalogo.forEach(c=>{ if(!jaBase.has(c.nome)) itens.push({nome:c.nome,vh:c.vh}); });
+  document.getElementById('pickList').innerHTML=itens.map((it,j)=>`
+    <div class="pick-item" onclick="pick(${j})"><span>${esc(it.nome)}</span><span class="vh">${brl(it.vh)}/h</span></div>`).join('') || '<div class="muted">Todos já estão na equipe.</div>';
+  _pickItens=itens;
+  document.getElementById('pickBg').classList.add('open');
+}
+let _pickItens=[];
+function pick(j){ const it=_pickItens[j], s=svc(_pickSvc); if(!s)return;
+  if(it.reAdd){ s.m.removidos=s.m.removidos.filter(x=>x!==it.reAdd); }
+  else { s.m.extras.push({id:uid(),nome:it.nome,vh:it.vh,pes:1}); }
+  closePick(); render();
+}
+function closePick(){ document.getElementById('pickBg').classList.remove('open'); }
+
+/* ---- total ---- */
+function renderTotal(){
+  const custo=S.servicos.reduce((a,s)=>a+custoServ(s),0);
+  const mg=num(document.getElementById('margem').value);
+  document.getElementById('tCusto').textContent=brl(custo);
+  document.getElementById('tPreco').textContent=brl(custo*(1+mg/100));
+}
+function render(){ renderEquipe(); renderServicos(); renderTotal(); }
+render();
+</script>
+</body>
+</html>
