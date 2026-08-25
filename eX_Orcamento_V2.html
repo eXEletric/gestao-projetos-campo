@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>eX Orçamento · MODELO v2</title>
+<meta name="theme-color" content="#533ab7">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0" rel="stylesheet">
+<style>
+:root{
+  --bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);
+  --tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--pri:#533ab7;--pri-bg:#eeedfe;
+  --blue:#185fa5;--green:#3b6d11;--amber:#ba7517;--red:#a32d2d;--teal:#0f6e56;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
+.material-symbols-rounded{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;line-height:1;vertical-align:middle;font-size:20px}
+.app{max-width:1220px;margin:0 auto;padding:16px 18px 80px}
+
+/* ===== TOPO ===== */
+.appbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px;position:sticky;top:0;z-index:30;background:var(--bg,#f6f5fb);padding:8px 0 7px;border-bottom:1px solid var(--line2,#e2ddf0)}
+.appbar .applogo-img{height:26px;max-width:120px;object-fit:contain;display:block}
+.savestate{font-size:12px;padding:5px 10px;border-radius:20px;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.savestate .material-symbols-rounded{font-size:15px}
+.savestate.ok{background:#eaf3de;color:#3b6d11}
+.savestate.warn{background:#faeeda;color:#854f0b}
+.btn.btnsalvar{border-color:#d9d3ee;background:#efeafc;color:var(--pri)}
+.btn.btnsalvar.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+/* status Aprovada (dirigido por comprovante) */
+.obst-aprov{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:#3b6d11;background:#e9f2dd;padding:5px 11px;border-radius:20px}
+.obst-aprov .material-symbols-rounded{font-size:16px}
+/* painel de comprovantes de fechamento */
+.cmp-wrap{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:16px}
+.cmp-h{display:flex;align-items:center;gap:7px;font-size:13px;font-weight:800;color:var(--pri);text-transform:uppercase;letter-spacing:.03em}
+.cmp-h .material-symbols-rounded{font-size:18px}
+.cmp-count{font-size:11px;background:var(--pri);color:#fff;border-radius:20px;padding:1px 8px;letter-spacing:0}
+.cmp-hint{font-size:12px;color:var(--tx3);margin:4px 0 10px;line-height:1.4}
+.cmp-list{display:flex;flex-direction:column;gap:7px;margin-bottom:10px}
+.cmp-empty{font-size:12.5px;color:var(--tx3);padding:6px 2px}
+.cmp-item{display:flex;align-items:center;gap:10px;border:1px solid var(--line2);border-radius:9px;padding:8px 10px;background:#fff}
+.cmp-ic{width:32px;height:32px;border-radius:8px;background:var(--pri-bg);color:var(--pri);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cmp-ic .material-symbols-rounded{font-size:18px}
+.cmp-b{min-width:0;flex:1}
+.cmp-t{font-size:13px;font-weight:600;color:var(--tx)}
+.cmp-m{font-size:11.5px;color:var(--tx3);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmp-mini{border:1px solid var(--line2);background:#fff;border-radius:7px;width:30px;height:30px;cursor:pointer;color:var(--tx2);display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.cmp-mini:hover{background:var(--surf2)}
+.cmp-mini.del:hover{color:#a32d2d;border-color:#e0b4b4}
+.cmp-mini .material-symbols-rounded{font-size:17px}
+.cmp-form{border-top:1px dashed var(--line2);margin-top:4px;padding-top:11px;display:flex;flex-direction:column;gap:8px}
+.cmp-frow{display:grid;grid-template-columns:120px 1fr;gap:9px;align-items:center}
+.cmp-frow label{font-size:12px;color:var(--tx2);font-weight:600}
+.cmp-frow .cin{width:100%}
+.cmp-fact{display:flex;gap:8px;margin-top:4px}
+@media(max-width:560px){.cmp-frow{grid-template-columns:1fr;gap:3px}}
+.logo{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--pri)}
+.logo b{color:var(--tx)}
+.modtag{font-size:12px;font-weight:600;color:var(--tx2);background:var(--surf2);padding:4px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px}
+.modtag .material-symbols-rounded{font-size:16px;color:var(--pri)}
+.spacer{flex:1}
+.mode{display:inline-flex;background:var(--surf2);border-radius:9px;padding:3px}
+.mode button{font-size:12px;font-weight:600;border:none;background:none;color:var(--tx2);cursor:pointer;padding:6px 12px;border-radius:7px;display:inline-flex;align-items:center;gap:5px}
+.mode button.on{background:var(--surf);color:var(--pri);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.mode .material-symbols-rounded{font-size:17px}
+.btn{font-size:13px;padding:8px 13px;border-radius:8px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--surf2)}
+.btn .material-symbols-rounded{font-size:18px}
+.btn-p{background:var(--pri);color:#fff;border-color:var(--pri)}
+.btn-p:hover{background:#472f9e}
+.sub{font-size:12px;color:var(--tx2);margin:2px 0 16px}
+.oppbar{display:flex;align-items:center;gap:11px;flex-wrap:wrap;background:var(--pri-bg);border:1px solid #cfc7f5;border-radius:10px;padding:9px 14px;margin-bottom:16px}
+.oppbar>.material-symbols-rounded{color:var(--pri);font-size:18px}
+.ob-txt{font-size:13px;color:var(--tx);flex:1;min-width:160px}
+.ob-fase{font-size:10px;background:var(--pri);color:#fff;padding:2px 8px;border-radius:10px;margin-left:4px;white-space:nowrap}
+.ob-st{display:inline-flex;background:var(--surf);border:1px solid var(--line);border-radius:8px;padding:2px}
+.obst{font-size:11px;font-weight:600;border:none;background:none;color:var(--tx3);cursor:pointer;padding:4px 9px;border-radius:6px;text-transform:capitalize}
+.obst.on{background:var(--pri);color:#fff}
+/* lista de orçamentos */
+.olbar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:12px}
+.olsearch{display:flex;align-items:center;gap:7px;border:1px solid var(--line2);border-radius:8px;padding:7px 11px;background:var(--surf);flex:1;min-width:220px}
+.olsearch input{border:none;outline:none;background:none;font-size:13px;color:var(--tx);width:100%}
+.olsearch .material-symbols-rounded{font-size:18px;color:var(--tx3)}
+.oltbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.oltbl th{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:600;text-align:left;padding:0 10px 7px;border-bottom:1px solid var(--line2);white-space:nowrap}
+.oltbl th.r{text-align:right}
+.oltbl td{padding:10px;border-bottom:1px solid var(--line);vertical-align:middle}
+.oltbl tr[data-opp]{cursor:pointer}
+.oltbl tr[data-opp]:hover td{background:var(--surf2)}
+.oltbl .num{font-family:ui-monospace,monospace;font-size:12px;color:var(--pri)}
+.oltbl .cli{font-weight:600}
+.oltbl .sol{color:var(--tx2);font-size:11.5px}
+.oltbl .tot{text-align:right;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.oltbl .dt{color:var(--tx3);white-space:nowrap}
+.stb{font-size:10px;font-weight:600;padding:3px 9px;border-radius:20px;text-transform:capitalize;white-space:nowrap}
+.stb.rascunho{background:var(--surf2);color:var(--tx2)}.stb.enviado{background:#e7f0fa;color:var(--blue)}.stb.aprovado{background:#e9f2dd;color:var(--green)}.stb.recusado{background:#fcebeb;color:var(--red)}
+
+/* ===== LAYOUT ===== */
+.grid{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
+@media(max-width:940px){.grid{grid-template-columns:1fr}}
+
+/* ===== CARTÃO / CABEÇALHO ===== */
+.panel{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:16px 18px;margin-bottom:16px}
+.phead{display:flex;align-items:center;gap:9px;margin-bottom:12px}
+.phead .material-symbols-rounded{font-size:20px;color:var(--pri)}
+.phead h2{font-size:14px;font-weight:700}
+.phead .cnt{font-size:11px;color:var(--tx3);margin-left:auto}
+.fgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px 16px}
+@media(max-width:560px){.fgrid{grid-template-columns:1fr}}
+.f{display:flex;flex-direction:column;gap:3px}
+.f.full{grid-column:1/-1}
+.f label{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:600}
+.in{width:100%;padding:7px 9px;border:1px solid var(--line);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)}
+.in:focus{outline:none;border-color:var(--pri);background:#fff}
+.in[readonly]{border-color:transparent;background:transparent;padding-left:0;color:var(--tx)}
+.in.mono{font-family:ui-monospace,monospace}
+
+/* ===== BLOCOS DE ITENS ===== */
+.blkhead{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.blkhead .ic{width:30px;height:30px;border-radius:8px;background:var(--pri-bg);color:var(--pri);display:flex;align-items:center;justify-content:center}
+.blkhead .ic .material-symbols-rounded{font-size:18px}
+.blkhead h2{font-size:14px;font-weight:700}
+.blkhead .st{font-size:12px;color:var(--tx2);margin-left:auto;font-variant-numeric:tabular-nums}
+.blkhead .st b{color:var(--tx);font-weight:700}
+.tbl{width:100%;border-collapse:collapse;font-size:12px}
+.tbl th{font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:600;text-align:left;padding:0 6px 5px;border-bottom:1px solid var(--line2);white-space:nowrap}
+.tbl th.r,.tbl td.r{text-align:right}
+.tbl td{padding:3px 6px;border-bottom:1px solid var(--line);vertical-align:middle}
+.tbl tr:hover td{background:var(--surf2)}
+.tbl .idx{color:var(--tx3);font-variant-numeric:tabular-nums;width:38px;font-size:11px;white-space:nowrap}
+.dgrab{cursor:grab;user-select:none}
+.dgrab:active{cursor:grabbing}
+.dgrab .gg{font-size:15px;color:var(--line2);vertical-align:middle;opacity:.45;transition:opacity .12s}
+.tbl tr:hover .dgrab .gg{opacity:1;color:var(--pri)}
+.dgrab .ixn{vertical-align:middle}
+.tbl tr.dragover td{border-top:2px solid var(--pri);background:var(--pri-bg)}
+.rowact{white-space:nowrap}
+.swp{width:26px;height:26px;border:1px solid transparent;border-radius:6px;background:none;color:var(--tx3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.swp:hover{background:var(--pri-bg);color:var(--pri)}
+.swp .material-symbols-rounded{font-size:16px}
+body.viewing .swp,body.viewing .dgrab{pointer-events:none;opacity:.4}
+.cin{width:100%;border:1px solid transparent;border-radius:6px;background:transparent;font-size:12px;color:var(--tx);padding:5px 6px}
+.cin:hover{border-color:var(--line)}
+.cin:focus{outline:none;border-color:var(--pri);background:#fff}
+.cin.num{text-align:right;font-variant-numeric:tabular-nums;width:74px}
+.cin.mk{width:64px}
+.edcad:hover{background:var(--pri-bg);color:var(--pri)}
+.cin.qt{width:60px}
+.cin.un{width:66px;color:var(--tx2)}
+select.cin.un{width:auto;min-width:58px;max-width:88px;cursor:pointer;padding:5px 4px;background:transparent}
+select.cin.un:hover{border-color:var(--line)}
+select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
+.cin.mc{width:110px;color:var(--tx2)}
+.tot{text-align:right;font-variant-numeric:tabular-nums;font-weight:600;color:var(--tx);white-space:nowrap;padding-right:6px}
+.tot.z{color:var(--tx3);font-weight:400}
+.del{width:26px;height:26px;border:1px solid transparent;border-radius:6px;background:none;color:var(--tx3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.del:hover{background:#fcebeb;color:var(--red)}
+.del .material-symbols-rounded{font-size:16px}
+.addrow{margin-top:8px}
+.addrow button{font-size:12px;color:var(--pri);background:none;border:1px dashed var(--line2);border-radius:7px;padding:6px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.addrow button:hover{background:var(--pri-bg);border-color:var(--pri)}
+.addrow .material-symbols-rounded{font-size:16px}
+.obs{font-size:11px;color:var(--tx3);margin-top:9px;display:flex;gap:6px;align-items:flex-start;line-height:1.4}
+.obs .material-symbols-rounded{font-size:15px;color:var(--amber);flex-shrink:0}
+.obs textarea{flex:1;border:1px solid transparent;border-radius:6px;background:transparent;font-size:11px;color:var(--tx3);resize:vertical;font-family:inherit;padding:2px 4px;line-height:1.4}
+.obs textarea:hover{border-color:var(--line)}
+.obs textarea:focus{outline:none;border-color:var(--pri);background:#fff;color:var(--tx)}
+.obs{flex-direction:column;gap:5px;align-items:stretch}
+.obs textarea{width:100%;min-height:52px;flex:none}
+.obshd{display:flex;align-items:center;gap:6px;width:100%}
+.obshd .obslbl{font-weight:600;color:var(--tx2)}
+.obshd .material-symbols-rounded{font-size:15px;color:var(--amber)}
+.obstog{margin-left:auto;display:inline-flex;align-items:center;gap:4px;font-size:10px;font-weight:600;border:1px solid var(--line2);background:var(--surf);border-radius:20px;padding:3px 9px;cursor:pointer;color:var(--tx3)}
+.obstog .material-symbols-rounded{font-size:14px;color:inherit}
+.obstog.on{background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}
+.obs.obs-off .obshd .obslbl{text-decoration:line-through;opacity:.7}
+.obsprint{display:none;font-size:11px;color:var(--tx2);line-height:1.4}
+/* chave de visibilidade (padrão eX: chavinha + olhinho aberto/fechado) */
+.vischave{display:inline-flex;align-items:center;gap:7px;border:none;background:transparent;cursor:pointer;padding:2px;font:600 11px inherit;color:var(--tx3)}
+.vsw{position:relative;width:34px;height:18px;border-radius:10px;flex-shrink:0;background:linear-gradient(#bbbeb7,#9a9d95);box-shadow:inset 0 1px 3px rgba(0,0,0,.34);transition:.16s}
+.vischave.on .vsw{background:linear-gradient(#2fcf88,#0f8f5b)}
+.vkb{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:linear-gradient(#fff,#e2e2dd);box-shadow:0 1px 2px rgba(0,0,0,.4);transition:.16s}
+.vischave.on .vkb{left:18px}
+.vischave .eye{font-size:16px;color:var(--tx3);transition:.16s}
+.vischave.on .eye{color:var(--green)}
+.vischave .vtxt{white-space:nowrap}
+.vischave.on .vtxt{color:var(--green)}
+/* descrição geral */
+.descarea{width:100%;min-height:64px;resize:vertical;font-family:inherit;line-height:1.45}
+.descprint{display:none;font-size:12px;color:var(--tx2);line-height:1.5;white-space:pre-wrap}
+/* efetivo na obra — cartão-roster */
+.efcard{background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden;margin:0 0 14px}
+.efhd{display:flex;align-items:center;gap:8px;padding:10px 13px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8}
+.efhd .material-symbols-rounded{font-size:19px;color:var(--pri)}
+.efhd h3{margin:0;font-size:12px;font-weight:800;color:var(--pri);text-transform:uppercase;letter-spacing:.04em}
+.efcnt{margin-left:auto;display:inline-flex;align-items:center;gap:5px;background:var(--pri);color:#fff;border-radius:20px;padding:3px 10px;font-size:11px}
+.efcnt .material-symbols-rounded{color:#fff;font-size:15px}
+.efrow{display:flex;align-items:center;gap:11px;padding:9px 13px;border-bottom:1px solid var(--line)}
+.efav{width:32px;height:32px;border-radius:50%;background:var(--pri-bg);color:var(--pri);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.efav .material-symbols-rounded{font-size:18px}
+.eff{flex:1;min-width:0}
+.eff .efn{font-weight:600;font-size:13px}
+.eff .efd{font-size:10.5px;color:var(--tx3)}
+.efstep{display:inline-flex;align-items:center;gap:2px;background:var(--surf);border:1px solid var(--line2);border-radius:8px;padding:2px}
+.efstep button{width:22px;height:22px;border:none;background:transparent;color:var(--pri);cursor:pointer;border-radius:5px;display:flex;align-items:center;justify-content:center}
+.efstep button:hover{background:var(--pri-bg)}
+.efstep .efqt{min-width:22px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums;font-size:13px}
+.efstep .material-symbols-rounded{font-size:17px}
+.efrm{border:none;background:none;color:var(--tx3);cursor:pointer;padding:5px;border-radius:6px}
+.efrm:hover{background:#fbecec;color:var(--red)}
+.efrm .material-symbols-rounded{font-size:16px}
+.effoot{display:flex;align-items:center;gap:12px;padding:10px 13px;flex-wrap:wrap;background:var(--surf2)}
+.efadd{border:1px dashed var(--line2);background:transparent;color:var(--pri);font:600 12px inherit;border-radius:20px;padding:5px 11px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.efadd:hover{background:var(--pri-bg);border-color:var(--pri)}
+.efadd .material-symbols-rounded{font-size:16px}
+.efprazo{display:inline-flex;align-items:center;gap:6px;font-size:12px;color:var(--tx2)}
+.efprazo input{width:44px;border:1px solid var(--line2);border-radius:6px;padding:3px;text-align:center;font:700 13px inherit;color:var(--tx);background:#fff}
+.efprazo .material-symbols-rounded{font-size:15px;color:var(--amber)}
+.efempty{padding:12px 13px;color:var(--tx3);font-size:12px}
+body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;opacity:.5}
+
+/* ===== RESUMO (direita, sticky) ===== */
+.side{position:sticky;top:16px}
+.summ{background:var(--surf);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.summ .cap{background:var(--pri);color:#fff;padding:13px 16px}
+.summ .cap .l{font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
+.summ .cap .v{font-size:27px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
+.summ .body{padding:14px 16px}
+.ln{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12.5px}
+.ln .lbl{color:var(--tx2);display:flex;align-items:center;gap:7px}
+.ln .lbl .material-symbols-rounded{font-size:16px;color:var(--tx3)}
+.ln .val{font-variant-numeric:tabular-nums;font-weight:600}
+.ln.tt{border-top:1px solid var(--line2);margin-top:6px;padding-top:9px;font-size:15px;font-weight:700}
+.ln.tt .val{font-size:16px;color:var(--pri)}
+.hr{height:1px;background:var(--line);margin:11px 0}
+.intbox{background:var(--surf2);border-radius:9px;padding:11px 12px;margin-top:4px}
+.intbox .ih{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.intbox .ih .material-symbols-rounded{font-size:15px}
+.iln{display:flex;justify-content:space-between;align-items:center;padding:4px 0;font-size:12px}
+.iln .lbl{color:var(--tx2)}
+.pin{width:66px;padding:4px 6px;border:1px solid var(--line);border-radius:6px;background:var(--surf);font-size:12px;text-align:right;font-variant-numeric:tabular-nums;color:var(--tx)}
+.pin:focus{outline:none;border-color:var(--pri)}
+.iln .val{font-variant-numeric:tabular-nums;font-weight:600}
+.luc{color:var(--green)}.luc.neg{color:var(--red)}
+.meta{display:flex;flex-direction:column;gap:7px;margin-top:12px}
+.meta .m{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--tx2)}
+.meta .m .material-symbols-rounded{font-size:17px;color:var(--pri)}
+.meta .m b{color:var(--tx);font-weight:600}
+
+/* chave modo Unitário/Geral (padrão eX chave+LED) */
+.modosw{display:flex;align-items:center;gap:9px;margin-left:auto}
+.modolbl{font-size:11px;font-weight:600;color:var(--tx2);min-width:82px;text-align:right}
+.blkhead .st{margin-left:16px}
+.ex-switch{position:relative;width:50px;height:25px;border-radius:13px;cursor:pointer;flex-shrink:0;background:linear-gradient(#bbbeb7,#9a9d95);box-shadow:inset 0 2px 4px rgba(0,0,0,.38),inset 0 -1px 1px rgba(255,255,255,.35);transition:.16s;font:800 8px ui-monospace,monospace;letter-spacing:.3px}
+.ex-switch.on{background:linear-gradient(#2fcf88,#0f8f5b);box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
+.ex-switch .lb{position:absolute;top:0;height:100%;display:flex;align-items:center;color:#fff}
+.ex-switch .lb.off{right:6px;color:#5a5a50}.ex-switch.on .lb.off{display:none}
+.ex-switch .lb.onx{left:5px;display:none}.ex-switch.on .lb.onx{display:flex}
+.ex-switch .kb{position:absolute;top:3px;left:3px;width:20px;height:19px;border-radius:10px;transition:.16s;background:linear-gradient(#ffffff,#d4d4cf);box-shadow:0 2px 2px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 2px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
+.ex-switch.on .kb{left:27px}
+.ex-switch .pin{width:3px;height:11px;border-radius:2px;background:linear-gradient(#9a9a92,#565650);box-shadow:0 1px 1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5)}
+body.viewing .ex-switch{pointer-events:none;opacity:.55}
+/* chave usar base ⇄ alterar: lado EDIT em âmbar = atenção (valor alterado) */
+.swcell .ex-switch:not(.on){background:linear-gradient(#f6c85a,#e2a233);box-shadow:inset 0 2px 4px rgba(0,0,0,.26),inset 0 -1px 1px rgba(255,255,255,.4)}
+.swcell .ex-switch:not(.on) .lb.off{color:#6b4a0e}
+
+/* modelo base+margem (linha de serviço) */
+.svc{min-width:190px}
+.svc>.cin{width:100%}
+.svc .bs{font-size:11px;color:var(--tx3);display:flex;align-items:center;gap:4px;margin-top:2px}
+.svc .bs .material-symbols-rounded{font-size:13px;color:var(--blue)}
+.money{white-space:nowrap}
+.preco{font-weight:700;color:var(--tx)}
+.lucro{color:var(--green);font-weight:600}
+.lockval{display:inline-flex;align-items:center;gap:5px;color:var(--tx2);font-variant-numeric:tabular-nums;font-weight:600;justify-content:flex-end}
+.lockval .material-symbols-rounded{font-size:14px;color:var(--tx3)}
+.swcell{display:flex;flex-direction:column;align-items:flex-start;gap:3px;white-space:nowrap}
+.swlbl{font-size:10.5px;font-weight:600}
+.swlbl.on{color:var(--green)}.swlbl.off{color:var(--amber)}
+.mkwrap{display:flex;align-items:center;gap:4px;justify-content:flex-end}
+.rsw{display:inline-flex;align-items:center;gap:3px;justify-content:flex-end}
+.rsw .rsl{color:var(--tx3);font-size:11px;font-weight:600}
+.rsw .cin.num{width:66px}
+.mktag{text-align:right;margin-top:3px}
+.pd{font-size:9px;color:var(--pri);background:var(--pri-bg);padding:2px 6px;border-radius:9px;white-space:nowrap}
+.pd.own{background:#faeeda;color:#854f0b}
+
+/* modal picker do cadastro */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;z-index:100;padding:20px}
+.modal-bg.open{display:flex}
+.modal{background:var(--surf);border-radius:14px;max-width:560px;width:100%;max-height:80vh;display:flex;flex-direction:column;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.modal .mh{display:flex;align-items:center;gap:9px;padding:15px 18px;border-bottom:1px solid var(--line)}
+.modal .mh .material-symbols-rounded{color:var(--pri)}
+.modal .mh h3{font-size:15px;font-weight:700;flex:1}
+.modal .mh .x{width:30px;height:30px;border:none;background:none;color:var(--tx3);cursor:pointer;border-radius:7px}
+.modal .mh .x:hover{background:var(--surf2)}
+.modal .mb{padding:10px 12px;overflow-y:auto}
+.pkitem{display:flex;align-items:center;gap:10px;width:100%;text-align:left;padding:10px 12px;border:1px solid var(--line);border-radius:9px;background:var(--surf);cursor:pointer;margin-bottom:6px;font-size:13px;color:var(--tx)}
+.pkitem:hover{background:var(--pri-bg);border-color:var(--pri)}
+.pkitem .pknm{flex:1;min-width:0}
+.pkitem .pkcusto{font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.hpsrch{display:flex;align-items:center;gap:7px;border:1px solid var(--line2);border-radius:8px;padding:8px 11px;margin-bottom:9px;position:sticky;top:0;background:var(--surf);z-index:1}
+.hpsrch input{border:none;outline:none;background:none;font-size:13px;width:100%;color:var(--tx)}
+.hpsrch .material-symbols-rounded{font-size:18px;color:var(--tx3)}
+.hplist{max-height:54vh;overflow-y:auto}
+/* compositor de custo do serviço */
+.cmpsec{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin:2px 0 8px}
+.cmphd{display:grid;grid-template-columns:1fr 62px 62px 68px 28px;gap:8px;font-size:9.5px;font-weight:700;text-transform:uppercase;color:var(--tx3);padding:0 2px 5px;text-align:center}
+.cmphd span:first-child{text-align:left}
+.cmprow{display:grid;grid-template-columns:1fr 62px 62px 68px 28px;gap:8px;align-items:center;padding:4px 0}
+.cmprow select{width:100%;padding:6px 7px;border:1px solid var(--line2);border-radius:7px;font-size:12.5px;background:var(--surf);color:var(--tx)}
+.cmprow .cmpn{width:100%;padding:6px;border:1px solid var(--line2);border-radius:7px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
+.cmprow .cmpvh{text-align:right;font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums}
+.cmprow .cmpdel{border:none;background:none;color:var(--tx3);cursor:pointer;padding:3px;border-radius:6px}
+.cmprow .cmpdel:hover{background:#fcebeb;color:var(--red)}.cmprow .cmpdel .material-symbols-rounded{font-size:16px}
+.cmpadd{border:1px dashed var(--line2);background:transparent;color:var(--pri);font:600 12px inherit;border-radius:20px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin-top:6px}
+.cmpadd:hover{background:var(--pri-bg);border-color:var(--pri)}.cmpadd .material-symbols-rounded{font-size:16px}
+.cmplbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);margin-bottom:5px;display:block}
+.cmpsel{width:100%;padding:8px 10px;border:1px solid var(--line2);border-radius:7px;font-size:13px;background:var(--surf);color:var(--tx)}
+.cmpres{margin-top:16px;background:var(--surf2);border-radius:10px;padding:12px 14px;display:flex;gap:26px}
+.cmpres .cr{display:flex;flex-direction:column;gap:2px}.cmpres .cr span{font-size:11px;color:var(--tx3)}.cmpres .cr b{font-size:19px;font-variant-numeric:tabular-nums}
+.pkitem.avulso{color:var(--pri);border-style:dashed;margin-top:4px}
+.pkitem.avulso .material-symbols-rounded{font-size:17px}
+.fpick{font-size:10px;font-weight:600;color:var(--pri);background:var(--pri-bg);border:none;border-radius:20px;padding:2px 9px;cursor:pointer;display:inline-flex;align-items:center;gap:3px;margin-left:6px;vertical-align:middle;text-transform:none;letter-spacing:0}
+.fpick:hover{background:#e2dffb}
+.fpick .material-symbols-rounded{font-size:13px}
+.hintlbl{font-size:9px;color:var(--tx3);font-weight:400;text-transform:none;letter-spacing:0}
+.svcnm{font-size:13px;padding:5px 0;color:var(--tx);line-height:1.3}
+.chip{font-size:11px;font-weight:600;color:var(--tx2);background:var(--surf2);border:1px solid var(--line);border-radius:20px;padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.chip:hover{border-color:var(--line2)}
+.chip .material-symbols-rounded{font-size:15px}
+.chip.on{background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}
+body.viewing .chip{pointer-events:none;opacity:.55}
+.tbl tfoot .ftot td{border-top:1.5px solid var(--line2);padding-top:8px}
+.tbl .ftl{color:var(--tx2);font-weight:700;font-size:12px}
+.tbl tfoot .cin.num{font-weight:700;color:var(--pri);width:100px}
+.incl{color:var(--tx3);font-size:11px;font-style:italic}
+
+/* ===== VER COMO O CLIENTE — prévia FIEL ao papel (espelha o @media print) ===== */
+body.viewing{background:#e9e7f0}
+body.viewing .app{max-width:900px;background:#fff;padding:30px 34px 40px;margin:0 auto 40px;box-shadow:0 6px 30px rgba(30,20,70,.16);border-radius:6px}
+body.viewing .appbar,
+body.viewing .del,body.viewing .addrow,body.viewing .intbox,body.viewing .obs textarea,
+body.viewing .pint,body.viewing .bs,body.viewing .modosw,body.viewing .oppbar,body.viewing .fpick,body.viewing .hintlbl,body.viewing .dgrab,body.viewing .blktog,
+body.viewing .sub,body.viewing #cloudb,body.viewing .noprint,body.viewing .ln.zeroprint,body.viewing .obs.obs-off,body.viewing .panel.hideprint,body.viewing .blk-off{display:none!important}
+body.viewing .obsprint,body.viewing .descprint{display:block!important}
+body.viewing .side{position:static}
+body.viewing .in,body.viewing .cin,body.viewing .pin{border:none!important;background:transparent!important;box-shadow:none!important;padding-left:0!important;color:var(--tx)!important;pointer-events:none}
+body.viewing .in:hover,body.viewing .cin:hover{border-color:transparent}
+body.viewing input[type=date]::-webkit-calendar-picker-indicator{display:none!important}
+body.viewing select.cin{-webkit-appearance:none;appearance:none}
+/* barra de prévia (escura, no topo) — só no modo Ver; nunca imprime */
+#previewBar{display:none}
+body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:sticky;top:0;z-index:50;background:#2b2440;color:#fff;padding:10px 16px;flex-wrap:wrap;margin-bottom:16px}
+#previewBar .pv-lbl{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600}
+#previewBar .pv-lbl .material-symbols-rounded{font-size:18px}
+#previewBar .pv-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;border-radius:8px;padding:7px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
+#previewBar .pv-btn:hover{background:rgba(255,255,255,.18)}
+#previewBar .pv-print{background:#fff;color:#2b2440;border-color:#fff}
+@media print{#previewBar{display:none!important}}
+
+/* impressão */
+@media print{
+  body{background:#fff}
+  /* mecanismo interno — nunca vai pro cliente */
+  .appbar,
+  .appbar .mode,.appbar .btn,.addrow,.del,.intbox,.obs textarea,
+  .pint,.bs,.modosw,.oppbar,.fpick,.hintlbl,.dgrab,.blktog,
+  .sub,#cloudb,.noprint,.ln.zeroprint,.obs.obs-off,.panel.hideprint{display:none!important}
+  .obsprint,.descprint{display:block!important}
+  .side{position:static}
+  .panel,.summ,.blk{break-inside:avoid}
+  .app{padding:0}
+  /* campos viram texto limpo na proposta */
+  .in,.cin,.pin{border:none!important;background:transparent!important;box-shadow:none!important;padding-left:0!important;color:var(--tx)!important}
+  input[type=date]::-webkit-calendar-picker-indicator{display:none!important}   /* some o ícone de calendário no papel */
+  select.cin{-webkit-appearance:none;appearance:none;text-align:center}
+  .scroll{overflow:visible!important}
+}
+.blk{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:15px 16px;margin-bottom:16px}
+.scroll{overflow-x:auto}
+/* barra liga/desliga de blocos */
+.blocosbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:2px 0 14px}
+.blocosbar .bb-lbl{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3)}
+.bbchip{display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:20px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);font-size:12px;font-weight:600;cursor:pointer;transition:.14s}
+.bbchip .ic,.bbchip .ck{font-size:16px}
+.bbchip.on{background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}
+.bbchip.off{opacity:.65}
+.bbchip.off .nm{text-decoration:line-through}
+.bbchip.off .ck{color:var(--tx3)}
+/* chave liga/desliga do BLOCO, no cabeçalho */
+.blktog{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--surf);border-radius:20px;padding:3px 11px 3px 4px;cursor:pointer;font:inherit;font-size:11px;font-weight:700;color:var(--tx2);flex:0 0 auto}
+.blktog-sw{position:relative;width:32px;height:18px;border-radius:11px;background:var(--line2);transition:.15s;flex:0 0 auto}
+.blktog-sw i{position:absolute;top:2px;left:2px;width:14px;height:14px;border-radius:50%;background:#fff;transition:.15s}
+.blktog.on{border-color:var(--pri);color:var(--pri);background:var(--pri-bg)}
+.blktog.on .blktog-sw{background:var(--pri)}
+.blktog.on .blktog-sw i{left:16px}
+.blktog.off .blktog-lb{color:var(--tx3)}
+/* bloco desligado: some o conteúdo na tela (cabeçalho/chave ficam p/ religar); some inteiro na impressão */
+.blk-off{opacity:.72}
+.blk-off > :not(.blkhead){display:none!important}
+.blk-off .blkhead .modosw,.blk-off .blkhead .st{display:none!important}
+@media print{.blk-off{display:none!important}}
+.valwarn{font-size:10px;font-weight:700;color:var(--red);background:#fcebeb;padding:1px 7px;border-radius:9px;display:none}
+.valwarn.on{display:inline-block}
+/* "Só o total": valores dos itens só na tela (some na impressão); "incluso" só na impressão */
+.printonly{display:none}
+@media print{.printonly{display:inline!important}}
+.scrn-only-badge{font-size:9px;font-weight:700;color:var(--pri);background:var(--pri-bg);border:1px solid var(--pri);border-radius:8px;padding:1px 6px;margin-left:6px;white-space:nowrap;vertical-align:middle}
+.sotot-hint{display:flex;align-items:center;gap:7px;font-size:11px;color:var(--pri);background:var(--pri-bg);border:1px dashed var(--pri);border-radius:9px;padding:6px 10px;margin:0 0 10px}
+.sotot-hint .material-symbols-rounded{font-size:16px}
+.mgimp{font-size:12px;font-weight:600;color:var(--tx2)}   /* margem implícita (só leitura) no modo valor geral */
+/* "Só o total": na impressão a tabela some e sai só este bloco com o valor agrupado */
+.grouped-print{border:1px solid var(--line2);border-radius:10px;padding:12px 15px;margin:4px 0 2px;text-align:right}
+@media print{.grouped-print{display:block!important}}
+.grouped-print .gp-l{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:700}
+.grouped-print .gp-v{font-size:19px;font-weight:800;color:var(--tx);margin-top:2px}
+.grouped-print .gp-n{font-size:11px;color:var(--tx3);font-style:italic;margin-top:3px}
+/* ===== CABEÇALHO DA PROPOSTA — cartão dividido (Opção B) ===== */
+.prophead{padding:0;overflow:hidden}
+.ph-grid{display:grid;grid-template-columns:1.3fr 1fr}
+.ph-left{padding:15px 17px}
+.ph-right{padding:15px 17px;background:var(--pri-bg);border-left:1px solid var(--line2);-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.ph-brand{display:flex;align-items:center;gap:9px;margin-bottom:10px}
+.ph-lg{font-weight:800;font-size:22px;color:var(--pri)}.ph-lg b{color:var(--tx)}
+.ph-logo-img{max-height:44px;max-width:160px;object-fit:contain;display:block}
+.ph-co{font-size:11px;color:var(--tx3);line-height:1.3}
+.ph-cap{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri);font-weight:800;margin:8px 0 2px;display:flex;align-items:center;gap:5px}
+.ph-cap .material-symbols-rounded{font-size:14px}
+.ph-nm{font-size:15px!important;font-weight:800!important;padding:2px 4px!important;border:none!important;background:transparent!important;box-shadow:none!important}
+.ph-nm:focus{background:var(--surf)!important;box-shadow:0 0 0 1px var(--pri) inset!important;border-radius:5px!important}
+.ph-kv,.ph-kv2{display:grid;grid-template-columns:auto 1fr;gap:1px 8px;align-items:center;margin-top:3px}
+.ph-kv label,.ph-kv2 label{font-size:10.5px;color:var(--tx3);white-space:nowrap;font-weight:600}
+.ph-kv .in,.ph-kv2 .in{font-size:12.5px!important;padding:3px 6px!important;border:1px solid transparent!important;background:transparent!important;border-radius:5px!important;box-shadow:none!important}
+.ph-kv .in:hover,.ph-kv2 .in:hover,.ph-esc .in:hover{background:#faf9ff!important}
+.ph-kv .in:focus,.ph-kv2 .in:focus,.ph-esc .in:focus{border-color:var(--pri)!important;background:var(--surf)!important}
+.ph-hr{height:1px;background:var(--line);margin:9px 0}
+.ph-rt{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--pri);margin-bottom:5px}
+.ph-num{font-size:14px!important;font-weight:800!important;color:var(--pri)!important}
+.ph-sub2{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri);font-weight:800;margin:10px 0 3px;padding-top:8px;border-top:1px solid var(--line2);display:flex;align-items:center;gap:6px}
+.ph-sol{padding:11px 17px;border-top:2px solid var(--pri)}
+.ph-soltag{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--pri);margin-bottom:2px;display:flex;align-items:center;gap:6px}
+.ph-soltxt{font-size:15px!important;font-weight:800!important;border:none!important;background:transparent!important;padding:2px 4px!important;box-shadow:none!important}
+.ph-soltxt:focus{background:var(--surf)!important;box-shadow:0 0 0 1px var(--pri) inset!important;border-radius:5px!important}
+.ph-esc{display:grid;grid-template-columns:auto 1fr;gap:8px;align-items:center;margin-top:5px}
+.ph-esc label{font-size:10.5px;color:var(--tx3);font-weight:600}
+.ph-esc .in{font-size:12.5px!important;padding:3px 6px!important;border:1px solid transparent!important;background:transparent!important;border-radius:5px!important;box-shadow:none!important}
+.prophead .fpick{font-size:10px;margin-left:6px;padding:2px 7px}
+.ph-canal{margin-top:10px;padding-top:8px;border-top:1px dashed var(--line2)}
+.ph-canal-t{font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:#b26a00;font-weight:800;display:flex;align-items:center;gap:5px;margin-bottom:3px}
+.ph-canal-t .material-symbols-rounded{font-size:13px}
+.ph-canal .cline{font-size:12px;font-weight:700;color:var(--tx2);font-family:ui-monospace,monospace}
+@media(max-width:720px){.ph-grid{grid-template-columns:1fr}.ph-right{border-left:none;border-top:1px solid var(--line2)}}
+/* impressão: cartão com borda visível + fundo roxo forçado; inputs viram texto limpo */
+@media print{
+  .prophead{border:1px solid var(--line2)!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+  .ph-grid{grid-template-columns:1.3fr 1fr!important}
+  .prophead .in{padding:2px 4px!important}
+  .ph-kv .in,.ph-kv2 .in,.ph-esc .in{padding:1px 2px!important}
+}
+</style>
+</head>
+<body class="editing">
+<div id="previewBar">
+  <span class="pv-lbl"><span class="material-symbols-rounded">visibility</span>Prévia — é assim que o cliente recebe</span>
+  <span style="flex:1"></span>
+  <button class="pv-btn" onclick="setMode('edit')"><span class="material-symbols-rounded">edit</span>Voltar a editar</button>
+  <button class="pv-btn pv-print" onclick="window.print()"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
+</div>
+<div class="app">
+
+  <!-- ===== BARRA SUPERIOR ===== -->
+  <div class="appbar">
+    <span class="logo" id="appLogo"><b>e</b>X</span>
+    <span class="modtag"><span class="material-symbols-rounded">request_quote</span>Orçamento</span>
+    <span class="modtag" style="background:#faeeda;color:#854f0b"><span class="material-symbols-rounded">science</span>MODELO v2 · lê real, não grava</span>
+    <span class="spacer"></span>
+    <div class="mode">
+      <button id="mEdit" class="on" onclick="setMode('edit')"><span class="material-symbols-rounded">edit</span>Editar</button>
+      <button id="mView" onclick="setMode('view')"><span class="material-symbols-rounded">visibility</span>Ver como o cliente</button>
+    </div>
+    <span id="saveState" class="savestate"></span>
+    <button class="btn btnsalvar" id="btnSalvar" onclick="salvarManual()"><span class="material-symbols-rounded">save</span>Salvar</button>
+    <button class="btn" onclick="window.print()"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
+  </div>
+  <div class="sub">Folha de cotação.</div>
+
+  <div id="oppBanner"></div>
+  <div id="comprovantesPanel"></div>
+  <div id="orcList" style="display:none"></div>
+
+  <div class="grid">
+    <!-- ===== COLUNA ESQUERDA: A FOLHA ===== -->
+    <div>
+      <!-- CABEÇALHO DA PROPOSTA (cartão dividido) -->
+      <div class="panel prophead">
+        <div class="ph-grid">
+          <!-- ESQUERDA: quem recebe -->
+          <div class="ph-left">
+            <div class="ph-brand" id="phBrand"><span class="ph-lg"><b>e</b>X</span><span class="ph-co">eX Eletric<br>Automação &amp; Elétrica</span></div>
+            <div class="ph-cap"><span class="material-symbols-rounded">business</span>Contratante<button class="fpick noprint" onclick="openHP('contratante')"><span class="material-symbols-rounded">list</span>CRM</button></div>
+            <input class="in ph-nm" data-m="cliNome" placeholder="Empresa / contratante…">
+            <div class="ph-kv">
+              <label>Contato</label><input class="in" data-m="cliContato">
+              <label>Fone</label><input class="in" data-m="cliFone">
+              <label>E-mail</label><input class="in" data-m="cliEmail">
+            </div>
+            <div class="ph-hr"></div>
+            <div class="ph-cap"><span class="material-symbols-rounded">storefront</span>Cliente final / destino<button class="fpick noprint" onclick="openHP('final')"><span class="material-symbols-rounded">list</span>CRM</button></div>
+            <input class="in ph-nm" data-m="finNome" placeholder="Loja / unidade…">
+            <div class="ph-kv">
+              <label>Rede</label><input class="in" data-m="finRede" placeholder="—">
+              <label>Nº unidade</label><input class="in" data-m="finNum" placeholder="—">
+              <label>Endereço</label><input class="in" data-m="finEnd">
+            </div>
+          </div>
+          <!-- DIREITA: a proposta -->
+          <div class="ph-right">
+            <div class="ph-rt">Proposta comercial</div>
+            <div class="ph-kv2">
+              <label>Nº</label><input class="in mono ph-num" data-m="numero">
+              <label>Emissão</label><input class="in" type="date" data-m="dataISO">
+              <label>Validade <span class="valwarn noprint" id="valWarn"></span></label><input class="in" type="date" data-m="validadeISO" onchange="checkValidade()">
+              <label class="noprint">Ref. externa</label><input class="in mono noprint" data-m="idpipe" placeholder="—">
+            </div>
+            <div class="ph-sub2">Responsável<button class="fpick noprint" onclick="openHP('resp')"><span class="material-symbols-rounded">list</span>usuários</button></div>
+            <div class="ph-kv2">
+              <label>Nome</label><input class="in" data-m="respNome" placeholder="Responsável…">
+              <label>Fone</label><input class="in" data-m="respFone" placeholder="—">
+              <label>E-mail</label><input class="in" data-m="respEmail" placeholder="—">
+            </div>
+            <div id="phCanal"></div>
+          </div>
+        </div>
+        <!-- SOLUÇÃO + ESCOPO -->
+        <div class="ph-sol">
+          <div class="ph-soltag">Solução<button class="fpick noprint" onclick="openHP('solucao')"><span class="material-symbols-rounded">list</span>cadastro</button></div>
+          <input class="in ph-soltxt" data-m="solTitulo" placeholder="Solução…">
+          <div class="ph-esc"><label>Escopo</label><input class="in" data-m="solDesc" placeholder="Descrição do escopo…"></div>
+        </div>
+      </div>
+
+      <!-- DESCRIÇÃO GERAL (opcional) -->
+      <div class="panel" id="descGeralPanel">
+        <div class="phead"><span class="material-symbols-rounded">notes</span><h2>Descrição geral do orçamento</h2><span id="descGeralTog" class="noprint" style="margin-left:auto"></span></div>
+        <textarea class="in descarea noprint" id="descGeralTa" oninput="updDescGeral(this.value)" placeholder="Texto de apresentação / descrições gerais do orçamento (opcional). Aparece no topo da proposta quando a chave estiver na proposta."></textarea>
+        <div class="descprint" id="descGeralPrint"></div>
+      </div>
+
+      <!-- BLOCOS DE ITENS (liga/desliga fica no cabeçalho de cada bloco) -->
+      <div class="blk" id="blk_servicos"></div>
+      <div class="blk" id="blk_equip"></div>
+      <div class="blk" id="blk_despesas"></div>
+      <div class="blk" id="blk_materiais"></div>
+    </div>
+
+    <!-- ===== COLUNA DIREITA: RESUMO ===== -->
+    <div class="side">
+      <div class="summ">
+        <div class="cap">
+          <div class="l">Preço da proposta</div>
+          <div class="v" id="s_preco">R$ 0,00</div>
+        </div>
+        <div class="body">
+          <div class="ln" id="ln_servicos"><span class="lbl"><span class="material-symbols-rounded">build</span>Serviços</span><span class="val" id="s_serv">—</span></div>
+          <div class="ln" id="ln_equip"><span class="lbl"><span class="material-symbols-rounded">construction</span>Equipamentos</span><span class="val" id="s_equip">—</span></div>
+          <div class="ln" id="ln_despesas"><span class="lbl"><span class="material-symbols-rounded">local_shipping</span>Despesas</span><span class="val" id="s_desp">—</span></div>
+          <div class="ln" id="ln_materiais"><span class="lbl"><span class="material-symbols-rounded">inventory_2</span>Materiais</span><span class="val" id="s_mat">—</span></div>
+          <div class="ln"><span class="lbl">Subtotal</span><span class="val" id="s_bruto">—</span></div>
+          <div class="ln" id="ln_desc"><span class="lbl">Desconto <input class="pin" style="width:52px" data-f="descontoPct" inputmode="decimal">%</span><span class="val" id="s_desc">—</span></div>
+          <div class="ln" id="ln_imp"><span class="lbl">Impostos <input class="pin" style="width:52px" data-f="impostoPct" inputmode="decimal">%</span><span class="val" id="s_imp">—</span></div>
+          <div class="ln tt"><span class="lbl">Total</span><span class="val" id="s_total">R$ 0,00</span></div>
+
+          <!-- VISÃO INTERNA -->
+          <div class="intbox">
+            <div class="ih"><span class="material-symbols-rounded">lock</span>Visão interna — não vai pro cliente</div>
+            <div class="iln"><span class="lbl">Margem base <input class="pin" style="width:52px" data-f="margemBase" inputmode="decimal">%</span><span class="val" style="color:var(--tx3);font-size:11px;font-weight:400">padrão das linhas</span></div>
+            <div class="iln"><span class="lbl">Custo real <span style="color:var(--tx3);font-weight:400">(auto)</span></span><span class="val" id="s_custo">—</span></div>
+            <div class="iln"><span class="lbl">Lucro líquido</span><span class="val luc" id="s_lucro">—</span></div>
+            <div class="iln"><span class="lbl">Margem de lucro</span><span class="val luc" id="s_marg">—</span></div>
+          </div>
+
+          <div class="hr"></div>
+          <div class="meta">
+            <div class="m"><span class="material-symbols-rounded">schedule</span>Prazo estimado: <input class="pin" style="width:44px" data-f="prazoDias" inputmode="numeric"> dias</div>
+            <div class="m"><span class="material-symbols-rounded">groups</span><input class="in" readonly title="Definido no Efetivo na obra (topo dos Serviços)" style="width:100%;padding:2px 0;font-size:12px" data-m="equipe"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="pickModal">
+  <div class="modal">
+    <div class="mh">
+      <span class="material-symbols-rounded">playlist_add</span>
+      <h3 id="pickTitle">Adicionar</h3>
+      <button class="x" onclick="closePick()"><span class="material-symbols-rounded">close</span></button>
+    </div>
+    <div class="mb" id="pickBody"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="novoCatModal">
+  <div class="modal">
+    <div class="mh"><span class="material-symbols-rounded">note_add</span><h3 id="novoCatTitle">Novo serviço</h3><button class="x" onclick="closeNovoCat()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div style="margin-bottom:12px"><label style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Nome</label><input id="nc_nome" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+        <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Unidade</label><select id="nc_und" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></select></div>
+        <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Custo (R$)</label><input id="nc_custo" inputmode="decimal" onfocus="this.select()" onblur="this.value=this.value.trim()===''?'':fmtN(this.value)" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+        <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Margem %</label><input id="nc_margem" inputmode="decimal" placeholder="padrão" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+      </div>
+      <div style="margin-top:12px"><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Categoria (opcional)</label><select id="nc_cat" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></select></div>
+    </div>
+    <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="closeNovoCat()">Cancelar</button>
+      <button class="btn" style="background:var(--pri);color:#fff;border-color:var(--pri)" onclick="saveNovoCat()"><span class="material-symbols-rounded">check</span>Salvar no catálogo</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="compModal">
+  <div class="modal" style="width:600px;max-width:100%">
+    <div class="mh"><span class="material-symbols-rounded">precision_manufacturing</span><h3 id="compTitle">Compor custo do serviço</h3><button class="x" onclick="closeComp()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div class="cmpsec">Mão de obra <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— função · nível (R$/h da referência) × pessoas × horas</span></div>
+      <div id="compMO"></div>
+      <button class="cmpadd" onclick="compAddMO()"><span class="material-symbols-rounded">add</span>profissional</button>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
+        <div><label class="cmplbl">Dificuldade</label><select id="comp_dif" class="cmpsel" onchange="compCalc()"></select></div>
+        <div><label class="cmplbl">Abrangência</label><select id="comp_abr" class="cmpsel" onchange="compCalc()"></select></div>
+      </div>
+      <div class="cmpres">
+        <div class="cr"><span>Custo do serviço</span><b id="comp_custo">R$ 0,00</b></div>
+        <div class="cr"><span>Tempo de execução</span><b id="comp_tempo" style="color:var(--pri)">0 h</b></div>
+      </div>
+    </div>
+    <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="closeComp()">Cancelar</button>
+      <button class="btn" style="background:var(--pri);color:#fff;border-color:var(--pri)" onclick="compAplicar()"><span class="material-symbols-rounded">check</span>Aplicar ao serviço</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+const OPP=(new URLSearchParams(location.search)).get('opp')||null;   // ?opp=<id> → orçamento desta oportunidade
+const STORE=OPP?('ex_orc_v6__'+OPP):'ex_orc_v6';
+/* ===== NUVEM (Supabase) — persiste o orçamento (retrato JSON) por oportunidade ===== */
+const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
+const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
+const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
+let CLOUD=false, EMPRESA_ID=null, ORC_ID=null, _saveT=null, USER_NOME='', USER_EMAIL='', USER_ID='', USER_TELEFONE='', USER_COLAB_ID=null;
+// salvamento: MANUAL=true quando a proposta JÁ existia ao abrir (alterar depois exige clicar Salvar). Nova = auto (nasce sozinha). DIRTY=alteração pendente.
+let MANUAL=false, DIRTY=false, _lastSaved='';
+function _hhmm(){ const d=new Date(); return ('0'+d.getHours()).slice(-2)+':'+('0'+d.getMinutes()).slice(-2); }
+let USUARIOS=[];   // COLABORADORES comerciais (Gestão › Equipe c/ função "Comercial / Vendas") — responsáveis da proposta
+function hoje(){ const t=new Date(); const p=n=>String(n).padStart(2,'0'); return t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate()); }
+function maisDias(iso,d){ const t=new Date(iso+'T00:00:00'); t.setDate(t.getDate()+d); const p=n=>String(n).padStart(2,'0'); return t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate()); }
+function stampNovo(){ // orçamento novo: data de hoje + criador (usuário logado)
+  const d=hoje(); setM('dataISO',d); setM('validadeISO',maisDias(d,30));
+  // responsável = COLABORADOR do login (não o perfil de acesso); refreshClienteLive puxa nome/email/fone do colaborador comercial
+  if(USER_COLAB_ID){ S.respId=USER_COLAB_ID; const u=USUARIOS.find(x=>x.id===USER_COLAB_ID); if(u){ setM('respNome',u.nome); setM('respFone',u.fone); setM('respEmail',u.email); } }
+  else if(USER_NOME){ setM('respNome',USER_NOME); }   // sem vínculo colaborador ainda → só o nome; o refresh casa pelo nome
+  S.criadoPor=USER_NOME||S.respNome||''; S.criadoEm=d;
+}
+// número automático e ÚNICO: ORÇ-<ano>-<sequência>, tomando o maior nº já usado no ano
+async function proximoNumero(){
+  const ano=new Date().getFullYear(), pref='ORÇ-'+ano+'-';
+  try{ if(SB){ const {data}=await SB.from('orcamentos').select('numero').ilike('numero',pref+'%').is('deleted_at',null);
+    let mx=0; (data||[]).forEach(r=>{ const m=(r.numero||'').match(/(\d+)\s*$/); if(m){ const n=+m[1]; if(n>mx)mx=n; } });
+    return pref+String(mx+1).padStart(4,'0'); } }catch(e){}
+  return pref+'0001';
+}
+function cloudMsg(t){ let e=document.getElementById('cloudb'); if(!e){ e=document.createElement('span'); e.id='cloudb'; e.style.cssText='font-size:11px;color:var(--tx3)'; const bar=document.querySelector('.appbar'); if(bar)bar.appendChild(e); else return; } e.textContent=t; }
+/* catálogo real do orçamento (tabela orc_catalogo); fallback = semente CAD */
+const TIPO_BLK={servico:'servicos',equipamento:'equip',despesa:'despesas',material:'materiais'};
+let CATALOGO={servicos:[],equip:[],despesas:[],materiais:[]};
+function catFor(blk){ return (CATALOGO[blk]&&CATALOGO[blk].length)?CATALOGO[blk]:(CAD[blk]||[]); }
+async function carregarCatalogo(){
+  try{ const {data,error}=await SB.from('orc_catalogo').select('id,tipo,nome,unidade,custo,margem,marca,categoria').is('deleted_at',null).eq('ativo',true).order('nome');
+    if(error) throw error;
+    const g={servicos:[],equip:[],despesas:[],materiais:[]};
+    (data||[]).forEach(it=>{ const blk=TIPO_BLK[it.tipo]; if(blk) g[blk].push({id:it.id,nome:it.nome,custo:it.custo||0,und:it.unidade||'UND',margem:(it.margem==null?'':it.margem),marca:it.marca||'',categoria:it.categoria||''}); });
+    CATALOGO=g;
+  }catch(e){ console.error('catalogo',e); }
+}
+// materiais vêm do ESTOQUE (tabela `materiais`) — fonte única; cadastro em Gestão › Materiais
+async function carregarMateriaisEstoque(){
+  try{ const {data,error}=await SB.from('materiais').select('id,descricao_padronizada,unidade,marca,custo_compra,preco_venda').is('deleted_at',null).order('descricao_padronizada');
+    if(error) throw error;
+    CATALOGO.materiais=(data||[]).map(m=>{
+      const cc=(m.custo_compra!=null)?m.custo_compra:null, pv=(m.preco_venda!=null)?m.preco_venda:null;
+      const custo=(cc!=null)?cc:(pv!=null?pv:0);
+      return { id:m.id, nome:m.descricao_padronizada||'(sem descrição)', custo, und:m.unidade||'UND', marca:m.marca||'', margem:(cc!=null?25:''), categoria:'' };
+    });
+  }catch(e){ console.error('materiais estoque',e); }
+}
+let CATEGORIAS={servicos:[],equip:[],despesas:[],materiais:[]};
+async function carregarCategorias(){
+  try{ const {data,error}=await SB.from('orc_categorias').select('nome,tipo,ordem').eq('ativo',true).is('deleted_at',null).order('ordem');
+    if(error) throw error;
+    const g={servicos:[],equip:[],despesas:[],materiais:[]};
+    (data||[]).forEach(c=>{ const blk=TIPO_BLK[c.tipo]; if(blk) g[blk].push(c.nome); });
+    CATEGORIAS=g;
+  }catch(e){ console.error('categorias',e); }
+}
+function fillCateg(sel,blk,current){
+  if(!sel)return; current=String(current||'').trim();
+  const list=(CATEGORIAS[blk]||[]).slice();
+  let o='<option value="">— sem categoria —</option>';
+  list.forEach(n=>{ o+=`<option value="${esc(n)}"${n===current?' selected':''}>${esc(n)}</option>`; });
+  if(current && list.indexOf(current)<0) o+=`<option value="${esc(current)}" selected>${esc(current)} (fora da lista)</option>`;
+  sel.innerHTML=o; sel.value=current;
+}
+const MODELO_V2=true;   // ⚠️ MODELO v2: lê os dados reais, mas NUNCA grava nas tabelas reais (sandbox seguro)
+function pushOrc(){
+  if(MODELO_V2)return;    // blindagem: v2 não persiste na nuvem
+  if(!(OPP&&CLOUD))return;
+  const p={ empresa_id:EMPRESA_ID, oportunidade_id:OPP, numero:S.numero||null, status:S.status||'rascunho',
+    solucao:S.solTitulo||null, escopo:S.solDesc||null, responsavel:S.respNome||null,
+    margem_base:num(S.margemBase), imposto_pct:num(S.impostoPct), desconto_pct:num(S.descontoPct),
+    prazo_dias:parseInt(S.prazoDias)||null, validade:S.validadeISO||null, data_cotacao:S.dataISO||null, id_externo:S.idpipe||null,
+    cliente_contratante:S.cliNome||null, cliente_contato:S.cliContato||null, cliente_fone:S.cliFone||null, cliente_email:S.cliEmail||null,
+    cliente_final:S.finNome||null, cliente_endereco:S.finEnd||null,
+    total:S._total||0, custo:S._custo||0, lucro:S._lucro||0, dados:S };
+  if(ORC_ID){ SB.from('orcamentos').update(p).eq('id',ORC_ID).then(({error})=>{ if(error){console.error('orc up',error);cloudMsg('erro ao salvar');} }); }
+  else { SB.from('orcamentos').insert(p).select('id').then(({data,error})=>{ if(error){console.error('orc ins',error);cloudMsg('erro ao salvar');return;} if(data&&data[0])ORC_ID=data[0].id; }); }
+}
+function saveOrc(){ if(!(OPP&&CLOUD))return; clearTimeout(_saveT); _saveT=setTimeout(pushOrc,1200); }
+async function carregarOrc(){
+  const {data,error}=await SB.from('orcamentos').select('*').eq('oportunidade_id',OPP).is('deleted_at',null).order('created_at',{ascending:false}).limit(1);
+  if(error) throw error;
+  if(data&&data.length){ ORC_ID=data[0].id; if(data[0].dados) S=data[0].dados; else S=orcVazio(); }
+  else { ORC_ID=null; S=orcVazio(); S.numero=await proximoNumero(); stampNovo(); }   // orçamento novo nasce EM BRANCO + número automático único
+  sanitize();
+}
+async function initOrc(){
+  if(!OPP){ await initList(); return; }   // sem ?opp → LISTA de orçamentos
+  if(OPP&&SB){ try{
+    const {data:{session}}=await SB.auth.getSession();
+    if(session){
+      try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
+      USER_ID=session.user.id;
+      try{ const p=await SB.from('perfis').select('nome,email,telefone,colaborador_id').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; USER_TELEFONE=p.data[0].telefone||''; USER_COLAB_ID=p.data[0].colaborador_id||null; } }catch(_){}
+      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia();
+      await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
+      MANUAL = !!ORC_ID;   // já existia ao abrir → alterações exigem clicar Salvar; nova (ORC_ID null) → auto até nascer
+      // vínculo: pega contratante/loja da OPORTUNIDADE (pra puxar dados ao vivo do CRM, mesmo em orçamentos antigos)
+      if(OPP && !S.contratanteId){ try{ const {data}=await SB.from('oportunidades').select('contratante_id,contemplado_id').eq('id',OPP).limit(1); if(data&&data[0]){ if(data[0].contratante_id)S.contratanteId=data[0].contratante_id; if(data[0].contemplado_id)S.lojaId=data[0].contemplado_id; } }catch(_){} }
+      refreshClienteLive();
+    } else { cloudMsg('modo local (sem login)'); }
+  }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
+  if(!CLOUD){ load(); }
+  boot();
+}
+
+/* ---------- LISTA de orçamentos (Comercial › Orçamentos) ---------- */
+let _ORCS=[];
+async function initList(){
+  document.querySelectorAll('.grid,#oppBanner').forEach(e=>{e.style.display='none';});
+  const mode=document.querySelector('.appbar .mode'); if(mode)mode.style.display='none';
+  const mt=document.querySelector('.modtag'); if(mt)mt.innerHTML='<span class="material-symbols-rounded">request_quote</span>Orçamentos';
+  const sub=document.querySelector('.sub'); if(sub)sub.textContent='Lista de orçamentos — clique para abrir. Novos orçamentos nascem do funil (Comercial › Funil).';
+  const wrap=document.getElementById('orcList'); wrap.style.display='block';
+  wrap.innerHTML=`<div class="olbar"><div class="olsearch"><span class="material-symbols-rounded">search</span><input id="orcQ" oninput="renderList()" placeholder="Buscar por número, cliente ou solução…"></div></div>
+    <div class="scroll"><table class="oltbl"><thead><tr><th>Nº</th><th>Cliente</th><th>Solução / objeto</th><th>Data</th><th class="r">Total</th><th>Status</th></tr></thead><tbody id="orcRows"></tbody></table></div>`;
+  if(SB){ try{
+    const {data:{session}}=await SB.auth.getSession();
+    if(session){ CLOUD=true; cloudMsg('nuvem ✓'); await loadList(); return; }
+    else cloudMsg('faça login');
+  }catch(e){ console.error(e); cloudMsg('erro nuvem'); } }
+  document.getElementById('orcRows').innerHTML='<tr><td colspan="6" style="padding:26px;text-align:center;color:var(--tx3)">Entre com login pra ver os orçamentos salvos.</td></tr>';
+}
+async function loadList(){
+  const {data,error}=await SB.from('orcamentos').select('id,numero,status,total,oportunidade_id,cliente_contratante,cliente_final,solucao,data_cotacao,created_at').is('deleted_at',null).order('created_at',{ascending:false});
+  if(error){ document.getElementById('orcRows').innerHTML='<tr><td colspan="6" style="padding:20px;color:var(--red)">Erro: '+esc(error.message)+'</td></tr>'; return; }
+  _ORCS=data||[]; renderList();
+}
+function renderList(){
+  const qi=document.getElementById('orcQ'); const q=(qi?qi.value:'').toLowerCase();
+  const rows=_ORCS.filter(o=>((o.numero||'')+' '+(o.cliente_contratante||'')+' '+(o.cliente_final||'')+' '+(o.solucao||'')).toLowerCase().includes(q));
+  const el=document.getElementById('orcRows'); if(!el)return;
+  if(!rows.length){ el.innerHTML='<tr><td colspan="6" style="padding:26px;text-align:center;color:var(--tx3)">'+(_ORCS.length?'Nada encontrado.':'Nenhum orçamento ainda — gere um a partir do funil.')+'</td></tr>'; return; }
+  el.innerHTML=rows.map(o=>{
+    const dt=o.data_cotacao?o.data_cotacao.split('-').reverse().join('/'):(o.created_at?o.created_at.slice(0,10).split('-').reverse().join('/'):'—');
+    const cli=[o.cliente_contratante,o.cliente_final].filter(Boolean).join(' · ')||'—';
+    const st=o.status||'rascunho';
+    const open=o.oportunidade_id?`onclick="location.href='eX_Orcamento.html?opp=${o.oportunidade_id}'"`:'';
+    return `<tr data-opp ${open}>
+      <td class="num">${esc(o.numero||'—')}</td>
+      <td class="cli">${esc(cli)}</td>
+      <td class="sol">${esc(o.solucao||'—')}</td>
+      <td class="dt">${dt}</td>
+      <td class="tot">${fmt(o.total||0)}</td>
+      <td><span class="stb ${st}">${esc(st)}</span></td>
+    </tr>`;
+  }).join('');
+}
+let S=null;
+
+/* ---------- utilidades ---------- */
+const uid=()=>Math.random().toString(36).slice(2,9);
+const num=v=>{
+  if(typeof v==='number')return isNaN(v)?0:v;
+  let s=String(v).trim();if(!s)return 0;
+  s=s.replace(/[R$\s ]/g,'');                                  // remove "R$", espaços
+  if(s.indexOf(',')>-1) s=s.replace(/\./g,'').replace(',','.');     // pt-BR: 1.234,56
+  else if(/^-?\d{1,3}(\.\d{3})+$/.test(s)) s=s.replace(/\./g,'');   // 1.500 / 2.345.678 = milhar (ponto agrupador)
+  // senão o ponto é decimal (1.5, 3.14) — mantém
+  const n=parseFloat(s);return isNaN(n)?0:n;
+};
+const fmt=n=>'R$ '+(n||0).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtN=v=>num(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});  // só o número, padrão financeiro
+const moneyVal=v=>(v===''||v==null)?'':fmtN(v);                                                   // valor inicial do campo (formatado)
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+/* unidades — lista suspensa (evita digitação livre) */
+const UNIDADES=['UND','PÇ','CJ','KIT','M','M²','M³','KM','KG','L','H','DIA','MÊS','VB','PT','LOTE'];
+function undSelect(blk,id,val){
+  const cur=String(val||'').trim(); const opts=UNIDADES.slice(); if(cur && opts.indexOf(cur)<0) opts.unshift(cur);
+  return `<select class="cin un" onchange="upd('${blk}','${id}','und',this.value)">`
+    + opts.map(u=>`<option value="${esc(u)}"${u===cur?' selected':''}>${esc(u)}</option>`).join('') + `</select>`;
+}
+function fillUnd(sel,val){ if(!sel)return; const cur=String(val||'').trim(); const opts=UNIDADES.slice(); if(cur && opts.indexOf(cur)<0) opts.unshift(cur);
+  sel.innerHTML=opts.map(u=>`<option value="${esc(u)}"${u===cur?' selected':''}>${esc(u)}</option>`).join(''); sel.value=cur||opts[0]; }
+/* formata o campo de valor ao sair (padrão financeiro) */
+function moneyBlur(el,blk,id,field){ const v=el.value.trim(); el.value=(v===''?'':fmtN(Math.max(0,num(v)))); upd(blk,id,field,el.value); }
+function moneyBlurBloco(el,blk){ const v=el.value.trim(); el.value=(v===''?'':fmtN(Math.max(0,num(v)))); updBloco(blk,el.value); }
+function qtBlur(el,blk,id){ const n=Math.max(0,num(el.value)); el.value=String(n).replace('.',','); upd(blk,id,'qtd',el.value); }
+function mgBlur(el,blk,id){ const v=el.value.trim(); if(v==='') { upd(blk,id,'margem',''); return; } el.value=String(Math.max(0,num(v))).replace('.',','); upd(blk,id,'margem',el.value); }
+// modelo base+margem (custo): custo usado, margem herdada/própria
+const isCusto=r=>r.custoBase!==undefined;
+const custoUn=r=>num(r.usarBase?r.custoBase:r.custoAlt);
+const mgOf=r=>(r.margem===''||r.margem==null)?num(S.margemBase):num(r.margem);
+// preço (o que o cliente paga) e custo (interno) por linha
+function linePreco(r,modo){
+  if(modo==='geral') return num(r.geral);
+  if(isCusto(r)) return num(r.qtd)*custoUn(r)*(1+mgOf(r)/100);
+  return num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100);
+}
+function lineCusto(r,modo){
+  if(modo==='geral') return num(r.geral);           // verba: custo=preço (lucro 0)
+  if(isCusto(r)) return num(r.qtd)*custoUn(r);
+  return num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100); // bloco não migrado: custo=preço
+}
+const lineTot=(r,modo)=>linePreco(r,modo);           // alias p/ compat
+// subtotal do bloco (PREÇO): no Geral+"só o total" usa o valor manual; senão soma
+// "Só o total": honra o valor digitado à mão SÓ se foi editado (blocoEdited); senão acompanha a soma viva dos itens
+// (evita total congelado que fica defasado quando os itens mudam depois)
+function effBlocoTotal(blk){
+  if(S.blocoEdited && S.blocoEdited[blk]) return num(S.blocoTotal[blk]);
+  return +(S[blk].reduce((a,r)=>a+(r.geralEdited?num(r.geral):linePreco(r,'unit')),0).toFixed(2));
+}
+function blkSub(blk){
+  const modo=S.modos[blk]||'unit';
+  if(modo==='geral' && S.soTotal[blk]) return effBlocoTotal(blk);
+  return S[blk].reduce((a,r)=>a+linePreco(r,modo),0);
+}
+function blkCusto(blk){
+  const modo=S.modos[blk]||'unit';
+  if(modo==='geral' && S.soTotal[blk]) return effBlocoTotal(blk);
+  return S[blk].reduce((a,r)=>a+lineCusto(r,modo),0);
+}
+
+/* ---------- estado exemplo (Copeland / Assaí) ---------- */
+function demo(){
+  return {
+    numero:"ORÇ-2026-0042", idpipe:"1049469624",
+    dataISO:"2025-03-26", validadeISO:"2025-04-25",
+    solTitulo:"SOLUÇÃO COPELAND 2025 ASSAÍ",
+    solDesc:"Lojas 2022 (Olimpo) — Iluminação (4 QDs) + substituição do controlador do ar-condicionado central.",
+    cliNome:"COPELAND", cliContato:"Denis Ferraz", cliFone:"11 98950-4477", cliEmail:"denis.ferraz@copeland.com",
+    finNome:"ASSAÍ NACIONAL", finRede:"Assaí", finNum:"256", finEnd:"Av. Vasco da Gama, s/nº — Salvador/BA",
+    respNome:"André Camilo", respFone:"62 99392-2999", respEmail:"aocinnet@gmail.com",
+    equipe:"1 Eletrotécnico · 1 Eletricista · 1 Operacional",
+    efetivo:[{f:'Eletrotécnico',ic:'electrical_services',n:1},{f:'Eletricista',ic:'bolt',n:1},{f:'Operacional',ic:'groups',n:1}],
+    prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho',
+    descGeral:"Proposta para execução dos serviços de automação de iluminação e substituição do controlador do ar-condicionado central, conforme escopo detalhado abaixo. Valores e condições conforme apresentado nesta cotação.", descGeralOn:true,
+    modos:{servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'},
+    soTotal:{servicos:false,equip:false,despesas:false,materiais:false},
+    blocoEdited:{servicos:false,equip:false,despesas:false,materiais:false},
+    blocoTotal:{servicos:0,equip:0,despesas:0,materiais:0},
+    obs:{
+      servicos:"Não inclui: controladores, componentes eletrônicos, sensores; programação de controladores; material de infraestrutura 100% dedicada.",
+      materiais:"Neste orçamento foi considerado o uso de toda a infra de rede existente na loja para a passagem dos circuitos de comunicação e sensores.",
+      despesas:"Todas as despesas para instalação dos itens propostos estão incluídas."
+    },
+    servicos: CAD.servicos.map(c=>rowSvc(c.nome,1,"UND",c.custo,'',c.id)),
+    equip: [ rowSvc(CAD.equip[0].nome,0,CAD.equip[0].und,CAD.equip[0].custo,'',CAD.equip[0].id) ],
+    despesas: [
+      rowSvc(CAD.despesas[0].nome,1200,CAD.despesas[0].und,CAD.despesas[0].custo,CAD.despesas[0].margem,CAD.despesas[0].id),
+      rowSvc(CAD.despesas[4].nome,0,CAD.despesas[4].und,CAD.despesas[4].custo,CAD.despesas[4].margem,CAD.despesas[4].id),
+      rowSvc(CAD.despesas[1].nome,120,CAD.despesas[1].und,CAD.despesas[1].custo,CAD.despesas[1].margem,CAD.despesas[1].id),
+      rowSvc(CAD.despesas[2].nome,12,CAD.despesas[2].und,CAD.despesas[2].custo,CAD.despesas[2].margem,CAD.despesas[2].id),
+      rowSvc(CAD.despesas[3].nome,12,CAD.despesas[3].und,CAD.despesas[3].custo,CAD.despesas[3].margem,CAD.despesas[3].id),
+      rowSvc(CAD.despesas[5].nome,0,CAD.despesas[5].und,CAD.despesas[5].custo,CAD.despesas[5].margem,CAD.despesas[5].id),
+      rowSvc(CAD.despesas[8].nome,1,CAD.despesas[8].und,CAD.despesas[8].custo,CAD.despesas[8].margem,CAD.despesas[8].id)
+    ],
+    materiais:[]
+  };
+}
+// ORÇAMENTO EM BRANCO — usado em todo orçamento NOVO (nada de escopo/obs/descrição pré-preenchidos, que induziam a erro)
+function orcVazio(){
+  return {
+    numero:"", idpipe:"",
+    dataISO:"", validadeISO:"",
+    solTitulo:"", solDesc:"",
+    contratanteId:null, lojaId:null, respId:null,
+    cliNome:"", cliContato:"", cliFone:"", cliEmail:"",
+    finNome:"", finRede:"", finNum:"", finEnd:"",
+    respNome:"", respFone:"", respEmail:"",
+    equipe:"", efetivo:[],
+    prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho',
+    descGeral:"", descGeralOn:true,
+    modos:{servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'},
+    soTotal:{servicos:false,equip:false,despesas:false,materiais:false},
+    blocoEdited:{servicos:false,equip:false,despesas:false,materiais:false},
+    blocoTotal:{servicos:0,equip:0,despesas:0,materiais:0},
+    obs:{},
+    comprovantes:[],
+    servicos:[], equip:[], despesas:[], materiais:[]
+  };
+}
+// linha do modelo base+margem (custo). margem '' = herda a margem base
+function rowSvc(desc,qtd,und,custo,margem,catId,marca){return{id:uid(),desc,qtd,und,custoBase:custo,usarBase:true,custoAlt:custo,margem:(margem===undefined||margem===null?'':margem),catId:catId||null,marca:marca||""};}
+
+// cadastro-semente de serviços (custo predeterminado por serviço)
+const CAD={ servicos:[
+  {id:uid(),nome:"Instalação — QA automação — iluminação frente de caixa",custo:5362},
+  {id:uid(),nome:"Instalação — QA automação — iluminação e energia",custo:3685},
+  {id:uid(),nome:"Instalação — QA automação — iluminação estacionamento",custo:3377},
+  {id:uid(),nome:"Instalação — QA automação — iluminação administrativo",custo:3377},
+  {id:uid(),nome:"Adequação de comando — automatizar QD iluminação frente de caixa",custo:3531},
+  {id:uid(),nome:"Adequação de comando — automatizar QD iluminação depósito",custo:1354},
+  {id:uid(),nome:"Adequação de comando — automatizar QD iluminação estacionamento",custo:1354},
+  {id:uid(),nome:"Adequação de comando — automatizar QD iluminação administrativo",custo:1354},
+  {id:uid(),nome:"Instalação BUS — QA automação — iluminação frente de caixa",custo:692},
+  {id:uid(),nome:"Instalação BUS — QA automação — iluminação e energia",custo:692},
+  {id:uid(),nome:"Instalação BUS — QA automação — iluminação estacionamento",custo:692},
+  {id:uid(),nome:"Instalação BUS — QA automação — iluminação administrativo",custo:692},
+  {id:uid(),nome:"Substituição — controlador de ar-condicionado central",custo:2692}
+],
+equip:[
+  {id:uid(),nome:"Plataforma elevatória tesoura 10m (elétrica)",custo:880,und:"DIA"},
+  {id:uid(),nome:"Veículo popular 1.0",custo:130,und:"DIA"},
+  {id:uid(),nome:"Andaime fachadeiro (módulo)",custo:45,und:"DIA"}
+],
+despesas:[
+  {id:uid(),nome:"Deslocamento",custo:2,und:"KM",margem:11.1111},
+  {id:uid(),nome:"Translado",custo:2,und:"KM",margem:11.1111},
+  {id:uid(),nome:"Estadia",custo:120,und:"DIÁRIA",margem:11.1111},
+  {id:uid(),nome:"Alimentação diária",custo:80,und:"DIÁRIA",margem:11.1111},
+  {id:uid(),nome:"Aéreo (passagem)",custo:2300,und:"UND",margem:11.1111},
+  {id:uid(),nome:"Táxi / app",custo:50,und:"UND",margem:11.1111},
+  {id:uid(),nome:"Pedágio",custo:6.9,und:"UND",margem:11.1111},
+  {id:uid(),nome:"Combustível",custo:5.2,und:"L",margem:11.1111},
+  {id:uid(),nome:"Despesas gerais",custo:500,und:"VB",margem:11.1111}
+],
+materiais:[
+  {id:uid(),nome:"Cabo flexível 2,50mm² 750V afumex",custo:2.7,und:"M",marca:"PRYSMIAN",margem:25},
+  {id:uid(),nome:"Cabo flexível 10mm² 1kV 90° afumex",custo:10.25,und:"M",marca:"PRYSMIAN",margem:25},
+  {id:uid(),nome:"Cabo de rede RJ45 blindado (cobre)",custo:4,und:"M",marca:"Megatron",margem:25},
+  {id:uid(),nome:"Abraçadeira p/ eletroduto galvanizada 3/4",custo:7.53,und:"PÇ",marca:"ELECON",margem:25},
+  {id:uid(),nome:"Borne 2,5mm tipo mola push in",custo:5,und:"PÇ",marca:"PROAUTO",margem:25},
+  {id:uid(),nome:"Botão de impulsão 22mm 1NA verde",custo:16,und:"PÇ",marca:"SCHNEIDER",margem:25},
+  {id:uid(),nome:"Bloco de contato auxiliar BFC0-22",custo:50,und:"PÇ",marca:"WEG",margem:25},
+  {id:uid(),nome:"Caixa de alumínio 20×20",custo:127,und:"PÇ",marca:"TRAMONTINA",margem:25}
+],
+solucoes:[
+  {id:uid(),nome:"Solução Copeland 2025 — Assaí",escopo:"Lojas 2022 (Olimpo) — iluminação (4 QDs) + substituição do controlador do ar-condicionado central."},
+  {id:uid(),nome:"Automação de iluminação (padrão)",escopo:"Automação dos quadros de iluminação com controladores e sensores, integrada ao supervisório."},
+  {id:uid(),nome:"Adequação de comando elétrico",escopo:"Adequação dos comandos dos quadros para automação, incluindo BUS de comunicação."}
+],
+clientes:[
+  {id:uid(),nome:"COPELAND",contato:"Denis Ferraz",fone:"11 98950-4477",email:"denis.ferraz@copeland.com",endereco:""},
+  {id:uid(),nome:"ASSAÍ NACIONAL",contato:"",fone:"",email:"",endereco:"Nacional"},
+  {id:uid(),nome:"ATACADÃO",contato:"",fone:"",email:"",endereco:""},
+  {id:uid(),nome:"PÃO DE AÇÚCAR",contato:"",fone:"",email:"",endereco:""},
+  {id:uid(),nome:"ECONOMART",contato:"",fone:"",email:"",endereco:""}
+],
+usuarios:[
+  {id:uid(),nome:"André Camilo",papel:"comercial",fone:"62 99392-2999",email:"aocinnet@gmail.com"},
+  {id:uid(),nome:"Gustavo Neves",papel:"comercial",fone:"",email:"gustavoneves@exautomacao.com.br"},
+  {id:uid(),nome:"José Arnaldo",papel:"tecnico",fone:"",email:""}
+]};
+/* ids ESTÁVEIS pro semente (não mudam a cada carga) — evita item virar "avulso" após recarregar */
+['servicos','equip','despesas','materiais'].forEach(k=>{ (CAD[k]||[]).forEach((it,i)=>{ it.id='sd_'+k+'_'+i; }); });
+
+/* ---------- carga / persistência ---------- */
+function sanitize(){
+  // migra orçamentos antigos: respContato combinado → Fone + E-mail separados; e rede/nº do cliente final
+  if(S.respFone===undefined)S.respFone=''; if(S.respEmail===undefined)S.respEmail='';
+  if(S.respContato && !S.respFone && !S.respEmail){ const p=S.respContato.split(/·|\||;/).map(s=>s.trim()).filter(Boolean); p.forEach(x=>{ if(x.indexOf('@')>-1)S.respEmail=x; else if(!S.respFone)S.respFone=x; }); if(!S.respFone&&!S.respEmail){ if(S.respContato.indexOf('@')>-1)S.respEmail=S.respContato; else S.respFone=S.respContato; } }
+  if(S.finRede===undefined)S.finRede=''; if(S.finNum===undefined)S.finNum='';
+  if(!S.modos)S.modos={servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'};
+  if(!S.soTotal)S.soTotal={servicos:false,equip:false,despesas:false,materiais:false};
+  if(!S.blocoEdited)S.blocoEdited={servicos:false,equip:false,despesas:false,materiais:false};
+  if(!S.blocoTotal)S.blocoTotal={servicos:0,equip:0,despesas:0,materiais:0};
+  if(!S.blocoOn)S.blocoOn={servicos:true,equip:true,despesas:true,materiais:true};
+  if(!S.obsOn)S.obsOn={servicos:true,equip:true,despesas:true,materiais:true};
+  ['servicos','equip','despesas','materiais'].forEach(k=>{ if(S.blocoOn[k]===undefined)S.blocoOn[k]=true; if(S.obsOn[k]===undefined)S.obsOn[k]=true; });
+  if(S.descGeral===undefined)S.descGeral='';
+  if(S.descGeralOn===undefined)S.descGeralOn=true;
+  if(!Array.isArray(S.efetivo))S.efetivo=[{f:'Eletrotécnico',ic:'electrical_services',n:1},{f:'Eletricista',ic:'bolt',n:1}];
+  if(S.margemBase===undefined)S.margemBase=30;
+  if(!Array.isArray(S.comprovantes))S.comprovantes=[];
+  if(!S.status)S.status='rascunho';
+}
+const blocoAtivo=k=>S.blocoOn[k]!==false;
+function load(){ try{const r=localStorage.getItem(STORE);S=r?JSON.parse(r):orcVazio();}catch(e){S=orcVazio();} sanitize(); }
+function save(){ try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){}   // localStorage = rede de segurança, sempre
+  if(MANUAL){ DIRTY=true; renderSaveState(); }   // proposta existente: só marca pendente; nuvem/funil só no botão Salvar
+  else { saveOrc(); }                            // proposta nova (ou modo local): salva sozinha
+}
+function salvarManual(){
+  if(!(OPP&&CLOUD)){ DIRTY=false; renderSaveState(); return; }
+  clearTimeout(_saveT); try{recalc();}catch(e){} pushOrc();
+  DIRTY=false; _lastSaved=_hhmm(); renderSaveState();
+}
+function renderSaveState(){
+  const st=document.getElementById('saveState'), bt=document.getElementById('btnSalvar');
+  if(!st||!bt) return;
+  if(!MANUAL){ st.className='savestate ok'; st.innerHTML='<span class="material-symbols-rounded">cloud_done</span>Salvo automaticamente'; bt.style.display='none'; return; }
+  bt.style.display='';
+  if(DIRTY){ st.className='savestate warn'; st.innerHTML='<span class="material-symbols-rounded">warning</span>Alterações não salvas'; bt.classList.add('on'); }
+  else { st.className='savestate ok'; st.innerHTML='<span class="material-symbols-rounded">check_circle</span>Salvo'+(_lastSaved?(' às '+_lastSaved):''); bt.classList.remove('on'); }
+}
+window.addEventListener('beforeunload',function(e){ if(MANUAL&&DIRTY){ e.preventDefault(); e.returnValue=''; } });
+function resetDemo(){ if(OPP&&CLOUD){ if(confirm("Recarregar este orçamento do banco (nuvem)?")){ carregarOrc().then(()=>boot()).catch(e=>console.error(e)); } return; } if(confirm("Recarregar o exemplo Copeland/Assaí? As edições atuais serão perdidas.")){S=demo();save();boot();} }
+
+/* ---------- blocos ---------- */
+const BLKS=[
+  {key:"servicos",titulo:"Serviços",icon:"build",obs:true,mat:false,custo:true,soCad:true,sing:"serviço"},
+  {key:"equip",titulo:"Locação de equipamentos",icon:"construction",obs:true,mat:false,custo:true,soCad:true,sing:"equipamento"},
+  {key:"despesas",titulo:"Deslocamento & Despesas",icon:"local_shipping",obs:true,mat:false,custo:true,soCad:true,sing:"despesa"},
+  {key:"materiais",titulo:"Materiais empregados",icon:"inventory_2",obs:true,mat:true,custo:true,soCad:false,sing:"material"}
+];
+
+function renderBlk(cfg){
+  const modo=S.modos[cfg.key]||'unit';
+  const soT = modo==='geral' && S.soTotal[cfg.key];
+  const rows=S[cfg.key], sub=blkSub(cfg.key);
+  let cols, body, foot='';
+  if(modo==='geral'){
+    // Valor geral: você digita o valor final por item. Na EDIÇÃO mostra o detalhe interno (custo/margem/lucro, classe .pint);
+    // na IMPRESSÃO some tudo isso e o cliente vê só Descrição · Qtd · Und · Preço (= valor geral).
+    const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
+    const fmtMg=m=>(m==null?'—':String(m).replace('.',',')+'%');
+    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem</th><th class="r"><span class="pint">Valor (geral)</span><span class="printonly">Preço</span></th><th class="r pint">Lucro</th><th class="pint"></th>`;
+    body=rows.map((r,i)=>{
+      const cu=custoUn(r), custo=num(r.qtd)*cu, preco=num(r.geral), lucro=preco-custo;
+      const margImpl = custo>0?(Math.round((preco/custo-1)*1000)/10):null;
+      const custoCell = r.usarBase
+        ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
+        : `<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)"></span>`;
+      const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
+      const editCad = (r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'';
+      return `<tr data-id="${r.id}">
+        <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div></td>
+        ${marcaCell}
+        <td class="pint">
+          <div class="swcell">
+            <div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar">
+              <span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span>
+            </div>
+            <span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'usar base':'alterar'}</span>
+          </div>
+        </td>
+        <td class="r money pint">${custoCell}</td>
+        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
+        <td>${undSelect(cfg.key,r.id,r.und)}</td>
+        <td class="r pint"><span class="mgimp" id="tm_${r.id}">${fmtMg(margImpl)}</span></td>
+        <td class="r">${soT?`<span class="incl printonly">incluso</span>`:''}<span class="rsw${soT?' noprint':''}"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
+        <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
+        <td class="pint rowact">${cfg.key==='servicos'?`<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Compor custo por mão de obra"><span class="material-symbols-rounded">precision_manufacturing</span></button>`:''}${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+      </tr>`;
+    }).join('');
+    if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
+    if(soT){   // "Só o total": edição idêntica aos outros modos; na IMPRESSÃO os itens saem (Desc/Qtd/Und) com "incluso" no valor + o total agrupado do bloco no fim
+      foot=`<tfoot><tr class="ftot"><td class="ftl" colspan="${cfg.mat?8:7}">Total do bloco (agrupado)</td><td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(effBlocoTotal(cfg.key))}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlurBloco(this,'${cfg.key}')" oninput="updBloco('${cfg.key}',this.value)" title="Acompanha a soma dos itens; digite um valor para sobrescrever"></span></td><td colspan="2"></td></tr></tfoot>`;
+    }
+  } else if(cfg.custo){
+    // MODELO base+margem: custo (do cadastro, usar/alterar) → margem → preço e lucro
+    const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
+    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem</th><th class="r">Preço</th><th class="r pint">Lucro</th><th class="pint"></th>`;
+    body=rows.map((r,i)=>{
+      const cu=custoUn(r), preco=num(r.qtd)*cu*(1+mgOf(r)/100), custo=num(r.qtd)*cu, lucro=preco-custo;
+      const propria=!(r.margem===''||r.margem==null);
+      const custoCell = r.usarBase
+        ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
+        : `<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)"></span>`;
+      const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
+      const editCad = (r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'';
+      return `<tr data-id="${r.id}">
+        <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div></td>
+        ${marcaCell}
+        <td class="pint">
+          <div class="swcell">
+            <div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar">
+              <span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span>
+            </div>
+            <span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'usar base':'alterar'}</span>
+          </div>
+        </td>
+        <td class="r money pint">${custoCell}</td>
+        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
+        <td>${undSelect(cfg.key,r.id,r.und)}</td>
+        <td class="r pint"><div class="mkwrap"><input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span>%</span></div><div class="mktag">${propria?'<span class="pd own">própria</span>':'<span class="pd">padrão</span>'}</div></td>
+        <td class="r money preco" id="tp_${r.id}">${fmt(preco)}</td>
+        <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
+        <td class="pint rowact">${cfg.key==='servicos'?`<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Compor custo por mão de obra"><span class="material-symbols-rounded">precision_manufacturing</span></button>`:''}${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+      </tr>`;
+    }).join('');
+    if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
+  }
+  const obsTxt=(S.obs&&S.obs[cfg.key])||'';
+  const obsShow=!(S.obsOn&&S.obsOn[cfg.key]===false);
+  const obsHtml = cfg.obs?`<div class="obs${obsShow?'':' obs-off'}">
+      <div class="obshd noprint"><span class="material-symbols-rounded">info</span><span class="obslbl">Observações do bloco</span>
+        <span style="margin-left:auto">${visChave(obsShow,"toggleObs('"+cfg.key+"')")}</span></div>
+      <textarea class="noprint" rows="2" oninput="updObs('${cfg.key}',this.value)" placeholder="Observações do bloco… (aparecem na proposta se ligado)">${esc(obsTxt)}</textarea>
+      <div class="obsprint" id="obsp_${cfg.key}">${obsTxt?('Obs.: '+esc(obsTxt)):''}</div>
+    </div>`:'';
+  const bOn=blocoAtivo(cfg.key);
+  document.getElementById('blk_'+cfg.key).innerHTML=`
+    <div class="blkhead">
+      <button class="blktog ${bOn?'on':'off'}" onclick="toggleBloco('${cfg.key}')" title="${bOn?'Bloco incluído na proposta — clique para remover':'Bloco removido — clique para incluir'}"><span class="blktog-sw"><i></i></span><span class="blktog-lb">${bOn?'na proposta':'removido'}</span></button>
+      <span class="ic"><span class="material-symbols-rounded">${cfg.icon}</span></span>
+      <h2>${cfg.titulo}</h2>
+      <div class="modosw">
+        ${modo==='geral'?`<button class="chip ${soT?'on':''}" onclick="toggleSoTotal('${cfg.key}')" title="Ocultar o valor de cada item e mostrar só o total do bloco"><span class="material-symbols-rounded">${soT?'visibility_off':'visibility'}</span>Só o total</button>`:''}
+        <span class="modolbl" id="modolbl_${cfg.key}">${modo==='geral'?'Valor geral':'Valor unitário'}</span>
+        <div class="ex-switch ${modo==='geral'?'on':''}" onclick="toggleModo('${cfg.key}')" title="Alterna: valor unitário (qtd × preço) ⇄ valor geral (verba única)">
+          <span class="lb off">UN</span><span class="lb onx">GER</span>
+          <span class="kb"><span class="pin"></span></span>
+        </div>
+      </div>
+      <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
+    </div>
+    ${cfg.key==='servicos'?efetivoHtml():''}
+    ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: a edição é igual (você vê e ajusta cada item), mas na <b>impressão / envio da proposta</b> os itens saem como <b>“incluso”</b> e o valor aparece só no <b>total agrupado</b> do bloco — não item por item.</span></div>`:''}
+    <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
+    <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button></div>
+    ${obsHtml}`;
+}
+
+/* ---------- efetivo na obra (cartão-roster, topo do bloco Serviços) ---------- */
+const FUNCS=[
+  {f:'Encarregado',ic:'engineering'},
+  {f:'Eletrotécnico',ic:'electrical_services'},
+  {f:'Eletricista',ic:'bolt'},
+  {f:'Ajudante',ic:'person'},
+  {f:'Montador',ic:'handyman'},
+  {f:'Operacional',ic:'groups'},
+  {f:'Téc. de segurança',ic:'health_and_safety'},
+  {f:'Motorista',ic:'local_shipping'}
+];
+const efTotal=()=>(S.efetivo||[]).reduce((a,c)=>a+(+c.n||0),0);
+function efFrase(){ const p=(S.efetivo||[]).filter(c=>+c.n>0).map(c=>c.n+' '+c.f+(c.n>1?'s':'')); return p.join(' · '); }
+function efetivoHtml(){
+  const crew=S.efetivo||[];
+  const rows=crew.map((c,i)=>`<div class="efrow"><span class="efav"><span class="material-symbols-rounded">${c.ic||'person'}</span></span>
+      <div class="eff"><div class="efn">${esc(c.f)}</div><div class="efd">função na equipe</div></div>
+      <div class="efstep"><button onclick="efDec(${i})" title="−"><span class="material-symbols-rounded">remove</span></button><span class="efqt">${c.n}</span><button onclick="efInc(${i})" title="+"><span class="material-symbols-rounded">add</span></button></div>
+      <button class="efrm" onclick="efRm(${i})" title="Remover função"><span class="material-symbols-rounded">close</span></button></div>`).join('');
+  return `<div class="efcard noprint">
+    <div class="efhd"><span class="material-symbols-rounded">engineering</span><h3>Efetivo na obra</h3><span class="efcnt"><span class="material-symbols-rounded">group</span>${efTotal()} pessoas</span></div>
+    ${rows||'<div class="efempty">Sem funções definidas. Adicione abaixo.</div>'}
+    <div class="effoot"><button class="efadd" onclick="efAddOpen()"><span class="material-symbols-rounded">add</span>função</button>
+      <span class="efprazo"><span class="material-symbols-rounded">event</span>Prazo estimado <input type="number" min="1" value="${num(S.prazoDias)||1}" oninput="efSetDias(this.value)"> dias</span></div>
+  </div>`;
+}
+function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m="equipe"]'); if(el)el.value=S.equipe; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function efInc(i){ if(!S.efetivo[i])return; S.efetivo[i].n=(+S.efetivo[i].n||0)+1; efApply(); }
+function efDec(i){ if(!S.efetivo[i])return; S.efetivo[i].n=Math.max(0,(+S.efetivo[i].n||0)-1); if(S.efetivo[i].n===0)S.efetivo.splice(i,1); efApply(); }
+function efRm(i){ S.efetivo.splice(i,1); efApply(); }
+function efSetDias(v){ S.prazoDias=Math.max(1,parseInt(v)||1); const el=document.querySelector('[data-f="prazoDias"]'); if(el)el.value=S.prazoDias; save(); }
+function efAddOpen(){
+  const have=new Set((S.efetivo||[]).map(c=>c.f));
+  const disp=FUNCS.filter(f=>!have.has(f.f));
+  PICK_TARGET=null;
+  document.getElementById('pickTitle').textContent='Adicionar função ao efetivo';
+  document.getElementById('pickBody').innerHTML=disp.length?disp.map(f=>`<button class="pkitem" onclick="efAdd('${f.f}')"><span class="pknm"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;color:var(--pri);margin-right:7px">${f.ic}</span>${f.f}</span></button>`).join(''):'<div style="color:var(--tx3);padding:12px;font-size:12px">Todas as funções já estão na equipe.</div>';
+  document.getElementById('pickModal').classList.add('open');
+}
+function efAdd(f){ const ic=(FUNCS.find(x=>x.f===f)||{}).ic||'person'; if(!Array.isArray(S.efetivo))S.efetivo=[]; S.efetivo.push({f,ic,n:1}); closePick(); efApply(); }
+
+function toggleModo(blk){
+  const next = (S.modos[blk]||'unit')==='unit' ? 'geral' : 'unit';
+  // ao entrar em Geral: semeia com o preço REAL do momento SÓ nos itens ainda não ajustados à mão (preserva edições do usuário)
+  if(next==='geral') S[blk].forEach(r=>{ if(!r.geralEdited) r.geral=+(linePreco(r,'unit').toFixed(2)); });
+  S.modos[blk]=next; save();
+  renderBlk(BLKS.find(b=>b.key===blk)); recalc();
+}
+function toggleSoTotal(blk){
+  const next=!S.soTotal[blk];
+  // ao ligar "Só o total", começa acompanhando a soma dos itens (blocoEdited=false); só vira travado se o usuário digitar um valor
+  if(next){ (S.blocoEdited||(S.blocoEdited={}))[blk]=false; S.blocoTotal[blk]=effBlocoTotal(blk); }
+  S.soTotal[blk]=next; save();
+  renderBlk(BLKS.find(b=>b.key===blk)); recalc();
+}
+function updBloco(blk,val){
+  S.blocoTotal[blk]=val;
+  (S.blocoEdited||(S.blocoEdited={}))[blk]=true;   // usuário digitou um total à mão → sobrescreve a soma dos itens
+  const st=document.getElementById('st_'+blk);
+  if(st) st.innerHTML='Subtotal <b>'+fmt(blkSub(blk))+'</b>';
+  recalc(); save();
+}
+
+/* ---------- edição ---------- */
+function upd(blk,id,field,val){
+  const r=S[blk].find(x=>x.id===id); if(!r)return;
+  r[field]=val;
+  // marca que o "valor geral" foi ajustado à mão (vazio = volta a acompanhar o preço calculado)
+  if(field==='geral') r.geralEdited = (val!==''&&val!=null);
+  if(['qtd','vunit','markup','geral','custoAlt','margem'].includes(field)){
+    refreshRow(blk,r);
+    const st=document.getElementById('st_'+blk);
+    if(st) st.innerHTML='Subtotal <b>'+fmt(blkSub(blk))+'</b>';
+    recalc();
+  }
+  save();
+}
+function refreshRow(blk,r){
+  const modo=S.modos[blk]||'unit';
+  const c=document.getElementById('tt_'+r.id);
+  if(c){const t=lineTot(r,modo); c.textContent=fmt(t); c.className='tot '+(t?'':'z');}
+  const cu=custoUn(r), custo=num(r.qtd)*cu;
+  const pe=document.getElementById('tp_'+r.id), le=document.getElementById('tl_'+r.id), me=document.getElementById('tm_'+r.id);
+  if(modo==='geral'){   // valor geral: preço = valor digitado; margem e lucro são derivados (ao vivo)
+    const preco=num(r.geral), marg=custo>0?(Math.round((preco/custo-1)*1000)/10):null;
+    if(le) le.textContent=fmt(preco-custo);
+    if(me) me.textContent=(marg==null?'—':String(marg).replace('.',',')+'%');
+  } else if(pe){ const preco=num(r.qtd)*cu*(1+mgOf(r)/100);
+    pe.textContent=fmt(preco); if(le)le.textContent=fmt(preco-custo); }
+  const bv=document.getElementById('bsv_'+r.id); if(bv) bv.textContent=fmt(num(r.custoBase));   // legenda "base:" ao vivo
+}
+function togBase(blk,id){
+  const r=S[blk].find(x=>x.id===id); if(!r)return;
+  r.usarBase=!r.usarBase;
+  if(r.usarBase) r.custoAlt=r.custoBase;                 // volta pro base do cadastro
+  else if(r.custoAlt===undefined||r.custoAlt==='') r.custoAlt=r.custoBase;
+  save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc();
+}
+
+/* ---------- picker do cadastro ---------- */
+const UND_DFLT={servicos:'UND',equip:'DIA',despesas:'UND',materiais:'PÇ'};
+let PICK_TARGET=null;   // id da linha sendo TROCADA (null = adicionar nova)
+function openPick(blk,target){
+  PICK_TARGET = target || null;
+  const cfg=BLKS.find(b=>b.key===blk), cad=catFor(blk);
+  const list=cad.map(c=>`<button class="pkitem" onclick="pickCad('${blk}','${c.id}')"><span class="pknm">${esc(c.nome)}${c.marca?' — '+esc(c.marca):''}</span><span class="pkcusto">custo ${fmt(c.custo)}/${esc(c.und||UND_DFLT[blk])}</span></button>`).join('');
+  const isCat = !cfg.mat && cfg.custo;
+  const avAction = (isCat && CLOUD) ? `openNovoCat('${blk}')` : `addAvulso('${blk}')`;
+  const avLabel = cfg.mat ? 'Material genérico / avulso (sem preço fixo)' : ('+ Novo '+cfg.sing+((isCat&&CLOUD)?' (cadastrar no catálogo)':' (fora do cadastro)'));
+  const avulso = `<button class="pkitem avulso" onclick="${avAction}"><span class="material-symbols-rounded">${(isCat&&CLOUD)?'note_add':'edit_note'}</span>${avLabel}</button>`;
+  document.getElementById('pickTitle').textContent=(PICK_TARGET?'Trocar '+cfg.sing+' (mantém a posição)':'Adicionar '+cfg.sing);
+  document.getElementById('pickBody').innerHTML=(cad.length?list:'<div style="color:var(--tx3);padding:12px;font-size:12px">Cadastro vazio.</div>')+avulso;
+  document.getElementById('pickModal').classList.add('open');
+}
+function closePick(){ document.getElementById('pickModal').classList.remove('open'); PICK_TARGET=null; }
+function pickCad(blk,cid){
+  const c=catFor(blk).find(x=>x.id===cid); if(!c)return;
+  if(PICK_TARGET){                                   // TROCA: substitui o item na mesma posição, mantendo a qtd
+    const r=S[blk].find(x=>x.id===PICK_TARGET);
+    if(r){ r.desc=c.nome; r.catId=c.id; r.custoBase=c.custo; r.usarBase=true; r.custoAlt=c.custo;
+           r.und=c.und||UND_DFLT[blk]; r.margem=(c.margem===undefined?'':c.margem); if('marca' in r) r.marca=c.marca||''; }
+    save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick(); return;
+  }
+  S[blk].push(rowSvc(c.nome,1,c.und||UND_DFLT[blk],c.custo,(c.margem===undefined?'':c.margem),c.id,c.marca||''));
+  save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
+}
+function addAvulso(blk){
+  PICK_TARGET=null;
+  const r=rowSvc("",1,UND_DFLT[blk],0,'',null,''); r.usarBase=false; // avulso: sem base do cadastro → custo editável
+  S[blk].push(r);
+  save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
+}
+/* + Novo: cadastra no catálogo (orc_catalogo) e adiciona na folha */
+const BLK_TIPO={servicos:'servico',equip:'equipamento',despesas:'despesa',materiais:'material'};
+let _ncBlk=null, _ncEdit=null, _ncEditRow=null;   // _ncEdit = id do item real do catálogo; _ncEditRow = linha a religar
+function openNovoCat(blk){
+  PICK_TARGET=null; _ncBlk=blk; _ncEdit=null; _ncEditRow=null; closePick();
+  const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
+  document.getElementById('novoCatTitle').textContent='Novo '+sing+' — salva no catálogo';
+  ['nc_nome','nc_custo','nc_margem'].forEach(id=>document.getElementById(id).value='');
+  fillUnd(document.getElementById('nc_und'),(UND_DFLT[blk]||'UND'));
+  fillCateg(document.getElementById('nc_cat'),blk,'');
+  document.getElementById('novoCatModal').classList.add('open');
+  setTimeout(()=>document.getElementById('nc_nome').focus(),40);
+}
+/* editar o VALOR PADRÃO no cadastro (a partir da linha). Se o item ainda não tem cadastro real
+   (semente/avulso/id defasado), abre pré-preenchido para CADASTRAR e religa a linha ao salvar. */
+function openEditCat(blk,rowId){
+  const r=(S[blk]||[]).find(x=>x.id===rowId); if(!r)return;
+  const c = r.catId ? catFor(blk).find(x=>x.id===r.catId) : null;              // real, semente ou nada
+  const realCat = !!(c && (CATALOGO[blk]||[]).some(x=>x.id===r.catId));        // existe no catálogo da nuvem?
+  PICK_TARGET=null; _ncBlk=blk; _ncEditRow=rowId; _ncEdit = realCat ? r.catId : null; // null => vai CRIAR
+  closePick();
+  const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
+  const src = c || {nome:r.desc, custo:(r.usarBase?r.custoBase:num(r.custoAlt)), und:r.und, margem:r.margem, categoria:''};
+  document.getElementById('novoCatTitle').textContent = realCat ? ('Editar '+sing+' no cadastro — valor padrão') : ('Cadastrar '+sing+' no catálogo');
+  document.getElementById('nc_nome').value=src.nome||'';
+  fillUnd(document.getElementById('nc_und'), src.und||UND_DFLT[blk]||'UND');
+  document.getElementById('nc_custo').value=(src.custo!=null&&src.custo!==''?moneyVal(src.custo):'');
+  document.getElementById('nc_margem').value=(src.margem===''||src.margem==null?'':src.margem);
+  fillCateg(document.getElementById('nc_cat'),blk,src.categoria||'');
+  document.getElementById('novoCatModal').classList.add('open');
+  setTimeout(()=>document.getElementById('nc_custo').focus(),40);
+}
+function closeNovoCat(){ document.getElementById('novoCatModal').classList.remove('open'); _ncBlk=null; _ncEdit=null; _ncEditRow=null; }
+function saveNovoCat(){
+  const blk=_ncBlk; if(!blk)return;
+  const nome=document.getElementById('nc_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
+  const und=document.getElementById('nc_und').value.trim()||'UND';
+  const custo=num(document.getElementById('nc_custo').value);
+  const mv=document.getElementById('nc_margem').value.trim(); const margem=mv===''?null:num(mv);
+  const cat=document.getElementById('nc_cat').value.trim()||null;
+  if(_ncEdit){   // ATUALIZAR item existente do catálogo + refletir nas linhas que o usam
+    const applyLocal=()=>{
+      CATALOGO[blk]=CATALOGO[blk]||[];
+      let ci=CATALOGO[blk].find(x=>x.id===_ncEdit);
+      if(ci){ ci.nome=nome; ci.custo=custo; ci.und=und; ci.margem=(margem==null?'':margem); ci.categoria=cat||''; }
+      else CATALOGO[blk].push({id:_ncEdit,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||''});
+      (S[blk]||[]).forEach(r=>{ if(r.catId===_ncEdit){ r.desc=nome; r.custoBase=custo; if(r.usarBase) r.custoAlt=custo; } });
+      save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closeNovoCat();
+    };
+    if(CLOUD){
+      SB.from('orc_catalogo').update({nome,unidade:und,custo,margem,categoria:cat}).eq('id',_ncEdit).then(({error})=>{
+        if(error){ console.error(error); alert('Erro ao atualizar no catálogo: '+error.message); return; }
+        applyLocal();
+      });
+    } else applyLocal();
+    return;
+  }
+  // CRIAR no catálogo — item novo OU promover semente/avulso de uma linha existente
+  const rowId=_ncEditRow;
+  const oldCat = rowId ? ((S[blk].find(x=>x.id===rowId)||{}).catId||null) : null;
+  const finish=(id)=>{ id=id||uid();
+    CATALOGO[blk]=CATALOGO[blk]||[]; CATALOGO[blk].push({id,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||''});
+    if(rowId){ // religa a linha (e irmãs com o mesmo catId antigo) ao cadastro criado
+      (S[blk]||[]).forEach(r=>{ if(r.id===rowId || (oldCat && r.catId===oldCat)){ r.catId=id; r.desc=nome; r.custoBase=custo; r.und=und; r.margem=(margem==null?'':margem); if(r.usarBase) r.custoAlt=custo; } });
+    } else { S[blk].push(rowSvc(nome,1,und,custo,(margem==null?'':margem),id,'')); }
+    save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closeNovoCat(); };
+  if(CLOUD){
+    SB.from('orc_catalogo').insert({empresa_id:EMPRESA_ID,tipo:BLK_TIPO[blk],nome,unidade:und,custo,margem,categoria:cat,ativo:true}).select('id').then(({data,error})=>{
+      if(error){ console.error(error); alert('Erro ao salvar no catálogo: '+error.message); return; }
+      finish(data&&data[0]&&data[0].id);
+    });
+  } else { finish(null); }
+}
+
+/* ---------- picker do cabeçalho (solução, cliente, responsável) ---------- */
+// clientes: contratantes da tabela `clientes`; lojas/contemplados da tabela `lojas` (mesma fonte do CRM)
+let CLIENTES=null, LOJAS=null;
+async function carregarClientes(){
+  try{
+    const [c,l]=await Promise.all([
+      SB.from('clientes').select('id,tipo,nome,contato,fone,email,endereco,cnpj,pai_id').is('deleted_at',null).order('nome'),
+      SB.from('lojas').select('id,nome,grupo,numero,endereco,contato,fone,email,cnpj').is('deleted_at',null).order('nome')
+    ]);
+    if(!c.error) CLIENTES=c.data||[];
+    if(!l.error) LOJAS=(l.data||[]).map(x=>({id:x.id,tipo:'contemplado',nome:x.nome,grupo:x.grupo,numero:x.numero,contato:x.contato,endereco:x.endereco,fone:x.fone,email:x.email,cnpj:x.cnpj}));
+  }catch(e){ console.error('clientes/lojas',e); }
+}
+// RESPONSÁVEIS = colaboradores (Gestão › Equipe) com FUNÇÃO COMERCIAL delegada (ex.: "Comercial / Vendas")
+// Cascata (B): e-mail/telefone COMERCIAL do vendedor → se vazio, o geral do colaborador
+async function carregarUsuarios(){
+  try{ const {data,error}=await SB.from('colaboradores').select('id,nome,email,email_comercial,telefone,telefone_comercial,cargo,colaborador_funcoes(funcoes(nome))').is('deleted_at',null).eq('ativo',true).order('nome');
+    if(!error) USUARIOS=(data||[]).filter(c=>c.nome && (c.colaborador_funcoes||[]).some(cf=>cf.funcoes && /comercial|vendas/i.test(cf.funcoes.nome||'')))
+      .map(c=>({id:c.id,nome:c.nome,email:(c.email_comercial||c.email||''),fone:(c.telefone_comercial||c.telefone||''),cargo:c.cargo||''})); }catch(e){ console.error('colaboradores comercial',e); }
+}
+// CANAL comercial da empresa (C) — institucional
+let CANAL={email:'',fone:'',mostrar:false};
+let EMP={logo:'',nome:''};
+async function carregarEmpresaCanal(){
+  try{ if(!EMPRESA_ID)return; const {data,error}=await SB.from('empresas').select('nome,logo_url,email_comercial,telefone_comercial,mostrar_canal_comercial').eq('id',EMPRESA_ID).limit(1);
+    if(!error && data && data[0]){ CANAL={email:data[0].email_comercial||'',fone:data[0].telefone_comercial||'',mostrar:data[0].mostrar_canal_comercial!==false}; EMP={logo:data[0].logo_url||'',nome:data[0].nome||''}; } }catch(e){ console.error('canal empresa',e); }
+}
+function renderBrand(){ const el=document.getElementById('phBrand');
+  const nome=EMP.nome||'eX Eletric';
+  if(el){
+    const mark=EMP.logo?`<img src="${esc(EMP.logo)}" alt="logo ${esc(nome)}" class="ph-logo-img">`:`<span class="ph-lg"><b>e</b>X</span>`;
+    el.innerHTML=`${mark}<span class="ph-co">${esc(nome)}<br>Automação &amp; Elétrica</span>`;
+  }
+  const al=document.getElementById('appLogo');
+  if(al) al.innerHTML=EMP.logo?`<img src="${esc(EMP.logo)}" alt="logo ${esc(nome)}" class="applogo-img">`:`<b>e</b>X`;
+}
+function renderCanal(){ const el=document.getElementById('phCanal'); if(!el)return;
+  if(CANAL.mostrar && (CANAL.email||CANAL.fone))
+    el.innerHTML=`<div class="ph-canal"><div class="ph-canal-t"><span class="material-symbols-rounded">domain</span>Canal comercial</div>${CANAL.email?`<div class="cline">${esc(CANAL.email)}</div>`:''}${CANAL.fone?`<div class="cline">${esc(CANAL.fone)}</div>`:''}</div>`;
+  else el.innerHTML=''; }
+// puxa AO VIVO os dados do contratante/loja/RESPONSÁVEL pelo vínculo (id) — a proposta reflete o cadastro sempre que abrir
+function refreshClienteLive(){
+  if(S.contratanteId && CLIENTES){ const c=CLIENTES.find(x=>x.id===S.contratanteId);
+    if(c){ S.cliNome=c.nome||''; S.cliContato=c.contato||''; S.cliFone=c.fone||''; S.cliEmail=c.email||''; } }
+  if(S.lojaId && LOJAS){ const l=LOJAS.find(x=>x.id===S.lojaId);
+    if(l){ S.finNome=l.nome||''; S.finRede=l.grupo||''; S.finNum=l.numero||''; S.finEnd=l.endereco||''; } }
+  // orçamentos antigos (sem respId): tenta casar por e-mail/nome pra vincular ao usuário real
+  if(!S.respId && USUARIOS.length && (S.respEmail||S.respNome)){ const u=USUARIOS.find(x=>(S.respEmail&&x.email&&x.email.toLowerCase()===(S.respEmail||'').toLowerCase())||(S.respNome&&x.nome===S.respNome)); if(u)S.respId=u.id; }
+  if(S.respId && USUARIOS.length){ const u=USUARIOS.find(x=>x.id===S.respId);
+    if(u){ S.respNome=u.nome||''; S.respFone=u.fone||''; S.respEmail=u.email||''; } }
+}
+// mão de obra de referência (função×nível→R$/h) e abrangência — pro compositor de serviço
+let MAOOBRA=[], ABRANGENCIA=[];
+async function carregarMaoObra(){
+  try{ const {data,error}=await SB.from('mao_obra_ref').select('valor_hora, funcao:funcoes(nome), nivel:niveis(nome)');
+    if(!error) MAOOBRA=(data||[]).filter(x=>x.funcao&&x.nivel&&x.valor_hora!=null).map(x=>({funcao:x.funcao.nome,nivel:x.nivel.nome,vh:num(x.valor_hora)}));
+  }catch(e){ console.error('maoobra',e); }
+}
+async function carregarAbrangencia(){
+  try{ const {data,error}=await SB.from('orc_abrangencia').select('nivel,rotulo,ordem,custo_pct,tempo_pct').order('ordem');
+    if(!error && data && data.length) ABRANGENCIA=data;
+  }catch(e){ console.error('abrangencia',e); }
+  if(!ABRANGENCIA.length) ABRANGENCIA=[{nivel:'local',rotulo:'Local',custo_pct:0,tempo_pct:0},{nivel:'estadual',rotulo:'Estadual',custo_pct:35,tempo_pct:15},{nivel:'nacional',rotulo:'Nacional',custo_pct:80,tempo_pct:30}];
+}
+// escala fixa de dificuldade (multiplica o tempo)
+const DIFIC=[{n:'Normal',mult:1.00},{n:'Moderada',mult:1.25},{n:'Alta',mult:1.50},{n:'Severa',mult:2.00}];
+/* ---------- compositor de custo do serviço (mão de obra × dificuldade × abrangência) ---------- */
+let COMP={blk:null,rowId:null,mo:[],dif:0,abr:0,_custo:0,_tempo:0};
+function openComp(blk,rowId){
+  const r=(S[blk]||[]).find(x=>x.id===rowId); if(!r)return;
+  if(!MAOOBRA.length){ alert('Configure os valores de mão de obra em Gestão › Mão de obra (função × nível) antes de compor.'); return; }
+  COMP={blk,rowId,mo:[],dif:0,abr:0,_custo:0,_tempo:0};
+  if(r.composicao){ COMP.mo=(r.composicao.mo||[]).map(x=>({...x})); COMP.dif=r.composicao.dif||0; COMP.abr=r.composicao.abr||0; }
+  if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1,h:1}];
+  document.getElementById('compTitle').textContent='Compor custo · '+(r.desc||'serviço');
+  document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
+  document.getElementById('comp_abr').innerHTML=ABRANGENCIA.map((a,j)=>`<option value="${j}" ${j===COMP.abr?'selected':''}>${esc(a.rotulo)}</option>`).join('');
+  compRenderMO(); compCalc();
+  document.getElementById('compModal').classList.add('open');
+}
+function compMORow(r,i){
+  const opts=MAOOBRA.map((m,j)=>`<option value="${j}" ${j===r.fn?'selected':''}>${esc(m.funcao)} · ${esc(m.nivel)} (${fmt(m.vh)}/h)</option>`).join('');
+  const m=MAOOBRA[r.fn]||{vh:0};
+  return `<div class="cmprow">
+    <select onchange="COMP.mo[${i}].fn=+this.value;compRenderMO();compCalc()">${opts}</select>
+    <input class="cmpn" type="number" min="0" step="1" value="${r.pes}" oninput="COMP.mo[${i}].pes=+this.value||0;compCalc()">
+    <input class="cmpn" type="number" min="0" step="0.25" value="${r.h}" oninput="COMP.mo[${i}].h=+this.value||0;compCalc()">
+    <span class="cmpvh">${fmt(m.vh)}</span>
+    <button class="cmpdel" onclick="COMP.mo.splice(${i},1);compRenderMO();compCalc()"><span class="material-symbols-rounded">close</span></button></div>`;
+}
+function compRenderMO(){ document.getElementById('compMO').innerHTML='<div class="cmphd"><span>Função · nível</span><span>Pessoas</span><span>Horas</span><span>R$/h</span><span></span></div>'+COMP.mo.map(compMORow).join(''); }
+function compAddMO(){ COMP.mo.push({fn:0,pes:1,h:1}); compRenderMO(); compCalc(); }
+function compCalc(){
+  const dif=DIFIC[+document.getElementById('comp_dif').value||0]||DIFIC[0];
+  const abr=ABRANGENCIA[+document.getElementById('comp_abr').value||0]||{custo_pct:0,tempo_pct:0};
+  const abrC=1+num(abr.custo_pct)/100, abrT=1+num(abr.tempo_pct)/100;
+  let custo=0,tempo=0;
+  COMP.mo.forEach(r=>{ const m=MAOOBRA[r.fn]; if(!m)return; const h=num(r.pes)*num(r.h)*dif.mult*abrT; tempo+=h; custo+=h*num(m.vh)*abrC; });
+  document.getElementById('comp_custo').textContent=fmt(custo);
+  document.getElementById('comp_tempo').textContent=tempo.toLocaleString('pt-BR',{maximumFractionDigits:2})+' h';
+  COMP._custo=custo; COMP._tempo=tempo;
+}
+function closeComp(){ document.getElementById('compModal').classList.remove('open'); }
+function compAplicar(){
+  const r=(S[COMP.blk]||[]).find(x=>x.id===COMP.rowId); if(!r){closeComp();return;}
+  COMP.dif=+document.getElementById('comp_dif').value||0; COMP.abr=+document.getElementById('comp_abr').value||0;
+  compCalc();
+  r.custoBase=+(COMP._custo.toFixed(2)); r.usarBase=true; r.custoAlt=r.custoBase;
+  r.composicao={mo:COMP.mo.map(x=>({...x})),dif:COMP.dif,abr:COMP.abr};
+  r.compTempo=+(COMP._tempo.toFixed(2));
+  save(); renderBlk(BLKS.find(b=>b.key===COMP.blk)); recalc(); closeComp();
+}
+function crmData(){ try{const r=localStorage.getItem('ex_crm_v1'); if(r){const d=JSON.parse(r); if(d&&Array.isArray(d.clientes)&&d.clientes.length) return d.clientes;}}catch(e){} return null; }
+function cliSrc(){ return (CLIENTES&&CLIENTES.length)?CLIENTES:(crmData()||CAD.clientes); }
+function cliList(kind){
+  if(kind==='contratante') return cliSrc().filter(c=>c.tipo==='contratante');
+  // cliente final / loja: fonte = tabela `lojas` (mesma do CRM); fallback = clientes tipo=contemplado
+  if(LOJAS&&LOJAS.length) return LOJAS;
+  return cliSrc().filter(c=>c.tipo==='contemplado');
+}
+function cliFind(id){ return (LOJAS||[]).find(x=>x.id===id) || cliSrc().find(x=>x.id===id); }
+function setM(f,v){ S[f]=v; const el=document.querySelector('[data-m="'+f+'"]'); if(el)el.value=v; }
+function pkRow(kind,id,nome,sub){ return `<button class="pkitem" onclick="pickHP('${kind}','${id}')"><span class="pknm">${esc(nome)}</span>${sub?`<span class="pkcusto">${esc(sub)}</span>`:''}</button>`; }
+let HP_KIND=null, HP_LIST=[];
+function hpFilter(q){
+  q=(q||'').toLowerCase().trim();
+  const rows=HP_LIST.filter(c=>!q||((c.nome||'')+' '+(c.numero||'')+' '+(c.grupo||'')+' '+(c.contato||'')+' '+(c.endereco||'')+' '+(c.cnpj||'')).toLowerCase().includes(q));
+  const el=document.getElementById('hpList'); if(!el)return;
+  const hpSub=c=>[c.grupo,c.numero?('nº '+c.numero):'',c.endereco||c.contato].filter(Boolean).join(' · ');
+  el.innerHTML=rows.length?rows.map(c=>pkRow(HP_KIND,c.id,c.nome,HP_KIND==='final'?(hpSub(c)||''):(c.contato||c.endereco||''))).join('')
+    :`<div style="color:var(--tx3);padding:14px;font-size:12px;text-align:center">${HP_LIST.length?'Nada encontrado.':'Nenhum cliente no CRM ainda.'}</div>`;
+}
+function openHP(kind){
+  let title='', html='';
+  if(kind==='solucao'){
+    title='Escolher solução';
+    html=CAD.solucoes.map(s=>pkRow('solucao',s.id,s.nome,(s.escopo||'').slice(0,46)+((s.escopo||'').length>46?'…':''))).join('')
+      +`<button class="pkitem avulso" onclick="pickHP('solucao','__gen')"><span class="material-symbols-rounded">edit_note</span>Solução genérica / manual</button>`;
+  } else if(kind==='contratante'||kind==='final'){
+    title = kind==='contratante'?'Escolher cliente contratante':'Escolher cliente final / loja';
+    HP_KIND=kind; HP_LIST=cliList(kind);
+    document.getElementById('pickTitle').textContent=title;
+    document.getElementById('pickBody').innerHTML=`<div class="hpsrch"><span class="material-symbols-rounded">search</span><input id="hpq" placeholder="Buscar por nome, nº, rede, contato…" oninput="hpFilter(this.value)"></div><div id="hpList" class="hplist"></div>`;
+    hpFilter('');
+    document.getElementById('pickModal').classList.add('open');
+    setTimeout(()=>{const q=document.getElementById('hpq'); if(q)q.focus();},60);
+    return;
+  } else if(kind==='resp'){
+    title='Escolher responsável (comercial)';
+    const lista=USUARIOS.length?USUARIOS:CAD.usuarios.filter(u=>u.papel==='comercial');
+    html=lista.map(u=>pkRow('resp',u.id,u.nome,u.email||u.fone||'')).join('')||'<div style="color:var(--tx3);padding:12px;font-size:12px">Nenhum usuário cadastrado.</div>';
+  }
+  document.getElementById('pickTitle').textContent=title;
+  document.getElementById('pickBody').innerHTML=html;
+  document.getElementById('pickModal').classList.add('open');
+}
+function pickHP(kind,id){
+  if(kind==='solucao'){
+    if(id==='__gen'){ setM('solTitulo',''); setM('solDesc',''); }
+    else{ const s=CAD.solucoes.find(x=>x.id===id); if(s){ setM('solTitulo',s.nome); setM('solDesc',s.escopo||''); } }
+  } else if(kind==='contratante'){ const c=cliFind(id); if(c){ S.contratanteId=id; setM('cliNome',c.nome); setM('cliContato',c.contato||''); setM('cliFone',c.fone||''); setM('cliEmail',c.email||''); } }
+  else if(kind==='final'){ const c=cliFind(id); if(c){ S.lojaId=id; setM('finNome',c.nome); setM('finRede',c.grupo||''); setM('finNum',c.numero||''); setM('finEnd',c.endereco||''); } }
+  else if(kind==='resp'){ const u=(USUARIOS.find(x=>x.id===id))||CAD.usuarios.find(x=>x.id===id); if(u){ S.respId=id; setM('respNome',u.nome); setM('respFone',u.fone||''); setM('respEmail',u.email||''); } }
+  save(); closePick();
+}
+function updObs(blk,val){ if(!S.obs)S.obs={}; S.obs[blk]=val; const p=document.getElementById('obsp_'+blk); if(p)p.textContent=val?('Obs.: '+val):''; save(); }
+function toggleObs(blk){ if(!S.obsOn)S.obsOn={}; const on=S.obsOn[blk]!==false; S.obsOn[blk]=!on; save(); renderBlk(BLKS.find(b=>b.key===blk)); }
+/* chave de visibilidade padrão (chavinha + olhinho aberto/fechado) */
+function visChave(on,onclickStr){
+  return `<button class="vischave ${on?'on':'off'}" onclick="${onclickStr}" title="${on?'Visível na proposta — clique para ocultar':'Oculto na proposta — clique para mostrar'}"><span class="vsw"><span class="vkb"></span></span><span class="material-symbols-rounded eye">${on?'visibility':'visibility_off'}</span><span class="vtxt">${on?'na proposta':'oculto'}</span></button>`;
+}
+/* descrição geral do orçamento (opcional) */
+function renderDescGeral(){
+  const on=S.descGeralOn!==false;
+  const ta=document.getElementById('descGeralTa'); if(ta) ta.value=S.descGeral||'';
+  const tog=document.getElementById('descGeralTog'); if(tog) tog.innerHTML=visChave(on,"toggleDescGeral()");
+  const p=document.getElementById('descGeralPrint'); if(p) p.textContent=S.descGeral||'';
+  const panel=document.getElementById('descGeralPanel'); if(panel) panel.classList.toggle('hideprint',!on);
+}
+function toggleDescGeral(){ const on=S.descGeralOn!==false; S.descGeralOn=!on; save(); renderDescGeral(); }
+function updDescGeral(v){ S.descGeral=v; const p=document.getElementById('descGeralPrint'); if(p)p.textContent=v; save(); }
+function delRow(blk,id){ S[blk]=S[blk].filter(x=>x.id!==id); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
+
+/* ---------- arrastar para reordenar (dentro do mesmo bloco) ---------- */
+let DRAG=null;
+function dragStart(e,blk,id){ DRAG={blk,id}; try{e.dataTransfer.effectAllowed='move'; e.dataTransfer.setData('text/plain',id);}catch(_){}}
+function dragOver(e){ if(!DRAG)return; e.preventDefault(); try{e.dataTransfer.dropEffect='move';}catch(_){}
+  const tr=e.target.closest&&e.target.closest('tr');
+  document.querySelectorAll('.tbl tr.dragover').forEach(x=>x.classList.remove('dragover'));
+  if(tr&&tr.dataset.id&&tr.dataset.id!==DRAG.id) tr.classList.add('dragover');
+}
+function dragDrop(e,blk){
+  document.querySelectorAll('.tbl tr.dragover').forEach(x=>x.classList.remove('dragover'));
+  if(!DRAG||DRAG.blk!==blk){ DRAG=null; return; }   // só reordena dentro do mesmo bloco
+  e.preventDefault();
+  const arr=S[blk]; const from=arr.findIndex(x=>x.id===DRAG.id);
+  const tr=e.target.closest&&e.target.closest('tr');
+  let to = (tr&&tr.dataset.id)?arr.findIndex(x=>x.id===tr.dataset.id):arr.length-1;
+  DRAG=null;
+  if(from<0||to<0||from===to) return;
+  const [it]=arr.splice(from,1); arr.splice(to,0,it);
+  save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc();
+}
+
+/* campos meta (inputs data-m) e fechamento (data-f) */
+function bindFields(){
+  document.querySelectorAll('[data-m]').forEach(el=>{
+    const k=el.dataset.m; el.value=S[k]??'';
+    el.oninput=()=>{S[k]=el.value;save();};
+  });
+  document.querySelectorAll('[data-f]').forEach(el=>{
+    const k=el.dataset.f; el.value=S[k]??0;
+    el.oninput=()=>{S[k]=num(el.value);save();
+      if(k==='margemBase') BLKS.filter(b=>b.custo).forEach(renderBlk); // re-renderiza linhas que herdam
+      recalc();};
+  });
+}
+
+/* ---------- fechamento ---------- */
+function recalc(){
+  const preco={}, cst={};
+  BLKS.forEach(b=>{ const on=blocoAtivo(b.key); preco[b.key]=on?blkSub(b.key):0; cst[b.key]=on?blkCusto(b.key):0; });
+  const bruto=preco.servicos+preco.equip+preco.despesas+preco.materiais;
+  const desc=bruto*num(S.descontoPct)/100;
+  const liquido=bruto-desc;                                 // valor antes do imposto
+  const imp=liquido*num(S.impostoPct)/100;
+  const total=liquido+imp;                                  // imposto SOMA ao total (repasse ao cliente)
+  const custo=cst.servicos+cst.equip+cst.despesas+cst.materiais;   // custo real (auto)
+  const lucro=liquido-custo;                                // imposto é repasse — NÃO reduz o lucro
+  const marg=liquido?lucro/liquido*100:0;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('s_serv',fmt(preco.servicos)); set('s_equip',fmt(preco.equip));
+  set('s_desp',fmt(preco.despesas)); set('s_mat',fmt(preco.materiais));
+  set('s_bruto',fmt(bruto)); set('s_desc','− '+fmt(desc));
+  set('s_total',fmt(total)); set('s_preco',fmt(total));
+  set('s_imp','+ '+fmt(imp)); set('s_custo',fmt(custo));
+  const lu=document.getElementById('s_lucro'), mg=document.getElementById('s_marg');
+  if(lu)lu.textContent=fmt(lucro); if(mg)mg.textContent=marg.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
+  const neg=(lucro<0);
+  if(lu)lu.className='val luc'+(neg?' neg':''); if(mg)mg.className='val luc'+(neg?' neg':'');
+  const lnd=document.getElementById('ln_desc'); if(lnd) lnd.classList.toggle('zeroprint', num(S.descontoPct)<=0);  // desconto 0% some na proposta
+  const lni=document.getElementById('ln_imp'); if(lni) lni.classList.toggle('zeroprint', num(S.impostoPct)<=0);   // imposto 0% some na proposta
+  checkValidade();
+  S._total=total; S._custo=custo; S._lucro=lucro;
+  writeback(total);
+}
+/* aviso de validade vencida (interno, some na proposta) */
+function checkValidade(){
+  const el=document.getElementById('valWarn'); if(!el)return;
+  const v=S.validadeISO;
+  if(!v){ el.textContent=''; el.classList.remove('on'); return; }
+  const hoje=new Date(); hoje.setHours(0,0,0,0);
+  const d=new Date(v+'T00:00:00');
+  if(!isNaN(d) && d<hoje){ el.textContent='validade vencida'; el.classList.add('on'); }
+  else { el.textContent=''; el.classList.remove('on'); }
+}
+
+/* ---------- modo ver/editar ---------- */
+function setMode(m){
+  document.body.classList.toggle('viewing',m==='view');
+  document.body.classList.toggle('editing',m==='edit');
+  document.getElementById('mView').classList.toggle('on',m==='view');
+  document.getElementById('mEdit').classList.toggle('on',m==='edit');
+}
+
+/* ---------- ponte com o CRM: pré-preenche o cabeçalho vindo de uma oportunidade ---------- */
+function applyPrefill(){
+  if(ORC_ID){ localStorage.removeItem('ex_orc_prefill'); return; } // orçamento já existe na nuvem → não sobrescreve
+  try{ const r=localStorage.getItem('ex_orc_prefill'); if(!r)return; localStorage.removeItem('ex_orc_prefill');
+    const p=JSON.parse(r);
+    // NÃO pré-preenche a "Descrição do escopo" (solDesc) — vinha da obs da oportunidade e induzia a erro; o escopo é digitado/escolhido da solução
+    ['cliNome','cliContato','cliFone','cliEmail','finNome','finEnd','solTitulo'].forEach(k=>{ if(p[k]!=null&&p[k]!=='') setM(k,p[k]); });
+    stampNovo(); // data de hoje + criador logado
+    save();
+  }catch(e){}
+}
+// info da oportunidade (lê o CRM) para o banner de vínculo
+function oppInfo(){ if(!OPP)return null; try{ const crm=JSON.parse(localStorage.getItem('ex_crm_v1')||'{}'); const o=(crm.oportunidades||[]).find(x=>x.id===OPP); if(!o)return null; const f=id=>(crm.clientes||[]).find(c=>c.id===id); const ct=f(o.contratanteId),cp=f(o.contempladoId); const col=(crm.colunas||[]).find(k=>k.id===o.colId); return {titulo:[ct&&ct.nome,cp&&cp.nome,o.objeto].filter(Boolean).join(' · '), fase:col?col.nome:''}; }catch(e){return null;} }
+// grava total + status de volta no índice que o funil lê
+function writeback(total){ if(!OPP)return; try{ const idx=JSON.parse(localStorage.getItem('ex_orc_index')||'{}'); const info=oppInfo(); idx[OPP]={total:total, status:S.status||'rascunho', titulo:info?info.titulo:''}; localStorage.setItem('ex_orc_index',JSON.stringify(idx)); }catch(e){} }
+function renderBanner(){ const el=document.getElementById('oppBanner'); if(!el){ renderComprovantes(); return; } if(!OPP){ el.innerHTML=''; renderComprovantes(); return; }
+  const info=oppInfo(); const aprovada=(S.comprovantes||[]).length>0;
+  const st=aprovada?'aprovado':(S.status==='aprovado'?'enviado':(S.status||'rascunho'));
+  el.innerHTML=`<div class="oppbar">
+    <span class="material-symbols-rounded">link</span>
+    <div class="ob-txt"><b>Orçamento da oportunidade:</b> ${info?esc(info.titulo):esc(OPP)}${info&&info.fase?` <span class="ob-fase">${esc(info.fase)}</span>`:''}</div>
+    <div class="ob-st">${aprovada
+      ? `<span class="obst-aprov"><span class="material-symbols-rounded">verified</span>Aprovada</span>`
+      : ['rascunho','enviado'].map(s=>`<button class="obst ${st===s?'on':''}" onclick="setStatus('${s}')">${s}</button>`).join('')}</div>
+    <button class="btn btn-s" onclick="voltarFunil()"><span class="material-symbols-rounded">arrow_back</span>Funil</button>
+  </div>`;
+  renderComprovantes();
+}
+/* ===== Comprovantes de fechamento (Fase 1) — a aprovação vira reflexo da PROVA ===== */
+const CMP_TIPOS={email:{nome:'E-mail de aprovação',ic:'mail'},os:{nome:'Ordem de serviço / pedido',ic:'receipt_long'},contrato:{nome:'Contrato / termo',ic:'history_edu'},outro:{nome:'Outro',ic:'attach_file'}};
+function syncStatusFromComprovantes(){ const has=(S.comprovantes||[]).length>0; if(has){ if(S.status!=='aprovado')S.status='aprovado'; } else if(S.status==='aprovado'){ S.status='enviado'; } }
+function onComprovantesChange(){ syncStatusFromComprovantes(); try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){} try{recalc();}catch(e){} writeback(S._total||0);
+  if(OPP&&CLOUD){ pushOrc(); }   // fechamento é ação deliberada → grava o orçamento (dados+status) na nuvem
+  renderBanner(); }
+function cmpRow(c){ const t=CMP_TIPOS[c.tipo]||CMP_TIPOS.outro; const meta=[c.origem,(c.data?c.data.split('-').reverse().join('/'):'')].filter(Boolean).map(esc).join(' · ');
+  return `<div class="cmp-item">
+    <span class="cmp-ic"><span class="material-symbols-rounded">${t.ic}</span></span>
+    <div class="cmp-b"><div class="cmp-t">${esc(t.nome)}</div><div class="cmp-m">${meta||'—'}${c.obs?' · '+esc(c.obs):''}${c.nome?' · '+esc(c.nome):''}</div></div>
+    ${c.url?`<button class="cmp-mini" title="Ver" onclick="verComprovante('${c.id}')"><span class="material-symbols-rounded">open_in_new</span></button>`:''}
+    <button class="cmp-mini del" title="Remover" onclick="removeComprovante('${c.id}')"><span class="material-symbols-rounded">delete</span></button>
+  </div>`; }
+function renderComprovantes(){ const el=document.getElementById('comprovantesPanel'); if(!el)return; if(!OPP){ el.innerHTML=''; return; }
+  const cs=S.comprovantes||[];
+  el.innerHTML=`<div class="cmp-wrap noprint">
+    <div class="cmp-h"><span class="material-symbols-rounded">verified_user</span>Comprovantes de fechamento${cs.length?` <span class="cmp-count">${cs.length}</span>`:''}</div>
+    <div class="cmp-hint">Anexe a prova da aprovação do cliente (e-mail, ordem de serviço, contrato). Com <b>1 comprovante</b>, a proposta vira <b>Aprovada</b>.</div>
+    <div class="cmp-list">${cs.length?cs.map(cmpRow).join(''):'<div class="cmp-empty">Nenhum comprovante ainda.</div>'}</div>
+    <button class="btn btn-s btn-p" onclick="addComprovanteUI()"><span class="material-symbols-rounded">add</span>Adicionar comprovante</button>
+    <div id="cmpForm"></div>
+  </div>`; }
+function addComprovanteUI(){ const f=document.getElementById('cmpForm'); if(!f)return;
+  f.innerHTML=`<div class="cmp-form">
+    <div class="cmp-frow"><label>Tipo</label><select id="cmpTipo" class="cin">${Object.keys(CMP_TIPOS).map(k=>`<option value="${k}">${CMP_TIPOS[k].nome}</option>`).join('')}</select></div>
+    <div class="cmp-frow"><label>De quem / origem</label><input id="cmpOrigem" class="cin" placeholder="ex.: Denis Ferraz (Copeland)"></div>
+    <div class="cmp-frow"><label>Data</label><input id="cmpData" class="cin" type="date"></div>
+    <div class="cmp-frow"><label>Observação</label><input id="cmpObs" class="cin" placeholder="opcional"></div>
+    <div class="cmp-frow"><label>Link (Drive/PDF)</label><input id="cmpUrl" class="cin" placeholder="cole um link, se houver"></div>
+    <div class="cmp-frow"><label>Arquivo</label><input id="cmpFile" type="file" accept="image/*,application/pdf,.eml,.msg,.doc,.docx"></div>
+    <div class="cmp-fact"><button class="btn btn-s btn-p" id="cmpSaveBtn" onclick="salvarComprovante()"><span class="material-symbols-rounded">check</span>Salvar comprovante</button><button class="btn btn-s" onclick="document.getElementById('cmpForm').innerHTML=''"><span class="material-symbols-rounded">close</span>Cancelar</button></div>
+  </div>`; }
+async function salvarComprovante(){
+  const g=id=>document.getElementById(id);
+  const tipo=(g('cmpTipo')||{}).value||'outro', origem=((g('cmpOrigem')||{}).value||'').trim(), data=(g('cmpData')||{}).value||'', obs=((g('cmpObs')||{}).value||'').trim();
+  let url=((g('cmpUrl')||{}).value||'').trim(), nome='';
+  const fi=g('cmpFile'), file=fi&&fi.files&&fi.files[0];
+  if(file){
+    if(MODELO_V2){ alert('MODELO v2: upload desativado (sandbox). Use um link pra testar.'); return; }
+    if(!(OPP&&CLOUD&&SB)){ alert('Para anexar arquivo é preciso estar logado. Você pode colar um link enquanto isso.'); return; }
+    if(file.size>8*1024*1024){ alert('Arquivo muito grande (máx 8MB).'); return; }
+    const btn=g('cmpSaveBtn'); const _h=btn?btn.innerHTML:''; if(btn){btn.disabled=true;btn.innerHTML='<span class="material-symbols-rounded">hourglass_top</span>Enviando…';}
+    try{ const ext=((file.name.split('.').pop()||'bin')+'').toLowerCase().replace(/[^a-z0-9]/g,'')||'bin';
+      const path='comprovantes/'+(ORC_ID||OPP)+'-'+(new Date().getTime())+'.'+ext;
+      const up=await SB.storage.from('anexos').upload(path,file,{upsert:true,contentType:file.type||'application/octet-stream'});
+      if(up.error)throw up.error; url='anexos:'+path; nome=file.name;
+    }catch(e){ alert('Falha no upload: '+(e.message||e)); if(btn){btn.disabled=false;btn.innerHTML=_h;} return; }
+    if(btn){btn.disabled=false;btn.innerHTML=_h;}
+  }
+  if(!url && !origem && !obs){ alert('Preencha ao menos a origem, um link ou um arquivo.'); return; }
+  if(!Array.isArray(S.comprovantes))S.comprovantes=[];
+  S.comprovantes.push({id:uid(),tipo,origem,data,obs,url,nome});
+  onComprovantesChange();
+}
+function removeComprovante(id){ if(!confirm('Remover este comprovante? Sem comprovantes, a proposta deixa de estar Aprovada.'))return; S.comprovantes=(S.comprovantes||[]).filter(c=>c.id!==id); onComprovantesChange(); }
+async function verComprovante(id){ const c=(S.comprovantes||[]).find(x=>x.id===id); if(!c||!c.url)return;
+  if(c.url.indexOf('anexos:')===0){ if(!SB){alert('Sem conexão.');return;} try{ const {data,error}=await SB.storage.from('anexos').createSignedUrl(c.url.slice(7),3600); if(error)throw error; window.open(data.signedUrl,'_blank'); }catch(e){ alert('Não foi possível abrir: '+(e.message||e)); } }
+  else { window.open(c.url,'_blank'); } }
+function setStatus(s){ S.status=s;
+  try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){}   // local sempre
+  try{recalc();}catch(e){} writeback(S._total||0);               // atualiza o índice local do funil
+  // status é AÇÃO explícita: grava só o status na nuvem NA HORA (não arrasta edições de conteúdo não salvas)
+  if(!MODELO_V2 && OPP&&CLOUD&&ORC_ID){ SB.from('orcamentos').update({status:s}).eq('id',ORC_ID).then(({error})=>{ if(error)console.error('status',error); }); }
+  else if(OPP&&CLOUD){ saveOrc(); }   // proposta nova ainda sem id: o insert automático leva o status
+  renderBanner(); }
+// volta ao funil SEMPRE pelo shell (que tem o menu lateral): embutido → avisa o shell; avulso → abre o shell no funil
+function voltarFunil(){ try{ if(window.top!==window.self){ parent.postMessage({type:'exNav',view:'funil'},'*'); return; } }catch(e){} location.href='index.html#funil'; }
+
+/* ---------- blocos: liga/desliga ---------- */
+function renderBlocosBar(){
+  const el=document.getElementById('blocosBar'); if(!el)return;
+  el.innerHTML='<span class="bb-lbl">Blocos da proposta:</span>'+BLKS.map(b=>{
+    const on=blocoAtivo(b.key);
+    return `<button class="bbchip ${on?'on':'off'}" onclick="toggleBloco('${b.key}')" title="${on?'Incluído — clique para remover deste orçamento':'Removido — clique para incluir'}">
+      <span class="material-symbols-rounded ic">${b.icon}</span><span class="nm">${b.titulo}</span>
+      <span class="material-symbols-rounded ck">${on?'check_circle':'add_circle'}</span></button>`;
+  }).join('');
+}
+function applyBlocoVis(){
+  BLKS.forEach(b=>{ const on=blocoAtivo(b.key);
+    const c=document.getElementById('blk_'+b.key); if(c){ c.style.display=''; c.classList.toggle('blk-off',!on); } // off: recolhe na tela (chave fica) + some na impressão
+    const ln=document.getElementById('ln_'+b.key); if(ln) ln.style.display=on?'':'none';
+  });
+}
+function toggleBloco(k){ S.blocoOn[k]=!blocoAtivo(k); save(); renderBlk(BLKS.find(b=>b.key===k)); applyBlocoVis(); recalc(); }
+
+/* ---------- boot ---------- */
+function boot(){ BLKS.forEach(renderBlk); applyBlocoVis(); renderDescGeral(); bindFields(); applyPrefill(); recalc(); try{syncStatusFromComprovantes();}catch(e){} renderBanner(); renderCanal(); renderBrand(); if(MANUAL&&_lastSaved==='')_lastSaved=_hhmm(); renderSaveState(); }
+initOrc();
+</script>
+</body>
+</html>
