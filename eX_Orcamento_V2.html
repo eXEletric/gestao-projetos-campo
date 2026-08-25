@@ -305,9 +305,24 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .hplist{max-height:54vh;overflow-y:auto}
 /* compositor de custo do serviço */
 .cmpsec{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin:2px 0 8px}
-.cmphd{display:grid;grid-template-columns:1fr 62px 62px 68px 28px;gap:8px;font-size:9.5px;font-weight:700;text-transform:uppercase;color:var(--tx3);padding:0 2px 5px;text-align:center}
+.cmphd{display:grid;grid-template-columns:1fr 96px 64px 78px 28px;gap:8px;font-size:9.5px;font-weight:700;text-transform:uppercase;color:var(--tx3);padding:0 2px 5px;text-align:center}
 .cmphd span:first-child{text-align:left}
-.cmprow{display:grid;grid-template-columns:1fr 62px 62px 68px 28px;gap:8px;align-items:center;padding:4px 0}
+.cmprow{display:grid;grid-template-columns:1fr 96px 64px 78px 28px;gap:8px;align-items:center;padding:4px 0}
+.cmprow .cmpstep{display:inline-flex;align-items:center;justify-content:center;gap:2px;border:1px solid var(--line2);border-radius:7px;overflow:hidden}
+.cmprow .cmpstep button{border:none;background:var(--surf);color:var(--pri);width:26px;height:28px;cursor:pointer;font-size:15px;font-weight:700}
+.cmprow .cmpstep button:hover{background:var(--pri-bg)}.cmprow .cmpstep .v{min-width:22px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
+.cmprow .cmpval{text-align:right;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--tx)}
+.cmpdrow{display:flex;align-items:center;gap:8px;padding:4px 0}
+.cmpdrow .cmpin{flex:1;padding:7px 9px;border:1px solid var(--line2);border-radius:7px;font-size:13px;background:var(--surf);color:var(--tx)}
+.cmpdrow .cmpin.val{flex:0 0 110px;text-align:right;font-variant-numeric:tabular-nums}
+.cmpdrow .cmprs{font-size:12px;color:var(--tx3)}
+.cmpdrow .cmpdel{border:none;background:none;color:var(--tx3);cursor:pointer;padding:3px;border-radius:6px}
+.cmpdrow .cmpdel:hover{background:#fcebeb;color:var(--red)}.cmpdrow .cmpdel .material-symbols-rounded{font-size:16px}
+.cmptv{width:80px;padding:7px 9px;border:1px solid var(--line2);border-radius:7px;text-align:center;font-size:14px;font-variant-numeric:tabular-nums}
+.cmpseg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.cmpseg button{border:none;background:var(--surf);color:var(--tx2);font:600 12.5px inherit;padding:7px 13px;cursor:pointer}
+.cmpseg button.on{background:var(--pri);color:#fff}
+.cmphint{font-size:12px;color:var(--tx3)}
 .cmprow select{width:100%;padding:6px 7px;border:1px solid var(--line2);border-radius:7px;font-size:12.5px;background:var(--surf);color:var(--tx)}
 .cmprow .cmpn{width:100%;padding:6px;border:1px solid var(--line2);border-radius:7px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
 .cmprow .cmpvh{text-align:right;font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums}
@@ -625,15 +640,26 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
   <div class="modal" style="width:600px;max-width:100%">
     <div class="mh"><span class="material-symbols-rounded">precision_manufacturing</span><h3 id="compTitle">Compor custo do serviço</h3><button class="x" onclick="closeComp()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div class="cmpsec">Mão de obra <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— função · nível (R$/h da referência) × pessoas × horas</span></div>
+      <div class="cmpsec">Tempo do serviço</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
+        <input id="comp_tv" class="cmptv" value="1" inputmode="decimal" oninput="COMP.tv=num(this.value);compCalc()">
+        <span class="cmpseg"><button id="comp_un_d" onclick="setCompUn('dias')">dias</button><button id="comp_un_h" onclick="setCompUn('horas')">horas</button></span>
+        <span class="cmphint" id="comp_horas"></span>
+      </div>
+      <div class="cmpsec">Equipe (mão de obra) <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— função · nível (R$/h do banco) × pessoas × tempo</span></div>
       <div id="compMO"></div>
-      <button class="cmpadd" onclick="compAddMO()"><span class="material-symbols-rounded">add</span>profissional</button>
+      <button class="cmpadd" onclick="compAddMO()"><span class="material-symbols-rounded">person_add</span>profissional</button>
+      <div class="cmpsec" style="margin-top:16px">Despesas da execução <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— deslocamento, hospedagem, alimentação…</span></div>
+      <div id="compDesp"></div>
+      <button class="cmpadd" onclick="compAddDesp()"><span class="material-symbols-rounded">add</span>despesa</button>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
         <div><label class="cmplbl">Dificuldade</label><select id="comp_dif" class="cmpsel" onchange="compCalc()"></select></div>
         <div><label class="cmplbl">Abrangência</label><select id="comp_abr" class="cmpsel" onchange="compCalc()"></select></div>
       </div>
       <div class="cmpres">
-        <div class="cr"><span>Custo do serviço</span><b id="comp_custo">R$ 0,00</b></div>
+        <div class="cr"><span>Mão de obra</span><b id="comp_mo">R$ 0,00</b></div>
+        <div class="cr"><span>Despesas</span><b id="comp_dsp">R$ 0,00</b></div>
+        <div class="cr" style="border-top:1px solid var(--line2);margin-top:2px;padding-top:8px"><span>Custo do serviço</span><b id="comp_custo" style="font-size:16px">R$ 0,00</b></div>
         <div class="cr"><span>Tempo de execução</span><b id="comp_tempo" style="color:var(--pri)">0 h</b></div>
       </div>
     </div>
@@ -1421,49 +1447,70 @@ async function carregarAbrangencia(){
 }
 // escala fixa de dificuldade (multiplica o tempo)
 const DIFIC=[{n:'Normal',mult:1.00},{n:'Moderada',mult:1.25},{n:'Alta',mult:1.50},{n:'Severa',mult:2.00}];
-/* ---------- compositor de custo do serviço (mão de obra × dificuldade × abrangência) ---------- */
-let COMP={blk:null,rowId:null,mo:[],dif:0,abr:0,_custo:0,_tempo:0};
+/* ---------- compositor de custo do serviço — MOTOR NOVO (equipe × tempo dias/horas + despesas) ---------- */
+const JORNADA=8;   // horas por dia (conversão dias↔horas)
+let COMP={blk:null,rowId:null,tv:1,un:'dias',mo:[],desp:[],dif:0,abr:0,_custo:0,_tempo:0,_mo:0,_dsp:0};
 function openComp(blk,rowId){
   const r=(S[blk]||[]).find(x=>x.id===rowId); if(!r)return;
-  if(!MAOOBRA.length){ alert('Configure os valores de mão de obra em Gestão › Mão de obra (função × nível) antes de compor.'); return; }
-  COMP={blk,rowId,mo:[],dif:0,abr:0,_custo:0,_tempo:0};
-  if(r.composicao){ COMP.mo=(r.composicao.mo||[]).map(x=>({...x})); COMP.dif=r.composicao.dif||0; COMP.abr=r.composicao.abr||0; }
-  if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1,h:1}];
+  if(!MAOOBRA.length){
+    if(!CLOUD) alert('Você está em modo local (sem login). Faça login para carregar a mão de obra do banco e compor o custo pela equipe.');
+    else alert('Nenhuma mão de obra cadastrada. Vá em Comercial › Cadastros › Mão de obra e clique em "Carregar os 7 tipos sugeridos" (ou cadastre função × nível → R$/h) antes de compor.');
+    return; }
+  COMP={blk,rowId,tv:1,un:'dias',mo:[],desp:[],dif:0,abr:0,_custo:0,_tempo:0,_mo:0,_dsp:0};
+  const c=r.composicao;
+  if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; COMP.abr=c.abr||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; }
+  if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1}];
   document.getElementById('compTitle').textContent='Compor custo · '+(r.desc||'serviço');
   document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
   document.getElementById('comp_abr').innerHTML=ABRANGENCIA.map((a,j)=>`<option value="${j}" ${j===COMP.abr?'selected':''}>${esc(a.rotulo)}</option>`).join('');
-  compRenderMO(); compCalc();
+  document.getElementById('comp_tv').value=COMP.tv;
+  setCompUn(COMP.un,true);
+  compRenderMO(); compRenderDesp(); compCalc();
   document.getElementById('compModal').classList.add('open');
 }
+function setCompUn(u,noCalc){ COMP.un=u; const d=document.getElementById('comp_un_d'),h=document.getElementById('comp_un_h'); if(d)d.classList.toggle('on',u==='dias'); if(h)h.classList.toggle('on',u==='horas'); if(!noCalc)compCalc(); }
+function compHoras(){ return COMP.un==='dias' ? num(COMP.tv)*JORNADA : num(COMP.tv); }
 function compMORow(r,i){
   const opts=MAOOBRA.map((m,j)=>`<option value="${j}" ${j===r.fn?'selected':''}>${esc(m.funcao)} · ${esc(m.nivel)} (${fmt(m.vh)}/h)</option>`).join('');
-  const m=MAOOBRA[r.fn]||{vh:0};
+  const m=MAOOBRA[r.fn]||{vh:0}; const h=compHoras(); const val=num(r.pes)*h*num(m.vh);
   return `<div class="cmprow">
     <select onchange="COMP.mo[${i}].fn=+this.value;compRenderMO();compCalc()">${opts}</select>
-    <input class="cmpn" type="number" min="0" step="1" value="${r.pes}" oninput="COMP.mo[${i}].pes=+this.value||0;compCalc()">
-    <input class="cmpn" type="number" min="0" step="0.25" value="${r.h}" oninput="COMP.mo[${i}].h=+this.value||0;compCalc()">
-    <span class="cmpvh">${fmt(m.vh)}</span>
+    <span class="cmpstep"><button onclick="compPes(${i},-1)">−</button><span class="v">${r.pes}</span><button onclick="compPes(${i},1)">+</button></span>
+    <span class="cmpvh">${fmt(m.vh)}/h</span>
+    <span class="cmpval">${fmt(val)}</span>
     <button class="cmpdel" onclick="COMP.mo.splice(${i},1);compRenderMO();compCalc()"><span class="material-symbols-rounded">close</span></button></div>`;
 }
-function compRenderMO(){ document.getElementById('compMO').innerHTML='<div class="cmphd"><span>Função · nível</span><span>Pessoas</span><span>Horas</span><span>R$/h</span><span></span></div>'+COMP.mo.map(compMORow).join(''); }
-function compAddMO(){ COMP.mo.push({fn:0,pes:1,h:1}); compRenderMO(); compCalc(); }
+function compPes(i,d){ if(!COMP.mo[i])return; COMP.mo[i].pes=Math.max(0,(+COMP.mo[i].pes||0)+d); compRenderMO(); compCalc(); }
+function compRenderMO(){ document.getElementById('compMO').innerHTML='<div class="cmphd"><span>Função · nível</span><span>Pessoas</span><span>R$/h</span><span>Subtotal</span><span></span></div>'+COMP.mo.map(compMORow).join(''); }
+function compAddMO(){ COMP.mo.push({fn:0,pes:1}); compRenderMO(); compCalc(); }
+function compRenderDesp(){ const el=document.getElementById('compDesp'); if(!el)return;
+  el.innerHTML=(COMP.desp||[]).map((d,i)=>`<div class="cmpdrow"><input class="cmpin" value="${esc(d.nome)}" placeholder="ex.: Deslocamento" oninput="COMP.desp[${i}].nome=this.value"><span class="cmprs">R$</span><input class="cmpin val" value="${d.valor!=null&&d.valor!==''?String(d.valor).replace('.',','):''}" inputmode="decimal" oninput="COMP.desp[${i}].valor=num(this.value);compCalc()"><button class="cmpdel" onclick="COMP.desp.splice(${i},1);compRenderDesp();compCalc()"><span class="material-symbols-rounded">close</span></button></div>`).join('')
+    || '<div style="font-size:12px;color:var(--tx3);padding:2px 2px 6px">Sem despesas nesta execução.</div>'; }
+function compAddDesp(){ if(!COMP.desp)COMP.desp=[]; COMP.desp.push({nome:'',valor:''}); compRenderDesp(); }
 function compCalc(){
   const dif=DIFIC[+document.getElementById('comp_dif').value||0]||DIFIC[0];
   const abr=ABRANGENCIA[+document.getElementById('comp_abr').value||0]||{custo_pct:0,tempo_pct:0};
   const abrC=1+num(abr.custo_pct)/100, abrT=1+num(abr.tempo_pct)/100;
-  let custo=0,tempo=0;
-  COMP.mo.forEach(r=>{ const m=MAOOBRA[r.fn]; if(!m)return; const h=num(r.pes)*num(r.h)*dif.mult*abrT; tempo+=h; custo+=h*num(m.vh)*abrC; });
-  document.getElementById('comp_custo').textContent=fmt(custo);
-  document.getElementById('comp_tempo').textContent=tempo.toLocaleString('pt-BR',{maximumFractionDigits:2})+' h';
-  COMP._custo=custo; COMP._tempo=tempo;
+  const h=compHoras();
+  let mo=0;
+  COMP.mo.forEach(r=>{ const m=MAOOBRA[r.fn]; if(!m)return; mo+=num(r.pes)*h*dif.mult*num(m.vh)*abrC; });   // custo = esforço (pessoas×horas) × R$/h
+  const tempo=(COMP.mo.some(r=>MAOOBRA[r.fn]&&num(r.pes)>0)) ? h*dif.mult*abrT : 0;                          // DURAÇÃO (equipe em paralelo), não soma por pessoa
+  const dsp=(COMP.desp||[]).reduce((a,d)=>a+num(d.valor),0);
+  const custo=mo+dsp;
+  COMP._mo=mo; COMP._dsp=dsp; COMP._custo=custo; COMP._tempo=tempo;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('comp_mo',fmt(mo)); set('comp_dsp',fmt(dsp)); set('comp_custo',fmt(custo));
+  set('comp_tempo',tempo.toLocaleString('pt-BR',{maximumFractionDigits:2})+' h ('+(tempo/JORNADA).toLocaleString('pt-BR',{maximumFractionDigits:1})+' dias)');
+  set('comp_horas', COMP.un==='dias' ? ('= '+h.toLocaleString('pt-BR',{maximumFractionDigits:2})+'h por pessoa') : '');
 }
 function closeComp(){ document.getElementById('compModal').classList.remove('open'); }
 function compAplicar(){
   const r=(S[COMP.blk]||[]).find(x=>x.id===COMP.rowId); if(!r){closeComp();return;}
   COMP.dif=+document.getElementById('comp_dif').value||0; COMP.abr=+document.getElementById('comp_abr').value||0;
+  COMP.tv=num(document.getElementById('comp_tv').value);
   compCalc();
   r.custoBase=+(COMP._custo.toFixed(2)); r.usarBase=true; r.custoAlt=r.custoBase;
-  r.composicao={mo:COMP.mo.map(x=>({...x})),dif:COMP.dif,abr:COMP.abr};
+  r.composicao={mo:COMP.mo.map(x=>({...x})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,abr:COMP.abr,tv:COMP.tv,un:COMP.un};
   r.compTempo=+(COMP._tempo.toFixed(2));
   save(); renderBlk(BLKS.find(b=>b.key===COMP.blk)); recalc(); closeComp();
 }
