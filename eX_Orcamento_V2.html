@@ -636,10 +636,10 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
     <div class="mh"><span class="material-symbols-rounded">note_add</span><h3 id="novoCatTitle">Novo serviço</h3><button class="x" onclick="closeNovoCat()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
       <div style="margin-bottom:12px"><label style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Nome</label><input id="nc_nome" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div id="nc_grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
         <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Unidade</label><select id="nc_und" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></select></div>
-        <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Custo (R$)</label><input id="nc_custo" inputmode="decimal" onfocus="this.select()" onblur="this.value=this.value.trim()===''?'':fmtN(this.value)" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
-        <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Margem %</label><input id="nc_margem" inputmode="decimal" placeholder="padrão" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+        <div><label id="nc_custo_lbl" style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Custo (R$)</label><input id="nc_custo" inputmode="decimal" onfocus="this.select()" onblur="this.value=this.value.trim()===''?'':fmtN(this.value)" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+        <div id="nc_mgcell"><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Margem %</label><input id="nc_margem" inputmode="decimal" placeholder="padrão" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
       </div>
       <div style="margin-top:12px"><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Categoria (opcional)</label><select id="nc_cat" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></select></div>
       <div id="nc_composBox" style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line2);display:none">
@@ -1355,7 +1355,15 @@ function addAvulso(blk){
 /* + Novo: cadastra no catálogo (orc_catalogo) e adiciona na folha */
 const BLK_TIPO={servicos:'servico',equip:'equipamento',despesas:'despesa',materiais:'material'};
 let _ncBlk=null, _ncEdit=null, _ncEditRow=null, _ncComposicao=null;   // _ncEdit = id do item real do catálogo; _ncEditRow = linha a religar; _ncComposicao = receita do serviço
-function ncComposBox(blk){ const box=document.getElementById('nc_composBox'); if(box)box.style.display=(blk==='servicos')?'block':'none'; ncComposResumo(); }
+function ncComposBox(blk){ const isServ=(blk==='servicos');
+  const box=document.getElementById('nc_composBox'); if(box)box.style.display=isServ?'block':'none';
+  // SERVIÇO: custo vem da receita (só-leitura); número solto só na LINHA do orçamento (usar base/editar). Margem é comercial → fora do cadastro.
+  const custo=document.getElementById('nc_custo'), lbl=document.getElementById('nc_custo_lbl'), mg=document.getElementById('nc_mgcell'), grid=document.getElementById('nc_grid');
+  if(custo){ custo.readOnly=isServ; custo.style.background=isServ?'var(--surf2)':'var(--surf)'; custo.style.color=isServ?'var(--tx2)':'var(--tx)'; custo.title=isServ?'Vem da receita — componha abaixo':''; }
+  if(lbl) lbl.textContent=isServ?'Custo (da receita)':'Custo (R$)';
+  if(mg) mg.style.display=isServ?'none':'';
+  if(grid) grid.style.gridTemplateColumns=isServ?'1fr 1fr':'1fr 1fr 1fr';
+  ncComposResumo(); }
 function ncComposResumo(){ const el=document.getElementById('nc_composResumo'); if(!el)return;
   if(_ncComposicao&&(_ncComposicao.mo||[]).length){ const n=(_ncComposicao.mo||[]).length; el.innerHTML='<b style="color:var(--green,#3b6d11)">Receita definida</b> — '+n+' profissional(is) · '+(_ncComposicao.tv||'')+' '+(_ncComposicao.un||'')+'. O custo acima vem da composição.'; }
   else { el.textContent='Sem receita — custo digitado direto. Componha pela equipe × tempo pra virar receita reutilizável.'; } }
@@ -1410,6 +1418,7 @@ function openCompCadastro(){
 function saveNovoCat(){
   const blk=_ncBlk; if(!blk)return;
   const nome=document.getElementById('nc_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
+  if(blk==='servicos' && !(_ncComposicao&&(_ncComposicao.mo||[]).length)){ alert('Componha a receita do serviço (equipe × tempo) antes de salvar — no cadastro, o custo do serviço vem da receita. Número solto você usa só na linha do orçamento (editar).'); return; }
   const und=document.getElementById('nc_und').value.trim()||'UND';
   const custo=num(document.getElementById('nc_custo').value);
   const mv=document.getElementById('nc_margem').value.trim(); const margem=mv===''?null:num(mv);
