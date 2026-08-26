@@ -663,16 +663,16 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
       <div class="cmpsec">Equipe (mão de obra) <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— função · nível (R$/h do banco) × pessoas × tempo</span></div>
       <div id="compMO"></div>
       <button class="cmpadd" onclick="compAddMO()"><span class="material-symbols-rounded">person_add</span>profissional</button>
-      <div class="cmpsec" style="margin-top:16px">Despesas da execução <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— deslocamento, hospedagem, alimentação…</span></div>
+      <div class="cmpsec" style="margin-top:16px">Adicionais deste serviço <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— opcional; só o que é específico deste serviço (ex.: hora extra). Despesas gerais da obra vão no bloco Despesas.</span></div>
       <div id="compDesp"></div>
-      <button class="cmpadd" onclick="compAddDesp()"><span class="material-symbols-rounded">add</span>despesa</button>
+      <button class="cmpadd" onclick="compAddDesp()"><span class="material-symbols-rounded">add</span>adicional</button>
       <div style="margin-top:16px">
         <label class="cmplbl">Dificuldade do serviço <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— intrínseca à tarefa; abrangência e local ficam no orçamento</span></label>
         <select id="comp_dif" class="cmpsel" onchange="compCalc()"></select>
       </div>
       <div class="cmpres">
         <div class="cr"><span>Mão de obra</span><b id="comp_mo">R$ 0,00</b></div>
-        <div class="cr"><span>Despesas</span><b id="comp_dsp">R$ 0,00</b></div>
+        <div class="cr"><span>Adicionais</span><b id="comp_dsp">R$ 0,00</b></div>
         <div class="cr" style="border-top:1px solid var(--line2);margin-top:2px;padding-top:8px"><span>Custo do serviço</span><b id="comp_custo" style="font-size:16px">R$ 0,00</b></div>
         <div class="cr"><span>Tempo de execução</span><b id="comp_tempo" style="color:var(--pri)">0 h</b></div>
       </div>
@@ -1521,7 +1521,7 @@ function compRenderMO(){ document.getElementById('compMO').innerHTML='<div class
 function compAddMO(){ COMP.mo.push({fn:0,pes:1}); compRenderMO(); compCalc(); }
 function compRenderDesp(){ const el=document.getElementById('compDesp'); if(!el)return;
   el.innerHTML=(COMP.desp||[]).map((d,i)=>`<div class="cmpdrow"><input class="cmpin" value="${esc(d.nome)}" placeholder="ex.: Deslocamento" oninput="COMP.desp[${i}].nome=this.value"><span class="cmprs">R$</span><input class="cmpin val" value="${d.valor!=null&&d.valor!==''?String(d.valor).replace('.',','):''}" inputmode="decimal" oninput="COMP.desp[${i}].valor=num(this.value);compCalc()"><button class="cmpdel" onclick="COMP.desp.splice(${i},1);compRenderDesp();compCalc()"><span class="material-symbols-rounded">close</span></button></div>`).join('')
-    || '<div style="font-size:12px;color:var(--tx3);padding:2px 2px 6px">Sem despesas nesta execução.</div>'; }
+    || '<div style="font-size:12px;color:var(--tx3);padding:2px 2px 6px">Sem adicionais neste serviço.</div>'; }
 function compAddDesp(){ if(!COMP.desp)COMP.desp=[]; COMP.desp.push({nome:'',valor:''}); compRenderDesp(); }
 function compCalc(){
   const dif=DIFIC[+document.getElementById('comp_dif').value||0]||DIFIC[0];   // dificuldade DO SERVIÇO (fica na receita); abrangência/local são fatores da OBRA (no orçamento)
