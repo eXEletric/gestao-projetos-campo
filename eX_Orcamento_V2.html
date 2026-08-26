@@ -642,6 +642,11 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
         <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Margem %</label><input id="nc_margem" inputmode="decimal" placeholder="padrão" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
       </div>
       <div style="margin-top:12px"><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Categoria (opcional)</label><select id="nc_cat" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></select></div>
+      <div id="nc_composBox" style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line2);display:none">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri);font-weight:700;margin-bottom:6px"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">restaurant_menu</span> Receita — a composição do custo</div>
+        <div id="nc_composResumo" style="font-size:12.5px;color:var(--tx3);margin-bottom:8px"></div>
+        <button class="btn" style="border-color:var(--pri);color:var(--pri)" onclick="openCompCadastro()"><span class="material-symbols-rounded">precision_manufacturing</span>Compor receita (equipe × tempo)</button>
+      </div>
     </div>
     <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px">
       <button class="btn" onclick="closeNovoCat()">Cancelar</button>
@@ -721,10 +726,10 @@ const TIPO_BLK={servico:'servicos',equipamento:'equip',despesa:'despesas',materi
 let CATALOGO={servicos:[],equip:[],despesas:[],materiais:[]};
 function catFor(blk){ return (CATALOGO[blk]&&CATALOGO[blk].length)?CATALOGO[blk]:(CAD[blk]||[]); }
 async function carregarCatalogo(){
-  try{ const {data,error}=await SB.from('orc_catalogo').select('id,tipo,nome,unidade,custo,margem,marca,categoria').is('deleted_at',null).eq('ativo',true).order('nome');
+  try{ const {data,error}=await SB.from('orc_catalogo').select('id,tipo,nome,unidade,custo,margem,marca,categoria,composicao').is('deleted_at',null).eq('ativo',true).order('nome');
     if(error) throw error;
     const g={servicos:[],equip:[],despesas:[],materiais:[]};
-    (data||[]).forEach(it=>{ const blk=TIPO_BLK[it.tipo]; if(blk) g[blk].push({id:it.id,nome:it.nome,custo:it.custo||0,und:it.unidade||'UND',margem:(it.margem==null?'':it.margem),marca:it.marca||'',categoria:it.categoria||''}); });
+    (data||[]).forEach(it=>{ const blk=TIPO_BLK[it.tipo]; if(blk) g[blk].push({id:it.id,nome:it.nome,custo:it.custo||0,und:it.unidade||'UND',margem:(it.margem==null?'':it.margem),marca:it.marca||'',categoria:it.categoria||'',composicao:(it.composicao&&typeof it.composicao==='object')?it.composicao:null}); });
     CATALOGO=g;
   }catch(e){ console.error('catalogo',e); }
 }
@@ -1332,10 +1337,13 @@ function pickCad(blk,cid){
   if(PICK_TARGET){                                   // TROCA: substitui o item na mesma posição, mantendo a qtd
     const r=S[blk].find(x=>x.id===PICK_TARGET);
     if(r){ r.desc=c.nome; r.catId=c.id; r.custoBase=c.custo; r.usarBase=true; r.custoAlt=c.custo;
-           r.und=c.und||UND_DFLT[blk]; r.margem=(c.margem===undefined?'':c.margem); if('marca' in r) r.marca=c.marca||''; }
+           r.und=c.und||UND_DFLT[blk]; r.margem=(c.margem===undefined?'':c.margem); if('marca' in r) r.marca=c.marca||'';
+           if(c.composicao)r.composicao=JSON.parse(JSON.stringify(c.composicao)); else delete r.composicao; }   // HERDA a receita do cadastro
     save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick(); return;
   }
-  S[blk].push(rowSvc(c.nome,1,c.und||UND_DFLT[blk],c.custo,(c.margem===undefined?'':c.margem),c.id,c.marca||''));
+  const nr=rowSvc(c.nome,1,c.und||UND_DFLT[blk],c.custo,(c.margem===undefined?'':c.margem),c.id,c.marca||'');
+  if(c.composicao)nr.composicao=JSON.parse(JSON.stringify(c.composicao));   // HERDA a receita do cadastro
+  S[blk].push(nr);
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
 }
 function addAvulso(blk){
@@ -1346,14 +1354,19 @@ function addAvulso(blk){
 }
 /* + Novo: cadastra no catálogo (orc_catalogo) e adiciona na folha */
 const BLK_TIPO={servicos:'servico',equip:'equipamento',despesas:'despesa',materiais:'material'};
-let _ncBlk=null, _ncEdit=null, _ncEditRow=null;   // _ncEdit = id do item real do catálogo; _ncEditRow = linha a religar
+let _ncBlk=null, _ncEdit=null, _ncEditRow=null, _ncComposicao=null;   // _ncEdit = id do item real do catálogo; _ncEditRow = linha a religar; _ncComposicao = receita do serviço
+function ncComposBox(blk){ const box=document.getElementById('nc_composBox'); if(box)box.style.display=(blk==='servicos')?'block':'none'; ncComposResumo(); }
+function ncComposResumo(){ const el=document.getElementById('nc_composResumo'); if(!el)return;
+  if(_ncComposicao&&(_ncComposicao.mo||[]).length){ const n=(_ncComposicao.mo||[]).length; el.innerHTML='<b style="color:var(--green,#3b6d11)">Receita definida</b> — '+n+' profissional(is) · '+(_ncComposicao.tv||'')+' '+(_ncComposicao.un||'')+'. O custo acima vem da composição.'; }
+  else { el.textContent='Sem receita — custo digitado direto. Componha pela equipe × tempo pra virar receita reutilizável.'; } }
 function openNovoCat(blk){
-  PICK_TARGET=null; _ncBlk=blk; _ncEdit=null; _ncEditRow=null; closePick();
+  PICK_TARGET=null; _ncBlk=blk; _ncEdit=null; _ncEditRow=null; _ncComposicao=null; closePick();
   const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
   document.getElementById('novoCatTitle').textContent='Novo '+sing+' — salva no catálogo';
   ['nc_nome','nc_custo','nc_margem'].forEach(id=>document.getElementById(id).value='');
   fillUnd(document.getElementById('nc_und'),(UND_DFLT[blk]||'UND'));
   fillCateg(document.getElementById('nc_cat'),blk,'');
+  ncComposBox(blk);
   document.getElementById('novoCatModal').classList.add('open');
   setTimeout(()=>document.getElementById('nc_nome').focus(),40);
 }
@@ -1373,10 +1386,27 @@ function openEditCat(blk,rowId){
   document.getElementById('nc_custo').value=(src.custo!=null&&src.custo!==''?moneyVal(src.custo):'');
   document.getElementById('nc_margem').value=(src.margem===''||src.margem==null?'':src.margem);
   fillCateg(document.getElementById('nc_cat'),blk,src.categoria||'');
+  _ncComposicao=(c&&c.composicao)||(r&&r.composicao)||null;   // carrega a receita (do catálogo ou da linha)
+  ncComposBox(blk);
   document.getElementById('novoCatModal').classList.add('open');
   setTimeout(()=>document.getElementById('nc_custo').focus(),40);
 }
-function closeNovoCat(){ document.getElementById('novoCatModal').classList.remove('open'); _ncBlk=null; _ncEdit=null; _ncEditRow=null; }
+function closeNovoCat(){ document.getElementById('novoCatModal').classList.remove('open'); _ncBlk=null; _ncEdit=null; _ncEditRow=null; _ncComposicao=null; }
+// compor a RECEITA no cadastro (não numa linha do orçamento) — reusa o mesmo compositor
+function openCompCadastro(){
+  if(!MAOOBRA.length){ if(!CLOUD)alert('Faça login pra usar a mão de obra do banco e compor a receita.'); else alert('Cadastre a mão de obra (Comercial › Cadastros › Mão de obra) antes de compor.'); return; }
+  COMP={cadastro:true,blk:null,rowId:null,tv:1,un:'dias',mo:[],desp:[],dif:0,_custo:0,_tempo:0,_mo:0,_dsp:0};
+  const c=_ncComposicao;
+  if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; }
+  if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1}];
+  const nm=(document.getElementById('nc_nome').value||'').trim();
+  document.getElementById('compTitle').textContent='Receita · '+(nm||'serviço');
+  document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
+  document.getElementById('comp_tv').value=COMP.tv;
+  setCompUn(COMP.un,true);
+  compRenderMO(); compRenderDesp(); compCalc();
+  document.getElementById('compModal').classList.add('open');
+}
 function saveNovoCat(){
   const blk=_ncBlk; if(!blk)return;
   const nome=document.getElementById('nc_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
@@ -1388,13 +1418,13 @@ function saveNovoCat(){
     const applyLocal=()=>{
       CATALOGO[blk]=CATALOGO[blk]||[];
       let ci=CATALOGO[blk].find(x=>x.id===_ncEdit);
-      if(ci){ ci.nome=nome; ci.custo=custo; ci.und=und; ci.margem=(margem==null?'':margem); ci.categoria=cat||''; }
-      else CATALOGO[blk].push({id:_ncEdit,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||''});
-      (S[blk]||[]).forEach(r=>{ if(r.catId===_ncEdit){ r.desc=nome; r.custoBase=custo; if(r.usarBase) r.custoAlt=custo; } });
+      if(ci){ ci.nome=nome; ci.custo=custo; ci.und=und; ci.margem=(margem==null?'':margem); ci.categoria=cat||''; ci.composicao=_ncComposicao||null; }
+      else CATALOGO[blk].push({id:_ncEdit,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||'',composicao:_ncComposicao||null});
+      (S[blk]||[]).forEach(r=>{ if(r.catId===_ncEdit){ r.desc=nome; r.custoBase=custo; if(r.usarBase) r.custoAlt=custo; if(_ncComposicao)r.composicao=JSON.parse(JSON.stringify(_ncComposicao)); } });
       save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closeNovoCat();
     };
     if(CLOUD){
-      SB.from('orc_catalogo').update({nome,unidade:und,custo,margem,categoria:cat}).eq('id',_ncEdit).then(({error})=>{
+      SB.from('orc_catalogo').update({nome,unidade:und,custo,margem,categoria:cat,composicao:_ncComposicao||null}).eq('id',_ncEdit).then(({error})=>{
         if(error){ console.error(error); alert('Erro ao atualizar no catálogo: '+error.message); return; }
         applyLocal();
       });
@@ -1405,13 +1435,13 @@ function saveNovoCat(){
   const rowId=_ncEditRow;
   const oldCat = rowId ? ((S[blk].find(x=>x.id===rowId)||{}).catId||null) : null;
   const finish=(id)=>{ id=id||uid();
-    CATALOGO[blk]=CATALOGO[blk]||[]; CATALOGO[blk].push({id,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||''});
+    CATALOGO[blk]=CATALOGO[blk]||[]; CATALOGO[blk].push({id,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||'',composicao:_ncComposicao||null});
     if(rowId){ // religa a linha (e irmãs com o mesmo catId antigo) ao cadastro criado
-      (S[blk]||[]).forEach(r=>{ if(r.id===rowId || (oldCat && r.catId===oldCat)){ r.catId=id; r.desc=nome; r.custoBase=custo; r.und=und; r.margem=(margem==null?'':margem); if(r.usarBase) r.custoAlt=custo; } });
-    } else { S[blk].push(rowSvc(nome,1,und,custo,(margem==null?'':margem),id,'')); }
+      (S[blk]||[]).forEach(r=>{ if(r.id===rowId || (oldCat && r.catId===oldCat)){ r.catId=id; r.desc=nome; r.custoBase=custo; r.und=und; r.margem=(margem==null?'':margem); if(r.usarBase) r.custoAlt=custo; if(_ncComposicao)r.composicao=JSON.parse(JSON.stringify(_ncComposicao)); } });
+    } else { const nr=rowSvc(nome,1,und,custo,(margem==null?'':margem),id,''); if(_ncComposicao)nr.composicao=JSON.parse(JSON.stringify(_ncComposicao)); S[blk].push(nr); }
     save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closeNovoCat(); };
   if(CLOUD){
-    SB.from('orc_catalogo').insert({empresa_id:EMPRESA_ID,tipo:BLK_TIPO[blk],nome,unidade:und,custo,margem,categoria:cat,ativo:true}).select('id').then(({data,error})=>{
+    SB.from('orc_catalogo').insert({empresa_id:EMPRESA_ID,tipo:BLK_TIPO[blk],nome,unidade:und,custo,margem,categoria:cat,ativo:true,composicao:_ncComposicao||null}).select('id').then(({data,error})=>{
       if(error){ console.error(error); alert('Erro ao salvar no catálogo: '+error.message); return; }
       finish(data&&data[0]&&data[0].id);
     });
@@ -1539,12 +1569,18 @@ function compCalc(){
 }
 function closeComp(){ document.getElementById('compModal').classList.remove('open'); }
 function compAplicar(){
-  const r=(S[COMP.blk]||[]).find(x=>x.id===COMP.rowId); if(!r){closeComp();return;}
   COMP.dif=+document.getElementById('comp_dif').value||0;
   COMP.tv=num(document.getElementById('comp_tv').value);
   compCalc();
+  const receita={mo:COMP.mo.map(x=>({...x})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,tv:COMP.tv,un:COMP.un};
+  if(COMP.cadastro){   // veio do cadastro: grava a receita e joga o custo no campo, volta pro modal do cadastro
+    _ncComposicao=receita;
+    const nc=document.getElementById('nc_custo'); if(nc)nc.value=fmtN(COMP._custo);
+    ncComposResumo(); closeComp(); return;
+  }
+  const r=(S[COMP.blk]||[]).find(x=>x.id===COMP.rowId); if(!r){closeComp();return;}
   r.custoBase=+(COMP._custo.toFixed(2)); r.usarBase=true; r.custoAlt=r.custoBase;
-  r.composicao={mo:COMP.mo.map(x=>({...x})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,tv:COMP.tv,un:COMP.un};
+  r.composicao=receita;
   r.compTempo=+(COMP._tempo.toFixed(2));
   save(); renderBlk(BLKS.find(b=>b.key===COMP.blk)); recalc(); closeComp();
 }
