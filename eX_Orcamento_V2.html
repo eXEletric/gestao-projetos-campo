@@ -323,6 +323,20 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .cmpseg button{border:none;background:var(--surf);color:var(--tx2);font:600 12.5px inherit;padding:7px 13px;cursor:pointer}
 .cmpseg button.on{background:var(--pri);color:#fff}
 .cmphint{font-size:12px;color:var(--tx3)}
+.fatobra{background:var(--surf2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin:0 0 12px}
+.fatobra .fo-t{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--pri);display:flex;align-items:center;gap:6px;margin-bottom:9px}
+.fatobra .fo-t .material-symbols-rounded{font-size:16px}
+.fatobra .fo-h{font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0}
+.fatobra .fo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:640px){.fatobra .fo-grid{grid-template-columns:1fr}}
+.fatobra .fo-row{display:flex;align-items:center;gap:9px}
+.fatobra .fo-row label{font-size:12px;font-weight:600;color:var(--tx2);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.fatobra .fo-row label .material-symbols-rounded{font-size:16px;color:var(--pri)}
+.fatobra .fo-sel{flex:1;padding:7px 9px;border:1px solid var(--line2);border-radius:8px;font-size:13px;background:var(--surf);color:var(--tx)}
+.fatobra .fo-fl{display:inline-flex;align-items:center;gap:4px}
+.fatobra .flbtn{border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:7px;padding:6px 9px;font:600 12.5px inherit;cursor:pointer}
+.fatobra .flbtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.fatobra .fo-flin{width:52px;text-align:center;padding:6px;border:1px solid var(--line2);border-radius:7px;font-size:13px;font-variant-numeric:tabular-nums}
 .cmprow select{width:100%;padding:6px 7px;border:1px solid var(--line2);border-radius:7px;font-size:12.5px;background:var(--surf);color:var(--tx)}
 .cmprow .cmpn{width:100%;padding:6px;border:1px solid var(--line2);border-radius:7px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
 .cmprow .cmpvh{text-align:right;font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums}
@@ -652,9 +666,9 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
       <div class="cmpsec" style="margin-top:16px">Despesas da execução <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— deslocamento, hospedagem, alimentação…</span></div>
       <div id="compDesp"></div>
       <button class="cmpadd" onclick="compAddDesp()"><span class="material-symbols-rounded">add</span>despesa</button>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
-        <div><label class="cmplbl">Dificuldade</label><select id="comp_dif" class="cmpsel" onchange="compCalc()"></select></div>
-        <div><label class="cmplbl">Abrangência</label><select id="comp_abr" class="cmpsel" onchange="compCalc()"></select></div>
+      <div style="margin-top:16px">
+        <label class="cmplbl">Dificuldade do serviço <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— intrínseca à tarefa; abrangência e local ficam no orçamento</span></label>
+        <select id="comp_dif" class="cmpsel" onchange="compCalc()"></select>
       </div>
       <div class="cmpres">
         <div class="cr"><span>Mão de obra</span><b id="comp_mo">R$ 0,00</b></div>
@@ -861,15 +875,21 @@ function mgBlur(el,blk,id){ const v=el.value.trim(); if(v==='') { upd(blk,id,'ma
 const isCusto=r=>r.custoBase!==undefined;
 const custoUn=r=>num(r.usarBase?r.custoBase:r.custoAlt);
 const mgOf=r=>(r.margem===''||r.margem==null)?num(S.margemBase):num(r.margem);
+// ===== FATORES DA OBRA (gerais do orçamento) — só afetam serviços MONTADOS (com composição) =====
+function abrObra(){ return (ABRANGENCIA&&ABRANGENCIA[num(S.abrIdx)||0])||{custo_pct:0,tempo_pct:0}; }
+function localMult(){ const f=num(S.fatorLocal); return f>0?f:1; }
+function obraMult(r){ if(!r||!r.composicao) return 1;   // tabelado/avulso não leva fator da obra
+  return (1+num(abrObra().custo_pct)/100) * localMult(); }
+const custoEf=r=>custoUn(r)*obraMult(r);                // custo efetivo = base × abrangência × fator do local
 // preço (o que o cliente paga) e custo (interno) por linha
 function linePreco(r,modo){
   if(modo==='geral') return num(r.geral);
-  if(isCusto(r)) return num(r.qtd)*custoUn(r)*(1+mgOf(r)/100);
+  if(isCusto(r)) return num(r.qtd)*custoEf(r)*(1+mgOf(r)/100);
   return num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100);
 }
 function lineCusto(r,modo){
   if(modo==='geral') return num(r.geral);           // verba: custo=preço (lucro 0)
-  if(isCusto(r)) return num(r.qtd)*custoUn(r);
+  if(isCusto(r)) return num(r.qtd)*custoEf(r);
   return num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100); // bloco não migrado: custo=preço
 }
 const lineTot=(r,modo)=>linePreco(r,modo);           // alias p/ compat
@@ -903,7 +923,7 @@ function demo(){
     respNome:"André Camilo", respFone:"62 99392-2999", respEmail:"aocinnet@gmail.com",
     equipe:"1 Eletrotécnico · 1 Eletricista · 1 Operacional",
     efetivo:[{f:'Eletrotécnico',ic:'electrical_services',n:1},{f:'Eletricista',ic:'bolt',n:1},{f:'Operacional',ic:'groups',n:1}],
-    prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho',
+    prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho', abrIdx:0, fatorLocal:1,
     descGeral:"Proposta para execução dos serviços de automação de iluminação e substituição do controlador do ar-condicionado central, conforme escopo detalhado abaixo. Valores e condições conforme apresentado nesta cotação.", descGeralOn:true,
     modos:{servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'},
     soTotal:{servicos:false,equip:false,despesas:false,materiais:false},
@@ -939,7 +959,7 @@ function orcVazio(){
     finNome:"", finRede:"", finNum:"", finEnd:"",
     respNome:"", respFone:"", respEmail:"",
     equipe:"", efetivo:[],
-    prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho',
+    prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho', abrIdx:0, fatorLocal:1,
     descGeral:"", descGeralOn:true,
     modos:{servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'},
     soTotal:{servicos:false,equip:false,despesas:false,materiais:false},
@@ -1033,6 +1053,8 @@ function sanitize(){
   if(!Array.isArray(S.efetivo))S.efetivo=[{f:'Eletrotécnico',ic:'electrical_services',n:1},{f:'Eletricista',ic:'bolt',n:1}];
   if(S.margemBase===undefined)S.margemBase=30;
   if(!Array.isArray(S.comprovantes))S.comprovantes=[];
+  if(S.abrIdx===undefined)S.abrIdx=0;
+  if(S.fatorLocal===undefined||num(S.fatorLocal)<=0)S.fatorLocal=1;
   if(!S.status)S.status='rascunho';
 }
 const blocoAtivo=k=>S.blocoOn[k]!==false;
@@ -1168,7 +1190,7 @@ function renderBlk(cfg){
       </div>
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
-    ${cfg.key==='servicos'?efetivoHtml():''}
+    ${cfg.key==='servicos'?efetivoHtml()+fatoresObraHtml():''}
     ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: a edição é igual (você vê e ajusta cada item), mas na <b>impressão / envio da proposta</b> os itens saem como <b>“incluso”</b> e o valor aparece só no <b>total agrupado</b> do bloco — não item por item.</span></div>`:''}
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button></div>
@@ -1202,6 +1224,21 @@ function efetivoHtml(){
   </div>`;
 }
 function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m="equipe"]'); if(el)el.value=S.equipe; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+// ===== Fatores da obra (abrangência + fator do local) — só nos serviços montados =====
+function fatoresObraHtml(){
+  const abrOpts=(ABRANGENCIA||[]).map((a,j)=>`<option value="${j}" ${j==(num(S.abrIdx)||0)?'selected':''}>${esc(a.rotulo)}${num(a.custo_pct)?' (+'+num(a.custo_pct)+'%)':''}</option>`).join('');
+  const fl=num(S.fatorLocal)||1;
+  const presets=[1,2,3,4].map(f=>`<button class="flbtn ${fl==f?'on':''}" onclick="setFatorLocal(${f})">${f}×</button>`).join('');
+  return `<div class="fatobra noprint">
+    <div class="fo-t"><span class="material-symbols-rounded">tune</span>Fatores da obra<span class="fo-h"> — aplicam ao custo dos serviços montados</span></div>
+    <div class="fo-grid">
+      <div class="fo-row"><label><span class="material-symbols-rounded">pin_drop</span>Abrangência</label><select class="fo-sel" onchange="setAbr(this.value)">${abrOpts}</select></div>
+      <div class="fo-row"><label><span class="material-symbols-rounded">terrain</span>Fator do local</label><div class="fo-fl">${presets}<input class="fo-flin" value="${String(fl).replace('.',',')}" inputmode="decimal" onchange="setFatorLocal(this.value)" title="ou digite o multiplicador">×</div></div>
+    </div>
+  </div>`;
+}
+function setAbr(v){ S.abrIdx=+v||0; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function setFatorLocal(f){ f=num(f); S.fatorLocal=f>0?f:1; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function efInc(i){ if(!S.efetivo[i])return; S.efetivo[i].n=(+S.efetivo[i].n||0)+1; efApply(); }
 function efDec(i){ if(!S.efetivo[i])return; S.efetivo[i].n=Math.max(0,(+S.efetivo[i].n||0)-1); if(S.efetivo[i].n===0)S.efetivo.splice(i,1); efApply(); }
 function efRm(i){ S.efetivo.splice(i,1); efApply(); }
@@ -1256,7 +1293,7 @@ function refreshRow(blk,r){
   const modo=S.modos[blk]||'unit';
   const c=document.getElementById('tt_'+r.id);
   if(c){const t=lineTot(r,modo); c.textContent=fmt(t); c.className='tot '+(t?'':'z');}
-  const cu=custoUn(r), custo=num(r.qtd)*cu;
+  const cu=custoEf(r), custo=num(r.qtd)*cu;   // custo efetivo (base × fatores da obra) p/ preço/lucro ao vivo
   const pe=document.getElementById('tp_'+r.id), le=document.getElementById('tl_'+r.id), me=document.getElementById('tm_'+r.id);
   if(modo==='geral'){   // valor geral: preço = valor digitado; margem e lucro são derivados (ao vivo)
     const preco=num(r.geral), marg=custo>0?(Math.round((preco/custo-1)*1000)/10):null;
@@ -1462,7 +1499,6 @@ function openComp(blk,rowId){
   if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1}];
   document.getElementById('compTitle').textContent='Compor custo · '+(r.desc||'serviço');
   document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
-  document.getElementById('comp_abr').innerHTML=ABRANGENCIA.map((a,j)=>`<option value="${j}" ${j===COMP.abr?'selected':''}>${esc(a.rotulo)}</option>`).join('');
   document.getElementById('comp_tv').value=COMP.tv;
   setCompUn(COMP.un,true);
   compRenderMO(); compRenderDesp(); compCalc();
@@ -1488,13 +1524,11 @@ function compRenderDesp(){ const el=document.getElementById('compDesp'); if(!el)
     || '<div style="font-size:12px;color:var(--tx3);padding:2px 2px 6px">Sem despesas nesta execução.</div>'; }
 function compAddDesp(){ if(!COMP.desp)COMP.desp=[]; COMP.desp.push({nome:'',valor:''}); compRenderDesp(); }
 function compCalc(){
-  const dif=DIFIC[+document.getElementById('comp_dif').value||0]||DIFIC[0];
-  const abr=ABRANGENCIA[+document.getElementById('comp_abr').value||0]||{custo_pct:0,tempo_pct:0};
-  const abrC=1+num(abr.custo_pct)/100, abrT=1+num(abr.tempo_pct)/100;
+  const dif=DIFIC[+document.getElementById('comp_dif').value||0]||DIFIC[0];   // dificuldade DO SERVIÇO (fica na receita); abrangência/local são fatores da OBRA (no orçamento)
   const h=compHoras();
   let mo=0;
-  COMP.mo.forEach(r=>{ const m=MAOOBRA[r.fn]; if(!m)return; mo+=num(r.pes)*h*dif.mult*num(m.vh)*abrC; });   // custo = esforço (pessoas×horas) × R$/h
-  const tempo=(COMP.mo.some(r=>MAOOBRA[r.fn]&&num(r.pes)>0)) ? h*dif.mult*abrT : 0;                          // DURAÇÃO (equipe em paralelo), não soma por pessoa
+  COMP.mo.forEach(r=>{ const m=MAOOBRA[r.fn]; if(!m)return; mo+=num(r.pes)*h*dif.mult*num(m.vh); });   // custo = esforço (pessoas×horas) × R$/h × dificuldade do serviço
+  const tempo=(COMP.mo.some(r=>MAOOBRA[r.fn]&&num(r.pes)>0)) ? h*dif.mult : 0;                          // DURAÇÃO (equipe em paralelo)
   const dsp=(COMP.desp||[]).reduce((a,d)=>a+num(d.valor),0);
   const custo=mo+dsp;
   COMP._mo=mo; COMP._dsp=dsp; COMP._custo=custo; COMP._tempo=tempo;
@@ -1506,11 +1540,11 @@ function compCalc(){
 function closeComp(){ document.getElementById('compModal').classList.remove('open'); }
 function compAplicar(){
   const r=(S[COMP.blk]||[]).find(x=>x.id===COMP.rowId); if(!r){closeComp();return;}
-  COMP.dif=+document.getElementById('comp_dif').value||0; COMP.abr=+document.getElementById('comp_abr').value||0;
+  COMP.dif=+document.getElementById('comp_dif').value||0;
   COMP.tv=num(document.getElementById('comp_tv').value);
   compCalc();
   r.custoBase=+(COMP._custo.toFixed(2)); r.usarBase=true; r.custoAlt=r.custoBase;
-  r.composicao={mo:COMP.mo.map(x=>({...x})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,abr:COMP.abr,tv:COMP.tv,un:COMP.un};
+  r.composicao={mo:COMP.mo.map(x=>({...x})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,tv:COMP.tv,un:COMP.un};
   r.compTempo=+(COMP._tempo.toFixed(2));
   save(); renderBlk(BLKS.find(b=>b.key===COMP.blk)); recalc(); closeComp();
 }
