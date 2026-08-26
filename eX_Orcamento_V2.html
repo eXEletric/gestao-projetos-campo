@@ -323,6 +323,7 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .cmpseg button{border:none;background:var(--surf);color:var(--tx2);font:600 12.5px inherit;padding:7px 13px;cursor:pointer}
 .cmpseg button.on{background:var(--pri);color:#fff}
 .cmphint{font-size:12px;color:var(--tx3)}
+.und-fix{display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:var(--tx2);background:var(--surf2);border:1px solid var(--line2);border-radius:7px;padding:6px 8px;min-width:44px}
 .fatobra{background:var(--surf2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin:0 0 12px}
 .fatobra .fo-t{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--pri);display:flex;align-items:center;gap:6px;margin-bottom:9px}
 .fatobra .fo-t .material-symbols-rounded{font-size:16px}
@@ -864,8 +865,11 @@ const moneyVal=v=>(v===''||v==null)?'':fmtN(v);                                 
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 /* unidades — lista suspensa (evita digitação livre) */
 const UNIDADES=['UND','PÇ','CJ','KIT','M','M²','M³','KM','KG','L','H','DIA','MÊS','VB','PT','LOTE'];
-function undSelect(blk,id,val){
-  const cur=String(val||'').trim(); const opts=UNIDADES.slice(); if(cur && opts.indexOf(cur)<0) opts.unshift(cur);
+function undSelect(blk,id,val,r){
+  const cur=String(val||'').trim();
+  // UND atrelada ao CADASTRO: item do catálogo (catId) mostra a unidade só-leitura; avulso (sem cadastro) é editável
+  if(r && r.catId) return `<span class="und-fix" title="unidade definida no cadastro do serviço">${esc(cur||'—')}</span>`;
+  const opts=UNIDADES.slice(); if(cur && opts.indexOf(cur)<0) opts.unshift(cur);
   return `<select class="cin un" onchange="upd('${blk}','${id}','und',this.value)">`
     + opts.map(u=>`<option value="${esc(u)}"${u===cur?' selected':''}>${esc(u)}</option>`).join('') + `</select>`;
 }
@@ -1125,7 +1129,7 @@ function renderBlk(cfg){
         </td>
         <td class="r money pint">${custoCell}</td>
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
-        <td>${undSelect(cfg.key,r.id,r.und)}</td>
+        <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
         <td class="r pint"><span class="mgimp" id="tm_${r.id}">${fmtMg(margImpl)}</span></td>
         <td class="r">${soT?`<span class="incl printonly">incluso</span>`:''}<span class="rsw${soT?' noprint':''}"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
@@ -1162,7 +1166,7 @@ function renderBlk(cfg){
         </td>
         <td class="r money pint">${custoCell}</td>
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
-        <td>${undSelect(cfg.key,r.id,r.und)}</td>
+        <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
         <td class="r pint"><div class="mkwrap"><input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span>%</span></div><div class="mktag">${propria?'<span class="pd own">própria</span>':'<span class="pd">padrão</span>'}</div></td>
         <td class="r money preco" id="tp_${r.id}">${fmt(preco)}</td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
@@ -1429,7 +1433,7 @@ function saveNovoCat(){
       let ci=CATALOGO[blk].find(x=>x.id===_ncEdit);
       if(ci){ ci.nome=nome; ci.custo=custo; ci.und=und; ci.margem=(margem==null?'':margem); ci.categoria=cat||''; ci.composicao=_ncComposicao||null; }
       else CATALOGO[blk].push({id:_ncEdit,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||'',composicao:_ncComposicao||null});
-      (S[blk]||[]).forEach(r=>{ if(r.catId===_ncEdit){ r.desc=nome; r.custoBase=custo; if(r.usarBase) r.custoAlt=custo; if(_ncComposicao)r.composicao=JSON.parse(JSON.stringify(_ncComposicao)); } });
+      (S[blk]||[]).forEach(r=>{ if(r.catId===_ncEdit){ r.desc=nome; r.custoBase=custo; r.und=und; if(r.usarBase) r.custoAlt=custo; if(_ncComposicao)r.composicao=JSON.parse(JSON.stringify(_ncComposicao)); } });
       save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closeNovoCat();
     };
     if(CLOUD){
