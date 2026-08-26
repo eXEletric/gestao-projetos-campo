@@ -815,7 +815,7 @@ function renderList(){
     const dt=o.data_cotacao?o.data_cotacao.split('-').reverse().join('/'):(o.created_at?o.created_at.slice(0,10).split('-').reverse().join('/'):'—');
     const cli=[o.cliente_contratante,o.cliente_final].filter(Boolean).join(' · ')||'—';
     const st=o.status||'rascunho';
-    const open=o.oportunidade_id?`onclick="location.href='eX_Orcamento.html?opp=${o.oportunidade_id}'"`:'';
+    const open=o.oportunidade_id?`onclick="location.href='eX_Orcamento_V2.html?opp=${o.oportunidade_id}'"`:'';
     return `<tr data-opp ${open}>
       <td class="num">${esc(o.numero||'—')}</td>
       <td class="cli">${esc(cli)}</td>
