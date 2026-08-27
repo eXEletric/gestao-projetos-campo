@@ -891,7 +891,7 @@ function fillUnd(sel,val){ if(!sel)return; const cur=String(val||'').trim(); con
 function moneyBlur(el,blk,id,field){ const v=el.value.trim(); el.value=(v===''?'':fmtN(Math.max(0,num(v)))); upd(blk,id,field,el.value); }
 function moneyBlurBloco(el,blk){ const v=el.value.trim(); el.value=(v===''?'':fmtN(Math.max(0,num(v)))); updBloco(blk,el.value); }
 function qtBlur(el,blk,id){ const n=Math.max(0,num(el.value)); el.value=String(n).replace('.',','); upd(blk,id,'qtd',el.value); }
-function mgBlur(el,blk,id){ const v=el.value.trim(); if(v==='') { upd(blk,id,'margem',''); return; } el.value=String(Math.max(0,num(v))).replace('.',','); upd(blk,id,'margem',el.value); }
+function mgBlur(el,blk,id){ const v=el.value.trim(); if(v===''){ upd(blk,id,'margem',''); } else { el.value=String(Math.max(0,num(v))).replace('.',','); upd(blk,id,'margem',el.value); } renderBlk(BLKS.find(b=>b.key===blk)); }   // re-renderiza p/ acender/apagar o sinal de margem própria
 function resetMargem(blk,id){ const r=(S[blk]||[]).find(x=>x.id===id); if(!r)return; r.margem=''; save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }   // volta esta linha à margem base
 function zerarMargens(blk){ const own=(S[blk]||[]).filter(r=>!(r.margem===''||r.margem==null)).length; if(!own)return; if(!confirm('Voltar TODAS as margens à base? ('+own+' linha(s) com margem própria)'))return; (S[blk]||[]).forEach(r=>{ r.margem=''; }); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
 // modelo base+margem (custo): custo usado, margem herdada/própria
@@ -1115,7 +1115,9 @@ function renderBlk(cfg){
         ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
         : `<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)"></span>`;
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
-      const editCad = (r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'';
+      const editCad = (cfg.key==='servicos')
+        ? `<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="${r.catId?'Compor a receita / editar no cadastro do serviço':'Cadastrar este serviço e compor a receita'}"><span class="material-symbols-rounded">precision_manufacturing</span></button>`
+        : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div></td>
@@ -1134,7 +1136,7 @@ function renderBlk(cfg){
         <td class="r pint"><span class="mgimp" id="tm_${r.id}">${fmtMg(margImpl)}</span></td>
         <td class="r">${soT?`<span class="incl printonly">incluso</span>`:''}<span class="rsw${soT?' noprint':''}"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
-        <td class="pint rowact">${cfg.key==='servicos'?`<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Compor custo por mão de obra"><span class="material-symbols-rounded">precision_manufacturing</span></button>`:''}${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+        <td class="pint rowact">${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
@@ -1152,7 +1154,9 @@ function renderBlk(cfg){
         ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
         : `<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)"></span>`;
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
-      const editCad = (r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'';
+      const editCad = (cfg.key==='servicos')
+        ? `<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="${r.catId?'Compor a receita / editar no cadastro do serviço':'Cadastrar este serviço e compor a receita'}"><span class="material-symbols-rounded">precision_manufacturing</span></button>`
+        : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div></td>
@@ -1171,7 +1175,7 @@ function renderBlk(cfg){
         <td class="r pint"><div class="mkwrap ${propria?'own':'base'}">${propria?'<span class="mkne" title="diferente da margem base">&ne;</span>':''}<input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span class="mkpc">%</span>${propria?`<span class="mkwarn material-symbols-rounded" title="margem própria — fora da base ${num(S.margemBase)}%">warning</span><button class="mkreset" title="voltar à margem base" onclick="resetMargem('${cfg.key}','${r.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</div></td>
         <td class="r money preco" id="tp_${r.id}">${fmt(preco)}</td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
-        <td class="pint rowact">${cfg.key==='servicos'?`<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Compor custo por mão de obra"><span class="material-symbols-rounded">precision_manufacturing</span></button>`:''}${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+        <td class="pint rowact">${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
