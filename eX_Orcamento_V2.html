@@ -905,34 +905,19 @@ function obraMult(r){ if(!r||!r.composicao) return 1;   // tabelado/avulso não 
   return (1+num(abrObra().custo_pct)/100) * localMult(); }
 const custoEf=r=>custoUn(r)*obraMult(r);                // custo efetivo = base × abrangência × fator do local
 // preço (o que o cliente paga) e custo (interno) por linha
-function linePreco(r,modo){
-  if(modo==='geral') return num(r.geral);
+// MARGEM MANDA: o preço é SEMPRE custo × margem (acabou o "valor geral" que zerava). "Só o total" = só apresentação.
+function linePreco(r){
   if(isCusto(r)) return num(r.qtd)*custoEf(r)*(1+mgOf(r)/100);
   return num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100);
 }
-function lineCusto(r,modo){
-  if(modo==='geral') return num(r.geral);           // verba: custo=preço (lucro 0)
+function lineCusto(r){
   if(isCusto(r)) return num(r.qtd)*custoEf(r);
-  return num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100); // bloco não migrado: custo=preço
+  return num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100);
 }
-const lineTot=(r,modo)=>linePreco(r,modo);           // alias p/ compat
-// subtotal do bloco (PREÇO): no Geral+"só o total" usa o valor manual; senão soma
-// "Só o total": honra o valor digitado à mão SÓ se foi editado (blocoEdited); senão acompanha a soma viva dos itens
-// (evita total congelado que fica defasado quando os itens mudam depois)
-function effBlocoTotal(blk){
-  if(S.blocoEdited && S.blocoEdited[blk]) return num(S.blocoTotal[blk]);
-  return +(S[blk].reduce((a,r)=>a+(r.geralEdited?num(r.geral):linePreco(r,'unit')),0).toFixed(2));
-}
-function blkSub(blk){
-  const modo=S.modos[blk]||'unit';
-  if(modo==='geral' && S.soTotal[blk]) return effBlocoTotal(blk);
-  return S[blk].reduce((a,r)=>a+linePreco(r,modo),0);
-}
-function blkCusto(blk){
-  const modo=S.modos[blk]||'unit';
-  if(modo==='geral' && S.soTotal[blk]) return effBlocoTotal(blk);
-  return S[blk].reduce((a,r)=>a+lineCusto(r,modo),0);
-}
+const lineTot=r=>linePreco(r);
+function effBlocoTotal(blk){ return +(S[blk].reduce((a,r)=>a+linePreco(r),0).toFixed(2)); }
+function blkSub(blk){ return S[blk].reduce((a,r)=>a+linePreco(r),0); }
+function blkCusto(blk){ return S[blk].reduce((a,r)=>a+lineCusto(r),0); }
 
 /* ---------- estado exemplo (Copeland / Assaí) ---------- */
 function demo(){
@@ -1065,6 +1050,8 @@ function sanitize(){
   if(S.respContato && !S.respFone && !S.respEmail){ const p=S.respContato.split(/·|\||;/).map(s=>s.trim()).filter(Boolean); p.forEach(x=>{ if(x.indexOf('@')>-1)S.respEmail=x; else if(!S.respFone)S.respFone=x; }); if(!S.respFone&&!S.respEmail){ if(S.respContato.indexOf('@')>-1)S.respEmail=S.respContato; else S.respFone=S.respContato; } }
   if(S.finRede===undefined)S.finRede=''; if(S.finNum===undefined)S.finNum='';
   if(!S.modos)S.modos={servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'};
+  Object.keys(S.modos).forEach(k=>{ if(S.modos[k]==='geral')S.modos[k]='unit'; });   // MARGEM MANDA: aposenta o modo "valor geral" (editar preço). Blocos antigos migram p/ unitário.
+  (S.servicos||[]).concat(S.equip||[],S.despesas||[],S.materiais||[]).forEach(r=>{ if(r&&'geralEdited'in r)delete r.geralEdited; });
   if(!S.soTotal)S.soTotal={servicos:false,equip:false,despesas:false,materiais:false};
   if(!S.blocoEdited)S.blocoEdited={servicos:false,equip:false,despesas:false,materiais:false};
   if(!S.blocoTotal)S.blocoTotal={servicos:0,equip:0,despesas:0,materiais:0};
@@ -1112,7 +1099,7 @@ const BLKS=[
 
 function renderBlk(cfg){
   const modo=S.modos[cfg.key]||'unit';
-  const soT = modo==='geral' && S.soTotal[cfg.key];
+  const soT = !!(S.soTotal && S.soTotal[cfg.key]);   // "só o total" = apresentação (agrupar na proposta), independente do modo
   const rows=S[cfg.key], sub=blkSub(cfg.key);
   let cols, body, foot='';
   if(modo==='geral'){
@@ -1188,6 +1175,7 @@ function renderBlk(cfg){
       </tr>`;
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
+    if(soT){ foot=`<tfoot><tr class="ftot"><td class="ftl" colspan="${cfg.mat?8:7}">Total do bloco (agrupado)</td><td class="r money"><b>${fmt(blkSub(cfg.key))}</b></td><td colspan="2"></td></tr></tfoot>`; }
   }
   const obsTxt=(S.obs&&S.obs[cfg.key])||'';
   const obsShow=!(S.obsOn&&S.obsOn[cfg.key]===false);
@@ -1204,12 +1192,7 @@ function renderBlk(cfg){
       <span class="ic"><span class="material-symbols-rounded">${cfg.icon}</span></span>
       <h2>${cfg.titulo}</h2>
       <div class="modosw">
-        ${modo==='geral'?`<button class="chip ${soT?'on':''}" onclick="toggleSoTotal('${cfg.key}')" title="Ocultar o valor de cada item e mostrar só o total do bloco"><span class="material-symbols-rounded">${soT?'visibility_off':'visibility'}</span>Só o total</button>`:''}
-        <span class="modolbl" id="modolbl_${cfg.key}">${modo==='geral'?'Valor geral':'Valor unitário'}</span>
-        <div class="ex-switch ${modo==='geral'?'on':''}" onclick="toggleModo('${cfg.key}')" title="Alterna: valor unitário (qtd × preço) ⇄ valor geral (verba única)">
-          <span class="lb off">UN</span><span class="lb onx">GER</span>
-          <span class="kb"><span class="pin"></span></span>
-        </div>
+        <button class="chip ${soT?'on':''}" onclick="toggleSoTotal('${cfg.key}')" title="Na proposta do cliente: agrupar os itens num total só (esconde item a item). Não muda o cálculo."><span class="material-symbols-rounded">${soT?'visibility_off':'format_list_bulleted'}</span>${soT?'Só o total':'Detalhado'}</button>
       </div>
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
