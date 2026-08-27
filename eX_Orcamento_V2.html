@@ -658,7 +658,7 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
       <div id="nc_composBox" style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line2);display:none">
         <div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri);font-weight:700;margin-bottom:6px"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">restaurant_menu</span> Receita — a composição do custo</div>
         <div id="nc_composResumo" style="font-size:12.5px;color:var(--tx3);margin-bottom:8px"></div>
-        <button class="btn" style="border-color:var(--pri);color:var(--pri)" onclick="openCompCadastro()"><span class="material-symbols-rounded">precision_manufacturing</span>Compor receita (equipe × tempo)</button>
+        <button id="nc_composBtn" class="btn" style="border-color:var(--pri);color:var(--pri)" onclick="openCompCadastro()"><span class="material-symbols-rounded">precision_manufacturing</span>Compor receita (equipe × tempo)</button>
       </div>
     </div>
     <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px">
@@ -1130,7 +1130,7 @@ function renderBlk(cfg){
         : `<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)"></span>`;
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
       const editCad = (cfg.key==='servicos')
-        ? `<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="${r.catId?'Compor a receita / editar no cadastro do serviço':'Cadastrar este serviço e compor a receita'}"><span class="material-symbols-rounded">precision_manufacturing</span></button>`
+        ? `<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Compor a receita (equipe × tempo) — salva no cadastro"><span class="material-symbols-rounded">precision_manufacturing</span></button><button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar dados do cadastro (nome, unidade)"><span class="material-symbols-rounded">edit_note</span></button>`
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
@@ -1169,7 +1169,7 @@ function renderBlk(cfg){
         : `<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)"></span>`;
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
       const editCad = (cfg.key==='servicos')
-        ? `<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="${r.catId?'Compor a receita / editar no cadastro do serviço':'Cadastrar este serviço e compor a receita'}"><span class="material-symbols-rounded">precision_manufacturing</span></button>`
+        ? `<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Compor a receita (equipe × tempo) — salva no cadastro"><span class="material-symbols-rounded">precision_manufacturing</span></button><button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar dados do cadastro (nome, unidade)"><span class="material-symbols-rounded">edit_note</span></button>`
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
@@ -1367,7 +1367,7 @@ function addAvulso(blk){
 }
 /* + Novo: cadastra no catálogo (orc_catalogo) e adiciona na folha */
 const BLK_TIPO={servicos:'servico',equip:'equipamento',despesas:'despesa',materiais:'material'};
-let _ncBlk=null, _ncEdit=null, _ncEditRow=null, _ncComposicao=null;   // _ncEdit = id do item real do catálogo; _ncEditRow = linha a religar; _ncComposicao = receita do serviço
+let _ncBlk=null, _ncEdit=null, _ncEditRow=null, _ncComposicao=null, _ncNew=false;   // _ncNew = criando serviço novo (mostra o botão Compor aqui); editar existente compõe pela engrenagem da linha
 function ncComposBox(blk){ const isServ=(blk==='servicos');
   const box=document.getElementById('nc_composBox'); if(box)box.style.display=isServ?'block':'none';
   // SERVIÇO: custo vem da receita (só-leitura); número solto só na LINHA do orçamento (usar base/editar). Margem é comercial → fora do cadastro.
@@ -1376,12 +1376,13 @@ function ncComposBox(blk){ const isServ=(blk==='servicos');
   if(lbl) lbl.textContent=isServ?'Custo (da receita)':'Custo (R$)';
   if(mg) mg.style.display=isServ?'none':'';
   if(grid) grid.style.gridTemplateColumns=isServ?'1fr 1fr':'1fr 1fr 1fr';
+  const btn=document.getElementById('nc_composBtn'); if(btn)btn.style.display=(isServ&&_ncNew)?'':'none';   // botão Compor só ao CRIAR; existente compõe pela engrenagem da linha
   ncComposResumo(); }
 function ncComposResumo(){ const el=document.getElementById('nc_composResumo'); if(!el)return;
   if(_ncComposicao&&(_ncComposicao.mo||[]).length){ const n=(_ncComposicao.mo||[]).length; el.innerHTML='<b style="color:var(--green,#3b6d11)">Receita definida</b> — '+n+' profissional(is) · '+(_ncComposicao.tv||'')+' '+(_ncComposicao.un||'')+'. O custo acima vem da composição.'; }
   else { el.textContent='Sem receita — custo digitado direto. Componha pela equipe × tempo pra virar receita reutilizável.'; } }
 function openNovoCat(blk){
-  PICK_TARGET=null; _ncBlk=blk; _ncEdit=null; _ncEditRow=null; _ncComposicao=null; closePick();
+  PICK_TARGET=null; _ncBlk=blk; _ncEdit=null; _ncEditRow=null; _ncComposicao=null; _ncNew=true; closePick();
   const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
   document.getElementById('novoCatTitle').textContent='Novo '+sing+' — salva no catálogo';
   ['nc_nome','nc_custo','nc_margem'].forEach(id=>document.getElementById(id).value='');
@@ -1407,7 +1408,7 @@ function openEditCat(blk,rowId){
   document.getElementById('nc_custo').value=(src.custo!=null&&src.custo!==''?moneyVal(src.custo):'');
   document.getElementById('nc_margem').value=(src.margem===''||src.margem==null?'':src.margem);
   fillCateg(document.getElementById('nc_cat'),blk,src.categoria||'');
-  _ncComposicao=(c&&c.composicao)||(r&&r.composicao)||null;   // carrega a receita (do catálogo ou da linha)
+  _ncComposicao=(c&&c.composicao)||(r&&r.composicao)||null; _ncNew=false;   // carrega a receita (do catálogo ou da linha); editar existente → compor pela engrenagem
   ncComposBox(blk);
   document.getElementById('novoCatModal').classList.add('open');
   setTimeout(()=>document.getElementById('nc_custo').focus(),40);
@@ -1542,13 +1543,10 @@ const JORNADA=8;   // horas por dia (conversão dias↔horas)
 let COMP={blk:null,rowId:null,tv:1,un:'dias',mo:[],desp:[],dif:0,abr:0,_custo:0,_tempo:0,_mo:0,_dsp:0};
 function openComp(blk,rowId){
   const r=(S[blk]||[]).find(x=>x.id===rowId); if(!r)return;
-  if(!MAOOBRA.length){
-    if(!CLOUD) alert('Você está em modo local (sem login). Faça login para carregar a mão de obra do banco e compor o custo pela equipe.');
-    else alert('Nenhuma mão de obra cadastrada. Vá em Comercial › Cadastros › Mão de obra e clique em "Carregar os 7 tipos sugeridos" (ou cadastre função × nível → R$/h) antes de compor.');
-    return; }
   COMP={blk,rowId,tv:1,un:'dias',mo:[],desp:[],dif:0,abr:0,modo:'calc',base:'unidade',valorManual:0,_custo:0,_tempo:0,_mo:0,_dsp:0};
   const c=r.composicao;
   if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; COMP.abr=c.abr||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; }
+  if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';   // sem mão de obra → cai no Manual
   if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1}];
   document.getElementById('compTitle').textContent='Compor custo · '+(r.desc||'serviço');
   document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
@@ -1611,6 +1609,12 @@ function compAplicar(){
   r.custoBase=+(COMP._custo.toFixed(2)); r.usarBase=true; r.custoAlt=r.custoBase;
   r.composicao=receita;
   r.compTempo=+(COMP._tempo.toFixed(2));
+  if(r.catId){   // a receita é do SERVIÇO → salva no CADASTRO (fonte reutilizável) e propaga p/ irmãos que usam o mesmo cadastro
+    const ci=(CATALOGO[COMP.blk]||[]).find(x=>x.id===r.catId);
+    if(ci){ ci.custo=r.custoBase; ci.composicao=JSON.parse(JSON.stringify(receita)); }
+    (S[COMP.blk]||[]).forEach(x=>{ if(x.id!==r.id && x.catId===r.catId){ x.custoBase=r.custoBase; if(x.usarBase)x.custoAlt=r.custoBase; x.composicao=JSON.parse(JSON.stringify(receita)); } });
+    if(CLOUD && !MODELO_V2){ SB.from('orc_catalogo').update({custo:r.custoBase,composicao:receita}).eq('id',r.catId).then(({error})=>{ if(error)console.error('receita→catálogo',error); }); }
+  }
   save(); renderBlk(BLKS.find(b=>b.key===COMP.blk)); recalc(); closeComp();
 }
 function crmData(){ try{const r=localStorage.getItem('ex_crm_v1'); if(r){const d=JSON.parse(r); if(d&&Array.isArray(d.clientes)&&d.clientes.length) return d.clientes;}}catch(e){} return null; }
