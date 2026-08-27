@@ -672,6 +672,10 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
   <div class="modal" style="width:600px;max-width:100%">
     <div class="mh"><span class="material-symbols-rounded">precision_manufacturing</span><h3 id="compTitle">Compor custo do serviço</h3><button class="x" onclick="closeComp()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end">
+        <div style="flex:1;min-width:180px"><div class="cmpsec">Nome do serviço</div><input id="comp_nome" style="width:100%;padding:8px 10px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)" placeholder="ex.: Instalação de tomada"></div>
+        <div><div class="cmpsec">Unidade</div><select id="comp_und" class="cmpsel" style="width:96px"></select></div>
+      </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px">
         <div><div class="cmpsec">Como o custo nasce</div><span class="cmpseg"><button id="comp_md_c" onclick="setCompModo('calc')">Calculado</button><button id="comp_md_m" onclick="setCompModo('manual')">Manual</button></span></div>
         <div><div class="cmpsec">O valor é</div><span class="cmpseg"><button id="comp_bs_u" onclick="setCompBase('unidade')">Por unidade</button><button id="comp_bs_t" onclick="setCompBase('total')">Total do serviço</button></span></div>
@@ -1130,7 +1134,7 @@ function renderBlk(cfg){
         : `<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)"></span>`;
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
       const editCad = (cfg.key==='servicos')
-        ? `<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Compor a receita (equipe × tempo) — salva no cadastro"><span class="material-symbols-rounded">precision_manufacturing</span></button><button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar dados do cadastro (nome, unidade)"><span class="material-symbols-rounded">edit_note</span></button>`
+        ? `<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Definir o serviço: nome, unidade e receita (equipe × tempo)"><span class="material-symbols-rounded">precision_manufacturing</span></button>`
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
@@ -1169,7 +1173,7 @@ function renderBlk(cfg){
         : `<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)"></span>`;
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
       const editCad = (cfg.key==='servicos')
-        ? `<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Compor a receita (equipe × tempo) — salva no cadastro"><span class="material-symbols-rounded">precision_manufacturing</span></button><button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar dados do cadastro (nome, unidade)"><span class="material-symbols-rounded">edit_note</span></button>`
+        ? `<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Definir o serviço: nome, unidade e receita (equipe × tempo)"><span class="material-symbols-rounded">precision_manufacturing</span></button>`
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
@@ -1421,8 +1425,9 @@ function openCompCadastro(){
   if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; }
   if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';   // sem mão de obra → cai no Manual
   if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1}];
-  const nm=(document.getElementById('nc_nome').value||'').trim();
-  document.getElementById('compTitle').textContent='Receita · '+(nm||'serviço');
+  document.getElementById('compTitle').textContent='Serviço';
+  const nmi=document.getElementById('comp_nome'); if(nmi){ nmi.value=(document.getElementById('nc_nome').value||''); }
+  fillUnd(document.getElementById('comp_und'), (document.getElementById('nc_und').value||'UND'));
   document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
   document.getElementById('comp_tv').value=COMP.tv;
   const mvi=document.getElementById('comp_manual'); if(mvi)mvi.value=COMP.valorManual?String(COMP.valorManual).replace('.',','):'';
@@ -1548,7 +1553,9 @@ function openComp(blk,rowId){
   if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; COMP.abr=c.abr||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; }
   if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';   // sem mão de obra → cai no Manual
   if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1}];
-  document.getElementById('compTitle').textContent='Compor custo · '+(r.desc||'serviço');
+  document.getElementById('compTitle').textContent='Serviço';
+  const nmi=document.getElementById('comp_nome'); if(nmi){ nmi.value=r.desc||''; nmi.readOnly=false; }
+  fillUnd(document.getElementById('comp_und'), r.und||UND_DFLT[blk]||'UND');
   document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
   document.getElementById('comp_tv').value=COMP.tv;
   const mvi=document.getElementById('comp_manual'); if(mvi)mvi.value=COMP.valorManual?String(COMP.valorManual).replace('.',','):'';
@@ -1599,21 +1606,26 @@ function compAplicar(){
   COMP.tv=num(document.getElementById('comp_tv').value);
   compCalc();
   COMP.valorManual=num((document.getElementById('comp_manual')||{}).value||COMP.valorManual);
+  const _nome=((document.getElementById('comp_nome')||{}).value||'').trim();
+  const _und=((document.getElementById('comp_und')||{}).value||'').trim()||'UND';
   const receita={mo:COMP.mo.map(x=>({...x})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,tv:COMP.tv,un:COMP.un,modo:COMP.modo||'calc',base:COMP.base||'unidade',valorManual:num(COMP.valorManual)};
-  if(COMP.cadastro){   // veio do cadastro: grava a receita e joga o custo no campo, volta pro modal do cadastro
+  if(COMP.cadastro){   // veio do cadastro (criar novo): joga nome/unidade/custo de volta no formulário do cadastro
     _ncComposicao=receita;
+    const nn=document.getElementById('nc_nome'); if(nn && _nome)nn.value=_nome;
+    const nu=document.getElementById('nc_und'); if(nu)fillUnd(nu,_und);
     const nc=document.getElementById('nc_custo'); if(nc)nc.value=fmtN(COMP._custo);
     ncComposResumo(); closeComp(); return;
   }
   const r=(S[COMP.blk]||[]).find(x=>x.id===COMP.rowId); if(!r){closeComp();return;}
+  if(_nome)r.desc=_nome; r.und=_und;
   r.custoBase=+(COMP._custo.toFixed(2)); r.usarBase=true; r.custoAlt=r.custoBase;
   r.composicao=receita;
   r.compTempo=+(COMP._tempo.toFixed(2));
   if(r.catId){   // a receita é do SERVIÇO → salva no CADASTRO (fonte reutilizável) e propaga p/ irmãos que usam o mesmo cadastro
     const ci=(CATALOGO[COMP.blk]||[]).find(x=>x.id===r.catId);
-    if(ci){ ci.custo=r.custoBase; ci.composicao=JSON.parse(JSON.stringify(receita)); }
-    (S[COMP.blk]||[]).forEach(x=>{ if(x.id!==r.id && x.catId===r.catId){ x.custoBase=r.custoBase; if(x.usarBase)x.custoAlt=r.custoBase; x.composicao=JSON.parse(JSON.stringify(receita)); } });
-    if(CLOUD && !MODELO_V2){ SB.from('orc_catalogo').update({custo:r.custoBase,composicao:receita}).eq('id',r.catId).then(({error})=>{ if(error)console.error('receita→catálogo',error); }); }
+    if(ci){ if(_nome)ci.nome=_nome; ci.und=_und; ci.custo=r.custoBase; ci.composicao=JSON.parse(JSON.stringify(receita)); }
+    (S[COMP.blk]||[]).forEach(x=>{ if(x.id!==r.id && x.catId===r.catId){ if(_nome)x.desc=_nome; x.und=_und; x.custoBase=r.custoBase; if(x.usarBase)x.custoAlt=r.custoBase; x.composicao=JSON.parse(JSON.stringify(receita)); } });
+    if(CLOUD && !MODELO_V2){ SB.from('orc_catalogo').update({nome:_nome,unidade:_und,custo:r.custoBase,composicao:receita}).eq('id',r.catId).then(({error})=>{ if(error)console.error('receita→catálogo',error); }); }
   }
   save(); renderBlk(BLKS.find(b=>b.key===COMP.blk)); recalc(); closeComp();
 }
