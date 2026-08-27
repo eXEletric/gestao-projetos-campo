@@ -663,7 +663,7 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
       <div class="cmpsec">Tempo do serviço</div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
         <input id="comp_tv" class="cmptv" value="1" inputmode="decimal" oninput="COMP.tv=num(this.value);compCalc()">
-        <span class="cmpseg"><button id="comp_un_d" onclick="setCompUn('dias')">dias</button><button id="comp_un_h" onclick="setCompUn('horas')">horas</button></span>
+        <span class="cmpseg"><button id="comp_un_d" onclick="setCompUn('dias')">dias</button><button id="comp_un_h" onclick="setCompUn('horas')">horas</button><button id="comp_un_m" onclick="setCompUn('minutos')">min</button></span>
         <span class="cmphint" id="comp_horas"></span>
       </div>
       <div class="cmpsec">Equipe (mão de obra) <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— função · nível (R$/h do banco) × pessoas × tempo</span></div>
@@ -1547,8 +1547,8 @@ function openComp(blk,rowId){
   compRenderMO(); compRenderDesp(); compCalc();
   document.getElementById('compModal').classList.add('open');
 }
-function setCompUn(u,noCalc){ COMP.un=u; const d=document.getElementById('comp_un_d'),h=document.getElementById('comp_un_h'); if(d)d.classList.toggle('on',u==='dias'); if(h)h.classList.toggle('on',u==='horas'); if(!noCalc)compCalc(); }
-function compHoras(){ return COMP.un==='dias' ? num(COMP.tv)*JORNADA : num(COMP.tv); }
+function setCompUn(u,noCalc){ COMP.un=u; const d=document.getElementById('comp_un_d'),h=document.getElementById('comp_un_h'),m=document.getElementById('comp_un_m'); if(d)d.classList.toggle('on',u==='dias'); if(h)h.classList.toggle('on',u==='horas'); if(m)m.classList.toggle('on',u==='minutos'); if(!noCalc)compCalc(); }
+function compHoras(){ if(COMP.un==='dias') return num(COMP.tv)*JORNADA; if(COMP.un==='minutos') return num(COMP.tv)/60; return num(COMP.tv); }
 function compMORow(r,i){
   const opts=MAOOBRA.map((m,j)=>`<option value="${j}" ${j===r.fn?'selected':''}>${esc(m.funcao)} · ${esc(m.nivel)} (${fmt(m.vh)}/h)</option>`).join('');
   const m=MAOOBRA[r.fn]||{vh:0}; const h=compHoras(); const val=num(r.pes)*h*num(m.vh);
@@ -1578,7 +1578,7 @@ function compCalc(){
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   set('comp_mo',fmt(mo)); set('comp_dsp',fmt(dsp)); set('comp_custo',fmt(custo));
   set('comp_tempo',tempo.toLocaleString('pt-BR',{maximumFractionDigits:2})+' h ('+(tempo/JORNADA).toLocaleString('pt-BR',{maximumFractionDigits:1})+' dias)');
-  set('comp_horas', COMP.un==='dias' ? ('= '+h.toLocaleString('pt-BR',{maximumFractionDigits:2})+'h por pessoa') : '');
+  set('comp_horas', (COMP.un==='dias'||COMP.un==='minutos') ? ('= '+h.toLocaleString('pt-BR',{maximumFractionDigits:2})+'h por pessoa') : '');
 }
 function closeComp(){ document.getElementById('compModal').classList.remove('open'); }
 function compAplicar(){
