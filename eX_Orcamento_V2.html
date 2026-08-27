@@ -277,7 +277,19 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .swcell{display:flex;flex-direction:column;align-items:flex-start;gap:3px;white-space:nowrap}
 .swlbl{font-size:10.5px;font-weight:600}
 .swlbl.on{color:var(--green)}.swlbl.off{color:var(--amber)}
-.mkwrap{display:flex;align-items:center;gap:4px;justify-content:flex-end}
+.mkwrap{display:flex;align-items:center;gap:3px;justify-content:flex-end;flex-wrap:wrap}
+.mkwrap .mk{width:46px;text-align:right}
+.mkwrap.base{opacity:.5}
+.mkwrap.base .mk{border-style:dashed;background:transparent}
+.mkwrap.own .mk{background:#faeeda;border-color:#e6c360;color:#854f0b;font-weight:700}
+.mkwrap.own .mkpc{color:#854f0b}
+.mkne{font-size:14px;font-weight:800;color:#854f0b}
+.mkwarn{font-size:15px;color:#d4a017}
+.mkreset{border:none;background:none;cursor:pointer;color:#854f0b;padding:1px;display:inline-flex;align-items:center}
+.mkreset .material-symbols-rounded{font-size:15px}
+.mkallbtn{border:1px solid var(--line2);background:var(--surf);border-radius:6px;cursor:pointer;color:var(--tx3);padding:1px 3px;vertical-align:middle;line-height:1}
+.mkallbtn:hover{background:#faeeda;color:#854f0b;border-color:#e6c360}
+.mkallbtn .material-symbols-rounded{font-size:14px}
 .rsw{display:inline-flex;align-items:center;gap:3px;justify-content:flex-end}
 .rsw .rsl{color:var(--tx3);font-size:11px;font-weight:600}
 .rsw .cin.num{width:66px}
@@ -880,6 +892,8 @@ function moneyBlur(el,blk,id,field){ const v=el.value.trim(); el.value=(v===''?'
 function moneyBlurBloco(el,blk){ const v=el.value.trim(); el.value=(v===''?'':fmtN(Math.max(0,num(v)))); updBloco(blk,el.value); }
 function qtBlur(el,blk,id){ const n=Math.max(0,num(el.value)); el.value=String(n).replace('.',','); upd(blk,id,'qtd',el.value); }
 function mgBlur(el,blk,id){ const v=el.value.trim(); if(v==='') { upd(blk,id,'margem',''); return; } el.value=String(Math.max(0,num(v))).replace('.',','); upd(blk,id,'margem',el.value); }
+function resetMargem(blk,id){ const r=(S[blk]||[]).find(x=>x.id===id); if(!r)return; r.margem=''; save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }   // volta esta linha à margem base
+function zerarMargens(blk){ const own=(S[blk]||[]).filter(r=>!(r.margem===''||r.margem==null)).length; if(!own)return; if(!confirm('Voltar TODAS as margens à base? ('+own+' linha(s) com margem própria)'))return; (S[blk]||[]).forEach(r=>{ r.margem=''; }); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
 // modelo base+margem (custo): custo usado, margem herdada/própria
 const isCusto=r=>r.custoBase!==undefined;
 const custoUn=r=>num(r.usarBase?r.custoBase:r.custoAlt);
@@ -1106,7 +1120,7 @@ function renderBlk(cfg){
     // na IMPRESSÃO some tudo isso e o cliente vê só Descrição · Qtd · Und · Preço (= valor geral).
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
     const fmtMg=m=>(m==null?'—':String(m).replace('.',',')+'%');
-    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem</th><th class="r"><span class="pint">Valor (geral)</span><span class="printonly">Preço</span></th><th class="r pint">Lucro</th><th class="pint"></th>`;
+    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r"><span class="pint">Valor (geral)</span><span class="printonly">Preço</span></th><th class="r pint">Lucro</th><th class="pint"></th>`;
     body=rows.map((r,i)=>{
       const cu=custoUn(r), custo=num(r.qtd)*cu, preco=num(r.geral), lucro=preco-custo;
       const margImpl = custo>0?(Math.round((preco/custo-1)*1000)/10):null;
@@ -1143,7 +1157,7 @@ function renderBlk(cfg){
   } else if(cfg.custo){
     // MODELO base+margem: custo (do cadastro, usar/alterar) → margem → preço e lucro
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
-    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem</th><th class="r">Preço</th><th class="r pint">Lucro</th><th class="pint"></th>`;
+    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r">Preço</th><th class="r pint">Lucro</th><th class="pint"></th>`;
     body=rows.map((r,i)=>{
       const cu=custoUn(r), preco=num(r.qtd)*cu*(1+mgOf(r)/100), custo=num(r.qtd)*cu, lucro=preco-custo;
       const propria=!(r.margem===''||r.margem==null);
@@ -1167,7 +1181,7 @@ function renderBlk(cfg){
         <td class="r money pint">${custoCell}</td>
         <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
         <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
-        <td class="r pint"><div class="mkwrap"><input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span>%</span></div><div class="mktag">${propria?'<span class="pd own">própria</span>':'<span class="pd">padrão</span>'}</div></td>
+        <td class="r pint"><div class="mkwrap ${propria?'own':'base'}">${propria?'<span class="mkne" title="diferente da margem base">&ne;</span>':''}<input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span class="mkpc">%</span>${propria?`<span class="mkwarn material-symbols-rounded" title="margem própria — fora da base ${num(S.margemBase)}%">warning</span><button class="mkreset" title="voltar à margem base" onclick="resetMargem('${cfg.key}','${r.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</div></td>
         <td class="r money preco" id="tp_${r.id}">${fmt(preco)}</td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
         <td class="pint rowact">${cfg.key==='servicos'?`<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Compor custo por mão de obra"><span class="material-symbols-rounded">precision_manufacturing</span></button>`:''}${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
