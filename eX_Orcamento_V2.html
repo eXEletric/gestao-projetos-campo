@@ -672,6 +672,16 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
   <div class="modal" style="width:600px;max-width:100%">
     <div class="mh"><span class="material-symbols-rounded">precision_manufacturing</span><h3 id="compTitle">Compor custo do serviço</h3><button class="x" onclick="closeComp()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px">
+        <div><div class="cmpsec">Como o custo nasce</div><span class="cmpseg"><button id="comp_md_c" onclick="setCompModo('calc')">Calculado</button><button id="comp_md_m" onclick="setCompModo('manual')">Manual</button></span></div>
+        <div><div class="cmpsec">O valor é</div><span class="cmpseg"><button id="comp_bs_u" onclick="setCompBase('unidade')">Por unidade</button><button id="comp_bs_t" onclick="setCompBase('total')">Total do serviço</button></span></div>
+      </div>
+      <div id="comp_basehint" class="cmphint" style="margin:-6px 0 12px"></div>
+      <div id="comp_manualBox" style="display:none;margin-bottom:14px">
+        <label class="cmplbl">Valor do serviço (custo predeterminado)</label>
+        <div style="display:flex;align-items:center;gap:6px"><span style="color:var(--tx3);font-size:14px">R$</span><input id="comp_manual" class="cmptv" style="width:130px;text-align:right" inputmode="decimal" oninput="COMP.valorManual=num(this.value);compCalc()"></div>
+      </div>
+      <div id="comp_calcBox">
       <div class="cmpsec">Tempo do serviço</div>
       <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;flex-wrap:wrap">
         <input id="comp_tv" class="cmptv" value="1" inputmode="decimal" oninput="COMP.tv=num(this.value);compCalc()">
@@ -688,6 +698,7 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
         <label class="cmplbl">Dificuldade do serviço <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— intrínseca à tarefa; abrangência e local ficam no orçamento</span></label>
         <select id="comp_dif" class="cmpsel" onchange="compCalc()"></select>
       </div>
+      </div><!-- /comp_calcBox -->
       <div class="cmpres">
         <div class="cr"><span>Mão de obra</span><b id="comp_mo">R$ 0,00</b></div>
         <div class="cr"><span>Adicionais</span><b id="comp_dsp">R$ 0,00</b></div>
@@ -905,14 +916,17 @@ function obraMult(r){ if(!r||!r.composicao) return 1;   // tabelado/avulso não 
   return (1+num(abrObra().custo_pct)/100) * localMult(); }
 const custoEf=r=>custoUn(r)*obraMult(r);                // custo efetivo = base × abrangência × fator do local
 // preço (o que o cliente paga) e custo (interno) por linha
+// "Total do serviço": o custo já é o total → a quantidade é 1 (não multiplica)
+const isTotal=r=>!!(r.composicao&&r.composicao.base==='total');
+const qtyOf=r=>isTotal(r)?1:num(r.qtd);
 // MARGEM MANDA: o preço é SEMPRE custo × margem (acabou o "valor geral" que zerava). "Só o total" = só apresentação.
 function linePreco(r){
-  if(isCusto(r)) return num(r.qtd)*custoEf(r)*(1+mgOf(r)/100);
-  return num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100);
+  if(isCusto(r)) return qtyOf(r)*custoEf(r)*(1+mgOf(r)/100);
+  return qtyOf(r)*num(r.vunit)*(1+num(r.markup)/100);
 }
 function lineCusto(r){
-  if(isCusto(r)) return num(r.qtd)*custoEf(r);
-  return num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100);
+  if(isCusto(r)) return qtyOf(r)*custoEf(r);
+  return qtyOf(r)*num(r.vunit)*(1+num(r.markup)/100);
 }
 const lineTot=r=>linePreco(r);
 function effBlocoTotal(blk){ return +(S[blk].reduce((a,r)=>a+linePreco(r),0).toFixed(2)); }
@@ -1131,7 +1145,7 @@ function renderBlk(cfg){
           </div>
         </td>
         <td class="r money pint">${custoCell}</td>
-        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
+        <td class="r">${isTotal(r)?`<span class="und-fix" title="valor total do serviço — quantidade não se aplica">total</span>`:`<input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)">`}</td>
         <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
         <td class="r pint"><span class="mgimp" id="tm_${r.id}">${fmtMg(margImpl)}</span></td>
         <td class="r">${soT?`<span class="incl printonly">incluso</span>`:''}<span class="rsw${soT?' noprint':''}"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
@@ -1148,7 +1162,7 @@ function renderBlk(cfg){
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
     cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r">Preço</th><th class="r pint">Lucro</th><th class="pint"></th>`;
     body=rows.map((r,i)=>{
-      const cu=custoUn(r), preco=num(r.qtd)*cu*(1+mgOf(r)/100), custo=num(r.qtd)*cu, lucro=preco-custo;
+      const preco=linePreco(r), custo=lineCusto(r), lucro=preco-custo;
       const propria=!(r.margem===''||r.margem==null);
       const custoCell = r.usarBase
         ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
@@ -1170,7 +1184,7 @@ function renderBlk(cfg){
           </div>
         </td>
         <td class="r money pint">${custoCell}</td>
-        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
+        <td class="r">${isTotal(r)?`<span class="und-fix" title="valor total do serviço — quantidade não se aplica">total</span>`:`<input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)">`}</td>
         <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
         <td class="r pint"><div class="mkwrap ${propria?'own':'base'}">${propria?'<span class="mkne" title="diferente da margem base">&ne;</span>':''}<input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span class="mkpc">%</span>${propria?`<span class="mkwarn material-symbols-rounded" title="margem própria — fora da base ${num(S.margemBase)}%">warning</span><button class="mkreset" title="voltar à margem base" onclick="resetMargem('${cfg.key}','${r.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</div></td>
         <td class="r money preco" id="tp_${r.id}">${fmt(preco)}</td>
@@ -1300,18 +1314,12 @@ function upd(blk,id,field,val){
   save();
 }
 function refreshRow(blk,r){
-  const modo=S.modos[blk]||'unit';
-  const c=document.getElementById('tt_'+r.id);
-  if(c){const t=lineTot(r,modo); c.textContent=fmt(t); c.className='tot '+(t?'':'z');}
-  const cu=custoEf(r), custo=num(r.qtd)*cu;   // custo efetivo (base × fatores da obra) p/ preço/lucro ao vivo
-  const pe=document.getElementById('tp_'+r.id), le=document.getElementById('tl_'+r.id), me=document.getElementById('tm_'+r.id);
-  if(modo==='geral'){   // valor geral: preço = valor digitado; margem e lucro são derivados (ao vivo)
-    const preco=num(r.geral), marg=custo>0?(Math.round((preco/custo-1)*1000)/10):null;
-    if(le) le.textContent=fmt(preco-custo);
-    if(me) me.textContent=(marg==null?'—':String(marg).replace('.',',')+'%');
-  } else if(pe){ const preco=num(r.qtd)*cu*(1+mgOf(r)/100);
-    pe.textContent=fmt(preco); if(le)le.textContent=fmt(preco-custo); }
-  const bv=document.getElementById('bsv_'+r.id); if(bv) bv.textContent=fmt(num(r.custoBase));   // legenda "base:" ao vivo
+  const preco=linePreco(r), custo=lineCusto(r);
+  const c=document.getElementById('tt_'+r.id); if(c){ c.textContent=fmt(preco); c.className='tot '+(preco?'':'z'); }
+  const pe=document.getElementById('tp_'+r.id), le=document.getElementById('tl_'+r.id);
+  if(pe) pe.textContent=fmt(preco);
+  if(le) le.textContent=fmt(preco-custo);
+  const bv=document.getElementById('bsv_'+r.id); if(bv) bv.textContent=fmt(num(r.custoBase));
 }
 function togBase(blk,id){
   const r=S[blk].find(x=>x.id===id); if(!r)return;
@@ -1407,16 +1415,17 @@ function openEditCat(blk,rowId){
 function closeNovoCat(){ document.getElementById('novoCatModal').classList.remove('open'); _ncBlk=null; _ncEdit=null; _ncEditRow=null; _ncComposicao=null; }
 // compor a RECEITA no cadastro (não numa linha do orçamento) — reusa o mesmo compositor
 function openCompCadastro(){
-  if(!MAOOBRA.length){ if(!CLOUD)alert('Faça login pra usar a mão de obra do banco e compor a receita.'); else alert('Cadastre a mão de obra (Comercial › Cadastros › Mão de obra) antes de compor.'); return; }
-  COMP={cadastro:true,blk:null,rowId:null,tv:1,un:'dias',mo:[],desp:[],dif:0,_custo:0,_tempo:0,_mo:0,_dsp:0};
+  COMP={cadastro:true,blk:null,rowId:null,tv:1,un:'dias',mo:[],desp:[],dif:0,modo:'calc',base:'unidade',valorManual:0,_custo:0,_tempo:0,_mo:0,_dsp:0};
   const c=_ncComposicao;
-  if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; }
+  if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; }
+  if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';   // sem mão de obra → cai no Manual
   if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1}];
   const nm=(document.getElementById('nc_nome').value||'').trim();
   document.getElementById('compTitle').textContent='Receita · '+(nm||'serviço');
   document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
   document.getElementById('comp_tv').value=COMP.tv;
-  setCompUn(COMP.un,true);
+  const mvi=document.getElementById('comp_manual'); if(mvi)mvi.value=COMP.valorManual?String(COMP.valorManual).replace('.',','):'';
+  setCompUn(COMP.un,true); setCompModo(COMP.modo,true); setCompBase(COMP.base,true);
   compRenderMO(); compRenderDesp(); compCalc();
   document.getElementById('compModal').classList.add('open');
 }
@@ -1537,19 +1546,22 @@ function openComp(blk,rowId){
     if(!CLOUD) alert('Você está em modo local (sem login). Faça login para carregar a mão de obra do banco e compor o custo pela equipe.');
     else alert('Nenhuma mão de obra cadastrada. Vá em Comercial › Cadastros › Mão de obra e clique em "Carregar os 7 tipos sugeridos" (ou cadastre função × nível → R$/h) antes de compor.');
     return; }
-  COMP={blk,rowId,tv:1,un:'dias',mo:[],desp:[],dif:0,abr:0,_custo:0,_tempo:0,_mo:0,_dsp:0};
+  COMP={blk,rowId,tv:1,un:'dias',mo:[],desp:[],dif:0,abr:0,modo:'calc',base:'unidade',valorManual:0,_custo:0,_tempo:0,_mo:0,_dsp:0};
   const c=r.composicao;
-  if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; COMP.abr=c.abr||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; }
+  if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; COMP.abr=c.abr||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; }
   if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1}];
   document.getElementById('compTitle').textContent='Compor custo · '+(r.desc||'serviço');
   document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
   document.getElementById('comp_tv').value=COMP.tv;
-  setCompUn(COMP.un,true);
+  const mvi=document.getElementById('comp_manual'); if(mvi)mvi.value=COMP.valorManual?String(COMP.valorManual).replace('.',','):'';
+  setCompUn(COMP.un,true); setCompModo(COMP.modo,true); setCompBase(COMP.base,true);
   compRenderMO(); compRenderDesp(); compCalc();
   document.getElementById('compModal').classList.add('open');
 }
 function setCompUn(u,noCalc){ COMP.un=u; const d=document.getElementById('comp_un_d'),h=document.getElementById('comp_un_h'),m=document.getElementById('comp_un_m'); if(d)d.classList.toggle('on',u==='dias'); if(h)h.classList.toggle('on',u==='horas'); if(m)m.classList.toggle('on',u==='minutos'); if(!noCalc)compCalc(); }
 function compHoras(){ if(COMP.un==='dias') return num(COMP.tv)*JORNADA; if(COMP.un==='minutos') return num(COMP.tv)/60; return num(COMP.tv); }
+function setCompModo(m,noCalc){ COMP.modo=m; const c=document.getElementById('comp_md_c'),mn=document.getElementById('comp_md_m'); if(c)c.classList.toggle('on',m==='calc'); if(mn)mn.classList.toggle('on',m==='manual'); const cb=document.getElementById('comp_calcBox'),mb=document.getElementById('comp_manualBox'); if(cb)cb.style.display=(m==='manual')?'none':''; if(mb)mb.style.display=(m==='manual')?'block':'none'; if(!noCalc)compCalc(); }
+function setCompBase(b,noCalc){ COMP.base=b; const u=document.getElementById('comp_bs_u'),t=document.getElementById('comp_bs_t'); if(u)u.classList.toggle('on',b==='unidade'); if(t)t.classList.toggle('on',b==='total'); const h=document.getElementById('comp_basehint'); if(h)h.textContent=(b==='total')?'É o TOTAL do serviço — na linha a quantidade trava em 1.':'Custo de 1 unidade — na linha você multiplica pela quantidade.'; if(!noCalc)compCalc(); }
 function compMORow(r,i){
   const opts=MAOOBRA.map((m,j)=>`<option value="${j}" ${j===r.fn?'selected':''}>${esc(m.funcao)} · ${esc(m.nivel)} (${fmt(m.vh)}/h)</option>`).join('');
   const m=MAOOBRA[r.fn]||{vh:0}; const h=compHoras(); const val=num(r.pes)*h*num(m.vh);
@@ -1568,6 +1580,8 @@ function compRenderDesp(){ const el=document.getElementById('compDesp'); if(!el)
     || '<div style="font-size:12px;color:var(--tx3);padding:2px 2px 6px">Sem adicionais neste serviço.</div>'; }
 function compAddDesp(){ if(!COMP.desp)COMP.desp=[]; COMP.desp.push({nome:'',valor:''}); compRenderDesp(); }
 function compCalc(){
+  const setr=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  if(COMP.modo==='manual'){ const custo=num(COMP.valorManual); COMP._mo=0;COMP._dsp=0;COMP._custo=custo;COMP._tempo=0; setr('comp_mo','—'); setr('comp_dsp','—'); setr('comp_custo',fmt(custo)); setr('comp_tempo','—'); setr('comp_horas',''); return; }
   const dif=DIFIC[+document.getElementById('comp_dif').value||0]||DIFIC[0];   // dificuldade DO SERVIÇO (fica na receita); abrangência/local são fatores da OBRA (no orçamento)
   const h=compHoras();
   let mo=0;
@@ -1586,7 +1600,8 @@ function compAplicar(){
   COMP.dif=+document.getElementById('comp_dif').value||0;
   COMP.tv=num(document.getElementById('comp_tv').value);
   compCalc();
-  const receita={mo:COMP.mo.map(x=>({...x})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,tv:COMP.tv,un:COMP.un};
+  COMP.valorManual=num((document.getElementById('comp_manual')||{}).value||COMP.valorManual);
+  const receita={mo:COMP.mo.map(x=>({...x})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,tv:COMP.tv,un:COMP.un,modo:COMP.modo||'calc',base:COMP.base||'unidade',valorManual:num(COMP.valorManual)};
   if(COMP.cadastro){   // veio do cadastro: grava a receita e joga o custo no campo, volta pro modal do cadastro
     _ncComposicao=receita;
     const nc=document.getElementById('nc_custo'); if(nc)nc.value=fmtN(COMP._custo);
