@@ -198,6 +198,10 @@ select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 .efrow{display:flex;align-items:center;gap:11px;padding:9px 13px;border-bottom:1px solid var(--line)}
 .efav{width:32px;height:32px;border-radius:50%;background:var(--pri-bg);color:var(--pri);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .efav .material-symbols-rounded{font-size:18px}
+.efmode{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 13px 2px}
+.efmode-lb{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3)}
+.efmode .cmpseg button{padding:6px 12px;font-size:12px}
+.efhint{font-size:11.5px;color:var(--tx2);padding:7px 13px 10px;line-height:1.5}
 .eff{flex:1;min-width:0}
 .eff .efn{font-weight:600;font-size:13px}
 .eff .efd{font-size:10.5px;color:var(--tx3)}
@@ -701,7 +705,6 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
         <span class="cmphint" id="comp_horas"></span>
       </div>
       <div class="cmpsec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Equipe (mão de obra)
-        <span class="cmpseg" style="text-transform:none;letter-spacing:0"><button id="comp_ef_e" onclick="setCompEfetivo(true)">Usar o efetivo</button><button id="comp_ef_m" onclick="setCompEfetivo(false)">Manual</button></span>
         <span id="comp_ef_badge"></span>
       </div>
       <div id="compMO"></div>
@@ -924,14 +927,18 @@ function zerarMargens(blk){ const own=(S[blk]||[]).filter(r=>!(r.margem===''||r.
 const isCusto=r=>r.custoBase!==undefined;
 function horasReceita(c){ if(!c)return 0; if(c.un==='dias')return num(c.tv)*8; if(c.un==='minutos')return num(c.tv)/60; return num(c.tv); }
 function custoComposto(r){ const c=r&&r.composicao; if(!c)return null;
-  if(c.modo==='manual') return num(c.valorManual);
+  if(c.modo==='manual') return num(c.valorManual);   // valor predeterminado (chave Calculado×Manual)
   const dif=(DIFIC[c.dif||0]||DIFIC[0]||{mult:1}).mult, h=horasReceita(c);
-  const crew = c.usaEfetivo ? (S.efetivo||[]).map(e=>({vh:num(efMao(e).vh),pes:num(e.pes)})) : (c.mo||[]).map(x=>{const m=MAOOBRA[x.fn]; return {vh:num(m?m.vh:x.vh),pes:num(x.pes)};});
+  // equipe: modo GLOBAL do orçamento — pelo efetivo (todos), ou manual (equipe própria; sem própria, cai no efetivo)
+  const useOwn = !maoGlobalEfetivo() && c.mo && c.mo.length;
+  const crew = useOwn
+    ? c.mo.map(x=>{const m=MAOOBRA[x.fn]; return {vh:num(m?m.vh:x.vh),pes:num(x.pes)};})
+    : (S.efetivo||[]).map(e=>({vh:num(efMao(e).vh),pes:num(e.pes)}));
   let mo=0; crew.forEach(p=>{ mo+=p.pes*h*dif*p.vh; });
   return mo+(c.desp||[]).reduce((a,d)=>a+num(d.valor),0);
 }
-// custo unitário: serviço que USA O EFETIVO recalcula ao vivo (efetivo dirige); senão usa o base/alterado
-const custoUn=r=>{ if(r.usarBase!==false && r.composicao && r.composicao.usaEfetivo){ const cc=custoComposto(r); if(cc!=null)return cc; } return num(r.usarBase?r.custoBase:r.custoAlt); };
+// custo unitário: serviço montado recalcula ao vivo (efetivo dirige quando o modo é global-efetivo); senão base/alterado
+const custoUn=r=>{ if(r.usarBase!==false && r.composicao){ const cc=custoComposto(r); if(cc!=null)return cc; } return num(r.usarBase?r.custoBase:r.custoAlt); };
 const mgOf=r=>(r.margem===''||r.margem==null)?num(S.margemBase):num(r.margem);
 // ===== FATORES DA OBRA (gerais do orçamento) — só afetam serviços MONTADOS (com composição) =====
 function abrObra(){ return (ABRANGENCIA&&ABRANGENCIA[num(S.abrIdx)||0])||{custo_pct:0,tempo_pct:0}; }
@@ -1100,6 +1107,7 @@ function sanitize(){
   if(S.descGeralOn===undefined)S.descGeralOn=true;
   if(!Array.isArray(S.efetivo))S.efetivo=[];
   S.efetivo=S.efetivo.filter(c=>c&&(c.fn!=null||c.vh!=null)).map(c=>({fn:c.fn,funcao:c.funcao,nivel:c.nivel,vh:num(c.vh),pes:(+c.pes||+c.n||1)}));   // migra efetivo antigo (nome+contagem) → equipe real (função·nível·R$/h); sem R$/h é descartado
+  if(S.maoObraModo!=='manual' && S.maoObraModo!=='efetivo') S.maoObraModo='efetivo';   // modo GLOBAL da mão de obra dos serviços
   if(S.margemBase===undefined)S.margemBase=30;
   if(!Array.isArray(S.comprovantes))S.comprovantes=[];
   if(S.abrIdx===undefined)S.abrIdx=0;
@@ -1268,7 +1276,13 @@ function efetivoHtml(){
       <button class="efrm" onclick="efRm(${i})" title="Remover"><span class="material-symbols-rounded">close</span></button></div>`; }).join('');
   return `<div class="efcard noprint">
     <div class="efhd"><span class="material-symbols-rounded">engineering</span><h3>Efetivo na obra</h3><span class="efcnt"><span class="material-symbols-rounded">group</span>${efTotal()} pessoas</span></div>
-    <div class="efhint">A equipe da obra. Os serviços <b>usam este efetivo</b> por padrão (dá pra mudar em cada um, com aviso).</div>
+    <div class="efmode">
+      <span class="efmode-lb">Mão de obra dos serviços</span>
+      <span class="cmpseg"><button class="${maoGlobalEfetivo()?'on':''}" onclick="setMaoModo('efetivo')">Pelo efetivo</button><button class="${!maoGlobalEfetivo()?'on':''}" onclick="setMaoModo('manual')">Manual por serviço</button></span>
+    </div>
+    <div class="efhint">${maoGlobalEfetivo()
+      ?'<b>Todos os serviços</b> puxam o custo da mão de obra deste efetivo. Mudou o efetivo, muda o custo — de uma vez.'
+      :'Cada serviço tem a <b>sua equipe</b> (você monta no compositor). Este efetivo vira só o ponto de partida.'}</div>
     ${rows||'<div class="efempty">Sem equipe definida. Adicione os profissionais (do cadastro de mão de obra).</div>'}
     <div class="effoot"><button class="efadd" onclick="efAddOpen()"><span class="material-symbols-rounded">person_add</span>profissional</button>
       <span class="efprazo"><span class="material-symbols-rounded">event</span>Prazo estimado <input type="number" min="1" value="${num(S.prazoDias)||1}" oninput="efSetDias(this.value)"> dias</span></div>
@@ -1446,7 +1460,7 @@ function closeNovoCat(){ document.getElementById('novoCatModal').classList.remov
 function openCompCadastro(){
   COMP={cadastro:true,blk:null,rowId:null,tv:1,un:'dias',mo:[],desp:[],dif:0,modo:'calc',base:'unidade',valorManual:0,usaEfetivo:true,_custo:0,_tempo:0,_mo:0,_dsp:0};
   const c=_ncComposicao;
-  if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; COMP.usaEfetivo=(c.usaEfetivo!==undefined)?!!c.usaEfetivo:!((c.mo||[]).length); }
+  if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; }
   if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';   // sem mão de obra → cai no Manual
   if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1}];
   document.getElementById('compTitle').textContent='Serviço';
@@ -1455,6 +1469,8 @@ function openCompCadastro(){
   document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
   document.getElementById('comp_tv').value=COMP.tv;
   const mvi=document.getElementById('comp_manual'); if(mvi)mvi.value=COMP.valorManual?String(COMP.valorManual).replace('.',','):'';
+  COMP.usaEfetivo=maoGlobalEfetivo();   // modo é GLOBAL do orçamento
+  if(!COMP.usaEfetivo && !(c&&(c.mo||[]).length)){ const seed=(S.efetivo||[]).filter(e=>e.fn!=null).map(e=>({fn:e.fn,pes:(+e.pes||1)})); if(seed.length)COMP.mo=seed; }
   setCompUn(COMP.un,true); setCompModo(COMP.modo,true); setCompBase(COMP.base,true); compSyncEfUI();
   compRenderMO(); compRenderDesp(); compCalc();
   document.getElementById('compModal').classList.add('open');
@@ -1574,7 +1590,7 @@ function openComp(blk,rowId){
   const r=(S[blk]||[]).find(x=>x.id===rowId); if(!r)return;
   COMP={blk,rowId,tv:1,un:'dias',mo:[],desp:[],dif:0,abr:0,modo:'calc',base:'unidade',valorManual:0,usaEfetivo:true,_custo:0,_tempo:0,_mo:0,_dsp:0};
   const c=r.composicao;
-  if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; COMP.abr=c.abr||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; COMP.usaEfetivo=(c.usaEfetivo!==undefined)?!!c.usaEfetivo:!((c.mo||[]).length); }
+  if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; COMP.abr=c.abr||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; }
   if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';   // sem mão de obra → cai no Manual
   if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1}];
   document.getElementById('compTitle').textContent='Serviço';
@@ -1583,6 +1599,8 @@ function openComp(blk,rowId){
   document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
   document.getElementById('comp_tv').value=COMP.tv;
   const mvi=document.getElementById('comp_manual'); if(mvi)mvi.value=COMP.valorManual?String(COMP.valorManual).replace('.',','):'';
+  COMP.usaEfetivo=maoGlobalEfetivo();   // modo é GLOBAL do orçamento
+  if(!COMP.usaEfetivo && !(c&&(c.mo||[]).length)){ const seed=(S.efetivo||[]).filter(e=>e.fn!=null).map(e=>({fn:e.fn,pes:(+e.pes||1)})); if(seed.length)COMP.mo=seed; }
   setCompUn(COMP.un,true); setCompModo(COMP.modo,true); setCompBase(COMP.base,true); compSyncEfUI();
   compRenderMO(); compRenderDesp(); compCalc();
   document.getElementById('compModal').classList.add('open');
@@ -1623,22 +1641,18 @@ function compRenderMO(){
   el.innerHTML=hd+COMP.mo.map(compMORow).join('');
 }
 function compAddMO(){ COMP.mo.push({fn:0,pes:1}); compRenderMO(); compCalc(); }
-// chave usar-o-efetivo × manual: espelha o sinal do resto do sistema (base×modificado)
-function setCompEfetivo(on){ const was=COMP.usaEfetivo!==false; COMP.usaEfetivo=on;
-  if(!on && was){   // veio do efetivo → parte a equipe manual como CÓPIA do efetivo (pra só ajustar)
-    const seed=(S.efetivo||[]).filter(e=>e.fn!=null).map(e=>({fn:e.fn,pes:(+e.pes||1)}));
-    COMP.mo = seed.length ? seed : [{fn:0,pes:1}];
-  }
-  compSyncEfUI(); compRenderMO(); compCalc();
-}
+// modo da mão de obra é GLOBAL do orçamento (S.maoObraModo), NÃO por serviço.
+// O compositor só reflete o modo vigente: efetivo=read-only · manual=editável.
+function maoGlobalEfetivo(){ return S.maoObraModo!=='manual'; }
 function compSyncEfUI(){
   const on=COMP.usaEfetivo!==false;
-  const e=document.getElementById('comp_ef_e'),m=document.getElementById('comp_ef_m'); if(e)e.classList.toggle('on',on); if(m)m.classList.toggle('on',!on);
   const b=document.getElementById('comp_ef_badge'); if(b)b.innerHTML=on
-    ?`<span class="efbadge ok"><span class="material-symbols-rounded">groups</span>usa o efetivo da obra</span>`
-    :`<span class="efbadge mod"><span class="material-symbols-rounded">edit</span>equipe manual — fora do efetivo</span>`;
+    ?`<span class="efbadge ok"><span class="material-symbols-rounded">groups</span>puxa o efetivo da obra <span style="opacity:.7;font-weight:500">— mude no card Efetivo</span></span>`
+    :`<span class="efbadge mod"><span class="material-symbols-rounded">edit</span>modo manual — equipe deste serviço</span>`;
   const add=document.getElementById('comp_addprof'); if(add)add.style.display=on?'none':'';
 }
+// controle GLOBAL (fica no card Efetivo): todos pelo efetivo, ou todos manuais
+function setMaoModo(m){ S.maoObraModo=(m==='manual')?'manual':'efetivo'; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); recalc(); }
 function compRenderDesp(){ const el=document.getElementById('compDesp'); if(!el)return;
   el.innerHTML=(COMP.desp||[]).map((d,i)=>`<div class="cmpdrow"><input class="cmpin" value="${esc(d.nome)}" placeholder="ex.: Deslocamento" oninput="COMP.desp[${i}].nome=this.value"><span class="cmprs">R$</span><input class="cmpin val" value="${d.valor!=null&&d.valor!==''?String(d.valor).replace('.',','):''}" inputmode="decimal" oninput="COMP.desp[${i}].valor=num(this.value);compCalc()"><button class="cmpdel" onclick="COMP.desp.splice(${i},1);compRenderDesp();compCalc()"><span class="material-symbols-rounded">close</span></button></div>`).join('')
     || '<div style="font-size:12px;color:var(--tx3);padding:2px 2px 6px">Sem adicionais neste serviço.</div>'; }
@@ -1671,7 +1685,8 @@ function compAplicar(){
   COMP.valorManual=num((document.getElementById('comp_manual')||{}).value||COMP.valorManual);
   const _nome=((document.getElementById('comp_nome')||{}).value||'').trim();
   const _und=((document.getElementById('comp_und')||{}).value||'').trim()||'UND';
-  const receita={mo:COMP.mo.map(x=>({...x})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,tv:COMP.tv,un:COMP.un,modo:COMP.modo||'calc',base:COMP.base||'unidade',valorManual:num(COMP.valorManual),usaEfetivo:COMP.usaEfetivo!==false};
+  // modo efetivo (global): equipe vem do efetivo ao vivo → não congela mo; modo manual: guarda a equipe própria do serviço
+  const receita={mo:(maoGlobalEfetivo()?[]:COMP.mo.map(x=>({...x}))),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,tv:COMP.tv,un:COMP.un,modo:COMP.modo||'calc',base:COMP.base||'unidade',valorManual:num(COMP.valorManual),usaEfetivo:maoGlobalEfetivo()};
   if(COMP.cadastro){   // veio do cadastro (criar novo): joga nome/unidade/custo de volta no formulário do cadastro
     _ncComposicao=receita;
     const nn=document.getElementById('nc_nome'); if(nn && _nome)nn.value=_nome;
