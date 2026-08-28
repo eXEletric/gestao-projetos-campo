@@ -357,6 +357,14 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .cmprow .cmpdel:hover{background:#fcebeb;color:var(--red)}.cmprow .cmpdel .material-symbols-rounded{font-size:16px}
 .cmpadd{border:1px dashed var(--line2);background:transparent;color:var(--pri);font:600 12px inherit;border-radius:20px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin-top:6px}
 .cmpadd:hover{background:var(--pri-bg);border-color:var(--pri)}.cmpadd .material-symbols-rounded{font-size:16px}
+.efbadge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+.efbadge.ok{background:var(--pri-bg);color:var(--pri)}
+.efbadge.mod{background:#fff3e0;color:#b26a00;border:1px solid #f0c27a}
+.efbadge .material-symbols-rounded{font-size:14px}
+.cmprow .cmpfn{font-size:12.5px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmprow .cmppes{text-align:center;font-size:13px;font-weight:600;color:var(--tx2);font-variant-numeric:tabular-nums}
+.cmprow.ef{opacity:.92}
+.efnone{font-size:12px;color:var(--tx3);padding:8px 2px;line-height:1.5}
 .cmplbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);margin-bottom:5px;display:block}
 .cmpsel{width:100%;padding:8px 10px;border:1px solid var(--line2);border-radius:7px;font-size:13px;background:var(--surf);color:var(--tx)}
 .cmpres{margin-top:16px;background:var(--surf2);border-radius:10px;padding:12px 14px;display:flex;gap:26px}
@@ -692,9 +700,12 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
         <span class="cmpseg"><button id="comp_un_d" onclick="setCompUn('dias')">dias</button><button id="comp_un_h" onclick="setCompUn('horas')">horas</button><button id="comp_un_m" onclick="setCompUn('minutos')">min</button></span>
         <span class="cmphint" id="comp_horas"></span>
       </div>
-      <div class="cmpsec">Equipe (mão de obra) <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— função · nível (R$/h do banco) × pessoas × tempo</span></div>
+      <div class="cmpsec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Equipe (mão de obra)
+        <span class="cmpseg" style="text-transform:none;letter-spacing:0"><button id="comp_ef_e" onclick="setCompEfetivo(true)">Usar o efetivo</button><button id="comp_ef_m" onclick="setCompEfetivo(false)">Manual</button></span>
+        <span id="comp_ef_badge"></span>
+      </div>
       <div id="compMO"></div>
-      <button class="cmpadd" onclick="compAddMO()"><span class="material-symbols-rounded">person_add</span>profissional</button>
+      <button id="comp_addprof" class="cmpadd" onclick="compAddMO()"><span class="material-symbols-rounded">person_add</span>profissional</button>
       <div class="cmpsec" style="margin-top:16px">Adicionais deste serviço <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— opcional; só o que é específico deste serviço (ex.: hora extra). Despesas gerais da obra vão no bloco Despesas.</span></div>
       <div id="compDesp"></div>
       <button class="cmpadd" onclick="compAddDesp()"><span class="material-symbols-rounded">add</span>adicional</button>
@@ -911,7 +922,16 @@ function resetMargem(blk,id){ const r=(S[blk]||[]).find(x=>x.id===id); if(!r)ret
 function zerarMargens(blk){ const own=(S[blk]||[]).filter(r=>!(r.margem===''||r.margem==null)).length; if(!own)return; if(!confirm('Voltar TODAS as margens à base? ('+own+' linha(s) com margem própria)'))return; (S[blk]||[]).forEach(r=>{ r.margem=''; }); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
 // modelo base+margem (custo): custo usado, margem herdada/própria
 const isCusto=r=>r.custoBase!==undefined;
-const custoUn=r=>num(r.usarBase?r.custoBase:r.custoAlt);
+function horasReceita(c){ if(!c)return 0; if(c.un==='dias')return num(c.tv)*8; if(c.un==='minutos')return num(c.tv)/60; return num(c.tv); }
+function custoComposto(r){ const c=r&&r.composicao; if(!c)return null;
+  if(c.modo==='manual') return num(c.valorManual);
+  const dif=(DIFIC[c.dif||0]||DIFIC[0]||{mult:1}).mult, h=horasReceita(c);
+  const crew = c.usaEfetivo ? (S.efetivo||[]).map(e=>({vh:num(efMao(e).vh),pes:num(e.pes)})) : (c.mo||[]).map(x=>{const m=MAOOBRA[x.fn]; return {vh:num(m?m.vh:x.vh),pes:num(x.pes)};});
+  let mo=0; crew.forEach(p=>{ mo+=p.pes*h*dif*p.vh; });
+  return mo+(c.desp||[]).reduce((a,d)=>a+num(d.valor),0);
+}
+// custo unitário: serviço que USA O EFETIVO recalcula ao vivo (efetivo dirige); senão usa o base/alterado
+const custoUn=r=>{ if(r.usarBase!==false && r.composicao && r.composicao.usaEfetivo){ const cc=custoComposto(r); if(cc!=null)return cc; } return num(r.usarBase?r.custoBase:r.custoAlt); };
 const mgOf=r=>(r.margem===''||r.margem==null)?num(S.margemBase):num(r.margem);
 // ===== FATORES DA OBRA (gerais do orçamento) — só afetam serviços MONTADOS (com composição) =====
 function abrObra(){ return (ABRANGENCIA&&ABRANGENCIA[num(S.abrIdx)||0])||{custo_pct:0,tempo_pct:0}; }
@@ -948,7 +968,7 @@ function demo(){
     finNome:"ASSAÍ NACIONAL", finRede:"Assaí", finNum:"256", finEnd:"Av. Vasco da Gama, s/nº — Salvador/BA",
     respNome:"André Camilo", respFone:"62 99392-2999", respEmail:"aocinnet@gmail.com",
     equipe:"1 Eletrotécnico · 1 Eletricista · 1 Operacional",
-    efetivo:[{f:'Eletrotécnico',ic:'electrical_services',n:1},{f:'Eletricista',ic:'bolt',n:1},{f:'Operacional',ic:'groups',n:1}],
+    efetivo:[],
     prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho', abrIdx:0, fatorLocal:1,
     descGeral:"Proposta para execução dos serviços de automação de iluminação e substituição do controlador do ar-condicionado central, conforme escopo detalhado abaixo. Valores e condições conforme apresentado nesta cotação.", descGeralOn:true,
     modos:{servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'},
@@ -1078,7 +1098,8 @@ function sanitize(){
   ['servicos','equip','despesas','materiais'].forEach(k=>{ if(S.blocoOn[k]===undefined)S.blocoOn[k]=true; if(S.obsOn[k]===undefined)S.obsOn[k]=true; });
   if(S.descGeral===undefined)S.descGeral='';
   if(S.descGeralOn===undefined)S.descGeralOn=true;
-  if(!Array.isArray(S.efetivo))S.efetivo=[{f:'Eletrotécnico',ic:'electrical_services',n:1},{f:'Eletricista',ic:'bolt',n:1}];
+  if(!Array.isArray(S.efetivo))S.efetivo=[];
+  S.efetivo=S.efetivo.filter(c=>c&&(c.fn!=null||c.vh!=null)).map(c=>({fn:c.fn,funcao:c.funcao,nivel:c.nivel,vh:num(c.vh),pes:(+c.pes||+c.n||1)}));   // migra efetivo antigo (nome+contagem) → equipe real (função·nível·R$/h); sem R$/h é descartado
   if(S.margemBase===undefined)S.margemBase=30;
   if(!Array.isArray(S.comprovantes))S.comprovantes=[];
   if(S.abrIdx===undefined)S.abrIdx=0;
@@ -1236,22 +1257,24 @@ const FUNCS=[
   {f:'Téc. de segurança',ic:'health_and_safety'},
   {f:'Motorista',ic:'local_shipping'}
 ];
-const efTotal=()=>(S.efetivo||[]).reduce((a,c)=>a+(+c.n||0),0);
-function efFrase(){ const p=(S.efetivo||[]).filter(c=>+c.n>0).map(c=>c.n+' '+c.f+(c.n>1?'s':'')); return p.join(' · '); }
+const efTotal=()=>(S.efetivo||[]).reduce((a,c)=>a+(+c.pes||0),0);
+function efMao(c){ const m=MAOOBRA[c.fn]; if(m)return m; return {funcao:c.funcao||'(profissional)',nivel:c.nivel||'',vh:num(c.vh)}; }   // resolve pela MAOOBRA; fallback nos dados guardados
+function efFrase(){ return (S.efetivo||[]).filter(c=>+c.pes>0).map(c=>{const m=efMao(c);return c.pes+' '+m.funcao+(m.nivel?' '+m.nivel:'');}).join(' · '); }
 function efetivoHtml(){
   const crew=S.efetivo||[];
-  const rows=crew.map((c,i)=>`<div class="efrow"><span class="efav"><span class="material-symbols-rounded">${c.ic||'person'}</span></span>
-      <div class="eff"><div class="efn">${esc(c.f)}</div><div class="efd">função na equipe</div></div>
-      <div class="efstep"><button onclick="efDec(${i})" title="−"><span class="material-symbols-rounded">remove</span></button><span class="efqt">${c.n}</span><button onclick="efInc(${i})" title="+"><span class="material-symbols-rounded">add</span></button></div>
-      <button class="efrm" onclick="efRm(${i})" title="Remover função"><span class="material-symbols-rounded">close</span></button></div>`).join('');
+  const rows=crew.map((c,i)=>{ const m=efMao(c); return `<div class="efrow"><span class="efav"><span class="material-symbols-rounded">engineering</span></span>
+      <div class="eff"><div class="efn">${esc(m.funcao)}${m.nivel?' · '+esc(m.nivel):''}</div><div class="efd">${fmt(m.vh)}/h</div></div>
+      <div class="efstep"><button onclick="efDec(${i})" title="−"><span class="material-symbols-rounded">remove</span></button><span class="efqt">${c.pes}</span><button onclick="efInc(${i})" title="+"><span class="material-symbols-rounded">add</span></button></div>
+      <button class="efrm" onclick="efRm(${i})" title="Remover"><span class="material-symbols-rounded">close</span></button></div>`; }).join('');
   return `<div class="efcard noprint">
     <div class="efhd"><span class="material-symbols-rounded">engineering</span><h3>Efetivo na obra</h3><span class="efcnt"><span class="material-symbols-rounded">group</span>${efTotal()} pessoas</span></div>
-    ${rows||'<div class="efempty">Sem funções definidas. Adicione abaixo.</div>'}
-    <div class="effoot"><button class="efadd" onclick="efAddOpen()"><span class="material-symbols-rounded">add</span>função</button>
+    <div class="efhint">A equipe da obra. Os serviços <b>usam este efetivo</b> por padrão (dá pra mudar em cada um, com aviso).</div>
+    ${rows||'<div class="efempty">Sem equipe definida. Adicione os profissionais (do cadastro de mão de obra).</div>'}
+    <div class="effoot"><button class="efadd" onclick="efAddOpen()"><span class="material-symbols-rounded">person_add</span>profissional</button>
       <span class="efprazo"><span class="material-symbols-rounded">event</span>Prazo estimado <input type="number" min="1" value="${num(S.prazoDias)||1}" oninput="efSetDias(this.value)"> dias</span></div>
   </div>`;
 }
-function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m="equipe"]'); if(el)el.value=S.equipe; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m="equipe"]'); if(el)el.value=S.equipe; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); recalc(); }   // efetivo dirige o custo dos serviços que o usam
 // ===== Fatores da obra (abrangência + fator do local) — só nos serviços montados =====
 function fatoresObraHtml(){
   const abrOpts=(ABRANGENCIA||[]).map((a,j)=>`<option value="${j}" ${j==(num(S.abrIdx)||0)?'selected':''}>${esc(a.rotulo)}${num(a.custo_pct)?' (+'+num(a.custo_pct)+'%)':''}</option>`).join('');
@@ -1267,19 +1290,20 @@ function fatoresObraHtml(){
 }
 function setAbr(v){ S.abrIdx=+v||0; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function setFatorLocal(f){ f=num(f); S.fatorLocal=f>0?f:1; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
-function efInc(i){ if(!S.efetivo[i])return; S.efetivo[i].n=(+S.efetivo[i].n||0)+1; efApply(); }
-function efDec(i){ if(!S.efetivo[i])return; S.efetivo[i].n=Math.max(0,(+S.efetivo[i].n||0)-1); if(S.efetivo[i].n===0)S.efetivo.splice(i,1); efApply(); }
+function efInc(i){ if(!S.efetivo[i])return; S.efetivo[i].pes=(+S.efetivo[i].pes||0)+1; efApply(); }
+function efDec(i){ if(!S.efetivo[i])return; S.efetivo[i].pes=Math.max(0,(+S.efetivo[i].pes||0)-1); if(S.efetivo[i].pes===0)S.efetivo.splice(i,1); efApply(); }
 function efRm(i){ S.efetivo.splice(i,1); efApply(); }
 function efSetDias(v){ S.prazoDias=Math.max(1,parseInt(v)||1); const el=document.querySelector('[data-f="prazoDias"]'); if(el)el.value=S.prazoDias; save(); }
 function efAddOpen(){
-  const have=new Set((S.efetivo||[]).map(c=>c.f));
-  const disp=FUNCS.filter(f=>!have.has(f.f));
+  if(!MAOOBRA.length){ if(!CLOUD)alert('Faça login pra carregar a mão de obra do banco e montar o efetivo.'); else alert('Cadastre a mão de obra (Comercial › Cadastros › Mão de obra) antes de montar o efetivo.'); return; }
+  const have=new Set((S.efetivo||[]).map(c=>c.fn));
   PICK_TARGET=null;
-  document.getElementById('pickTitle').textContent='Adicionar função ao efetivo';
-  document.getElementById('pickBody').innerHTML=disp.length?disp.map(f=>`<button class="pkitem" onclick="efAdd('${f.f}')"><span class="pknm"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;color:var(--pri);margin-right:7px">${f.ic}</span>${f.f}</span></button>`).join(''):'<div style="color:var(--tx3);padding:12px;font-size:12px">Todas as funções já estão na equipe.</div>';
+  document.getElementById('pickTitle').textContent='Adicionar profissional ao efetivo';
+  const itens=MAOOBRA.map((m,j)=>({m,j})).filter(x=>!have.has(x.j));
+  document.getElementById('pickBody').innerHTML=itens.length?itens.map(x=>`<button class="pkitem" onclick="efAdd(${x.j})"><span class="pknm"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;color:var(--pri);margin-right:7px">engineering</span>${esc(x.m.funcao)}${x.m.nivel?' · '+esc(x.m.nivel):''} <span style="color:var(--tx3)">(${fmt(x.m.vh)}/h)</span></span></button>`).join(''):'<div style="color:var(--tx3);padding:12px;font-size:12px">Todos os profissionais já estão no efetivo.</div>';
   document.getElementById('pickModal').classList.add('open');
 }
-function efAdd(f){ const ic=(FUNCS.find(x=>x.f===f)||{}).ic||'person'; if(!Array.isArray(S.efetivo))S.efetivo=[]; S.efetivo.push({f,ic,n:1}); closePick(); efApply(); }
+function efAdd(fn){ const m=MAOOBRA[fn]||{}; if(!Array.isArray(S.efetivo))S.efetivo=[]; S.efetivo.push({fn,funcao:m.funcao,nivel:m.nivel,vh:num(m.vh),pes:1}); closePick(); efApply(); }
 
 function toggleModo(blk){
   const next = (S.modos[blk]||'unit')==='unit' ? 'geral' : 'unit';
@@ -1420,9 +1444,9 @@ function openEditCat(blk,rowId){
 function closeNovoCat(){ document.getElementById('novoCatModal').classList.remove('open'); _ncBlk=null; _ncEdit=null; _ncEditRow=null; _ncComposicao=null; }
 // compor a RECEITA no cadastro (não numa linha do orçamento) — reusa o mesmo compositor
 function openCompCadastro(){
-  COMP={cadastro:true,blk:null,rowId:null,tv:1,un:'dias',mo:[],desp:[],dif:0,modo:'calc',base:'unidade',valorManual:0,_custo:0,_tempo:0,_mo:0,_dsp:0};
+  COMP={cadastro:true,blk:null,rowId:null,tv:1,un:'dias',mo:[],desp:[],dif:0,modo:'calc',base:'unidade',valorManual:0,usaEfetivo:true,_custo:0,_tempo:0,_mo:0,_dsp:0};
   const c=_ncComposicao;
-  if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; }
+  if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; COMP.usaEfetivo=(c.usaEfetivo!==undefined)?!!c.usaEfetivo:!((c.mo||[]).length); }
   if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';   // sem mão de obra → cai no Manual
   if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1}];
   document.getElementById('compTitle').textContent='Serviço';
@@ -1431,7 +1455,7 @@ function openCompCadastro(){
   document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
   document.getElementById('comp_tv').value=COMP.tv;
   const mvi=document.getElementById('comp_manual'); if(mvi)mvi.value=COMP.valorManual?String(COMP.valorManual).replace('.',','):'';
-  setCompUn(COMP.un,true); setCompModo(COMP.modo,true); setCompBase(COMP.base,true);
+  setCompUn(COMP.un,true); setCompModo(COMP.modo,true); setCompBase(COMP.base,true); compSyncEfUI();
   compRenderMO(); compRenderDesp(); compCalc();
   document.getElementById('compModal').classList.add('open');
 }
@@ -1548,9 +1572,9 @@ const JORNADA=8;   // horas por dia (conversão dias↔horas)
 let COMP={blk:null,rowId:null,tv:1,un:'dias',mo:[],desp:[],dif:0,abr:0,_custo:0,_tempo:0,_mo:0,_dsp:0};
 function openComp(blk,rowId){
   const r=(S[blk]||[]).find(x=>x.id===rowId); if(!r)return;
-  COMP={blk,rowId,tv:1,un:'dias',mo:[],desp:[],dif:0,abr:0,modo:'calc',base:'unidade',valorManual:0,_custo:0,_tempo:0,_mo:0,_dsp:0};
+  COMP={blk,rowId,tv:1,un:'dias',mo:[],desp:[],dif:0,abr:0,modo:'calc',base:'unidade',valorManual:0,usaEfetivo:true,_custo:0,_tempo:0,_mo:0,_dsp:0};
   const c=r.composicao;
-  if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; COMP.abr=c.abr||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; }
+  if(c){ COMP.mo=(c.mo||[]).map(x=>({fn:x.fn,pes:x.pes})); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; COMP.abr=c.abr||0; if(c.tv!=null)COMP.tv=c.tv; if(c.un)COMP.un=c.un; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; COMP.usaEfetivo=(c.usaEfetivo!==undefined)?!!c.usaEfetivo:!((c.mo||[]).length); }
   if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';   // sem mão de obra → cai no Manual
   if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1}];
   document.getElementById('compTitle').textContent='Serviço';
@@ -1559,7 +1583,7 @@ function openComp(blk,rowId){
   document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
   document.getElementById('comp_tv').value=COMP.tv;
   const mvi=document.getElementById('comp_manual'); if(mvi)mvi.value=COMP.valorManual?String(COMP.valorManual).replace('.',','):'';
-  setCompUn(COMP.un,true); setCompModo(COMP.modo,true); setCompBase(COMP.base,true);
+  setCompUn(COMP.un,true); setCompModo(COMP.modo,true); setCompBase(COMP.base,true); compSyncEfUI();
   compRenderMO(); compRenderDesp(); compCalc();
   document.getElementById('compModal').classList.add('open');
 }
@@ -1577,9 +1601,44 @@ function compMORow(r,i){
     <span class="cmpval">${fmt(val)}</span>
     <button class="cmpdel" onclick="COMP.mo.splice(${i},1);compRenderMO();compCalc()"><span class="material-symbols-rounded">close</span></button></div>`;
 }
+// linha SÓ-LEITURA do efetivo da obra (a equipe vem da obra; edita-se no card Efetivo, não aqui)
+function compEfRow(c){ const m=efMao(c); const h=compHoras(); const val=num(c.pes)*h*num(m.vh);
+  return `<div class="cmprow ef">
+    <span class="cmpfn">${esc(m.funcao)}${m.nivel?' · '+esc(m.nivel):''}</span>
+    <span class="cmppes">${c.pes||0}</span>
+    <span class="cmpvh">${fmt(m.vh)}/h</span>
+    <span class="cmpval">${fmt(val)}</span>
+    <span></span></div>`;
+}
 function compPes(i,d){ if(!COMP.mo[i])return; COMP.mo[i].pes=Math.max(0,(+COMP.mo[i].pes||0)+d); compRenderMO(); compCalc(); }
-function compRenderMO(){ document.getElementById('compMO').innerHTML='<div class="cmphd"><span>Função · nível</span><span>Pessoas</span><span>R$/h</span><span>Subtotal</span><span></span></div>'+COMP.mo.map(compMORow).join(''); }
+function compRenderMO(){
+  const hd='<div class="cmphd"><span>Função · nível</span><span>Pessoas</span><span>R$/h</span><span>Subtotal</span><span></span></div>';
+  const el=document.getElementById('compMO'); if(!el)return;
+  if(COMP.usaEfetivo!==false){   // usa o efetivo da obra (padrão) — read-only
+    const crew=(S.efetivo||[]);
+    el.innerHTML=hd+(crew.length?crew.map(compEfRow).join('')
+      :`<div class="efnone">Nenhum <b>efetivo</b> definido na obra ainda.<br>Defina o efetivo lá em cima, ou troque esta chave para <b>Manual</b> e monte a equipe deste serviço.</div>`);
+    return;
+  }
+  el.innerHTML=hd+COMP.mo.map(compMORow).join('');
+}
 function compAddMO(){ COMP.mo.push({fn:0,pes:1}); compRenderMO(); compCalc(); }
+// chave usar-o-efetivo × manual: espelha o sinal do resto do sistema (base×modificado)
+function setCompEfetivo(on){ const was=COMP.usaEfetivo!==false; COMP.usaEfetivo=on;
+  if(!on && was){   // veio do efetivo → parte a equipe manual como CÓPIA do efetivo (pra só ajustar)
+    const seed=(S.efetivo||[]).filter(e=>e.fn!=null).map(e=>({fn:e.fn,pes:(+e.pes||1)}));
+    COMP.mo = seed.length ? seed : [{fn:0,pes:1}];
+  }
+  compSyncEfUI(); compRenderMO(); compCalc();
+}
+function compSyncEfUI(){
+  const on=COMP.usaEfetivo!==false;
+  const e=document.getElementById('comp_ef_e'),m=document.getElementById('comp_ef_m'); if(e)e.classList.toggle('on',on); if(m)m.classList.toggle('on',!on);
+  const b=document.getElementById('comp_ef_badge'); if(b)b.innerHTML=on
+    ?`<span class="efbadge ok"><span class="material-symbols-rounded">groups</span>usa o efetivo da obra</span>`
+    :`<span class="efbadge mod"><span class="material-symbols-rounded">edit</span>equipe manual — fora do efetivo</span>`;
+  const add=document.getElementById('comp_addprof'); if(add)add.style.display=on?'none':'';
+}
 function compRenderDesp(){ const el=document.getElementById('compDesp'); if(!el)return;
   el.innerHTML=(COMP.desp||[]).map((d,i)=>`<div class="cmpdrow"><input class="cmpin" value="${esc(d.nome)}" placeholder="ex.: Deslocamento" oninput="COMP.desp[${i}].nome=this.value"><span class="cmprs">R$</span><input class="cmpin val" value="${d.valor!=null&&d.valor!==''?String(d.valor).replace('.',','):''}" inputmode="decimal" oninput="COMP.desp[${i}].valor=num(this.value);compCalc()"><button class="cmpdel" onclick="COMP.desp.splice(${i},1);compRenderDesp();compCalc()"><span class="material-symbols-rounded">close</span></button></div>`).join('')
     || '<div style="font-size:12px;color:var(--tx3);padding:2px 2px 6px">Sem adicionais neste serviço.</div>'; }
@@ -1589,9 +1648,13 @@ function compCalc(){
   if(COMP.modo==='manual'){ const custo=num(COMP.valorManual); COMP._mo=0;COMP._dsp=0;COMP._custo=custo;COMP._tempo=0; setr('comp_mo','—'); setr('comp_dsp','—'); setr('comp_custo',fmt(custo)); setr('comp_tempo','—'); setr('comp_horas',''); return; }
   const dif=DIFIC[+document.getElementById('comp_dif').value||0]||DIFIC[0];   // dificuldade DO SERVIÇO (fica na receita); abrangência/local são fatores da OBRA (no orçamento)
   const h=compHoras();
+  // equipe: o EFETIVO da obra (padrão) ou a equipe manual deste serviço
+  const crew = (COMP.usaEfetivo!==false)
+    ? (S.efetivo||[]).map(e=>({vh:num(efMao(e).vh),pes:num(e.pes)}))
+    : COMP.mo.map(r=>{ const m=MAOOBRA[r.fn]; return {vh:num(m?m.vh:0),pes:num(r.pes)}; });
   let mo=0;
-  COMP.mo.forEach(r=>{ const m=MAOOBRA[r.fn]; if(!m)return; mo+=num(r.pes)*h*dif.mult*num(m.vh); });   // custo = esforço (pessoas×horas) × R$/h × dificuldade do serviço
-  const tempo=(COMP.mo.some(r=>MAOOBRA[r.fn]&&num(r.pes)>0)) ? h*dif.mult : 0;                          // DURAÇÃO (equipe em paralelo)
+  crew.forEach(p=>{ mo+=p.pes*h*dif.mult*p.vh; });   // custo = esforço (pessoas×horas) × R$/h × dificuldade do serviço
+  const tempo=(crew.some(p=>p.pes>0&&p.vh>0)) ? h*dif.mult : 0;                          // DURAÇÃO (equipe em paralelo)
   const dsp=(COMP.desp||[]).reduce((a,d)=>a+num(d.valor),0);
   const custo=mo+dsp;
   COMP._mo=mo; COMP._dsp=dsp; COMP._custo=custo; COMP._tempo=tempo;
@@ -1608,7 +1671,7 @@ function compAplicar(){
   COMP.valorManual=num((document.getElementById('comp_manual')||{}).value||COMP.valorManual);
   const _nome=((document.getElementById('comp_nome')||{}).value||'').trim();
   const _und=((document.getElementById('comp_und')||{}).value||'').trim()||'UND';
-  const receita={mo:COMP.mo.map(x=>({...x})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,tv:COMP.tv,un:COMP.un,modo:COMP.modo||'calc',base:COMP.base||'unidade',valorManual:num(COMP.valorManual)};
+  const receita={mo:COMP.mo.map(x=>({...x})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,tv:COMP.tv,un:COMP.un,modo:COMP.modo||'calc',base:COMP.base||'unidade',valorManual:num(COMP.valorManual),usaEfetivo:COMP.usaEfetivo!==false};
   if(COMP.cadastro){   // veio do cadastro (criar novo): joga nome/unidade/custo de volta no formulário do cadastro
     _ncComposicao=receita;
     const nn=document.getElementById('nc_nome'); if(nn && _nome)nn.value=_nome;
