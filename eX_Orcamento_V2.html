@@ -202,6 +202,21 @@ select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 .efmode-lb{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3)}
 .efmode .cmpseg button{padding:6px 12px;font-size:12px}
 .efhint{font-size:11.5px;color:var(--tx2);padding:7px 13px 10px;line-height:1.5}
+.moahd,.moarow{display:grid;grid-template-columns:1fr 104px 82px 100px;gap:8px;align-items:center;padding:8px 13px}
+.moahd{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);padding-top:4px;padding-bottom:2px}
+.moahd span:nth-child(2),.moahd span:nth-child(3){text-align:center}.moahd span:nth-child(4){text-align:right}
+.moarow{border-top:1px solid var(--line)}
+.moawho{display:flex;align-items:center;gap:10px;min-width:0}
+.moawho .efn{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.moawho .efd{font-size:11px;color:var(--tx3)}
+.moastep{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line2);border-radius:8px;overflow:hidden;justify-self:center}
+.moastep button{border:none;background:var(--surf);color:var(--pri);width:28px;height:30px;font-size:16px;font-weight:700;cursor:pointer}
+.moastep button:hover{background:var(--pri-bg)}.moastep .v{min-width:24px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.moapz{text-align:center;font-variant-numeric:tabular-nums;font-size:13px;color:var(--tx2)}
+.moapz b{font-size:14px;color:var(--tx)}.moapz span{font-size:10px;color:var(--tx3)}
+.moapz.g b{color:var(--amber)}.moapz.g span{color:var(--amber)}
+.moacusto{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-size:13.5px}
+.moatot{border-top:2px solid var(--line);background:var(--surf2)}.moatot .efn{font-weight:800}.moatot .moacusto b{color:var(--pri);font-size:15px}
 .eff{flex:1;min-width:0}
 .eff .efn{font-weight:600;font-size:13px}
 .eff .efd{font-size:10.5px;color:var(--tx3)}
@@ -1100,7 +1115,8 @@ function sanitize(){
   if(S.descGeralOn===undefined)S.descGeralOn=true;
   if(!Array.isArray(S.efetivo))S.efetivo=[];
   S.efetivo=S.efetivo.filter(c=>c&&(c.fn!=null||c.vh!=null)).map(c=>({fn:c.fn,funcao:c.funcao,nivel:c.nivel,vh:num(c.vh),pes:(+c.pes||+c.n||1)}));   // migra efetivo antigo (nome+contagem) → equipe real (função·nível·R$/h); sem R$/h é descartado
-  if(S.maoObraModo!=='manual' && S.maoObraModo!=='efetivo') S.maoObraModo='efetivo';   // modo GLOBAL da mão de obra dos serviços
+  if(S.maoObraModo!=='manual' && S.maoObraModo!=='efetivo') S.maoObraModo='efetivo';   // (legado) modo GLOBAL — não usado no motor trabalho-fixo
+  if(!S.pessoasFn||typeof S.pessoasFn!=='object')S.pessoasFn={};   // pessoas por função (mexe só no prazo)
   if(S.margemBase===undefined)S.margemBase=30;
   if(!Array.isArray(S.comprovantes))S.comprovantes=[];
   if(S.abrIdx===undefined)S.abrIdx=0;
@@ -1261,24 +1277,47 @@ const FUNCS=[
 const efTotal=()=>(S.efetivo||[]).reduce((a,c)=>a+(+c.pes||0),0);
 function efMao(c){ const m=MAOOBRA[c.fn]; if(m)return m; return {funcao:c.funcao||'(profissional)',nivel:c.nivel||'',vh:num(c.vh)}; }   // resolve pela MAOOBRA; fallback nos dados guardados
 function efFrase(){ return (S.efetivo||[]).filter(c=>+c.pes>0).map(c=>{const m=efMao(c);return c.pes+' '+m.funcao+(m.nivel?' '+m.nivel:'');}).join(' · '); }
+const _d1=n=>Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:1});
+// agrega a mão de obra POR FUNÇÃO (soma o trabalho de todos os serviços montados). Pessoas mexe só no prazo.
+function aggMaoObra(){
+  const map={};
+  (S.servicos||[]).forEach(r=>{ const c=r.composicao; if(!c||c.modo==='manual')return;
+    const dif=(DIFIC[c.dif||0]||DIFIC[0]||{mult:1}).mult;
+    const oldH=(c.un==='dias')?num(c.tv)*JORNADA:(c.un==='minutos')?num(c.tv)/60:num(c.tv);
+    (c.mo||[]).forEach(x=>{ const m=MAOOBRA[x.fn]; if(!m)return;
+      const trab=((x.trab!=null)?num(x.trab):num(x.pes||0)*oldH/JORNADA)*dif;   // homem-dia (já com dificuldade)
+      const k=m.funcao+'|'+m.nivel;
+      if(!map[k])map[k]={k,funcao:m.funcao,nivel:m.nivel,vh:num(m.vh),trab:0};
+      map[k].trab+=trab; }); });
+  return Object.keys(map).map(k=>{ const f=map[k]; const pes=Math.max(1,(S.pessoasFn&&S.pessoasFn[k])||1);
+    return {...f, horas:f.trab*JORNADA, custo:f.trab*f.vh*JORNADA, pes, dias:f.trab/pes}; })
+    .sort((a,b)=>b.horas-a.horas);
+}
+function pesFn(k,d){ if(!S.pessoasFn)S.pessoasFn={}; S.pessoasFn[k]=Math.max(1,(+S.pessoasFn[k]||1)+d); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function efetivoHtml(){
-  const crew=S.efetivo||[];
-  const rows=crew.map((c,i)=>{ const m=efMao(c); return `<div class="efrow"><span class="efav"><span class="material-symbols-rounded">engineering</span></span>
-      <div class="eff"><div class="efn">${esc(m.funcao)}${m.nivel?' · '+esc(m.nivel):''}</div><div class="efd">${fmt(m.vh)}/h</div></div>
-      <div class="efstep"><button onclick="efDec(${i})" title="−"><span class="material-symbols-rounded">remove</span></button><span class="efqt">${c.pes}</span><button onclick="efInc(${i})" title="+"><span class="material-symbols-rounded">add</span></button></div>
-      <button class="efrm" onclick="efRm(${i})" title="Remover"><span class="material-symbols-rounded">close</span></button></div>`; }).join('');
+  const fs=aggMaoObra();
+  if(!fs.length) return `<div class="efcard noprint">
+    <div class="efhd"><span class="material-symbols-rounded">groups</span><h3>Mão de obra da proposta</h3></div>
+    <div class="efhint">Componha os serviços (botão <span class="material-symbols-rounded" style="font-size:14px;color:var(--pri)">precision_manufacturing</span>) e as <b>funções</b> aparecem aqui, somadas. Você só decide quantas pessoas.</div>
+  </div>`;
+  const gargalo=fs.reduce((m,f)=>Math.max(m,f.dias),0);
+  const MO=fs.reduce((a,f)=>a+f.custo,0), totPes=fs.reduce((a,f)=>a+f.pes,0);
+  const rows=fs.map(f=>{ const isG=Math.abs(f.dias-gargalo)<1e-9&&fs.length>1; return `<div class="moarow">
+    <div class="moawho"><span class="efav"><span class="material-symbols-rounded">engineering</span></span>
+      <div><div class="efn">${esc(f.funcao)} · ${esc(f.nivel)}</div><div class="efd">${fmt(f.vh)}/h · <b>${_d1(f.horas)} h</b> acum.</div></div></div>
+    <div class="moastep"><button onclick="pesFn('${f.k.replace(/'/g,"\\'")}',-1)">−</button><span class="v">${f.pes}</span><button onclick="pesFn('${f.k.replace(/'/g,"\\'")}',1)">+</button></div>
+    <div class="moapz ${isG?'g':''}"><b>${_d1(f.dias)} d</b><br><span>${isG?'gargalo':'&nbsp;'}</span></div>
+    <div class="moacusto">${fmt(f.custo)}</div>
+  </div>`; }).join('');
   return `<div class="efcard noprint">
-    <div class="efhd"><span class="material-symbols-rounded">engineering</span><h3>Efetivo na obra</h3><span class="efcnt"><span class="material-symbols-rounded">group</span>${efTotal()} pessoas</span></div>
-    <div class="efmode">
-      <span class="efmode-lb">Mão de obra dos serviços</span>
-      <span class="cmpseg"><button class="${maoGlobalEfetivo()?'on':''}" onclick="setMaoModo('efetivo')">Pelo efetivo</button><button class="${!maoGlobalEfetivo()?'on':''}" onclick="setMaoModo('manual')">Manual por serviço</button></span>
-    </div>
-    <div class="efhint">${maoGlobalEfetivo()
-      ?'<b>Todos os serviços</b> puxam o custo da mão de obra deste efetivo. Mudou o efetivo, muda o custo — de uma vez.'
-      :'Cada serviço tem a <b>sua equipe</b> (você monta no compositor). Este efetivo vira só o ponto de partida.'}</div>
-    ${rows||'<div class="efempty">Sem equipe definida. Adicione os profissionais (do cadastro de mão de obra).</div>'}
-    <div class="effoot"><button class="efadd" onclick="efAddOpen()"><span class="material-symbols-rounded">person_add</span>profissional</button>
-      <span class="efprazo"><span class="material-symbols-rounded">event</span>Prazo estimado <input type="number" min="1" value="${num(S.prazoDias)||1}" oninput="efSetDias(this.value)"> dias</span></div>
+    <div class="efhd"><span class="material-symbols-rounded">groups</span><h3>Mão de obra da proposta</h3><span class="efcnt"><span class="material-symbols-rounded">event</span>${_d1(gargalo)} dias</span></div>
+    <div class="efhint">As <b>funções somadas</b> dos serviços. Mais pessoas → menos prazo; o <b>custo não muda</b>. O gargalo (função mais carregada) está em âmbar e dita o prazo.</div>
+    <div class="moahd"><span>Função · nível</span><span>Pessoas</span><span>Prazo</span><span>Custo</span></div>
+    ${rows}
+    <div class="moarow moatot"><div class="moawho"><span style="width:34px"></span><div class="efn">Total</div></div>
+      <div class="moapz" style="text-align:center"><b>${totPes}</b><br><span>pessoas</span></div>
+      <div class="moapz"><b>${_d1(gargalo)} d</b><br><span>prazo</span></div>
+      <div class="moacusto"><b>${fmt(MO)}</b></div></div>
   </div>`;
 }
 function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m="equipe"]'); if(el)el.value=S.equipe; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); recalc(); }   // efetivo dirige o custo dos serviços que o usam
