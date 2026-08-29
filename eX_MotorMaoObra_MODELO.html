@@ -21,10 +21,8 @@
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 system-ui,-apple-system,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
 .material-symbols-rounded{font-family:"Material Symbols Rounded";font-weight:normal;font-style:normal;line-height:1;vertical-align:middle;-webkit-font-feature-settings:'liga'}
-.wrap{max-width:1080px;margin:0 auto;padding:22px 20px 80px}
-.tabnum{font-variant-numeric:tabular-nums}
+.wrap{max-width:980px;margin:0 auto;padding:22px 20px 80px}
 
-/* topbar */
 .top{display:flex;align-items:center;gap:12px;margin-bottom:6px}
 .logo{width:34px;height:34px;border-radius:9px;background:var(--pri);color:#fff;display:grid;place-items:center;font-weight:800;font-size:16px}
 .logo i{font-style:normal;font-weight:500;opacity:.85}
@@ -34,84 +32,95 @@ body{margin:0;background:var(--bg);color:var(--tx);font:15px/1.55 system-ui,-app
 .selo .material-symbols-rounded{font-size:15px}
 
 h1{font-size:23px;font-weight:800;letter-spacing:-.01em;margin:16px 0 4px}
-.sub{color:var(--tx2);font-size:14.5px;margin:0 0 4px;max-width:70ch}
+.sub{color:var(--tx2);font-size:14.5px;margin:0;max-width:72ch}
 .sub b{color:var(--tx)}
 
-/* global switch */
-.gbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:18px 0;box-shadow:var(--shadow)}
+.gbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin:18px 0 16px;box-shadow:var(--shadow)}
 .gbar .lb{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--tx3)}
 .seg{display:inline-flex;border:1px solid var(--line);border-radius:9px;overflow:hidden}
 .seg button{border:none;background:var(--surf);color:var(--tx2);font:600 13px inherit;padding:8px 15px;cursor:pointer}
 .seg button.on{background:var(--pri);color:#fff}
-.gbar .note{font-size:12.5px;color:var(--tx3);margin-left:auto;max-width:44ch}
+.gbar .note{font-size:12.5px;color:var(--tx3);margin-left:auto;max-width:46ch}
 
-/* layout */
-.cols{display:grid;grid-template-columns:1fr 340px;gap:20px;align-items:start}
-@media(max-width:900px){.cols{grid-template-columns:1fr}}
+/* main card */
+.card{background:var(--surf);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+.card-hd{display:flex;align-items:center;gap:9px;padding:13px 16px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,var(--pri-bg),var(--surf2))}
+.card-hd .material-symbols-rounded{color:var(--pri);font-size:20px}
+.card-hd h3{margin:0;font-size:14px;font-weight:700;letter-spacing:.02em;text-transform:uppercase;color:var(--pri)}
+.card-hd .cnt{margin-left:auto;font-size:12.5px;color:var(--tx2)}
 
-/* service card */
-.svc{background:var(--surf);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow);margin-bottom:16px;overflow:hidden}
-.svc-hd{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);background:linear-gradient(90deg,var(--pri-bg),var(--surf2))}
-.svc-hd .ic{color:var(--pri)}
-.svc-hd h3{margin:0;font-size:15px;font-weight:700}
-.svc-hd .dif{margin-left:auto;display:flex;align-items:center;gap:6px;font-size:12px;color:var(--tx2)}
-.svc-hd select{border:1px solid var(--line);border-radius:7px;padding:4px 6px;font:inherit;font-size:12.5px;background:var(--surf);color:var(--tx)}
-
-.crewhd,.crew{display:grid;grid-template-columns:1.4fr 108px 82px 96px 30px;gap:10px;align-items:center}
-.crewhd{padding:9px 16px 4px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3)}
-.crewhd span:nth-child(2),.crewhd span:nth-child(3),.crewhd span:nth-child(4){text-align:center}
-.crew{padding:8px 16px;border-top:1px solid var(--line2)}
-.crew .who{display:flex;align-items:center;gap:9px;min-width:0}
-.crew .av{width:30px;height:30px;border-radius:50%;background:var(--pri-bg);color:var(--pri);display:grid;place-items:center;flex-shrink:0}
-.crew .av .material-symbols-rounded{font-size:17px}
-.crew .nm{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.crew .rt{font-size:11.5px;color:var(--tx3)}
-.step{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:8px;overflow:hidden}
-.step button{border:none;background:var(--surf);color:var(--pri);width:28px;height:30px;font-size:16px;font-weight:700;cursor:pointer}
+.fhd,.frow{display:grid;grid-template-columns:1.5fr 120px 128px 92px 108px;gap:10px;align-items:center}
+.fhd{padding:10px 18px 6px;font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3)}
+.fhd span:nth-child(2),.fhd span:nth-child(3),.fhd span:nth-child(4){text-align:center}
+.fhd span:nth-child(5){text-align:right}
+.frow{padding:11px 18px;border-top:1px solid var(--line2)}
+.frow .who{display:flex;align-items:center;gap:11px;min-width:0}
+.frow .av{width:34px;height:34px;border-radius:50%;background:var(--pri-bg);color:var(--pri);display:grid;place-items:center;flex-shrink:0}
+.frow .av .material-symbols-rounded{font-size:19px}
+.frow .nm{font-size:14.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.frow .rt{font-size:11.5px;color:var(--tx3)}
+.hrs{text-align:center;font-variant-numeric:tabular-nums}
+.hrs .b{font-size:15px;font-weight:700}
+.hrs .s{font-size:11px;color:var(--tx3)}
+.hrs.edit input{width:60px;border:1px solid var(--line);border-radius:6px;padding:5px;text-align:center;font:inherit;font-size:14px}
+.step{display:inline-flex;align-items:center;border:1px solid var(--line);border-radius:9px;overflow:hidden;justify-self:center}
+.step button{border:none;background:var(--surf);color:var(--pri);width:30px;height:32px;font-size:17px;font-weight:700;cursor:pointer}
 .step button:hover{background:var(--pri-bg)}
-.step .v{min-width:26px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums;font-size:14px}
-.trab{text-align:center;font-size:13px;color:var(--tx2);font-variant-numeric:tabular-nums}
-.trab.edit input{width:52px;border:1px solid var(--line);border-radius:6px;padding:4px;text-align:center;font:inherit;font-size:13px}
-.dias{text-align:center;font-weight:700;font-variant-numeric:tabular-nums;font-size:14px}
-.custo{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-size:13.5px}
+.step .v{min-width:28px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums;font-size:15px}
+.prazo{text-align:center;font-variant-numeric:tabular-nums}
+.prazo .b{font-size:15px;font-weight:700}
+.prazo .s{font-size:10.5px;color:var(--tx3)}
+.prazo.gargalo .b{color:var(--amber)}
+.custo{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-size:14px}
 .rm{border:none;background:none;color:var(--tx3);cursor:pointer;padding:3px;border-radius:6px}
 .rm:hover{background:#fbeaec;color:var(--red)}.rm .material-symbols-rounded{font-size:16px}
-.addtipo{margin:6px 16px 12px;border:1px dashed var(--line);background:transparent;color:var(--pri);font:600 12.5px inherit;border-radius:20px;padding:7px 13px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
-.addtipo:hover{background:var(--pri-bg);border-color:var(--pri-line)}.addtipo .material-symbols-rounded{font-size:16px}
+.addf{margin:8px 18px 14px;border:1px dashed var(--line);background:transparent;color:var(--pri);font:600 12.5px inherit;border-radius:20px;padding:8px 14px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.addf:hover{background:var(--pri-bg);border-color:var(--pri-line)}.addf .material-symbols-rounded{font-size:16px}
 
-/* despesas */
-.dsp{border-top:1px solid var(--line);background:var(--surf2)}
-.dsp-hd{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);padding:11px 16px 4px}
-.dsp-row{display:grid;grid-template-columns:1.5fr 150px 96px;gap:10px;align-items:center;padding:6px 16px;font-size:13px}
-.dsp-row .gt{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--tx2);background:var(--surf);border:1px solid var(--line);border-radius:20px;padding:3px 9px;justify-self:start}
-.dsp-row .gt .material-symbols-rounded{font-size:14px;color:var(--pri)}
-.dsp-row .dval{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+.frow.total{grid-template-columns:1.5fr 120px 128px 92px 108px;border-top:2px solid var(--line);background:var(--surf2)}
+.frow.total .who .nm{font-weight:800}
+.frow.total .prazo .b{color:var(--pri)}
+.frow.total .custo{font-size:16px;font-weight:800;color:var(--pri)}
 
-/* service foot */
-.svc-ft{display:flex;flex-wrap:wrap;gap:14px;align-items:center;padding:12px 16px;border-top:1px solid var(--line)}
-.pill{display:inline-flex;align-items:center;gap:6px;font-size:12.5px;color:var(--tx2)}
-.pill b{color:var(--tx);font-variant-numeric:tabular-nums}
-.pill .material-symbols-rounded{font-size:16px;color:var(--pri)}
-.svc-ft .tot{margin-left:auto;font-size:15px;font-weight:800;color:var(--pri);font-variant-numeric:tabular-nums}
+/* totals strip */
+.strip{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px}
+.kpi{flex:1;min-width:150px;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:13px 15px;box-shadow:var(--shadow)}
+.kpi .l{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);display:flex;align-items:center;gap:5px}
+.kpi .l .material-symbols-rounded{font-size:15px;color:var(--pri)}
+.kpi .v{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;margin-top:3px}
+.kpi.big .v{color:var(--pri)}
+.kpi .sm{font-size:11px;color:var(--tx3);font-weight:400}
 
-/* conferência (sticky) */
-.conf{position:sticky;top:14px;background:var(--surf);border:1px solid var(--pri-line);border-radius:14px;box-shadow:var(--shadow);overflow:hidden}
-.conf-hd{display:flex;align-items:center;gap:8px;padding:13px 16px;background:linear-gradient(90deg,var(--pri),var(--pri-2));color:#fff}
-.conf-hd .material-symbols-rounded{font-size:19px}
-.conf-hd h3{margin:0;font-size:13px;font-weight:700;letter-spacing:.03em;text-transform:uppercase}
-.conf-bd{padding:6px 16px 14px}
-.ident{display:flex;align-items:flex-start;gap:9px;padding:9px 0;border-bottom:1px solid var(--line2);font-size:12.5px;color:var(--tx2)}
-.ident:last-child{border-bottom:none}
-.ident .ck{color:var(--ok);flex-shrink:0}.ident .ck .material-symbols-rounded{font-size:18px}
-.ident .k{font-weight:600;color:var(--tx)}
-.ident code{font-family:ui-monospace,"SF Mono",Menlo,monospace;font-size:11.5px;background:var(--ok-bg);color:var(--ok);padding:1px 6px;border-radius:5px;border:1px solid var(--ok-line);white-space:nowrap}
-.totbox{margin-top:14px;border-top:2px solid var(--line);padding-top:12px}
-.totline{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;color:var(--tx2);font-variant-numeric:tabular-nums}
-.totline b{color:var(--tx)}
-.totline.big{font-size:17px;font-weight:800;color:var(--pri);border-top:1px dashed var(--line);margin-top:6px;padding-top:10px}
-.hintbar{background:var(--pri-bg);border:1px solid var(--pri-line);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--tx2);margin-bottom:14px;display:flex;gap:8px}
+/* despesas mini */
+.dsp{background:var(--surf);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);overflow:hidden;margin-bottom:16px}
+.dsp-hd{display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:1px solid var(--line2);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3)}
+.dsp-hd .material-symbols-rounded{font-size:16px;color:var(--pri)}
+.dsp-row{display:grid;grid-template-columns:1.5fr 140px 100px;gap:10px;align-items:center;padding:8px 15px;font-size:13px;border-top:1px solid var(--line2)}
+.dsp-row:first-of-type{border-top:none}
+.gt{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;color:var(--tx2);background:var(--surf2);border:1px solid var(--line);border-radius:20px;padding:3px 9px;justify-self:start}
+.gt .material-symbols-rounded{font-size:14px;color:var(--pri)}
+.dval{text-align:right;font-weight:600;font-variant-numeric:tabular-nums}
+
+/* report */
+.repbtn{display:inline-flex;align-items:center;gap:7px;background:var(--surf);border:1px solid var(--pri-line);color:var(--pri);font:600 13px inherit;border-radius:10px;padding:10px 15px;cursor:pointer;box-shadow:var(--shadow)}
+.repbtn:hover{background:var(--pri-bg)}.repbtn .material-symbols-rounded{font-size:18px}
+.report{margin-top:14px;display:none}
+.report.open{display:block}
+.rsvc{background:var(--surf);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin-bottom:10px;overflow:hidden}
+.rsvc-hd{display:flex;align-items:center;gap:9px;padding:11px 15px;background:var(--surf2);border-bottom:1px solid var(--line2)}
+.rsvc-hd .material-symbols-rounded{color:var(--pri);font-size:18px}
+.rsvc-hd h4{margin:0;font-size:14px;font-weight:700}
+.rsvc-hd .rdif{margin-left:auto;font-size:11.5px;color:var(--tx3)}
+.rline{display:grid;grid-template-columns:1.5fr 90px 90px 100px;gap:10px;padding:7px 15px;font-size:12.5px;border-top:1px solid var(--line2);align-items:center}
+.rline .rt{color:var(--tx2)}
+.rline .rv{text-align:center;font-variant-numeric:tabular-nums;color:var(--tx2)}
+.rline .rc{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+.rline.h{font-size:9.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);border-top:none;padding-top:9px}
+.rline.h .rv,.rline.h .rc{text-align:center}.rline.h .rc{text-align:right}
+
+.hintbar{background:var(--pri-bg);border:1px solid var(--pri-line);border-radius:10px;padding:10px 12px;font-size:12.5px;color:var(--tx2);margin-bottom:16px;display:flex;gap:8px}
 .hintbar .material-symbols-rounded{color:var(--pri);font-size:18px;flex-shrink:0}
-.base{font-size:11.5px;color:var(--tx3);margin:10px 2px 0}
+.base{font-size:11.5px;color:var(--tx3);margin:16px 2px 0}
 .base b{color:var(--tx2)}
 </style>
 </head>
@@ -120,172 +129,181 @@ h1{font-size:23px;font-weight:800;letter-spacing:-.01em;margin:16px 0 4px}
 
   <div class="top">
     <div class="logo"><b>e</b><i>X</i></div>
-    <div><div class="tt">eX Orçamento</div><div class="ts">Motor de mão de obra — modelo de decisão</div></div>
-    <span class="selo"><span class="material-symbols-rounded">science</span>MODELO · empurre a quantidade de gente</span>
+    <div><div class="tt">eX Orçamento</div><div class="ts">Mão de obra da proposta — modelo</div></div>
+    <span class="selo"><span class="material-symbols-rounded">science</span>MODELO · mexa nas pessoas</span>
   </div>
 
-  <h1>Trabalho fixo. Pessoas mexem só no prazo.</h1>
-  <p class="sub">Cada serviço tem um <b>trabalho</b> (homem-dia) definido. Mudar quantas pessoas <b>encurta o prazo</b>, não o custo da mão de obra. As <b>despesas</b> é que puxam cada uma pro seu lado. Mexa nos <b>+/−</b> e veja a <b>conferência</b> fechar ao vivo.</p>
+  <h1>As funções, somadas. Você só decide quantas pessoas.</h1>
+  <p class="sub">A tela mostra <b>a função e as horas que ela acumula</b> em toda a proposta. Você põe <b>mais ou menos gente</b> em cada função pra mexer no <b>prazo</b> — o <b>custo não muda</b> (as horas são as mesmas). O detalhe por serviço fica no <b>relatório</b>.</p>
 
   <div class="gbar">
-    <span class="lb">Mão de obra dos serviços</span>
+    <span class="lb">Mão de obra</span>
     <span class="seg"><button id="mAuto" class="on" onclick="setModo('auto')">Automático</button><button id="mMan" onclick="setModo('manual')">Manual</button></span>
-    <span class="note" id="modoNote">Puxa do cadastro de cada serviço — os <b>tipos ficam travados</b>, você só ajusta a quantidade.</span>
+    <span class="note" id="modoNote">Somado do cadastro dos serviços — as <b>funções vêm travadas</b>, você só ajusta a quantidade de pessoas.</span>
   </div>
 
   <div class="hintbar">
     <span class="material-symbols-rounded">lightbulb</span>
-    <span>Experimente: no <b>1º serviço</b>, suba o Eletrotécnico de 1 → 2 pessoas. O <b>custo da mão de obra fica igual</b>, o <b>prazo cai de 4 → 2 dias</b>, e as despesas se recompõem. É isso que faz a conta bater com a realidade. <i>(Suba mais e o Ajudante vira o gargalo — o prazo é ditado pelo tipo mais lento, como na obra.)</i></span>
+    <span>Suba o <b>Eletrotécnico</b> de 1 → 2 pessoas: o <b>custo fica igual</b>, o <b>prazo cai</b> (a função mais carregada é o gargalo, marcada em âmbar). É assim que você calibra a entrega sem mexer no preço.</span>
   </div>
 
-  <div class="cols">
-    <div id="svcs"></div>
-
-    <aside>
-      <div class="conf">
-        <div class="conf-hd"><span class="material-symbols-rounded">verified</span><h3>Conferência ao vivo</h3></div>
-        <div class="conf-bd">
-          <div class="ident"><span class="ck"><span class="material-symbols-rounded">check_circle</span></span><div><span class="k">Trabalho = pessoas × dias</span><br><span id="idTrab"></span></div></div>
-          <div class="ident"><span class="ck"><span class="material-symbols-rounded">check_circle</span></span><div><span class="k">Custo MO = trabalho × R$/h</span><br>Estável — não muda com nº de pessoas <code id="idMO"></code></div></div>
-          <div class="ident"><span class="ck"><span class="material-symbols-rounded">check_circle</span></span><div><span class="k">Despesas por gatilho</span><br><span id="idDsp"></span></div></div>
-          <div class="ident"><span class="ck"><span class="material-symbols-rounded">check_circle</span></span><div><span class="k">Total = soma das receitas</span><br>Cada custo é trabalho×R$/h → soma direta</div></div>
-
-          <div class="totbox">
-            <div class="totline"><span>Mão de obra</span><b id="tMO">—</b></div>
-            <div class="totline"><span>Despesas</span><b id="tDsp">—</b></div>
-            <div class="totline big"><span>Total da obra</span><b id="tTot">—</b></div>
-            <div class="totline" style="margin-top:6px"><span>Prazo estimado</span><b id="tPrazo">—</b></div>
-          </div>
-          <p class="base"><b>Base de R$/h (cadastro):</b> Encarregado 48 · Eletrotécnico 32 · Ajudante 18 · Engenheiro 62,50. Jornada 8h/dia. O R$/h nunca se digita — vem daqui.</p>
-        </div>
-      </div>
-    </aside>
+  <div class="strip">
+    <div class="kpi"><div class="l"><span class="material-symbols-rounded">payments</span>Mão de obra</div><div class="v" id="kMO">—</div></div>
+    <div class="kpi"><div class="l"><span class="material-symbols-rounded">receipt_long</span>Despesas</div><div class="v" id="kDsp">—</div></div>
+    <div class="kpi big"><div class="l"><span class="material-symbols-rounded">functions</span>Total da obra</div><div class="v" id="kTot">—</div></div>
+    <div class="kpi"><div class="l"><span class="material-symbols-rounded">event</span>Prazo</div><div class="v" id="kPrazo">—</div></div>
   </div>
+
+  <div class="card">
+    <div class="card-hd"><span class="material-symbols-rounded">groups</span><h3>Funções na proposta</h3><span class="cnt" id="fcnt"></span></div>
+    <div class="fhd"><span>Função · nível</span><span>Horas acumuladas</span><span>Pessoas</span><span>Prazo</span><span>Custo</span></div>
+    <div id="frows"></div>
+    <div id="faddwrap"></div>
+  </div>
+
+  <div class="dsp">
+    <div class="dsp-hd"><span class="material-symbols-rounded">receipt_long</span>Despesas da obra — cada uma pelo seu gatilho</div>
+    <div id="dsprows"></div>
+  </div>
+
+  <button class="repbtn" id="repBtn" onclick="toggleRep()"><span class="material-symbols-rounded">expand_more</span>Ver relatório completo (por serviço)</button>
+  <div class="report" id="report"></div>
+
+  <p class="base"><b>Base de R$/h (cadastro):</b> Encarregado 48 · Eletrotécnico 32 · Ajudante 18 · Engenheiro 62,50. Jornada 8h/dia. O R$/h nunca se digita — vem daqui. As horas de cada função são a soma do trabalho definido nos serviços.</p>
 </div>
 
 <script>
 const JORNADA=8;
 const fmt=n=>'R$ '+ (Math.round(n)).toLocaleString('pt-BR');
-const fmt2=n=>n.toLocaleString('pt-BR',{maximumFractionDigits:1});
-// cadastro base de tipos (função/nível → R$/h)
+const fmt1=n=>n.toLocaleString('pt-BR',{maximumFractionDigits:1});
 const TIPOS=[
   {id:'enc', nome:'Encarregado', nivel:'Sênior', vh:48},
   {id:'ele', nome:'Eletrotécnico', nivel:'Pleno', vh:32},
   {id:'aju', nome:'Ajudante', nivel:'Júnior', vh:18},
   {id:'eng', nome:'Engenheiro', nivel:'Sênior', vh:62.5},
+  {id:'mon', nome:'Montador', nivel:'Pleno', vh:20},
+  {id:'aut', nome:'Téc. Automação', nivel:'Pleno', vh:28},
 ];
 const tipo=id=>TIPOS.find(t=>t.id===id);
-const diaria=id=>tipo(id).vh*JORNADA;
 const DIF=[{n:'Normal',m:1},{n:'Moderada',m:1.25},{n:'Alta',m:1.5},{n:'Severa',m:2}];
-const GAT={
-  pd:{lb:'pessoa × dia', ic:'restaurant'},
-  dia:{lb:'por dia', ic:'calendar_month'},
-  pes:{lb:'por pessoa', ic:'person'},
-  fix:{lb:'fixo', ic:'lock'},
-};
+const GAT={pd:{lb:'pessoa × dia',ic:'restaurant'},dia:{lb:'por dia',ic:'calendar_month'},pes:{lb:'por pessoa',ic:'person'},fix:{lb:'fixo',ic:'lock'}};
 
-// serviços cadastrados (receita: tipos + TRABALHO em diárias por tipo)
-let MODO='auto';
+// serviços cadastrados (a RECEITA — trabalho em diárias por tipo). A tela agrega por FUNÇÃO.
 const SVC=[
   {nome:'Montagem de quadro de comando', ic:'developer_board', dif:0,
-   crew:[{tipo:'ele',trab:4,pes:1},{tipo:'aju',trab:1,pes:1}],
-   dsp:[{nome:'Alimentação',g:'pd',v:60},{nome:'Locação de ferramenta',g:'dia',v:120},{nome:'EPI / consumível',g:'pes',v:45}]},
+   crew:[{tipo:'ele',trab:4},{tipo:'aju',trab:1}]},
   {nome:'Lançamento e conexão de cabos', ic:'cable', dif:1,
-   crew:[{tipo:'enc',trab:1,pes:1},{tipo:'ele',trab:3,pes:1},{tipo:'aju',trab:3,pes:1}],
-   dsp:[{nome:'Alimentação',g:'pd',v:60},{nome:'Hospedagem',g:'pd',v:90},{nome:'Deslocamento',g:'pes',v:180},{nome:'Taxa da obra',g:'fix',v:150}]},
+   crew:[{tipo:'enc',trab:1},{tipo:'ele',trab:3},{tipo:'aju',trab:3}]},
   {nome:'Comissionamento e testes', ic:'checklist', dif:0,
-   crew:[{tipo:'eng',trab:0.5,pes:1},{tipo:'ele',trab:1,pes:1}],
-   dsp:[{nome:'Alimentação',g:'pd',v:60},{nome:'Instrumentação (locação)',g:'dia',v:200}]},
+   crew:[{tipo:'eng',trab:0.5},{tipo:'ele',trab:1}]},
+];
+// despesas da OBRA (obra-level; reagem a pessoas totais e prazo)
+const DSP=[
+  {nome:'Alimentação',g:'pd',v:60},
+  {nome:'Hospedagem',g:'pd',v:90},
+  {nome:'Locação de instrumentos',g:'dia',v:200},
+  {nome:'Deslocamento',g:'pes',v:180},
+  {nome:'Taxa da obra',g:'fix',v:150},
 ];
 
-// ---- cálculo ----
-function svcCalc(s){
-  const dm=DIF[s.dif].m;
-  let mo=0, maxDias=0, pessoas=0;
-  const crew=s.crew.map(c=>{
-    const trabEf=c.trab*dm;                 // trabalho efetivo (dificuldade sobe o trabalho)
-    const custo=trabEf*diaria(c.tipo);      // custo = trabalho × diária — NÃO multiplica por pessoas
-    const dias=c.pes>0?trabEf/c.pes:trabEf; // dias = trabalho ÷ pessoas
-    mo+=custo; pessoas+=c.pes; if(dias>maxDias)maxDias=dias;
-    return {...c,trabEf,custo,dias};
-  });
-  const dias=maxDias;
-  let dsp=0; const dl=s.dsp.map(d=>{
-    let v=0; if(d.g==='pd')v=d.v*pessoas*dias; else if(d.g==='dia')v=d.v*dias; else if(d.g==='pes')v=d.v*pessoas; else v=d.v;
-    dsp+=v; return {...d,calc:v};
-  });
-  return {crew,dias,pessoas,mo,dsp,dl,total:mo+dsp};
+let MODO='auto';
+// pessoas por função (a decisão do dono). default 1.
+let PES={};
+// função agregada: soma o trabalho (diárias, já com dificuldade) de todos os serviços
+function agregado(){
+  const map={};
+  SVC.forEach(s=>{ const dm=DIF[s.dif].m; s.crew.forEach(c=>{ map[c.tipo]=(map[c.tipo]||0)+c.trab*dm; }); });
+  // manual pode ter adicionado funções extra (em MANUAL_EXTRA)
+  MANUAL_EXTRA.forEach(e=>{ map[e.tipo]=(map[e.tipo]||0)+e.trabDi; });
+  return Object.keys(map).map(id=>{
+    const diEf=map[id];                 // diárias de trabalho (efetivo)
+    const horas=diEf*JORNADA;
+    const pes=Math.max(1, PES[id]||1);
+    const dias=diEf/pes;                // prazo da função = trabalho ÷ pessoas
+    const custo=horas*tipo(id).vh;      // estável (não multiplica por pessoas)
+    return {id,diEf,horas,pes,dias,custo};
+  }).sort((a,b)=>b.horas-a.horas);
+}
+let MANUAL_EXTRA=[]; // funções adicionadas no modo manual (diárias digitadas)
+
+function calc(){
+  const fs=agregado();
+  const obraPrazo=fs.reduce((m,f)=>Math.max(m,f.dias),0);
+  const totalPessoas=fs.reduce((a,f)=>a+f.pes,0);
+  const MO=fs.reduce((a,f)=>a+f.custo,0);
+  const dl=DSP.map(d=>{let v=0;if(d.g==='pd')v=d.v*totalPessoas*obraPrazo;else if(d.g==='dia')v=d.v*obraPrazo;else if(d.g==='pes')v=d.v*totalPessoas;else v=d.v;return{...d,calc:v};});
+  const Dsp=dl.reduce((a,d)=>a+d.calc,0);
+  return {fs,obraPrazo,totalPessoas,MO,Dsp,dl,total:MO+Dsp};
 }
 
-// ---- render ----
 function render(){
-  const host=document.getElementById('svcs'); host.innerHTML='';
-  let TMO=0,TDsp=0,Tprazo=0;
-  SVC.forEach((s,si)=>{
-    const r=svcCalc(s); TMO+=r.mo; TDsp+=r.dsp; Tprazo+=r.dias;
-    const difSel=DIF.map((d,i)=>`<option value="${i}" ${i===s.dif?'selected':''}>${d.n} ×${d.m.toFixed(2)}</option>`).join('');
-    const crewRows=r.crew.map((c,ci)=>{
-      const t=tipo(c.tipo);
-      const trabCell = (MODO==='manual')
-        ? `<span class="trab edit"><input type="number" step="0.5" min="0" value="${c.trab}" oninput="setTrab(${si},${ci},this.value)"> di</span>`
-        : `<span class="trab">${fmt2(c.trabEf)} di</span>`;
-      const rmBtn = (MODO==='manual') ? `<button class="rm" onclick="rmTipo(${si},${ci})"><span class="material-symbols-rounded">close</span></button>` : `<span></span>`;
-      return `<div class="crew">
-        <div class="who"><span class="av"><span class="material-symbols-rounded">engineering</span></span>
-          <div><div class="nm">${t.nome} · ${t.nivel}</div><div class="rt">${fmt(t.vh)}/h</div></div></div>
-        <span class="step"><button onclick="pes(${si},${ci},-1)">−</button><span class="v">${c.pes}</span><button onclick="pes(${si},${ci},1)">+</button></span>
-        ${trabCell}
-        <span class="dias">${fmt2(c.dias)} d</span>
-        <span class="custo">${fmt(c.custo)}</span>
-        ${rmBtn}</div>`;
-    }).join('');
-    const addBtn = (MODO==='manual') ? `<button class="addtipo" onclick="addTipo(${si})"><span class="material-symbols-rounded">person_add</span>adicionar tipo</button>` : '';
-    const dspRows=r.dl.map(d=>`<div class="dsp-row"><span>${d.nome}</span><span class="gt"><span class="material-symbols-rounded">${GAT[d.g].ic}</span>${GAT[d.g].lb}</span><span class="dval">${fmt(d.calc)}</span></div>`).join('');
-    host.insertAdjacentHTML('beforeend',`
-      <div class="svc">
-        <div class="svc-hd"><span class="ic material-symbols-rounded">${s.ic}</span><h3>${s.nome}</h3>
-          <span class="dif"><span class="material-symbols-rounded" style="font-size:16px;color:var(--tx3)">terrain</span>Dificuldade
-            <select onchange="setDif(${si},this.value)">${difSel}</select></span></div>
-        <div class="crewhd"><span>Tipo de profissional</span><span>Pessoas</span><span>Trabalho</span><span>Prazo</span><span>Custo MO</span><span></span></div>
-        ${crewRows}
-        ${addBtn}
-        <div class="dsp"><div class="dsp-hd">Despesas da execução — cada uma pelo seu gatilho</div>${dspRows}</div>
-        <div class="svc-ft">
-          <span class="pill"><span class="material-symbols-rounded">group</span>${r.pessoas} pessoas</span>
-          <span class="pill"><span class="material-symbols-rounded">event</span>prazo <b>${fmt2(r.dias)} dias</b></span>
-          <span class="pill"><span class="material-symbols-rounded">payments</span>MO <b>${fmt(r.mo)}</b> · despesas <b>${fmt(r.dsp)}</b></span>
-          <span class="tot">${fmt(r.total)}</span>
-        </div>
-      </div>`);
-  });
-  // conferência
-  const s0=svcCalc(SVC[0]); const c0=s0.crew[0];
-  document.getElementById('idTrab').innerHTML=`ex.: <code>${fmt2(c0.trabEf)} di = ${c0.pes} × ${fmt2(c0.dias)} d</code>`;
-  document.getElementById('idMO').textContent=fmt(s0.mo);
-  document.getElementById('idDsp').innerHTML='pessoa×dia estável · por dia cai · por pessoa sobe';
-  document.getElementById('tMO').textContent=fmt(TMO);
-  document.getElementById('tDsp').textContent=fmt(TDsp);
-  document.getElementById('tTot').textContent=fmt(TMO+TDsp);
-  document.getElementById('tPrazo').innerHTML=`${fmt2(Tprazo)} dias <span style="font-weight:400;color:var(--tx3);font-size:11px">(soma; paralelo é cronograma)</span>`;
+  const r=calc();
+  const gargalo=r.fs.reduce((m,f)=>f.dias>m?f.dias:m,0);
+  const rows=r.fs.map(f=>{
+    const t=tipo(f.id);
+    const isG=Math.abs(f.dias-gargalo)<1e-9 && r.fs.length>1;
+    const hrsCell=(MODO==='manual' && MANUAL_EXTRA.some(e=>e.tipo===f.id))
+      ? `<span class="hrs edit"><input type="number" step="1" min="0" value="${Math.round(f.horas)}" oninput="setHoras('${f.id}',this.value)"></span>`
+      : `<span class="hrs"><span class="b">${fmt1(f.horas)} h</span><br><span class="s">${fmt1(f.diEf)} diárias</span></span>`;
+    const rm=(MODO==='manual' && MANUAL_EXTRA.some(e=>e.tipo===f.id))?`<button class="rm" onclick="rmFunc('${f.id}')"><span class="material-symbols-rounded">close</span></button>`:'';
+    return `<div class="frow">
+      <div class="who"><span class="av"><span class="material-symbols-rounded">engineering</span></span>
+        <div><div class="nm">${t.nome} · ${t.nivel} ${rm}</div><div class="rt">${fmt(t.vh)}/h</div></div></div>
+      ${hrsCell}
+      <span class="step"><button onclick="pes('${f.id}',-1)">−</button><span class="v">${f.pes}</span><button onclick="pes('${f.id}',1)">+</button></span>
+      <span class="prazo ${isG?'gargalo':''}"><span class="b">${fmt1(f.dias)} d</span><br><span class="s">${isG?'gargalo':'&nbsp;'}</span></span>
+      <span class="custo">${fmt(f.custo)}</span>
+    </div>`;
+  }).join('');
+  document.getElementById('frows').innerHTML=rows + `
+    <div class="frow total">
+      <div class="who"><span style="width:34px"></span><div class="nm">Total</div></div>
+      <span class="hrs"><span class="b">${fmt1(r.fs.reduce((a,f)=>a+f.horas,0))} h</span></span>
+      <span class="prazo" style="text-align:center"><span class="b">${r.totalPessoas}</span><br><span class="s">pessoas</span></span>
+      <span class="prazo"><span class="b">${fmt1(r.obraPrazo)} d</span><br><span class="s">prazo</span></span>
+      <span class="custo">${fmt(r.MO)}</span>
+    </div>`;
+  document.getElementById('fcnt').textContent=r.fs.length+' funções · somadas dos serviços';
+  document.getElementById('faddwrap').innerHTML = (MODO==='manual')
+    ? `<button class="addf" onclick="addFunc()"><span class="material-symbols-rounded">add</span>adicionar função</button>` : '';
+  document.getElementById('dsprows').innerHTML=r.dl.map(d=>`<div class="dsp-row"><span>${d.nome}</span><span class="gt"><span class="material-symbols-rounded">${GAT[d.g].ic}</span>${GAT[d.g].lb}</span><span class="dval">${fmt(d.calc)}</span></div>`).join('');
+  document.getElementById('kMO').textContent=fmt(r.MO);
+  document.getElementById('kDsp').textContent=fmt(r.Dsp);
+  document.getElementById('kTot').textContent=fmt(r.total);
+  document.getElementById('kPrazo').innerHTML=fmt1(r.obraPrazo)+' <span class="sm">dias</span>';
+  renderReport();
 }
 
-// ---- ações ----
-function pes(si,ci,d){ const c=SVC[si].crew[ci]; c.pes=Math.max(1,(+c.pes||1)+d); render(); }
-function setDif(si,v){ SVC[si].dif=+v; render(); }
-function setTrab(si,ci,v){ SVC[si].crew[ci].trab=Math.max(0,parseFloat((v+'').replace(',','.'))||0); render(); }
-function rmTipo(si,ci){ SVC[si].crew.splice(ci,1); render(); }
-function addTipo(si){
-  const usados=SVC[si].crew.map(c=>c.tipo);
-  const livre=TIPOS.find(t=>!usados.includes(t.id))||TIPOS[0];
-  SVC[si].crew.push({tipo:livre.id,trab:1,pes:1}); render();
+function renderReport(){
+  const host=document.getElementById('report');
+  host.innerHTML=SVC.map(s=>{
+    const dm=DIF[s.dif].m;
+    const lines=s.crew.map(c=>{const t=tipo(c.tipo);const diEf=c.trab*dm;const custo=diEf*JORNADA*t.vh;
+      return `<div class="rline"><span class="rt">${t.nome} · ${t.nivel}</span><span class="rv">${fmt1(diEf)} di</span><span class="rv">${fmt1(diEf*JORNADA)} h</span><span class="rc">${fmt(custo)}</span></div>`;}).join('');
+    const mo=s.crew.reduce((a,c)=>a+c.trab*dm*JORNADA*tipo(c.tipo).vh,0);
+    return `<div class="rsvc"><div class="rsvc-hd"><span class="material-symbols-rounded">${s.ic}</span><h4>${s.nome}</h4><span class="rdif">Dificuldade ${DIF[s.dif].n} ×${dm.toFixed(2)}</span></div>
+      <div class="rline h"><span>Função</span><span class="rv">Trabalho</span><span class="rv">Horas</span><span class="rc">Custo</span></div>
+      ${lines}
+      <div class="rline" style="border-top:2px solid var(--line)"><span class="rt" style="font-weight:700;color:var(--tx)">Subtotal do serviço</span><span class="rv"></span><span class="rv"></span><span class="rc" style="color:var(--pri)">${fmt(mo)}</span></div>
+    </div>`;
+  }).join('');
 }
-function setModo(m){
-  MODO=m;
+function toggleRep(){const r=document.getElementById('report');r.classList.toggle('open');
+  const b=document.getElementById('repBtn');const open=r.classList.contains('open');
+  b.innerHTML=`<span class="material-symbols-rounded">${open?'expand_less':'expand_more'}</span>${open?'Ocultar relatório':'Ver relatório completo (por serviço)'}`;}
+
+function pes(id,d){ PES[id]=Math.max(1,(PES[id]||1)+d); render(); }
+function setHoras(id,v){ const e=MANUAL_EXTRA.find(x=>x.tipo===id); if(e){ e.trabDi=Math.max(0,(parseFloat((v+'').replace(',','.'))||0)/JORNADA); render(); } }
+function rmFunc(id){ MANUAL_EXTRA=MANUAL_EXTRA.filter(x=>x.tipo!==id); render(); }
+function addFunc(){ const usados=agregado().map(f=>f.id); const livre=TIPOS.find(t=>!usados.includes(t.id))||TIPOS[0];
+  MANUAL_EXTRA.push({tipo:livre.id,trabDi:1}); render(); }
+function setModo(m){ MODO=m;
   document.getElementById('mAuto').classList.toggle('on',m==='auto');
   document.getElementById('mMan').classList.toggle('on',m==='manual');
   document.getElementById('modoNote').innerHTML = m==='auto'
-    ? 'Puxa do cadastro de cada serviço — os <b>tipos ficam travados</b>, você só ajusta a quantidade.'
-    : 'Você <b>monta a equipe</b> de cada serviço: adiciona tipos e define o trabalho. O R$/h continua vindo do cadastro.';
+    ? 'Somado do cadastro dos serviços — as <b>funções vêm travadas</b>, você só ajusta a quantidade de pessoas.'
+    : 'Você pode <b>adicionar funções</b> e editar as horas. O R$/h continua vindo do cadastro.';
+  if(m==='auto') MANUAL_EXTRA=[];
   render();
 }
 render();
