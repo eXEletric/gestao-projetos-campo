@@ -336,16 +336,16 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .hplist{max-height:54vh;overflow-y:auto}
 /* compositor de custo do serviço */
 .cmpsec{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin:2px 0 8px}
-.cmphd{display:grid;grid-template-columns:1fr 120px 54px 76px 26px;gap:8px;font-size:9.5px;font-weight:700;text-transform:uppercase;color:var(--tx3);padding:0 2px 5px;text-align:center}
+.cmphd{display:grid;grid-template-columns:1fr 140px 50px 72px 24px;gap:8px;font-size:9.5px;font-weight:700;text-transform:uppercase;color:var(--tx3);padding:0 2px 5px;text-align:center}
 .cmphd span:first-child{text-align:left}
-.cmprow{display:grid;grid-template-columns:1fr 120px 54px 76px 26px;gap:8px;align-items:center;padding:4px 0}
+.cmprow{display:grid;grid-template-columns:1fr 140px 50px 72px 24px;gap:8px;align-items:center;padding:4px 0}
 .cmprow .cmpstep{display:inline-flex;align-items:center;justify-content:center;gap:2px;border:1px solid var(--line2);border-radius:7px;overflow:hidden}
 .cmprow .cmpstep button{border:none;background:var(--surf);color:var(--pri);width:26px;height:28px;cursor:pointer;font-size:15px;font-weight:700}
 .cmprow .cmpstep button:hover{background:var(--pri-bg)}.cmprow .cmpstep .v{min-width:22px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
 .cmprow .cmpval{text-align:right;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--tx)}
 .cmprow .cmptrab{display:inline-flex;align-items:center;justify-content:center;gap:4px}
 .cmprow .cmptrab input{width:52px;padding:6px 4px;border:1px solid var(--line2);border-radius:7px;text-align:center;font:inherit;font-size:13px;font-variant-numeric:tabular-nums;background:var(--surf);color:var(--tx)}
-.cmprow .cmptrab .cmpu{width:56px;padding:6px 2px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:12px;background:var(--surf);color:var(--tx2)}
+.cmprow .cmptrab .cmpu{width:76px;padding:6px 2px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:12px;background:var(--surf);color:var(--tx2)}
 .cmpdrow{display:flex;align-items:center;gap:8px;padding:4px 0}
 .cmpdrow .cmpin{flex:1;padding:7px 9px;border:1px solid var(--line2);border-radius:7px;font-size:13px;background:var(--surf);color:var(--tx)}
 .cmpdrow .cmpin.val{flex:0 0 110px;text-align:right;font-variant-numeric:tabular-nums}
@@ -1651,7 +1651,7 @@ function compSetUn(i,u){ const r=COMP.mo[i]; if(!r)return; r.un=u; compRenderMO(
 function compMORow(r,i){
   const opts=MAOOBRA.map((m,j)=>`<option value="${j}" ${j===r.fn?'selected':''}>${esc(m.funcao)} · ${esc(m.nivel)} (${fmt(m.vh)}/h)</option>`).join('');
   const m=MAOOBRA[r.fn]||{vh:0}; const un=r.un||'di';
-  const uns=[['di','di'],['h','h'],['min','min']].map(([v,l])=>`<option value="${v}" ${v===un?'selected':''}>${l}</option>`).join('');
+  const uns=[['di','dia'],['h','hora'],['min','minuto']].map(([v,l])=>`<option value="${v}" ${v===un?'selected':''}>${l}</option>`).join('');
   const val=trabToUn(r.trab,un);
   return `<div class="cmprow">
     <select onchange="COMP.mo[${i}].fn=+this.value;compRenderMO();compCalc()">${opts}</select>
