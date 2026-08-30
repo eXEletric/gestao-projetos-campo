@@ -678,7 +678,7 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
   <div class="modal">
     <div class="mh"><span class="material-symbols-rounded">note_add</span><h3 id="novoCatTitle">Novo serviço</h3><button class="x" onclick="closeNovoCat()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div style="margin-bottom:12px"><label style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Nome</label><input id="nc_nome" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+      <div style="margin-bottom:12px"><label style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Nome</label><textarea id="nc_nome" rows="1" oninput="agrow(this)" placeholder="ex.: Instalação e ligação de quadro de comando" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx);font-family:inherit;line-height:1.4;resize:none;overflow:hidden;min-height:38px"></textarea></div>
       <div id="nc_grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
         <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Unidade</label><select id="nc_und" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></select></div>
         <div><label id="nc_custo_lbl" style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Custo (R$)</label><input id="nc_custo" inputmode="decimal" onfocus="this.select()" onblur="this.value=this.value.trim()===''?'':fmtN(this.value)" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
@@ -703,7 +703,7 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
     <div class="mh"><span class="material-symbols-rounded">precision_manufacturing</span><h3 id="compTitle">Compor custo do serviço</h3><button class="x" onclick="closeComp()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
       <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end">
-        <div style="flex:1;min-width:180px"><div class="cmpsec">Nome do serviço</div><input id="comp_nome" style="width:100%;padding:8px 10px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)" placeholder="ex.: Instalação de tomada"></div>
+        <div style="flex:1;min-width:180px"><div class="cmpsec">Nome do serviço</div><textarea id="comp_nome" rows="1" oninput="agrow(this)" placeholder="ex.: Instalação de tomada" style="width:100%;padding:8px 10px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx);font-family:inherit;line-height:1.4;resize:none;overflow:hidden;min-height:36px"></textarea></div>
         <div><div class="cmpsec">Unidade</div><select id="comp_und" class="cmpsel" style="width:96px"></select></div>
       </div>
       <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px">
@@ -915,7 +915,9 @@ const fmtN=v=>num(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFrac
 const moneyVal=v=>(v===''||v==null)?'':fmtN(v);                                                   // valor inicial do campo (formatado)
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 /* unidades — lista suspensa (evita digitação livre) */
-const UNIDADES=['UND','PÇ','CJ','KIT','M','M²','M³','KM','KG','L','H','DIA','MÊS','VB','PT','LOTE'];
+const UNIDADES=['UND','SERV','PÇ','CJ','KIT','M','M²','M³','KM','KG','L','H','DIA','MÊS','VB','PT','LOTE'];
+// caixa de texto que cresce conforme escreve (nome do serviço)
+function agrow(el){ if(!el)return; el.style.height='auto'; el.style.height=(el.scrollHeight)+'px'; }
 function undSelect(blk,id,val,r){
   const cur=String(val||'').trim();
   // UND atrelada ao CADASTRO: item do catálogo (catId) mostra a unidade só-leitura; avulso (sem cadastro) é editável
@@ -1325,7 +1327,7 @@ function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m
 function fatoresObraHtml(){
   const abrOpts=(ABRANGENCIA||[]).map((a,j)=>`<option value="${j}" ${j==(num(S.abrIdx)||0)?'selected':''}>${esc(a.rotulo)}${num(a.custo_pct)?' (+'+num(a.custo_pct)+'%)':''}</option>`).join('');
   const fl=num(S.fatorLocal)||1;
-  const presets=[1,2,3,4].map(f=>`<button class="flbtn ${fl==f?'on':''}" onclick="setFatorLocal(${f})">${f}×</button>`).join('');
+  const presets=[[1,'1'],[1.5,'1,5'],[2,'2'],[3,'3']].map(([f,l])=>`<button class="flbtn ${fl==f?'on':''}" onclick="setFatorLocal(${f})">${l}×</button>`).join('');
   return `<div class="fatobra noprint">
     <div class="fo-t"><span class="material-symbols-rounded">tune</span>Fatores da obra<span class="fo-h"> — aplicam ao custo dos serviços montados</span></div>
     <div class="fo-grid">
@@ -1459,7 +1461,7 @@ function openNovoCat(blk){
   PICK_TARGET=null; _ncBlk=blk; _ncEdit=null; _ncEditRow=null; _ncComposicao=null; _ncNew=true; closePick();
   const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
   document.getElementById('novoCatTitle').textContent='Novo '+sing+' — salva no catálogo';
-  ['nc_nome','nc_custo','nc_margem'].forEach(id=>document.getElementById(id).value='');
+  ['nc_nome','nc_custo','nc_margem'].forEach(id=>document.getElementById(id).value=''); agrow(document.getElementById('nc_nome'));
   fillUnd(document.getElementById('nc_und'),(UND_DFLT[blk]||'UND'));
   fillCateg(document.getElementById('nc_cat'),blk,'');
   ncComposBox(blk);
@@ -1477,7 +1479,7 @@ function openEditCat(blk,rowId){
   const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
   const src = c || {nome:r.desc, custo:(r.usarBase?r.custoBase:num(r.custoAlt)), und:r.und, margem:r.margem, categoria:''};
   document.getElementById('novoCatTitle').textContent = realCat ? ('Editar '+sing+' no cadastro — valor padrão') : ('Cadastrar '+sing+' no catálogo');
-  document.getElementById('nc_nome').value=src.nome||'';
+  document.getElementById('nc_nome').value=src.nome||''; agrow(document.getElementById('nc_nome'));
   fillUnd(document.getElementById('nc_und'), src.und||UND_DFLT[blk]||'UND');
   document.getElementById('nc_custo').value=(src.custo!=null&&src.custo!==''?moneyVal(src.custo):'');
   document.getElementById('nc_margem').value=(src.margem===''||src.margem==null?'':src.margem);
@@ -1496,7 +1498,7 @@ function openCompCadastro(){
   if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';   // sem mão de obra → cai no Manual
   if(!COMP.mo.length) COMP.mo=[{fn:0,trab:1,un:'di'}];
   document.getElementById('compTitle').textContent='Serviço';
-  const nmi=document.getElementById('comp_nome'); if(nmi){ nmi.value=(document.getElementById('nc_nome').value||''); }
+  const nmi=document.getElementById('comp_nome'); if(nmi){ nmi.value=(document.getElementById('nc_nome').value||''); agrow(nmi); }
   fillUnd(document.getElementById('comp_und'), (document.getElementById('nc_und').value||'UND'));
   document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
   const mvi=document.getElementById('comp_manual'); if(mvi)mvi.value=COMP.valorManual?String(COMP.valorManual).replace('.',','):'';
@@ -1608,7 +1610,7 @@ async function carregarAbrangencia(){
   try{ const {data,error}=await SB.from('orc_abrangencia').select('nivel,rotulo,ordem,custo_pct,tempo_pct').order('ordem');
     if(!error && data && data.length) ABRANGENCIA=data;
   }catch(e){ console.error('abrangencia',e); }
-  if(!ABRANGENCIA.length) ABRANGENCIA=[{nivel:'local',rotulo:'Local',custo_pct:0,tempo_pct:0},{nivel:'estadual',rotulo:'Estadual',custo_pct:35,tempo_pct:15},{nivel:'nacional',rotulo:'Nacional',custo_pct:80,tempo_pct:30}];
+  if(!ABRANGENCIA.length) ABRANGENCIA=[{nivel:'local',rotulo:'Local',custo_pct:0,tempo_pct:0},{nivel:'estadual',rotulo:'Estadual',custo_pct:10,tempo_pct:8},{nivel:'nacional',rotulo:'Nacional',custo_pct:20,tempo_pct:15}];
 }
 // escala fixa de dificuldade (multiplica o tempo)
 const DIFIC=[{n:'Normal',mult:1.00},{n:'Moderada',mult:1.25},{n:'Alta',mult:1.50},{n:'Severa',mult:2.00}];
@@ -1628,7 +1630,7 @@ function openComp(blk,rowId){
   if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';   // sem mão de obra → cai no Manual
   if(!COMP.mo.length) COMP.mo=[{fn:0,trab:1,un:'di'}];
   document.getElementById('compTitle').textContent='Serviço';
-  const nmi=document.getElementById('comp_nome'); if(nmi){ nmi.value=r.desc||''; nmi.readOnly=false; }
+  const nmi=document.getElementById('comp_nome'); if(nmi){ nmi.value=r.desc||''; nmi.readOnly=false; agrow(nmi); }
   fillUnd(document.getElementById('comp_und'), r.und||UND_DFLT[blk]||'UND');
   document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
   const mvi=document.getElementById('comp_manual'); if(mvi)mvi.value=COMP.valorManual?String(COMP.valorManual).replace('.',','):'';
