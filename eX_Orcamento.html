@@ -290,7 +290,11 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .svc .bs .material-symbols-rounded{font-size:13px;color:var(--blue)}
 .money{white-space:nowrap}
 .preco{font-weight:700;color:var(--tx)}
+.preco b{font-weight:800;color:var(--pri)}
 .lucro{color:var(--green);font-weight:600}
+.custot{color:var(--tx3);font-weight:600}
+.unit{color:var(--tx2);font-weight:600}
+.tbl th .thsub{display:block;font-size:8px;font-weight:500;letter-spacing:.02em;color:var(--tx3);text-transform:none;margin-top:1px}
 .lockval{display:inline-flex;align-items:center;gap:5px;color:var(--tx2);font-variant-numeric:tabular-nums;font-weight:600;justify-content:flex-end}
 .lockval .material-symbols-rounded{font-size:14px;color:var(--tx3)}
 .swcell{display:flex;flex-direction:column;align-items:flex-start;gap:3px;white-space:nowrap}
@@ -997,6 +1001,11 @@ function lineCusto(r){
   if(isCusto(r)) return qtyOf(r)*custoEf(r);
   return qtyOf(r)*num(r.vunit)*(1+num(r.markup)/100);
 }
+// valor UNITÁRIO com margem (o que o cliente paga por unidade) — total ÷ qtd, sem depender de qtd
+function lineUnit(r){
+  if(isCusto(r)) return custoEf(r)*(1+mgOf(r)/100);
+  return num(r.vunit)*(1+num(r.markup)/100);
+}
 const lineTot=r=>linePreco(r);
 function effBlocoTotal(blk){ return +(S[blk].reduce((a,r)=>a+linePreco(r),0).toFixed(2)); }
 function blkSub(blk){ return S[blk].reduce((a,r)=>a+linePreco(r),0); }
@@ -1234,9 +1243,9 @@ function renderBlk(cfg){
   } else if(cfg.custo){
     // MODELO base+margem: custo (do cadastro, usar/alterar) → margem → preço e lucro
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
-    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r">Preço</th><th class="r pint">Lucro</th><th class="pint"></th>`;
+    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo un.</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r pint">Custo total<span class="thsub">sem margem</span></th><th class="r">Unitário<span class="thsub">c/ margem</span></th><th class="r">Total<span class="thsub">c/ margem</span></th><th class="pint"></th>`;
     body=rows.map((r,i)=>{
-      const preco=linePreco(r), custo=lineCusto(r), lucro=preco-custo;
+      const preco=linePreco(r), custo=lineCusto(r), unit=lineUnit(r);
       const propria=!(r.margem===''||r.margem==null);
       const custoCell = r.usarBase
         ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
@@ -1261,13 +1270,14 @@ function renderBlk(cfg){
         <td class="r">${isTotal(r)?`<span class="und-fix" title="valor total do serviço — quantidade não se aplica">total</span>`:`<input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)">`}</td>
         <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
         <td class="r pint"><div class="mkwrap ${propria?'own':'base'}">${propria?'<span class="mkne" title="diferente da margem base">&ne;</span>':''}<input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span class="mkpc">%</span>${propria?`<span class="mkwarn material-symbols-rounded" title="margem própria — fora da base ${num(S.margemBase)}%">warning</span><button class="mkreset" title="voltar à margem base" onclick="resetMargem('${cfg.key}','${r.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</div></td>
-        <td class="r money preco" id="tp_${r.id}">${fmt(preco)}</td>
-        <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
+        <td class="r money custot pint" id="tc_${r.id}">${fmt(custo)}</td>
+        <td class="r money unit" id="tu_${r.id}">${fmt(unit)}</td>
+        <td class="r money preco" id="tp_${r.id}"><b>${fmt(preco)}</b></td>
         <td class="pint rowact">${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
-    if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
-    if(soT){ foot=`<tfoot><tr class="ftot"><td class="ftl" colspan="${cfg.mat?8:7}">Total do bloco (agrupado)</td><td class="r money"><b>${fmt(blkSub(cfg.key))}</b></td><td colspan="2"></td></tr></tfoot>`; }
+    if(!rows.length) body=`<tr><td colspan="${cfg.mat?12:11}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
+    if(soT){ foot=`<tfoot><tr class="ftot"><td class="ftl" colspan="${cfg.mat?10:9}">Total do bloco (agrupado)</td><td class="r money"><b>${fmt(blkSub(cfg.key))}</b></td><td colspan="1"></td></tr></tfoot>`; }
   }
   const obsTxt=(S.obs&&S.obs[cfg.key])||'';
   const obsShow=!(S.obsOn&&S.obsOn[cfg.key]===false);
@@ -1457,11 +1467,13 @@ function upd(blk,id,field,val){
   save();
 }
 function refreshRow(blk,r){
-  const preco=linePreco(r), custo=lineCusto(r);
+  const preco=linePreco(r), custo=lineCusto(r), unit=lineUnit(r);
   const c=document.getElementById('tt_'+r.id); if(c){ c.textContent=fmt(preco); c.className='tot '+(preco?'':'z'); }
-  const pe=document.getElementById('tp_'+r.id), le=document.getElementById('tl_'+r.id);
-  if(pe) pe.textContent=fmt(preco);
-  if(le) le.textContent=fmt(preco-custo);
+  const pe=document.getElementById('tp_'+r.id), tc=document.getElementById('tc_'+r.id), tu=document.getElementById('tu_'+r.id), le=document.getElementById('tl_'+r.id);
+  if(pe) pe.innerHTML='<b>'+fmt(preco)+'</b>';   // Total (c/ margem)
+  if(tc) tc.textContent=fmt(custo);              // Custo total (s/ margem)
+  if(tu) tu.textContent=fmt(unit);               // Unitário (c/ margem)
+  if(le) le.textContent=fmt(preco-custo);        // (lucro — se ainda existir em alguma view)
   const bv=document.getElementById('bsv_'+r.id); if(bv) bv.textContent=fmt(num(r.custoBase));
 }
 function togBase(blk,id){
