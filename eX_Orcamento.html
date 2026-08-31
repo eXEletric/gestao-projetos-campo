@@ -198,6 +198,25 @@ select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 .efrow{display:flex;align-items:center;gap:11px;padding:9px 13px;border-bottom:1px solid var(--line)}
 .efav{width:32px;height:32px;border-radius:50%;background:var(--pri-bg);color:var(--pri);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .efav .material-symbols-rounded{font-size:18px}
+.efmode{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 13px 2px}
+.efmode-lb{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3)}
+.efmode .cmpseg button{padding:6px 12px;font-size:12px}
+.efhint{font-size:11.5px;color:var(--tx2);padding:7px 13px 10px;line-height:1.5}
+.moahd,.moarow{display:grid;grid-template-columns:1fr 104px 82px 100px;gap:8px;align-items:center;padding:8px 13px}
+.moahd{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);padding-top:4px;padding-bottom:2px}
+.moahd span:nth-child(2),.moahd span:nth-child(3){text-align:center}.moahd span:nth-child(4){text-align:right}
+.moarow{border-top:1px solid var(--line)}
+.moawho{display:flex;align-items:center;gap:10px;min-width:0}
+.moawho .efn{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.moawho .efd{font-size:11px;color:var(--tx3)}
+.moastep{display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--line2);border-radius:8px;overflow:hidden;justify-self:center}
+.moastep button{border:none;background:var(--surf);color:var(--pri);width:28px;height:30px;font-size:16px;font-weight:700;cursor:pointer}
+.moastep button:hover{background:var(--pri-bg)}.moastep .v{min-width:24px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.moapz{text-align:center;font-variant-numeric:tabular-nums;font-size:13px;color:var(--tx2)}
+.moapz b{font-size:14px;color:var(--tx)}.moapz span{font-size:10px;color:var(--tx3)}
+.moapz.g b{color:var(--amber)}.moapz.g span{color:var(--amber)}
+.moacusto{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-size:13.5px}
+.moatot{border-top:2px solid var(--line);background:var(--surf2)}.moatot .efn{font-weight:800}.moatot .moacusto b{color:var(--pri);font-size:15px}
 .eff{flex:1;min-width:0}
 .eff .efn{font-weight:600;font-size:13px}
 .eff .efd{font-size:10.5px;color:var(--tx3)}
@@ -277,7 +296,19 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .swcell{display:flex;flex-direction:column;align-items:flex-start;gap:3px;white-space:nowrap}
 .swlbl{font-size:10.5px;font-weight:600}
 .swlbl.on{color:var(--green)}.swlbl.off{color:var(--amber)}
-.mkwrap{display:flex;align-items:center;gap:4px;justify-content:flex-end}
+.mkwrap{display:flex;align-items:center;gap:3px;justify-content:flex-end;flex-wrap:wrap}
+.mkwrap .mk{width:46px;text-align:right}
+.mkwrap.base{opacity:.5}
+.mkwrap.base .mk{border-style:dashed;background:transparent}
+.mkwrap.own .mk{background:#faeeda;border-color:#e6c360;color:#854f0b;font-weight:700}
+.mkwrap.own .mkpc{color:#854f0b}
+.mkne{font-size:14px;font-weight:800;color:#854f0b}
+.mkwarn{font-size:15px;color:#d4a017}
+.mkreset{border:none;background:none;cursor:pointer;color:#854f0b;padding:1px;display:inline-flex;align-items:center}
+.mkreset .material-symbols-rounded{font-size:15px}
+.mkallbtn{border:1px solid var(--line2);background:var(--surf);border-radius:6px;cursor:pointer;color:var(--tx3);padding:1px 3px;vertical-align:middle;line-height:1}
+.mkallbtn:hover{background:#faeeda;color:#854f0b;border-color:#e6c360}
+.mkallbtn .material-symbols-rounded{font-size:14px}
 .rsw{display:inline-flex;align-items:center;gap:3px;justify-content:flex-end}
 .rsw .rsl{color:var(--tx3);font-size:11px;font-weight:600}
 .rsw .cin.num{width:66px}
@@ -305,9 +336,70 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .hplist{max-height:54vh;overflow-y:auto}
 /* compositor de custo do serviço */
 .cmpsec{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin:2px 0 8px}
-.cmphd{display:grid;grid-template-columns:1fr 62px 62px 68px 28px;gap:8px;font-size:9.5px;font-weight:700;text-transform:uppercase;color:var(--tx3);padding:0 2px 5px;text-align:center}
+.cmphd{display:grid;grid-template-columns:1fr 140px 50px 72px 24px;gap:8px;font-size:9.5px;font-weight:700;text-transform:uppercase;color:var(--tx3);padding:0 2px 5px;text-align:center}
 .cmphd span:first-child{text-align:left}
-.cmprow{display:grid;grid-template-columns:1fr 62px 62px 68px 28px;gap:8px;align-items:center;padding:4px 0}
+.cmprow{display:grid;grid-template-columns:1fr 140px 50px 72px 24px;gap:8px;align-items:center;padding:4px 0}
+.cmprow .cmpstep{display:inline-flex;align-items:center;justify-content:center;gap:2px;border:1px solid var(--line2);border-radius:7px;overflow:hidden}
+.cmprow .cmpstep button{border:none;background:var(--surf);color:var(--pri);width:26px;height:28px;cursor:pointer;font-size:15px;font-weight:700}
+.cmprow .cmpstep button:hover{background:var(--pri-bg)}.cmprow .cmpstep .v{min-width:22px;text-align:center;font-weight:600;font-variant-numeric:tabular-nums}
+.cmprow .cmpval{text-align:right;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--tx)}
+.cmprow .cmptrab{display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.cmprow .cmptrab input{width:52px;padding:6px 4px;border:1px solid var(--line2);border-radius:7px;text-align:center;font:inherit;font-size:13px;font-variant-numeric:tabular-nums;background:var(--surf);color:var(--tx)}
+.cmprow .cmptrab .cmpu{width:76px;padding:6px 2px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:12px;background:var(--surf);color:var(--tx2)}
+.cmpdrow{display:flex;align-items:center;gap:8px;padding:4px 0}
+.cmpdrow .cmpin{flex:1;padding:7px 9px;border:1px solid var(--line2);border-radius:7px;font-size:13px;background:var(--surf);color:var(--tx)}
+.cmpdrow .cmpin.val{flex:0 0 110px;text-align:right;font-variant-numeric:tabular-nums}
+.cmpdrow .cmprs{font-size:12px;color:var(--tx3)}
+.cmpdrow .cmpdel{border:none;background:none;color:var(--tx3);cursor:pointer;padding:3px;border-radius:6px}
+.cmpdrow .cmpdel:hover{background:#fcebeb;color:var(--red)}.cmpdrow .cmpdel .material-symbols-rounded{font-size:16px}
+.cmptv{width:80px;padding:7px 9px;border:1px solid var(--line2);border-radius:7px;text-align:center;font-size:14px;font-variant-numeric:tabular-nums}
+.cmpseg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.cmpseg button{border:none;background:var(--surf);color:var(--tx2);font:600 12.5px inherit;padding:7px 13px;cursor:pointer}
+.cmpseg button.on{background:var(--pri);color:#fff}
+.cmphint{font-size:12px;color:var(--tx3)}
+.und-fix{display:inline-flex;align-items:center;justify-content:center;font-size:12.5px;color:var(--tx2);background:var(--surf2);border:1px solid var(--line2);border-radius:7px;padding:6px 8px;min-width:44px}
+.fatobra{background:var(--surf2);border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin:0 0 12px}
+.fatobra .fo-t{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--pri);display:flex;align-items:center;gap:6px;margin-bottom:9px}
+.fatobra .fo-cfgbtn{margin-left:auto;border:1px solid var(--line2);background:var(--surf);color:var(--tx3);border-radius:7px;width:28px;height:26px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+.fatobra .fo-cfgbtn:hover,.fatobra .fo-cfgbtn.on{border-color:var(--pri-line);color:var(--pri);background:var(--pri-bg)}
+.fatobra .fo-cfgbtn .material-symbols-rounded{font-size:17px}
+.fo-cfg{margin-top:11px;padding-top:11px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:8px}
+.fo-cfg-sec{font-size:11px;font-weight:600;color:var(--tx2);margin-top:4px;line-height:1.4}
+.fo-cfg-sec b{color:var(--tx)}
+.fo-cfg-tbl{border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surf)}
+.fo-cfg-h,.fo-cfg-tr{display:grid;grid-template-columns:1fr 116px 116px;gap:8px;align-items:center;padding:8px 12px}
+.fo-cfg-g4{grid-template-columns:1fr 104px 104px 30px}
+.fo-cfg-namewrap{display:flex;flex-direction:column;gap:1px;min-width:0}
+.fo-cfg-name{border:1px solid transparent;border-radius:6px;padding:5px 7px;margin:-5px -7px;font:600 13px inherit;color:var(--tx);background:transparent;width:100%}
+.fo-cfg-name:hover{border-color:var(--line2)}
+.fo-cfg-name:focus{outline:none;border-color:var(--pri);background:var(--surf)}
+.fo-cfg-namewrap small{font-weight:400;color:var(--tx3);font-size:11px;padding:0 1px}
+.fo-cfg-del{border:none;background:none;color:var(--tx3);cursor:pointer;padding:4px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center}
+.fo-cfg-del:hover{background:#fbeaec;color:var(--red)}.fo-cfg-del:disabled{opacity:.25;cursor:default}.fo-cfg-del .material-symbols-rounded{font-size:16px}
+.fo-cfg-add{width:100%;border:none;border-top:1px solid var(--line2);background:var(--surf2);color:var(--pri);font:600 12.5px inherit;padding:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+.fo-cfg-add:hover{background:var(--pri-bg)}.fo-cfg-add .material-symbols-rounded{font-size:16px}
+.fo-cfg-h{background:var(--surf2);border-bottom:1px solid var(--line)}
+.fo-cfg-h span:not(:first-child){display:inline-flex;align-items:center;gap:5px;justify-content:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:var(--tx3)}
+.fo-cfg-h .material-symbols-rounded{font-size:15px;color:var(--pri)}
+.fo-cfg-tr{border-top:1px solid var(--line2)}.fo-cfg-tbl .fo-cfg-tr:first-child{border-top:none}
+.fo-cfg-lb{font-weight:600;color:var(--tx);font-size:13px;display:flex;flex-direction:column;line-height:1.25}
+.fo-cfg-lb small{font-weight:400;color:var(--tx3);font-size:11px}
+.fo-cfg-in{display:inline-flex;align-items:center;justify-content:center;gap:3px;color:var(--tx3);font-size:13px}
+.fo-cfg-in input{width:52px;padding:6px 7px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;background:var(--surf);color:var(--tx)}
+.fo-cfg-in input:focus{outline:none;border-color:var(--pri)}
+.fo-cfg-in i{font-style:normal;color:var(--tx3)}
+.fatobra .fo-t .material-symbols-rounded{font-size:16px}
+.fatobra .fo-h{font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0}
+.fatobra .fo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:640px){.fatobra .fo-grid{grid-template-columns:1fr}}
+.fatobra .fo-row{display:flex;align-items:center;gap:9px}
+.fatobra .fo-row label{font-size:12px;font-weight:600;color:var(--tx2);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
+.fatobra .fo-row label .material-symbols-rounded{font-size:16px;color:var(--pri)}
+.fatobra .fo-sel{flex:1;padding:7px 9px;border:1px solid var(--line2);border-radius:8px;font-size:13px;background:var(--surf);color:var(--tx)}
+.fatobra .fo-fl{display:inline-flex;align-items:center;gap:4px}
+.fatobra .flbtn{border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:7px;padding:6px 9px;font:600 12.5px inherit;cursor:pointer}
+.fatobra .flbtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.fatobra .fo-flin{width:52px;text-align:center;padding:6px;border:1px solid var(--line2);border-radius:7px;font-size:13px;font-variant-numeric:tabular-nums}
 .cmprow select{width:100%;padding:6px 7px;border:1px solid var(--line2);border-radius:7px;font-size:12.5px;background:var(--surf);color:var(--tx)}
 .cmprow .cmpn{width:100%;padding:6px;border:1px solid var(--line2);border-radius:7px;text-align:center;font-size:13px;font-variant-numeric:tabular-nums}
 .cmprow .cmpvh{text-align:right;font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums}
@@ -315,6 +407,14 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .cmprow .cmpdel:hover{background:#fcebeb;color:var(--red)}.cmprow .cmpdel .material-symbols-rounded{font-size:16px}
 .cmpadd{border:1px dashed var(--line2);background:transparent;color:var(--pri);font:600 12px inherit;border-radius:20px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin-top:6px}
 .cmpadd:hover{background:var(--pri-bg);border-color:var(--pri)}.cmpadd .material-symbols-rounded{font-size:16px}
+.efbadge{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;padding:3px 9px;border-radius:20px}
+.efbadge.ok{background:var(--pri-bg);color:var(--pri)}
+.efbadge.mod{background:#fff3e0;color:#b26a00;border:1px solid #f0c27a}
+.efbadge .material-symbols-rounded{font-size:14px}
+.cmprow .cmpfn{font-size:12.5px;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cmprow .cmppes{text-align:center;font-size:13px;font-weight:600;color:var(--tx2);font-variant-numeric:tabular-nums}
+.cmprow.ef{opacity:.92}
+.efnone{font-size:12px;color:var(--tx3);padding:8px 2px;line-height:1.5}
 .cmplbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);margin-bottom:5px;display:block}
 .cmpsel{width:100%;padding:8px 10px;border:1px solid var(--line2);border-radius:7px;font-size:13px;background:var(--surf);color:var(--tx)}
 .cmpres{margin-top:16px;background:var(--surf2);border-radius:10px;padding:12px 14px;display:flex;gap:26px}
@@ -605,13 +705,18 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
   <div class="modal">
     <div class="mh"><span class="material-symbols-rounded">note_add</span><h3 id="novoCatTitle">Novo serviço</h3><button class="x" onclick="closeNovoCat()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div style="margin-bottom:12px"><label style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Nome</label><input id="nc_nome" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
-      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
+      <div style="margin-bottom:12px"><label style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Nome</label><textarea id="nc_nome" rows="1" oninput="agrow(this)" placeholder="ex.: Instalação e ligação de quadro de comando" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx);font-family:inherit;line-height:1.4;resize:none;overflow:hidden;min-height:38px"></textarea></div>
+      <div id="nc_grid" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px">
         <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Unidade</label><select id="nc_und" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></select></div>
-        <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Custo (R$)</label><input id="nc_custo" inputmode="decimal" onfocus="this.select()" onblur="this.value=this.value.trim()===''?'':fmtN(this.value)" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
-        <div><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Margem %</label><input id="nc_margem" inputmode="decimal" placeholder="padrão" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+        <div><label id="nc_custo_lbl" style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Custo (R$)</label><input id="nc_custo" inputmode="decimal" onfocus="this.select()" onblur="this.value=this.value.trim()===''?'':fmtN(this.value)" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
+        <div id="nc_mgcell"><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Margem %</label><input id="nc_margem" inputmode="decimal" placeholder="padrão" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></div>
       </div>
       <div style="margin-top:12px"><label style="font-size:10px;text-transform:uppercase;color:var(--tx3);font-weight:600;display:block;margin-bottom:5px">Categoria (opcional)</label><select id="nc_cat" style="width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx)"></select></div>
+      <div id="nc_composBox" style="margin-top:14px;padding-top:12px;border-top:1px dashed var(--line2);display:none">
+        <div style="font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri);font-weight:700;margin-bottom:6px"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">restaurant_menu</span> Receita — a composição do custo</div>
+        <div id="nc_composResumo" style="font-size:12.5px;color:var(--tx3);margin-bottom:8px"></div>
+        <button id="nc_composBtn" class="btn" style="border-color:var(--pri);color:var(--pri)" onclick="openCompCadastro()"><span class="material-symbols-rounded">precision_manufacturing</span>Compor receita (equipe × tempo)</button>
+      </div>
     </div>
     <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px">
       <button class="btn" onclick="closeNovoCat()">Cancelar</button>
@@ -624,16 +729,36 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
   <div class="modal" style="width:600px;max-width:100%">
     <div class="mh"><span class="material-symbols-rounded">precision_manufacturing</span><h3 id="compTitle">Compor custo do serviço</h3><button class="x" onclick="closeComp()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div class="cmpsec">Mão de obra <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— função · nível (R$/h da referência) × pessoas × horas</span></div>
-      <div id="compMO"></div>
-      <button class="cmpadd" onclick="compAddMO()"><span class="material-symbols-rounded">add</span>profissional</button>
-      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px">
-        <div><label class="cmplbl">Dificuldade</label><select id="comp_dif" class="cmpsel" onchange="compCalc()"></select></div>
-        <div><label class="cmplbl">Abrangência</label><select id="comp_abr" class="cmpsel" onchange="compCalc()"></select></div>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end">
+        <div style="flex:1;min-width:180px"><div class="cmpsec">Nome do serviço</div><textarea id="comp_nome" rows="1" oninput="agrow(this)" placeholder="ex.: Instalação de tomada" style="width:100%;padding:8px 10px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx);font-family:inherit;line-height:1.4;resize:none;overflow:hidden;min-height:36px"></textarea></div>
+        <div><div class="cmpsec">Unidade</div><select id="comp_und" class="cmpsel" style="width:96px"></select></div>
       </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px">
+        <div><div class="cmpsec">Como o custo nasce</div><span class="cmpseg"><button id="comp_md_c" onclick="setCompModo('calc')">Calculado</button><button id="comp_md_m" onclick="setCompModo('manual')">Manual</button></span></div>
+        <div><div class="cmpsec">O valor é</div><span class="cmpseg"><button id="comp_bs_u" onclick="setCompBase('unidade')">Por unidade</button><button id="comp_bs_t" onclick="setCompBase('total')">Total do serviço</button></span></div>
+      </div>
+      <div id="comp_basehint" class="cmphint" style="margin:-6px 0 12px"></div>
+      <div id="comp_manualBox" style="display:none;margin-bottom:14px">
+        <label class="cmplbl">Valor do serviço (custo predeterminado)</label>
+        <div style="display:flex;align-items:center;gap:6px"><span style="color:var(--tx3);font-size:14px">R$</span><input id="comp_manual" class="cmptv" style="width:130px;text-align:right" inputmode="decimal" oninput="COMP.valorManual=num(this.value);compCalc()"></div>
+      </div>
+      <div id="comp_calcBox">
+      <div class="cmpsec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Equipe (mão de obra) <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— função · <b>trabalho</b> (homem-dia) · R$/h. O custo NÃO muda com nº de pessoas — pessoas é prazo (decide na proposta).</span></div>
+      <div id="compMO"></div>
+      <button id="comp_addprof" class="cmpadd" onclick="compAddMO()"><span class="material-symbols-rounded">person_add</span>função</button>
+      <div class="cmpsec" style="margin-top:16px">Adicionais deste serviço <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— opcional; só o que é específico deste serviço (ex.: hora extra). Despesas gerais da obra vão no bloco Despesas.</span></div>
+      <div id="compDesp"></div>
+      <button class="cmpadd" onclick="compAddDesp()"><span class="material-symbols-rounded">add</span>adicional</button>
+      <div style="margin-top:16px">
+        <label class="cmplbl">Dificuldade do serviço <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— intrínseca à tarefa; abrangência e local ficam no orçamento</span></label>
+        <select id="comp_dif" class="cmpsel" onchange="compRenderMO();compCalc()"></select>
+      </div>
+      </div><!-- /comp_calcBox -->
       <div class="cmpres">
-        <div class="cr"><span>Custo do serviço</span><b id="comp_custo">R$ 0,00</b></div>
-        <div class="cr"><span>Tempo de execução</span><b id="comp_tempo" style="color:var(--pri)">0 h</b></div>
+        <div class="cr"><span>Mão de obra</span><b id="comp_mo">R$ 0,00</b></div>
+        <div class="cr"><span>Adicionais</span><b id="comp_dsp">R$ 0,00</b></div>
+        <div class="cr" style="border-top:1px solid var(--line2);margin-top:2px;padding-top:8px"><span>Custo do serviço</span><b id="comp_custo" style="font-size:16px">R$ 0,00</b></div>
+        <div class="cr"><span>Trabalho total</span><b id="comp_tempo" style="color:var(--pri)">0 homem-dia</b></div>
       </div>
     </div>
     <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px">
@@ -680,10 +805,10 @@ const TIPO_BLK={servico:'servicos',equipamento:'equip',despesa:'despesas',materi
 let CATALOGO={servicos:[],equip:[],despesas:[],materiais:[]};
 function catFor(blk){ return (CATALOGO[blk]&&CATALOGO[blk].length)?CATALOGO[blk]:(CAD[blk]||[]); }
 async function carregarCatalogo(){
-  try{ const {data,error}=await SB.from('orc_catalogo').select('id,tipo,nome,unidade,custo,margem,marca,categoria').is('deleted_at',null).eq('ativo',true).order('nome');
+  try{ const {data,error}=await SB.from('orc_catalogo').select('id,tipo,nome,unidade,custo,margem,marca,categoria,composicao').is('deleted_at',null).eq('ativo',true).order('nome');
     if(error) throw error;
     const g={servicos:[],equip:[],despesas:[],materiais:[]};
-    (data||[]).forEach(it=>{ const blk=TIPO_BLK[it.tipo]; if(blk) g[blk].push({id:it.id,nome:it.nome,custo:it.custo||0,und:it.unidade||'UND',margem:(it.margem==null?'':it.margem),marca:it.marca||'',categoria:it.categoria||''}); });
+    (data||[]).forEach(it=>{ const blk=TIPO_BLK[it.tipo]; if(blk) g[blk].push({id:it.id,nome:it.nome,custo:it.custo||0,und:it.unidade||'UND',margem:(it.margem==null?'':it.margem),marca:it.marca||'',categoria:it.categoria||'',composicao:(it.composicao&&typeof it.composicao==='object')?it.composicao:null}); });
     CATALOGO=g;
   }catch(e){ console.error('catalogo',e); }
 }
@@ -715,7 +840,9 @@ function fillCateg(sel,blk,current){
   if(current && list.indexOf(current)<0) o+=`<option value="${esc(current)}" selected>${esc(current)} (fora da lista)</option>`;
   sel.innerHTML=o; sel.value=current;
 }
+const MODELO_V2=false;  // motor promovido a oficial — gravação na nuvem ATIVA
 function pushOrc(){
+  if(MODELO_V2)return;    // blindagem: v2 não persiste na nuvem
   if(!(OPP&&CLOUD))return;
   const p={ empresa_id:EMPRESA_ID, oportunidade_id:OPP, numero:S.numero||null, status:S.status||'rascunho',
     solucao:S.solTitulo||null, escopo:S.solDesc||null, responsavel:S.respNome||null,
@@ -815,9 +942,14 @@ const fmtN=v=>num(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFrac
 const moneyVal=v=>(v===''||v==null)?'':fmtN(v);                                                   // valor inicial do campo (formatado)
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 /* unidades — lista suspensa (evita digitação livre) */
-const UNIDADES=['UND','PÇ','CJ','KIT','M','M²','M³','KM','KG','L','H','DIA','MÊS','VB','PT','LOTE'];
-function undSelect(blk,id,val){
-  const cur=String(val||'').trim(); const opts=UNIDADES.slice(); if(cur && opts.indexOf(cur)<0) opts.unshift(cur);
+const UNIDADES=['UND','SERV','PÇ','CJ','KIT','M','M²','M³','KM','KG','L','H','DIA','MÊS','VB','PT','LOTE'];
+// caixa de texto que cresce conforme escreve (nome do serviço)
+function agrow(el){ if(!el)return; el.style.height='auto'; el.style.height=(el.scrollHeight)+'px'; }
+function undSelect(blk,id,val,r){
+  const cur=String(val||'').trim();
+  // UND atrelada ao CADASTRO: item do catálogo (catId) mostra a unidade só-leitura; avulso (sem cadastro) é editável
+  if(r && r.catId) return `<span class="und-fix" title="unidade definida no cadastro do serviço">${esc(cur||'—')}</span>`;
+  const opts=UNIDADES.slice(); if(cur && opts.indexOf(cur)<0) opts.unshift(cur);
   return `<select class="cin un" onchange="upd('${blk}','${id}','und',this.value)">`
     + opts.map(u=>`<option value="${esc(u)}"${u===cur?' selected':''}>${esc(u)}</option>`).join('') + `</select>`;
 }
@@ -827,40 +959,48 @@ function fillUnd(sel,val){ if(!sel)return; const cur=String(val||'').trim(); con
 function moneyBlur(el,blk,id,field){ const v=el.value.trim(); el.value=(v===''?'':fmtN(Math.max(0,num(v)))); upd(blk,id,field,el.value); }
 function moneyBlurBloco(el,blk){ const v=el.value.trim(); el.value=(v===''?'':fmtN(Math.max(0,num(v)))); updBloco(blk,el.value); }
 function qtBlur(el,blk,id){ const n=Math.max(0,num(el.value)); el.value=String(n).replace('.',','); upd(blk,id,'qtd',el.value); }
-function mgBlur(el,blk,id){ const v=el.value.trim(); if(v==='') { upd(blk,id,'margem',''); return; } el.value=String(Math.max(0,num(v))).replace('.',','); upd(blk,id,'margem',el.value); }
+function mgBlur(el,blk,id){ const v=el.value.trim(); if(v===''){ upd(blk,id,'margem',''); } else { el.value=String(Math.max(0,num(v))).replace('.',','); upd(blk,id,'margem',el.value); } renderBlk(BLKS.find(b=>b.key===blk)); }   // re-renderiza p/ acender/apagar o sinal de margem própria
+function resetMargem(blk,id){ const r=(S[blk]||[]).find(x=>x.id===id); if(!r)return; r.margem=''; save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }   // volta esta linha à margem base
+function zerarMargens(blk){ const own=(S[blk]||[]).filter(r=>!(r.margem===''||r.margem==null)).length; if(!own)return; if(!confirm('Voltar TODAS as margens à base? ('+own+' linha(s) com margem própria)'))return; (S[blk]||[]).forEach(r=>{ r.margem=''; }); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
 // modelo base+margem (custo): custo usado, margem herdada/própria
 const isCusto=r=>r.custoBase!==undefined;
-const custoUn=r=>num(r.usarBase?r.custoBase:r.custoAlt);
+function horasReceita(c){ if(!c)return 0; if(c.un==='dias')return num(c.tv)*8; if(c.un==='minutos')return num(c.tv)/60; return num(c.tv); }
+function custoComposto(r){ const c=r&&r.composicao; if(!c)return null;
+  if(c.modo==='manual') return num(c.valorManual);   // valor predeterminado (chave Calculado×Manual)
+  const dif=(DIFIC[c.dif||0]||DIFIC[0]||{mult:1}).mult;
+  // MOTOR: custo = Σ trabalho(homem-dia) × dificuldade × R$/h × jornada — estável (não depende de pessoas)
+  const oldH=(c.un==='dias')?num(c.tv)*JORNADA:(c.un==='minutos')?num(c.tv)/60:num(c.tv);   // compat composição antiga (pes+tv/un)
+  let mo=0;
+  (c.mo||[]).forEach(x=>{ const m=MAOOBRA[x.fn]; if(!m)return; const trab=(x.trab!=null)?num(x.trab):(num(x.pes||0)*oldH/JORNADA); mo+=trab*dif*num(m.vh)*JORNADA; });
+  return mo+(c.desp||[]).reduce((a,d)=>a+num(d.valor),0);
+}
+// custo unitário: serviço montado recalcula ao vivo (efetivo dirige quando o modo é global-efetivo); senão base/alterado
+const custoUn=r=>{ if(r.usarBase!==false && r.composicao){ const cc=custoComposto(r); if(cc!=null)return cc; } return num(r.usarBase?r.custoBase:r.custoAlt); };
 const mgOf=r=>(r.margem===''||r.margem==null)?num(S.margemBase):num(r.margem);
+// ===== FATORES DA OBRA (gerais do orçamento) — só afetam serviços MONTADOS (com composição) =====
+function abrObra(){ return (ABRANGENCIA&&ABRANGENCIA[num(S.abrIdx)||0])||{custo_pct:0,tempo_pct:0}; }
+function localMult(){ const f=num(S.fatorLocal); return f>0?f:1; }
+function obraMult(r){ if(!r||!r.composicao) return 1;   // tabelado/avulso não leva fator da obra
+  return (1+num(abrObra().custo_pct)/100) * localMult(); }
+function tempoMult(){ return 1+num(abrObra().tempo_pct)/100; }   // abrangência estica o PRAZO (deslocamento come dias)
+const custoEf=r=>custoUn(r)*obraMult(r);                // custo efetivo = base × abrangência × fator do local
 // preço (o que o cliente paga) e custo (interno) por linha
-function linePreco(r,modo){
-  if(modo==='geral') return num(r.geral);
-  if(isCusto(r)) return num(r.qtd)*custoUn(r)*(1+mgOf(r)/100);
-  return num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100);
+// "Total do serviço": o custo já é o total → a quantidade é 1 (não multiplica)
+const isTotal=r=>!!(r.composicao&&r.composicao.base==='total');
+const qtyOf=r=>isTotal(r)?1:num(r.qtd);
+// MARGEM MANDA: o preço é SEMPRE custo × margem (acabou o "valor geral" que zerava). "Só o total" = só apresentação.
+function linePreco(r){
+  if(isCusto(r)) return qtyOf(r)*custoEf(r)*(1+mgOf(r)/100);
+  return qtyOf(r)*num(r.vunit)*(1+num(r.markup)/100);
 }
-function lineCusto(r,modo){
-  if(modo==='geral') return num(r.geral);           // verba: custo=preço (lucro 0)
-  if(isCusto(r)) return num(r.qtd)*custoUn(r);
-  return num(r.qtd)*num(r.vunit)*(1+num(r.markup)/100); // bloco não migrado: custo=preço
+function lineCusto(r){
+  if(isCusto(r)) return qtyOf(r)*custoEf(r);
+  return qtyOf(r)*num(r.vunit)*(1+num(r.markup)/100);
 }
-const lineTot=(r,modo)=>linePreco(r,modo);           // alias p/ compat
-// subtotal do bloco (PREÇO): no Geral+"só o total" usa o valor manual; senão soma
-// "Só o total": honra o valor digitado à mão SÓ se foi editado (blocoEdited); senão acompanha a soma viva dos itens
-// (evita total congelado que fica defasado quando os itens mudam depois)
-function effBlocoTotal(blk){
-  if(S.blocoEdited && S.blocoEdited[blk]) return num(S.blocoTotal[blk]);
-  return +(S[blk].reduce((a,r)=>a+(r.geralEdited?num(r.geral):linePreco(r,'unit')),0).toFixed(2));
-}
-function blkSub(blk){
-  const modo=S.modos[blk]||'unit';
-  if(modo==='geral' && S.soTotal[blk]) return effBlocoTotal(blk);
-  return S[blk].reduce((a,r)=>a+linePreco(r,modo),0);
-}
-function blkCusto(blk){
-  const modo=S.modos[blk]||'unit';
-  if(modo==='geral' && S.soTotal[blk]) return effBlocoTotal(blk);
-  return S[blk].reduce((a,r)=>a+lineCusto(r,modo),0);
-}
+const lineTot=r=>linePreco(r);
+function effBlocoTotal(blk){ return +(S[blk].reduce((a,r)=>a+linePreco(r),0).toFixed(2)); }
+function blkSub(blk){ return S[blk].reduce((a,r)=>a+linePreco(r),0); }
+function blkCusto(blk){ return S[blk].reduce((a,r)=>a+lineCusto(r),0); }
 
 /* ---------- estado exemplo (Copeland / Assaí) ---------- */
 function demo(){
@@ -873,8 +1013,8 @@ function demo(){
     finNome:"ASSAÍ NACIONAL", finRede:"Assaí", finNum:"256", finEnd:"Av. Vasco da Gama, s/nº — Salvador/BA",
     respNome:"André Camilo", respFone:"62 99392-2999", respEmail:"aocinnet@gmail.com",
     equipe:"1 Eletrotécnico · 1 Eletricista · 1 Operacional",
-    efetivo:[{f:'Eletrotécnico',ic:'electrical_services',n:1},{f:'Eletricista',ic:'bolt',n:1},{f:'Operacional',ic:'groups',n:1}],
-    prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho',
+    efetivo:[],
+    prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho', abrIdx:0, fatorLocal:1,
     descGeral:"Proposta para execução dos serviços de automação de iluminação e substituição do controlador do ar-condicionado central, conforme escopo detalhado abaixo. Valores e condições conforme apresentado nesta cotação.", descGeralOn:true,
     modos:{servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'},
     soTotal:{servicos:false,equip:false,despesas:false,materiais:false},
@@ -910,7 +1050,7 @@ function orcVazio(){
     finNome:"", finRede:"", finNum:"", finEnd:"",
     respNome:"", respFone:"", respEmail:"",
     equipe:"", efetivo:[],
-    prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho',
+    prazoDias:5, impostoPct:6.38, descontoPct:0, margemBase:30, status:'rascunho', abrIdx:0, fatorLocal:1,
     descGeral:"", descGeralOn:true,
     modos:{servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'},
     soTotal:{servicos:false,equip:false,despesas:false,materiais:false},
@@ -993,6 +1133,8 @@ function sanitize(){
   if(S.respContato && !S.respFone && !S.respEmail){ const p=S.respContato.split(/·|\||;/).map(s=>s.trim()).filter(Boolean); p.forEach(x=>{ if(x.indexOf('@')>-1)S.respEmail=x; else if(!S.respFone)S.respFone=x; }); if(!S.respFone&&!S.respEmail){ if(S.respContato.indexOf('@')>-1)S.respEmail=S.respContato; else S.respFone=S.respContato; } }
   if(S.finRede===undefined)S.finRede=''; if(S.finNum===undefined)S.finNum='';
   if(!S.modos)S.modos={servicos:'unit',equip:'unit',despesas:'unit',materiais:'unit'};
+  Object.keys(S.modos).forEach(k=>{ if(S.modos[k]==='geral')S.modos[k]='unit'; });   // MARGEM MANDA: aposenta o modo "valor geral" (editar preço). Blocos antigos migram p/ unitário.
+  (S.servicos||[]).concat(S.equip||[],S.despesas||[],S.materiais||[]).forEach(r=>{ if(r&&'geralEdited'in r)delete r.geralEdited; });
   if(!S.soTotal)S.soTotal={servicos:false,equip:false,despesas:false,materiais:false};
   if(!S.blocoEdited)S.blocoEdited={servicos:false,equip:false,despesas:false,materiais:false};
   if(!S.blocoTotal)S.blocoTotal={servicos:0,equip:0,despesas:0,materiais:0};
@@ -1001,9 +1143,16 @@ function sanitize(){
   ['servicos','equip','despesas','materiais'].forEach(k=>{ if(S.blocoOn[k]===undefined)S.blocoOn[k]=true; if(S.obsOn[k]===undefined)S.obsOn[k]=true; });
   if(S.descGeral===undefined)S.descGeral='';
   if(S.descGeralOn===undefined)S.descGeralOn=true;
-  if(!Array.isArray(S.efetivo))S.efetivo=[{f:'Eletrotécnico',ic:'electrical_services',n:1},{f:'Eletricista',ic:'bolt',n:1}];
+  if(!Array.isArray(S.efetivo))S.efetivo=[];
+  S.efetivo=S.efetivo.filter(c=>c&&(c.fn!=null||c.vh!=null)).map(c=>({fn:c.fn,funcao:c.funcao,nivel:c.nivel,vh:num(c.vh),pes:(+c.pes||+c.n||1)}));   // migra efetivo antigo (nome+contagem) → equipe real (função·nível·R$/h); sem R$/h é descartado
+  if(S.maoObraModo!=='manual' && S.maoObraModo!=='efetivo') S.maoObraModo='efetivo';   // (legado) modo GLOBAL — não usado no motor trabalho-fixo
+  if(!S.pessoasFn||typeof S.pessoasFn!=='object')S.pessoasFn={};   // pessoas por função (mexe só no prazo)
+  if(!(num(S.fatorMax)>0))S.fatorMax=3;   // teto configurável do fator do local
+  if(num(S.fatorLocal)>num(S.fatorMax))S.fatorLocal=num(S.fatorMax);
   if(S.margemBase===undefined)S.margemBase=30;
   if(!Array.isArray(S.comprovantes))S.comprovantes=[];
+  if(S.abrIdx===undefined)S.abrIdx=0;
+  if(S.fatorLocal===undefined||num(S.fatorLocal)<=0)S.fatorLocal=1;
   if(!S.status)S.status='rascunho';
 }
 const blocoAtivo=k=>S.blocoOn[k]!==false;
@@ -1038,7 +1187,7 @@ const BLKS=[
 
 function renderBlk(cfg){
   const modo=S.modos[cfg.key]||'unit';
-  const soT = modo==='geral' && S.soTotal[cfg.key];
+  const soT = !!(S.soTotal && S.soTotal[cfg.key]);   // "só o total" = apresentação (agrupar na proposta), independente do modo
   const rows=S[cfg.key], sub=blkSub(cfg.key);
   let cols, body, foot='';
   if(modo==='geral'){
@@ -1046,7 +1195,7 @@ function renderBlk(cfg){
     // na IMPRESSÃO some tudo isso e o cliente vê só Descrição · Qtd · Und · Preço (= valor geral).
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
     const fmtMg=m=>(m==null?'—':String(m).replace('.',',')+'%');
-    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem</th><th class="r"><span class="pint">Valor (geral)</span><span class="printonly">Preço</span></th><th class="r pint">Lucro</th><th class="pint"></th>`;
+    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r"><span class="pint">Valor (geral)</span><span class="printonly">Preço</span></th><th class="r pint">Lucro</th><th class="pint"></th>`;
     body=rows.map((r,i)=>{
       const cu=custoUn(r), custo=num(r.qtd)*cu, preco=num(r.geral), lucro=preco-custo;
       const margImpl = custo>0?(Math.round((preco/custo-1)*1000)/10):null;
@@ -1054,7 +1203,9 @@ function renderBlk(cfg){
         ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
         : `<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)"></span>`;
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
-      const editCad = (r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'';
+      const editCad = (cfg.key==='servicos')
+        ? `<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Definir o serviço: nome, unidade e receita (equipe × tempo)"><span class="material-symbols-rounded">precision_manufacturing</span></button>`
+        : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div></td>
@@ -1068,12 +1219,12 @@ function renderBlk(cfg){
           </div>
         </td>
         <td class="r money pint">${custoCell}</td>
-        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
-        <td>${undSelect(cfg.key,r.id,r.und)}</td>
+        <td class="r">${isTotal(r)?`<span class="und-fix" title="valor total do serviço — quantidade não se aplica">total</span>`:`<input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)">`}</td>
+        <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
         <td class="r pint"><span class="mgimp" id="tm_${r.id}">${fmtMg(margImpl)}</span></td>
         <td class="r">${soT?`<span class="incl printonly">incluso</span>`:''}<span class="rsw${soT?' noprint':''}"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
-        <td class="pint rowact">${cfg.key==='servicos'?`<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Compor custo por mão de obra"><span class="material-symbols-rounded">precision_manufacturing</span></button>`:''}${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+        <td class="pint rowact">${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
@@ -1083,15 +1234,17 @@ function renderBlk(cfg){
   } else if(cfg.custo){
     // MODELO base+margem: custo (do cadastro, usar/alterar) → margem → preço e lucro
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
-    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem</th><th class="r">Preço</th><th class="r pint">Lucro</th><th class="pint"></th>`;
+    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r">Preço</th><th class="r pint">Lucro</th><th class="pint"></th>`;
     body=rows.map((r,i)=>{
-      const cu=custoUn(r), preco=num(r.qtd)*cu*(1+mgOf(r)/100), custo=num(r.qtd)*cu, lucro=preco-custo;
+      const preco=linePreco(r), custo=lineCusto(r), lucro=preco-custo;
       const propria=!(r.margem===''||r.margem==null);
       const custoCell = r.usarBase
         ? `<span class="lockval"><span class="material-symbols-rounded">lock</span>${fmt(r.custoBase)}</span>`
         : `<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.custoAlt)}" inputmode="decimal" title="Valor alterado só neste orçamento" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','custoAlt')" oninput="upd('${cfg.key}','${r.id}','custoAlt',this.value)"></span>`;
       const marcaCell = cfg.mat?`<td><input class="cin mc" value="${esc(r.marca)}" oninput="upd('${cfg.key}','${r.id}','marca',this.value)"></td>`:'';
-      const editCad = (r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'';
+      const editCad = (cfg.key==='servicos')
+        ? `<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Definir o serviço: nome, unidade e receita (equipe × tempo)"><span class="material-symbols-rounded">precision_manufacturing</span></button>`
+        : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div></td>
@@ -1105,15 +1258,16 @@ function renderBlk(cfg){
           </div>
         </td>
         <td class="r money pint">${custoCell}</td>
-        <td class="r"><input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)"></td>
-        <td>${undSelect(cfg.key,r.id,r.und)}</td>
-        <td class="r pint"><div class="mkwrap"><input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span>%</span></div><div class="mktag">${propria?'<span class="pd own">própria</span>':'<span class="pd">padrão</span>'}</div></td>
+        <td class="r">${isTotal(r)?`<span class="und-fix" title="valor total do serviço — quantidade não se aplica">total</span>`:`<input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)">`}</td>
+        <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
+        <td class="r pint"><div class="mkwrap ${propria?'own':'base'}">${propria?'<span class="mkne" title="diferente da margem base">&ne;</span>':''}<input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span class="mkpc">%</span>${propria?`<span class="mkwarn material-symbols-rounded" title="margem própria — fora da base ${num(S.margemBase)}%">warning</span><button class="mkreset" title="voltar à margem base" onclick="resetMargem('${cfg.key}','${r.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</div></td>
         <td class="r money preco" id="tp_${r.id}">${fmt(preco)}</td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
-        <td class="pint rowact">${cfg.key==='servicos'?`<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Compor custo por mão de obra"><span class="material-symbols-rounded">precision_manufacturing</span></button>`:''}${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+        <td class="pint rowact">${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
+    if(soT){ foot=`<tfoot><tr class="ftot"><td class="ftl" colspan="${cfg.mat?8:7}">Total do bloco (agrupado)</td><td class="r money"><b>${fmt(blkSub(cfg.key))}</b></td><td colspan="2"></td></tr></tfoot>`; }
   }
   const obsTxt=(S.obs&&S.obs[cfg.key])||'';
   const obsShow=!(S.obsOn&&S.obsOn[cfg.key]===false);
@@ -1130,16 +1284,11 @@ function renderBlk(cfg){
       <span class="ic"><span class="material-symbols-rounded">${cfg.icon}</span></span>
       <h2>${cfg.titulo}</h2>
       <div class="modosw">
-        ${modo==='geral'?`<button class="chip ${soT?'on':''}" onclick="toggleSoTotal('${cfg.key}')" title="Ocultar o valor de cada item e mostrar só o total do bloco"><span class="material-symbols-rounded">${soT?'visibility_off':'visibility'}</span>Só o total</button>`:''}
-        <span class="modolbl" id="modolbl_${cfg.key}">${modo==='geral'?'Valor geral':'Valor unitário'}</span>
-        <div class="ex-switch ${modo==='geral'?'on':''}" onclick="toggleModo('${cfg.key}')" title="Alterna: valor unitário (qtd × preço) ⇄ valor geral (verba única)">
-          <span class="lb off">UN</span><span class="lb onx">GER</span>
-          <span class="kb"><span class="pin"></span></span>
-        </div>
+        <button class="chip ${soT?'on':''}" onclick="toggleSoTotal('${cfg.key}')" title="Na proposta do cliente: agrupar os itens num total só (esconde item a item). Não muda o cálculo."><span class="material-symbols-rounded">${soT?'visibility_off':'format_list_bulleted'}</span>${soT?'Só o total':'Detalhado'}</button>
       </div>
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
-    ${cfg.key==='servicos'?efetivoHtml():''}
+    ${cfg.key==='servicos'?efetivoHtml()+fatoresObraHtml():''}
     ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: a edição é igual (você vê e ajusta cada item), mas na <b>impressão / envio da proposta</b> os itens saem como <b>“incluso”</b> e o valor aparece só no <b>total agrupado</b> do bloco — não item por item.</span></div>`:''}
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button></div>
@@ -1157,35 +1306,119 @@ const FUNCS=[
   {f:'Téc. de segurança',ic:'health_and_safety'},
   {f:'Motorista',ic:'local_shipping'}
 ];
-const efTotal=()=>(S.efetivo||[]).reduce((a,c)=>a+(+c.n||0),0);
-function efFrase(){ const p=(S.efetivo||[]).filter(c=>+c.n>0).map(c=>c.n+' '+c.f+(c.n>1?'s':'')); return p.join(' · '); }
+const efTotal=()=>(S.efetivo||[]).reduce((a,c)=>a+(+c.pes||0),0);
+function efMao(c){ const m=MAOOBRA[c.fn]; if(m)return m; return {funcao:c.funcao||'(profissional)',nivel:c.nivel||'',vh:num(c.vh)}; }   // resolve pela MAOOBRA; fallback nos dados guardados
+function efFrase(){ return (S.efetivo||[]).filter(c=>+c.pes>0).map(c=>{const m=efMao(c);return c.pes+' '+m.funcao+(m.nivel?' '+m.nivel:'');}).join(' · '); }
+const _d1=n=>Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:1});
+// agrega a mão de obra POR FUNÇÃO (soma o trabalho de todos os serviços montados). Pessoas mexe só no prazo.
+function aggMaoObra(){
+  const map={};
+  (S.servicos||[]).forEach(r=>{ const c=r.composicao; if(!c||c.modo==='manual')return;
+    const dif=(DIFIC[c.dif||0]||DIFIC[0]||{mult:1}).mult;
+    const oldH=(c.un==='dias')?num(c.tv)*JORNADA:(c.un==='minutos')?num(c.tv)/60:num(c.tv);
+    (c.mo||[]).forEach(x=>{ const m=MAOOBRA[x.fn]; if(!m)return;
+      const trab=((x.trab!=null)?num(x.trab):num(x.pes||0)*oldH/JORNADA)*dif;   // homem-dia (já com dificuldade)
+      const k=m.funcao+'|'+m.nivel;
+      if(!map[k])map[k]={k,funcao:m.funcao,nivel:m.nivel,vh:num(m.vh),trab:0};
+      map[k].trab+=trab; }); });
+  const tm=tempoMult();   // abrangência estica o prazo
+  return Object.keys(map).map(k=>{ const f=map[k]; const pes=Math.max(1,(S.pessoasFn&&S.pessoasFn[k])||1);
+    return {...f, horas:f.trab*JORNADA, custo:f.trab*f.vh*JORNADA, pes, dias:(f.trab/pes)*tm}; })
+    .sort((a,b)=>b.horas-a.horas);
+}
+function pesFn(k,d){ if(!S.pessoasFn)S.pessoasFn={}; S.pessoasFn[k]=Math.max(1,(+S.pessoasFn[k]||1)+d); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function efetivoHtml(){
-  const crew=S.efetivo||[];
-  const rows=crew.map((c,i)=>`<div class="efrow"><span class="efav"><span class="material-symbols-rounded">${c.ic||'person'}</span></span>
-      <div class="eff"><div class="efn">${esc(c.f)}</div><div class="efd">função na equipe</div></div>
-      <div class="efstep"><button onclick="efDec(${i})" title="−"><span class="material-symbols-rounded">remove</span></button><span class="efqt">${c.n}</span><button onclick="efInc(${i})" title="+"><span class="material-symbols-rounded">add</span></button></div>
-      <button class="efrm" onclick="efRm(${i})" title="Remover função"><span class="material-symbols-rounded">close</span></button></div>`).join('');
+  const fs=aggMaoObra();
+  if(!fs.length) return `<div class="efcard noprint">
+    <div class="efhd"><span class="material-symbols-rounded">groups</span><h3>Mão de obra da proposta</h3></div>
+    <div class="efhint">Componha os serviços (botão <span class="material-symbols-rounded" style="font-size:14px;color:var(--pri)">precision_manufacturing</span>) e as <b>funções</b> aparecem aqui, somadas. Você só decide quantas pessoas.</div>
+  </div>`;
+  const gargalo=fs.reduce((m,f)=>Math.max(m,f.dias),0);
+  const MO=fs.reduce((a,f)=>a+f.custo,0), totPes=fs.reduce((a,f)=>a+f.pes,0);
+  const rows=fs.map(f=>{ const isG=Math.abs(f.dias-gargalo)<1e-9&&fs.length>1; return `<div class="moarow">
+    <div class="moawho"><span class="efav"><span class="material-symbols-rounded">engineering</span></span>
+      <div><div class="efn">${esc(f.funcao)} · ${esc(f.nivel)}</div><div class="efd">${fmt(f.vh)}/h · <b>${_d1(f.horas)} h</b> acum.</div></div></div>
+    <div class="moastep"><button onclick="pesFn('${f.k.replace(/'/g,"\\'")}',-1)">−</button><span class="v">${f.pes}</span><button onclick="pesFn('${f.k.replace(/'/g,"\\'")}',1)">+</button></div>
+    <div class="moapz ${isG?'g':''}"><b>${_d1(f.dias)} d</b><br><span>${isG?'gargalo':'&nbsp;'}</span></div>
+    <div class="moacusto">${fmt(f.custo)}</div>
+  </div>`; }).join('');
   return `<div class="efcard noprint">
-    <div class="efhd"><span class="material-symbols-rounded">engineering</span><h3>Efetivo na obra</h3><span class="efcnt"><span class="material-symbols-rounded">group</span>${efTotal()} pessoas</span></div>
-    ${rows||'<div class="efempty">Sem funções definidas. Adicione abaixo.</div>'}
-    <div class="effoot"><button class="efadd" onclick="efAddOpen()"><span class="material-symbols-rounded">add</span>função</button>
-      <span class="efprazo"><span class="material-symbols-rounded">event</span>Prazo estimado <input type="number" min="1" value="${num(S.prazoDias)||1}" oninput="efSetDias(this.value)"> dias</span></div>
+    <div class="efhd"><span class="material-symbols-rounded">groups</span><h3>Mão de obra da proposta</h3><span class="efcnt"><span class="material-symbols-rounded">event</span>${_d1(gargalo)} dias</span></div>
+    <div class="efhint">As <b>funções somadas</b> dos serviços. Mais pessoas → menos prazo; o <b>custo não muda</b>. O gargalo (função mais carregada) está em âmbar e dita o prazo.</div>
+    <div class="moahd"><span>Função · nível</span><span>Pessoas</span><span>Prazo</span><span>Custo</span></div>
+    ${rows}
+    <div class="moarow moatot"><div class="moawho"><span style="width:34px"></span><div class="efn">Total</div></div>
+      <div class="moapz" style="text-align:center"><b>${totPes}</b><br><span>pessoas</span></div>
+      <div class="moapz"><b>${_d1(gargalo)} d</b><br><span>prazo</span></div>
+      <div class="moacusto"><b>${fmt(MO)}</b></div></div>
   </div>`;
 }
-function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m="equipe"]'); if(el)el.value=S.equipe; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
-function efInc(i){ if(!S.efetivo[i])return; S.efetivo[i].n=(+S.efetivo[i].n||0)+1; efApply(); }
-function efDec(i){ if(!S.efetivo[i])return; S.efetivo[i].n=Math.max(0,(+S.efetivo[i].n||0)-1); if(S.efetivo[i].n===0)S.efetivo.splice(i,1); efApply(); }
+function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m="equipe"]'); if(el)el.value=S.equipe; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); recalc(); }   // efetivo dirige o custo dos serviços que o usam
+// ===== Fatores da obra (abrangência + fator do local) — só nos serviços montados =====
+function fatorMax(){ return num(S.fatorMax)>0?num(S.fatorMax):3; }
+function fatoresObraHtml(){
+  const pct=n=>num(n)>0?('+'+num(n)+'%'):'—';
+  const abrOpts=(ABRANGENCIA||[]).map((a,j)=>`<option value="${j}" ${j==(num(S.abrIdx)||0)?'selected':''}>${esc(a.rotulo)}${(num(a.custo_pct)||num(a.tempo_pct))?' ('+pct(a.custo_pct)+' custo · '+pct(a.tempo_pct)+' prazo)':''}</option>`).join('');
+  const fmax=fatorMax();
+  const fl=Math.min(num(S.fatorLocal)||1,fmax);
+  const presets=[[1,'1'],[1.5,'1,5'],[2,'2'],[3,'3']].filter(([f])=>f<=fmax).map(([f,l])=>`<button class="flbtn ${fl==f?'on':''}" onclick="setFatorLocal(${f})">${l}×</button>`).join('');
+  const abrDesc={local:'na sua base / cidade',estadual:'dentro do estado',nacional:'outro estado ou país'};
+  const cfg = S._foCfg ? `<div class="fo-cfg">
+      <div class="fo-cfg-sec">Abrangência — <b>suas regiões</b>; quanto mais <b>longe</b>, mais <b>encarece</b> e <b>demora</b></div>
+      <div class="fo-cfg-tbl">
+        <div class="fo-cfg-h fo-cfg-g4"><span>Região</span><span><span class="material-symbols-rounded">payments</span>Encarece o custo</span><span><span class="material-symbols-rounded">schedule</span>Estica o prazo</span><span></span></div>
+        ${(ABRANGENCIA||[]).map((a,j)=>`<div class="fo-cfg-tr fo-cfg-g4">
+          <span class="fo-cfg-namewrap"><input class="fo-cfg-name" value="${esc(a.rotulo)}" onchange="setAbrRotulo(${j},this.value)" placeholder="nome da região">${abrDesc[a.nivel]?`<small>${abrDesc[a.nivel]}</small>`:''}</span>
+          <span class="fo-cfg-in">+<input type="number" step="1" min="0" value="${num(a.custo_pct)}" onchange="setAbrPct(${j},'custo_pct',this.value)"><i>%</i></span>
+          <span class="fo-cfg-in">+<input type="number" step="1" min="0" value="${num(a.tempo_pct)}" onchange="setAbrPct(${j},'tempo_pct',this.value)"><i>%</i></span>
+          <button class="fo-cfg-del" onclick="abrDel(${j})" ${(ABRANGENCIA||[]).length<=1?'disabled':''} title="remover região"><span class="material-symbols-rounded">close</span></button></div>`).join('')}
+        <button class="fo-cfg-add" onclick="abrAdd()"><span class="material-symbols-rounded">add</span>adicionar região</button>
+      </div>
+      <div class="fo-cfg-sec">Fator do local — <b>teto máximo</b> (a pior dificuldade não passa disso)</div>
+      <div class="fo-cfg-tr" style="grid-template-columns:1fr auto"><span class="fo-cfg-lb">Máximo permitido<small>obras muito complexas</small></span><span class="fo-cfg-in"><input type="number" step="0.5" min="1" max="5" value="${String(fmax).replace('.',',')}" onchange="setFatorMax(this.value)"><i>×</i></span></div>
+    </div>` : '';
+  return `<div class="fatobra noprint">
+    <div class="fo-t"><span class="material-symbols-rounded">tune</span>Fatores da obra<span class="fo-h"> — aplicam ao custo dos serviços montados</span>
+      <button class="fo-cfgbtn ${S._foCfg?'on':''}" onclick="toggleFoCfg()" title="Configurar as faixas"><span class="material-symbols-rounded">${S._foCfg?'expand_less':'settings'}</span></button></div>
+    <div class="fo-grid">
+      <div class="fo-row"><label><span class="material-symbols-rounded">pin_drop</span>Abrangência</label><select class="fo-sel" onchange="setAbr(this.value)">${abrOpts}</select></div>
+      <div class="fo-row"><label><span class="material-symbols-rounded">terrain</span>Fator do local</label><div class="fo-fl">${presets}<input class="fo-flin" value="${String(fl).replace('.',',')}" inputmode="decimal" onchange="setFatorLocal(this.value)" title="ou digite (até ${String(fmax).replace('.',',')}×)">×</div></div>
+    </div>
+    ${cfg}
+  </div>`;
+}
+function toggleFoCfg(){ S._foCfg=!S._foCfg; renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function setAbr(v){ S.abrIdx=+v||0; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function setAbrPct(j,field,v){ if(!ABRANGENCIA[j])return; ABRANGENCIA[j][field]=Math.max(0,num(v));
+  if(CLOUD && !MODELO_V2){ SB.from('orc_abrangencia').update({[field]:ABRANGENCIA[j][field]}).eq('nivel',ABRANGENCIA[j].nivel).then(({error})=>{ if(error)console.error('abr cfg',error); }); }
+  save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function setAbrRotulo(j,v){ if(!ABRANGENCIA[j])return; v=(v||'').trim(); if(!v)return; ABRANGENCIA[j].rotulo=v;
+  if(CLOUD && !MODELO_V2){ SB.from('orc_abrangencia').update({rotulo:v}).eq('nivel',ABRANGENCIA[j].nivel).then(({error})=>{ if(error)console.error('abr rotulo',error); }); }
+  save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function abrAdd(){ const ordem=(ABRANGENCIA||[]).length; const nivel='r'+uid(); const row={nivel,rotulo:'Nova região',custo_pct:0,tempo_pct:0,ordem};
+  ABRANGENCIA.push(row);
+  if(CLOUD && !MODELO_V2){ SB.from('orc_abrangencia').insert({nivel,rotulo:row.rotulo,custo_pct:0,tempo_pct:0,ordem}).then(({error})=>{ if(error)console.error('abr add',error); }); }
+  save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function abrDel(j){ if(!ABRANGENCIA[j]||ABRANGENCIA.length<=1)return; const nivel=ABRANGENCIA[j].nivel; ABRANGENCIA.splice(j,1);
+  if(num(S.abrIdx)>=ABRANGENCIA.length)S.abrIdx=0;
+  if(CLOUD && !MODELO_V2){ SB.from('orc_abrangencia').delete().eq('nivel',nivel).then(({error})=>{ if(error)console.error('abr del',error); }); }
+  save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function setFatorMax(v){ S.fatorMax=Math.max(1,Math.min(5,num(v)||3)); if(num(S.fatorLocal)>S.fatorMax)S.fatorLocal=S.fatorMax; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function setFatorLocal(f){ f=num(f); const fx=fatorMax(); f=Math.max(1,Math.min(fx,f)); S.fatorLocal=f; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function efInc(i){ if(!S.efetivo[i])return; S.efetivo[i].pes=(+S.efetivo[i].pes||0)+1; efApply(); }
+function efDec(i){ if(!S.efetivo[i])return; S.efetivo[i].pes=Math.max(0,(+S.efetivo[i].pes||0)-1); if(S.efetivo[i].pes===0)S.efetivo.splice(i,1); efApply(); }
 function efRm(i){ S.efetivo.splice(i,1); efApply(); }
 function efSetDias(v){ S.prazoDias=Math.max(1,parseInt(v)||1); const el=document.querySelector('[data-f="prazoDias"]'); if(el)el.value=S.prazoDias; save(); }
 function efAddOpen(){
-  const have=new Set((S.efetivo||[]).map(c=>c.f));
-  const disp=FUNCS.filter(f=>!have.has(f.f));
+  if(!MAOOBRA.length){ if(!CLOUD)alert('Faça login pra carregar a mão de obra do banco e montar o efetivo.'); else alert('Cadastre a mão de obra (Comercial › Cadastros › Mão de obra) antes de montar o efetivo.'); return; }
+  const have=new Set((S.efetivo||[]).map(c=>c.fn));
   PICK_TARGET=null;
-  document.getElementById('pickTitle').textContent='Adicionar função ao efetivo';
-  document.getElementById('pickBody').innerHTML=disp.length?disp.map(f=>`<button class="pkitem" onclick="efAdd('${f.f}')"><span class="pknm"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;color:var(--pri);margin-right:7px">${f.ic}</span>${f.f}</span></button>`).join(''):'<div style="color:var(--tx3);padding:12px;font-size:12px">Todas as funções já estão na equipe.</div>';
+  document.getElementById('pickTitle').textContent='Adicionar profissional ao efetivo';
+  const itens=MAOOBRA.map((m,j)=>({m,j})).filter(x=>!have.has(x.j));
+  document.getElementById('pickBody').innerHTML=itens.length?itens.map(x=>`<button class="pkitem" onclick="efAdd(${x.j})"><span class="pknm"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;color:var(--pri);margin-right:7px">engineering</span>${esc(x.m.funcao)}${x.m.nivel?' · '+esc(x.m.nivel):''} <span style="color:var(--tx3)">(${fmt(x.m.vh)}/h)</span></span></button>`).join(''):'<div style="color:var(--tx3);padding:12px;font-size:12px">Todos os profissionais já estão no efetivo.</div>';
   document.getElementById('pickModal').classList.add('open');
 }
-function efAdd(f){ const ic=(FUNCS.find(x=>x.f===f)||{}).ic||'person'; if(!Array.isArray(S.efetivo))S.efetivo=[]; S.efetivo.push({f,ic,n:1}); closePick(); efApply(); }
+function efAdd(fn){ const m=MAOOBRA[fn]||{}; if(!Array.isArray(S.efetivo))S.efetivo=[]; S.efetivo.push({fn,funcao:m.funcao,nivel:m.nivel,vh:num(m.vh),pes:1}); closePick(); efApply(); }
 
 function toggleModo(blk){
   const next = (S.modos[blk]||'unit')==='unit' ? 'geral' : 'unit';
@@ -1224,18 +1457,12 @@ function upd(blk,id,field,val){
   save();
 }
 function refreshRow(blk,r){
-  const modo=S.modos[blk]||'unit';
-  const c=document.getElementById('tt_'+r.id);
-  if(c){const t=lineTot(r,modo); c.textContent=fmt(t); c.className='tot '+(t?'':'z');}
-  const cu=custoUn(r), custo=num(r.qtd)*cu;
-  const pe=document.getElementById('tp_'+r.id), le=document.getElementById('tl_'+r.id), me=document.getElementById('tm_'+r.id);
-  if(modo==='geral'){   // valor geral: preço = valor digitado; margem e lucro são derivados (ao vivo)
-    const preco=num(r.geral), marg=custo>0?(Math.round((preco/custo-1)*1000)/10):null;
-    if(le) le.textContent=fmt(preco-custo);
-    if(me) me.textContent=(marg==null?'—':String(marg).replace('.',',')+'%');
-  } else if(pe){ const preco=num(r.qtd)*cu*(1+mgOf(r)/100);
-    pe.textContent=fmt(preco); if(le)le.textContent=fmt(preco-custo); }
-  const bv=document.getElementById('bsv_'+r.id); if(bv) bv.textContent=fmt(num(r.custoBase));   // legenda "base:" ao vivo
+  const preco=linePreco(r), custo=lineCusto(r);
+  const c=document.getElementById('tt_'+r.id); if(c){ c.textContent=fmt(preco); c.className='tot '+(preco?'':'z'); }
+  const pe=document.getElementById('tp_'+r.id), le=document.getElementById('tl_'+r.id);
+  if(pe) pe.textContent=fmt(preco);
+  if(le) le.textContent=fmt(preco-custo);
+  const bv=document.getElementById('bsv_'+r.id); if(bv) bv.textContent=fmt(num(r.custoBase));
 }
 function togBase(blk,id){
   const r=S[blk].find(x=>x.id===id); if(!r)return;
@@ -1266,10 +1493,13 @@ function pickCad(blk,cid){
   if(PICK_TARGET){                                   // TROCA: substitui o item na mesma posição, mantendo a qtd
     const r=S[blk].find(x=>x.id===PICK_TARGET);
     if(r){ r.desc=c.nome; r.catId=c.id; r.custoBase=c.custo; r.usarBase=true; r.custoAlt=c.custo;
-           r.und=c.und||UND_DFLT[blk]; r.margem=(c.margem===undefined?'':c.margem); if('marca' in r) r.marca=c.marca||''; }
+           r.und=c.und||UND_DFLT[blk]; r.margem=(c.margem===undefined?'':c.margem); if('marca' in r) r.marca=c.marca||'';
+           if(c.composicao)r.composicao=JSON.parse(JSON.stringify(c.composicao)); else delete r.composicao; }   // HERDA a receita do cadastro
     save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick(); return;
   }
-  S[blk].push(rowSvc(c.nome,1,c.und||UND_DFLT[blk],c.custo,(c.margem===undefined?'':c.margem),c.id,c.marca||''));
+  const nr=rowSvc(c.nome,1,c.und||UND_DFLT[blk],c.custo,(c.margem===undefined?'':c.margem),c.id,c.marca||'');
+  if(c.composicao)nr.composicao=JSON.parse(JSON.stringify(c.composicao));   // HERDA a receita do cadastro
+  S[blk].push(nr);
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
 }
 function addAvulso(blk){
@@ -1280,14 +1510,28 @@ function addAvulso(blk){
 }
 /* + Novo: cadastra no catálogo (orc_catalogo) e adiciona na folha */
 const BLK_TIPO={servicos:'servico',equip:'equipamento',despesas:'despesa',materiais:'material'};
-let _ncBlk=null, _ncEdit=null, _ncEditRow=null;   // _ncEdit = id do item real do catálogo; _ncEditRow = linha a religar
+let _ncBlk=null, _ncEdit=null, _ncEditRow=null, _ncComposicao=null, _ncNew=false;   // _ncNew = criando serviço novo (mostra o botão Compor aqui); editar existente compõe pela engrenagem da linha
+function ncComposBox(blk){ const isServ=(blk==='servicos');
+  const box=document.getElementById('nc_composBox'); if(box)box.style.display=isServ?'block':'none';
+  // SERVIÇO: custo vem da receita (só-leitura); número solto só na LINHA do orçamento (usar base/editar). Margem é comercial → fora do cadastro.
+  const custo=document.getElementById('nc_custo'), lbl=document.getElementById('nc_custo_lbl'), mg=document.getElementById('nc_mgcell'), grid=document.getElementById('nc_grid');
+  if(custo){ custo.readOnly=isServ; custo.style.background=isServ?'var(--surf2)':'var(--surf)'; custo.style.color=isServ?'var(--tx2)':'var(--tx)'; custo.title=isServ?'Vem da receita — componha abaixo':''; }
+  if(lbl) lbl.textContent=isServ?'Custo (da receita)':'Custo (R$)';
+  if(mg) mg.style.display=isServ?'none':'';
+  if(grid) grid.style.gridTemplateColumns=isServ?'1fr 1fr':'1fr 1fr 1fr';
+  const btn=document.getElementById('nc_composBtn'); if(btn)btn.style.display=(isServ&&_ncNew)?'':'none';   // botão Compor só ao CRIAR; existente compõe pela engrenagem da linha
+  ncComposResumo(); }
+function ncComposResumo(){ const el=document.getElementById('nc_composResumo'); if(!el)return;
+  if(_ncComposicao&&(_ncComposicao.mo||[]).length){ const n=(_ncComposicao.mo||[]).length; el.innerHTML='<b style="color:var(--green,#3b6d11)">Receita definida</b> — '+n+' profissional(is) · '+(_ncComposicao.tv||'')+' '+(_ncComposicao.un||'')+'. O custo acima vem da composição.'; }
+  else { el.textContent='Sem receita — custo digitado direto. Componha pela equipe × tempo pra virar receita reutilizável.'; } }
 function openNovoCat(blk){
-  PICK_TARGET=null; _ncBlk=blk; _ncEdit=null; _ncEditRow=null; closePick();
+  PICK_TARGET=null; _ncBlk=blk; _ncEdit=null; _ncEditRow=null; _ncComposicao=null; _ncNew=true; closePick();
   const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
   document.getElementById('novoCatTitle').textContent='Novo '+sing+' — salva no catálogo';
-  ['nc_nome','nc_custo','nc_margem'].forEach(id=>document.getElementById(id).value='');
+  ['nc_nome','nc_custo','nc_margem'].forEach(id=>document.getElementById(id).value=''); agrow(document.getElementById('nc_nome'));
   fillUnd(document.getElementById('nc_und'),(UND_DFLT[blk]||'UND'));
   fillCateg(document.getElementById('nc_cat'),blk,'');
+  ncComposBox(blk);
   document.getElementById('novoCatModal').classList.add('open');
   setTimeout(()=>document.getElementById('nc_nome').focus(),40);
 }
@@ -1302,18 +1546,37 @@ function openEditCat(blk,rowId){
   const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
   const src = c || {nome:r.desc, custo:(r.usarBase?r.custoBase:num(r.custoAlt)), und:r.und, margem:r.margem, categoria:''};
   document.getElementById('novoCatTitle').textContent = realCat ? ('Editar '+sing+' no cadastro — valor padrão') : ('Cadastrar '+sing+' no catálogo');
-  document.getElementById('nc_nome').value=src.nome||'';
+  document.getElementById('nc_nome').value=src.nome||''; agrow(document.getElementById('nc_nome'));
   fillUnd(document.getElementById('nc_und'), src.und||UND_DFLT[blk]||'UND');
   document.getElementById('nc_custo').value=(src.custo!=null&&src.custo!==''?moneyVal(src.custo):'');
   document.getElementById('nc_margem').value=(src.margem===''||src.margem==null?'':src.margem);
   fillCateg(document.getElementById('nc_cat'),blk,src.categoria||'');
+  _ncComposicao=(c&&c.composicao)||(r&&r.composicao)||null; _ncNew=false;   // carrega a receita (do catálogo ou da linha); editar existente → compor pela engrenagem
+  ncComposBox(blk);
   document.getElementById('novoCatModal').classList.add('open');
   setTimeout(()=>document.getElementById('nc_custo').focus(),40);
 }
-function closeNovoCat(){ document.getElementById('novoCatModal').classList.remove('open'); _ncBlk=null; _ncEdit=null; _ncEditRow=null; }
+function closeNovoCat(){ document.getElementById('novoCatModal').classList.remove('open'); _ncBlk=null; _ncEdit=null; _ncEditRow=null; _ncComposicao=null; }
+// compor a RECEITA no cadastro (não numa linha do orçamento) — reusa o mesmo compositor
+function openCompCadastro(){
+  COMP={cadastro:true,blk:null,rowId:null,mo:[],desp:[],dif:0,modo:'calc',base:'unidade',valorManual:0,_custo:0,_trab:0,_mo:0,_dsp:0};
+  const c=_ncComposicao;
+  if(c){ COMP.mo=moTrab(c); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; }
+  if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';   // sem mão de obra → cai no Manual
+  if(!COMP.mo.length) COMP.mo=[{fn:0,trab:1,un:'di'}];
+  document.getElementById('compTitle').textContent='Serviço';
+  const nmi=document.getElementById('comp_nome'); if(nmi){ nmi.value=(document.getElementById('nc_nome').value||''); agrow(nmi); }
+  fillUnd(document.getElementById('comp_und'), (document.getElementById('nc_und').value||'UND'));
+  document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
+  const mvi=document.getElementById('comp_manual'); if(mvi)mvi.value=COMP.valorManual?String(COMP.valorManual).replace('.',','):'';
+  setCompModo(COMP.modo,true); setCompBase(COMP.base,true);
+  compRenderMO(); compRenderDesp(); compCalc();
+  document.getElementById('compModal').classList.add('open');
+}
 function saveNovoCat(){
   const blk=_ncBlk; if(!blk)return;
   const nome=document.getElementById('nc_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
+  if(blk==='servicos' && !(_ncComposicao&&(_ncComposicao.mo||[]).length)){ alert('Componha a receita do serviço (equipe × tempo) antes de salvar — no cadastro, o custo do serviço vem da receita. Número solto você usa só na linha do orçamento (editar).'); return; }
   const und=document.getElementById('nc_und').value.trim()||'UND';
   const custo=num(document.getElementById('nc_custo').value);
   const mv=document.getElementById('nc_margem').value.trim(); const margem=mv===''?null:num(mv);
@@ -1322,13 +1585,13 @@ function saveNovoCat(){
     const applyLocal=()=>{
       CATALOGO[blk]=CATALOGO[blk]||[];
       let ci=CATALOGO[blk].find(x=>x.id===_ncEdit);
-      if(ci){ ci.nome=nome; ci.custo=custo; ci.und=und; ci.margem=(margem==null?'':margem); ci.categoria=cat||''; }
-      else CATALOGO[blk].push({id:_ncEdit,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||''});
-      (S[blk]||[]).forEach(r=>{ if(r.catId===_ncEdit){ r.desc=nome; r.custoBase=custo; if(r.usarBase) r.custoAlt=custo; } });
+      if(ci){ ci.nome=nome; ci.custo=custo; ci.und=und; ci.margem=(margem==null?'':margem); ci.categoria=cat||''; ci.composicao=_ncComposicao||null; }
+      else CATALOGO[blk].push({id:_ncEdit,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||'',composicao:_ncComposicao||null});
+      (S[blk]||[]).forEach(r=>{ if(r.catId===_ncEdit){ r.desc=nome; r.custoBase=custo; r.und=und; if(r.usarBase) r.custoAlt=custo; if(_ncComposicao)r.composicao=JSON.parse(JSON.stringify(_ncComposicao)); } });
       save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closeNovoCat();
     };
     if(CLOUD){
-      SB.from('orc_catalogo').update({nome,unidade:und,custo,margem,categoria:cat}).eq('id',_ncEdit).then(({error})=>{
+      SB.from('orc_catalogo').update({nome,unidade:und,custo,margem,categoria:cat,composicao:_ncComposicao||null}).eq('id',_ncEdit).then(({error})=>{
         if(error){ console.error(error); alert('Erro ao atualizar no catálogo: '+error.message); return; }
         applyLocal();
       });
@@ -1339,13 +1602,13 @@ function saveNovoCat(){
   const rowId=_ncEditRow;
   const oldCat = rowId ? ((S[blk].find(x=>x.id===rowId)||{}).catId||null) : null;
   const finish=(id)=>{ id=id||uid();
-    CATALOGO[blk]=CATALOGO[blk]||[]; CATALOGO[blk].push({id,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||''});
+    CATALOGO[blk]=CATALOGO[blk]||[]; CATALOGO[blk].push({id,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||'',composicao:_ncComposicao||null});
     if(rowId){ // religa a linha (e irmãs com o mesmo catId antigo) ao cadastro criado
-      (S[blk]||[]).forEach(r=>{ if(r.id===rowId || (oldCat && r.catId===oldCat)){ r.catId=id; r.desc=nome; r.custoBase=custo; r.und=und; r.margem=(margem==null?'':margem); if(r.usarBase) r.custoAlt=custo; } });
-    } else { S[blk].push(rowSvc(nome,1,und,custo,(margem==null?'':margem),id,'')); }
+      (S[blk]||[]).forEach(r=>{ if(r.id===rowId || (oldCat && r.catId===oldCat)){ r.catId=id; r.desc=nome; r.custoBase=custo; r.und=und; r.margem=(margem==null?'':margem); if(r.usarBase) r.custoAlt=custo; if(_ncComposicao)r.composicao=JSON.parse(JSON.stringify(_ncComposicao)); } });
+    } else { const nr=rowSvc(nome,1,und,custo,(margem==null?'':margem),id,''); if(_ncComposicao)nr.composicao=JSON.parse(JSON.stringify(_ncComposicao)); S[blk].push(nr); }
     save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closeNovoCat(); };
   if(CLOUD){
-    SB.from('orc_catalogo').insert({empresa_id:EMPRESA_ID,tipo:BLK_TIPO[blk],nome,unidade:und,custo,margem,categoria:cat,ativo:true}).select('id').then(({data,error})=>{
+    SB.from('orc_catalogo').insert({empresa_id:EMPRESA_ID,tipo:BLK_TIPO[blk],nome,unidade:und,custo,margem,categoria:cat,ativo:true,composicao:_ncComposicao||null}).select('id').then(({data,error})=>{
       if(error){ console.error(error); alert('Erro ao salvar no catálogo: '+error.message); return; }
       finish(data&&data[0]&&data[0].id);
     });
@@ -1414,54 +1677,131 @@ async function carregarAbrangencia(){
   try{ const {data,error}=await SB.from('orc_abrangencia').select('nivel,rotulo,ordem,custo_pct,tempo_pct').order('ordem');
     if(!error && data && data.length) ABRANGENCIA=data;
   }catch(e){ console.error('abrangencia',e); }
-  if(!ABRANGENCIA.length) ABRANGENCIA=[{nivel:'local',rotulo:'Local',custo_pct:0,tempo_pct:0},{nivel:'estadual',rotulo:'Estadual',custo_pct:35,tempo_pct:15},{nivel:'nacional',rotulo:'Nacional',custo_pct:80,tempo_pct:30}];
+  if(!ABRANGENCIA.length) ABRANGENCIA=[{nivel:'local',rotulo:'Local',custo_pct:0,tempo_pct:0},{nivel:'estadual',rotulo:'Estadual',custo_pct:10,tempo_pct:8},{nivel:'nacional',rotulo:'Nacional',custo_pct:20,tempo_pct:15}];
 }
 // escala fixa de dificuldade (multiplica o tempo)
 const DIFIC=[{n:'Normal',mult:1.00},{n:'Moderada',mult:1.25},{n:'Alta',mult:1.50},{n:'Severa',mult:2.00}];
-/* ---------- compositor de custo do serviço (mão de obra × dificuldade × abrangência) ---------- */
-let COMP={blk:null,rowId:null,mo:[],dif:0,abr:0,_custo:0,_tempo:0};
+/* ---------- compositor de custo do serviço — MOTOR NOVO (equipe × tempo dias/horas + despesas) ---------- */
+const JORNADA=8;   // horas por dia (conversão dias↔horas)
+let COMP={blk:null,rowId:null,mo:[],desp:[],dif:0,modo:'calc',base:'unidade',valorManual:0,_custo:0,_trab:0,_mo:0,_dsp:0};
+// normaliza a mão de obra da composição p/ {fn, trab(homem-dia)} — converte composição antiga (pes + tv/un) em diárias
+function moTrab(c){
+  const oldH=c?((c.un==='dias')?num(c.tv)*JORNADA:(c.un==='minutos')?num(c.tv)/60:num(c.tv)):0;
+  return ((c&&c.mo)||[]).map(x=>({fn:x.fn, trab:(x.trab!=null)?num(x.trab):(num(x.pes||0)*oldH/JORNADA), un:x.un||'di'}));
+}
 function openComp(blk,rowId){
   const r=(S[blk]||[]).find(x=>x.id===rowId); if(!r)return;
-  if(!MAOOBRA.length){ alert('Configure os valores de mão de obra em Gestão › Mão de obra (função × nível) antes de compor.'); return; }
-  COMP={blk,rowId,mo:[],dif:0,abr:0,_custo:0,_tempo:0};
-  if(r.composicao){ COMP.mo=(r.composicao.mo||[]).map(x=>({...x})); COMP.dif=r.composicao.dif||0; COMP.abr=r.composicao.abr||0; }
-  if(!COMP.mo.length) COMP.mo=[{fn:0,pes:1,h:1}];
-  document.getElementById('compTitle').textContent='Compor custo · '+(r.desc||'serviço');
+  COMP={blk,rowId,mo:[],desp:[],dif:0,modo:'calc',base:'unidade',valorManual:0,_custo:0,_trab:0,_mo:0,_dsp:0};
+  const c=r.composicao;
+  if(c){ COMP.mo=moTrab(c); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; }
+  if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';   // sem mão de obra → cai no Manual
+  if(!COMP.mo.length) COMP.mo=[{fn:0,trab:1,un:'di'}];
+  document.getElementById('compTitle').textContent='Serviço';
+  const nmi=document.getElementById('comp_nome'); if(nmi){ nmi.value=r.desc||''; nmi.readOnly=false; agrow(nmi); }
+  fillUnd(document.getElementById('comp_und'), r.und||UND_DFLT[blk]||'UND');
   document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
-  document.getElementById('comp_abr').innerHTML=ABRANGENCIA.map((a,j)=>`<option value="${j}" ${j===COMP.abr?'selected':''}>${esc(a.rotulo)}</option>`).join('');
-  compRenderMO(); compCalc();
+  const mvi=document.getElementById('comp_manual'); if(mvi)mvi.value=COMP.valorManual?String(COMP.valorManual).replace('.',','):'';
+  setCompModo(COMP.modo,true); setCompBase(COMP.base,true);
+  compRenderMO(); compRenderDesp(); compCalc();
   document.getElementById('compModal').classList.add('open');
 }
+function setCompUn(u,noCalc){ COMP.un=u; const d=document.getElementById('comp_un_d'),h=document.getElementById('comp_un_h'),m=document.getElementById('comp_un_m'); if(d)d.classList.toggle('on',u==='dias'); if(h)h.classList.toggle('on',u==='horas'); if(m)m.classList.toggle('on',u==='minutos'); if(!noCalc)compCalc(); }
+function compHoras(){ if(COMP.un==='dias') return num(COMP.tv)*JORNADA; if(COMP.un==='minutos') return num(COMP.tv)/60; return num(COMP.tv); }
+function setCompModo(m,noCalc){ COMP.modo=m; const c=document.getElementById('comp_md_c'),mn=document.getElementById('comp_md_m'); if(c)c.classList.toggle('on',m==='calc'); if(mn)mn.classList.toggle('on',m==='manual'); const cb=document.getElementById('comp_calcBox'),mb=document.getElementById('comp_manualBox'); if(cb)cb.style.display=(m==='manual')?'none':''; if(mb)mb.style.display=(m==='manual')?'block':'none'; if(!noCalc)compCalc(); }
+function setCompBase(b,noCalc){ COMP.base=b; const u=document.getElementById('comp_bs_u'),t=document.getElementById('comp_bs_t'); if(u)u.classList.toggle('on',b==='unidade'); if(t)t.classList.toggle('on',b==='total'); const h=document.getElementById('comp_basehint'); if(h)h.textContent=(b==='total')?'É o TOTAL do serviço — na linha a quantidade trava em 1.':'Custo de 1 unidade — na linha você multiplica pela quantidade.'; if(!noCalc)compCalc(); }
+function compDifMult(){ return (DIFIC[+(document.getElementById('comp_dif')||{}).value||0]||DIFIC[0]).mult; }
+function compRowValN(r){ const m=MAOOBRA[r.fn]||{vh:0}; return num(r.trab)*compDifMult()*num(m.vh)*JORNADA; }
+function compRowVal(i){ const r=COMP.mo[i]; if(!r)return; const e=document.getElementById('cmpval_'+i); if(e)e.textContent=fmt(compRowValN(r)); }
+// trabalho canônico = homem-DIA (r.trab); r.un é só a unidade de exibição/edição (di/h/min)
+function trabToUn(trab,un){ return un==='h'?num(trab)*JORNADA : un==='min'?num(trab)*JORNADA*60 : num(trab); }
+function unToTrab(v,un){ v=num(v); return un==='h'?v/JORNADA : un==='min'?v/(JORNADA*60) : v; }
+function compSetTrab(i,v){ const r=COMP.mo[i]; if(!r)return; r.trab=unToTrab(v,r.un||'di'); compRowVal(i); compCalc(); }
+function compSetUn(i,u){ const r=COMP.mo[i]; if(!r)return; r.un=u; compRenderMO(); compCalc(); }
 function compMORow(r,i){
   const opts=MAOOBRA.map((m,j)=>`<option value="${j}" ${j===r.fn?'selected':''}>${esc(m.funcao)} · ${esc(m.nivel)} (${fmt(m.vh)}/h)</option>`).join('');
-  const m=MAOOBRA[r.fn]||{vh:0};
+  const m=MAOOBRA[r.fn]||{vh:0}; const un=r.un||'di';
+  const uns=[['di','dia'],['h','hora'],['min','minuto']].map(([v,l])=>`<option value="${v}" ${v===un?'selected':''}>${l}</option>`).join('');
+  const val=trabToUn(r.trab,un);
   return `<div class="cmprow">
     <select onchange="COMP.mo[${i}].fn=+this.value;compRenderMO();compCalc()">${opts}</select>
-    <input class="cmpn" type="number" min="0" step="1" value="${r.pes}" oninput="COMP.mo[${i}].pes=+this.value||0;compCalc()">
-    <input class="cmpn" type="number" min="0" step="0.25" value="${r.h}" oninput="COMP.mo[${i}].h=+this.value||0;compCalc()">
-    <span class="cmpvh">${fmt(m.vh)}</span>
+    <span class="cmptrab"><input type="number" step="${un==='min'?'5':'0.5'}" min="0" value="${+val.toFixed(un==='di'?2:0)}" oninput="compSetTrab(${i},this.value)"><select class="cmpu" onchange="compSetUn(${i},this.value)">${uns}</select></span>
+    <span class="cmpvh">${fmt(m.vh)}/h</span>
+    <span class="cmpval" id="cmpval_${i}">${fmt(compRowValN(r))}</span>
     <button class="cmpdel" onclick="COMP.mo.splice(${i},1);compRenderMO();compCalc()"><span class="material-symbols-rounded">close</span></button></div>`;
 }
-function compRenderMO(){ document.getElementById('compMO').innerHTML='<div class="cmphd"><span>Função · nível</span><span>Pessoas</span><span>Horas</span><span>R$/h</span><span></span></div>'+COMP.mo.map(compMORow).join(''); }
-function compAddMO(){ COMP.mo.push({fn:0,pes:1,h:1}); compRenderMO(); compCalc(); }
+// linha SÓ-LEITURA do efetivo da obra (a equipe vem da obra; edita-se no card Efetivo, não aqui)
+function compEfRow(c){ const m=efMao(c); const h=compHoras(); const val=num(c.pes)*h*num(m.vh);
+  return `<div class="cmprow ef">
+    <span class="cmpfn">${esc(m.funcao)}${m.nivel?' · '+esc(m.nivel):''}</span>
+    <span class="cmppes">${c.pes||0}</span>
+    <span class="cmpvh">${fmt(m.vh)}/h</span>
+    <span class="cmpval">${fmt(val)}</span>
+    <span></span></div>`;
+}
+function compPes(i,d){ if(!COMP.mo[i])return; COMP.mo[i].pes=Math.max(0,(+COMP.mo[i].pes||0)+d); compRenderMO(); compCalc(); }
+function compRenderMO(){
+  const hd='<div class="cmphd"><span>Função · nível</span><span>Trabalho</span><span>R$/h</span><span>Subtotal</span><span></span></div>';
+  const el=document.getElementById('compMO'); if(!el)return;
+  el.innerHTML=hd+COMP.mo.map(compMORow).join('');
+}
+function compAddMO(){ COMP.mo.push({fn:0,trab:1,un:'di'}); compRenderMO(); compCalc(); }
+// modo da mão de obra é GLOBAL do orçamento (S.maoObraModo), NÃO por serviço.
+// O compositor só reflete o modo vigente: efetivo=read-only · manual=editável.
+function maoGlobalEfetivo(){ return S.maoObraModo!=='manual'; }
+function compSyncEfUI(){
+  const on=COMP.usaEfetivo!==false;
+  const b=document.getElementById('comp_ef_badge'); if(b)b.innerHTML=on
+    ?`<span class="efbadge ok"><span class="material-symbols-rounded">groups</span>puxa o efetivo da obra <span style="opacity:.7;font-weight:500">— mude no card Efetivo</span></span>`
+    :`<span class="efbadge mod"><span class="material-symbols-rounded">edit</span>modo manual — equipe deste serviço</span>`;
+  const add=document.getElementById('comp_addprof'); if(add)add.style.display=on?'none':'';
+}
+// controle GLOBAL (fica no card Efetivo): todos pelo efetivo, ou todos manuais
+function setMaoModo(m){ S.maoObraModo=(m==='manual')?'manual':'efetivo'; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); recalc(); }
+function compRenderDesp(){ const el=document.getElementById('compDesp'); if(!el)return;
+  el.innerHTML=(COMP.desp||[]).map((d,i)=>`<div class="cmpdrow"><input class="cmpin" value="${esc(d.nome)}" placeholder="ex.: Deslocamento" oninput="COMP.desp[${i}].nome=this.value"><span class="cmprs">R$</span><input class="cmpin val" value="${d.valor!=null&&d.valor!==''?String(d.valor).replace('.',','):''}" inputmode="decimal" oninput="COMP.desp[${i}].valor=num(this.value);compCalc()"><button class="cmpdel" onclick="COMP.desp.splice(${i},1);compRenderDesp();compCalc()"><span class="material-symbols-rounded">close</span></button></div>`).join('')
+    || '<div style="font-size:12px;color:var(--tx3);padding:2px 2px 6px">Sem adicionais neste serviço.</div>'; }
+function compAddDesp(){ if(!COMP.desp)COMP.desp=[]; COMP.desp.push({nome:'',valor:''}); compRenderDesp(); }
 function compCalc(){
-  const dif=DIFIC[+document.getElementById('comp_dif').value||0]||DIFIC[0];
-  const abr=ABRANGENCIA[+document.getElementById('comp_abr').value||0]||{custo_pct:0,tempo_pct:0};
-  const abrC=1+num(abr.custo_pct)/100, abrT=1+num(abr.tempo_pct)/100;
-  let custo=0,tempo=0;
-  COMP.mo.forEach(r=>{ const m=MAOOBRA[r.fn]; if(!m)return; const h=num(r.pes)*num(r.h)*dif.mult*abrT; tempo+=h; custo+=h*num(m.vh)*abrC; });
-  document.getElementById('comp_custo').textContent=fmt(custo);
-  document.getElementById('comp_tempo').textContent=tempo.toLocaleString('pt-BR',{maximumFractionDigits:2})+' h';
-  COMP._custo=custo; COMP._tempo=tempo;
+  const setr=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  if(COMP.modo==='manual'){ const custo=num(COMP.valorManual); COMP._mo=0;COMP._dsp=0;COMP._custo=custo;COMP._tempo=0; setr('comp_mo','—'); setr('comp_dsp','—'); setr('comp_custo',fmt(custo)); setr('comp_tempo','—'); setr('comp_horas',''); return; }
+  const dif=DIFIC[+document.getElementById('comp_dif').value||0]||DIFIC[0];   // dificuldade DO SERVIÇO (multiplica o trabalho)
+  // MOTOR: custo = Σ trabalho(homem-dia) × dificuldade × R$/h × jornada — ESTÁVEL (não depende de nº de pessoas)
+  let mo=0, trabTot=0;
+  COMP.mo.forEach(r=>{ const m=MAOOBRA[r.fn]; if(!m)return; const t=num(r.trab)*dif.mult; trabTot+=t; mo+=t*num(m.vh)*JORNADA; });
+  const dsp=(COMP.desp||[]).reduce((a,d)=>a+num(d.valor),0);
+  const custo=mo+dsp;
+  COMP._mo=mo; COMP._dsp=dsp; COMP._custo=custo; COMP._trab=trabTot;
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('comp_mo',fmt(mo)); set('comp_dsp',fmt(dsp)); set('comp_custo',fmt(custo));
+  set('comp_tempo', trabTot.toLocaleString('pt-BR',{maximumFractionDigits:1})+' homem-dia');
 }
 function closeComp(){ document.getElementById('compModal').classList.remove('open'); }
 function compAplicar(){
-  const r=(S[COMP.blk]||[]).find(x=>x.id===COMP.rowId); if(!r){closeComp();return;}
-  COMP.dif=+document.getElementById('comp_dif').value||0; COMP.abr=+document.getElementById('comp_abr').value||0;
+  COMP.dif=+document.getElementById('comp_dif').value||0;
   compCalc();
+  COMP.valorManual=num((document.getElementById('comp_manual')||{}).value||COMP.valorManual);
+  const _nome=((document.getElementById('comp_nome')||{}).value||'').trim();
+  const _und=((document.getElementById('comp_und')||{}).value||'').trim()||'UND';
+  // receita = trabalho por função (homem-dia); custo = trabalho × R$/h (estável); pessoas/prazo é decisão da proposta
+  const receita={mo:COMP.mo.map(x=>({fn:x.fn,trab:num(x.trab),un:x.un||'di'})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,modo:COMP.modo||'calc',base:COMP.base||'unidade',valorManual:num(COMP.valorManual)};
+  if(COMP.cadastro){   // veio do cadastro (criar novo): joga nome/unidade/custo de volta no formulário do cadastro
+    _ncComposicao=receita;
+    const nn=document.getElementById('nc_nome'); if(nn && _nome)nn.value=_nome;
+    const nu=document.getElementById('nc_und'); if(nu)fillUnd(nu,_und);
+    const nc=document.getElementById('nc_custo'); if(nc)nc.value=fmtN(COMP._custo);
+    ncComposResumo(); closeComp(); return;
+  }
+  const r=(S[COMP.blk]||[]).find(x=>x.id===COMP.rowId); if(!r){closeComp();return;}
+  if(_nome)r.desc=_nome; r.und=_und;
   r.custoBase=+(COMP._custo.toFixed(2)); r.usarBase=true; r.custoAlt=r.custoBase;
-  r.composicao={mo:COMP.mo.map(x=>({...x})),dif:COMP.dif,abr:COMP.abr};
-  r.compTempo=+(COMP._tempo.toFixed(2));
+  r.composicao=receita;
+  r.compTrab=+(COMP._trab.toFixed(2));
+  if(r.catId){   // a receita é do SERVIÇO → salva no CADASTRO (fonte reutilizável) e propaga p/ irmãos que usam o mesmo cadastro
+    const ci=(CATALOGO[COMP.blk]||[]).find(x=>x.id===r.catId);
+    if(ci){ if(_nome)ci.nome=_nome; ci.und=_und; ci.custo=r.custoBase; ci.composicao=JSON.parse(JSON.stringify(receita)); }
+    (S[COMP.blk]||[]).forEach(x=>{ if(x.id!==r.id && x.catId===r.catId){ if(_nome)x.desc=_nome; x.und=_und; x.custoBase=r.custoBase; if(x.usarBase)x.custoAlt=r.custoBase; x.composicao=JSON.parse(JSON.stringify(receita)); } });
+    if(CLOUD && !MODELO_V2){ SB.from('orc_catalogo').update({nome:_nome,unidade:_und,custo:r.custoBase,composicao:receita}).eq('id',r.catId).then(({error})=>{ if(error)console.error('receita→catálogo',error); }); }
+  }
   save(); renderBlk(BLKS.find(b=>b.key===COMP.blk)); recalc(); closeComp();
 }
 function crmData(){ try{const r=localStorage.getItem('ex_crm_v1'); if(r){const d=JSON.parse(r); if(d&&Array.isArray(d.clientes)&&d.clientes.length) return d.clientes;}}catch(e){} return null; }
@@ -1706,7 +2046,7 @@ function setStatus(s){ S.status=s;
   try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){}   // local sempre
   try{recalc();}catch(e){} writeback(S._total||0);               // atualiza o índice local do funil
   // status é AÇÃO explícita: grava só o status na nuvem NA HORA (não arrasta edições de conteúdo não salvas)
-  if(OPP&&CLOUD&&ORC_ID){ SB.from('orcamentos').update({status:s}).eq('id',ORC_ID).then(({error})=>{ if(error)console.error('status',error); }); }
+  if(!MODELO_V2 && OPP&&CLOUD&&ORC_ID){ SB.from('orcamentos').update({status:s}).eq('id',ORC_ID).then(({error})=>{ if(error)console.error('status',error); }); }
   else if(OPP&&CLOUD){ saveOrc(); }   // proposta nova ainda sem id: o insert automático leva o status
   renderBanner(); }
 // volta ao funil SEMPRE pelo shell (que tem o menu lateral): embutido → avisa o shell; avulso → abre o shell no funil
