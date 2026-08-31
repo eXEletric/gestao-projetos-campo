@@ -368,6 +368,16 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .fo-cfg-sec b{color:var(--tx)}
 .fo-cfg-tbl{border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surf)}
 .fo-cfg-h,.fo-cfg-tr{display:grid;grid-template-columns:1fr 116px 116px;gap:8px;align-items:center;padding:8px 12px}
+.fo-cfg-g4{grid-template-columns:1fr 104px 104px 30px}
+.fo-cfg-namewrap{display:flex;flex-direction:column;gap:1px;min-width:0}
+.fo-cfg-name{border:1px solid transparent;border-radius:6px;padding:5px 7px;margin:-5px -7px;font:600 13px inherit;color:var(--tx);background:transparent;width:100%}
+.fo-cfg-name:hover{border-color:var(--line2)}
+.fo-cfg-name:focus{outline:none;border-color:var(--pri);background:var(--surf)}
+.fo-cfg-namewrap small{font-weight:400;color:var(--tx3);font-size:11px;padding:0 1px}
+.fo-cfg-del{border:none;background:none;color:var(--tx3);cursor:pointer;padding:4px;border-radius:6px;display:inline-flex;align-items:center;justify-content:center}
+.fo-cfg-del:hover{background:#fbeaec;color:var(--red)}.fo-cfg-del:disabled{opacity:.25;cursor:default}.fo-cfg-del .material-symbols-rounded{font-size:16px}
+.fo-cfg-add{width:100%;border:none;border-top:1px solid var(--line2);background:var(--surf2);color:var(--pri);font:600 12.5px inherit;padding:9px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px}
+.fo-cfg-add:hover{background:var(--pri-bg)}.fo-cfg-add .material-symbols-rounded{font-size:16px}
 .fo-cfg-h{background:var(--surf2);border-bottom:1px solid var(--line)}
 .fo-cfg-h span:not(:first-child){display:inline-flex;align-items:center;gap:5px;justify-content:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:var(--tx3)}
 .fo-cfg-h .material-symbols-rounded{font-size:15px;color:var(--pri)}
@@ -1355,13 +1365,15 @@ function fatoresObraHtml(){
   const presets=[[1,'1'],[1.5,'1,5'],[2,'2'],[3,'3']].filter(([f])=>f<=fmax).map(([f,l])=>`<button class="flbtn ${fl==f?'on':''}" onclick="setFatorLocal(${f})">${l}×</button>`).join('');
   const abrDesc={local:'na sua base / cidade',estadual:'dentro do estado',nacional:'outro estado ou país'};
   const cfg = S._foCfg ? `<div class="fo-cfg">
-      <div class="fo-cfg-sec">Abrangência — quanto mais <b>longe</b> a obra, mais ela <b>encarece</b> e <b>demora</b></div>
+      <div class="fo-cfg-sec">Abrangência — <b>suas regiões</b>; quanto mais <b>longe</b>, mais <b>encarece</b> e <b>demora</b></div>
       <div class="fo-cfg-tbl">
-        <div class="fo-cfg-h"><span></span><span><span class="material-symbols-rounded">payments</span>Encarece o custo</span><span><span class="material-symbols-rounded">schedule</span>Estica o prazo</span></div>
-        ${(ABRANGENCIA||[]).map((a,j)=>`<div class="fo-cfg-tr">
-          <span class="fo-cfg-lb">${esc(a.rotulo)}<small>${abrDesc[a.nivel]||''}</small></span>
+        <div class="fo-cfg-h fo-cfg-g4"><span>Região</span><span><span class="material-symbols-rounded">payments</span>Encarece o custo</span><span><span class="material-symbols-rounded">schedule</span>Estica o prazo</span><span></span></div>
+        ${(ABRANGENCIA||[]).map((a,j)=>`<div class="fo-cfg-tr fo-cfg-g4">
+          <span class="fo-cfg-namewrap"><input class="fo-cfg-name" value="${esc(a.rotulo)}" onchange="setAbrRotulo(${j},this.value)" placeholder="nome da região">${abrDesc[a.nivel]?`<small>${abrDesc[a.nivel]}</small>`:''}</span>
           <span class="fo-cfg-in">+<input type="number" step="1" min="0" value="${num(a.custo_pct)}" onchange="setAbrPct(${j},'custo_pct',this.value)"><i>%</i></span>
-          <span class="fo-cfg-in">+<input type="number" step="1" min="0" value="${num(a.tempo_pct)}" onchange="setAbrPct(${j},'tempo_pct',this.value)"><i>%</i></span></div>`).join('')}
+          <span class="fo-cfg-in">+<input type="number" step="1" min="0" value="${num(a.tempo_pct)}" onchange="setAbrPct(${j},'tempo_pct',this.value)"><i>%</i></span>
+          <button class="fo-cfg-del" onclick="abrDel(${j})" ${(ABRANGENCIA||[]).length<=1?'disabled':''} title="remover região"><span class="material-symbols-rounded">close</span></button></div>`).join('')}
+        <button class="fo-cfg-add" onclick="abrAdd()"><span class="material-symbols-rounded">add</span>adicionar região</button>
       </div>
       <div class="fo-cfg-sec">Fator do local — <b>teto máximo</b> (a pior dificuldade não passa disso)</div>
       <div class="fo-cfg-tr" style="grid-template-columns:1fr auto"><span class="fo-cfg-lb">Máximo permitido<small>obras muito complexas</small></span><span class="fo-cfg-in"><input type="number" step="0.5" min="1" max="5" value="${String(fmax).replace('.',',')}" onchange="setFatorMax(this.value)"><i>×</i></span></div>
@@ -1380,6 +1392,17 @@ function toggleFoCfg(){ S._foCfg=!S._foCfg; renderBlk(BLKS.find(b=>b.key==='serv
 function setAbr(v){ S.abrIdx=+v||0; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function setAbrPct(j,field,v){ if(!ABRANGENCIA[j])return; ABRANGENCIA[j][field]=Math.max(0,num(v));
   if(CLOUD && !MODELO_V2){ SB.from('orc_abrangencia').update({[field]:ABRANGENCIA[j][field]}).eq('nivel',ABRANGENCIA[j].nivel).then(({error})=>{ if(error)console.error('abr cfg',error); }); }
+  save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function setAbrRotulo(j,v){ if(!ABRANGENCIA[j])return; v=(v||'').trim(); if(!v)return; ABRANGENCIA[j].rotulo=v;
+  if(CLOUD && !MODELO_V2){ SB.from('orc_abrangencia').update({rotulo:v}).eq('nivel',ABRANGENCIA[j].nivel).then(({error})=>{ if(error)console.error('abr rotulo',error); }); }
+  save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function abrAdd(){ const ordem=(ABRANGENCIA||[]).length; const nivel='r'+uid(); const row={nivel,rotulo:'Nova região',custo_pct:0,tempo_pct:0,ordem};
+  ABRANGENCIA.push(row);
+  if(CLOUD && !MODELO_V2){ SB.from('orc_abrangencia').insert({nivel,rotulo:row.rotulo,custo_pct:0,tempo_pct:0,ordem}).then(({error})=>{ if(error)console.error('abr add',error); }); }
+  save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function abrDel(j){ if(!ABRANGENCIA[j]||ABRANGENCIA.length<=1)return; const nivel=ABRANGENCIA[j].nivel; ABRANGENCIA.splice(j,1);
+  if(num(S.abrIdx)>=ABRANGENCIA.length)S.abrIdx=0;
+  if(CLOUD && !MODELO_V2){ SB.from('orc_abrangencia').delete().eq('nivel',nivel).then(({error})=>{ if(error)console.error('abr del',error); }); }
   save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function setFatorMax(v){ S.fatorMax=Math.max(1,Math.min(5,num(v)||3)); if(num(S.fatorLocal)>S.fatorMax)S.fatorLocal=S.fatorMax; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function setFatorLocal(f){ f=num(f); const fx=fatorMax(); f=Math.max(1,Math.min(fx,f)); S.fatorLocal=f; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
