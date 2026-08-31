@@ -363,12 +363,21 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .fatobra .fo-cfgbtn{margin-left:auto;border:1px solid var(--line2);background:var(--surf);color:var(--tx3);border-radius:7px;width:28px;height:26px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
 .fatobra .fo-cfgbtn:hover,.fatobra .fo-cfgbtn.on{border-color:var(--pri-line);color:var(--pri);background:var(--pri-bg)}
 .fatobra .fo-cfgbtn .material-symbols-rounded{font-size:17px}
-.fo-cfg{margin-top:11px;padding-top:11px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:6px}
-.fo-cfg-sec{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);margin-top:4px}
-.fo-cfg-row{display:flex;align-items:center;gap:12px;flex-wrap:wrap;font-size:12.5px;color:var(--tx2)}
-.fo-cfg-lb{min-width:78px;font-weight:600;color:var(--tx)}
-.fo-cfg-row label{display:inline-flex;align-items:center;gap:5px;color:var(--tx3)}
-.fo-cfg-row input{width:56px;padding:5px 7px;border:1px solid var(--line2);border-radius:6px;font:inherit;font-size:12.5px;text-align:right;font-variant-numeric:tabular-nums;background:var(--surf);color:var(--tx)}
+.fo-cfg{margin-top:11px;padding-top:11px;border-top:1px dashed var(--line);display:flex;flex-direction:column;gap:8px}
+.fo-cfg-sec{font-size:11px;font-weight:600;color:var(--tx2);margin-top:4px;line-height:1.4}
+.fo-cfg-sec b{color:var(--tx)}
+.fo-cfg-tbl{border:1px solid var(--line);border-radius:9px;overflow:hidden;background:var(--surf)}
+.fo-cfg-h,.fo-cfg-tr{display:grid;grid-template-columns:1fr 116px 116px;gap:8px;align-items:center;padding:8px 12px}
+.fo-cfg-h{background:var(--surf2);border-bottom:1px solid var(--line)}
+.fo-cfg-h span:not(:first-child){display:inline-flex;align-items:center;gap:5px;justify-content:center;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.02em;color:var(--tx3)}
+.fo-cfg-h .material-symbols-rounded{font-size:15px;color:var(--pri)}
+.fo-cfg-tr{border-top:1px solid var(--line2)}.fo-cfg-tbl .fo-cfg-tr:first-child{border-top:none}
+.fo-cfg-lb{font-weight:600;color:var(--tx);font-size:13px;display:flex;flex-direction:column;line-height:1.25}
+.fo-cfg-lb small{font-weight:400;color:var(--tx3);font-size:11px}
+.fo-cfg-in{display:inline-flex;align-items:center;justify-content:center;gap:3px;color:var(--tx3);font-size:13px}
+.fo-cfg-in input{width:52px;padding:6px 7px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:13px;text-align:right;font-variant-numeric:tabular-nums;background:var(--surf);color:var(--tx)}
+.fo-cfg-in input:focus{outline:none;border-color:var(--pri)}
+.fo-cfg-in i{font-style:normal;color:var(--tx3)}
 .fatobra .fo-t .material-symbols-rounded{font-size:16px}
 .fatobra .fo-h{font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0}
 .fatobra .fo-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -964,6 +973,7 @@ function abrObra(){ return (ABRANGENCIA&&ABRANGENCIA[num(S.abrIdx)||0])||{custo_
 function localMult(){ const f=num(S.fatorLocal); return f>0?f:1; }
 function obraMult(r){ if(!r||!r.composicao) return 1;   // tabelado/avulso não leva fator da obra
   return (1+num(abrObra().custo_pct)/100) * localMult(); }
+function tempoMult(){ return 1+num(abrObra().tempo_pct)/100; }   // abrangência estica o PRAZO (deslocamento come dias)
 const custoEf=r=>custoUn(r)*obraMult(r);                // custo efetivo = base × abrangência × fator do local
 // preço (o que o cliente paga) e custo (interno) por linha
 // "Total do serviço": o custo já é o total → a quantidade é 1 (não multiplica)
@@ -1302,8 +1312,9 @@ function aggMaoObra(){
       const k=m.funcao+'|'+m.nivel;
       if(!map[k])map[k]={k,funcao:m.funcao,nivel:m.nivel,vh:num(m.vh),trab:0};
       map[k].trab+=trab; }); });
+  const tm=tempoMult();   // abrangência estica o prazo
   return Object.keys(map).map(k=>{ const f=map[k]; const pes=Math.max(1,(S.pessoasFn&&S.pessoasFn[k])||1);
-    return {...f, horas:f.trab*JORNADA, custo:f.trab*f.vh*JORNADA, pes, dias:f.trab/pes}; })
+    return {...f, horas:f.trab*JORNADA, custo:f.trab*f.vh*JORNADA, pes, dias:(f.trab/pes)*tm}; })
     .sort((a,b)=>b.horas-a.horas);
 }
 function pesFn(k,d){ if(!S.pessoasFn)S.pessoasFn={}; S.pessoasFn[k]=Math.max(1,(+S.pessoasFn[k]||1)+d); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
@@ -1337,17 +1348,23 @@ function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m
 // ===== Fatores da obra (abrangência + fator do local) — só nos serviços montados =====
 function fatorMax(){ return num(S.fatorMax)>0?num(S.fatorMax):3; }
 function fatoresObraHtml(){
-  const abrOpts=(ABRANGENCIA||[]).map((a,j)=>`<option value="${j}" ${j==(num(S.abrIdx)||0)?'selected':''}>${esc(a.rotulo)}${num(a.custo_pct)?' (+'+num(a.custo_pct)+'%)':''}</option>`).join('');
+  const pct=n=>num(n)>0?('+'+num(n)+'%'):'—';
+  const abrOpts=(ABRANGENCIA||[]).map((a,j)=>`<option value="${j}" ${j==(num(S.abrIdx)||0)?'selected':''}>${esc(a.rotulo)}${(num(a.custo_pct)||num(a.tempo_pct))?' ('+pct(a.custo_pct)+' custo · '+pct(a.tempo_pct)+' prazo)':''}</option>`).join('');
   const fmax=fatorMax();
   const fl=Math.min(num(S.fatorLocal)||1,fmax);
   const presets=[[1,'1'],[1.5,'1,5'],[2,'2'],[3,'3']].filter(([f])=>f<=fmax).map(([f,l])=>`<button class="flbtn ${fl==f?'on':''}" onclick="setFatorLocal(${f})">${l}×</button>`).join('');
+  const abrDesc={local:'na sua base / cidade',estadual:'dentro do estado',nacional:'outro estado ou país'};
   const cfg = S._foCfg ? `<div class="fo-cfg">
-      <div class="fo-cfg-sec">Abrangência (deslocamento) — % que acrescenta ao custo e ao tempo</div>
-      ${(ABRANGENCIA||[]).map((a,j)=>`<div class="fo-cfg-row"><span class="fo-cfg-lb">${esc(a.rotulo)}</span>
-        <label>custo <input type="number" step="1" min="0" value="${num(a.custo_pct)}" onchange="setAbrPct(${j},'custo_pct',this.value)">%</label>
-        <label>tempo <input type="number" step="1" min="0" value="${num(a.tempo_pct)}" onchange="setAbrPct(${j},'tempo_pct',this.value)">%</label></div>`).join('')}
-      <div class="fo-cfg-sec">Fator do local — teto máximo (a pior dificuldade não passa disso)</div>
-      <div class="fo-cfg-row"><span class="fo-cfg-lb">Máximo</span><label><input type="number" step="0.5" min="1" max="5" value="${String(fmax).replace('.',',')}" onchange="setFatorMax(this.value)"></label><span style="color:var(--tx3)">×</span></div>
+      <div class="fo-cfg-sec">Abrangência — quanto mais <b>longe</b> a obra, mais ela <b>encarece</b> e <b>demora</b></div>
+      <div class="fo-cfg-tbl">
+        <div class="fo-cfg-h"><span></span><span><span class="material-symbols-rounded">payments</span>Encarece o custo</span><span><span class="material-symbols-rounded">schedule</span>Estica o prazo</span></div>
+        ${(ABRANGENCIA||[]).map((a,j)=>`<div class="fo-cfg-tr">
+          <span class="fo-cfg-lb">${esc(a.rotulo)}<small>${abrDesc[a.nivel]||''}</small></span>
+          <span class="fo-cfg-in">+<input type="number" step="1" min="0" value="${num(a.custo_pct)}" onchange="setAbrPct(${j},'custo_pct',this.value)"><i>%</i></span>
+          <span class="fo-cfg-in">+<input type="number" step="1" min="0" value="${num(a.tempo_pct)}" onchange="setAbrPct(${j},'tempo_pct',this.value)"><i>%</i></span></div>`).join('')}
+      </div>
+      <div class="fo-cfg-sec">Fator do local — <b>teto máximo</b> (a pior dificuldade não passa disso)</div>
+      <div class="fo-cfg-tr" style="grid-template-columns:1fr auto"><span class="fo-cfg-lb">Máximo permitido<small>obras muito complexas</small></span><span class="fo-cfg-in"><input type="number" step="0.5" min="1" max="5" value="${String(fmax).replace('.',',')}" onchange="setFatorMax(this.value)"><i>×</i></span></div>
     </div>` : '';
   return `<div class="fatobra noprint">
     <div class="fo-t"><span class="material-symbols-rounded">tune</span>Fatores da obra<span class="fo-h"> — aplicam ao custo dos serviços montados</span>
