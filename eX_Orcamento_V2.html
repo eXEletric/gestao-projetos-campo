@@ -1398,7 +1398,7 @@ function setAbrRotulo(j,v){ if(!ABRANGENCIA[j])return; v=(v||'').trim(); if(!v)r
   save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function abrAdd(){ const ordem=(ABRANGENCIA||[]).length; const nivel='r'+uid(); const row={nivel,rotulo:'Nova região',custo_pct:0,tempo_pct:0,ordem};
   ABRANGENCIA.push(row);
-  if(CLOUD && !MODELO_V2){ SB.from('orc_abrangencia').insert({nivel,rotulo:row.rotulo,custo_pct:0,tempo_pct:0,ordem}).then(({error})=>{ if(error)console.error('abr add',error); }); }
+  if(CLOUD && !MODELO_V2){ SB.from('orc_abrangencia').insert({empresa_id:EMPRESA_ID,nivel,rotulo:row.rotulo,custo_pct:0,tempo_pct:0,ordem}).then(({error})=>{ if(error)console.error('abr add',error); }); }
   save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function abrDel(j){ if(!ABRANGENCIA[j]||ABRANGENCIA.length<=1)return; const nivel=ABRANGENCIA[j].nivel; ABRANGENCIA.splice(j,1);
   if(num(S.abrIdx)>=ABRANGENCIA.length)S.abrIdx=0;
