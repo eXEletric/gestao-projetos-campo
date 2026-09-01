@@ -687,9 +687,9 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
         </div>
         <div class="body">
           <div class="ln" id="ln_servicos"><span class="lbl"><span class="material-symbols-rounded">build</span>Serviços</span><span class="val" id="s_serv">—</span></div>
-          <div class="ln" id="ln_equip"><span class="lbl"><span class="material-symbols-rounded">construction</span>Equipamentos</span><span class="val" id="s_equip">—</span></div>
           <div class="ln" id="ln_despesas"><span class="lbl"><span class="material-symbols-rounded">local_shipping</span>Despesas</span><span class="val" id="s_desp">—</span></div>
           <div class="ln" id="ln_diarias" style="display:none"><span class="lbl"><span class="material-symbols-rounded">restaurant</span>Diárias da equipe</span><span class="val" id="s_diarias">—</span></div>
+          <div class="ln" id="ln_equip"><span class="lbl"><span class="material-symbols-rounded">construction</span>Locações</span><span class="val" id="s_equip">—</span></div>
           <div class="ln" id="ln_materiais"><span class="lbl"><span class="material-symbols-rounded">inventory_2</span>Materiais</span><span class="val" id="s_mat">—</span></div>
           <div class="ln"><span class="lbl">Subtotal</span><span class="val" id="s_bruto">—</span></div>
           <div class="ln" id="ln_desc"><span class="lbl">Desconto <input class="pin" style="width:52px" data-f="descontoPct" inputmode="decimal">%</span><span class="val" id="s_desc">—</span></div>
@@ -1229,8 +1229,8 @@ function resetDemo(){ if(OPP&&CLOUD){ if(confirm("Recarregar este orçamento do 
 /* ---------- blocos ---------- */
 const BLKS=[
   {key:"servicos",titulo:"Serviços",icon:"build",obs:true,mat:false,custo:true,soCad:true,sing:"serviço"},
-  {key:"equip",titulo:"Locação de equipamentos",icon:"construction",obs:true,mat:false,custo:true,soCad:true,sing:"equipamento"},
   {key:"despesas",titulo:"Deslocamento e outras despesas",icon:"local_shipping",obs:true,mat:false,custo:true,soCad:true,sing:"despesa"},
+  {key:"equip",titulo:"Locações",icon:"construction",obs:true,mat:false,custo:true,soCad:true,sing:"equipamento"},
   {key:"materiais",titulo:"Materiais empregados",icon:"inventory_2",obs:true,mat:true,custo:true,soCad:false,sing:"material"}
 ];
 
@@ -1338,7 +1338,7 @@ function renderBlk(cfg){
       </div>
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
-    ${cfg.key==='servicos'?('<div id="svcTopPanels">'+efetivoHtml()+diariasHtml()+fatoresObraHtml()+'</div>'):''}
+    ${cfg.key==='servicos'?('<div id="svcTopPanels"><div id="maoObraPanel">'+efetivoHtml()+'</div><div id="diariasPanel">'+diariasHtml()+'</div><div id="fatoresPanel">'+fatoresObraHtml()+'</div></div>'):''}
     ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: a edição é igual (você vê e ajusta cada item), mas na <b>impressão / envio da proposta</b> os itens saem como <b>“incluso”</b> e o valor aparece só no <b>total agrupado</b> do bloco — não item por item.</span></div>`:''}
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button></div>
@@ -1427,7 +1427,7 @@ function diariasHtml(){
   return `<div class="diacard noprint">
     <div class="diahd"><span class="material-symbols-rounded">restaurant</span><h3>Diárias da equipe em campo</h3>
       <span class="cmpseg diaseg"><button class="${modo==='fim'?'on':''}" onclick="setDiaModo('fim')">Todos até o fim</button><button class="${modo==='exec'?'on':''}" onclick="setDiaModo('exec')">Por tempo de execução individual</button></span></div>
-    <div class="diahint">${hint}</div>
+    <div class="diahint" id="dia_hint">${hint}</div>
     ${row('Alimentação','restaurant','alim',a)}
     ${row('Hospedagem','hotel','hosp',h)}
     <div class="diafoot"><span>Total das diárias <span style="color:var(--tx3);font-weight:400">(custo)</span></span><b id="dia_foot">${fmt((a+h)*cnt)}</b></div>
@@ -1435,10 +1435,15 @@ function diariasHtml(){
 }
 function setDia(key,val){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.diarias[key]=num(val); save(); diaRefreshTotals(); recalc(); }
 function diaBlur(el,key){ const n=num(el.value); el.value=n?moneyVal(n):''; }
-function diaRefreshTotals(){ const cnt=obraPessoaDias(), d=S.diarias||{}, a=num(d.alim), h=num(d.hosp);
+function diaRefreshTotals(){ const fs=aggMaoObra()||[]; const cnt=obraPessoaDias(), d=S.diarias||{}, a=num(d.alim), h=num(d.hosp);
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-  set('dia_alim',fmt(a*cnt)); set('dia_hosp',fmt(h*cnt)); set('dia_foot',fmt((a+h)*cnt)); }
-function setDiaModo(m){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.diarias.modo=(m==='exec'?'exec':'fim'); save(); refreshMaoPanel(); recalc(); const db=BLKS.find(b=>b.key==='despesas'); if(db){try{renderBlk(db);}catch(e){}} }
+  set('dia_alim',fmt(a*cnt)); set('dia_hosp',fmt(h*cnt)); set('dia_foot',fmt((a+h)*cnt));
+  const pes=fs.reduce((x,f)=>x+num(f.pes),0);
+  const hint = diariasModo()==='fim' ? `A equipe fica <b>até o fim</b>: ${pes} pessoas × ${fmtPrazo(obraPrazo())} = <b>${_d1(cnt)} diárias</b>` : `Cada função <b>só os dias que trabalha</b> = <b>${_d1(cnt)} diárias</b> (soma)`;
+  const he=document.getElementById('dia_hint'); if(he)he.innerHTML=hint; }
+function setDiaModo(m){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.diarias.modo=(m==='exec'?'exec':'fim'); save();
+  const dp=document.getElementById('diariasPanel'); if(dp)dp.innerHTML=diariasHtml();   // troca de modo = re-render do card (clique, sem foco em input)
+  recalc(); const db=BLKS.find(b=>b.key==='despesas'); if(db){try{renderBlk(db);}catch(e){}} }
 function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m="equipe"]'); if(el)el.value=S.equipe; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); recalc(); }   // efetivo dirige o custo dos serviços que o usam
 // ===== Fatores da obra (abrangência + fator do local) — só nos serviços montados =====
 function fatorMax(){ return num(S.fatorMax)>0?num(S.fatorMax):3; }
@@ -1529,7 +1534,8 @@ function updBloco(blk,val){
 }
 
 /* ---------- edição ---------- */
-function refreshMaoPanel(){ const el=document.getElementById('svcTopPanels'); if(el) el.innerHTML=efetivoHtml()+diariasHtml()+fatoresObraHtml(); }
+// atualiza SÓ o painel de mão de obra + os TOTAIS das diárias (não recria os inputs de diária → não apaga o que você digita)
+function refreshMaoPanel(){ const m=document.getElementById('maoObraPanel'); if(m) m.innerHTML=efetivoHtml(); diaRefreshTotals(); }
 function upd(blk,id,field,val){
   const r=S[blk].find(x=>x.id===id); if(!r)return;
   r[field]=val;
