@@ -292,6 +292,23 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .gatline .gaic{font-size:14px;color:var(--pri)}
 .gatline .gatsel{font-size:11px;padding:2px 5px;border:1px solid var(--line2);border-radius:6px;background:var(--surf);color:var(--tx2);max-width:150px}
 .gatline .gathint{font-size:10.5px;color:var(--tx3);background:var(--pri-bg,#efeafc);border-radius:10px;padding:1px 7px}
+.diacard{background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden;margin:0 0 14px}
+.diahd{display:flex;align-items:center;gap:8px;padding:10px 13px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8;flex-wrap:wrap}
+.diahd .material-symbols-rounded{font-size:19px;color:var(--pri)}
+.diahd h3{margin:0;font-size:12px;font-weight:800;color:var(--pri);text-transform:uppercase;letter-spacing:.04em}
+.diaseg{margin-left:auto}.diaseg button{padding:6px 11px;font-size:12px}
+.diahint{font-size:11.5px;color:var(--tx2);padding:8px 13px;line-height:1.5}
+.diarow{display:grid;grid-template-columns:1fr 220px 110px;gap:10px;align-items:center;padding:8px 13px;border-top:1px solid var(--line2)}
+.diarow .diawho{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--tx)}
+.diarow .diaic{font-size:18px;color:var(--pri)}
+.diarow .diain{display:flex;align-items:center;gap:5px}
+.diarow .diain .rsl{font-size:12px;color:var(--tx3)}
+.diarow .diain input{width:80px;padding:6px 7px;border:1px solid var(--line2);border-radius:7px;text-align:right;font:inherit;font-size:13px;font-variant-numeric:tabular-nums;background:var(--surf);color:var(--tx)}
+.diarow .diain .diau{font-size:11px;color:var(--tx3)}
+.diarow .diatot{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-size:13.5px}
+.diafoot{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;border-top:2px solid var(--line);background:var(--surf2)}
+.diafoot b{color:var(--pri);font-size:15px;font-variant-numeric:tabular-nums}
+@media(max-width:640px){.diarow{grid-template-columns:1fr auto}.diarow .diatot{grid-column:1/-1;text-align:right}}
 .money{white-space:nowrap}
 .preco{font-weight:700;color:var(--tx)}
 .preco b{font-weight:800;color:var(--pri)}
@@ -672,6 +689,7 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
           <div class="ln" id="ln_servicos"><span class="lbl"><span class="material-symbols-rounded">build</span>Serviços</span><span class="val" id="s_serv">—</span></div>
           <div class="ln" id="ln_equip"><span class="lbl"><span class="material-symbols-rounded">construction</span>Equipamentos</span><span class="val" id="s_equip">—</span></div>
           <div class="ln" id="ln_despesas"><span class="lbl"><span class="material-symbols-rounded">local_shipping</span>Despesas</span><span class="val" id="s_desp">—</span></div>
+          <div class="ln" id="ln_diarias" style="display:none"><span class="lbl"><span class="material-symbols-rounded">restaurant</span>Diárias da equipe</span><span class="val" id="s_diarias">—</span></div>
           <div class="ln" id="ln_materiais"><span class="lbl"><span class="material-symbols-rounded">inventory_2</span>Materiais</span><span class="val" id="s_mat">—</span></div>
           <div class="ln"><span class="lbl">Subtotal</span><span class="val" id="s_bruto">—</span></div>
           <div class="ln" id="ln_desc"><span class="lbl">Desconto <input class="pin" style="width:52px" data-f="descontoPct" inputmode="decimal">%</span><span class="val" id="s_desc">—</span></div>
@@ -999,11 +1017,19 @@ const isTotal=r=>!!(r.composicao&&r.composicao.base==='total');
 const DESP_GAT={fixo:{lb:'valor fixo',ic:'lock'},pd:{lb:'por pessoa/dia',ic:'restaurant'},dia:{lb:'por dia',ic:'calendar_month'},pes:{lb:'por pessoa',ic:'person'}};
 function obraPessoas(){ return (aggMaoObra()||[]).reduce((a,f)=>a+num(f.pes),0); }
 function obraPrazo(){ return (aggMaoObra()||[]).reduce((m,f)=>Math.max(m,num(f.dias)),0); }
+// pessoa×dia (diárias) — MODO: 'fim' = todos até o fim (pessoas × prazo) · 'exec' = cada função seus dias (soma)
+function diariasModo(){ return (S.diarias&&S.diarias.modo==='exec')?'exec':'fim'; }
+function obraPessoaDias(){ const fs=aggMaoObra()||[];
+  if(diariasModo()==='exec') return fs.reduce((a,f)=>a+num(f.pes)*num(f.dias),0);
+  const pes=fs.reduce((a,f)=>a+num(f.pes),0), pz=fs.reduce((m,f)=>Math.max(m,num(f.dias)),0);
+  return pes*pz; }
 function despMult(r){ const g=r.gatilho||'fixo';
-  if(g==='pd') return obraPessoas()*obraPrazo();
+  if(g==='pd') return obraPessoaDias();   // respeita o modo das diárias
   if(g==='dia') return obraPrazo();
   if(g==='pes') return obraPessoas();
   return num(r.qtd); }
+// custo das diárias da equipe (alimentação + hospedagem, por pessoa/dia)
+function diariasCusto(){ const d=S.diarias||{}; return (num(d.alim)+num(d.hosp))*obraPessoaDias(); }
 const qtyOf=r=> (r.gatilho&&r.gatilho!=='fixo') ? despMult(r) : (isTotal(r)?1:num(r.qtd));
 // MARGEM MANDA: o preço é SEMPRE custo × margem (acabou o "valor geral" que zerava). "Só o total" = só apresentação.
 function linePreco(r){
@@ -1169,6 +1195,7 @@ function sanitize(){
   S.efetivo=S.efetivo.filter(c=>c&&(c.fn!=null||c.vh!=null)).map(c=>({fn:c.fn,funcao:c.funcao,nivel:c.nivel,vh:num(c.vh),pes:(+c.pes||+c.n||1)}));   // migra efetivo antigo (nome+contagem) → equipe real (função·nível·R$/h); sem R$/h é descartado
   if(S.maoObraModo!=='manual' && S.maoObraModo!=='efetivo') S.maoObraModo='efetivo';   // (legado) modo GLOBAL — não usado no motor trabalho-fixo
   if(!S.pessoasFn||typeof S.pessoasFn!=='object')S.pessoasFn={};   // pessoas por função (mexe só no prazo)
+  if(!S.diarias||typeof S.diarias!=='object')S.diarias={modo:'fim',alim:0,hosp:0};   // diárias da equipe (alimentação+hospedagem por pessoa/dia)
   if(!(num(S.fatorMax)>0))S.fatorMax=3;   // teto configurável do fator do local
   if(num(S.fatorLocal)>num(S.fatorMax))S.fatorLocal=num(S.fatorMax);
   if(S.margemBase===undefined)S.margemBase=30;
@@ -1311,7 +1338,7 @@ function renderBlk(cfg){
       </div>
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
-    ${cfg.key==='servicos'?('<div id="svcTopPanels">'+efetivoHtml()+fatoresObraHtml()+'</div>'):''}
+    ${cfg.key==='servicos'?('<div id="svcTopPanels">'+efetivoHtml()+diariasHtml()+fatoresObraHtml()+'</div>'):''}
     ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: a edição é igual (você vê e ajusta cada item), mas na <b>impressão / envio da proposta</b> os itens saem como <b>“incluso”</b> e o valor aparece só no <b>total agrupado</b> do bloco — não item por item.</span></div>`:''}
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button></div>
@@ -1384,6 +1411,34 @@ function efetivoHtml(){
       <div class="moacusto"><b>${fmt(MO)}</b></div></div>
   </div>`;
 }
+// ---- Diárias da equipe em campo (alimentação + hospedagem, por pessoa/dia) ----
+function diariasHtml(){
+  const fs=aggMaoObra(); if(!fs.length) return '';
+  const modo=diariasModo(), d=S.diarias||{};
+  const cnt=obraPessoaDias(), a=num(d.alim), h=num(d.hosp);
+  const pes=fs.reduce((x,f)=>x+num(f.pes),0);
+  const row=(nome,ic,key,val)=>`<div class="diarow">
+    <div class="diawho"><span class="diaic material-symbols-rounded">${ic}</span>${nome}</div>
+    <div class="diain"><span class="rsl">R$</span><input class="cin num" value="${val?moneyVal(val):''}" inputmode="decimal" placeholder="0,00" onfocus="this.select()" oninput="setDia('${key}',this.value)" onblur="diaBlur(this,'${key}')"><span class="diau">/ pessoa·dia</span></div>
+    <div class="diatot" id="dia_${key}">${fmt(val*cnt)}</div></div>`;
+  const hint = modo==='fim'
+    ? `A equipe fica <b>até o fim</b>: ${pes} pessoas × ${fmtPrazo(obraPrazo())} = <b>${_d1(cnt)} diárias</b>`
+    : `Cada função <b>só os dias que trabalha</b> = <b>${_d1(cnt)} diárias</b> (soma)`;
+  return `<div class="diacard noprint">
+    <div class="diahd"><span class="material-symbols-rounded">restaurant</span><h3>Diárias da equipe em campo</h3>
+      <span class="cmpseg diaseg"><button class="${modo==='fim'?'on':''}" onclick="setDiaModo('fim')">Todos até o fim</button><button class="${modo==='exec'?'on':''}" onclick="setDiaModo('exec')">Por tempo de execução</button></span></div>
+    <div class="diahint">${hint}</div>
+    ${row('Alimentação','restaurant','alim',a)}
+    ${row('Hospedagem','hotel','hosp',h)}
+    <div class="diafoot"><span>Total das diárias <span style="color:var(--tx3);font-weight:400">(custo)</span></span><b id="dia_foot">${fmt((a+h)*cnt)}</b></div>
+  </div>`;
+}
+function setDia(key,val){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.diarias[key]=num(val); save(); diaRefreshTotals(); recalc(); }
+function diaBlur(el,key){ const n=num(el.value); el.value=n?moneyVal(n):''; }
+function diaRefreshTotals(){ const cnt=obraPessoaDias(), d=S.diarias||{}, a=num(d.alim), h=num(d.hosp);
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  set('dia_alim',fmt(a*cnt)); set('dia_hosp',fmt(h*cnt)); set('dia_foot',fmt((a+h)*cnt)); }
+function setDiaModo(m){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.diarias.modo=(m==='exec'?'exec':'fim'); save(); refreshMaoPanel(); recalc(); const db=BLKS.find(b=>b.key==='despesas'); if(db){try{renderBlk(db);}catch(e){}} }
 function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m="equipe"]'); if(el)el.value=S.equipe; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); recalc(); }   // efetivo dirige o custo dos serviços que o usam
 // ===== Fatores da obra (abrangência + fator do local) — só nos serviços montados =====
 function fatorMax(){ return num(S.fatorMax)>0?num(S.fatorMax):3; }
@@ -1474,7 +1529,7 @@ function updBloco(blk,val){
 }
 
 /* ---------- edição ---------- */
-function refreshMaoPanel(){ const el=document.getElementById('svcTopPanels'); if(el) el.innerHTML=efetivoHtml()+fatoresObraHtml(); }
+function refreshMaoPanel(){ const el=document.getElementById('svcTopPanels'); if(el) el.innerHTML=efetivoHtml()+diariasHtml()+fatoresObraHtml(); }
 function upd(blk,id,field,val){
   const r=S[blk].find(x=>x.id===id); if(!r)return;
   r[field]=val;
@@ -1965,17 +2020,20 @@ function bindFields(){
 function recalc(){
   const preco={}, cst={};
   BLKS.forEach(b=>{ const on=blocoAtivo(b.key); preco[b.key]=on?blkSub(b.key):0; cst[b.key]=on?blkCusto(b.key):0; });
-  const bruto=preco.servicos+preco.equip+preco.despesas+preco.materiais;
+  // DIÁRIAS da equipe (alimentação+hospedagem): custo → preço com a margem base (como as despesas)
+  const diaC=diariasCusto(), diaP=diaC*(1+num(S.margemBase)/100);
+  const bruto=preco.servicos+preco.equip+preco.despesas+preco.materiais+diaP;
   const desc=bruto*num(S.descontoPct)/100;
   const liquido=bruto-desc;                                 // valor antes do imposto
   const imp=liquido*num(S.impostoPct)/100;
   const total=liquido+imp;                                  // imposto SOMA ao total (repasse ao cliente)
-  const custo=cst.servicos+cst.equip+cst.despesas+cst.materiais;   // custo real (auto)
+  const custo=cst.servicos+cst.equip+cst.despesas+cst.materiais+diaC;   // custo real (auto)
   const lucro=liquido-custo;                                // imposto é repasse — NÃO reduz o lucro
   const marg=liquido?lucro/liquido*100:0;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   set('s_serv',fmt(preco.servicos)); set('s_equip',fmt(preco.equip));
   set('s_desp',fmt(preco.despesas)); set('s_mat',fmt(preco.materiais));
+  set('s_diarias',fmt(diaP)); const lndia=document.getElementById('ln_diarias'); if(lndia) lndia.style.display=(diaC>0?'':'none');
   set('s_bruto',fmt(bruto)); set('s_desc','− '+fmt(desc));
   set('s_total',fmt(total)); set('s_preco',fmt(total));
   set('s_imp','+ '+fmt(imp)); set('s_custo',fmt(custo));
