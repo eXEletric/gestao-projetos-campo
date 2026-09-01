@@ -288,6 +288,10 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .svc>.cin{width:100%}
 .svc .bs{font-size:11px;color:var(--tx3);display:flex;align-items:center;gap:4px;margin-top:2px}
 .svc .bs .material-symbols-rounded{font-size:13px;color:var(--blue)}
+.gatline{display:flex;align-items:center;gap:5px;margin-top:4px;flex-wrap:wrap}
+.gatline .gaic{font-size:14px;color:var(--pri)}
+.gatline .gatsel{font-size:11px;padding:2px 5px;border:1px solid var(--line2);border-radius:6px;background:var(--surf);color:var(--tx2);max-width:150px}
+.gatline .gathint{font-size:10.5px;color:var(--tx3);background:var(--pri-bg,#efeafc);border-radius:10px;padding:1px 7px}
 .money{white-space:nowrap}
 .preco{font-weight:700;color:var(--tx)}
 .preco b{font-weight:800;color:var(--pri)}
@@ -991,7 +995,16 @@ const custoEf=r=>custoUn(r)*obraMult(r);                // custo efetivo = base 
 // preço (o que o cliente paga) e custo (interno) por linha
 // "Total do serviço": o custo já é o total → a quantidade é 1 (não multiplica)
 const isTotal=r=>!!(r.composicao&&r.composicao.base==='total');
-const qtyOf=r=>isTotal(r)?1:num(r.qtd);
+// DESPESAS por GATILHO: fixo · por pessoa/dia · por dia · por pessoa — puxam pessoas (efetivo) e prazo da obra
+const DESP_GAT={fixo:{lb:'valor fixo',ic:'lock'},pd:{lb:'por pessoa/dia',ic:'restaurant'},dia:{lb:'por dia',ic:'calendar_month'},pes:{lb:'por pessoa',ic:'person'}};
+function obraPessoas(){ return (aggMaoObra()||[]).reduce((a,f)=>a+num(f.pes),0); }
+function obraPrazo(){ return (aggMaoObra()||[]).reduce((m,f)=>Math.max(m,num(f.dias)),0); }
+function despMult(r){ const g=r.gatilho||'fixo';
+  if(g==='pd') return obraPessoas()*obraPrazo();
+  if(g==='dia') return obraPrazo();
+  if(g==='pes') return obraPessoas();
+  return num(r.qtd); }
+const qtyOf=r=> (r.gatilho&&r.gatilho!=='fixo') ? despMult(r) : (isTotal(r)?1:num(r.qtd));
 // MARGEM MANDA: o preço é SEMPRE custo × margem (acabou o "valor geral" que zerava). "Só o total" = só apresentação.
 function linePreco(r){
   if(isCusto(r)) return qtyOf(r)*custoEf(r)*(1+mgOf(r)/100);
@@ -1217,7 +1230,7 @@ function renderBlk(cfg){
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
-        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div></td>
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${despGatCtrl(cfg,r)}</td>
         ${marcaCell}
         <td class="pint">
           <div class="swcell">
@@ -1228,7 +1241,7 @@ function renderBlk(cfg){
           </div>
         </td>
         <td class="r money pint">${custoCell}</td>
-        <td class="r">${isTotal(r)?`<span class="und-fix" title="valor total do serviço — quantidade não se aplica">total</span>`:`<input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)">`}</td>
+        <td class="r">${qtdCellHtml(cfg,r)}</td>
         <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
         <td class="r pint"><span class="mgimp" id="tm_${r.id}">${fmtMg(margImpl)}</span></td>
         <td class="r">${soT?`<span class="incl printonly">incluso</span>`:''}<span class="rsw${soT?' noprint':''}"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
@@ -1256,7 +1269,7 @@ function renderBlk(cfg){
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
-        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div></td>
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${despGatCtrl(cfg,r)}</td>
         ${marcaCell}
         <td class="pint">
           <div class="swcell">
@@ -1267,7 +1280,7 @@ function renderBlk(cfg){
           </div>
         </td>
         <td class="r money pint">${custoCell}</td>
-        <td class="r">${isTotal(r)?`<span class="und-fix" title="valor total do serviço — quantidade não se aplica">total</span>`:`<input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)">`}</td>
+        <td class="r">${qtdCellHtml(cfg,r)}</td>
         <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
         <td class="r pint"><div class="mkwrap ${propria?'own':'base'}">${propria?'<span class="mkne" title="diferente da margem base">&ne;</span>':''}<input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(S.margemBase)}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span class="mkpc">%</span>${propria?`<span class="mkwarn material-symbols-rounded" title="margem própria — fora da base ${num(S.margemBase)}%">warning</span><button class="mkreset" title="voltar à margem base" onclick="resetMargem('${cfg.key}','${r.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</div></td>
         <td class="r money custot pint" id="tc_${r.id}">${fmt(custo)}</td>
@@ -1482,6 +1495,21 @@ function togBase(blk,id){
   if(r.usarBase) r.custoAlt=r.custoBase;                 // volta pro base do cadastro
   else if(r.custoAlt===undefined||r.custoAlt==='') r.custoAlt=r.custoBase;
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc();
+}
+// ---- Despesas: gatilho por linha (fixo / por pessoa·dia / por dia / por pessoa) ----
+function setGat(blk,id,v){ const r=S[blk].find(x=>x.id===id); if(!r)return; r.gatilho=v; save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
+function despGatCtrl(cfg,r){
+  if(cfg.key!=='despesas') return '';
+  const gat=r.gatilho||'fixo';
+  const opts=Object.keys(DESP_GAT).map(k=>`<option value="${k}" ${k===gat?'selected':''}>${DESP_GAT[k].lb}</option>`).join('');
+  const hint = gat==='fixo' ? '' : `<span class="gathint">${gat==='pd'?(obraPessoas()+' pes × '+_d1(obraPrazo())+' d'):gat==='dia'?(_d1(obraPrazo())+' dias'):(obraPessoas()+' pessoas')}</span>`;
+  return `<div class="gatline noprint"><span class="material-symbols-rounded gaic">${DESP_GAT[gat].ic}</span><select class="gatsel" onchange="setGat('${cfg.key}','${r.id}',this.value)" title="Como esta despesa é calculada">${opts}</select>${hint}</div>`;
+}
+function qtdCellHtml(cfg,r){
+  const gat=r.gatilho||'fixo';
+  if(cfg.key==='despesas' && gat!=='fixo') return `<span class="und-fix" title="quantidade calculada — ${DESP_GAT[gat].lb}">${_d1(qtyOf(r))}</span>`;
+  if(isTotal(r)) return `<span class="und-fix" title="valor total do serviço — quantidade não se aplica">total</span>`;
+  return `<input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)">`;
 }
 
 /* ---------- picker do cadastro ---------- */
