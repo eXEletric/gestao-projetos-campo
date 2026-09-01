@@ -1339,8 +1339,9 @@ function aggMaoObra(){
   (S.servicos||[]).forEach(r=>{ const c=r.composicao; if(!c||c.modo==='manual')return;
     const dif=(DIFIC[c.dif||0]||DIFIC[0]||{mult:1}).mult;
     const oldH=(c.un==='dias')?num(c.tv)*JORNADA:(c.un==='minutos')?num(c.tv)/60:num(c.tv);
+    const q=qtyOf(r);   // ⚠️ o trabalho da receita é POR UNIDADE → multiplica pela quantidade da linha (ex.: 600 m)
     (c.mo||[]).forEach(x=>{ const m=MAOOBRA[x.fn]; if(!m)return;
-      const trab=((x.trab!=null)?num(x.trab):num(x.pes||0)*oldH/JORNADA)*dif;   // homem-dia (já com dificuldade)
+      const trab=((x.trab!=null)?num(x.trab):num(x.pes||0)*oldH/JORNADA)*dif*q;   // homem-dia total (dificuldade × quantidade)
       const k=m.funcao+'|'+m.nivel;
       if(!map[k])map[k]={k,funcao:m.funcao,nivel:m.nivel,vh:num(m.vh),trab:0};
       map[k].trab+=trab; }); });
