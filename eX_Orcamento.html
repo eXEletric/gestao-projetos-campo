@@ -1311,7 +1311,7 @@ function renderBlk(cfg){
       </div>
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
-    ${cfg.key==='servicos'?efetivoHtml()+fatoresObraHtml():''}
+    ${cfg.key==='servicos'?('<div id="svcTopPanels">'+efetivoHtml()+fatoresObraHtml()+'</div>'):''}
     ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: a edição é igual (você vê e ajusta cada item), mas na <b>impressão / envio da proposta</b> os itens saem como <b>“incluso”</b> e o valor aparece só no <b>total agrupado</b> do bloco — não item por item.</span></div>`:''}
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button></div>
@@ -1351,6 +1351,13 @@ function aggMaoObra(){
     .sort((a,b)=>b.horas-a.horas);
 }
 function pesFn(k,d){ if(!S.pessoasFn)S.pessoasFn={}; S.pessoasFn[k]=Math.max(1,(+S.pessoasFn[k]||1)+d); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+// prazo legível: ≥1 dia → "X dias"; <1 dia → horas; <1h → minutos (abreviação por extenso)
+function fmtPrazo(d){ d=num(d); if(d<=0) return '0';
+  if(d>=1){ const v=_d1(d); return v+(v==='1'?' dia':' dias'); }
+  const h=d*JORNADA;
+  if(h>=1){ const v=_d1(h); return v+(v==='1'?' hora':' horas'); }
+  return Math.round(h*60)+' min';
+}
 function efetivoHtml(){
   const fs=aggMaoObra();
   if(!fs.length) return `<div class="efcard noprint">
@@ -1363,17 +1370,17 @@ function efetivoHtml(){
     <div class="moawho"><span class="efav"><span class="material-symbols-rounded">engineering</span></span>
       <div><div class="efn">${esc(f.funcao)} · ${esc(f.nivel)}</div><div class="efd">${fmt(f.vh)}/h · <b>${_d1(f.horas)} h</b> acum.</div></div></div>
     <div class="moastep"><button onclick="pesFn('${f.k.replace(/'/g,"\\'")}',-1)">−</button><span class="v">${f.pes}</span><button onclick="pesFn('${f.k.replace(/'/g,"\\'")}',1)">+</button></div>
-    <div class="moapz ${isG?'g':''}"><b>${_d1(f.dias)} d</b><br><span>${isG?'gargalo':'&nbsp;'}</span></div>
+    <div class="moapz ${isG?'g':''}"><b>${fmtPrazo(f.dias)}</b><br><span>${isG?'gargalo':'&nbsp;'}</span></div>
     <div class="moacusto">${fmt(f.custo)}</div>
   </div>`; }).join('');
   return `<div class="efcard noprint">
-    <div class="efhd"><span class="material-symbols-rounded">groups</span><h3>Mão de obra da proposta</h3><span class="efcnt"><span class="material-symbols-rounded">event</span>${_d1(gargalo)} dias</span></div>
+    <div class="efhd"><span class="material-symbols-rounded">groups</span><h3>Mão de obra da proposta</h3><span class="efcnt"><span class="material-symbols-rounded">event</span>${fmtPrazo(gargalo)}</span></div>
     <div class="efhint">As <b>funções somadas</b> dos serviços. Mais pessoas → menos prazo; o <b>custo não muda</b>. O gargalo (função mais carregada) está em âmbar e dita o prazo.</div>
     <div class="moahd"><span>Função · nível</span><span>Pessoas</span><span>Prazo</span><span>Custo</span></div>
     ${rows}
     <div class="moarow moatot"><div class="moawho"><span style="width:34px"></span><div class="efn">Total</div></div>
       <div class="moapz" style="text-align:center"><b>${totPes}</b><br><span>pessoas</span></div>
-      <div class="moapz"><b>${_d1(gargalo)} d</b><br><span>prazo</span></div>
+      <div class="moapz"><b>${fmtPrazo(gargalo)}</b><br><span>prazo</span></div>
       <div class="moacusto"><b>${fmt(MO)}</b></div></div>
   </div>`;
 }
@@ -1467,6 +1474,7 @@ function updBloco(blk,val){
 }
 
 /* ---------- edição ---------- */
+function refreshMaoPanel(){ const el=document.getElementById('svcTopPanels'); if(el) el.innerHTML=efetivoHtml()+fatoresObraHtml(); }
 function upd(blk,id,field,val){
   const r=S[blk].find(x=>x.id===id); if(!r)return;
   r[field]=val;
@@ -1477,6 +1485,8 @@ function upd(blk,id,field,val){
     const st=document.getElementById('st_'+blk);
     if(st) st.innerHTML='Subtotal <b>'+fmt(blkSub(blk))+'</b>';
     recalc();
+    // AO VIVO: quantidade de serviço muda o trabalho → atualiza o painel de mão de obra e as despesas por gatilho
+    if(blk==='servicos' && field==='qtd'){ refreshMaoPanel(); const db=BLKS.find(b=>b.key==='despesas'); if(db){ try{ renderBlk(db); }catch(e){} } }
   }
   save();
 }
