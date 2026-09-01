@@ -1230,7 +1230,7 @@ function resetDemo(){ if(OPP&&CLOUD){ if(confirm("Recarregar este orçamento do 
 const BLKS=[
   {key:"servicos",titulo:"Serviços",icon:"build",obs:true,mat:false,custo:true,soCad:true,sing:"serviço"},
   {key:"equip",titulo:"Locação de equipamentos",icon:"construction",obs:true,mat:false,custo:true,soCad:true,sing:"equipamento"},
-  {key:"despesas",titulo:"Deslocamento & Despesas",icon:"local_shipping",obs:true,mat:false,custo:true,soCad:true,sing:"despesa"},
+  {key:"despesas",titulo:"Deslocamento e outras despesas",icon:"local_shipping",obs:true,mat:false,custo:true,soCad:true,sing:"despesa"},
   {key:"materiais",titulo:"Materiais empregados",icon:"inventory_2",obs:true,mat:true,custo:true,soCad:false,sing:"material"}
 ];
 
@@ -1426,7 +1426,7 @@ function diariasHtml(){
     : `Cada função <b>só os dias que trabalha</b> = <b>${_d1(cnt)} diárias</b> (soma)`;
   return `<div class="diacard noprint">
     <div class="diahd"><span class="material-symbols-rounded">restaurant</span><h3>Diárias da equipe em campo</h3>
-      <span class="cmpseg diaseg"><button class="${modo==='fim'?'on':''}" onclick="setDiaModo('fim')">Todos até o fim</button><button class="${modo==='exec'?'on':''}" onclick="setDiaModo('exec')">Por tempo de execução</button></span></div>
+      <span class="cmpseg diaseg"><button class="${modo==='fim'?'on':''}" onclick="setDiaModo('fim')">Todos até o fim</button><button class="${modo==='exec'?'on':''}" onclick="setDiaModo('exec')">Por tempo de execução individual</button></span></div>
     <div class="diahint">${hint}</div>
     ${row('Alimentação','restaurant','alim',a)}
     ${row('Hospedagem','hotel','hosp',h)}
