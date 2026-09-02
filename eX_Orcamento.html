@@ -127,6 +127,16 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .blkmg-in{width:38px;border:none;background:transparent;color:var(--pri);font:700 13px inherit;text-align:right;padding:0;font-variant-numeric:tabular-nums}
 .blkmg-in:focus{outline:none}
 .blkmg.pass{color:var(--amber,#a45a00);background:var(--amber-bg,#fdf1de);border-color:var(--amber-line,#f0d29a)}
+.blkmg.locked{background:var(--surf2);color:var(--tx2);border-color:var(--line2)}
+.ln.combo .lbl{display:inline-flex;align-items:center;gap:5px;color:var(--pri);font-weight:600}
+.ln.combo .lbl .material-symbols-rounded{font-size:16px}
+.ln.combo .val{display:inline-flex;align-items:center;gap:4px}
+.combo-x{border:none;background:none;color:var(--tx3);cursor:pointer;padding:1px;border-radius:5px;display:inline-flex}
+.combo-x:hover{background:#fbeaec;color:var(--red,#b23a48)}.combo-x .material-symbols-rounded{font-size:15px}
+.combo-note{font-size:11.5px;color:var(--pri);padding:2px 0 6px;display:flex;align-items:center;gap:5px}
+.combo-note b{color:var(--pri)}
+.combo-note .material-symbols-rounded{font-size:14px}
+.combo-note.low{color:var(--amber,#a45a00)}.combo-note.neg{color:var(--red,#b23a48)}
 .tbl{width:100%;border-collapse:collapse;font-size:12px}
 .tbl th{font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:600;text-align:left;padding:0 6px 5px;border-bottom:1px solid var(--line2);white-space:nowrap}
 .tbl th.r,.tbl td.r{text-align:right}
@@ -709,6 +719,8 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
           <div class="ln" id="ln_desc"><span class="lbl">Desconto <input class="pin" style="width:52px" data-f="descontoPct" inputmode="decimal">%</span><span class="val" id="s_desc">—</span></div>
           <div class="ln" id="ln_imp"><span class="lbl">Impostos <input class="pin" style="width:52px" data-f="impostoPct" inputmode="decimal">%</span><span class="val" id="s_imp">—</span></div>
           <div class="ln tt"><span class="lbl">Total</span><span class="val" id="s_total">R$ 0,00</span></div>
+          <div class="ln combo" id="ln_combo"><span class="lbl"><span class="material-symbols-rounded">handshake</span>Valor combinado</span><span class="val"><span style="color:var(--tx3);font-size:12px">R$</span> <input class="pin" id="in_combo" style="width:84px;text-align:right" inputmode="decimal" placeholder="—" onchange="setValorCombinado(this.value)"><button id="combo_clear" class="combo-x" onclick="clearCombo()" title="soltar — voltar às margens das abas" style="display:none"><span class="material-symbols-rounded">close</span></button></span></div>
+          <div class="combo-note" id="combo_note" style="display:none"></div>
 
           <!-- VISÃO INTERNA -->
           <div class="intbox">
@@ -1034,11 +1046,27 @@ const custoUn=r=>{ if(r.usarBase!==false && r.composicao){ const cc=custoCompost
 // MARGEM POR BLOCO: Serviços e Materiais têm lucro (margem própria); Despesas e Locações entram a custo (0)
 const MG_DEF={servicos:30,materiais:30,despesas:0,equip:0};
 function baseMg(blk){ if(S.margem && S.margem[blk]!==undefined && S.margem[blk]!=='') return num(S.margem[blk]); return (MG_DEF[blk]!==undefined?MG_DEF[blk]:0); }
-const mgOf=r=>(r.margem===''||r.margem==null)?baseMg(r._blk):num(r.margem);
+// VALOR FINAL COMBINADO: fixa o preço; a margem dos blocos de lucro (serviços+materiais) deriva pra bater
+function comboActive(){ return S.valorCombinado!=null && num(S.valorCombinado)>0; }
+function comboMg(){   // margem uniforme (fração) nos blocos de lucro
+  const cL=(blocoAtivo('servicos')?blkCusto('servicos'):0)+(blocoAtivo('materiais')?blkCusto('materiais'):0);
+  if(cL<=0) return 0;
+  const cP=(blocoAtivo('despesas')?blkCusto('despesas'):0)+(blocoAtivo('equip')?blkCusto('equip'):0)+diariasCusto();
+  const desc=num(S.descontoPct)/100, imp=num(S.impostoPct)/100;
+  const bruto=num(S.valorCombinado)/(((1-desc)||1)*(1+imp));   // tira imposto e desconto
+  return (bruto-cP)/cL - 1;
+}
+const mgOf=r=>{ if(comboActive() && (r._blk==='servicos'||r._blk==='materiais')) return comboMg()*100;
+  return (r.margem===''||r.margem==null)?baseMg(r._blk):num(r.margem); };
+function setValorCombinado(v){ const n=num(v); S.valorCombinado=(n>0?n:null); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); }
+function clearCombo(){ S.valorCombinado=null; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); }
 function setBlkMargem(blk,v){ if(!S.margem)S.margem={}; S.margem[blk]=num(v); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
 // controle de margem no cabeçalho do bloco: só Serviços/Materiais (lucro); Despesas/Locações = etiqueta "custo + imposto"
 function blkMargemCtrl(cfg){ if(!cfg.custo) return '';
-  if(cfg.key==='servicos'||cfg.key==='materiais') return `<span class="blkmg" title="Margem padrão deste bloco (lucro). Cada linha pode ter a sua."><span class="material-symbols-rounded">trending_up</span>Margem <input class="blkmg-in" value="${num(baseMg(cfg.key))}" inputmode="decimal" onchange="setBlkMargem('${cfg.key}',this.value)">%</span>`;
+  if(cfg.key==='servicos'||cfg.key==='materiais'){
+    if(comboActive()) return `<span class="blkmg locked" title="Margem definida pelo Valor combinado. Solte o valor combinado (✕) pra editar."><span class="material-symbols-rounded">lock</span>Margem ${_d1(comboMg()*100)}%</span>`;
+    return `<span class="blkmg" title="Margem padrão deste bloco (lucro). Cada linha pode ter a sua."><span class="material-symbols-rounded">trending_up</span>Margem <input class="blkmg-in" value="${num(baseMg(cfg.key))}" inputmode="decimal" onchange="setBlkMargem('${cfg.key}',this.value)">%</span>`;
+  }
   return `<span class="blkmg pass" title="Este bloco entra a CUSTO — sem lucro. O imposto incide sobre tudo (repasse)."><span class="material-symbols-rounded">receipt_long</span>custo + imposto</span>`;
 }
 // ===== FATORES DA OBRA (gerais do orçamento) — só afetam serviços MONTADOS (com composição) =====
@@ -1145,6 +1173,7 @@ function orcVazio(){
     obs:{},
     comprovantes:[],
     diarias:{modo:'fim',alim:num(DIARIA_BASE.alim),hosp:num(DIARIA_BASE.hosp)},   // puxa o padrão da empresa
+    valorCombinado:null,
     servicos:[], equip:[], despesas:[], materiais:[]
   };
 }
@@ -1245,6 +1274,7 @@ function sanitize(){
   if(S.margem.despesas===undefined||S.margem.despesas==='')S.margem.despesas=0;
   if(S.margem.equip===undefined||S.margem.equip==='')S.margem.equip=0;
   ['servicos','equip','despesas','materiais'].forEach(k=>{ (S[k]||[]).forEach(r=>{ r._blk=k; }); });   // marca o bloco de cada linha (p/ a margem base certa)
+  if(S.valorCombinado===undefined)S.valorCombinado=null;   // preço fechado (deriva a margem); null = margens normais
   if(!Array.isArray(S.comprovantes))S.comprovantes=[];
   if(S.abrIdx===undefined)S.abrIdx=0;
   if(S.fatorLocal===undefined||num(S.fatorLocal)<=0)S.fatorLocal=1;
@@ -2126,6 +2156,14 @@ function recalc(){
   const lnd=document.getElementById('ln_desc'); if(lnd) lnd.classList.toggle('zeroprint', num(S.descontoPct)<=0);  // desconto 0% some na proposta
   const lni=document.getElementById('ln_imp'); if(lni) lni.classList.toggle('zeroprint', num(S.impostoPct)<=0);   // imposto 0% some na proposta
   checkValidade();
+  // valor combinado — UI (input, botão soltar, aviso da margem derivada)
+  const ci=document.getElementById('in_combo'), cx=document.getElementById('combo_clear'), cn=document.getElementById('combo_note');
+  if(comboActive()){
+    if(ci && document.activeElement!==ci) ci.value=num(S.valorCombinado).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+    if(cx)cx.style.display='';
+    const m=comboMg()*100;
+    if(cn){ cn.style.display=''; cn.className='combo-note'+(m<0?' neg':(m<5?' low':'')); cn.innerHTML=(m<0)?'<span class="material-symbols-rounded">warning</span>Abaixo do custo — margem '+_d1(m)+'% (prejuízo)':(m<5?'<span class="material-symbols-rounded">warning</span>Margem baixa: '+_d1(m)+'%':'Margem ajustada em Serviços/Materiais: <b>'+_d1(m)+'%</b>'); }
+  } else { if(cx)cx.style.display='none'; if(cn)cn.style.display='none'; if(ci && document.activeElement!==ci) ci.value=''; }
   S._total=total; S._custo=custo; S._lucro=lucro;
   writeback(total);
 }
