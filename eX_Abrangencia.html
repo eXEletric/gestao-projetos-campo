@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>eX Abrangência</title>
+<meta name="theme-color" content="#533ab7">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0" rel="stylesheet">
+<style>
+:root{--bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--pri:#533ab7;--pri-bg:#eeedfe;--green:#3b6d11;--amber:#ba7517;--red:#a32d2d;}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
+.material-symbols-rounded{font-family:'Material Symbols Rounded';line-height:1;vertical-align:middle;font-size:20px}
+.app{max-width:1000px;margin:0 auto;padding:16px 18px 60px}
+.appbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.logo{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--pri)}.logo b{color:var(--tx)}
+.modtag{font-size:12px;font-weight:600;color:var(--tx2);background:var(--surf2);padding:4px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px}
+.modtag .material-symbols-rounded{font-size:16px;color:var(--pri)}
+.spacer{flex:1}
+.btn{font-size:13px;padding:8px 13px;border-radius:8px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--surf2)}.btn .material-symbols-rounded{font-size:18px}
+.btn-p{background:var(--pri);color:#fff;border-color:var(--pri)}.btn-p:hover{background:#472f9e}
+.sub{font-size:12px;color:var(--tx2);margin:2px 0 16px}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:18px}
+.ch{display:flex;align-items:center;gap:8px;padding:11px 14px;border-bottom:1px solid var(--line);background:var(--surf2)}
+.ch .material-symbols-rounded{font-size:18px;color:var(--pri)}.ch b{font-size:12.5px}.ch .sm{color:var(--tx3);font-size:11px;font-weight:400}
+.hintbar{font-size:11.5px;color:var(--tx3);padding:9px 14px;background:var(--surf2);border-top:1px solid var(--line)}.hintbar b{color:var(--tx2)}
+.empty{padding:26px;text-align:center;color:var(--tx3);font-size:13px}
+.scroll{overflow-x:auto}
+
+/* ---- camada UF: mapa de blocos ---- */
+.ufwrap{display:flex;gap:22px;padding:16px 14px;flex-wrap:wrap}
+.ufmap{flex:0 0 302px;max-width:100%}
+.ufmap svg{width:100%;height:auto;display:block}
+.ufmap svg text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:600;font-size:11px}
+.ufmap svg g{cursor:pointer}
+.ufmap svg g:hover rect{stroke-width:2.4}
+.ufside{flex:1;min-width:230px;display:flex;flex-direction:column;gap:12px}
+.cnt{display:flex;flex-direction:column;gap:6px}
+.cntr{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--tx2)}
+.cntr .dot{width:11px;height:11px;border-radius:3px;flex:none}
+.cntr b{color:var(--tx);font-variant-numeric:tabular-nums;min-width:22px;text-align:right}
+.cntr .ufs{font-size:11px;color:var(--tx3);font-family:ui-monospace,Menlo,Consolas,monospace}
+.note{font-size:12px;color:var(--tx2);background:var(--pri-bg);border:1px solid rgba(83,58,183,.2);border-radius:9px;padding:10px 12px}
+.note b{color:var(--pri)}
+
+/* ---- tabelas de faixa e origem ---- */
+.tbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.tbl th{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:600;text-align:left;padding:9px 12px 7px;white-space:nowrap}
+.tbl th.r,.tbl td.r{text-align:right}
+.tbl th.c,.tbl td.c{text-align:center}
+.tbl td{padding:7px 12px;border-top:1px solid var(--line)}
+.rgin{width:100%;min-width:110px;padding:5px 7px;border:1px solid transparent;border-radius:6px;font:600 13px inherit;color:var(--tx);background:transparent}
+.rgin:hover{border-color:var(--line2)}.rgin:focus{outline:none;border-color:var(--pri);background:var(--surf)}
+.numin{width:74px;padding:5px 7px;border:1px solid var(--line2);border-radius:6px;text-align:right;font-size:13px;font-variant-numeric:tabular-nums}
+.numin:focus{outline:none;border-color:var(--pri)}
+.rgdel{border:none;background:none;color:var(--tx3);cursor:pointer;padding:3px;border-radius:6px;display:inline-flex}
+.rgdel:hover{background:#fbeaec;color:var(--red)}.rgdel:disabled{opacity:.25;cursor:default}.rgdel .material-symbols-rounded{font-size:16px}
+.rgadd{border:1px dashed var(--line2);background:transparent;color:var(--pri);font:600 12px inherit;border-radius:20px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.rgadd:hover{background:var(--surf2)}.rgadd .material-symbols-rounded{font-size:15px}
+.faixa-lbl{font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.star{border:none;background:none;cursor:pointer;color:var(--tx3);display:inline-flex;padding:2px}
+.star.on{color:var(--amber)}.star .material-symbols-rounded{font-size:18px}
+
+/* ---- modal ---- */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
+.modal-bg.show{display:flex}
+.modal{background:var(--surf);border-radius:13px;width:520px;max-width:100%;max-height:90vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 12px 40px rgba(0,0,0,.25)}
+.mh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}
+.mh b{font-size:15px;font-weight:700}.mh .x{cursor:pointer;color:var(--tx3);background:none;border:none;display:flex}
+.mb{padding:16px 18px;overflow-y:auto}
+.mf{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px}
+.fg{margin-bottom:14px}
+.fl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);margin-bottom:5px;display:block}
+.fi{width:100%;padding:8px 11px;border:1px solid var(--line2);border-radius:7px;font-size:14px;background:var(--surf)}
+.fi:focus{outline:none;border-color:var(--pri)}
+textarea.fi{resize:vertical;min-height:54px;font-family:inherit}
+.hint{font-size:10.5px;color:var(--tx3);margin-top:4px}
+.stgrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.stopt{border:1px solid var(--line2);border-radius:9px;padding:9px 11px;cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:var(--tx2);background:var(--surf)}
+.stopt .dot{width:11px;height:11px;border-radius:3px;flex:none}
+.stopt.sel{border-color:var(--pri);background:var(--pri-bg);color:var(--tx)}
+.chk{display:flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer}
+.chk input{width:17px;height:17px;accent-color:var(--pri)}
+.lojatag{font-size:11px;color:var(--tx3);background:var(--surf2);border-radius:20px;padding:3px 10px;display:inline-flex;align-items:center;gap:5px}
+.lojatag .material-symbols-rounded{font-size:14px}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="appbar">
+    <span class="logo"><b>e</b>X</span>
+    <span class="modtag"><span class="material-symbols-rounded">public</span>Abrangência · onde a eX atende</span>
+    <span id="cloudb" style="font-size:11px;color:var(--tx3)"></span>
+  </div>
+  <div class="sub"><b>Duas camadas sobre a mesma obra.</b> A <b>UF</b> governa o que é jurídico e fiscal (imposto, inscrição, parceiro). A <b>faixa de km</b> governa o que é custo e logística. Nenhuma substitui a outra — o orçamento recebe as duas parcelas separadas.</div>
+
+  <!-- CAMADA 1 — FISCAL POR UF -->
+  <div class="card">
+    <div class="ch"><span class="material-symbols-rounded">gavel</span><b>Camada fiscal · por estado</b><span class="sm">— clique na UF para configurar</span></div>
+    <div class="ufwrap">
+      <div class="ufmap"><svg id="mapa" viewBox="0 0 302 424" role="img" aria-label="Mapa em blocos das 27 UFs por status de atendimento"></svg></div>
+      <div class="ufside">
+        <div class="cnt" id="contadores"></div>
+        <div class="note" id="notaCarteira"></div>
+      </div>
+    </div>
+    <div class="hintbar">O status nasce da realidade: UF onde já existe <b>loja atendida</b> entra como <b>atende</b>. O que muda por estado é <b>imposto e habilitação</b> — distância não se resolve aqui, se resolve na faixa de km abaixo.</div>
+  </div>
+
+  <!-- CAMADA 2 — LOGÍSTICA POR KM -->
+  <div class="card">
+    <div class="ch"><span class="material-symbols-rounded">straighten</span><b>Camada logística · faixas de km rodado</b><span class="sm">— o que cada distância soma em custo e prazo</span><span class="spacer"></span><button class="btn btn-p" style="padding:5px 11px;font-size:12px" onclick="saveFaixas()"><span class="material-symbols-rounded">save</span>Salvar faixas</button></div>
+    <div class="scroll"><table class="tbl">
+      <thead><tr><th>Faixa</th><th class="r">até (km)</th><th class="r">+ custo %</th><th class="r">+ prazo %</th><th class="r"></th></tr></thead>
+      <tbody id="faixaRows"></tbody>
+    </table></div>
+    <div class="hintbar">Km <b>rodado</b>, não em linha reta — é rota de estrada. A faixa sem limite é a última: tudo acima do maior corte cai nela. Estes percentuais são os mesmos que o orçamento já usa hoje.</div>
+  </div>
+
+  <!-- ORIGENS -->
+  <div class="card">
+    <div class="ch"><span class="material-symbols-rounded">trip_origin</span><b>Origens recorrentes</b><span class="sm">— de onde a equipe costuma sair</span><span class="spacer"></span><button class="btn btn-p" style="padding:5px 11px;font-size:12px" onclick="saveOrigens()"><span class="material-symbols-rounded">save</span>Salvar origens</button></div>
+    <div class="scroll"><table class="tbl">
+      <thead><tr><th>Origem</th><th>Cidade</th><th class="c">UF</th><th class="c">padrão</th><th class="r"></th></tr></thead>
+      <tbody id="origemRows"></tbody>
+    </table></div>
+    <div class="hintbar">A eX <b>não tem base fixa</b>: a equipe se monta por obra. Esta lista só evita redigitar — <b>cada proposta escolhe a sua origem</b>, e é de lá que o km é contado.</div>
+  </div>
+</div>
+
+<!-- MODAL DA UF -->
+<div class="modal-bg" id="ufModal">
+  <div class="modal">
+    <div class="mh"><b id="ufTitle">UF</b><button class="x" onclick="closeUf()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div id="ufLojas" style="margin-bottom:14px"></div>
+      <div class="fg">
+        <label class="fl">Status de atendimento</label>
+        <div class="stgrid" id="ufStatus"></div>
+      </div>
+      <div class="fg">
+        <label class="chk"><input type="checkbox" id="uf_ie"><span>Tem inscrição estadual nesta UF</span></label>
+        <input class="fi" id="uf_ie_num" placeholder="número da IE (opcional)" style="margin-top:8px">
+        <div class="hint">É o que separa <b>atende</b> de <b>atende com condição</b>: sem IE, material com DIFAL fica travado.</div>
+      </div>
+      <div class="fg"><label class="fl">ICMS · DIFAL e ST de material</label><textarea class="fi" id="uf_icms" placeholder="ex.: DIFAL recolhido pela eX; cabo entra em ST"></textarea></div>
+      <div class="fg"><label class="fl">ISS do serviço</label><textarea class="fi" id="uf_iss" placeholder="ex.: 3% no município da obra, com retenção na fonte"></textarea><div class="hint">Lembrete: ISS é <b>municipal</b>. Aqui fica só a observação até a contabilidade fechar a regra.</div></div>
+      <div class="fg"><label class="fl">Parceiro local</label><input class="fi" id="uf_parc" placeholder="quem executa nesta UF, quando não for equipe própria"></div>
+      <div class="fg"><label class="fl">Observação</label><textarea class="fi" id="uf_obs" placeholder="qualquer coisa que a equipe precise saber antes de vender aqui"></textarea></div>
+    </div>
+    <div class="mf"><button class="btn" onclick="closeUf()">Cancelar</button><button class="btn btn-p" onclick="saveUf()"><span class="material-symbols-rounded">check</span>Salvar</button></div>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
+const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
+const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
+
+let UF={}, FAIXAS=[], ORIGENS=[], LOJAS_UF={}, CLOUD=false, EMPRESA_ID=null, TEM_TABELA=true, UF_EDIT=null;
+
+const UFS=['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+const GRID={RR:[3,1],AP:[4,1],AM:[2,2],PA:[3,2],MA:[4,2],CE:[5,2],RN:[6,2],
+  AC:[1,3],RO:[2,3],TO:[3,3],PI:[4,3],PE:[5,3],PB:[6,3],
+  MT:[2,4],GO:[3,4],BA:[4,4],SE:[5,4],AL:[6,4],
+  MS:[2,5],DF:[3,5],MG:[4,5],ES:[5,5],SP:[3,6],RJ:[4,6],PR:[2,7],SC:[3,7],RS:[2,8]};
+const STATUS=[
+  {k:'atende',    rot:'Atende',            cor:'#3b6d11'},
+  {k:'condicional',rot:'Com condição',     cor:'#ba7517'},
+  {k:'consulta',  rot:'Sob consulta',      cor:'#888780'},
+  {k:'nao_atende',rot:'Não atende',        cor:'#a32d2d'}
+];
+const stCor=k=>(STATUS.find(s=>s.k===k)||STATUS[2]).cor;
+const stRot=k=>(STATUS.find(s=>s.k===k)||STATUS[2]).rot;
+const FAIXA_DEFAULT=[{nivel:'local',rotulo:'Local',ordem:1,km_ate:150,custo_pct:0,tempo_pct:0},
+  {nivel:'estadual',rotulo:'Estadual',ordem:2,km_ate:400,custo_pct:10,tempo_pct:8},
+  {nivel:'nacional',rotulo:'Nacional',ordem:3,km_ate:null,custo_pct:20,tempo_pct:15}];
+
+const num=v=>{if(typeof v==='number')return isNaN(v)?0:v;let s=String(v||'').trim();if(!s)return 0;if(s.indexOf(',')>-1)s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?0:n;};
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+function cloudMsg(t){ const e=document.getElementById('cloudb'); if(e)e.textContent=t; }
+
+// UF do endereço da loja: a sigla é o último token válido do texto
+const RE_UF=new RegExp('\\b('+UFS.join('|')+')\\b','g');
+function ufDoEndereco(end){
+  const m=String(end||'').toUpperCase().match(RE_UF);
+  return m&&m.length?m[m.length-1]:null;
+}
+
+async function init(){
+  UFS.forEach(u=>{ UF[u]={uf:u,status:'consulta',inscricao_estadual:false,ie_numero:'',icms_obs:'',iss_obs:'',parceiro:'',obs:''}; });
+  FAIXAS=FAIXA_DEFAULT.map(x=>({...x}));
+  if(SB){ try{
+    const {data:{session}}=await SB.auth.getSession();
+    if(session){
+      try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
+      await carregar(); CLOUD=true; cloudMsg(TEM_TABELA?'nuvem ✓':'nuvem ✓ · rode SQL_abrangencia.sql');
+    } else cloudMsg('faça login');
+  }catch(e){ console.error(e); cloudMsg('erro nuvem'); } }
+  renderMapa(); renderContadores(); renderFaixas(); renderOrigens();
+}
+
+async function carregar(){
+  const lj=await SB.from('lojas').select('endereco').is('deleted_at',null);
+  LOJAS_UF={};
+  (lj.data||[]).forEach(l=>{ const u=ufDoEndereco(l.endereco); if(u) LOJAS_UF[u]=(LOJAS_UF[u]||0)+1; });
+
+  const a=await SB.from('abrangencia_uf').select('*');
+  if(a.error){ TEM_TABELA=false; }
+  else { TEM_TABELA=true; (a.data||[]).forEach(r=>{ if(UF[r.uf]) UF[r.uf]={...UF[r.uf],...r}; }); }
+
+  // sem tabela ainda: o mapa já mostra a realidade pelas lojas
+  if(!TEM_TABELA) Object.keys(LOJAS_UF).forEach(u=>{ if(UF[u]) UF[u].status='atende'; });
+
+  const f=await SB.from('orc_abrangencia').select('*').order('ordem');
+  if(!f.error && f.data && f.data.length) FAIXAS=f.data.map(x=>({km_ate:null,...x}));
+
+  const o=await SB.from('abrangencia_origens').select('*').order('nome');
+  ORIGENS=(o.error?[]:(o.data||[]));
+}
+
+/* ---------- mapa de blocos ---------- */
+function renderMapa(){
+  const NS='http://www.w3.org/2000/svg', svg=document.getElementById('mapa');
+  const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  svg.innerHTML='';
+  const cell=42, gap=6, ox=6, oy=6;
+  Object.keys(GRID).forEach(u=>{
+    const p=GRID[u], x=ox+(p[0]-1)*(cell+gap), y=oy+(p[1]-1)*(cell+gap);
+    const st=UF[u].status||'consulta', cor=stCor(st), n=LOJAS_UF[u]||0;
+    const forte=(st==='atende'||st==='nao_atende'||st==='condicional');
+    const g=el('g',{onclick:`openUf('${u}')`,tabindex:'0',role:'button'});
+    g.appendChild(el('rect',{x,y,width:cell,height:cell,rx:3,fill:cor,'fill-opacity':forte?0.88:0.30,stroke:cor,'stroke-width':1,'stroke-opacity':0.85}));
+    const t1=el('text',{x:x+cell/2,y:y+(n?17:25),'text-anchor':'middle',fill:forte?'#fff':'#1a1a18'});
+    t1.textContent=u; g.appendChild(t1);
+    if(n){ const t2=el('text',{x:x+cell/2,y:y+32,'text-anchor':'middle','font-size':'11',fill:forte?'#fff':'#5f5e5a','fill-opacity':forte?0.85:1});
+      t2.textContent=n+(n>1?' lojas':' loja'); t2.setAttribute('font-size','9'); g.appendChild(t2); }
+    const ttl=el('title'); ttl.textContent=u+' · '+stRot(st)+(n?' · '+n+(n>1?' lojas':' loja'):''); g.appendChild(ttl);
+    svg.appendChild(g);
+  });
+}
+function renderContadores(){
+  const box=document.getElementById('contadores');
+  box.innerHTML=STATUS.map(s=>{
+    const lista=UFS.filter(u=>(UF[u].status||'consulta')===s.k);
+    return `<div class="cntr"><span class="dot" style="background:${s.cor};opacity:${s.k==='consulta'?.45:1}"></span>
+      <b>${lista.length}</b><span>${s.rot}</span><span class="ufs">${lista.length&&lista.length<=8?lista.join(' '):''}</span></div>`;
+  }).join('');
+  const tot=Object.values(LOJAS_UF).reduce((a,b)=>a+b,0);
+  const nUf=Object.keys(LOJAS_UF).length;
+  const top=Object.entries(LOJAS_UF).sort((a,b)=>b[1]-a[1]).slice(0,3).map(([u,n])=>u+' '+n).join(' · ');
+  document.getElementById('notaCarteira').innerHTML = nUf
+    ? `<b>A carteira já responde por você.</b> ${tot} lojas em ${nUf} UFs${top?' — concentração em '+top:''}. Onde já há loja, o estado nasce como <b>atende</b>.`
+    : `Entre com login para o mapa nascer calibrado pelas lojas já atendidas.`;
+}
+
+/* ---------- modal da UF ---------- */
+function openUf(u){
+  if(!CLOUD){ alert('Entre com login para configurar.'); return; }
+  UF_EDIT=u; const d=UF[u], n=LOJAS_UF[u]||0;
+  document.getElementById('ufTitle').textContent=u+' · abrangência fiscal';
+  document.getElementById('ufLojas').innerHTML = n
+    ? `<span class="lojatag"><span class="material-symbols-rounded">storefront</span>${n} ${n>1?'lojas atendidas':'loja atendida'} nesta UF</span>`
+    : `<span class="lojatag"><span class="material-symbols-rounded">help</span>sem histórico de obra nesta UF</span>`;
+  document.getElementById('ufStatus').innerHTML=STATUS.map(s=>
+    `<div class="stopt ${d.status===s.k?'sel':''}" onclick="pickStatus('${s.k}')" data-k="${s.k}">
+      <span class="dot" style="background:${s.cor}"></span>${s.rot}</div>`).join('');
+  document.getElementById('uf_ie').checked=!!d.inscricao_estadual;
+  document.getElementById('uf_ie_num').value=d.ie_numero||'';
+  document.getElementById('uf_icms').value=d.icms_obs||'';
+  document.getElementById('uf_iss').value=d.iss_obs||'';
+  document.getElementById('uf_parc').value=d.parceiro||'';
+  document.getElementById('uf_obs').value=d.obs||'';
+  document.getElementById('ufModal').classList.add('show');
+}
+function pickStatus(k){
+  if(!UF_EDIT)return; UF[UF_EDIT].status=k;
+  document.querySelectorAll('#ufStatus .stopt').forEach(e=>e.classList.toggle('sel',e.dataset.k===k));
+}
+function closeUf(){ document.getElementById('ufModal').classList.remove('show'); UF_EDIT=null; }
+async function saveUf(){
+  if(!UF_EDIT)return;
+  const u=UF_EDIT, d=UF[u];
+  d.inscricao_estadual=document.getElementById('uf_ie').checked;
+  d.ie_numero=document.getElementById('uf_ie_num').value.trim();
+  d.icms_obs=document.getElementById('uf_icms').value.trim();
+  d.iss_obs=document.getElementById('uf_iss').value.trim();
+  d.parceiro=document.getElementById('uf_parc').value.trim();
+  d.obs=document.getElementById('uf_obs').value.trim();
+  if(CLOUD){
+    const payload={empresa_id:EMPRESA_ID,uf:u,status:d.status,inscricao_estadual:d.inscricao_estadual,
+      ie_numero:d.ie_numero||null,icms_obs:d.icms_obs||null,iss_obs:d.iss_obs||null,
+      parceiro:d.parceiro||null,obs:d.obs||null,updated_at:new Date().toISOString()};
+    const r=await SB.from('abrangencia_uf').upsert(payload,{onConflict:'empresa_id,uf'});
+    if(r&&r.error){ alert('Erro ao salvar '+u+': '+r.error.message+(TEM_TABELA?'':'\n\nA tabela ainda não existe: rode SQL_abrangencia.sql no Supabase.')); return; }
+    cloudMsg('nuvem ✓ · '+u+' salva');
+  }
+  closeUf(); renderMapa(); renderContadores();
+}
+
+/* ---------- faixas de km ---------- */
+function renderFaixas(){
+  const ordenadas=FAIXAS.map((f,i)=>({f,i})).sort((a,b)=>(a.f.km_ate==null?1e9:num(a.f.km_ate))-(b.f.km_ate==null?1e9:num(b.f.km_ate)));
+  let de=0;
+  const rows=ordenadas.map(({f,i})=>{
+    const ate=f.km_ate==null||f.km_ate===''?null:num(f.km_ate);
+    const faixa= ate==null ? `acima de ${de} km` : `${de} – ${ate} km`;
+    de = ate==null ? de : ate;
+    return `<tr>
+      <td><input class="rgin" value="${esc(f.rotulo||'')}" placeholder="nome da faixa" oninput="FAIXAS[${i}].rotulo=this.value">
+        <div class="faixa-lbl">${faixa}</div></td>
+      <td class="r"><input class="numin" type="number" min="0" step="10" value="${ate==null?'':ate}" placeholder="aberta" oninput="FAIXAS[${i}].km_ate=this.value===''?null:(+this.value||0);renderFaixas()"></td>
+      <td class="r"><input class="numin" type="number" min="0" value="${num(f.custo_pct)}" oninput="FAIXAS[${i}].custo_pct=+this.value||0"> %</td>
+      <td class="r"><input class="numin" type="number" min="0" value="${num(f.tempo_pct)}" oninput="FAIXAS[${i}].tempo_pct=+this.value||0"> %</td>
+      <td class="r"><button class="rgdel" onclick="faixaDel(${i})" title="remover faixa" ${FAIXAS.length<=1?'disabled':''}><span class="material-symbols-rounded">close</span></button></td></tr>`;
+  }).join('');
+  document.getElementById('faixaRows').innerHTML=rows+
+    `<tr><td colspan="5" style="padding:8px 12px"><button class="rgadd" onclick="faixaAdd()"><span class="material-symbols-rounded">add</span>adicionar faixa</button></td></tr>`;
+}
+function faixaAdd(){ FAIXAS.push({nivel:'r'+Date.now().toString(36),rotulo:'Nova faixa',ordem:FAIXAS.length+1,km_ate:null,custo_pct:0,tempo_pct:0}); renderFaixas(); }
+async function faixaDel(i){
+  const f=FAIXAS[i]; if(!f||FAIXAS.length<=1)return;
+  FAIXAS.splice(i,1); renderFaixas();
+  if(CLOUD && f.id){ const r=await SB.from('orc_abrangencia').delete().eq('id',f.id); if(r&&r.error)console.error('faixa del',r.error); }
+}
+async function saveFaixas(){
+  if(!CLOUD){ alert('Entre com login para salvar.'); return; }
+  const ord=FAIXAS.map((f,i)=>({f,i})).sort((a,b)=>(a.f.km_ate==null?1e9:num(a.f.km_ate))-(b.f.km_ate==null?1e9:num(b.f.km_ate)));
+  for(let k=0;k<ord.length;k++){
+    const f=ord[k].f;
+    const payload={rotulo:f.rotulo||'Faixa',ordem:k+1,km_ate:(f.km_ate==null||f.km_ate===''?null:num(f.km_ate)),
+      custo_pct:num(f.custo_pct),tempo_pct:num(f.tempo_pct),updated_at:new Date().toISOString()};
+    let r;
+    if(f.id) r=await SB.from('orc_abrangencia').update(payload).eq('id',f.id);
+    else     r=await SB.from('orc_abrangencia').insert({...payload,empresa_id:EMPRESA_ID,nivel:f.nivel||('r'+Date.now().toString(36))});
+    if(r&&r.error){ alert('Erro ao salvar faixas: '+r.error.message); return; }
+  }
+  await carregar(); renderFaixas(); cloudMsg('nuvem ✓ · faixas salvas');
+}
+
+/* ---------- origens ---------- */
+function renderOrigens(){
+  const rows=ORIGENS.map((o,i)=>`<tr>
+    <td><input class="rgin" value="${esc(o.nome||'')}" placeholder="ex.: Equipe Bahia" oninput="ORIGENS[${i}].nome=this.value"></td>
+    <td><input class="rgin" value="${esc(o.cidade||'')}" placeholder="cidade" oninput="ORIGENS[${i}].cidade=this.value"></td>
+    <td class="c"><input class="numin" style="width:52px;text-align:center;text-transform:uppercase" maxlength="2" value="${esc(o.uf||'')}" placeholder="UF" oninput="ORIGENS[${i}].uf=this.value.toUpperCase()"></td>
+    <td class="c"><button class="star ${o.padrao?'on':''}" title="origem padrão nas propostas novas" onclick="origemPadrao(${i})"><span class="material-symbols-rounded">${o.padrao?'star':'star_border'}</span></button></td>
+    <td class="r"><button class="rgdel" onclick="origemDel(${i})" title="remover origem"><span class="material-symbols-rounded">close</span></button></td></tr>`).join('');
+  document.getElementById('origemRows').innerHTML=(rows||'<tr><td colspan="5" class="empty">Nenhuma origem cadastrada — a proposta pode digitar a dela mesmo assim.</td></tr>')+
+    `<tr><td colspan="5" style="padding:8px 12px"><button class="rgadd" onclick="origemAdd()"><span class="material-symbols-rounded">add</span>adicionar origem</button></td></tr>`;
+}
+function origemAdd(){ ORIGENS.push({nome:'',cidade:'',uf:'',padrao:ORIGENS.length===0,ativo:true}); renderOrigens(); }
+function origemPadrao(i){ ORIGENS.forEach((o,j)=>o.padrao=(j===i)); renderOrigens(); }
+async function origemDel(i){
+  const o=ORIGENS[i]; if(!o)return;
+  ORIGENS.splice(i,1); renderOrigens();
+  if(CLOUD && o.id){ const r=await SB.from('abrangencia_origens').delete().eq('id',o.id); if(r&&r.error)console.error('origem del',r.error); }
+}
+async function saveOrigens(){
+  if(!CLOUD){ alert('Entre com login para salvar.'); return; }
+  for(const o of ORIGENS){
+    if(!String(o.nome||'').trim()) continue;
+    const payload={nome:o.nome.trim(),cidade:(o.cidade||'').trim()||null,uf:(o.uf||'').trim().toUpperCase()||null,
+      padrao:!!o.padrao,ativo:true,updated_at:new Date().toISOString()};
+    let r;
+    if(o.id) r=await SB.from('abrangencia_origens').update(payload).eq('id',o.id);
+    else     r=await SB.from('abrangencia_origens').insert({...payload,empresa_id:EMPRESA_ID});
+    if(r&&r.error){ alert('Erro ao salvar origens: '+r.error.message+(r.error.message.includes('abrangencia_origens')?'\n\nRode SQL_abrangencia.sql no Supabase.':'')); return; }
+  }
+  await carregar(); renderOrigens(); cloudMsg('nuvem ✓ · origens salvas');
+}
+
+init();
+</script>
+</body>
+</html>
