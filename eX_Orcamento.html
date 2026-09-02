@@ -1521,7 +1521,7 @@ function diariasHtml(){
     <div class="diatot" id="dia_${key}">${fmt(val*cnt)}</div></div>`;
   const hint = modo==='fim'
     ? `A equipe fica <b>até o fim</b>: ${pes} pessoas × ${fmtPrazo(obraPrazo())} = <b>${_d1(cnt)} diárias</b>`
-    : `Cada função <b>só os dias que trabalha</b> = <b>${_d1(cnt)} diárias</b> (soma)`;
+    : `Cada função <b>só os dias que trabalha</b>${diaFuncBreak()?': '+diaFuncBreak():''} = <b>${_d1(cnt)} diárias</b>`;
   return `<div class="diacard noprint">
     <div class="diahd"><span class="material-symbols-rounded">restaurant</span><h3>Diárias da equipe em campo</h3>
       <span class="cmpseg diaseg"><button class="${modo==='fim'?'on':''}" onclick="setDiaModo('fim')">Todos até o fim</button><button class="${modo==='exec'?'on':''}" onclick="setDiaModo('exec')">Por tempo de execução individual</button></span>
@@ -1556,11 +1556,14 @@ function diaBlur(el,key){ const n=num(el.value); el.value=n?moneyVal(n):''; }
 function diaBreak(){ const fs=aggMaoObra()||[]; const pes=fs.reduce((a,f)=>a+num(f.pes),0);
   if(diariasModo()==='fim') return '× '+pes+' pessoa'+(pes===1?'':'s')+' × '+_d1(obraPrazo())+' dia'+(obraPrazo()===1?'':'s')+' =';
   return '× '+_d1(obraPessoaDias())+' diárias ='; }
+// detalhamento por função (modo por execução): "3 Ajudante × 3d + 1 Eletrotécnico × 1d"
+function diaFuncBreak(){ const fs=(aggMaoObra()||[]).filter(f=>num(f.pes)>0&&num(f.dias)>0);
+  return fs.map(f=>num(f.pes)+' '+f.funcao+' × '+_d1(f.dias)+'d').join(' + '); }
 function diaRefreshTotals(){ const fs=aggMaoObra()||[]; const cnt=obraPessoaDias(), d=S.diarias||{}, a=num(d.alim), h=num(d.hosp);
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   set('dia_alim',fmt(a*cnt)); set('dia_hosp',fmt(h*cnt)); set('dia_foot',fmt((a+h)*cnt));
   const pes=fs.reduce((x,f)=>x+num(f.pes),0);
-  const hint = diariasModo()==='fim' ? `A equipe fica <b>até o fim</b>: ${pes} pessoas × ${fmtPrazo(obraPrazo())} = <b>${_d1(cnt)} diárias</b>` : `Cada função <b>só os dias que trabalha</b> = <b>${_d1(cnt)} diárias</b> (soma)`;
+  const hint = diariasModo()==='fim' ? `A equipe fica <b>até o fim</b>: ${pes} pessoas × ${fmtPrazo(obraPrazo())} = <b>${_d1(cnt)} diárias</b>` : `Cada função <b>só os dias que trabalha</b>${diaFuncBreak()?': '+diaFuncBreak():''} = <b>${_d1(cnt)} diárias</b>`;
   const he=document.getElementById('dia_hint'); if(he)he.innerHTML=hint;
   const nt=document.getElementById('dia_note'); if(nt)nt.style.display=((a+h)>0?'none':'');
   const bk=diaBreak(); ['alim','hosp'].forEach(k=>{ const e=document.getElementById('dia_sig_'+k); if(e)e.innerHTML=diaSig(k); const c=document.getElementById('dia_calc_'+k); if(c)c.textContent=bk; }); }
