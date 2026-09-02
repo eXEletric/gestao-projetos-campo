@@ -3922,26 +3922,25 @@ async function init(){
   else { loginVisivel(true); nuvemStatus('faça login','load'); }
 }
 /* ===================== KITS DE ACESSO — motor de grupos ===================== */
+/* Vocabulário POR ÁREA — espelha a tabela `modulos` do banco (o que o gating/view lê). NÃO usar ids finos (obras/diario/clientes…): a view junta em `modulos` e ids órfãos somem → gating abriria tudo. */
 var KT_MODULOS_DEFAULT=[
  {id:'painel',nome:'Painel Inicial',icone:'home',area:'principal',ordem:10,papel_min:'tecnico'},
- {id:'tarefas',nome:'Tarefas',icone:'checklist',area:'principal',ordem:20,papel_min:'tecnico'},
- {id:'agenda',nome:'Agenda',icone:'calendar_month',area:'principal',ordem:30,papel_min:'tecnico'},
- {id:'obras',nome:'Obras',icone:'account_tree',area:'operacao',ordem:40,papel_min:'tecnico'},
- {id:'diario',nome:'Diário de Obra',icone:'history_edu',area:'operacao',ordem:50,papel_min:'tecnico'},
- {id:'almoxarifado',nome:'Almoxarifado',icone:'warehouse',area:'gestao',ordem:60,papel_min:'tecnico'},
- {id:'estoque',nome:'Estoque (vendável)',icone:'sell',area:'gestao',ordem:65,papel_min:'adm',futuro:true},
- {id:'sst',nome:'SST',icone:'health_and_safety',area:'gestao',ordem:70,papel_min:'tecnico'},
- {id:'equipe',nome:'Equipe',icone:'groups',area:'gestao',ordem:80,papel_min:'adm'},
- {id:'clientes',nome:'Clientes',icone:'contacts',area:'gestao',ordem:90,papel_min:'adm'},
- {id:'financeiro',nome:'Financeiro',icone:'payments',area:'gestao',ordem:100,papel_min:'adm'},
- {id:'atividades',nome:'Atividades',icone:'manage_history',area:'gestao',ordem:110,papel_min:'adm'},
+ {id:'tarefas',nome:'Tarefas',icone:'checklist',area:'principal',ordem:20,papel_min:'tecnico',futuro:true},
+ {id:'agenda',nome:'Agenda',icone:'calendar_month',area:'principal',ordem:30,papel_min:'tecnico',futuro:true},
+ {id:'chat',nome:'Chat',icone:'forum',area:'principal',ordem:40,papel_min:'tecnico'},
+ {id:'operacao',nome:'Operação',icone:'account_tree',area:'operacao',ordem:50,papel_min:'tecnico'},
+ {id:'almoxarifado',nome:'Almoxarifado',icone:'warehouse',area:'operacao',ordem:55,papel_min:'tecnico'},
+ {id:'sst',nome:'Segurança do Trabalho',icone:'health_and_safety',area:'operacao',ordem:60,papel_min:'tecnico'},
+ {id:'comercial',nome:'Comercial',icone:'handshake',area:'gestao',ordem:70,papel_min:'adm'},
+ {id:'gestao',nome:'Gestão',icone:'insights',area:'gestao',ordem:80,papel_min:'adm'},
+ {id:'estoque',nome:'Estoque (vendável)',icone:'sell',area:'gestao',ordem:90,papel_min:'adm',futuro:true},
  {id:'config',nome:'Configurações',icone:'settings',area:'config',ordem:900,papel_min:'adm'}
 ];
 var KT_AREA_LBL={principal:'Principal',operacao:'Operação',gestao:'Gestão',config:'Configuração'};
 var KT_SUGERIDOS=[
- {nome:'Campo',icone:'construction',cor:'#22d27f',mods:['painel','tarefas','agenda','obras','diario','almoxarifado','sst']},
- {nome:'Escritório',icone:'business_center',cor:'#533ab7',mods:['painel','tarefas','agenda','clientes','financeiro','atividades']},
- {nome:'Supervisor',icone:'verified_user',cor:'#ba7517',mods:['painel','tarefas','agenda','obras','diario','almoxarifado','sst','equipe','clientes','atividades']}
+ {nome:'Campo',icone:'construction',cor:'#22d27f',mods:['painel','chat','operacao','almoxarifado','sst']},
+ {nome:'Escritório',icone:'business_center',cor:'#533ab7',mods:['painel','chat','comercial','gestao']},
+ {nome:'Supervisor',icone:'verified_user',cor:'#ba7517',mods:['painel','chat','operacao','almoxarifado','sst','comercial','gestao']}
 ];
 var KT_ICONES=['construction','business_center','verified_user','groups','engineering','badge','shield','handyman','apartment','key'];
 var KT_CORES=['#22d27f','#533ab7','#ba7517','#2f6fed','#a32d2d','#0ea5a5','#e0699f','#475569'];
