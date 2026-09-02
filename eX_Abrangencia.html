@@ -209,7 +209,7 @@ textarea.fi{resize:vertical;min-height:54px;font-family:inherit}
       <thead><tr><th>Base</th><th>Cidade</th><th class="c">UF</th><th class="c">padrão</th><th class="r"></th></tr></thead>
       <tbody id="origemRows"></tbody>
     </table></div>
-    <div class="hintbar">A eX <b>não tem base fixa</b>: a equipe se monta por obra. Aqui ficam as bases possíveis — <b>cada proposta escolhe uma</b>, e é dela que o raio é contado. Enquanto a base não tiver coordenada própria, o ponto usado é a capital da UF: com anéis de 500 km, isso não muda a faixa.</div>
+    <div class="hintbar">A eX <b>não tem base fixa</b>: a equipe se monta por obra. Aqui ficam as bases possíveis — <b>cada proposta escolhe uma</b>, e é dela que o raio é contado. Escolha o <b>estado</b> e depois a <b>cidade</b> — a base fica amarrada ao município do IBGE, com a coordenada dele. Não é a capital: base em Anápolis conta de Anápolis. <span id="avisoMun" hidden>· <b>Lista de cidades vazia:</b> rode o SQL_municipios.sql no Supabase.</span></div>
   </div>
 </div>
 
@@ -306,7 +306,7 @@ const NOME_UF={AC:'Acre',AL:'Alagoas',AP:'Amapá',AM:'Amazonas',BA:'Bahia',CE:'C
   ES:'Espírito Santo',GO:'Goiás',MA:'Maranhão',MT:'Mato Grosso',MS:'Mato Grosso do Sul',MG:'Minas Gerais',
   PA:'Pará',PB:'Paraíba',PR:'Paraná',PE:'Pernambuco',PI:'Piauí',RJ:'Rio de Janeiro',RN:'Rio Grande do Norte',
   RS:'Rio Grande do Sul',RO:'Rondônia',RR:'Roraima',SC:'Santa Catarina',SP:'São Paulo',SE:'Sergipe',TO:'Tocantins'};
-let ORIGEM='BA';
+let ORIGEM='BA', ORIGEM_PT=null, ORIGEM_NOME='';
 const FAIXA_DEFAULT=[{nivel:'local',rotulo:'Local',ordem:1,km_ate:150,custo_pct:0,tempo_pct:0},
   {nivel:'estadual',rotulo:'Estadual',ordem:2,km_ate:400,custo_pct:10,tempo_pct:8},
   {nivel:'nacional',rotulo:'Nacional',ordem:3,km_ate:null,custo_pct:20,tempo_pct:15}];
@@ -338,10 +338,12 @@ async function init(){
 }
 // base inicial da simulação: a origem marcada como padrão, senão a UF onde há mais obra
 function definirOrigemInicial(){
-  const p=ORIGENS.find(o=>o.padrao&&o.uf&&CAP[o.uf]);
-  if(p){ ORIGEM=p.uf; return; }
+  const p=ORIGENS.find(o=>o.padrao&&o.uf&&CAP[o.uf]) || ORIGENS.find(o=>o.uf&&CAP[o.uf]);
+  if(p){ ORIGEM=p.uf; ORIGEM_NOME=p.nome||p.cidade||p.uf;
+    ORIGEM_PT=(p.lat!=null&&p.lon!=null)?[num(p.lat),num(p.lon)]:CAP[p.uf]; return; }
   const top=Object.entries(LOJAS_UF).sort((a,b)=>b[1]-a[1])[0];
-  if(top&&CAP[top[0]]) ORIGEM=top[0];
+  if(top&&CAP[top[0]]){ ORIGEM=top[0]; ORIGEM_NOME=top[0]; }
+  ORIGEM_PT=CAP[ORIGEM];
 }
 
 async function carregar(){
@@ -445,15 +447,18 @@ async function saveUf(){
 }
 
 /* ---------- raio a partir da base ---------- */
-// distância entre duas UFs, de capital a capital, aproximada para rodovia
-function kmEntre(a,b){
-  if(a===b) return 0;
-  const A=CAP[a], B=CAP[b]; if(!A||!B) return null;
+// distância entre dois pontos [lat,lon], aproximada para rodovia
+function kmPontos(A,B){
+  if(!A||!B) return null;
   const R=6371, rad=x=>x*Math.PI/180;
   const dLat=rad(B[0]-A[0]), dLon=rad(B[1]-A[1]);
   const h=Math.sin(dLat/2)**2+Math.cos(rad(A[0]))*Math.cos(rad(B[0]))*Math.sin(dLon/2)**2;
   return Math.round(2*R*Math.asin(Math.sqrt(h))*FATOR_ROTA);
 }
+// da base escolhida até a capital de uma UF. A base é uma CIDADE, não a capital:
+// com base em Anápolis, Goiânia não dá zero — dá os ~55 km que existem de verdade.
+function kmDaBase(uf){ return kmPontos(ORIGEM_PT||CAP[ORIGEM], CAP[uf]); }
+function kmEntre(a,b){ return kmPontos(CAP[a],CAP[b]); }
 // faixas em ordem, com limite efetivo (usa sugestão enquanto nada foi salvo)
 function faixasOrdenadas(){
   const ord=FAIXAS.map((f,i)=>({f,i})).sort((a,b)=>
@@ -511,21 +516,36 @@ function faixaDe(km){
 }
 const corFaixa=pos=>{ const op=[0.90,0.62,0.34,0.21,0.14,0.10][pos]??0.12; return {cor:'#533ab7',op}; };
 
-function setOrigem(uf){ ORIGEM=uf; const s=document.getElementById("origemSel"); if(s&&s.value!==uf)s.value=uf; renderMapaLog(); renderFaixas(); renderEstados(); }
+// valor do seletor: "b:<i>" para base cadastrada, "uf:<UF>" para simulação por estado
+function setOrigem(v){
+  v=String(v||'');
+  if(v.startsWith('b:')){
+    const b=ORIGENS[+v.slice(2)];
+    if(b){ ORIGEM=b.uf; ORIGEM_NOME=b.nome||b.cidade||b.uf;
+      ORIGEM_PT=(b.lat!=null&&b.lon!=null)?[num(b.lat),num(b.lon)]:CAP[b.uf]; }
+  }else{
+    const uf=v.replace('uf:',''); if(CAP[uf]){ ORIGEM=uf; ORIGEM_PT=CAP[uf]; ORIGEM_NOME=uf; }
+  }
+  const s=document.getElementById('origemSel'); if(s&&s.value!==v)s.value=v;
+  renderMapaLog(); renderFaixas(); renderEstados();
+}
 function renderOrigemSel(){
   const sel=document.getElementById('origemSel'); if(!sel)return;
-  const bases=ORIGENS.filter(o=>o.uf&&CAP[o.uf]&&String(o.nome||'').trim());
   const aviso=document.getElementById('avisoBases');
+  const bases=ORIGENS.map((o,i)=>({o,i})).filter(({o})=>o.uf&&CAP[o.uf]&&String(o.nome||'').trim());
+  const marca=u=>LOJAS_UF[u]?' · '+LOJAS_UF[u]+(LOJAS_UF[u]>1?' lojas':' loja'):'';
+  const opBases=bases.map(({o,i})=>`<option value="b:${i}">${esc(o.nome)}${o.cidade?' · '+esc(o.cidade):''} (${o.uf})</option>`).join('');
+  const opUFs=UFS.map(u=>`<option value="uf:${u}">${u}${marca(u)}</option>`).join('');
   if(bases.length){
-    sel.innerHTML=bases.map(b=>`<option value="${b.uf}" ${b.uf===ORIGEM?'selected':''}>${esc(b.nome)}${b.cidade?' · '+esc(b.cidade):''} (${b.uf})</option>`).join('');
+    sel.innerHTML=`<optgroup label="bases cadastradas">${opBases}</optgroup>`
+                 +`<optgroup label="simular por estado">${opUFs}</optgroup>`;
     if(aviso) aviso.textContent='Cada proposta escolhe a sua base. Trocando aqui, o mapa e os anéis se recalculam.';
   }else{
-    // ainda sem base cadastrada: deixa simular por estado para não travar a configuração
-    const marca=u=>LOJAS_UF[u]?' · '+LOJAS_UF[u]+(LOJAS_UF[u]>1?' lojas':' loja'):'';
-    sel.innerHTML=`<optgroup label="simulando por estado — cadastre suas bases abaixo">${UFS.map(u=>`<option value="${u}" ${u===ORIGEM?'selected':''}>${u}${marca(u)}</option>`).join('')}</optgroup>`;
+    sel.innerHTML=`<optgroup label="simulando por estado — cadastre suas bases abaixo">${opUFs}</optgroup>`;
     if(aviso) aviso.textContent='Nenhuma base cadastrada ainda — cadastre no card abaixo e ela passa a aparecer aqui.';
   }
-  sel.value=ORIGEM;
+  const b0=bases.find(({o})=>o.uf===ORIGEM&&ORIGEM_PT&&o.lat!=null);
+  sel.value = b0 ? 'b:'+b0.i : (bases.length&&ORIGEM_NOME!==ORIGEM ? 'b:'+bases[0].i : 'uf:'+ORIGEM);
 }
 // código IBGE -> sigla da UF
 const COD_UF={'11':'RO','12':'AC','13':'AM','14':'RR','15':'PA','16':'AP','17':'TO','21':'MA','22':'PI',
@@ -571,7 +591,7 @@ function renderMapaLog(){
   // 1) estados, pintados pela faixa em que caem a partir da base
   BR_GEO.features.forEach(f=>{
     const u=COD_UF[f.properties.codarea]; if(!u) return;
-    const km=kmEntre(ORIGEM,u), fx=faixaDe(km), c=corFaixa(fx.pos), base=(u===ORIGEM);
+    const km=kmDaBase(u), fx=faixaDe(km), c=corFaixa(fx.pos), base=(u===ORIGEM);
     centros[u]=centroDaUF(f.geometry);
     const p=el('path',{d:pathDaUF(f.geometry),class:'uf-shape'+(u===UF_SEL?' uf-sel':''),
       fill:c.cor,'fill-opacity':c.op,stroke:base?'#ba7517':'#fff','stroke-width':base?1.8:.6,
@@ -585,7 +605,7 @@ function renderMapaLog(){
   });
 
   // 2) anéis de distância a partir da base — o raio, sobreposto ao mapa
-  const cb=CAP[ORIGEM];
+  const cb=ORIGEM_PT||CAP[ORIGEM];
   if(cb){
     const bx=projX(cb[1]), by=projY(cb[0]);
     faixasOrdenadas().forEach(o=>{
@@ -620,7 +640,7 @@ function renderMapaLog(){
   Object.keys(centros).forEach(u=>{
     const [cx,cy]=centros[u];
     if(FORA.includes(u)){ foraOrd.push({u,cx,cy}); return; }
-    const c=corFaixa(faixaDe(kmEntre(ORIGEM,u)).pos);
+    const c=corFaixa(faixaDe(kmDaBase(u)).pos);
     const t=el('text',{x:cx.toFixed(1),y:(cy+3).toFixed(1),'text-anchor':'middle',
       class:'sig'+(c.op>0.55?' claro':'')});
     t.textContent=u; gLabels.appendChild(t);
@@ -684,12 +704,12 @@ function renderEstados(){
   const tb=document.getElementById('estadoRows'); if(!tb)return;
   const ord=UFS.slice().sort((a,b)=>NOME_UF[a].localeCompare(NOME_UF[b],'pt-BR'));
   tb.innerHTML=ord.map(u=>{
-    const n=LOJAS_UF[u]||0, km=kmEntre(ORIGEM,u), fx=faixaDe(km), base=(u===ORIGEM), c=corFaixa(fx.pos);
+    const n=LOJAS_UF[u]||0, km=kmDaBase(u), fx=faixaDe(km), base=(u===ORIGEM), c=corFaixa(fx.pos);
     return `<tr>
       <td class="nm">${NOME_UF[u]}${base?' <span class="ufchip base">base</span>':''}</td>
       <td class="c"><span class="ufchip">${u}</span></td>
       <td class="r ${n?'':'zero'}">${n||'—'}</td>
-      <td class="r km ${base?'zero':''}">${base?'—':'~'+km.toLocaleString('pt-BR')+' km'}</td>
+      <td class="r km">~${km.toLocaleString('pt-BR')} km</td>
       <td class="c"><span class="anelnum" style="background:${c.cor};opacity:${Math.max(c.op,.25)}">${fx.pos+1}</span></td>
     </tr>`;
   }).join('');
@@ -703,12 +723,12 @@ function selUf(u){ UF_SEL=(UF_SEL===u?null:u); renderMapaLog(); }
 function renderDevolutiva(){
   const box=document.getElementById('devolutiva'); if(!box)return;
   if(!UF_SEL){ box.innerHTML='<span class="vazio">Clique num estado (ou num pin) para ver lojas, distância e faixa.</span>'; return; }
-  const u=UF_SEL, km=kmEntre(ORIGEM,u), fx=faixaDe(km), n=LOJAS_UF[u]||0, base=(u===ORIGEM);
+  const u=UF_SEL, km=kmDaBase(u), fx=faixaDe(km), n=LOJAS_UF[u]||0, base=(u===ORIGEM);
   const it=(k,v,sm)=>`<div class="dit"><span class="k">${k}</span><span class="v${sm?' sm':''}">${v}</span></div>`;
   box.innerHTML=`<span class="duf">${u}</span><span class="dsep"></span>`
     + it('lojas', n?`${n} ${n>1?'lojas':'loja'}`:'sem histórico')
     + `<span class="dsep"></span>`
-    + it('distância', base?'base':`~${km.toLocaleString('pt-BR')} km`)
+    + it('distância', `~${km.toLocaleString('pt-BR')} km`+(base?' · estado da base':''))
     + `<span class="dsep"></span>`
     + it('faixa', esc(fx.f.rotulo||'—'), true)
     + `<span class="dsep"></span>`
@@ -719,7 +739,7 @@ function renderFaixas(){
   const ord=faixasOrdenadas();
   // cada estado cai em exatamente um anel, pela distância até a base
   const porFaixa={};
-  UFS.forEach(u=>{ const fx=faixaDe(kmEntre(ORIGEM,u)); (porFaixa[fx.i]=porFaixa[fx.i]||[]).push(u); });
+  UFS.forEach(u=>{ const fx=faixaDe(kmDaBase(u)); (porFaixa[fx.i]=porFaixa[fx.i]||[]).push(u); });
   let de=0, naoSalvo=false;
   const rows=ord.map(o=>{
     const {f,i,ultima,efetivo,sugerido}=o;
@@ -768,11 +788,39 @@ async function saveFaixas(){
 }
 
 /* ---------- origens ---------- */
+// municípios por UF, carregados sob demanda (tabela public.municipios)
+const MUN={};
+async function carregaMun(uf){
+  if(!uf||!CLOUD||MUN[uf]) return MUN[uf]||[];
+  const r=await SB.from('municipios').select('codigo_ibge,nome,lat,lon').eq('uf',uf).order('nome');
+  MUN[uf]=r.error?[]:(r.data||[]);
+  return MUN[uf];
+}
+async function abreCidades(i){
+  const uf=(ORIGENS[i]||{}).uf; if(!uf)return;
+  const lista=await carregaMun(uf);
+  const dl=document.getElementById('mun_'+i); if(!dl)return;
+  dl.innerHTML=lista.length ? lista.map(m=>`<option value="${esc(m.nome)}"></option>`).join('')
+                            : '';
+  if(!lista.length){ const av=document.getElementById('avisoMun'); if(av) av.hidden=false; }
+}
+// escolheu a cidade: amarra o município de verdade (código IBGE + coordenada)
+function setCidade(i,valor){
+  const o=ORIGENS[i]; if(!o)return;
+  o.cidade=valor;
+  const m=(MUN[o.uf]||[]).find(x=>x.nome===valor);
+  if(m){ o.municipio_id=m.codigo_ibge; o.lat=m.lat; o.lon=m.lon; }
+  else  { o.municipio_id=null; o.lat=null; o.lon=null; }
+  renderOrigemSel();
+}
 function renderOrigens(){
   const rows=ORIGENS.map((o,i)=>`<tr>
-    <td><input class="rgin" value="${esc(o.nome||'')}" placeholder="ex.: Base Bahia" oninput="ORIGENS[${i}].nome=this.value"></td>
-    <td><input class="rgin" value="${esc(o.cidade||'')}" placeholder="cidade" oninput="ORIGENS[${i}].cidade=this.value"></td>
-    <td class="c"><input class="numin" style="width:52px;text-align:center;text-transform:uppercase" maxlength="2" value="${esc(o.uf||'')}" placeholder="UF" oninput="ORIGENS[${i}].uf=this.value.toUpperCase()"></td>
+    <td><input class="rgin" value="${esc(o.nome||'')}" placeholder="ex.: Base Anápolis" oninput="ORIGENS[${i}].nome=this.value"></td>
+    <td><input class="rgin" list="mun_${i}" value="${esc(o.cidade||'')}" placeholder="${o.uf?'digite a cidade':'escolha a UF primeiro'}"
+         onfocus="abreCidades(${i})" onchange="setCidade(${i},this.value)">
+      <datalist id="mun_${i}"></datalist>
+      ${o.municipio_id?'<div class="faixa-lbl">IBGE '+o.municipio_id+'</div>':''}</td>
+    <td class="c"><input class="numin" style="width:52px;text-align:center;text-transform:uppercase" maxlength="2" value="${esc(o.uf||'')}" placeholder="UF" oninput="ORIGENS[${i}].uf=this.value.toUpperCase()" onchange="abreCidades(${i})"></td>
     <td class="c"><button class="star ${o.padrao?'on':''}" title="origem padrão nas propostas novas" onclick="origemPadrao(${i})"><span class="material-symbols-rounded">${o.padrao?'star':'star_border'}</span></button></td>
     <td class="r"><button class="rgdel" onclick="origemDel(${i})" title="remover origem"><span class="material-symbols-rounded">close</span></button></td></tr>`).join('');
   document.getElementById('origemRows').innerHTML=(rows||'<tr><td colspan="5" class="empty">Nenhuma base cadastrada — cadastre a primeira para o orçamento poder escolher.</td></tr>')+
@@ -790,6 +838,7 @@ async function saveOrigens(){
   for(const o of ORIGENS){
     if(!String(o.nome||'').trim()) continue;
     const payload={nome:o.nome.trim(),cidade:(o.cidade||'').trim()||null,uf:(o.uf||'').trim().toUpperCase()||null,
+      municipio_id:o.municipio_id||null, lat:(o.lat??null), lon:(o.lon??null),
       padrao:!!o.padrao,ativo:true,updated_at:new Date().toISOString()};
     let r;
     if(o.id) r=await SB.from('abrangencia_origens').update(payload).eq('id',o.id);

@@ -103,17 +103,22 @@ comment on column public.orc_abrangencia.km_ate is
 -- A eX não tem base fixa: a equipe se monta por obra. Cada proposta escolhe
 -- de onde sai. Esta tabela é só a lista de pontos de partida frequentes,
 -- para não redigitar cidade a cada proposta — a escolha em si é do orçamento.
+-- ATENÇÃO À ORDEM: rode SQL_municipios.sql ANTES deste arquivo — a base
+-- aponta para um município de verdade, não para a capital da UF.
 create table if not exists public.abrangencia_origens (
-  id         uuid primary key default gen_random_uuid(),
-  empresa_id uuid,
-  nome       text not null,          -- ex.: "Equipe Bahia", "Sede", "Parceiro DF"
-  cidade     text,
-  uf         char(2),
-  padrao     boolean not null default false,
-  ativo      boolean not null default true,
-  obs        text,
-  created_at timestamptz default now(),
-  updated_at timestamptz default now()
+  id           uuid primary key default gen_random_uuid(),
+  empresa_id   uuid,
+  nome         text not null,        -- ex.: "Base Anápolis", "Equipe Bahia"
+  municipio_id integer references public.municipios(codigo_ibge),
+  cidade       text,                 -- texto de exibição; a verdade é o municipio_id
+  uf           char(2),
+  lat          numeric(9,6),         -- copiado do município ao escolher
+  lon          numeric(9,6),
+  padrao       boolean not null default false,
+  ativo        boolean not null default true,
+  obs          text,
+  created_at   timestamptz default now(),
+  updated_at   timestamptz default now()
 );
 
 alter table public.abrangencia_origens enable row level security;
@@ -124,9 +129,9 @@ create policy iso_emp on public.abrangencia_origens
   with check (eh_fundador() or (empresa_id = empresa_atual()));
 
 -- 6b) PRIMEIRA BASE ------------------------------------------------------
--- Anápolis (GO). Se a cidade for outra, troque aqui antes de rodar.
-insert into public.abrangencia_origens (empresa_id, nome, cidade, uf, padrao, ativo)
-select e.empresa_id, 'Base Anápolis', 'Anápolis', 'GO', true, true
+-- Anápolis (GO), código IBGE 5201108, com a coordenada da própria cidade.
+insert into public.abrangencia_origens (empresa_id, nome, municipio_id, cidade, uf, lat, lon, padrao, ativo)
+select e.empresa_id, 'Base Anápolis', 5201108, 'Anápolis', 'GO', -16.328100, -48.953000, true, true
 from (
   select distinct empresa_id from public.lojas where empresa_id is not null
   union
