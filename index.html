@@ -429,7 +429,7 @@ body.papel-tecnico .adm-only{display:none !important}
 </head>
 <body>
 <div class="loginbg" id="loginbg">
-  <div class="logincard">
+  <div class="logincard" id="logincard">
     <img src="logo_ex.png" alt="eX Eletric" style="height:42px;border-radius:8px;margin-bottom:14px">
     <h2>Entrar</h2>
     <div class="lsub">eX Cronograma · acesso restrito</div>
@@ -439,6 +439,17 @@ body.papel-tecnico .adm-only{display:none !important}
     <label>Senha</label>
     <input id="login-senha" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter'){event.preventDefault();fazerLogin();}">
     <button class="lbtn" id="login-btn" onclick="fazerLogin()">Entrar</button>
+    <button type="button" id="login-forgot" onclick="esqueciSenha()" style="background:none;border:none;color:#b9a9ff;font-size:12px;cursor:pointer;margin-top:12px;text-decoration:underline">Esqueci minha senha</button>
+    <div id="login-info" style="display:none;color:#22d27f;font-size:12px;margin-top:10px;line-height:1.45"></div>
+  </div>
+  <div class="logincard" id="recoverycard" style="display:none">
+    <img src="logo_ex.png" alt="eX Eletric" style="height:42px;border-radius:8px;margin-bottom:14px">
+    <h2>Nova senha</h2>
+    <div class="lsub">Defina uma nova senha para sua conta</div>
+    <div class="lerr" id="rec-erro"></div>
+    <label>Nova senha</label>
+    <input id="rec-senha" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres" onkeydown="if(event.key==='Enter'){event.preventDefault();definirNovaSenha();}">
+    <button class="lbtn" id="rec-btn" onclick="definirNovaSenha()">Salvar e entrar</button>
   </div>
 </div>
 <div class="app">
@@ -3456,6 +3467,33 @@ async function fazerLogin(){
   btn.disabled=false; btn.textContent='Entrar';
   if(error){ loginErro('E-mail ou senha inválidos.'); console.warn('login:',error.message); }
 }
+var _RECOVERY=false;
+function loginInfo(msg){ const e=document.getElementById('login-info'); if(e){ e.textContent=msg||''; e.style.display=msg?'block':'none'; } }
+function recErro(msg){ const e=document.getElementById('rec-erro'); if(e){ e.textContent=msg||''; e.style.display=msg?'block':'none'; } }
+async function esqueciSenha(){
+  if(!SB){ loginErro('Sem conexão com a nuvem.'); return; }
+  const email=(document.getElementById('login-email').value||'').trim();
+  if(!email){ loginInfo(''); loginErro('Digite seu e-mail no campo acima e clique de novo.'); return; }
+  loginErro(''); loginInfo('Enviando…');
+  const { error } = await SB.auth.resetPasswordForEmail(email, { redirectTo: location.origin+location.pathname });
+  if(error){ loginInfo(''); loginErro('Não deu pra enviar: '+error.message); console.warn('reset:',error.message); return; }
+  loginInfo('Link de redefinição enviado para '+email+'. Abra o e-mail (veja também o spam) e clique no link — ele traz você de volta aqui para criar a nova senha.');
+}
+function mostrarRecovery(){ loginVisivel(true); const l=document.getElementById('logincard'), r=document.getElementById('recoverycard'); if(l)l.style.display='none'; if(r)r.style.display='block'; }
+async function definirNovaSenha(){
+  if(!SB){ recErro('Sem conexão com a nuvem.'); return; }
+  const s=document.getElementById('rec-senha').value||'';
+  if(s.length<6){ recErro('A senha precisa de pelo menos 6 caracteres.'); return; }
+  const btn=document.getElementById('rec-btn'); btn.disabled=true; btn.textContent='Salvando…'; recErro('');
+  const { error } = await SB.auth.updateUser({ password: s });
+  btn.disabled=false; btn.textContent='Salvar e entrar';
+  if(error){ recErro('Não deu pra salvar: '+error.message); console.warn('updatepw:',error.message); return; }
+  _RECOVERY=false;
+  document.getElementById('rec-senha').value='';
+  const l=document.getElementById('logincard'), r=document.getElementById('recoverycard'); if(r)r.style.display='none'; if(l)l.style.display='block';
+  const { data:{ session } } = await SB.auth.getSession();
+  if(session && session.user){ if(!_USER) entrarApp(session); }
+}
 async function sair(){ if(SB) await SB.auth.signOut(); }
 async function carregarPerfil(uid){
   try{ const { data } = await SB.from('perfis').select('*').eq('user_id',uid).maybeSingle(); _PERFIL=data||null; }
@@ -3914,6 +3952,8 @@ function diaReabrir(){
 async function init(){
   if(!SB){ nuvemStatus('modo local','err'); loginVisivel(false); return; }
   SB.auth.onAuthStateChange((event,session)=>{
+    if(event==='PASSWORD_RECOVERY'){ _RECOVERY=true; mostrarRecovery(); return; }  // veio do link do e-mail: pedir nova senha, não entrar direto
+    if(_RECOVERY){ return; }                                                        // enquanto define a nova senha, ignora auto-login
     if(session && session.user){ if(!_USER) entrarApp(session); }
     else if(_USER){ aoDeslogar(); }
   });
