@@ -371,7 +371,7 @@ function faixaDe(km){
 }
 const corFaixa=pos=>{ const op=[0.92,0.68,0.46,0.30,0.20,0.14][pos]??0.12; return {cor:'#533ab7',op}; };
 
-function setOrigem(uf){ ORIGEM=uf; renderMapaLog(); renderFaixas(); }
+function setOrigem(uf){ ORIGEM=uf; const s=document.getElementById('origemSel'); if(s&&s.value!==uf)s.value=uf; renderMapaLog(); renderFaixas(); }
 function renderOrigemSel(){
   const sel=document.getElementById('origemSel'); if(!sel)return;
   const cadastradas=ORIGENS.filter(o=>o.uf&&CAP[o.uf]);
