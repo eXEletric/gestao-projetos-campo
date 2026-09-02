@@ -444,6 +444,30 @@ body.papel-tecnico .adm-only{display:none !important}
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="sb-logo"><img src="logo_ex.png" class="sb-mark" alt="eX"><span class="sb-name">eX Cronograma</span><span class="sb-coll" onclick="toggleSidebar()" title="recolher">&#171;</span></div>
+    <style>
+      .sb-unit{margin:8px 8px 4px;background:rgba(255,255,255,.05);border:1px solid #2a2350;border-radius:10px;padding:6px}
+      .sidebar.mini .sb-unit{display:none}
+      .sb-unit-cur{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:7px;cursor:pointer;color:#e7e3f6;font-size:12.5px;font-weight:600}
+      .sb-unit-cur:hover{background:rgba(255,255,255,.05)}
+      .sb-unit-cur .msr{font-size:17px;color:#b9a9ff}
+      .sb-unit-cur .u-nm{flex:1;white-space:nowrap;overflow:hidden}
+      .sb-unit-cur .u-cv{font-size:9px;color:#8a7fbf}
+      .sb-unit-menu{margin-top:3px}
+      .sb-unit-opt{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:7px;font-size:12.3px;color:#c8c0e6;cursor:pointer}
+      .sb-unit-opt:hover{background:rgba(255,255,255,.05)}
+      .sb-unit-opt.on{background:rgba(83,58,183,.28);cursor:default}
+      .sb-unit-opt .msr{font-size:16px;color:#9587c9}
+      .sb-unit-soon{margin-left:auto;font-size:9px;color:#8a7fbf;border:1px solid #3a3268;border-radius:9px;padding:0 6px}
+    </style>
+    <div class="sb-unit" title="Unidade de negócio (introdução — troca completa em breve)">
+      <div class="sb-unit-cur" onclick="var m=this.parentNode.querySelector('.sb-unit-menu');m.style.display=(m.style.display==='block'?'none':'block')">
+        <span class="msr">apartment</span><span class="u-nm">Campo &amp; Obras</span><span class="u-cv">&#9662;</span>
+      </div>
+      <div class="sb-unit-menu" style="display:none">
+        <div class="sb-unit-opt on"><span class="msr">apartment</span>Campo &amp; Obras</div>
+        <div class="sb-unit-opt" onclick="navSoon('Unidade: Oficina Elétrica',null);this.closest('.sb-unit-menu').style.display='none'"><span class="msr">bolt</span>Oficina Elétrica<span class="sb-unit-soon">em breve</span></div>
+      </div>
+    </div>
     <nav class="sb-nav">
       <button class="sb-i" onclick="navInicio(this)"><span class="ic"><span class="msr">space_dashboard</span></span><span class="lb">Painel Inicial</span></button>
       <button class="sb-i fut" onclick="navSoon('Tarefas',this)"><span class="ic"><span class="msr">checklist</span></span><span class="lb">Tarefas</span><span class="br">em breve</span></button>
