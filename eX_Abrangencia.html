@@ -36,6 +36,7 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .ufmap svg text{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-weight:600;font-size:11px}
 .ufmap svg g{cursor:pointer}
 .ufmap svg g:hover rect{stroke-width:2.4}
+#mapaLog g{cursor:default}
 .ufside{flex:1;min-width:230px;display:flex;flex-direction:column;gap:12px}
 .cnt{display:flex;flex-direction:column;gap:6px}
 .cntr{display:flex;align-items:center;gap:9px;font-size:13px;color:var(--tx2)}
@@ -83,6 +84,13 @@ textarea.fi{resize:vertical;min-height:54px;font-family:inherit}
 .stopt.sel{border-color:var(--pri);background:var(--pri-bg);color:var(--tx)}
 .chk{display:flex;align-items:center;gap:9px;font-size:13.5px;cursor:pointer}
 .chk input{width:17px;height:17px;accent-color:var(--pri)}
+.basebar{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:10px 14px;border-bottom:1px solid var(--line);background:#fbfaf7}
+.basebar .bl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3)}
+.basebar select{padding:6px 10px;border:1px solid var(--line2);border-radius:7px;font:600 13px inherit;color:var(--tx);background:var(--surf);cursor:pointer}
+.basebar select:focus{outline:none;border-color:var(--pri)}
+.basebar .bhint{font-size:11.5px;color:var(--tx3)}
+.faixapill{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--tx2)}
+.faixapill .dot{width:10px;height:10px;border-radius:3px;flex:none;background:var(--pri)}
 .lojatag{font-size:11px;color:var(--tx3);background:var(--surf2);border-radius:20px;padding:3px 10px;display:inline-flex;align-items:center;gap:5px}
 .lojatag .material-symbols-rounded{font-size:14px}
 </style>
@@ -106,17 +114,29 @@ textarea.fi{resize:vertical;min-height:54px;font-family:inherit}
         <div class="note" id="notaCarteira"></div>
       </div>
     </div>
-    <div class="hintbar">O status nasce da realidade: UF onde já existe <b>loja atendida</b> entra como <b>atende</b>. O que muda por estado é <b>imposto e habilitação</b> — distância não se resolve aqui, se resolve na faixa de km abaixo.</div>
+    <div class="hintbar">O status nasce da realidade: UF onde já existe <b>loja atendida</b> entra como <b>atende</b>. <b>Imposto ainda não entra na conta</b> — os campos fiscais ficam aqui como lembrete, para quando a contabilidade fechar a regra. Distância não se resolve aqui, se resolve no raio abaixo.</div>
   </div>
 
-  <!-- CAMADA 2 — LOGÍSTICA POR KM -->
+  <!-- CAMADA 2 — LOGÍSTICA: RAIO A PARTIR DA BASE -->
   <div class="card">
-    <div class="ch"><span class="material-symbols-rounded">straighten</span><b>Camada logística · faixas de km rodado</b><span class="sm">— o que cada distância soma em custo e prazo</span><span class="spacer"></span><button class="btn btn-p" style="padding:5px 11px;font-size:12px" onclick="saveFaixas()"><span class="material-symbols-rounded">save</span>Salvar faixas</button></div>
-    <div class="scroll"><table class="tbl">
-      <thead><tr><th>Faixa</th><th class="r">até (km)</th><th class="r">+ custo %</th><th class="r">+ prazo %</th><th class="r"></th></tr></thead>
-      <tbody id="faixaRows"></tbody>
-    </table></div>
-    <div class="hintbar">Km <b>rodado</b>, não em linha reta — é rota de estrada. A faixa sem limite é a última: tudo acima do maior corte cai nela. Estes percentuais são os mesmos que o orçamento já usa hoje.</div>
+    <div class="ch"><span class="material-symbols-rounded">radar</span><b>Camada logística · raio a partir da base</b><span class="sm">— a mesma faixa muda de estado quando a base muda</span><span class="spacer"></span><button class="btn btn-p" style="padding:5px 11px;font-size:12px" onclick="saveFaixas()"><span class="material-symbols-rounded">save</span>Salvar faixas</button></div>
+    <div class="basebar">
+      <span class="material-symbols-rounded" style="color:var(--pri)">my_location</span>
+      <span class="bl">Base desta simulação</span>
+      <select id="origemSel" onchange="setOrigem(this.value)"></select>
+      <span class="bhint">Cada proposta escolhe a sua. Trocando aqui, o mapa e as faixas se recalculam.</span>
+    </div>
+    <div class="ufwrap">
+      <div class="ufmap"><svg id="mapaLog" viewBox="0 0 302 424" role="img" aria-label="Estados coloridos pela faixa de distância a partir da base escolhida"></svg></div>
+      <div class="ufside">
+        <div class="scroll"><table class="tbl">
+          <thead><tr><th>Faixa</th><th class="r">até (km)</th><th class="r">+ custo %</th><th class="r">+ prazo %</th><th class="c">UFs</th><th class="r"></th></tr></thead>
+          <tbody id="faixaRows"></tbody>
+        </table></div>
+        <div class="note" id="notaRaio"></div>
+      </div>
+    </div>
+    <div class="hintbar">Os <b>27 estados</b> estão sempre aqui — o que muda é em qual faixa cada um cai, e isso depende da base. A distância é estimada de capital a capital em linha reta <b>× 1,25</b> para aproximar rodovia; no orçamento vale o <b>km rodado real</b> da cidade de origem até a obra.</div>
   </div>
 
   <!-- ORIGENS -->
@@ -176,6 +196,16 @@ const STATUS=[
 ];
 const stCor=k=>(STATUS.find(s=>s.k===k)||STATUS[2]).cor;
 const stRot=k=>(STATUS.find(s=>s.k===k)||STATUS[2]).rot;
+// capital de cada UF: ponto de referência para estimar a distância entre estados
+const CAP={AC:[-9.97,-67.81],AL:[-9.65,-35.73],AP:[0.03,-51.07],AM:[-3.10,-60.02],BA:[-12.97,-38.50],
+  CE:[-3.73,-38.53],DF:[-15.79,-47.88],ES:[-20.32,-40.34],GO:[-16.68,-49.25],MA:[-2.53,-44.30],
+  MT:[-15.60,-56.10],MS:[-20.44,-54.65],MG:[-19.92,-43.94],PA:[-1.46,-48.50],PB:[-7.12,-34.88],
+  PR:[-25.43,-49.27],PE:[-8.05,-34.88],PI:[-5.09,-42.80],RJ:[-22.91,-43.17],RN:[-5.79,-35.21],
+  RS:[-30.03,-51.23],RO:[-8.76,-63.90],RR:[2.82,-60.67],SC:[-27.59,-48.55],SP:[-23.55,-46.63],
+  SE:[-10.91,-37.07],TO:[-10.18,-48.33]};
+const FATOR_ROTA=1.25;   // linha reta -> aproximação de km rodado
+const KM_SUGERIDO=[300,800,1500,2500];   // só para pré-visualizar enquanto as faixas não têm limite salvo
+let ORIGEM='BA';
 const FAIXA_DEFAULT=[{nivel:'local',rotulo:'Local',ordem:1,km_ate:150,custo_pct:0,tempo_pct:0},
   {nivel:'estadual',rotulo:'Estadual',ordem:2,km_ate:400,custo_pct:10,tempo_pct:8},
   {nivel:'nacional',rotulo:'Nacional',ordem:3,km_ate:null,custo_pct:20,tempo_pct:15}];
@@ -201,7 +231,15 @@ async function init(){
       await carregar(); CLOUD=true; cloudMsg(TEM_TABELA?'nuvem ✓':'nuvem ✓ · rode SQL_abrangencia.sql');
     } else cloudMsg('faça login');
   }catch(e){ console.error(e); cloudMsg('erro nuvem'); } }
-  renderMapa(); renderContadores(); renderFaixas(); renderOrigens();
+  definirOrigemInicial();
+  renderMapa(); renderContadores(); renderOrigemSel(); renderMapaLog(); renderFaixas(); renderOrigens();
+}
+// base inicial da simulação: a origem marcada como padrão, senão a UF onde há mais obra
+function definirOrigemInicial(){
+  const p=ORIGENS.find(o=>o.padrao&&o.uf&&CAP[o.uf]);
+  if(p){ ORIGEM=p.uf; return; }
+  const top=Object.entries(LOJAS_UF).sort((a,b)=>b[1]-a[1])[0];
+  if(top&&CAP[top[0]]) ORIGEM=top[0];
 }
 
 async function carregar(){
@@ -304,32 +342,101 @@ async function saveUf(){
   closeUf(); renderMapa(); renderContadores();
 }
 
-/* ---------- faixas de km ---------- */
+/* ---------- raio a partir da base ---------- */
+// distância entre duas UFs, de capital a capital, aproximada para rodovia
+function kmEntre(a,b){
+  if(a===b) return 0;
+  const A=CAP[a], B=CAP[b]; if(!A||!B) return null;
+  const R=6371, rad=x=>x*Math.PI/180;
+  const dLat=rad(B[0]-A[0]), dLon=rad(B[1]-A[1]);
+  const h=Math.sin(dLat/2)**2+Math.cos(rad(A[0]))*Math.cos(rad(B[0]))*Math.sin(dLon/2)**2;
+  return Math.round(2*R*Math.asin(Math.sqrt(h))*FATOR_ROTA);
+}
+// faixas em ordem, com limite efetivo (usa sugestão enquanto nada foi salvo)
+function faixasOrdenadas(){
+  const ord=FAIXAS.map((f,i)=>({f,i})).sort((a,b)=>
+    (a.f.km_ate==null?1e9:num(a.f.km_ate))-(b.f.km_ate==null?1e9:num(b.f.km_ate)));
+  const nenhumLimite=ord.every(o=>o.f.km_ate==null||o.f.km_ate==='');
+  return ord.map((o,pos)=>{
+    const ultima=(pos===ord.length-1);
+    const salvo=(o.f.km_ate==null||o.f.km_ate==='')?null:num(o.f.km_ate);
+    const efetivo = salvo!=null ? salvo : (ultima?null:(nenhumLimite?KM_SUGERIDO[pos]:null));
+    return {...o,pos,ultima,salvo,efetivo,sugerido:(salvo==null&&efetivo!=null)};
+  });
+}
+function faixaDe(km){
+  const ord=faixasOrdenadas();
+  for(const o of ord){ if(o.efetivo==null || km<=o.efetivo) return o; }
+  return ord[ord.length-1];
+}
+const corFaixa=pos=>{ const op=[0.92,0.68,0.46,0.30,0.20,0.14][pos]??0.12; return {cor:'#533ab7',op}; };
+
+function setOrigem(uf){ ORIGEM=uf; renderMapaLog(); renderFaixas(); }
+function renderOrigemSel(){
+  const sel=document.getElementById('origemSel'); if(!sel)return;
+  const cadastradas=ORIGENS.filter(o=>o.uf&&CAP[o.uf]);
+  const marca=u=>LOJAS_UF[u]?' · '+LOJAS_UF[u]+(LOJAS_UF[u]>1?' lojas':' loja'):'';
+  sel.innerHTML=(cadastradas.length
+      ? `<optgroup label="origens cadastradas">${cadastradas.map(o=>`<option value="${o.uf}">${esc(o.nome||o.cidade||o.uf)} (${o.uf})</option>`).join('')}</optgroup>`
+      : '')
+    +`<optgroup label="por estado">${UFS.map(u=>`<option value="${u}" ${u===ORIGEM?'selected':''}>${u}${marca(u)}</option>`).join('')}</optgroup>`;
+  sel.value=ORIGEM;
+}
+function renderMapaLog(){
+  const NS='http://www.w3.org/2000/svg', svg=document.getElementById('mapaLog'); if(!svg)return;
+  const el=(t,a)=>{const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;};
+  svg.innerHTML='';
+  const cell=42, gap=6, ox=6, oy=6;
+  Object.keys(GRID).forEach(u=>{
+    const p=GRID[u], x=ox+(p[0]-1)*(cell+gap), y=oy+(p[1]-1)*(cell+gap);
+    const km=kmEntre(ORIGEM,u), fx=faixaDe(km), c=corFaixa(fx.pos), base=(u===ORIGEM);
+    const g=el('g',{});
+    g.appendChild(el('rect',{x,y,width:cell,height:cell,rx:3,fill:c.cor,'fill-opacity':c.op,
+      stroke:base?'#ba7517':c.cor,'stroke-width':base?2.4:1,'stroke-opacity':base?1:0.7}));
+    const claro=(c.op>0.5);
+    const t1=el('text',{x:x+cell/2,y:y+17,'text-anchor':'middle',fill:claro?'#fff':'#1a1a18'});
+    t1.textContent=u; g.appendChild(t1);
+    const t2=el('text',{x:x+cell/2,y:y+31,'text-anchor':'middle','font-size':'9',
+      fill:claro?'#fff':'#5f5e5a','fill-opacity':claro?0.9:1});
+    t2.textContent=base?'base':(km>=1000?(km/1000).toFixed(1).replace('.',',')+' mil':km+' km');
+    g.appendChild(t2);
+    const ttl=el('title');
+    ttl.textContent=base?u+' · base':`${u} · ~${km} km · ${fx.f.rotulo||'faixa'} (+${num(fx.f.custo_pct)}% custo · +${num(fx.f.tempo_pct)}% prazo)`;
+    g.appendChild(ttl);
+    svg.appendChild(g);
+  });
+}
 function renderFaixas(){
-  const ordenadas=FAIXAS.map((f,i)=>({f,i})).sort((a,b)=>(a.f.km_ate==null?1e9:num(a.f.km_ate))-(b.f.km_ate==null?1e9:num(b.f.km_ate)));
-  let de=0;
-  const rows=ordenadas.map(({f,i},pos)=>{
-    const ate=f.km_ate==null||f.km_ate===''?null:num(f.km_ate);
-    const ultima=(pos===ordenadas.length-1);
-    const faixa= ate!=null ? `${de} – ${ate} km`
-               : ultima   ? `acima de ${de} km`
-               :            'defina o limite';
-    de = ate==null ? de : ate;
+  const ord=faixasOrdenadas();
+  const conta={}; UFS.forEach(u=>{ const fx=faixaDe(kmEntre(ORIGEM,u)); conta[fx.i]=(conta[fx.i]||0)+1; });
+  let de=0, temSugerido=false;
+  const rows=ord.map(o=>{
+    const {f,i,ultima,salvo,efetivo,sugerido}=o;
+    if(sugerido) temSugerido=true;
+    const faixa = efetivo!=null ? `${de} – ${efetivo} km${sugerido?' (sugerido)':''}`
+                : ultima        ? `acima de ${de} km`
+                :                 'defina o limite';
+    de = efetivo==null ? de : efetivo;
     return `<tr>
       <td><input class="rgin" value="${esc(f.rotulo||'')}" placeholder="nome da faixa" oninput="FAIXAS[${i}].rotulo=this.value">
         <div class="faixa-lbl">${faixa}</div></td>
-      <td class="r"><input class="numin" type="number" min="0" step="10" value="${ate==null?'':ate}" placeholder="aberta" oninput="FAIXAS[${i}].km_ate=this.value===''?null:(+this.value||0);renderFaixas()"></td>
-      <td class="r"><input class="numin" type="number" min="0" value="${num(f.custo_pct)}" oninput="FAIXAS[${i}].custo_pct=+this.value||0"> %</td>
-      <td class="r"><input class="numin" type="number" min="0" value="${num(f.tempo_pct)}" oninput="FAIXAS[${i}].tempo_pct=+this.value||0"> %</td>
+      <td class="r"><input class="numin" type="number" min="0" step="10" value="${salvo==null?'':salvo}" placeholder="${ultima?'aberta':(efetivo??'')}" oninput="FAIXAS[${i}].km_ate=this.value===''?null:(+this.value||0);renderFaixas();renderMapaLog()"></td>
+      <td class="r"><input class="numin" type="number" min="0" value="${num(f.custo_pct)}" oninput="FAIXAS[${i}].custo_pct=+this.value||0;renderMapaLog()"> %</td>
+      <td class="r"><input class="numin" type="number" min="0" value="${num(f.tempo_pct)}" oninput="FAIXAS[${i}].tempo_pct=+this.value||0;renderMapaLog()"> %</td>
+      <td class="c"><span class="faixapill"><span class="dot" style="opacity:${corFaixa(o.pos).op}"></span>${conta[i]||0}</span></td>
       <td class="r"><button class="rgdel" onclick="faixaDel(${i})" title="remover faixa" ${FAIXAS.length<=1?'disabled':''}><span class="material-symbols-rounded">close</span></button></td></tr>`;
   }).join('');
   document.getElementById('faixaRows').innerHTML=rows+
-    `<tr><td colspan="5" style="padding:8px 12px"><button class="rgadd" onclick="faixaAdd()"><span class="material-symbols-rounded">add</span>adicionar faixa</button></td></tr>`;
+    `<tr><td colspan="6" style="padding:8px 12px"><button class="rgadd" onclick="faixaAdd()"><span class="material-symbols-rounded">add</span>adicionar faixa</button></td></tr>`;
+  const nt=document.getElementById('notaRaio');
+  if(nt) nt.innerHTML = temSugerido
+    ? `<b>Os limites em cinza são sugestão.</b> Digite o km de cada faixa e salve — o mapa se recolore na hora, e é isso que o orçamento vai usar.`
+    : `<b>Saindo de ${ORIGEM}.</b> Troque a base no topo do card para ver os mesmos estados mudarem de faixa. Nenhum estado some da lista — só muda de anel.`;
 }
-function faixaAdd(){ FAIXAS.push({nivel:'r'+Date.now().toString(36),rotulo:'Nova faixa',ordem:FAIXAS.length+1,km_ate:null,custo_pct:0,tempo_pct:0}); renderFaixas(); }
+function faixaAdd(){ FAIXAS.push({nivel:"r"+Date.now().toString(36),rotulo:"Nova faixa",ordem:FAIXAS.length+1,km_ate:null,custo_pct:0,tempo_pct:0}); renderFaixas(); renderMapaLog(); }
 async function faixaDel(i){
   const f=FAIXAS[i]; if(!f||FAIXAS.length<=1)return;
-  FAIXAS.splice(i,1); renderFaixas();
+  FAIXAS.splice(i,1); renderFaixas(); renderMapaLog();
   if(CLOUD && f.id){ const r=await SB.from('orc_abrangencia').delete().eq('id',f.id); if(r&&r.error)console.error('faixa del',r.error); }
 }
 async function saveFaixas(){
@@ -344,7 +451,7 @@ async function saveFaixas(){
     else     r=await SB.from('orc_abrangencia').insert({...payload,empresa_id:EMPRESA_ID,nivel:f.nivel||('r'+Date.now().toString(36))});
     if(r&&r.error){ alert('Erro ao salvar faixas: '+r.error.message); return; }
   }
-  await carregar(); renderFaixas(); cloudMsg('nuvem ✓ · faixas salvas');
+  await carregar(); renderFaixas(); renderMapaLog(); cloudMsg("nuvem ✓ · faixas salvas");
 }
 
 /* ---------- origens ---------- */
@@ -376,7 +483,7 @@ async function saveOrigens(){
     else     r=await SB.from('abrangencia_origens').insert({...payload,empresa_id:EMPRESA_ID});
     if(r&&r.error){ alert('Erro ao salvar origens: '+r.error.message+(r.error.message.includes('abrangencia_origens')?'\n\nRode SQL_abrangencia.sql no Supabase.':'')); return; }
   }
-  await carregar(); renderOrigens(); cloudMsg('nuvem ✓ · origens salvas');
+  await carregar(); renderOrigens(); renderOrigemSel(); cloudMsg("nuvem ✓ · origens salvas");
 }
 
 init();
