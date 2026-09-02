@@ -233,7 +233,9 @@ function renderMapa(){
     const p=GRID[u], x=ox+(p[0]-1)*(cell+gap), y=oy+(p[1]-1)*(cell+gap);
     const st=UF[u].status||'consulta', cor=stCor(st), n=LOJAS_UF[u]||0;
     const forte=(st==='atende'||st==='nao_atende'||st==='condicional');
-    const g=el('g',{onclick:`openUf('${u}')`,tabindex:'0',role:'button'});
+    const g=el('g',{tabindex:'0',role:'button','aria-label':'configurar '+u});
+    g.addEventListener('click',()=>openUf(u));
+    g.addEventListener('keydown',ev=>{ if(ev.key==='Enter'||ev.key===' '){ ev.preventDefault(); openUf(u); } });
     g.appendChild(el('rect',{x,y,width:cell,height:cell,rx:3,fill:cor,'fill-opacity':forte?0.88:0.30,stroke:cor,'stroke-width':1,'stroke-opacity':0.85}));
     const t1=el('text',{x:x+cell/2,y:y+(n?17:25),'text-anchor':'middle',fill:forte?'#fff':'#1a1a18'});
     t1.textContent=u; g.appendChild(t1);
