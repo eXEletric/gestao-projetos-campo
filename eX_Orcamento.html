@@ -1434,10 +1434,10 @@ function renderBlk(cfg){
       ${blkMargemCtrl(cfg)}
       <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
     </div>
-    ${cfg.key==='servicos'?('<div id="svcTopPanels"><div id="maoObraPanel">'+efetivoHtml()+'</div><div id="diariasPanel">'+diariasHtml()+'</div><div id="fatoresPanel">'+fatoresObraHtml()+'</div></div>'):''}
     ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: a edição é igual (você vê e ajusta cada item), mas na <b>impressão / envio da proposta</b> os itens saem como <b>“incluso”</b> e o valor aparece só no <b>total agrupado</b> do bloco — não item por item.</span></div>`:''}
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button></div>
+    ${cfg.key==='servicos'?('<div id="svcTopPanels"><div id="fatoresPanel">'+fatoresObraHtml()+'</div><div id="maoObraPanel">'+efetivoHtml()+'</div><div id="diariasPanel">'+diariasHtml()+'</div></div>'):''}
     ${obsHtml}`;
 }
 
