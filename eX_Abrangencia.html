@@ -542,8 +542,10 @@ function renderMapaLog(){
       const r=(o.efetivo/FATOR_ROTA/111.32)*ESC;   // volta para linha reta antes de virar grau
       if(r<6||r>760) return;
       gAneis.appendChild(el('circle',{cx:bx,cy:by,r:r.toFixed(1),class:'anel'}));
-      const t=el('text',{x:bx+3,y:(by-r+9).toFixed(1),class:'anelbl'});
-      t.textContent=o.efetivo+' km'; gAneis.appendChild(t);
+      if(o.efetivo%1000===0){   // rotula a cada 1.000 km para nao poluir
+        const t=el('text',{x:bx+3,y:(by-r+9).toFixed(1),class:'anelbl'});
+        t.textContent=(o.efetivo/1000).toLocaleString('pt-BR')+' mil km'; gAneis.appendChild(t);
+      }
     });
     gPins.appendChild(el('circle',{cx:bx,cy:by,r:6,fill:'#ba7517','fill-opacity':.22}));
     gPins.appendChild(el('circle',{cx:bx,cy:by,r:3,fill:'#ba7517',stroke:'#fff','stroke-width':1}));
@@ -640,7 +642,12 @@ async function saveFaixas(){
     let r;
     if(f.id) r=await SB.from('orc_abrangencia').update(payload).eq('id',f.id);
     else     r=await SB.from('orc_abrangencia').insert({...payload,empresa_id:EMPRESA_ID,nivel:f.nivel||('r'+Date.now().toString(36))});
-    if(r&&r.error){ alert('Erro ao salvar faixas: '+r.error.message); return; }
+    if(r&&r.error){
+      const m=r.error.message||'';
+      alert('Erro ao salvar faixas: '+m+(m.includes('km_ate')
+        ? '\n\nA coluna km_ate ainda não existe no banco. Rode o SQL_abrangencia.sql no Supabase e tente de novo.' : ''));
+      return;
+    }
   }
   await carregar(); renderFaixas(); renderMapaLog(); cloudMsg("nuvem ✓ · faixas salvas");
 }
