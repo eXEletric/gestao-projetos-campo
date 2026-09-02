@@ -474,11 +474,13 @@ body.papel-tecnico .adm-only{display:none !important}
         <button class="sb-i fut" onclick="navSoon('Propostas',this)"><span class="ic"><span class="msr">description</span></span><span class="lb">Propostas</span><span class="br">em breve</span></button>
         <button class="sb-i" onclick="navView('orcamento',this)"><span class="ic"><span class="msr">request_quote</span></span><span class="lb">Orçamentos</span></button>
         <button class="sb-i" onclick="navView('barramento',this);carregarBarramento()"><span class="ic"><span class="msr">bolt</span></span><span class="lb">Orç. de barramento</span></button>
-        <div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6a5f95;padding:11px 15px 4px">Cadastros</div>
-        <button class="sb-i" onclick="navView('clientes',this)"><span class="ic"><span class="msr">contacts</span></span><span class="lb">Clientes</span></button>
-        <button class="sb-i" onclick="navView('catservico',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Serviços</span></button>
-        <button class="sb-i" onclick="navView('catequip',this)"><span class="ic"><span class="msr">construction</span></span><span class="lb">Equipamentos</span></button>
-        <button class="sb-i" onclick="navView('catdespesa',this)"><span class="ic"><span class="msr">local_shipping</span></span><span class="lb">Deslocamento &amp; Despesas</span></button>
+        <div class="sb-grp sb-grp-nest" onclick="toggleGrp(this)"><span class="ic"><span class="msr">folder</span></span><span class="lb">Cadastros</span><span class="gchev">▶</span></div>
+        <div class="sb-sub sb-sub-nest">
+          <button class="sb-i" onclick="navView('clientes',this)"><span class="ic"><span class="msr">contacts</span></span><span class="lb">Clientes</span></button>
+          <button class="sb-i" onclick="navView('catservico',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Serviços</span></button>
+          <button class="sb-i" onclick="navView('catequip',this)"><span class="ic"><span class="msr">construction</span></span><span class="lb">Equipamentos</span></button>
+          <button class="sb-i" onclick="navView('catdespesa',this)"><span class="ic"><span class="msr">local_shipping</span></span><span class="lb">Deslocamento &amp; Despesas</span></button>
+        </div>
       </div>
 
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">business_center</span></span><span class="lb">Gestão</span><span class="gchev">▶</span></div>
