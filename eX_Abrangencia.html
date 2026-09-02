@@ -112,6 +112,26 @@ textarea.fi{resize:vertical;min-height:54px;font-family:inherit}
 .basebar .bhint{font-size:11.5px;color:var(--tx3)}
 .faixapill{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--tx2)}
 .faixapill .dot{width:10px;height:10px;border-radius:3px;flex:none;background:var(--pri)}
+.numin.franq{width:64px;margin:0 3px}
+.estdet{border:1px solid var(--line);border-radius:9px;overflow:hidden}
+.estdet summary{cursor:pointer;padding:9px 12px;background:var(--surf2);font-size:12.5px;font-weight:600;
+  color:var(--tx2);display:flex;align-items:center;gap:8px;list-style:none}
+.estdet summary::-webkit-details-marker{display:none}
+.estdet summary .material-symbols-rounded{font-size:17px;color:var(--pri)}
+.estdet[open] summary{border-bottom:1px solid var(--line)}
+.estres{margin-left:auto;font-weight:400;font-size:11.5px;color:var(--tx3)}
+.estab td{font-size:12.5px}
+.estab .nm{font-weight:600;color:var(--tx)}
+.estab .zero{color:var(--tx3)}
+.estab .km{font-variant-numeric:tabular-nums}
+.zoomctl{display:flex;align-items:center;gap:6px;justify-content:flex-end;margin-bottom:-6px}
+.zoomb{width:28px;height:28px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);
+  color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.zoomb:hover{background:var(--surf2);border-color:var(--pri);color:var(--pri)}
+.zoomb .material-symbols-rounded{font-size:17px}
+.zoomlvl{font:600 11px ui-monospace,Menlo,Consolas,monospace;color:var(--tx3);min-width:32px;text-align:center}
+#mapaLog.arrasta{cursor:grab}
+#mapaLog.arrastando{cursor:grabbing}
 .anelnum{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;
   border-radius:50%;color:#fff;font:700 10px ui-monospace,Menlo,Consolas,monospace}
 .faixanome{font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
@@ -156,6 +176,12 @@ textarea.fi{resize:vertical;min-height:54px;font-family:inherit}
       <span class="bhint" id="avisoBases">Cada proposta escolhe a sua base.</span>
     </div>
     <div class="logwrap">
+      <div class="zoomctl">
+        <button class="zoomb" onclick="zoomMapa(-1)" title="afastar"><span class="material-symbols-rounded">remove</span></button>
+        <span class="zoomlvl" id="zoomLvl">100%</span>
+        <button class="zoomb" onclick="zoomMapa(1)" title="aproximar"><span class="material-symbols-rounded">add</span></button>
+        <button class="zoomb" onclick="zoomMapa(0)" title="voltar ao tamanho original"><span class="material-symbols-rounded">restart_alt</span></button>
+      </div>
       <div class="logmap">
         <svg id="mapaLog" viewBox="0 0 470 440" role="img" aria-label="Mapa do Brasil com os estados coloridos pela faixa de distância a partir da base"></svg>
       </div>
@@ -165,6 +191,13 @@ textarea.fi{resize:vertical;min-height:54px;font-family:inherit}
         <tbody id="faixaRows"></tbody>
       </table></div>
       <div class="note" id="notaRaio"></div>
+      <details class="estdet">
+        <summary><span class="material-symbols-rounded">list</span>Estados do Brasil · lojas atendidas<span class="estres" id="estResumo"></span></summary>
+        <div class="scroll"><table class="tbl estab">
+          <thead><tr><th>Estado</th><th class="c">UF</th><th class="r">lojas</th><th class="r">distância</th><th class="c">anel</th></tr></thead>
+          <tbody id="estadoRows"></tbody>
+        </table></div>
+      </details>
     </div>
     <div class="hintbar">Um anel a cada <b>500 km</b> a partir da base, até 4.500 km — acima disso, faixa aberta. Quem define o acréscimo é <b>o anel</b>, não o estado: os 27 aparecem na lista só para você ver quem caiu onde. Regra por estado é assunto da camada fiscal. A distância é estimada de capital a capital em linha reta <b>× 1,25</b> para aproximar rodovia; no orçamento vale o <b>km rodado real</b> da base até a obra.</div>
   </div>
@@ -268,6 +301,11 @@ const CAP={AC:[-9.97,-67.81],AL:[-9.65,-35.73],AP:[0.03,-51.07],AM:[-3.10,-60.02
 const FATOR_ROTA=1.25;   // linha reta -> aproximação de km rodado
 const PASSO_KM=500;      // um anel a cada 500 km
 const KM_LIMITE=4500;    // cobre a maior distância entre capitais no país; acima disso, faixa aberta
+const KM_INICIAL=200;    // franquia: até aqui não há acréscimo; o limite é editável
+const NOME_UF={AC:'Acre',AL:'Alagoas',AP:'Amapá',AM:'Amazonas',BA:'Bahia',CE:'Ceará',DF:'Distrito Federal',
+  ES:'Espírito Santo',GO:'Goiás',MA:'Maranhão',MT:'Mato Grosso',MS:'Mato Grosso do Sul',MG:'Minas Gerais',
+  PA:'Pará',PB:'Paraíba',PR:'Paraná',PE:'Pernambuco',PI:'Piauí',RJ:'Rio de Janeiro',RN:'Rio Grande do Norte',
+  RS:'Rio Grande do Sul',RO:'Rondônia',RR:'Roraima',SC:'Santa Catarina',SP:'São Paulo',SE:'Sergipe',TO:'Tocantins'};
 let ORIGEM='BA';
 const FAIXA_DEFAULT=[{nivel:'local',rotulo:'Local',ordem:1,km_ate:150,custo_pct:0,tempo_pct:0},
   {nivel:'estadual',rotulo:'Estadual',ordem:2,km_ate:400,custo_pct:10,tempo_pct:8},
@@ -294,9 +332,9 @@ async function init(){
       await carregar(); CLOUD=true; cloudMsg(TEM_TABELA?'nuvem ✓':'nuvem ✓ · rode SQL_abrangencia.sql');
     } else cloudMsg('faça login');
   }catch(e){ console.error(e); cloudMsg('erro nuvem'); } }
-  if(!noPadrao500()) montarAneis500();
+  if(!gradeOk()) montarAneis();
   definirOrigemInicial();
-  renderMapa(); renderContadores(); renderOrigemSel(); renderMapaLog(); renderFaixas(); renderOrigens();
+  renderMapa(); renderContadores(); renderOrigemSel(); renderMapaLog(); renderFaixas(); renderEstados(); renderOrigens();
 }
 // base inicial da simulação: a origem marcada como padrão, senão a UF onde há mais obra
 function definirOrigemInicial(){
@@ -426,32 +464,45 @@ function faixasOrdenadas(){
     return {...o,pos,ultima,salvo,efetivo:salvo,sugerido:!o.f.id};
   });
 }
-// anéis fixos de 500 km, até cobrir o país; a última faixa é aberta
-function montarAneis500(){
+// grade: faixa inicial sem acréscimo (limite editável) + um anel a cada 500 km + faixa aberta
+function montarAneis(kmInicial){
   const antigas=FAIXAS.slice();
-  const pctDe=km=>{                       // aproveita o que já estava configurado
-    if(km<=PASSO_KM)        return antigas[0]||{custo_pct:0,tempo_pct:0};
-    if(km<=PASSO_KM*2)      return antigas[1]||antigas[antigas.length-1]||{custo_pct:0,tempo_pct:0};
+  const ini = kmInicial!=null ? kmInicial
+            : (antigas.length && antigas[0].km_ate!=null && num(antigas[0].km_ate)<PASSO_KM
+                ? num(antigas[0].km_ate) : KM_INICIAL);
+  const pctDe=pos=>{                        // aproveita o que já estava configurado
+    if(pos===0) return {custo_pct:0,tempo_pct:0};
+    if(pos===1) return antigas[1]||antigas[antigas.length-1]||{custo_pct:0,tempo_pct:0};
     return antigas[antigas.length-1]||{custo_pct:0,tempo_pct:0};
   };
-  const novas=[]; let n=1;
-  for(let km=PASSO_KM; km<=KM_LIMITE; km+=PASSO_KM){
-    const ref=pctDe(km), velha=antigas[novas.length];
-    novas.push({id:velha?velha.id:undefined, nivel:velha?velha.nivel:'a'+km,
-      rotulo:(km-PASSO_KM)+' – '+km+' km', ordem:n++, km_ate:km,
-      custo_pct:num(ref.custo_pct), tempo_pct:num(ref.tempo_pct)});
-  }
-  const ref=antigas[antigas.length-1]||{custo_pct:0,tempo_pct:0}, velha=antigas[novas.length];
-  novas.push({id:velha?velha.id:undefined, nivel:velha?velha.nivel:'a_max',
-    rotulo:'acima de '+KM_LIMITE+' km', ordem:n, km_ate:null,
-    custo_pct:num(ref.custo_pct), tempo_pct:num(ref.tempo_pct)});
-  FAIXAS=novas;
+  const limites=[ini];
+  for(let km=PASSO_KM; km<=KM_LIMITE; km+=PASSO_KM) if(km>ini) limites.push(km);
+  limites.push(null);                       // última: aberta
+  FAIXAS=limites.map((km,pos)=>{
+    const ref=pctDe(pos), velha=antigas[pos];
+    return {id:velha?velha.id:undefined, nivel:velha?velha.nivel:'a'+(km??'max'),
+      rotulo: km==null ? 'acima de '+limites[limites.length-2]+' km'
+            : pos===0  ? 'até '+km+' km'
+            :            limites[pos-1]+' – '+km+' km',
+      ordem:pos+1, km_ate:km,
+      custo_pct:num(ref.custo_pct), tempo_pct:num(ref.tempo_pct)};
+  });
 }
-// já está no padrão de 500 em 500?
-function noPadrao500(){
-  const comLimite=FAIXAS.filter(f=>f.km_ate!=null&&f.km_ate!=='');
-  if(comLimite.length<KM_LIMITE/PASSO_KM) return false;
-  return comLimite.every(f=>num(f.km_ate)%PASSO_KM===0);
+// a grade salva já está no formato (inicial curta + múltiplos de 500 + aberta)?
+function gradeOk(){
+  const com=FAIXAS.filter(f=>f.km_ate!=null&&f.km_ate!=='').map(f=>num(f.km_ate));
+  if(com.length<3) return false;
+  if(com[0]>=PASSO_KM) return false;
+  return com.slice(1).every(k=>k%PASSO_KM===0);
+}
+// muda a franquia inicial e reconstrói os anéis preservando os percentuais
+function setKmInicial(v){
+  let km=Math.max(0,Math.min(PASSO_KM-1,+v||0));
+  const pcts=FAIXAS.map(f=>({c:num(f.custo_pct),t:num(f.tempo_pct)})), ids=FAIXAS.map(f=>f.id);
+  montarAneis(km);
+  FAIXAS.forEach((f,i)=>{ if(pcts[i]){ f.custo_pct=pcts[i].c; f.tempo_pct=pcts[i].t; } if(ids[i])f.id=ids[i]; });
+  FAIXAS[0].custo_pct=0; FAIXAS[0].tempo_pct=0;
+  renderFaixas(); renderMapaLog(); renderEstados();
 }
 function faixaDe(km){
   const ord=faixasOrdenadas();
@@ -460,7 +511,7 @@ function faixaDe(km){
 }
 const corFaixa=pos=>{ const op=[0.90,0.62,0.34,0.21,0.14,0.10][pos]??0.12; return {cor:'#533ab7',op}; };
 
-function setOrigem(uf){ ORIGEM=uf; const s=document.getElementById('origemSel'); if(s&&s.value!==uf)s.value=uf; renderMapaLog(); renderFaixas(); }
+function setOrigem(uf){ ORIGEM=uf; const s=document.getElementById("origemSel"); if(s&&s.value!==uf)s.value=uf; renderMapaLog(); renderFaixas(); renderEstados(); }
 function renderOrigemSel(){
   const sel=document.getElementById('origemSel'); if(!sel)return;
   const bases=ORIGENS.filter(o=>o.uf&&CAP[o.uf]&&String(o.nome||'').trim());
@@ -584,8 +635,67 @@ function renderMapaLog(){
     t.textContent=o.u; gLabels.appendChild(t);
   });
 
-  svg.appendChild(gShapes); svg.appendChild(gAneis); svg.appendChild(gPins); svg.appendChild(gLabels);
+  const gz=el('g',{id:'zoomG'});
+  gz.appendChild(gShapes); gz.appendChild(gAneis); gz.appendChild(gPins); gz.appendChild(gLabels);
+  svg.appendChild(gz);
+  aplicaZoom();
   renderDevolutiva();
+}
+
+/* ---------- zoom discreto do mapa ---------- */
+const NIVEIS=[1,1.3,1.7,2.2];
+let Z_I=0, PANX=0, PANY=0;
+function aplicaZoom(){
+  const z=NIVEIS[Z_I], g=document.getElementById('zoomG'), svg=document.getElementById('mapaLog');
+  const cx=MAPA_W/2, cy=MAPA_H/2;
+  if(g) g.setAttribute('transform',`translate(${(cx-cx*z+PANX).toFixed(1)} ${(cy-cy*z+PANY).toFixed(1)}) scale(${z})`);
+  const lv=document.getElementById('zoomLvl'); if(lv) lv.textContent=Math.round(z*100)+'%';
+  if(svg) svg.classList.toggle('arrasta', z>1);
+}
+function zoomMapa(dir){
+  if(dir===0){ Z_I=0; PANX=PANY=0; }
+  else Z_I=Math.max(0,Math.min(NIVEIS.length-1,Z_I+dir));
+  if(Z_I===0){ PANX=PANY=0; }
+  aplicaZoom();
+}
+(function panDoMapa(){
+  let ativo=false,x0=0,y0=0,px=0,py=0;
+  document.addEventListener('mousedown',e=>{
+    const svg=e.target.closest&&e.target.closest('#mapaLog');
+    if(!svg||NIVEIS[Z_I]<=1)return;
+    ativo=true; x0=e.clientX; y0=e.clientY; px=PANX; py=PANY;
+    svg.classList.add('arrastando'); e.preventDefault();
+  });
+  document.addEventListener('mousemove',e=>{
+    if(!ativo)return;
+    const svg=document.getElementById('mapaLog'); if(!svg)return;
+    const k=MAPA_W/svg.getBoundingClientRect().width;   // px de tela -> unidades do viewBox
+    PANX=px+(e.clientX-x0)*k; PANY=py+(e.clientY-y0)*k;
+    aplicaZoom();
+  });
+  document.addEventListener('mouseup',()=>{
+    if(!ativo)return; ativo=false;
+    const svg=document.getElementById('mapaLog'); if(svg)svg.classList.remove('arrastando');
+  });
+})();
+
+/* ---------- lista dos 27 estados com as lojas atendidas ---------- */
+function renderEstados(){
+  const tb=document.getElementById('estadoRows'); if(!tb)return;
+  const ord=UFS.slice().sort((a,b)=>NOME_UF[a].localeCompare(NOME_UF[b],'pt-BR'));
+  tb.innerHTML=ord.map(u=>{
+    const n=LOJAS_UF[u]||0, km=kmEntre(ORIGEM,u), fx=faixaDe(km), base=(u===ORIGEM), c=corFaixa(fx.pos);
+    return `<tr>
+      <td class="nm">${NOME_UF[u]}${base?' <span class="ufchip base">base</span>':''}</td>
+      <td class="c"><span class="ufchip">${u}</span></td>
+      <td class="r ${n?'':'zero'}">${n||'—'}</td>
+      <td class="r km ${base?'zero':''}">${base?'—':'~'+km.toLocaleString('pt-BR')+' km'}</td>
+      <td class="c"><span class="anelnum" style="background:${c.cor};opacity:${Math.max(c.op,.25)}">${fx.pos+1}</span></td>
+    </tr>`;
+  }).join('');
+  const tot=Object.values(LOJAS_UF).reduce((a,b)=>a+b,0), nUf=Object.keys(LOJAS_UF).length;
+  const res=document.getElementById('estResumo');
+  if(res) res.textContent=`${tot} lojas em ${nUf} de 27 estados`;
 }
 
 // devolutiva do estado escolhido — fora do mapa, com espaço para ler
@@ -620,7 +730,10 @@ function renderFaixas(){
     const c=corFaixa(o.pos);
     return `<tr>
       <td class="c"><span class="anelnum" style="background:${c.cor};opacity:${Math.max(c.op,.25)}">${o.pos+1}</span></td>
-      <td><b class="faixanome">${faixa}</b>${ultima?'<div class="faixa-lbl">tudo que passa do último anel</div>':''}</td>
+      <td>${o.pos===0
+          ? `<span class="faixanome">até <input class="numin franq" type="number" min="0" max="${PASSO_KM-1}" step="10" value="${efetivo??KM_INICIAL}" onchange="setKmInicial(this.value)"> km</span>
+             <div class="faixa-lbl">franquia — sem acréscimo</div>`
+          : `<b class="faixanome">${faixa}</b>${ultima?'<div class="faixa-lbl">tudo que passa do último anel</div>':''}`}</td>
       <td class="r"><input class="numin" type="number" min="0" value="${num(f.custo_pct)}" oninput="FAIXAS[${i}].custo_pct=+this.value||0;renderMapaLog()"> %</td>
       <td class="r"><input class="numin" type="number" min="0" value="${num(f.tempo_pct)}" oninput="FAIXAS[${i}].tempo_pct=+this.value||0;renderMapaLog()"> %</td>
       <td class="ufslist">${ufs.length?ufs.map(u=>`<span class="ufchip${u===ORIGEM?' base':''}">${u}</span>`).join(''):'<span class="vaziof">nenhum estado neste anel</span>'}</td>
@@ -649,7 +762,9 @@ async function saveFaixas(){
       return;
     }
   }
-  await carregar(); renderFaixas(); renderMapaLog(); cloudMsg("nuvem ✓ · faixas salvas");
+  await carregar();
+  if(!gradeOk()) montarAneis();
+  renderFaixas(); renderMapaLog(); renderEstados(); cloudMsg("nuvem ✓ · faixas salvas");
 }
 
 /* ---------- origens ---------- */

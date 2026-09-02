@@ -123,6 +123,20 @@ create policy iso_emp on public.abrangencia_origens
   using      (eh_fundador() or (empresa_id = empresa_atual()))
   with check (eh_fundador() or (empresa_id = empresa_atual()));
 
+-- 6b) PRIMEIRA BASE ------------------------------------------------------
+-- Anápolis (GO). Se a cidade for outra, troque aqui antes de rodar.
+insert into public.abrangencia_origens (empresa_id, nome, cidade, uf, padrao, ativo)
+select e.empresa_id, 'Base Anápolis', 'Anápolis', 'GO', true, true
+from (
+  select distinct empresa_id from public.lojas where empresa_id is not null
+  union
+  select distinct empresa_id from public.orc_abrangencia where empresa_id is not null
+) e
+where not exists (
+  select 1 from public.abrangencia_origens a
+  where a.empresa_id = e.empresa_id and lower(a.nome) = 'base anápolis'
+);
+
 -- 7) CONFERÊNCIA -------------------------------------------------------
 -- Deve mostrar 14 UFs em 'atende' (BA, DF, GO, MS, RN, TO, CE, PB, SP, MG, AL, PE, SE, RO)
 -- e as demais em 'consulta'.
