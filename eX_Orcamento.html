@@ -306,6 +306,10 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .dianote{display:flex;align-items:center;gap:6px;margin:0 13px 8px;padding:7px 11px;background:var(--amber-bg,#fdf1de);border:1px solid var(--amber-line,#f0d29a);border-radius:8px;font-size:12px;color:var(--amber,#a45a00);line-height:1.4}
 .dianote .material-symbols-rounded{font-size:15px}
 .dianote b{color:var(--amber,#a45a00)}
+.diasig{display:inline-flex;align-items:center;margin-left:8px}
+.diaalt{display:inline-flex;align-items:center;gap:2px;font-size:10.5px;font-weight:600;color:var(--amber,#a45a00);background:var(--amber-bg,#fdf1de);border:1px solid var(--amber-line,#f0d29a);border-radius:20px;padding:1px 4px 1px 8px}
+.diaalt button{border:none;background:none;color:var(--amber,#a45a00);cursor:pointer;padding:1px;display:inline-flex;align-items:center}
+.diaalt button .material-symbols-rounded{font-size:14px}
 .diarow{display:grid;grid-template-columns:1fr 220px 110px;gap:10px;align-items:center;padding:8px 13px;border-top:1px solid var(--line2)}
 .diarow .diawho{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--tx)}
 .diarow .diaic{font-size:18px;color:var(--pri)}
@@ -904,7 +908,7 @@ async function initOrc(){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
       USER_ID=session.user.id;
       try{ const p=await SB.from('perfis').select('nome,email,telefone,colaborador_id').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; USER_TELEFONE=p.data[0].telefone||''; USER_COLAB_ID=p.data[0].colaborador_id||null; } }catch(_){}
-      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia();
+      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia(); await carregarDiariaBase();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
       MANUAL = !!ORC_ID;   // já existia ao abrir → alterações exigem clicar Salvar; nova (ORC_ID null) → auto até nascer
       // vínculo: pega contratante/loja da OPORTUNIDADE (pra puxar dados ao vivo do CRM, mesmo em orçamentos antigos)
@@ -1123,6 +1127,7 @@ function orcVazio(){
     blocoTotal:{servicos:0,equip:0,despesas:0,materiais:0},
     obs:{},
     comprovantes:[],
+    diarias:{modo:'fim',alim:num(DIARIA_BASE.alim),hosp:num(DIARIA_BASE.hosp)},   // puxa o padrão da empresa
     servicos:[], equip:[], despesas:[], materiais:[]
   };
 }
@@ -1444,7 +1449,7 @@ function diariasHtml(){
   const cnt=obraPessoaDias(), a=num(d.alim), h=num(d.hosp);
   const pes=fs.reduce((x,f)=>x+num(f.pes),0);
   const row=(nome,ic,key,val)=>`<div class="diarow">
-    <div class="diawho"><span class="diaic material-symbols-rounded">${ic}</span>${nome}</div>
+    <div class="diawho"><span class="diaic material-symbols-rounded">${ic}</span>${nome}<span class="diasig" id="dia_sig_${key}">${diaSig(key)}</span></div>
     <div class="diain"><span class="rsl">R$</span><input class="cin num" value="${val?moneyVal(val):''}" inputmode="decimal" placeholder="0,00" onfocus="this.select()" oninput="setDia('${key}',this.value)" onblur="diaBlur(this,'${key}')"><span class="diau">/ pessoa·dia</span></div>
     <div class="diatot" id="dia_${key}">${fmt(val*cnt)}</div></div>`;
   const hint = modo==='fim'
@@ -1460,6 +1465,9 @@ function diariasHtml(){
     <div class="diafoot"><span>Total das diárias <span style="color:var(--tx3);font-weight:400">(custo)</span></span><b id="dia_foot">${fmt((a+h)*cnt)}</b></div>
   </div>`;
 }
+// sinal "alterado": valor difere do padrão da empresa (DIARIA_BASE)
+function diaSig(key){ const b=num(DIARIA_BASE[key]); if(b>0 && Math.abs(num((S.diarias||{})[key])-b)>0.001) return `<span class="diaalt" title="diferente do padrão (R$ ${_d1(b)}/pessoa·dia)">≠ padrão<button onclick="diaRestore('${key}')" title="voltar ao padrão da empresa"><span class="material-symbols-rounded">restart_alt</span></button></span>`; return ''; }
+function diaRestore(key){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.diarias[key]=num(DIARIA_BASE[key]); save(); const dp=document.getElementById('diariasPanel'); if(dp)dp.innerHTML=diariasHtml(); recalc(); }
 function setDia(key,val){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.diarias[key]=num(val); save(); diaRefreshTotals(); recalc(); }
 function diaBlur(el,key){ const n=num(el.value); el.value=n?moneyVal(n):''; }
 function diaRefreshTotals(){ const fs=aggMaoObra()||[]; const cnt=obraPessoaDias(), d=S.diarias||{}, a=num(d.alim), h=num(d.hosp);
@@ -1468,7 +1476,8 @@ function diaRefreshTotals(){ const fs=aggMaoObra()||[]; const cnt=obraPessoaDias
   const pes=fs.reduce((x,f)=>x+num(f.pes),0);
   const hint = diariasModo()==='fim' ? `A equipe fica <b>até o fim</b>: ${pes} pessoas × ${fmtPrazo(obraPrazo())} = <b>${_d1(cnt)} diárias</b>` : `Cada função <b>só os dias que trabalha</b> = <b>${_d1(cnt)} diárias</b> (soma)`;
   const he=document.getElementById('dia_hint'); if(he)he.innerHTML=hint;
-  const nt=document.getElementById('dia_note'); if(nt)nt.style.display=((a+h)>0?'none':''); }
+  const nt=document.getElementById('dia_note'); if(nt)nt.style.display=((a+h)>0?'none':'');
+  ['alim','hosp'].forEach(k=>{ const e=document.getElementById('dia_sig_'+k); if(e)e.innerHTML=diaSig(k); }); }
 function setDiaModo(m){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.diarias.modo=(m==='exec'?'exec':'fim'); save();
   const dp=document.getElementById('diariasPanel'); if(dp)dp.innerHTML=diariasHtml();   // troca de modo = re-render do card (clique, sem foco em input)
   recalc(); const db=BLKS.find(b=>b.key==='despesas'); if(db){try{renderBlk(db);}catch(e){}} }
@@ -1819,6 +1828,12 @@ async function carregarAbrangencia(){
     if(!error && data && data.length) ABRANGENCIA=data;
   }catch(e){ console.error('abrangencia',e); }
   if(!ABRANGENCIA.length) ABRANGENCIA=[{nivel:'local',rotulo:'Local',custo_pct:0,tempo_pct:0},{nivel:'estadual',rotulo:'Estadual',custo_pct:10,tempo_pct:8},{nivel:'nacional',rotulo:'Nacional',custo_pct:20,tempo_pct:15}];
+}
+let DIARIA_BASE={alim:0,hosp:0};   // padrão da empresa (cadastro em Gestão › Mão de obra)
+async function carregarDiariaBase(){
+  try{ if(!EMPRESA_ID)return; const {data,error}=await SB.from('orc_diaria_base').select('alim,hosp').eq('empresa_id',EMPRESA_ID).limit(1);
+    if(!error && data && data[0]) DIARIA_BASE={alim:num(data[0].alim),hosp:num(data[0].hosp)};
+  }catch(e){ console.error('diaria base',e); }
 }
 // escala fixa de dificuldade (multiplica o tempo)
 const DIFIC=[{n:'Normal',mult:1.00},{n:'Moderada',mult:1.25},{n:'Alta',mult:1.50},{n:'Severa',mult:2.00}];

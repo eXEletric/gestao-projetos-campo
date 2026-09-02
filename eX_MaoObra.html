@@ -38,6 +38,11 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .gearb:hover{background:var(--pri-bg);border-color:var(--pri)}.gearb .material-symbols-rounded{font-size:17px}
 .empty{padding:26px;text-align:center;color:var(--tx3);font-size:13px}
 .hintbar{font-size:11.5px;color:var(--tx3);padding:9px 14px;background:var(--surf2);border-top:1px solid var(--line)}.hintbar b{color:var(--tx2)}
+.diarow{display:flex;align-items:center;gap:10px;padding:11px 14px;border-top:1px solid var(--line)}
+.diarow .dic{font-size:19px;color:var(--pri)}
+.diarow .dnm{flex:1;font-size:13.5px;font-weight:600;color:var(--tx)}
+.diarow .dv{font-size:15px;font-weight:700;color:var(--tx);font-variant-numeric:tabular-nums}
+.diarow .du{font-size:11px;color:var(--tx3)}
 .abr-tbl{width:100%;border-collapse:collapse;font-size:12.5px}
 .abr-tbl th{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:600;text-align:left;padding:8px 12px 6px}
 .abr-tbl th.r,.abr-tbl td.r{text-align:right}
@@ -83,6 +88,23 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
     <div class="ch"><span class="material-symbols-rounded">distance</span><b>Abrangência (deslocamento)</b><span class="sm">— % no custo/hora e no tempo por nível</span><span class="spacer"></span><button class="btn btn-p" style="padding:5px 11px;font-size:12px" onclick="saveAbr()"><span class="material-symbols-rounded">save</span>Salvar %</button></div>
     <div class="scroll"><table class="abr-tbl"><thead><tr><th>Nível de abrangência</th><th class="r">+ custo/hora %</th><th class="r">+ tempo % (deslocamento)</th></tr></thead><tbody id="abrRows"></tbody></table></div>
   </div>
+
+  <div class="card">
+    <div class="ch"><span class="material-symbols-rounded">restaurant</span><b>Diárias padrão</b><span class="sm">— por pessoa/dia; o orçamento puxa como base</span><span class="spacer"></span><button class="gearb" title="Editar valores" onclick="openDia()"><span class="material-symbols-rounded">settings</span></button></div>
+    <div id="diaBody"></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="diaModal">
+  <div class="modal">
+    <div class="mh"><b>Editar diárias padrão</b><button class="x" onclick="closeDia()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div class="hint" style="margin-bottom:12px">Valor por pessoa/dia. O orçamento passa a puxar estes valores como base (dá pra alterar por obra).</div>
+      <div class="nvrow"><span class="nm">Alimentação</span><input class="msin" id="dia_alim_in" inputmode="decimal" placeholder="0,00"><span class="vh">/ pessoa·dia</span></div>
+      <div class="nvrow"><span class="nm">Hospedagem</span><input class="msin" id="dia_hosp_in" inputmode="decimal" placeholder="0,00"><span class="vh">/ pessoa·dia</span></div>
+    </div>
+    <div class="mf"><button class="btn" onclick="closeDia()">Cancelar</button><button class="btn btn-p" onclick="saveDia()"><span class="material-symbols-rounded">check</span>Salvar</button></div>
+  </div>
 </div>
 
 <div class="modal-bg" id="cfg">
@@ -120,7 +142,7 @@ async function init(){
     } else cloudMsg('faça login');
   }catch(e){ console.error(e); cloudMsg('erro nuvem'); } }
   if(!ABR.length) ABR=ABR_DEFAULT.map(x=>({...x}));
-  render(); renderAbr();
+  render(); renderAbr(); renderDia();
 }
 async function carregar(){
   const [f,n,r]=await Promise.all([
@@ -132,6 +154,27 @@ async function carregar(){
   REF={}; (r.data||[]).forEach(x=>{ REF[key(x.funcao_id,x.nivel_id)]={mensal:x.valor_mensal,horas:x.horas_mes,vh:x.valor_hora}; });
   const a=await SB.from('orc_abrangencia').select('*').order('ordem');
   ABR=(a.data&&a.data.length)?a.data:ABR_DEFAULT.map(x=>({...x}));
+  const d=await SB.from('orc_diaria_base').select('alim,hosp').eq('empresa_id',EMPRESA_ID).limit(1);
+  DIA=(d.data&&d.data[0])?{alim:num(d.data[0].alim),hosp:num(d.data[0].hosp)}:{alim:0,hosp:0};
+}
+let DIA={alim:0,hosp:0};
+function renderDia(){
+  const el=document.getElementById('diaBody'); if(!el)return;
+  if(!CLOUD){ el.innerHTML='<div class="hintbar">Entre com login para configurar.</div>'; return; }
+  const rowd=(nome,ic,v)=>`<div class="diarow"><span class="material-symbols-rounded dic">${ic}</span><span class="dnm">${nome}</span><b class="dv">${v?fmt(v):'—'}</b><span class="du">/ pessoa·dia</span></div>`;
+  el.innerHTML=`<div class="hintbar">Estes valores viram a <b>base</b> nos orçamentos novos. Pra alterar, clique na engrenagem.</div>`+rowd('Alimentação','restaurant',DIA.alim)+rowd('Hospedagem','hotel',DIA.hosp);
+}
+function openDia(){ if(!CLOUD){ alert('Entre com login para configurar.'); return; }
+  document.getElementById('dia_alim_in').value=DIA.alim?String(DIA.alim).replace('.',','):'';
+  document.getElementById('dia_hosp_in').value=DIA.hosp?String(DIA.hosp).replace('.',','):'';
+  document.getElementById('diaModal').classList.add('show'); }
+function closeDia(){ document.getElementById('diaModal').classList.remove('show'); }
+async function saveDia(){
+  if(!CLOUD){ alert('Entre com login para salvar.'); return; }
+  const alim=num(document.getElementById('dia_alim_in').value), hosp=num(document.getElementById('dia_hosp_in').value);
+  const r=await SB.from('orc_diaria_base').upsert({empresa_id:EMPRESA_ID,alim,hosp,updated_at:new Date().toISOString()},{onConflict:'empresa_id'});
+  if(r.error){ alert('Erro ao salvar: '+r.error.message); return; }
+  DIA={alim,hosp}; closeDia(); renderDia(); cloudMsg('nuvem ✓ · diárias padrão salvas');
 }
 function render(){
   if(!CLOUD){ document.getElementById('mtxBody').innerHTML='<tr><td class="empty" colspan="5">Entre com login para ver e configurar.</td></tr>'; return; }
