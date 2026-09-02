@@ -112,6 +112,14 @@ textarea.fi{resize:vertical;min-height:54px;font-family:inherit}
 .basebar .bhint{font-size:11.5px;color:var(--tx3)}
 .faixapill{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--tx2)}
 .faixapill .dot{width:10px;height:10px;border-radius:3px;flex:none;background:var(--pri)}
+.anelnum{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;
+  border-radius:50%;color:#fff;font:700 10px ui-monospace,Menlo,Consolas,monospace}
+.faixanome{font-size:13px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.ufslist{display:flex;flex-wrap:wrap;gap:3px;max-width:330px}
+.ufchip{font:600 10px ui-monospace,Menlo,Consolas,monospace;background:var(--surf2);
+  border:1px solid var(--line);border-radius:4px;padding:1px 4px;color:var(--tx2)}
+.ufchip.base{background:#fdf3e4;border-color:var(--amber);color:#8a5510}
+.vaziof{font-size:11px;color:var(--tx3);font-style:italic}
 .lojatag{font-size:11px;color:var(--tx3);background:var(--surf2);border-radius:20px;padding:3px 10px;display:inline-flex;align-items:center;gap:5px}
 .lojatag .material-symbols-rounded{font-size:14px}
 </style>
@@ -140,12 +148,12 @@ textarea.fi{resize:vertical;min-height:54px;font-family:inherit}
 
   <!-- CAMADA 2 — LOGÍSTICA: RAIO A PARTIR DA BASE -->
   <div class="card">
-    <div class="ch"><span class="material-symbols-rounded">radar</span><b>Camada logística · raio a partir da base</b><span class="sm">— a mesma faixa muda de estado quando a base muda</span><span class="spacer"></span><button class="btn btn-p" style="padding:5px 11px;font-size:12px" onclick="saveFaixas()"><span class="material-symbols-rounded">save</span>Salvar faixas</button></div>
+    <div class="ch"><span class="material-symbols-rounded">radar</span><b>Camada logística · raio a partir da base</b><span class="sm">— um anel a cada 500 km; o acréscimo vem do anel</span><span class="spacer"></span><button class="btn btn-p" style="padding:5px 11px;font-size:12px" onclick="saveFaixas()"><span class="material-symbols-rounded">save</span>Salvar faixas</button></div>
     <div class="basebar">
       <span class="material-symbols-rounded" style="color:var(--pri)">my_location</span>
       <span class="bl">Base desta simulação</span>
       <select id="origemSel" onchange="setOrigem(this.value)"></select>
-      <span class="bhint">Cada proposta escolhe a sua. Trocando aqui, o mapa e as faixas se recalculam.</span>
+      <span class="bhint" id="avisoBases">Cada proposta escolhe a sua base.</span>
     </div>
     <div class="logwrap">
       <div class="logmap">
@@ -153,22 +161,22 @@ textarea.fi{resize:vertical;min-height:54px;font-family:inherit}
       </div>
       <div class="devol" id="devolutiva"></div>
       <div class="scroll"><table class="tbl">
-        <thead><tr><th>Faixa</th><th class="r">até (km)</th><th class="r">+ custo %</th><th class="r">+ prazo %</th><th class="c">UFs</th><th class="r"></th></tr></thead>
+        <thead><tr><th class="c">anel</th><th>faixa</th><th class="r">+ custo %</th><th class="r">+ prazo %</th><th>estados nesta faixa</th></tr></thead>
         <tbody id="faixaRows"></tbody>
       </table></div>
       <div class="note" id="notaRaio"></div>
     </div>
-    <div class="hintbar">Os <b>27 estados</b> estão sempre aqui — o que muda é em qual faixa cada um cai, e isso depende da base. A distância é estimada de capital a capital em linha reta <b>× 1,25</b> para aproximar rodovia; no orçamento vale o <b>km rodado real</b> da cidade de origem até a obra.</div>
+    <div class="hintbar">Um anel a cada <b>500 km</b> a partir da base, até 4.500 km — acima disso, faixa aberta. Quem define o acréscimo é <b>o anel</b>, não o estado: os 27 aparecem na lista só para você ver quem caiu onde. Regra por estado é assunto da camada fiscal. A distância é estimada de capital a capital em linha reta <b>× 1,25</b> para aproximar rodovia; no orçamento vale o <b>km rodado real</b> da base até a obra.</div>
   </div>
 
   <!-- ORIGENS -->
   <div class="card">
-    <div class="ch"><span class="material-symbols-rounded">trip_origin</span><b>Origens recorrentes</b><span class="sm">— de onde a equipe costuma sair</span><span class="spacer"></span><button class="btn btn-p" style="padding:5px 11px;font-size:12px" onclick="saveOrigens()"><span class="material-symbols-rounded">save</span>Salvar origens</button></div>
+    <div class="ch"><span class="material-symbols-rounded">trip_origin</span><b>Bases cadastradas</b><span class="sm">— os pontos de partida que o orçamento vai oferecer</span><span class="spacer"></span><button class="btn btn-p" style="padding:5px 11px;font-size:12px" onclick="saveOrigens()"><span class="material-symbols-rounded">save</span>Salvar bases</button></div>
     <div class="scroll"><table class="tbl">
-      <thead><tr><th>Origem</th><th>Cidade</th><th class="c">UF</th><th class="c">padrão</th><th class="r"></th></tr></thead>
+      <thead><tr><th>Base</th><th>Cidade</th><th class="c">UF</th><th class="c">padrão</th><th class="r"></th></tr></thead>
       <tbody id="origemRows"></tbody>
     </table></div>
-    <div class="hintbar">A eX <b>não tem base fixa</b>: a equipe se monta por obra. Esta lista só evita redigitar — <b>cada proposta escolhe a sua origem</b>, e é de lá que o km é contado.</div>
+    <div class="hintbar">A eX <b>não tem base fixa</b>: a equipe se monta por obra. Aqui ficam as bases possíveis — <b>cada proposta escolhe uma</b>, e é dela que o raio é contado. Enquanto a base não tiver coordenada própria, o ponto usado é a capital da UF: com anéis de 500 km, isso não muda a faixa.</div>
   </div>
 </div>
 
@@ -258,7 +266,8 @@ const CAP={AC:[-9.97,-67.81],AL:[-9.65,-35.73],AP:[0.03,-51.07],AM:[-3.10,-60.02
   RS:[-30.03,-51.23],RO:[-8.76,-63.90],RR:[2.82,-60.67],SC:[-27.59,-48.55],SP:[-23.55,-46.63],
   SE:[-10.91,-37.07],TO:[-10.18,-48.33]};
 const FATOR_ROTA=1.25;   // linha reta -> aproximação de km rodado
-const KM_SUGERIDO=[300,800,1500,2500];   // só para pré-visualizar enquanto as faixas não têm limite salvo
+const PASSO_KM=500;      // um anel a cada 500 km
+const KM_LIMITE=4500;    // cobre a maior distância entre capitais no país; acima disso, faixa aberta
 let ORIGEM='BA';
 const FAIXA_DEFAULT=[{nivel:'local',rotulo:'Local',ordem:1,km_ate:150,custo_pct:0,tempo_pct:0},
   {nivel:'estadual',rotulo:'Estadual',ordem:2,km_ate:400,custo_pct:10,tempo_pct:8},
@@ -285,6 +294,7 @@ async function init(){
       await carregar(); CLOUD=true; cloudMsg(TEM_TABELA?'nuvem ✓':'nuvem ✓ · rode SQL_abrangencia.sql');
     } else cloudMsg('faça login');
   }catch(e){ console.error(e); cloudMsg('erro nuvem'); } }
+  if(!noPadrao500()) montarAneis500();
   definirOrigemInicial();
   renderMapa(); renderContadores(); renderOrigemSel(); renderMapaLog(); renderFaixas(); renderOrigens();
 }
@@ -410,13 +420,38 @@ function kmEntre(a,b){
 function faixasOrdenadas(){
   const ord=FAIXAS.map((f,i)=>({f,i})).sort((a,b)=>
     (a.f.km_ate==null?1e9:num(a.f.km_ate))-(b.f.km_ate==null?1e9:num(b.f.km_ate)));
-  const nenhumLimite=ord.every(o=>o.f.km_ate==null||o.f.km_ate==='');
   return ord.map((o,pos)=>{
     const ultima=(pos===ord.length-1);
     const salvo=(o.f.km_ate==null||o.f.km_ate==='')?null:num(o.f.km_ate);
-    const efetivo = salvo!=null ? salvo : (ultima?null:(nenhumLimite?KM_SUGERIDO[pos]:null));
-    return {...o,pos,ultima,salvo,efetivo,sugerido:(salvo==null&&efetivo!=null)};
+    return {...o,pos,ultima,salvo,efetivo:salvo,sugerido:!o.f.id};
   });
+}
+// anéis fixos de 500 km, até cobrir o país; a última faixa é aberta
+function montarAneis500(){
+  const antigas=FAIXAS.slice();
+  const pctDe=km=>{                       // aproveita o que já estava configurado
+    if(km<=PASSO_KM)        return antigas[0]||{custo_pct:0,tempo_pct:0};
+    if(km<=PASSO_KM*2)      return antigas[1]||antigas[antigas.length-1]||{custo_pct:0,tempo_pct:0};
+    return antigas[antigas.length-1]||{custo_pct:0,tempo_pct:0};
+  };
+  const novas=[]; let n=1;
+  for(let km=PASSO_KM; km<=KM_LIMITE; km+=PASSO_KM){
+    const ref=pctDe(km), velha=antigas[novas.length];
+    novas.push({id:velha?velha.id:undefined, nivel:velha?velha.nivel:'a'+km,
+      rotulo:(km-PASSO_KM)+' – '+km+' km', ordem:n++, km_ate:km,
+      custo_pct:num(ref.custo_pct), tempo_pct:num(ref.tempo_pct)});
+  }
+  const ref=antigas[antigas.length-1]||{custo_pct:0,tempo_pct:0}, velha=antigas[novas.length];
+  novas.push({id:velha?velha.id:undefined, nivel:velha?velha.nivel:'a_max',
+    rotulo:'acima de '+KM_LIMITE+' km', ordem:n, km_ate:null,
+    custo_pct:num(ref.custo_pct), tempo_pct:num(ref.tempo_pct)});
+  FAIXAS=novas;
+}
+// já está no padrão de 500 em 500?
+function noPadrao500(){
+  const comLimite=FAIXAS.filter(f=>f.km_ate!=null&&f.km_ate!=='');
+  if(comLimite.length<KM_LIMITE/PASSO_KM) return false;
+  return comLimite.every(f=>num(f.km_ate)%PASSO_KM===0);
 }
 function faixaDe(km){
   const ord=faixasOrdenadas();
@@ -428,12 +463,17 @@ const corFaixa=pos=>{ const op=[0.90,0.62,0.34,0.21,0.14,0.10][pos]??0.12; retur
 function setOrigem(uf){ ORIGEM=uf; const s=document.getElementById('origemSel'); if(s&&s.value!==uf)s.value=uf; renderMapaLog(); renderFaixas(); }
 function renderOrigemSel(){
   const sel=document.getElementById('origemSel'); if(!sel)return;
-  const cadastradas=ORIGENS.filter(o=>o.uf&&CAP[o.uf]);
-  const marca=u=>LOJAS_UF[u]?' · '+LOJAS_UF[u]+(LOJAS_UF[u]>1?' lojas':' loja'):'';
-  sel.innerHTML=(cadastradas.length
-      ? `<optgroup label="origens cadastradas">${cadastradas.map(o=>`<option value="${o.uf}">${esc(o.nome||o.cidade||o.uf)} (${o.uf})</option>`).join('')}</optgroup>`
-      : '')
-    +`<optgroup label="por estado">${UFS.map(u=>`<option value="${u}" ${u===ORIGEM?'selected':''}>${u}${marca(u)}</option>`).join('')}</optgroup>`;
+  const bases=ORIGENS.filter(o=>o.uf&&CAP[o.uf]&&String(o.nome||'').trim());
+  const aviso=document.getElementById('avisoBases');
+  if(bases.length){
+    sel.innerHTML=bases.map(b=>`<option value="${b.uf}" ${b.uf===ORIGEM?'selected':''}>${esc(b.nome)}${b.cidade?' · '+esc(b.cidade):''} (${b.uf})</option>`).join('');
+    if(aviso) aviso.textContent='Cada proposta escolhe a sua base. Trocando aqui, o mapa e os anéis se recalculam.';
+  }else{
+    // ainda sem base cadastrada: deixa simular por estado para não travar a configuração
+    const marca=u=>LOJAS_UF[u]?' · '+LOJAS_UF[u]+(LOJAS_UF[u]>1?' lojas':' loja'):'';
+    sel.innerHTML=`<optgroup label="simulando por estado — cadastre suas bases abaixo">${UFS.map(u=>`<option value="${u}" ${u===ORIGEM?'selected':''}>${u}${marca(u)}</option>`).join('')}</optgroup>`;
+    if(aviso) aviso.textContent='Nenhuma base cadastrada ainda — cadastre no card abaixo e ela passa a aparecer aqui.';
+  }
   sel.value=ORIGEM;
 }
 // código IBGE -> sigla da UF
@@ -565,36 +605,30 @@ function renderDevolutiva(){
 }
 function renderFaixas(){
   const ord=faixasOrdenadas();
-  const conta={}; UFS.forEach(u=>{ const fx=faixaDe(kmEntre(ORIGEM,u)); conta[fx.i]=(conta[fx.i]||0)+1; });
-  let de=0, temSugerido=false;
+  // cada estado cai em exatamente um anel, pela distância até a base
+  const porFaixa={};
+  UFS.forEach(u=>{ const fx=faixaDe(kmEntre(ORIGEM,u)); (porFaixa[fx.i]=porFaixa[fx.i]||[]).push(u); });
+  let de=0, naoSalvo=false;
   const rows=ord.map(o=>{
-    const {f,i,ultima,salvo,efetivo,sugerido}=o;
-    if(sugerido) temSugerido=true;
-    const faixa = efetivo!=null ? `${de} – ${efetivo} km${sugerido?' (sugerido)':''}`
-                : ultima        ? `acima de ${de} km`
-                :                 'defina o limite';
+    const {f,i,ultima,efetivo,sugerido}=o;
+    if(sugerido) naoSalvo=true;
+    const faixa = ultima ? `acima de ${de} km` : `${de} – ${efetivo} km`;
     de = efetivo==null ? de : efetivo;
+    const ufs=(porFaixa[i]||[]);
+    const c=corFaixa(o.pos);
     return `<tr>
-      <td><input class="rgin" value="${esc(f.rotulo||'')}" placeholder="nome da faixa" oninput="FAIXAS[${i}].rotulo=this.value">
-        <div class="faixa-lbl">${faixa}</div></td>
-      <td class="r"><input class="numin" type="number" min="0" step="10" value="${salvo==null?'':salvo}" placeholder="${ultima?'aberta':(efetivo??'')}" oninput="FAIXAS[${i}].km_ate=this.value===''?null:(+this.value||0);renderFaixas();renderMapaLog()"></td>
+      <td class="c"><span class="anelnum" style="background:${c.cor};opacity:${Math.max(c.op,.25)}">${o.pos+1}</span></td>
+      <td><b class="faixanome">${faixa}</b>${ultima?'<div class="faixa-lbl">tudo que passa do último anel</div>':''}</td>
       <td class="r"><input class="numin" type="number" min="0" value="${num(f.custo_pct)}" oninput="FAIXAS[${i}].custo_pct=+this.value||0;renderMapaLog()"> %</td>
       <td class="r"><input class="numin" type="number" min="0" value="${num(f.tempo_pct)}" oninput="FAIXAS[${i}].tempo_pct=+this.value||0;renderMapaLog()"> %</td>
-      <td class="c"><span class="faixapill"><span class="dot" style="opacity:${corFaixa(o.pos).op}"></span>${conta[i]||0}</span></td>
-      <td class="r"><button class="rgdel" onclick="faixaDel(${i})" title="remover faixa" ${FAIXAS.length<=1?'disabled':''}><span class="material-symbols-rounded">close</span></button></td></tr>`;
+      <td class="ufslist">${ufs.length?ufs.map(u=>`<span class="ufchip${u===ORIGEM?' base':''}">${u}</span>`).join(''):'<span class="vaziof">nenhum estado neste anel</span>'}</td>
+    </tr>`;
   }).join('');
-  document.getElementById('faixaRows').innerHTML=rows+
-    `<tr><td colspan="6" style="padding:8px 12px"><button class="rgadd" onclick="faixaAdd()"><span class="material-symbols-rounded">add</span>adicionar faixa</button></td></tr>`;
+  document.getElementById('faixaRows').innerHTML=rows;
   const nt=document.getElementById('notaRaio');
-  if(nt) nt.innerHTML = temSugerido
-    ? `<b>Os limites em cinza são sugestão.</b> Digite o km de cada faixa e salve — o mapa se recolore na hora, e é isso que o orçamento vai usar.`
-    : `<b>Saindo de ${ORIGEM}.</b> Troque a base no topo do card para ver os mesmos estados mudarem de faixa. Nenhum estado some da lista — só muda de anel.`;
-}
-function faixaAdd(){ FAIXAS.push({nivel:"r"+Date.now().toString(36),rotulo:"Nova faixa",ordem:FAIXAS.length+1,km_ate:null,custo_pct:0,tempo_pct:0}); renderFaixas(); renderMapaLog(); }
-async function faixaDel(i){
-  const f=FAIXAS[i]; if(!f||FAIXAS.length<=1)return;
-  FAIXAS.splice(i,1); renderFaixas(); renderMapaLog();
-  if(CLOUD && f.id){ const r=await SB.from('orc_abrangencia').delete().eq('id',f.id); if(r&&r.error)console.error('faixa del',r.error); }
+  if(nt) nt.innerHTML = naoSalvo
+    ? `<b>Os anéis de ${PASSO_KM} km ainda não foram salvos.</b> Ajuste os percentuais e clique em <b>Salvar faixas</b> — a partir daí é isso que o orçamento usa.`
+    : `<b>Saindo de ${ORIGEM}.</b> Um anel a cada ${PASSO_KM} km. Os 27 estados estão sempre na lista — trocando a base, eles trocam de anel, e o percentual vem do anel, não do estado.`;
 }
 async function saveFaixas(){
   if(!CLOUD){ alert('Entre com login para salvar.'); return; }
@@ -614,13 +648,13 @@ async function saveFaixas(){
 /* ---------- origens ---------- */
 function renderOrigens(){
   const rows=ORIGENS.map((o,i)=>`<tr>
-    <td><input class="rgin" value="${esc(o.nome||'')}" placeholder="ex.: Equipe Bahia" oninput="ORIGENS[${i}].nome=this.value"></td>
+    <td><input class="rgin" value="${esc(o.nome||'')}" placeholder="ex.: Base Bahia" oninput="ORIGENS[${i}].nome=this.value"></td>
     <td><input class="rgin" value="${esc(o.cidade||'')}" placeholder="cidade" oninput="ORIGENS[${i}].cidade=this.value"></td>
     <td class="c"><input class="numin" style="width:52px;text-align:center;text-transform:uppercase" maxlength="2" value="${esc(o.uf||'')}" placeholder="UF" oninput="ORIGENS[${i}].uf=this.value.toUpperCase()"></td>
     <td class="c"><button class="star ${o.padrao?'on':''}" title="origem padrão nas propostas novas" onclick="origemPadrao(${i})"><span class="material-symbols-rounded">${o.padrao?'star':'star_border'}</span></button></td>
     <td class="r"><button class="rgdel" onclick="origemDel(${i})" title="remover origem"><span class="material-symbols-rounded">close</span></button></td></tr>`).join('');
-  document.getElementById('origemRows').innerHTML=(rows||'<tr><td colspan="5" class="empty">Nenhuma origem cadastrada — a proposta pode digitar a dela mesmo assim.</td></tr>')+
-    `<tr><td colspan="5" style="padding:8px 12px"><button class="rgadd" onclick="origemAdd()"><span class="material-symbols-rounded">add</span>adicionar origem</button></td></tr>`;
+  document.getElementById('origemRows').innerHTML=(rows||'<tr><td colspan="5" class="empty">Nenhuma base cadastrada — cadastre a primeira para o orçamento poder escolher.</td></tr>')+
+    `<tr><td colspan="5" style="padding:8px 12px"><button class="rgadd" onclick="origemAdd()"><span class="material-symbols-rounded">add</span>adicionar base</button></td></tr>`;
 }
 function origemAdd(){ ORIGENS.push({nome:'',cidade:'',uf:'',padrao:ORIGENS.length===0,ativo:true}); renderOrigens(); }
 function origemPadrao(i){ ORIGENS.forEach((o,j)=>o.padrao=(j===i)); renderOrigens(); }
