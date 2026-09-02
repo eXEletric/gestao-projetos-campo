@@ -334,7 +334,8 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .diaalt{display:inline-flex;align-items:center;gap:2px;font-size:10.5px;font-weight:600;color:var(--amber,#a45a00);background:var(--amber-bg,#fdf1de);border:1px solid var(--amber-line,#f0d29a);border-radius:20px;padding:1px 4px 1px 8px}
 .diaalt button{border:none;background:none;color:var(--amber,#a45a00);cursor:pointer;padding:1px;display:inline-flex;align-items:center}
 .diaalt button .material-symbols-rounded{font-size:14px}
-.diarow{display:grid;grid-template-columns:1fr 220px 110px;gap:10px;align-items:center;padding:8px 13px;border-top:1px solid var(--line2)}
+.diarow{display:grid;grid-template-columns:1fr 172px auto 118px;gap:10px;align-items:center;padding:8px 13px;border-top:1px solid var(--line2)}
+.diarow .diacalc{font-size:11.5px;color:var(--tx3);text-align:right;white-space:nowrap;font-variant-numeric:tabular-nums}
 .diarow .diawho{display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--tx)}
 .diarow .diaic{font-size:18px;color:var(--pri)}
 .diarow .diain{display:flex;align-items:center;gap:5px}
@@ -344,7 +345,7 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .diarow .diatot{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-size:13.5px}
 .diafoot{display:flex;justify-content:space-between;align-items:center;padding:10px 13px;border-top:2px solid var(--line);background:var(--surf2)}
 .diafoot b{color:var(--pri);font-size:15px;font-variant-numeric:tabular-nums}
-@media(max-width:640px){.diarow{grid-template-columns:1fr auto}.diarow .diatot{grid-column:1/-1;text-align:right}}
+@media(max-width:640px){.diarow{grid-template-columns:1fr auto}.diarow .diacalc,.diarow .diatot{grid-column:1/-1;text-align:right}}
 .money{white-space:nowrap}
 .preco{font-weight:700;color:var(--tx)}
 .preco b{font-weight:800;color:var(--pri)}
@@ -1516,6 +1517,7 @@ function diariasHtml(){
   const row=(nome,ic,key,val)=>`<div class="diarow">
     <div class="diawho"><span class="diaic material-symbols-rounded">${ic}</span>${nome}<span class="diasig" id="dia_sig_${key}">${diaSig(key)}</span></div>
     <div class="diain"><span class="rsl">R$</span><input class="cin num" value="${val?moneyVal(val):''}" inputmode="decimal" placeholder="0,00" onfocus="this.select()" oninput="setDia('${key}',this.value)" onblur="diaBlur(this,'${key}')"><span class="diau">/ pessoa·dia</span></div>
+    <div class="diacalc" id="dia_calc_${key}">${diaBreak()}</div>
     <div class="diatot" id="dia_${key}">${fmt(val*cnt)}</div></div>`;
   const hint = modo==='fim'
     ? `A equipe fica <b>até o fim</b>: ${pes} pessoas × ${fmtPrazo(obraPrazo())} = <b>${_d1(cnt)} diárias</b>`
@@ -1550,6 +1552,10 @@ async function saveDiaBase(){
 }
 function setDia(key,val){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.diarias[key]=num(val); save(); diaRefreshTotals(); recalc(); }
 function diaBlur(el,key){ const n=num(el.value); el.value=n?moneyVal(n):''; }
+// texto didático: × N pessoas × N dias = (ou × N diárias = , no modo por execução)
+function diaBreak(){ const fs=aggMaoObra()||[]; const pes=fs.reduce((a,f)=>a+num(f.pes),0);
+  if(diariasModo()==='fim') return '× '+pes+' pessoa'+(pes===1?'':'s')+' × '+_d1(obraPrazo())+' dia'+(obraPrazo()===1?'':'s')+' =';
+  return '× '+_d1(obraPessoaDias())+' diárias ='; }
 function diaRefreshTotals(){ const fs=aggMaoObra()||[]; const cnt=obraPessoaDias(), d=S.diarias||{}, a=num(d.alim), h=num(d.hosp);
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   set('dia_alim',fmt(a*cnt)); set('dia_hosp',fmt(h*cnt)); set('dia_foot',fmt((a+h)*cnt));
@@ -1557,7 +1563,7 @@ function diaRefreshTotals(){ const fs=aggMaoObra()||[]; const cnt=obraPessoaDias
   const hint = diariasModo()==='fim' ? `A equipe fica <b>até o fim</b>: ${pes} pessoas × ${fmtPrazo(obraPrazo())} = <b>${_d1(cnt)} diárias</b>` : `Cada função <b>só os dias que trabalha</b> = <b>${_d1(cnt)} diárias</b> (soma)`;
   const he=document.getElementById('dia_hint'); if(he)he.innerHTML=hint;
   const nt=document.getElementById('dia_note'); if(nt)nt.style.display=((a+h)>0?'none':'');
-  ['alim','hosp'].forEach(k=>{ const e=document.getElementById('dia_sig_'+k); if(e)e.innerHTML=diaSig(k); }); }
+  const bk=diaBreak(); ['alim','hosp'].forEach(k=>{ const e=document.getElementById('dia_sig_'+k); if(e)e.innerHTML=diaSig(k); const c=document.getElementById('dia_calc_'+k); if(c)c.textContent=bk; }); }
 function setDiaModo(m){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.diarias.modo=(m==='exec'?'exec':'fim'); save();
   const dp=document.getElementById('diariasPanel'); if(dp)dp.innerHTML=diariasHtml();   // troca de modo = re-render do card (clique, sem foco em input)
   recalc(); const db=BLKS.find(b=>b.key==='despesas'); if(db){try{renderBlk(db);}catch(e){}} }
