@@ -306,9 +306,12 @@ async function saveUf(){
 function renderFaixas(){
   const ordenadas=FAIXAS.map((f,i)=>({f,i})).sort((a,b)=>(a.f.km_ate==null?1e9:num(a.f.km_ate))-(b.f.km_ate==null?1e9:num(b.f.km_ate)));
   let de=0;
-  const rows=ordenadas.map(({f,i})=>{
+  const rows=ordenadas.map(({f,i},pos)=>{
     const ate=f.km_ate==null||f.km_ate===''?null:num(f.km_ate);
-    const faixa= ate==null ? `acima de ${de} km` : `${de} – ${ate} km`;
+    const ultima=(pos===ordenadas.length-1);
+    const faixa= ate!=null ? `${de} – ${ate} km`
+               : ultima   ? `acima de ${de} km`
+               :            'defina o limite';
     de = ate==null ? de : ate;
     return `<tr>
       <td><input class="rgin" value="${esc(f.rotulo||'')}" placeholder="nome da faixa" oninput="FAIXAS[${i}].rotulo=this.value">
