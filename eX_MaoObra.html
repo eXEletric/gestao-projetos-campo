@@ -48,6 +48,12 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .abr-tbl th.r,.abr-tbl td.r{text-align:right}
 .abr-tbl td{padding:7px 12px;border-top:1px solid var(--line)}.abr-tbl .lvl{font-weight:600}
 .pctin{width:60px;padding:5px 7px;border:1px solid var(--line2);border-radius:6px;text-align:right;font-size:13px}
+.rgin{width:100%;padding:5px 7px;border:1px solid transparent;border-radius:6px;font:600 13px inherit;color:var(--tx);background:transparent}
+.rgin:hover{border-color:var(--line2)}.rgin:focus{outline:none;border-color:var(--pri);background:var(--surf)}
+.rgdel{border:none;background:none;color:var(--tx3);cursor:pointer;padding:3px;border-radius:6px;display:inline-flex}
+.rgdel:hover{background:#fbeaec;color:var(--red,#b23a48)}.rgdel:disabled{opacity:.25;cursor:default}.rgdel .material-symbols-rounded{font-size:16px}
+.rgadd{border:1px dashed var(--line2);background:transparent;color:var(--pri);font:600 12px inherit;border-radius:20px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.rgadd:hover{background:var(--surf2)}.rgadd .material-symbols-rounded{font-size:15px}
 .pctin:disabled{background:var(--surf2);color:var(--tx3)}.pctin:focus{outline:none;border-color:var(--pri)}
 /* modal */
 .modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:center;justify-content:center;padding:20px;z-index:60}
@@ -86,7 +92,7 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 
   <div class="card">
     <div class="ch"><span class="material-symbols-rounded">distance</span><b>Abrangência (deslocamento)</b><span class="sm">— % no custo/hora e no tempo por nível</span><span class="spacer"></span><button class="btn btn-p" style="padding:5px 11px;font-size:12px" onclick="saveAbr()"><span class="material-symbols-rounded">save</span>Salvar %</button></div>
-    <div class="scroll"><table class="abr-tbl"><thead><tr><th>Nível de abrangência</th><th class="r">+ custo/hora %</th><th class="r">+ tempo % (deslocamento)</th></tr></thead><tbody id="abrRows"></tbody></table></div>
+    <div class="scroll"><table class="abr-tbl"><thead><tr><th>Região</th><th class="r">+ custo/hora %</th><th class="r">+ tempo % (deslocamento)</th><th></th></tr></thead><tbody id="abrRows"></tbody></table></div>
   </div>
 
   <div class="card">
@@ -131,7 +137,7 @@ const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>
 const fmt=n=>'R$ '+(Math.round((+n||0)*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 function cloudMsg(t){ const e=document.getElementById('cloudb'); if(e)e.textContent=t; }
 const key=(f,n)=>f+'|'+n;
-const ABR_DEFAULT=[{nivel:'local',rotulo:'Local',ordem:1,custo_pct:0,tempo_pct:0},{nivel:'estadual',rotulo:'Estadual',ordem:2,custo_pct:35,tempo_pct:15},{nivel:'nacional',rotulo:'Nacional',ordem:3,custo_pct:80,tempo_pct:30}];
+const ABR_DEFAULT=[{nivel:'local',rotulo:'Local',ordem:1,custo_pct:0,tempo_pct:0},{nivel:'estadual',rotulo:'Estadual',ordem:2,custo_pct:10,tempo_pct:8},{nivel:'nacional',rotulo:'Nacional',ordem:3,custo_pct:20,tempo_pct:15}];
 
 async function init(){
   if(SB){ try{
@@ -186,11 +192,16 @@ function render(){
   }).join('')+`<td class="cfg"><button class="gearb" title="Configurar" onclick="openCfg('${f.id}')"><span class="material-symbols-rounded">settings</span></button></td></tr>`).join('');
 }
 function renderAbr(){
-  document.getElementById('abrRows').innerHTML=ABR.map((a,i)=>{const base=a.nivel==='local';return `<tr>
-    <td class="lvl">${esc(a.rotulo)}</td>
-    <td class="r"><input class="pctin" type="number" min="0" value="${num(a.custo_pct)}" ${base?'disabled':''} oninput="ABR[${i}].custo_pct=+this.value||0"> %</td>
-    <td class="r"><input class="pctin" type="number" min="0" value="${num(a.tempo_pct)}" ${base?'disabled':''} oninput="ABR[${i}].tempo_pct=+this.value||0"> %</td></tr>`;}).join('');
+  const rows=ABR.map((a,i)=>`<tr>
+    <td class="lvl"><input class="rgin" value="${esc(a.rotulo||'')}" placeholder="nome da região" oninput="ABR[${i}].rotulo=this.value"></td>
+    <td class="r"><input class="pctin" type="number" min="0" value="${num(a.custo_pct)}" oninput="ABR[${i}].custo_pct=+this.value||0"> %</td>
+    <td class="r"><input class="pctin" type="number" min="0" value="${num(a.tempo_pct)}" oninput="ABR[${i}].tempo_pct=+this.value||0"> %</td>
+    <td class="r"><button class="rgdel" onclick="abrDelMao(${i})" title="remover região" ${ABR.length<=1?'disabled':''}><span class="material-symbols-rounded">close</span></button></td></tr>`).join('');
+  document.getElementById('abrRows').innerHTML=rows+`<tr><td colspan="4" style="padding:8px 12px"><button class="rgadd" onclick="abrAddMao()"><span class="material-symbols-rounded">add</span>adicionar região</button></td></tr>`;
 }
+function abrAddMao(){ ABR.push({nivel:'r'+Date.now().toString(36),rotulo:'Nova região',ordem:ABR.length,custo_pct:0,tempo_pct:0}); renderAbr(); }
+async function abrDelMao(i){ const a=ABR[i]; if(!a||ABR.length<=1)return; ABR.splice(i,1); renderAbr();
+  if(CLOUD && a.id){ const r=await SB.from('orc_abrangencia').delete().eq('id',a.id); if(r&&r.error)console.error('abr del',r.error); } }
 /* caixa de configuração POR FUNÇÃO */
 function openCfg(fid){
   CFG_FUNC=fid; const f=FUNCOES.find(x=>x.id===fid);

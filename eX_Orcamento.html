@@ -302,6 +302,8 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .diahd .material-symbols-rounded{font-size:19px;color:var(--pri)}
 .diahd h3{margin:0;font-size:12px;font-weight:800;color:var(--pri);text-transform:uppercase;letter-spacing:.04em}
 .diaseg{margin-left:auto}.diaseg button{padding:6px 11px;font-size:12px}
+.diagear{border:1px solid var(--pri-line,#ddd3f6);background:var(--surf);color:var(--pri);border-radius:8px;width:30px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.diagear:hover{background:var(--pri-bg,#efeafc)}.diagear .material-symbols-rounded{font-size:17px}
 .diahint{font-size:11.5px;color:var(--tx2);padding:8px 13px;line-height:1.5}
 .dianote{display:flex;align-items:center;gap:6px;margin:0 13px 8px;padding:7px 11px;background:var(--amber-bg,#fdf1de);border:1px solid var(--amber-line,#f0d29a);border-radius:8px;font-size:12px;color:var(--amber,#a45a00);line-height:1.4}
 .dianote .material-symbols-rounded{font-size:15px}
@@ -724,6 +726,21 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
           </div>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="diaBaseModal">
+  <div class="modal" style="width:440px;max-width:100%">
+    <div class="mh"><span class="material-symbols-rounded">restaurant</span><h3>Diárias padrão da empresa</h3><button class="x" onclick="closeDiaBase()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div class="cmphint" style="margin-bottom:12px">Valor por pessoa/dia. Vira a <b>base</b> de todo orçamento novo. (Também salva em Gestão › Mão de obra.)</div>
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px"><span class="material-symbols-rounded" style="color:var(--pri)">restaurant</span><span style="flex:1;font-weight:600">Alimentação</span><span style="color:var(--tx3);font-size:12px">R$</span><input id="db_alim" class="cin num" style="width:110px;text-align:right" inputmode="decimal" placeholder="0,00"><span style="font-size:11px;color:var(--tx3)">/ pessoa·dia</span></div>
+      <div style="display:flex;align-items:center;gap:10px"><span class="material-symbols-rounded" style="color:var(--pri)">hotel</span><span style="flex:1;font-weight:600">Hospedagem</span><span style="color:var(--tx3);font-size:12px">R$</span><input id="db_hosp" class="cin num" style="width:110px;text-align:right" inputmode="decimal" placeholder="0,00"><span style="font-size:11px;color:var(--tx3)">/ pessoa·dia</span></div>
+    </div>
+    <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="closeDiaBase()">Cancelar</button>
+      <button class="btn" style="background:var(--pri);color:#fff;border-color:var(--pri)" onclick="saveDiaBase()"><span class="material-symbols-rounded">check</span>Salvar padrão</button>
     </div>
   </div>
 </div>
@@ -1457,7 +1474,8 @@ function diariasHtml(){
     : `Cada função <b>só os dias que trabalha</b> = <b>${_d1(cnt)} diárias</b> (soma)`;
   return `<div class="diacard noprint">
     <div class="diahd"><span class="material-symbols-rounded">restaurant</span><h3>Diárias da equipe em campo</h3>
-      <span class="cmpseg diaseg"><button class="${modo==='fim'?'on':''}" onclick="setDiaModo('fim')">Todos até o fim</button><button class="${modo==='exec'?'on':''}" onclick="setDiaModo('exec')">Por tempo de execução individual</button></span></div>
+      <span class="cmpseg diaseg"><button class="${modo==='fim'?'on':''}" onclick="setDiaModo('fim')">Todos até o fim</button><button class="${modo==='exec'?'on':''}" onclick="setDiaModo('exec')">Por tempo de execução individual</button></span>
+      <button class="diagear" onclick="openDiaBase()" title="Configurar o valor padrão da empresa (alimentação/hospedagem)"><span class="material-symbols-rounded">settings</span></button></div>
     <div class="diahint" id="dia_hint">${hint}</div>
     <div class="dianote" id="dia_note" style="display:${(a+h)>0?'none':''}"><span class="material-symbols-rounded">edit</span>Informe o <b>R$ por pessoa/dia</b> de cada item — as diárias só entram no total depois disso.</div>
     ${row('Alimentação','restaurant','alim',a)}
@@ -1468,6 +1486,20 @@ function diariasHtml(){
 // sinal "alterado": valor difere do padrão da empresa (DIARIA_BASE)
 function diaSig(key){ const b=num(DIARIA_BASE[key]); if(b>0 && Math.abs(num((S.diarias||{})[key])-b)>0.001) return `<span class="diaalt" title="diferente do padrão (R$ ${_d1(b)}/pessoa·dia)">≠ padrão<button onclick="diaRestore('${key}')" title="voltar ao padrão da empresa"><span class="material-symbols-rounded">restart_alt</span></button></span>`; return ''; }
 function diaRestore(key){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.diarias[key]=num(DIARIA_BASE[key]); save(); const dp=document.getElementById('diariasPanel'); if(dp)dp.innerHTML=diariasHtml(); recalc(); }
+// atalho: configurar o PADRÃO da empresa (orc_diaria_base) direto do orçamento
+function openDiaBase(){ const a=document.getElementById('db_alim'), h=document.getElementById('db_hosp');
+  if(a)a.value=num(DIARIA_BASE.alim)?String(DIARIA_BASE.alim).replace('.',','):''; if(h)h.value=num(DIARIA_BASE.hosp)?String(DIARIA_BASE.hosp).replace('.',','):'';
+  document.getElementById('diaBaseModal').classList.add('open'); }
+function closeDiaBase(){ document.getElementById('diaBaseModal').classList.remove('open'); }
+async function saveDiaBase(){
+  const alim=num((document.getElementById('db_alim')||{}).value), hosp=num((document.getElementById('db_hosp')||{}).value);
+  DIARIA_BASE={alim,hosp};
+  if(CLOUD && EMPRESA_ID){ try{ const r=await SB.from('orc_diaria_base').upsert({empresa_id:EMPRESA_ID,alim,hosp,updated_at:new Date().toISOString()},{onConflict:'empresa_id'}); if(r&&r.error)console.error('diaria base save',r.error); }catch(e){ console.error(e); } }
+  // se este orçamento ainda está zerado, já puxa o padrão salvo
+  if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0};
+  if(!num(S.diarias.alim))S.diarias.alim=alim; if(!num(S.diarias.hosp))S.diarias.hosp=hosp;
+  save(); closeDiaBase(); const dp=document.getElementById('diariasPanel'); if(dp)dp.innerHTML=diariasHtml(); recalc();
+}
 function setDia(key,val){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.diarias[key]=num(val); save(); diaRefreshTotals(); recalc(); }
 function diaBlur(el,key){ const n=num(el.value); el.value=n?moneyVal(n):''; }
 function diaRefreshTotals(){ const fs=aggMaoObra()||[]; const cnt=obraPessoaDias(), d=S.diarias||{}, a=num(d.alim), h=num(d.hosp);
