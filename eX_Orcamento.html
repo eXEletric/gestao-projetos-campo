@@ -232,6 +232,15 @@ select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 .moastep button:hover{background:var(--pri-bg)}.moastep .v{min-width:24px;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
 .moapz{text-align:center;font-variant-numeric:tabular-nums;font-size:13px;color:var(--tx2)}
 .moapz b{font-size:14px;color:var(--tx)}.moapz span{font-size:10px;color:var(--tx3)}
+.moapzedit .mopzwrap{display:inline-flex;align-items:center;justify-content:center;gap:2px}
+.moapzedit .mopzin{width:38px;padding:3px 4px;border:1px solid var(--line2);border-radius:6px;text-align:right;font:700 14px inherit;color:var(--tx);background:var(--surf);font-variant-numeric:tabular-nums}
+.moapzedit .mopzin:focus{outline:none;border-color:var(--pri)}
+.moapzedit .mopzu{font-size:11px;color:var(--tx3)}
+.moapzedit .mopzrst{border:none;background:none;color:var(--amber,#a45a00);cursor:pointer;padding:1px;display:inline-flex}
+.moapzedit .mopzrst .material-symbols-rounded{font-size:15px}
+.moapzedit .mopzman{color:var(--amber,#a45a00)}
+.prazoman{display:inline-flex;align-items:center;gap:2px;margin-left:6px;font-size:10.5px;font-weight:600;color:var(--amber,#a45a00);background:var(--amber-bg,#fdf1de);border:1px solid var(--amber-line,#f0d29a);border-radius:20px;padding:0 7px}
+.prazoman .material-symbols-rounded{font-size:12px}
 .moapz.g b{color:var(--amber)}.moapz.g span{color:var(--amber)}
 .moacusto{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-size:13.5px}
 .moatot{border-top:2px solid var(--line);background:var(--surf2)}.moatot .efn{font-weight:800}.moatot .moacusto b{color:var(--pri);font-size:15px}
@@ -728,7 +737,8 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
           <!-- VISÃO INTERNA -->
           <div class="intbox">
             <div class="ih"><span class="material-symbols-rounded">lock</span>Visão interna — não vai pro cliente</div>
-            <div class="iln"><span class="lbl">Margem</span><span class="val" style="color:var(--tx3);font-size:11px;font-weight:400">por aba (Serviços e Materiais)</span></div>
+            <div class="iln"><span class="lbl">Margem serviços</span><span class="val"><input class="pin" style="width:48px;text-align:right" id="mg_serv_in" inputmode="decimal" onchange="setBlkMargem('servicos',this.value)">%</span></div>
+            <div class="iln"><span class="lbl">Margem materiais</span><span class="val"><input class="pin" style="width:48px;text-align:right" id="mg_mat_in" inputmode="decimal" onchange="setBlkMargem('materiais',this.value)">%</span></div>
             <div class="iln"><span class="lbl">Custo real <span style="color:var(--tx3);font-weight:400">(auto)</span></span><span class="val" id="s_custo">—</span></div>
             <div class="iln"><span class="lbl">Lucro líquido</span><span class="val luc" id="s_lucro">—</span></div>
             <div class="iln"><span class="lbl">Margem de lucro</span><span class="val luc" id="s_marg">—</span></div>
@@ -736,7 +746,7 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
 
           <div class="hr"></div>
           <div class="meta">
-            <div class="m"><span class="material-symbols-rounded">schedule</span>Prazo estimado: <input class="pin" style="width:44px" data-f="prazoDias" inputmode="numeric"> dias</div>
+            <div class="m"><span class="material-symbols-rounded">schedule</span>Prazo estimado: <b id="s_prazo">—</b><span id="s_prazo_man" class="prazoman" style="display:none" title="sobrescrito manualmente no painel de Mão de obra"><span class="material-symbols-rounded">edit</span>manual</span></div>
             <div class="m"><span class="material-symbols-rounded">groups</span><input class="in" readonly title="Definido no Efetivo na obra (topo dos Serviços)" style="width:100%;padding:2px 0;font-size:12px" data-m="equipe"></div>
           </div>
         </div>
@@ -1067,8 +1077,8 @@ function setBlkMargem(blk,v){ if(!S.margem)S.margem={}; S.margem[blk]=num(v); sa
 // controle de margem no cabeçalho do bloco: só Serviços/Materiais (lucro); Despesas/Locações = etiqueta "custo + imposto"
 function blkMargemCtrl(cfg){ if(!cfg.custo) return '';
   if(cfg.key==='servicos'||cfg.key==='materiais'){
-    if(comboActive()) return `<span class="blkmg locked" title="Margem definida pelo Valor combinado. Solte o valor combinado (✕) pra editar."><span class="material-symbols-rounded">lock</span>Margem ${_d1(comboMg()*100)}%</span>`;
-    return `<span class="blkmg" title="Margem padrão deste bloco (lucro). Cada linha pode ter a sua."><span class="material-symbols-rounded">trending_up</span>Margem <input class="blkmg-in" value="${num(baseMg(cfg.key))}" inputmode="decimal" onchange="setBlkMargem('${cfg.key}',this.value)">%</span>`;
+    const on=comboActive(); const m=on?comboMg()*100:baseMg(cfg.key);
+    return `<span class="blkmg ${on?'locked':''}" title="Margem deste bloco — configura no painel da direita${on?' · travada pelo valor combinado':''}"><span class="material-symbols-rounded">${on?'lock':'trending_up'}</span>Margem ${_d1(m)}%</span>`;
   }
   return `<span class="blkmg pass" title="Este bloco entra a CUSTO — sem lucro. O imposto incide sobre tudo (repasse)."><span class="material-symbols-rounded">receipt_long</span>custo + imposto</span>`;
 }
@@ -1085,13 +1095,17 @@ const isTotal=r=>!!(r.composicao&&r.composicao.base==='total');
 // DESPESAS por GATILHO: fixo · por pessoa/dia · por dia · por pessoa — puxam pessoas (efetivo) e prazo da obra
 const DESP_GAT={fixo:{lb:'valor fixo',ic:'lock'},pd:{lb:'por pessoa/dia',ic:'restaurant'},dia:{lb:'por dia',ic:'calendar_month'},pes:{lb:'por pessoa',ic:'person'}};
 function obraPessoas(){ return (aggMaoObra()||[]).reduce((a,f)=>a+num(f.pes),0); }
-function obraPrazo(){ return (aggMaoObra()||[]).reduce((m,f)=>Math.max(m,num(f.dias)),0); }
+function prazoCalc(){ return (aggMaoObra()||[]).reduce((m,f)=>Math.max(m,num(f.dias)),0); }   // prazo calculado (gargalo)
+function prazoManualOn(){ return num(S.prazoManual)>0; }
+function obraPrazo(){ return prazoManualOn()?num(S.prazoManual):prazoCalc(); }   // manual sobrescreve o calculado
+function setPrazoManual(v){ const n=num(v); S.prazoManual=(n>0?n:null); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); const db=BLKS.find(b=>b.key==='despesas'); if(db){try{renderBlk(db);}catch(e){}} recalc(); }
+function clearPrazoManual(){ S.prazoManual=null; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); const db=BLKS.find(b=>b.key==='despesas'); if(db){try{renderBlk(db);}catch(e){}} recalc(); }
 // pessoa×dia (diárias) — MODO: 'fim' = todos até o fim (pessoas × prazo) · 'exec' = cada função seus dias (soma)
 function diariasModo(){ return (S.diarias&&S.diarias.modo==='exec')?'exec':'fim'; }
 function obraPessoaDias(){ const fs=aggMaoObra()||[];
   if(diariasModo()==='exec') return fs.reduce((a,f)=>a+num(f.pes)*num(f.dias),0);
-  const pes=fs.reduce((a,f)=>a+num(f.pes),0), pz=fs.reduce((m,f)=>Math.max(m,num(f.dias)),0);
-  return pes*pz; }
+  const pes=fs.reduce((a,f)=>a+num(f.pes),0);
+  return pes*obraPrazo(); }   // 'fim' usa o prazo da obra (respeita o manual)
 function despMult(r){ const g=r.gatilho||'fixo';
   if(g==='pd') return obraPessoaDias();   // respeita o modo das diárias
   if(g==='dia') return obraPrazo();
@@ -1278,6 +1292,7 @@ function sanitize(){
   if(S.margem.equip===undefined||S.margem.equip==='')S.margem.equip=0;
   ['servicos','equip','despesas','materiais'].forEach(k=>{ (S[k]||[]).forEach(r=>{ r._blk=k; }); });   // marca o bloco de cada linha (p/ a margem base certa)
   if(S.valorCombinado===undefined)S.valorCombinado=null;   // preço fechado (deriva a margem); null = margens normais
+  if(S.prazoManual===undefined)S.prazoManual=null;   // prazo sobrescrito (null = usa o calculado da mão de obra)
   if(!Array.isArray(S.comprovantes))S.comprovantes=[];
   if(S.abrIdx===undefined)S.abrIdx=0;
   if(S.fatorLocal===undefined||num(S.fatorLocal)<=0)S.fatorLocal=1;
@@ -1488,7 +1503,7 @@ function efetivoHtml(){
     ${rows}
     <div class="moarow moatot"><div class="moawho"><span style="width:34px"></span><div class="efn">Total</div></div>
       <div class="moapz" style="text-align:center"><b>${totPes}</b><br><span>pessoas</span></div>
-      <div class="moapz"><b>${fmtPrazo(gargalo)}</b><br><span>prazo</span></div>
+      <div class="moapz moapzedit"><span class="mopzwrap"><input class="mopzin" value="${_d1(obraPrazo())}" inputmode="decimal" onchange="setPrazoManual(this.value)" title="dias — edite para sobrescrever o prazo"><span class="mopzu">d</span>${prazoManualOn()?`<button class="mopzrst" onclick="clearPrazoManual()" title="voltar ao calculado (${_d1(prazoCalc())} d)"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</span><br><span>${prazoManualOn()?'<b class="mopzman">manual</b>':'prazo'}</span></div>
       <div class="moacusto"><b>${fmt(MO)}</b></div></div>
   </div>`;
 }
@@ -2167,6 +2182,14 @@ function recalc(){
     const m=comboMg()*100;
     if(cn){ cn.style.display=''; cn.className='combo-note'+(m<0?' neg':(m<5?' low':'')); cn.innerHTML=(m<0)?'<span class="material-symbols-rounded">warning</span>Abaixo do custo — margem '+_d1(m)+'% (prejuízo)':(m<5?'<span class="material-symbols-rounded">warning</span>Margem baixa: '+_d1(m)+'%':'Margem ajustada em Serviços/Materiais: <b>'+_d1(m)+'%</b>'); }
   } else { if(cx)cx.style.display='none'; if(cn)cn.style.display='none'; if(ci && document.activeElement!==ci) ci.value=''; }
+  // margens no painel da direita (travam quando o valor combinado está ativo)
+  const _combo=comboActive();
+  const ms=document.getElementById('mg_serv_in'), mm=document.getElementById('mg_mat_in');
+  if(ms){ if(document.activeElement!==ms) ms.value=_d1(_combo?comboMg()*100:baseMg('servicos')); ms.disabled=_combo; ms.title=_combo?'travada pelo valor combinado':''; }
+  if(mm){ if(document.activeElement!==mm) mm.value=_d1(_combo?comboMg()*100:baseMg('materiais')); mm.disabled=_combo; mm.title=_combo?'travada pelo valor combinado':''; }
+  // prazo espelho (direita) — reflete o prazo da mão de obra; avisa quando manual
+  const sp=document.getElementById('s_prazo'); if(sp)sp.textContent=fmtPrazo(obraPrazo());
+  const spm=document.getElementById('s_prazo_man'); if(spm)spm.style.display=prazoManualOn()?'':'none';
   S._total=total; S._custo=custo; S._lucro=lucro;
   writeback(total);
 }
