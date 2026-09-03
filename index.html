@@ -520,7 +520,11 @@ body.papel-tecnico .adm-only{display:none !important}
         <button class="sb-i" onclick="navView('funil',this)"><span class="ic"><span class="msr">view_kanban</span></span><span class="lb">Funil</span></button>
         <button class="sb-i fut" onclick="navSoon('Propostas',this)"><span class="ic"><span class="msr">description</span></span><span class="lb">Propostas</span><span class="br">em breve</span></button>
         <button class="sb-i" onclick="navView('orcamento',this)"><span class="ic"><span class="msr">request_quote</span></span><span class="lb">Orçamentos</span></button>
-        <button class="sb-i" onclick="navView('barramento',this);carregarBarramento()"><span class="ic"><span class="msr">bolt</span></span><span class="lb">Orç. de barramento</span></button>
+        <div class="sb-grp sb-grp-nest" onclick="toggleGrp(this)"><span class="ic"><span class="msr">electrical_services</span></span><span class="lb">Oficina de Quadros</span><span class="gchev">▶</span></div>
+        <div class="sb-sub sb-sub-nest">
+          <button class="sb-i" onclick="navView('barramento',this);carregarBarramento()"><span class="ic"><span class="msr">bolt</span></span><span class="lb">Orç. de barramento</span></button>
+          <button class="sb-i fut" onclick="navSoon('Montagem de quadros',this)"><span class="ic"><span class="msr">grid_view</span></span><span class="lb">Montagem de quadros</span><span class="br">em breve</span></button>
+        </div>
         <div class="sb-grp sb-grp-nest" onclick="toggleGrp(this)"><span class="ic"><span class="msr">folder</span></span><span class="lb">Cadastros</span><span class="gchev">▶</span></div>
         <div class="sb-sub sb-sub-nest">
           <button class="sb-i" onclick="navView('clientes',this)"><span class="ic"><span class="msr">contacts</span></span><span class="lb">Clientes</span></button>
