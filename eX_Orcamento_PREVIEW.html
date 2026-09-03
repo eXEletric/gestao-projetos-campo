@@ -1410,6 +1410,8 @@ function sanitize(){
   if(S.abrIdx===undefined)S.abrIdx=0;
   if(S.kmManual===undefined)S.kmManual=0;   // km rodado sobrescrito (0 = usa o automático base→cidade)
   if(S.abrSnap===undefined)S.abrSnap=null;   // congelamento da abrangência (null = calcula ao vivo)
+  if(!S.macro||typeof S.macro!=='object')S.macro={estruturas:[]};   // macro do lote (estrutura/frota selecionada)
+  if(!Array.isArray(S.macro.estruturas))S.macro.estruturas=[];
   if(S.fatorLocal===undefined||num(S.fatorLocal)<=0)S.fatorLocal=1;
   if(!S.status)S.status='rascunho';
 }
@@ -2160,6 +2162,10 @@ async function criarNova(){
 
 /* ============ PRÉVIA · PROPOSTA EM LOTE (tela mestra) ============ */
 let LOTE_ID=null, LOTE_ROW=null, LOTE_UNITS=[], LOTE_PEND=[], BASE_DADOS=null, BASE_TOTAL=0, LOTE_UNIT_ABR=[];
+let ESTRUTURAS=[];   // cadastro de estrutura/frota (van/caminhão/equipe) — orc_estruturas
+async function carregarEstruturas(){ try{ const {data,error}=await SB.from('orc_estruturas').select('id,nome,tipo,custo').is('deleted_at',null).eq('ativo',true).order('nome'); if(!error) ESTRUTURAS=(data||[]).map(e=>({id:e.id,nome:e.nome,tipo:e.tipo||'outro',custo:num(e.custo)})); }catch(e){ console.error('estruturas',e); } }
+function macroTotal(){ return ((S.macro&&S.macro.estruturas)||[]).reduce((a,e)=>a+num(e.custo),0); }
+const ESTR_IC={van:'airport_shuttle',caminhao:'local_shipping',equipe:'groups',outro:'category'};
 async function computeLoteUnitsAbr(){
   LOTE_UNIT_ABR=[];
   const ids=(LOTE_UNITS||[]).map(u=>u.dados&&u.dados.lojaId).filter(Boolean); if(!ids.length)return;
@@ -2346,7 +2352,7 @@ function loteAbrHtml(){ const r=loteAbrResumo(); const pct=n=>num(n)>0?('+'+num(
 
 /* ===== base DO LOTE = MESTRA: painel "Rede & lojas do lote" dentro do orçamento base ===== */
 function isLoteBase(){ return !!(S && S._base && S_LOTE_ID); }
-async function initLoteBasePanel(){ LOTE_ID=S_LOTE_ID; try{ await loadLote(); await computeLoteUnitsAbr(); computeLoteUnitsPrazo(); }catch(e){ console.error(e); } injectLoteBasePanel(); relabelRede(); try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} }
+async function initLoteBasePanel(){ LOTE_ID=S_LOTE_ID; if(!S.macro||typeof S.macro!=='object')S.macro={estruturas:[]}; try{ await loadLote(); await carregarEstruturas(); await computeLoteUnitsAbr(); computeLoteUnitsPrazo(); }catch(e){ console.error(e); } injectLoteBasePanel(); relabelRede(); try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} }
 function injectLoteBasePanel(){
   let p=_lg('loteBasePanel');
   if(!p){ p=document.createElement('div'); p.id='loteBasePanel'; p.style.cssText='margin:0 0 16px';
@@ -2371,7 +2377,8 @@ function updateRedeUnidades(){ if(!isLoteBase())return; const num=document.query
   num.value=list; num.placeholder=(LOTE_UNITS&&LOTE_UNITS.length)?'':'as unidades aparecem aqui ao adicionar lojas ↓'; }
 function renderLoteBaseHtml(){
   const lojaOpts=(LOJAS||[]).filter(l=>!LOTE_UNITS.some(u=>(u.dados&&u.dados.lojaId)===l.id)).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
-  const total=LOTE_UNITS.reduce((a,o)=>a+num(o.total),0);
+  const macroT=macroTotal();
+  const total=LOTE_UNITS.reduce((a,o)=>a+num(o.total),0)+macroT;
   const baseT=num(S._total)||0;
   const contrNome=S.cliNome||'';
   const rows=LOTE_UNITS.length?LOTE_UNITS.map(o=>{ const st=unitStatus(o); return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line2)">
@@ -2397,6 +2404,24 @@ function renderLoteBaseHtml(){
       ${LOTE_UNITS.some(u=>u.herda_base)?`<button class="lbtn" style="padding:8px 12px" onclick="lotePropagar()" title="reaplica o escopo base nas lojas que estão iguais à base"><span class="material-symbols-rounded">sync</span>Propagar base</button>`:''}
     </div>
     ${rows}
+    <div style="border-top:1px solid var(--line);padding:13px 14px;background:#f2fafb">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <span class="material-symbols-rounded" style="color:#0f7b8a;font-size:19px">hub</span>
+        <b style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#0c5f6b">Macro da operação</b>
+        <span style="font-size:11.5px;color:var(--tx3)">estrutura/frota do lote — entra uma vez na mestra</span>
+        <button class="lbtn" style="margin-left:auto" onclick="openEstruturasModal()"><span class="material-symbols-rounded">settings</span>gerenciar cadastro</button>
+      </div>
+      ${((S.macro&&S.macro.estruturas)||[]).map((e,i)=>`<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px dashed var(--line2)">
+        <span class="material-symbols-rounded" style="font-size:17px;color:#0f7b8a">${ESTR_IC[e.tipo]||'category'}</span>
+        <span style="flex:1;font-size:13px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.nome)}</span>
+        <span style="font-weight:700;font-variant-numeric:tabular-nums;font-size:13px">${fmt(num(e.custo))}</span>
+        <button class="lbtn danger" onclick="macroRemove(${i})"><span class="material-symbols-rounded">close</span></button></div>`).join('')||'<div style="font-size:12.5px;color:var(--tx3);padding:2px 0 6px">Nenhuma estrutura no macro ainda.</div>'}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">
+        <select id="lbEstr" style="flex:1;min-width:180px;padding:8px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">${(ESTRUTURAS&&ESTRUTURAS.length)?'— estrutura do cadastro —':'cadastre uma estrutura (⚙)'}</option>${(ESTRUTURAS||[]).map(e=>`<option value="${e.id}">${esc(e.nome)} · ${fmt(num(e.custo))}</option>`).join('')}</select>
+        <button class="lbtn" style="padding:8px 13px;border-color:#0f7b8a;color:#0c5f6b" onclick="macroAddEstrutura()"><span class="material-symbols-rounded" style="color:#0f7b8a">add</span>Adicionar ao macro</button>
+        <span style="margin-left:auto;font-size:12.5px">Macro: <b style="color:#0f7b8a">${fmt(macroT)}</b></span>
+      </div>
+    </div>
     ${(()=>{ const pr=lotePrazoResumo(); if(!pr.n) return ''; const same=Math.abs(pr.min.p-pr.max.p)<1e-9;
       return `<div style="display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:11px 14px;background:var(--pri-bg);border-top:1px solid var(--line);font-size:12.5px">
         <span style="font-weight:800;color:var(--pri-d);text-transform:uppercase;letter-spacing:.04em;font-size:11px"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">schedule</span> Prazo</span>
@@ -2405,8 +2430,8 @@ function renderLoteBaseHtml(){
         <span style="color:var(--amber,#b0701a)">maior <b>${fmtPrazo(pr.max.p)}</b> · ${esc((pr.max.nome||'').slice(0,22))}</span>
         <span style="color:var(--tx3)">faixa ${fmtPrazo(pr.min.p)}–${fmtPrazo(pr.max.p)}</span>`}
       </div>`; })()}
-    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--surf2,#faf9fe);border-top:1px solid var(--line)">
-      <span style="font-size:12px;color:var(--tx3)">Escopo base / loja: <b style="color:var(--pri)">${fmt(baseT)}</b></span>
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;background:var(--surf2,#faf9fe);border-top:1px solid var(--line)">
+      <span style="font-size:12px;color:var(--tx3)">Unidades <b>${fmt(total-macroT)}</b> + Macro <b style="color:#0f7b8a">${fmt(macroT)}</b></span>
       <span style="font-size:13px;font-weight:800">Total do lote: <span style="color:var(--pri);font-size:16px">${fmt(total)}</span></span></div>
     ${LOTE_UNITS.length?`<div style="padding:8px 14px 12px"><button class="lbtn danger" onclick="loteDesmembrar()"><span class="material-symbols-rounded">call_split</span>Desmembrar lote</button></div>`:''}
   </div>`;
@@ -2423,6 +2448,36 @@ async function loteAddLojaNow(){
     await loteReload();
   }catch(e){ console.error('add loja',e); alert('Erro: '+(e.message||e)); }
 }
+// ---- macro do lote: estruturas selecionadas ----
+function macroAddEstrutura(){ const sel=_lg('lbEstr'); const id=sel?sel.value:''; if(!id){ alert('Escolha uma estrutura (ou cadastre no ⚙ gerenciar).'); return; }
+  const e=(ESTRUTURAS||[]).find(x=>x.id===id); if(!e)return;
+  if(!S.macro||typeof S.macro!=='object')S.macro={estruturas:[]}; if(!Array.isArray(S.macro.estruturas))S.macro.estruturas=[];
+  S.macro.estruturas.push({id:e.id,nome:e.nome,tipo:e.tipo,custo:num(e.custo)});
+  save(); try{saveOrc();}catch(_){}; injectLoteBasePanel(); }
+function macroRemove(i){ if(!(S.macro&&S.macro.estruturas))return; S.macro.estruturas.splice(i,1); save(); try{saveOrc();}catch(_){}; injectLoteBasePanel(); }
+// ---- CRUD do cadastro de estruturas/frota (orc_estruturas) ----
+function openEstruturasModal(){ let m=_lg('estrModal'); if(!m){ m=document.createElement('div'); m.id='estrModal'; m.className='modal-bg'; document.body.appendChild(m); } renderEstruturasModal(); m.classList.add('open'); }
+function closeEstruturas(){ const m=_lg('estrModal'); if(m)m.classList.remove('open'); }
+function renderEstruturasModal(){ const m=_lg('estrModal'); if(!m)return;
+  const inS='padding:7px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)';
+  const rows=(ESTRUTURAS||[]).map(e=>`<div style="display:grid;grid-template-columns:1fr 116px 118px auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line2)">
+      <input value="${esc(e.nome)}" onchange="estrEdit('${e.id}','nome',this.value)" style="${inS}">
+      <select onchange="estrEdit('${e.id}','tipo',this.value)" style="${inS}">${['van','caminhao','equipe','outro'].map(t=>`<option value="${t}" ${e.tipo===t?'selected':''}>${t}</option>`).join('')}</select>
+      <span style="display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line2);border-radius:8px;padding:5px 8px;background:var(--surf)"><span style="font-size:12px;color:var(--tx3)">R$</span><input value="${e.custo?moneyVal(e.custo):''}" inputmode="decimal" placeholder="0,00" onchange="estrEdit('${e.id}','custo',this.value)" style="width:74px;border:0;background:transparent;color:var(--tx);font:700 13px inherit;text-align:right;outline:0;font-variant-numeric:tabular-nums"></span>
+      <button class="lbtn danger" onclick="estrDel('${e.id}')"><span class="material-symbols-rounded">delete</span></button></div>`).join('');
+  m.innerHTML=`<div class="modal" style="width:600px;max-width:100%">
+    <div class="mh"><span class="material-symbols-rounded">local_shipping</span><h3>Estruturas / frota</h3><button class="x" onclick="closeEstruturas()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div class="cmphint" style="margin-bottom:10px">Cadastro reaproveitável (van, caminhão, equipe base…). Selecione no <b>macro</b> do lote.</div>
+      <div style="display:grid;grid-template-columns:1fr 116px 118px auto;gap:8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3)"><span>Nome</span><span>Tipo</span><span>Custo</span><span></span></div>
+      ${rows||'<div style="color:var(--tx3);padding:12px 0;font-size:13px">Nenhuma estrutura ainda.</div>'}
+      <button class="lbtn" style="margin-top:12px" onclick="estrAdd()"><span class="material-symbols-rounded">add</span>Nova estrutura</button>
+    </div>
+    <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end"><button class="btn" onclick="closeEstruturas()">Fechar</button></div>
+  </div>`; }
+async function estrAdd(){ try{ const r=await SB.from('orc_estruturas').insert({empresa_id:EMPRESA_ID,nome:'Nova estrutura',tipo:'outro',custo:0}).select('id').limit(1); if(r.error)throw r.error; await carregarEstruturas(); renderEstruturasModal(); }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
+async function estrEdit(id,field,val){ const v=(field==='custo')?num(val):(val||'').trim(); try{ const r=await SB.from('orc_estruturas').update({[field]:v,updated_at:new Date().toISOString()}).eq('id',id); if(r.error)throw r.error; const e=(ESTRUTURAS||[]).find(x=>x.id===id); if(e)e[field]=v; if(field==='custo'||field==='nome'||field==='tipo'){ (S.macro&&S.macro.estruturas||[]).forEach(m=>{ if(m.id===id)m[field]=v; }); } if(isLoteBase())injectLoteBasePanel(); }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
+async function estrDel(id){ if(!confirm('Excluir esta estrutura do cadastro? (não afeta lotes já salvos)'))return; try{ const r=await SB.from('orc_estruturas').update({deleted_at:new Date().toISOString()}).eq('id',id); if(r.error)throw r.error; await carregarEstruturas(); renderEstruturasModal(); if(isLoteBase())injectLoteBasePanel(); }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
 
 // RESPONSÁVEIS = colaboradores (Gestão › Equipe) com FUNÇÃO COMERCIAL delegada (ex.: "Comercial / Vendas")
 // Cascata (B): e-mail/telefone COMERCIAL do vendedor → se vazio, o geral do colaborador
