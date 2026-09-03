@@ -2173,6 +2173,14 @@ async function computeLoteUnitsAbr(){
       return {nome:u.cliente_final, cidade:mu?(mu.nome+'/'+mu.uf):null, km, custo_pct:num(f.custo_pct), tempo_pct:num(f.tempo_pct)}; });
   }catch(e){ console.error('units abr',e); }
 }
+// #3 PRAZO CONSOLIDADO: prazo de cada unidade = obraPrazo() no dados dela (temp-swap de S)
+function unitPrazoDias(dados){ if(!dados)return 0; const keep=S; try{ S=dados; return num(obraPrazo()); }catch(e){ return 0; } finally{ S=keep; } }
+function computeLoteUnitsPrazo(){ (LOTE_UNITS||[]).forEach(u=>{ u._prazo=unitPrazoDias(u.dados); }); }
+function lotePrazoResumo(){ const ps=(LOTE_UNITS||[]).map(u=>({nome:(u.cliente_final||u.numero||'unidade'),p:num(u._prazo)})).filter(x=>x.p>0);
+  if(!ps.length) return {n:0}; const arr=ps.map(x=>x.p);
+  const media=arr.reduce((a,b)=>a+b,0)/ps.length;
+  const min=ps.reduce((a,b)=>b.p<a.p?b:a), max=ps.reduce((a,b)=>b.p>a.p?b:a);
+  return {n:ps.length, media, min, max}; }
 function loteAbrResumo(){ const a=LOTE_UNIT_ABR||[]; const comCid=a.filter(x=>x.cidade); const semCid=a.length-comCid.length;
   const mc=comCid.length?Math.round(comCid.reduce((s,x)=>s+x.custo_pct,0)/comCid.length):0;
   const mt=comCid.length?Math.round(comCid.reduce((s,x)=>s+x.tempo_pct,0)/comCid.length):0;
@@ -2327,7 +2335,7 @@ async function loteDesmembrar(){ if(!confirm('Desmembrar o lote? Cada unidade vi
     alert('Lote desmembrado. As unidades agora são propostas avulsas.'); location.href='eX_Orcamento_PREVIEW.html';
   }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
 function loteRerender(){ if(_lg('loteBasePanel')) injectLoteBasePanel(); else if(_lg('loteView')) renderLote(_lg('loteView')); }
-async function loteReload(){ await loadLote(); if(isLoteBase()){ try{ await computeLoteUnitsAbr(); }catch(e){} } loteRerender(); if(isLoteBase()){ try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} } }
+async function loteReload(){ await loadLote(); if(isLoteBase()){ try{ await computeLoteUnitsAbr(); computeLoteUnitsPrazo(); }catch(e){} } loteRerender(); if(isLoteBase()){ try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} } }
 function loteAbrHtml(){ const r=loteAbrResumo(); const pct=n=>num(n)>0?('+'+num(n)+'%'):'0%';
   if(!r.n) return `<span class="fo-autopill nocity"><span class="material-symbols-rounded">wrong_location</span>Sem lojas ainda</span><span class="fo-autotag">adicione as lojas no painel acima ↑</span>`;
   const faixa=r.min===r.max?pct(r.mediaCusto):(pct(r.min)+' a '+pct(r.max));
@@ -2338,7 +2346,7 @@ function loteAbrHtml(){ const r=loteAbrResumo(); const pct=n=>num(n)>0?('+'+num(
 
 /* ===== base DO LOTE = MESTRA: painel "Rede & lojas do lote" dentro do orçamento base ===== */
 function isLoteBase(){ return !!(S && S._base && S_LOTE_ID); }
-async function initLoteBasePanel(){ LOTE_ID=S_LOTE_ID; try{ await loadLote(); await computeLoteUnitsAbr(); }catch(e){ console.error(e); } injectLoteBasePanel(); relabelRede(); try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} }
+async function initLoteBasePanel(){ LOTE_ID=S_LOTE_ID; try{ await loadLote(); await computeLoteUnitsAbr(); computeLoteUnitsPrazo(); }catch(e){ console.error(e); } injectLoteBasePanel(); relabelRede(); try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} }
 function injectLoteBasePanel(){
   let p=_lg('loteBasePanel');
   if(!p){ p=document.createElement('div'); p.id='loteBasePanel'; p.style.cssText='margin:0 0 16px';
@@ -2371,6 +2379,7 @@ function renderLoteBaseHtml(){
         <div style="min-width:0"><div style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.cliente_final||o.numero||'unidade')}</div><div style="font-size:11px;color:var(--tx3)">${esc(o.numero||'')}</div></div></div>
       <span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;border-radius:20px;padding:3px 8px;color:${st.c};background:${st.bg};white-space:nowrap"><span class="material-symbols-rounded" style="font-size:12px">${st.i}</span>${st.t}</span>
       <div style="display:flex;align-items:center;gap:7px;justify-self:end">
+        <span style="font-size:12px;color:var(--tx3);min-width:70px;text-align:right;font-variant-numeric:tabular-nums" title="prazo desta unidade"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">schedule</span> ${num(o._prazo)?fmtPrazo(num(o._prazo)):'—'}</span>
         <span style="font-weight:800;font-variant-numeric:tabular-nums;font-size:13.5px;min-width:92px;text-align:right">${fmt(num(o.total))}</span>
         <a href="eX_Orcamento_PREVIEW.html?opp=${o.oportunidade_id}&lote=${LOTE_ID}" class="lbtn"><span class="material-symbols-rounded">open_in_full</span>abrir</a>
         ${o.herda_base?'':`<button class="lbtn" onclick="loteResetUnit('${o.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`}
@@ -2388,6 +2397,14 @@ function renderLoteBaseHtml(){
       ${LOTE_UNITS.some(u=>u.herda_base)?`<button class="lbtn" style="padding:8px 12px" onclick="lotePropagar()" title="reaplica o escopo base nas lojas que estão iguais à base"><span class="material-symbols-rounded">sync</span>Propagar base</button>`:''}
     </div>
     ${rows}
+    ${(()=>{ const pr=lotePrazoResumo(); if(!pr.n) return ''; const same=Math.abs(pr.min.p-pr.max.p)<1e-9;
+      return `<div style="display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:11px 14px;background:var(--pri-bg);border-top:1px solid var(--line);font-size:12.5px">
+        <span style="font-weight:800;color:var(--pri-d);text-transform:uppercase;letter-spacing:.04em;font-size:11px"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">schedule</span> Prazo</span>
+        <span>média <b>${fmtPrazo(pr.media)}</b></span>
+        ${same?`<span>todas <b>${fmtPrazo(pr.min.p)}</b></span>`:`<span style="color:var(--herd,#159a6a)">menor <b>${fmtPrazo(pr.min.p)}</b> · ${esc((pr.min.nome||'').slice(0,22))}</span>
+        <span style="color:var(--amber,#b0701a)">maior <b>${fmtPrazo(pr.max.p)}</b> · ${esc((pr.max.nome||'').slice(0,22))}</span>
+        <span style="color:var(--tx3)">faixa ${fmtPrazo(pr.min.p)}–${fmtPrazo(pr.max.p)}</span>`}
+      </div>`; })()}
     <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--surf2,#faf9fe);border-top:1px solid var(--line)">
       <span style="font-size:12px;color:var(--tx3)">Escopo base / loja: <b style="color:var(--pri)">${fmt(baseT)}</b></span>
       <span style="font-size:13px;font-weight:800">Total do lote: <span style="color:var(--pri);font-size:16px">${fmt(total)}</span></span></div>
