@@ -220,9 +220,39 @@ select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 .efmode-lb{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3)}
 .efmode .cmpseg button{padding:6px 12px;font-size:12px}
 .efhint{font-size:11.5px;color:var(--tx2);padding:7px 13px 10px;line-height:1.5}
-.moahd,.moarow{display:grid;grid-template-columns:1fr 104px 82px 100px;gap:8px;align-items:center;padding:8px 13px}
-.moahd{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);padding-top:4px;padding-bottom:2px}
-.moahd span:nth-child(2),.moahd span:nth-child(3){text-align:center}.moahd span:nth-child(4){text-align:right}
+.moahd,.moarow{display:grid;grid-template-columns:1fr 78px 66px 88px 90px 90px 96px;gap:7px;align-items:center;padding:8px 13px}
+.moahd{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);padding-top:4px;padding-bottom:2px}
+.moahd span:nth-child(2),.moahd span:nth-child(3){text-align:center}
+.moahd span:nth-child(4),.moahd span:nth-child(5),.moahd span:nth-child(6),.moahd span:nth-child(7){text-align:right}
+.moaali,.moahosp,.moasoma{text-align:right;font-variant-numeric:tabular-nums;font-size:13px;color:var(--tx2)}
+.moaali,.moahosp{font-weight:600}
+.moasoma b{font-size:13.5px;color:var(--pri);font-weight:800}.moasoma span{font-size:9.5px;color:var(--tx3)}
+.moaali.off,.moahosp.off{color:var(--tx3);opacity:.45}
+.moatot .moaali b,.moatot .moahosp b{color:var(--tx);font-size:14px}.moatot .moasoma b{font-size:15px}.moatot .moasoma span{color:var(--tx3)}
+/* barra de controles das diárias dentro da mão de obra */
+.diactrl{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 13px;background:linear-gradient(90deg,#f3efff,#faf8ff);border-top:1px solid #ece5fb;border-bottom:1px solid #ece5fb;margin-top:8px}
+.diactrl .dclbl{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)}
+.diactrl .dclbl .material-symbols-rounded{font-size:15px}
+.diaseg2{margin-left:0}.diaseg2 button{padding:5px 10px;font-size:11.5px}
+.diachave{display:inline-flex;align-items:center;gap:7px;padding:4px 10px 4px 6px;border:1px solid var(--line2);border-radius:10px;background:var(--surf);font-size:12.5px;font-weight:600;color:var(--tx2)}
+.diachave .material-symbols-rounded{font-size:17px;color:var(--tx3)}.diachave .dcnm{white-space:nowrap}
+.diachave b{color:var(--tx3);font-weight:700;font-variant-numeric:tabular-nums}
+.diachave.on{border-color:#bfe8d3;background:#eefaf3;color:#127a54}
+.diachave.on .material-symbols-rounded{color:#0f8f5b}.diachave.on b{color:#0f8f5b}
+.diagear{border:1px solid var(--pri-line,#ddd3f6);background:var(--surf);color:var(--pri);border-radius:8px;width:30px;height:28px;display:inline-flex;align-items:center;justify-content:center;cursor:pointer}
+.diagear:hover{background:var(--pri-bg,#efeafc)}.diagear .material-symbols-rounded{font-size:17px}
+.dianote2{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--amber,#a45a00);background:#fdf5e7;padding:7px 13px;border-bottom:1px solid #f2e6cd}
+.dianote2 .material-symbols-rounded{font-size:16px}
+@media(max-width:820px){
+  .moahd{display:none}
+  .moarow{grid-template-columns:1fr;gap:0;padding:12px 13px}
+  .moarow .moawho{margin-bottom:8px}
+  .moastep,.moapz,.moacusto,.moaali,.moahosp,.moasoma{display:flex;align-items:center;justify-content:space-between;text-align:left;padding:6px 0;border-top:1px dashed var(--line2)}
+  .moastep{justify-self:stretch}
+  .moastep::before,.moapz::before,.moacusto::before,.moaali::before,.moahosp::before,.moasoma::before{content:attr(data-l);font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);margin-right:auto}
+  .moasoma{align-items:flex-start}
+  .moatot .moapzedit{justify-content:space-between}
+}
 .moarow{border-top:1px solid var(--line)}
 .moawho{display:flex;align-items:center;gap:10px;min-width:0}
 .moawho .efn{font-size:13.5px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -457,39 +487,24 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .fatobra .fo-row{display:flex;align-items:center;gap:9px}
 .fatobra .fo-row label{font-size:12px;font-weight:600;color:var(--tx2);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .fatobra .fo-row label .material-symbols-rounded{font-size:16px;color:var(--pri)}
-/* abrangência da proposta: onde é a obra e qual anel isso alcança */
-.abrbox{margin-top:9px;border:1px solid var(--line);border-radius:10px;background:var(--surf);overflow:hidden}
-.abr-hd{display:flex;align-items:center;gap:9px;padding:9px 11px;flex-wrap:wrap;font-size:12.5px}
-.abr-hd>.material-symbols-rounded{font-size:17px;color:var(--pri)}
-.abr-res b{color:var(--tx)}
-.abr-arrow{color:var(--tx3)}
-.abr-anel{font-weight:700;color:var(--pri);background:var(--pri-bg);border-radius:20px;padding:3px 10px;white-space:nowrap}
-.abr-pcts{font-size:11.5px;color:var(--tx2);font-variant-numeric:tabular-nums}
-.abr-vazio{color:var(--tx3);font-style:italic}
-.abr-cfgb{border:1px solid var(--line2);background:var(--surf);color:var(--tx2);font:600 11.5px inherit;
-  border-radius:20px;padding:5px 12px;cursor:pointer}
-.abr-cfgb:hover,.abr-cfgb.on{border-color:var(--pri);color:var(--pri);background:var(--pri-bg)}
-.abr-man{border:1px solid var(--amber);background:#fdf6ea;color:#8a5510;font:600 11px inherit;border-radius:20px;
-  padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
-.abr-man .material-symbols-rounded{font-size:14px}
-.abr-body{border-top:1px solid var(--line);padding:9px 11px 11px;background:var(--surf2)}
-.abr-h,.abr-l{display:grid;grid-template-columns:56px 1fr 92px 104px 30px;gap:8px;align-items:center}
-.abr-h{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:600;padding-bottom:5px}
-.abr-l{padding:3px 0}
-.abr-l input{padding:6px 8px;border:1px solid var(--line2);border-radius:7px;font-size:13px;background:var(--surf);width:100%}
-.abr-l input:focus{outline:none;border-color:var(--pri)}
-.abr-uf{text-align:center;text-transform:uppercase}
-.abr-un,.abr-km{display:flex;align-items:center;gap:4px}
-.abr-un input,.abr-km input{text-align:right;font-variant-numeric:tabular-nums}
-.abr-un i,.abr-km i{font-style:normal;font-size:10.5px;color:var(--tx3)}
-.abr-del{border:none;background:none;color:var(--tx3);cursor:pointer;border-radius:6px;display:inline-flex;padding:3px}
-.abr-del:hover{background:#fbeaec;color:var(--red,#a32d2d)}
-.abr-del .material-symbols-rounded{font-size:16px}
-.abr-foot{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
-.abr-manlb{font-size:11.5px;color:var(--tx2);display:inline-flex;align-items:center;gap:5px;cursor:pointer}
-.abr-hint{font-size:10.5px;color:var(--tx3);margin-top:7px;line-height:1.5}
-.abr-hint b{color:var(--tx2)}
 .fatobra .fo-sel{flex:1;padding:7px 9px;border:1px solid var(--line2);border-radius:8px;font-size:13px;background:var(--surf);color:var(--tx)}
+.fatobra .fo-auto{flex:1;display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap}
+.fatobra .fo-autopill{display:inline-flex;align-items:center;gap:6px;background:var(--pri-bg,#efeafc);border:1px solid #ddd3f6;color:var(--pri);border-radius:8px;padding:6px 11px;font-size:13px;font-weight:700}
+.fatobra .fo-autopill .material-symbols-rounded{font-size:16px;color:var(--pri)}
+.fatobra .fo-autopill small{font-weight:600;color:var(--pri);opacity:.8;font-size:11px}
+.fatobra .fo-autotag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--tx3)}
+.fatobra .fo-autotag .material-symbols-rounded{font-size:14px;color:var(--tx3)}
+.fatobra .fo-autopill.nocity{background:#fdf5e7;border-color:#f0e0c0;color:var(--amber,#a45a00)}
+.fatobra .fo-autopill.nocity .material-symbols-rounded{color:var(--amber,#a45a00)}
+.fatobra .fo-km{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--tx3);flex-wrap:wrap}
+.fatobra .fo-km .material-symbols-rounded{font-size:15px;color:var(--tx3)}
+.fatobra .fo-kmin{width:60px;padding:4px 6px;border:1px solid var(--line2);border-radius:6px;text-align:right;font:700 12.5px inherit;color:var(--tx);background:var(--surf);font-variant-numeric:tabular-nums}
+.fatobra .fo-kmin:focus{outline:none;border-color:var(--pri)}
+.fatobra .fo-kmtag{font-size:10px;font-weight:700;color:#0f8f5b;background:#eefaf3;border:1px solid #bfe8d3;border-radius:20px;padding:1px 7px;text-transform:uppercase;letter-spacing:.03em}
+.fatobra .fo-kmrst{display:inline-flex;align-items:center;gap:2px;border:none;background:none;color:var(--amber,#a45a00);cursor:pointer;font:700 10px inherit;text-transform:uppercase}
+.fatobra .fo-kmrst .material-symbols-rounded{font-size:14px}
+.fatobra .fo-setcity{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--pri-line,#ddd3f6);background:var(--pri-bg,#efeafc);color:var(--pri);border-radius:8px;padding:6px 11px;font:700 12px inherit;cursor:pointer}
+.fatobra .fo-setcity .material-symbols-rounded{font-size:16px}
 .fatobra .fo-fl{display:inline-flex;align-items:center;gap:4px}
 .fatobra .flbtn{border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:7px;padding:6px 9px;font:600 12.5px inherit;cursor:pointer}
 .fatobra .flbtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
@@ -803,6 +818,28 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
   </div>
 </div>
 
+<div class="modal-bg" id="raioCidadeModal">
+  <div class="modal" style="width:460px;max-width:100%">
+    <div class="mh"><span class="material-symbols-rounded">add_location_alt</span><h3>Cidade da loja</h3><button class="x" onclick="closeRaioCidade()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div class="cmphint" style="margin-bottom:12px">Onde fica o local do trabalho. Fica salvo <b>na loja</b> (contemplado) e serve pra calcular o raio de todos os orçamentos dela.</div>
+      <div style="display:flex;gap:10px">
+        <div style="width:120px"><label style="font-size:11px;font-weight:600;color:var(--tx3);display:block;margin-bottom:4px">Estado</label>
+          <select id="rcUf" class="cin" onchange="rcLoadCidades(this.value)" style="width:100%">
+            <option value="">UF</option>
+            ${['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(u=>`<option value="${u}">${u}</option>`).join('')}
+          </select></div>
+        <div style="flex:1"><label style="font-size:11px;font-weight:600;color:var(--tx3);display:block;margin-bottom:4px">Cidade</label>
+          <select id="rcCidade" class="cin" style="width:100%" disabled><option value="">— escolha o estado primeiro —</option></select></div>
+      </div>
+    </div>
+    <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end;gap:8px">
+      <button class="btn" onclick="closeRaioCidade()">Cancelar</button>
+      <button class="btn" style="background:var(--pri);color:#fff;border-color:var(--pri)" onclick="saveRaioCidade()"><span class="material-symbols-rounded">check</span>Salvar na loja</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-bg" id="pickModal">
   <div class="modal">
     <div class="mh">
@@ -983,11 +1020,13 @@ async function initOrc(){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
       USER_ID=session.user.id;
       try{ const p=await SB.from('perfis').select('nome,email,telefone,colaborador_id').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; USER_TELEFONE=p.data[0].telefone||''; USER_COLAB_ID=p.data[0].colaborador_id||null; } }catch(_){}
-      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia(); await carregarDiariaBase(); await carregarBases();
+      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia(); await carregarDiariaBase();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
       MANUAL = !!ORC_ID;   // já existia ao abrir → alterações exigem clicar Salvar; nova (ORC_ID null) → auto até nascer
       // vínculo: pega contratante/loja da OPORTUNIDADE (pra puxar dados ao vivo do CRM, mesmo em orçamentos antigos)
       if(OPP && !S.contratanteId){ try{ const {data}=await SB.from('oportunidades').select('contratante_id,contemplado_id').eq('id',OPP).limit(1); if(data&&data[0]){ if(data[0].contratante_id)S.contratanteId=data[0].contratante_id; if(data[0].contemplado_id)S.lojaId=data[0].contemplado_id; } }catch(_){} }
+      if(OPP && !S.lojaId){ try{ const {data}=await SB.from('oportunidades').select('contemplado_id').eq('id',OPP).limit(1); if(data&&data[0]&&data[0].contemplado_id)S.lojaId=data[0].contemplado_id; }catch(_){} }
+      await carregarRaio();
       refreshClienteLive();
     } else { cloudMsg('modo local (sem login)'); }
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
@@ -1116,12 +1155,7 @@ function blkMargemCtrl(cfg){ if(!cfg.custo) return '';
   return `<span class="blkmg pass" title="Este bloco entra a CUSTO — sem lucro. O imposto incide sobre tudo (repasse)."><span class="material-symbols-rounded">receipt_long</span>custo + imposto</span>`;
 }
 // ===== FATORES DA OBRA (gerais do orçamento) — só afetam serviços MONTADOS (com composição) =====
-// a proposta usa a CÓPIA CONGELADA da faixa. Reajustar a régua depois não
-// mexe em proposta já feita — cada uma vale pela configuração que tinha.
-function abrObra(){
-  if(S.abrSnap && (S.abrSnap.custo_pct!=null)) return S.abrSnap;
-  return (ABRANGENCIA&&ABRANGENCIA[num(S.abrIdx)||0])||{custo_pct:0,tempo_pct:0};
-}
+function abrObra(){ return faixaDeKm(kmObra())||{custo_pct:0,tempo_pct:0}; }   // abrangência = faixa automática pelo km (base → cidade da loja)
 function localMult(){ const f=num(S.fatorLocal); return f>0?f:1; }
 function obraMult(r){ if(!r||!r.composicao) return 1;   // tabelado/avulso não leva fator da obra
   return (1+num(abrObra().custo_pct)/100) * localMult(); }
@@ -1149,8 +1183,13 @@ function despMult(r){ const g=r.gatilho||'fixo';
   if(g==='dia') return obraPrazo();
   if(g==='pes') return obraPessoas();
   return num(r.qtd); }
-// custo das diárias da equipe (alimentação + hospedagem, por pessoa/dia)
-function diariasCusto(){ const d=S.diarias||{}; return (num(d.alim)+num(d.hosp))*obraPessoaDias(); }
+// ---- diárias: valor SEMPRE do padrão da empresa (DIARIA_BASE); chaves gerais decidem quem entra ----
+function diaValKey(key){ return num(DIARIA_BASE[key]) || num((S.diarias||{})[key]); } // fallback p/ orçamentos antigos
+function diaOn(key){ const d=S.diarias||{}; return d[key+'On']!==false; }              // padrão: ligado
+function diaValOn(){ return (diaOn('alim')?diaValKey('alim'):0)+(diaOn('hosp')?diaValKey('hosp'):0); } // R$/pessoa·dia efetivo
+function fnPessoaDias(f){ return diariasModo()==='fim' ? num(f.pes)*obraPrazo() : num(f.pes)*num(f.dias); } // pessoa-dias da função
+// custo das diárias da equipe (alimentação + hospedagem, por pessoa/dia) — gated pelas chaves
+function diariasCusto(){ return diaValOn()*obraPessoaDias(); }
 const qtyOf=r=> (r.gatilho&&r.gatilho!=='fixo') ? despMult(r) : (isTotal(r)?1:num(r.qtd));
 // MARGEM MANDA: o preço é SEMPRE custo × margem (acabou o "valor geral" que zerava). "Só o total" = só apresentação.
 function linePreco(r){
@@ -1227,7 +1266,7 @@ function orcVazio(){
     blocoTotal:{servicos:0,equip:0,despesas:0,materiais:0},
     obs:{},
     comprovantes:[],
-    diarias:{modo:'fim',alim:num(DIARIA_BASE.alim),hosp:num(DIARIA_BASE.hosp)},   // puxa o padrão da empresa
+    diarias:{modo:'fim',alimOn:true,hospOn:true,alim:num(DIARIA_BASE.alim),hosp:num(DIARIA_BASE.hosp)},   // puxa o padrão da empresa; chaves ligadas
     valorCombinado:null,
     servicos:[], equip:[], despesas:[], materiais:[]
   };
@@ -1319,6 +1358,9 @@ function sanitize(){
   if(S.maoObraModo!=='manual' && S.maoObraModo!=='efetivo') S.maoObraModo='efetivo';   // (legado) modo GLOBAL — não usado no motor trabalho-fixo
   if(!S.pessoasFn||typeof S.pessoasFn!=='object')S.pessoasFn={};   // pessoas por função (mexe só no prazo)
   if(!S.diarias||typeof S.diarias!=='object')S.diarias={modo:'fim',alim:0,hosp:0};   // diárias da equipe (alimentação+hospedagem por pessoa/dia)
+  // migração chaves gerais: se não definidas, liga quando havia valor (orçamento antigo) ou por padrão (novo)
+  if(S.diarias.alimOn===undefined)S.diarias.alimOn=(S.diarias.alim!=null?num(S.diarias.alim)>0:true);
+  if(S.diarias.hospOn===undefined)S.diarias.hospOn=(S.diarias.hosp!=null?num(S.diarias.hosp)>0:true);
   if(!(num(S.fatorMax)>0))S.fatorMax=3;   // teto configurável do fator do local
   if(num(S.fatorLocal)>num(S.fatorMax))S.fatorLocal=num(S.fatorMax);
   if(S.margemBase===undefined)S.margemBase=30;
@@ -1333,6 +1375,7 @@ function sanitize(){
   if(S.prazoManual===undefined)S.prazoManual=null;   // prazo sobrescrito (null = usa o calculado da mão de obra)
   if(!Array.isArray(S.comprovantes))S.comprovantes=[];
   if(S.abrIdx===undefined)S.abrIdx=0;
+  if(S.kmManual===undefined)S.kmManual=0;   // km rodado sobrescrito (0 = usa o automático base→cidade)
   if(S.fatorLocal===undefined||num(S.fatorLocal)<=0)S.fatorLocal=1;
   if(!S.status)S.status='rascunho';
 }
@@ -1475,7 +1518,7 @@ function renderBlk(cfg){
     ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: a edição é igual (você vê e ajusta cada item), mas na <b>impressão / envio da proposta</b> os itens saem como <b>“incluso”</b> e o valor aparece só no <b>total agrupado</b> do bloco — não item por item.</span></div>`:''}
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button></div>
-    ${cfg.key==='servicos'?('<div id="svcTopPanels"><div id="fatoresPanel">'+fatoresObraHtml()+'</div><div id="maoObraPanel">'+efetivoHtml()+'</div><div id="diariasPanel">'+diariasHtml()+'</div></div>'):''}
+    ${cfg.key==='servicos'?('<div id="svcTopPanels"><div id="fatoresPanel">'+fatoresObraHtml()+'</div><div id="maoObraPanel">'+efetivoHtml()+'</div></div>'):''}
     ${obsHtml}`;
 }
 
@@ -1527,22 +1570,46 @@ function efetivoHtml(){
   </div>`;
   const gargalo=fs.reduce((m,f)=>Math.max(m,f.dias),0);
   const MO=fs.reduce((a,f)=>a+f.custo,0), totPes=fs.reduce((a,f)=>a+f.pes,0);
-  const rows=fs.map(f=>{ const isG=Math.abs(f.dias-gargalo)<1e-9&&fs.length>1; return `<div class="moarow">
+  const modo=diariasModo(), totPD=obraPessoaDias();
+  const swA=diaOn('alim'), swH=diaOn('hosp'), baseA=diaValKey('alim'), baseH=diaValKey('hosp');
+  const rows=fs.map(f=>{ const isG=Math.abs(f.dias-gargalo)<1e-9&&fs.length>1;
+    const pd=fnPessoaDias(f);
+    const av=swA?pd*baseA:0, hv=swH?pd*baseH:0, sv=av+hv;
+    return `<div class="moarow">
     <div class="moawho"><span class="efav"><span class="material-symbols-rounded">engineering</span></span>
       <div><div class="efn">${esc(f.funcao)} · ${esc(f.nivel)}</div><div class="efd">${fmt(f.vh)}/h · <b>${_d1(f.horas)} h</b> acum.</div></div></div>
-    <div class="moastep"><button onclick="pesFn('${f.k.replace(/'/g,"\\'")}',-1)">−</button><span class="v">${f.pes}</span><button onclick="pesFn('${f.k.replace(/'/g,"\\'")}',1)">+</button></div>
-    <div class="moapz ${isG?'g':''}"><b>${fmtPrazo(f.dias)}</b><br><span>${isG?'gargalo':'&nbsp;'}</span></div>
-    <div class="moacusto">${fmt(f.custo)}</div>
+    <div class="moastep" data-l="Pessoas"><button onclick="pesFn('${f.k.replace(/'/g,"\\'")}',-1)">−</button><span class="v">${f.pes}</span><button onclick="pesFn('${f.k.replace(/'/g,"\\'")}',1)">+</button></div>
+    <div class="moapz ${isG?'g':''}" data-l="Prazo"><b>${fmtPrazo(f.dias)}</b><br><span>${isG?'gargalo':'&nbsp;'}</span></div>
+    <div class="moacusto" data-l="Custo M.O.">${fmt(f.custo)}</div>
+    <div class="moaali ${swA?'':'off'}" data-l="Alimentação">${swA?fmt(av):'—'}</div>
+    <div class="moahosp ${swH?'':'off'}" data-l="Hospedagem">${swH?fmt(hv):'—'}</div>
+    <div class="moasoma" data-l="Soma diárias"><b>${fmt(sv)}</b><br><span>${_d1(pd)} diárias</span></div>
   </div>`; }).join('');
+  const totAli=swA?totPD*baseA:0, totHosp=swH?totPD*baseH:0, totDia=totAli+totHosp;
+  const needBase=(swA&&baseA<=0)||(swH&&baseH<=0);
+  const chave=(key,ic,nome,on,base)=>`<span class="diachave ${on?'on':''}">
+    <div class="ex-switch ${on?'on':''}" onclick="setDiaOn('${key}')" title="${nome}: liga/desliga para toda a equipe"><span class="lb off">NÃO</span><span class="lb onx">SIM</span><span class="kb"><span class="pin"></span></span></div>
+    <span class="material-symbols-rounded">${ic}</span><span class="dcnm">${nome}</span><b>${base?fmt(base):'—'}</b></span>`;
+  const ctrl=`<div class="diactrl">
+    <span class="dclbl"><span class="material-symbols-rounded">restaurant</span>Diárias em campo</span>
+    <span class="cmpseg diaseg2"><button class="${modo==='fim'?'on':''}" onclick="setDiaModo('fim')">Todos até o fim</button><button class="${modo==='exec'?'on':''}" onclick="setDiaModo('exec')">Por execução</button></span>
+    ${chave('alim','restaurant','Alimentação',swA,baseA)}
+    ${chave('hosp','hotel','Hospedagem',swH,baseH)}
+    <button class="diagear" onclick="openDiaBase()" title="Valores base — ver / editar"><span class="material-symbols-rounded">settings</span></button>
+  </div>${needBase?`<div class="dianote2"><span class="material-symbols-rounded">edit</span>Defina o <b>valor base</b> de alimentação/hospedagem na engrenagem <span class="material-symbols-rounded" style="font-size:14px">settings</span> — as diárias só entram no total depois disso.</div>`:''}`;
   return `<div class="efcard noprint">
     <div class="efhd"><span class="material-symbols-rounded">groups</span><h3>Mão de obra da proposta</h3><span class="efcnt"><span class="material-symbols-rounded">event</span>${fmtPrazo(gargalo)}</span></div>
     <div class="efhint">As <b>funções somadas</b> dos serviços. Mais pessoas → menos prazo; o <b>custo não muda</b>. O gargalo (função mais carregada) está em âmbar e dita o prazo.</div>
-    <div class="moahd"><span>Função · nível</span><span>Pessoas</span><span>Prazo</span><span>Custo</span></div>
+    ${ctrl}
+    <div class="moahd"><span>Função · nível</span><span>Pessoas</span><span>Prazo</span><span>Custo M.O.</span><span>Alimentação</span><span>Hospedagem</span><span>Soma diárias</span></div>
     ${rows}
     <div class="moarow moatot"><div class="moawho"><span style="width:34px"></span><div class="efn">Total</div></div>
-      <div class="moapz" style="text-align:center"><b>${totPes}</b><br><span>pessoas</span></div>
-      <div class="moapz moapzedit"><span class="mopzwrap"><input class="mopzin" value="${_d1(obraPrazo())}" inputmode="decimal" onchange="setPrazoManual(this.value)" title="dias — edite para sobrescrever o prazo"><span class="mopzu">d</span>${prazoManualOn()?`<button class="mopzrst" onclick="clearPrazoManual()" title="voltar ao calculado (${_d1(prazoCalc())} d)"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</span><br><span>${prazoManualOn()?'<b class="mopzman">manual</b>':'prazo'}</span></div>
-      <div class="moacusto"><b>${fmt(MO)}</b></div></div>
+      <div class="moapz" style="text-align:center" data-l="Pessoas"><b>${totPes}</b><br><span>pessoas</span></div>
+      <div class="moapz moapzedit" data-l="Prazo"><span class="mopzwrap"><input class="mopzin" value="${_d1(obraPrazo())}" inputmode="decimal" onchange="setPrazoManual(this.value)" title="dias — edite para sobrescrever o prazo"><span class="mopzu">d</span>${prazoManualOn()?`<button class="mopzrst" onclick="clearPrazoManual()" title="voltar ao calculado (${_d1(prazoCalc())} d)"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</span><br><span>${prazoManualOn()?'<b class="mopzman">manual</b>':'prazo'}</span></div>
+      <div class="moacusto" data-l="Custo M.O."><b>${fmt(MO)}</b></div>
+      <div class="moaali ${swA?'':'off'}" data-l="Alimentação"><b>${swA?fmt(totAli):'—'}</b></div>
+      <div class="moahosp ${swH?'':'off'}" data-l="Hospedagem"><b>${swH?fmt(totHosp):'—'}</b></div>
+      <div class="moasoma" data-l="Soma diárias"><b>${fmt(totDia)}</b><br><span>a custo${totDia>0?' + imp.':''}</span></div></div>
   </div>`;
 }
 // ---- Diárias da equipe em campo (alimentação + hospedagem, por pessoa/dia) ----
@@ -1585,8 +1652,10 @@ async function saveDiaBase(){
   // se este orçamento ainda está zerado, já puxa o padrão salvo
   if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0};
   if(!num(S.diarias.alim))S.diarias.alim=alim; if(!num(S.diarias.hosp))S.diarias.hosp=hosp;
-  save(); closeDiaBase(); const dp=document.getElementById('diariasPanel'); if(dp)dp.innerHTML=diariasHtml(); recalc();
+  save(); closeDiaBase(); refreshMaoPanel(); recalc(); const _db=BLKS.find(b=>b.key==='despesas'); if(_db){try{renderBlk(_db);}catch(e){}}
 }
+// chaves gerais: liga/desliga alimentação/hospedagem para a equipe inteira
+function setDiaOn(key){ if(!S.diarias)S.diarias={modo:'fim'}; S.diarias[key+'On']=!diaOn(key); save(); refreshMaoPanel(); recalc(); const db=BLKS.find(b=>b.key==='despesas'); if(db){try{renderBlk(db);}catch(e){}} }
 function setDia(key,val){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.diarias[key]=num(val); save(); diaRefreshTotals(); recalc(); }
 function diaBlur(el,key){ const n=num(el.value); el.value=n?moneyVal(n):''; }
 // texto didático: × N pessoas × N dias = (ou × N diárias = , no modo por execução)
@@ -1606,79 +1675,22 @@ function diaRefreshTotals(){ const fs=aggMaoObra()||[]; const cnt=obraPessoaDias
   const he=document.getElementById('dia_hint'); if(he)he.innerHTML=hint;
   const nt=document.getElementById('dia_note'); if(nt)nt.style.display=((a+h)>0?'none':'');
   const bk=diaBreak(); ['alim','hosp'].forEach(k=>{ const e=document.getElementById('dia_sig_'+k); if(e)e.innerHTML=diaSig(k); const c=document.getElementById('dia_calc_'+k); if(c)c.textContent=bk; }); }
-function setDiaModo(m){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.diarias.modo=(m==='exec'?'exec':'fim'); save();
-  const dp=document.getElementById('diariasPanel'); if(dp)dp.innerHTML=diariasHtml();   // troca de modo = re-render do card (clique, sem foco em input)
+function setDiaModo(m){ if(!S.diarias)S.diarias={modo:'fim'}; S.diarias.modo=(m==='exec'?'exec':'fim'); save();
+  refreshMaoPanel();   // agora as diárias vivem dentro da mão de obra
   recalc(); const db=BLKS.find(b=>b.key==='despesas'); if(db){try{renderBlk(db);}catch(e){}} }
 function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m="equipe"]'); if(el)el.value=S.equipe; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); recalc(); }   // efetivo dirige o custo dos serviços que o usam
 // ===== Fatores da obra (abrangência + fator do local) — só nos serviços montados =====
 function fatorMax(){ return num(S.fatorMax)>0?num(S.fatorMax):3; }
-// --- bloco da abrangência: onde é a obra, quantas unidades e qual anel isso alcança ---
-function abrangenciaHtml(abrOpts){
-  const km=kmMedio(), o=anelDoKm(km), locais=(S.locais||[]);
-  const un=totalUnidades(), lote=locais.length>1;
-  const pctTxt=n=>num(n)>0?('+'+num(n)+'%'):'0%';
-  const resumo = !locais.length
-      ? '<span class="abr-vazio">Nenhum local informado — diga onde é a obra para a faixa sair sozinha</span>'
-      : `<b>${locais.length}</b> ${lote?'cidades':'cidade'}${lote||un>1?` · <b>${un}</b> ${un>1?'unidades':'unidade'}`:''}`
-        + (km!=null?` · ${lote?'média ':''}<b>${km.toLocaleString('pt-BR')} km</b>`:' · <span class="abr-vazio">sem distância</span>');
-  // o que vale é a cópia congelada da proposta, não a régua de hoje
-  const val=abrObra(), snap=S.abrSnap;
-  const atual=(ABRANGENCIA||[])[num(S.abrIdx)||0];
-  const divergiu = snap && atual && (num(snap.custo_pct)!==num(atual.custo_pct) || num(snap.tempo_pct)!==num(atual.tempo_pct));
-  const rot = (snap&&snap.rotulo) || (o&&o.a.rotulo) || '';
-  const idx = (snap?snap.idx:(o?o.i:null));
-  const faixa = (o||snap)
-      ? `<span class="abr-anel">anel ${(idx??0)+1} · ${esc(rot)}</span>
-         <span class="abr-pcts">${pctTxt(val.custo_pct)} custo · ${pctTxt(val.tempo_pct)} prazo</span>`
-        + (divergiu?`<button class="abr-man" onclick="atualizaFaixa()" title="esta proposta guarda os percentuais de quando foi feita: ${pctTxt(snap.custo_pct)} custo · ${pctTxt(snap.tempo_pct)} prazo. A régua hoje está em ${pctTxt(atual.custo_pct)} · ${pctTxt(atual.tempo_pct)}."><span class="material-symbols-rounded">history</span>congelado · atualizar</button>`:'')
-      : '<span class="abr-vazio">faixa indefinida</span>';
-  const linhas = locais.map((l,i)=>`<div class="abr-l">
-      <input class="abr-uf" maxlength="2" value="${esc(l.uf||'')}" placeholder="UF"
-        oninput="S.locais[${i}].uf=this.value.toUpperCase()" onchange="locUF(${i})">
-      <input class="abr-cid" list="lmun_${i}" value="${esc(l.cidade||'')}" placeholder="${l.uf?'cidade':'escolha a UF'}"
-        onfocus="locUF(${i})" onchange="locCidade(${i},this.value)">
-      <datalist id="lmun_${i}"></datalist>
-      <span class="abr-un"><input type="number" min="1" value="${Math.max(1,num(l.unidades)||1)}"
-        onchange="S.locais[${i}].unidades=Math.max(1,+this.value||1);save();refreshAbr()"><i>un.</i></span>
-      <span class="abr-km"><input type="number" min="0" step="10" value="${num(l.km)||''}"
-        placeholder="${l.lat!=null?(kmPontos(pontoBase(),[num(l.lat),num(l.lon)])??''):''}"
-        onchange="S.locais[${i}].km=+this.value||0;save();refreshAbr()"><i>km</i></span>
-      <button class="abr-del" onclick="locDel(${i})" title="remover"><span class="material-symbols-rounded">close</span></button>
-    </div>`).join('');
-  return `<div class="abrbox">
-    <div class="abr-hd">
-      <span class="material-symbols-rounded">pin_drop</span>
-      <span class="abr-res">${resumo}</span>
-      <span class="abr-arrow">→</span>
-      ${faixa}
-      <span class="spacer"></span>
-      ${S.abrManual?`<button class="abr-man on" onclick="setAbrManual(false)" title="voltar a derivar da distância"><span class="material-symbols-rounded">lock</span>faixa fixada</button>`:''}
-      <button class="abr-cfgb ${S._locCfg?'on':''}" onclick="toggleLocais()">${S._locCfg?'fechar':(locais.length?'editar locais':'informar locais')}</button>
-    </div>
-    ${S._locCfg?`<div class="abr-body">
-      <div class="abr-h"><span>UF</span><span>Cidade</span><span>Unidades</span><span>Km rodado</span><span></span></div>
-      ${linhas||'<div class="abr-vazio" style="padding:6px 2px">Nenhuma cidade ainda.</div>'}
-      <div class="abr-foot">
-        <button class="fo-cfg-add" onclick="locAdd()"><span class="material-symbols-rounded">add</span>${locais.length?'outra cidade (lote)':'adicionar cidade'}</button>
-        <span class="spacer"></span>
-        <label class="abr-manlb"><input type="checkbox" ${S.abrManual?'checked':''} onchange="setAbrManual(this.checked)"> escolher a faixa na mão</label>
-        ${S.abrManual?`<select class="fo-sel" style="max-width:230px" onchange="setAbr(this.value)">${abrOpts}</select>`:''}
-      </div>
-      <div class="abr-hint">O <b>km rodado</b> é opcional: em branco, vale a estimativa em cinza (linha reta × 1,25). Preencha quando a rota real importar — perto do corte de um anel, ela decide.</div>
-    </div>`:''}
-  </div>`;
-}
 function fatoresObraHtml(){
   const pct=n=>num(n)>0?('+'+num(n)+'%'):'—';
-  const b=baseAtual();
-  const baseOpts=(BASES.length
-      ? BASES.map(x=>`<option value="${x.id}" ${b&&x.id===b.id?'selected':''}>${esc(x.nome)}${x.cidade?' · '+esc(x.cidade):''}${x.uf?'/'+x.uf:''}</option>`).join('')
-      : '<option value="">— cadastre em Gestão › Abrangência —</option>');
   const abrOpts=(ABRANGENCIA||[]).map((a,j)=>`<option value="${j}" ${j==(num(S.abrIdx)||0)?'selected':''}>${esc(a.rotulo)}${(num(a.custo_pct)||num(a.tempo_pct))?' ('+pct(a.custo_pct)+' custo · '+pct(a.tempo_pct)+' prazo)':''}</option>`).join('');
   const fmax=fatorMax();
   const fl=Math.min(num(S.fatorLocal)||1,fmax);
   const presets=[[1,'1'],[1.5,'1,5'],[2,'2'],[3,'3']].filter(([f])=>f<=fmax).map(([f,l])=>`<button class="flbtn ${fl==f?'on':''}" onclick="setFatorLocal(${f})">${l}×</button>`).join('');
   const abrDesc={local:'na sua base / cidade',estadual:'dentro do estado',nacional:'outro estado ou país'};
+  const km=kmObra(), faixa=faixaDeKm(km)||{}, lm=lojaMun(), bm=baseMun();
+  const baseOpts=(ORIGENS||[]).map(o=>`<option value="${o.municipio_id}" ${o.municipio_id==S.baseMunId?'selected':''}>${esc(o.nome)}</option>`).join('');
+  const aPct=(num(faixa.custo_pct)||num(faixa.tempo_pct))?` <small>${pct(faixa.custo_pct)} custo · ${pct(faixa.tempo_pct)} prazo</small>`:' <small>sem acréscimo</small>';
   const cfg = S._foCfg ? `<div class="fo-cfg">
       <div class="fo-cfg-sec">Abrangência — <b>suas regiões</b>; quanto mais <b>longe</b>, mais <b>encarece</b> e <b>demora</b></div>
       <div class="fo-cfg-tbl">
@@ -1697,54 +1709,20 @@ function fatoresObraHtml(){
     <div class="fo-t"><span class="material-symbols-rounded">tune</span>Fatores da obra<span class="fo-h"> — aplicam ao custo dos serviços montados</span>
       <button class="fo-cfgbtn ${S._foCfg?'on':''}" onclick="toggleFoCfg()" title="Configurar as faixas"><span class="material-symbols-rounded">${S._foCfg?'expand_less':'settings'}</span></button></div>
     <div class="fo-grid">
-      <div class="fo-row"><label><span class="material-symbols-rounded">my_location</span>Base desta proposta</label><select class="fo-sel" onchange="setBase(this.value)">${baseOpts}</select></div>
+      <div class="fo-row"><label><span class="material-symbols-rounded">warehouse</span>Base de atendimento</label><select class="fo-sel" onchange="setBaseMun(this.value)">${baseOpts||'<option>— cadastre uma base —</option>'}</select></div>
+      <div class="fo-row"><label><span class="material-symbols-rounded">pin_drop</span>Abrangência</label>
+        <div class="fo-auto">
+          ${ lm ? `<span class="fo-autopill"><span class="material-symbols-rounded">bolt</span>${esc(faixa.rotulo||'—')}${aPct}</span>
+            <span class="fo-km"><span class="material-symbols-rounded">route</span>${bm?esc(bm.nome+'/'+bm.uf):'base?'} → ${esc(lm.nome+'/'+lm.uf)}: <input class="fo-kmin" value="${km!=null?_d1(km):''}" inputmode="decimal" placeholder="km" onchange="setKmManual(this.value)" title="km rodado — edite para sobrescrever o automático">km ${kmManualOn()?`<button class="fo-kmrst" onclick="clearKmManual()" title="voltar ao automático (${kmAuto()!=null?_d1(kmAuto())+' km':'—'})"><span class="material-symbols-rounded">restart_alt</span>auto</button>`:'<span class="fo-kmtag">auto</span>'}</span>`
+            : `<span class="fo-autopill nocity"><span class="material-symbols-rounded">wrong_location</span>Loja sem cidade cadastrada</span><button class="fo-setcity" onclick="openRaioCidade()"><span class="material-symbols-rounded">add_location_alt</span>definir cidade da loja</button>` }
+        </div></div>
       <div class="fo-row"><label><span class="material-symbols-rounded">terrain</span>Fator do local</label><div class="fo-fl">${presets}<input class="fo-flin" value="${String(fl).replace('.',',')}" inputmode="decimal" onchange="setFatorLocal(this.value)" title="ou digite (até ${String(fmax).replace('.',',')}×)">×</div></div>
     </div>
-    ${abrangenciaHtml(abrOpts)}
     ${cfg}
   </div>`;
 }
-/* --- locais da obra: onde é, quantas unidades, e a faixa que isso alcança --- */
-function refreshAbr(){ aplicaAnel(); save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
-function toggleLocais(){
-  S._locCfg=!S._locCfg;
-  if(S._locCfg && !(S.locais||[]).length) locAdd(true);
-  else renderBlk(BLKS.find(b=>b.key==='servicos'));
-}
-function setBase(id){
-  S.baseId=id||null;
-  const b=baseAtual(); S.baseNome=b?b.nome:null;
-  (S.locais||[]).forEach(l=>{ if(!num(l.km)) l._rec=1; });   // estimativas mudam de base
-  refreshAbr();
-}
-function locAdd(silencioso){
-  if(!S.locais)S.locais=[];
-  const ult=S.locais[S.locais.length-1];
-  S.locais.push({uf:(ult&&ult.uf)||'',cidade:'',municipio_id:null,lat:null,lon:null,unidades:1,km:0});
-  if(!silencioso) save();
-  renderBlk(BLKS.find(b=>b.key==='servicos'));
-}
-function locDel(i){ (S.locais||[]).splice(i,1); refreshAbr(); }
-async function locUF(i){
-  const l=(S.locais||[])[i]; if(!l||!l.uf)return;
-  const lista=await munDaUF(l.uf);
-  const dl=document.getElementById('lmun_'+i);
-  if(dl) dl.innerHTML=lista.map(m=>`<option value="${esc(m.nome)}"></option>`).join('');
-}
-function locCidade(i,valor){
-  const l=(S.locais||[])[i]; if(!l)return;
-  l.cidade=valor;
-  const m=(MUN_CACHE[l.uf]||[]).find(x=>x.nome===valor);
-  if(m){ l.municipio_id=m.codigo_ibge; l.lat=m.lat; l.lon=m.lon; }
-  else  { l.municipio_id=null; l.lat=null; l.lon=null; }
-  refreshAbr();
-}
-// troca a cópia congelada pela régua de hoje — só quando VOCÊ manda
-function atualizaFaixa(){ congelaFaixa(num(S.abrIdx)||0); save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
-function setAbrManual(v){ S.abrManual=!!v; if(!v) aplicaAnel(); save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
-
 function toggleFoCfg(){ S._foCfg=!S._foCfg; renderBlk(BLKS.find(b=>b.key==='servicos')); }
-function setAbr(v){ S.abrIdx=+v||0; S.abrManual=true; congelaFaixa(S.abrIdx); save(); recalc(); renderBlk(BLKS.find(b=>b.key==="servicos")); }
+function setAbr(v){ S.abrIdx=+v||0; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function setAbrPct(j,field,v){ if(!ABRANGENCIA[j])return; ABRANGENCIA[j][field]=Math.max(0,num(v));
   if(CLOUD && !MODELO_V2){ SB.from('orc_abrangencia').update({[field]:ABRANGENCIA[j][field]}).eq('nivel',ABRANGENCIA[j].nivel).then(({error})=>{ if(error)console.error('abr cfg',error); }); }
   save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
@@ -1761,6 +1739,27 @@ function abrDel(j){ if(!ABRANGENCIA[j]||ABRANGENCIA.length<=1)return; const nive
   save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function setFatorMax(v){ S.fatorMax=Math.max(1,Math.min(5,num(v)||3)); if(num(S.fatorLocal)>S.fatorMax)S.fatorLocal=S.fatorMax; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function setFatorLocal(f){ f=num(f); const fx=fatorMax(); f=Math.max(1,Math.min(fx,f)); S.fatorLocal=f; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+// --- raio: base de atendimento, km manual, cidade da loja ---
+function _reFat(){ save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function setBaseMun(v){ v=+v||null; S.baseMunId=v; const o=(ORIGENS||[]).find(x=>x.municipio_id==v); S.baseNome=o?o.nome:''; S.kmManual=0;   // trocar base volta pro km automático
+  if(v && !MUNI[v] && SB){ SB.from('municipios').select('codigo_ibge,nome,uf,lat,lon').eq('codigo_ibge',v).limit(1).then(({data})=>{ if(data&&data[0]){MUNI[data[0].codigo_ibge]=data[0]; _reFat();} }); }
+  _reFat(); }
+function setKmManual(v){ S.kmManual=Math.max(0,num(v)); _reFat(); }
+function clearKmManual(){ S.kmManual=0; _reFat(); }
+// fallback: loja sem municipio_id → escolher estado→cidade e salvar na loja
+function openRaioCidade(){ const m=document.getElementById('raioCidadeModal'); if(!m)return; document.getElementById('rcUf').value=''; document.getElementById('rcCidade').innerHTML='<option value="">— escolha o estado primeiro —</option>'; document.getElementById('rcCidade').disabled=true; m.classList.add('open'); }
+function closeRaioCidade(){ const m=document.getElementById('raioCidadeModal'); if(m)m.classList.remove('open'); }
+async function rcLoadCidades(uf){ const sel=document.getElementById('rcCidade'); if(!uf){ sel.innerHTML='<option value="">— escolha o estado —</option>'; sel.disabled=true; return; }
+  sel.innerHTML='<option>carregando…</option>'; sel.disabled=true;
+  try{ const {data}=await SB.from('municipios').select('codigo_ibge,nome,lat,lon').eq('uf',uf).order('nome');
+    (data||[]).forEach(r=>{ MUNI[r.codigo_ibge]={codigo_ibge:r.codigo_ibge,nome:r.nome,uf,lat:r.lat,lon:r.lon}; });
+    sel.innerHTML='<option value="">— cidade —</option>'+(data||[]).map(r=>`<option value="${r.codigo_ibge}">${esc(r.nome)}</option>`).join(''); sel.disabled=false;
+  }catch(e){ console.error('rc cidades',e); sel.innerHTML='<option value="">erro</option>'; } }
+async function saveRaioCidade(){ const cid=+document.getElementById('rcCidade').value||null; if(!cid){ alert('Escolha a cidade.'); return; }
+  if(!S.lojaId){ alert('Sem loja vinculada a este orçamento.'); return; }
+  try{ const r=await SB.from('lojas').update({municipio_id:cid}).eq('id',S.lojaId); if(r&&r.error)throw r.error;
+    S._lojaMunId=cid; closeRaioCidade(); _reFat();
+  }catch(e){ console.error('salvar cidade loja',e); alert('Não foi possível salvar: '+(e.message||e)); } }
 function efInc(i){ if(!S.efetivo[i])return; S.efetivo[i].pes=(+S.efetivo[i].pes||0)+1; efApply(); }
 function efDec(i){ if(!S.efetivo[i])return; S.efetivo[i].pes=Math.max(0,(+S.efetivo[i].pes||0)-1); if(S.efetivo[i].pes===0)S.efetivo.splice(i,1); efApply(); }
 function efRm(i){ S.efetivo.splice(i,1); efApply(); }
@@ -1800,7 +1799,7 @@ function updBloco(blk,val){
 
 /* ---------- edição ---------- */
 // atualiza SÓ o painel de mão de obra + os TOTAIS das diárias (não recria os inputs de diária → não apaga o que você digita)
-function refreshMaoPanel(){ const m=document.getElementById('maoObraPanel'); if(m) m.innerHTML=efetivoHtml(); diaRefreshTotals(); }
+function refreshMaoPanel(){ const m=document.getElementById('maoObraPanel'); if(m) m.innerHTML=efetivoHtml(); }
 function upd(blk,id,field,val){
   const r=S[blk].find(x=>x.id===id); if(!r)return;
   r[field]=val;
@@ -1993,83 +1992,6 @@ function saveNovoCat(){
   } else { finish(null); }
 }
 
-/* ---------- ABRANGÊNCIA: base da proposta + locais da obra (lote) ----------
-   A base é escolhida NESTA proposta (não existe base fixa da empresa).
-   Os locais são as cidades atendidas; num lote, várias. A faixa não é
-   escolhida à mão: sai da distância média ponderada pelas unidades.      */
-let BASES=[], MUN_CACHE={};
-const FATOR_ROTA=1.25;   // linha reta -> aproximação de km rodado
-async function carregarBases(){
-  try{ const r=await SB.from('abrangencia_origens').select('*').eq('ativo',true).order('nome');
-    if(!r.error) BASES=r.data||[];
-  }catch(e){ console.error('bases',e); }
-}
-async function munDaUF(uf){
-  if(!uf) return [];
-  if(MUN_CACHE[uf]) return MUN_CACHE[uf];
-  try{ const r=await SB.from('municipios').select('codigo_ibge,nome,lat,lon').eq('uf',uf).order('nome');
-    MUN_CACHE[uf]=r.error?[]:(r.data||[]);
-  }catch(e){ MUN_CACHE[uf]=[]; }
-  return MUN_CACHE[uf];
-}
-function kmPontos(A,B){
-  if(!A||!B||A[0]==null||B[0]==null) return null;
-  const R=6371, rad=x=>x*Math.PI/180;
-  const dLat=rad(B[0]-A[0]), dLon=rad(B[1]-A[1]);
-  const h=Math.sin(dLat/2)**2+Math.cos(rad(A[0]))*Math.cos(rad(B[0]))*Math.sin(dLon/2)**2;
-  return Math.round(2*R*Math.asin(Math.sqrt(h))*FATOR_ROTA);
-}
-function baseAtual(){
-  const id=S.baseId;
-  return BASES.find(b=>String(b.id)===String(id)) || BASES.find(b=>b.padrao) || BASES[0] || null;
-}
-function pontoBase(){ const b=baseAtual(); return b&&b.lat!=null?[num(b.lat),num(b.lon)]:null; }
-// km de um local: o rodado informado vence; senão a estimativa
-function kmLocal(l){
-  if(num(l.km)>0) return num(l.km);
-  if(l.lat!=null) return kmPontos(pontoBase(),[num(l.lat),num(l.lon)]);
-  return null;
-}
-// média PONDERADA pelas unidades: dez obras numa cidade pesam dez vezes mais
-function kmMedio(){
-  const ls=(S.locais||[]).filter(l=>kmLocal(l)!=null);
-  if(!ls.length) return null;
-  let som=0, un=0;
-  ls.forEach(l=>{ const u=Math.max(1,num(l.unidades)||1); som+=kmLocal(l)*u; un+=u; });
-  return un?Math.round(som/un):null;
-}
-function totalUnidades(){ return (S.locais||[]).reduce((a,l)=>a+Math.max(1,num(l.unidades)||1),0); }
-// qual anel esse km alcança (as faixas vêm de orc_abrangencia, ordenadas)
-function anelDoKm(km){
-  if(km==null) return null;
-  const ord=(ABRANGENCIA||[]).map((a,i)=>({a,i}))
-    .sort((x,y)=>(x.a.km_ate==null?1e9:num(x.a.km_ate))-(y.a.km_ate==null?1e9:num(y.a.km_ate)));
-  for(const o of ord){ if(o.a.km_ate==null || km<=num(o.a.km_ate)) return o; }
-  return ord[ord.length-1]||null;
-}
-// aplica a faixa derivada no motor que já existe (S.abrIdx) e congela a cópia
-function aplicaAnel(){
-  if(S.abrManual){ congelaFaixa(num(S.abrIdx)||0); return false; }
-  const o=anelDoKm(kmMedio());
-  if(!o) return false;
-  const mudou=(S.abrIdx!==o.i);
-  S.abrIdx=o.i;
-  congelaFaixa(o.i);
-  return mudou;
-}
-// guarda na proposta a faixa como ela é HOJE: rótulo, percentuais, base e km
-function congelaFaixa(i){
-  const a=(ABRANGENCIA||[])[i]; if(!a) return;
-  const b=baseAtual();
-  S.abrSnap={
-    idx:i, faixa_id:a.id||null, rotulo:a.rotulo||'', km_ate:(a.km_ate??null),
-    custo_pct:num(a.custo_pct), tempo_pct:num(a.tempo_pct),
-    km_medio:kmMedio(), unidades:totalUnidades(),
-    base_id:b?b.id:null, base_nome:b?b.nome:null, base_municipio_id:b?b.municipio_id:null,
-    manual:!!S.abrManual, em:new Date().toISOString()
-  };
-}
-
 /* ---------- picker do cabeçalho (solução, cliente, responsável) ---------- */
 // clientes: contratantes da tabela `clientes`; lojas/contemplados da tabela `lojas` (mesma fonte do CRM)
 let CLIENTES=null, LOJAS=null;
@@ -2129,11 +2051,36 @@ async function carregarMaoObra(){
   }catch(e){ console.error('maoobra',e); }
 }
 async function carregarAbrangencia(){
-  try{ const {data,error}=await SB.from('orc_abrangencia').select('id,nivel,rotulo,ordem,custo_pct,tempo_pct,km_ate').order('ordem');
+  try{ const {data,error}=await SB.from('orc_abrangencia').select('nivel,rotulo,ordem,custo_pct,tempo_pct,km_ate').order('ordem');
     if(!error && data && data.length) ABRANGENCIA=data;
   }catch(e){ console.error('abrangencia',e); }
   if(!ABRANGENCIA.length) ABRANGENCIA=[{nivel:'local',rotulo:'Local',custo_pct:0,tempo_pct:0},{nivel:'estadual',rotulo:'Estadual',custo_pct:10,tempo_pct:8},{nivel:'nacional',rotulo:'Nacional',custo_pct:20,tempo_pct:15}];
 }
+// ===== RAIO: base de atendimento + cidade da loja → km → faixa (abrangência automática) =====
+let ORIGENS=[], MUNI={};   // MUNI: codigo_ibge -> {nome,uf,lat,lon}
+async function carregarRaio(){
+  try{
+    const o=await SB.from('abrangencia_origens').select('id,nome,municipio_id'); ORIGENS=(o.data||[]);
+    // cidade da loja (contemplado) via S.lojaId
+    S._lojaNome=null; S._lojaMunId=null;
+    if(S.lojaId){ const l=await SB.from('lojas').select('nome,municipio_id').eq('id',S.lojaId).limit(1); if(l.data&&l.data[0]){ S._lojaNome=l.data[0].nome; S._lojaMunId=l.data[0].municipio_id||null; } }
+    if(!S.baseMunId && ORIGENS[0]){ S.baseMunId=ORIGENS[0].municipio_id; S.baseNome=ORIGENS[0].nome; }
+    const ids=[...new Set([...ORIGENS.map(o=>o.municipio_id), S.baseMunId, S._lojaMunId].filter(Boolean))];
+    if(ids.length){ const m=await SB.from('municipios').select('codigo_ibge,nome,uf,lat,lon').in('codigo_ibge',ids); (m.data||[]).forEach(r=>{ MUNI[r.codigo_ibge]=r; }); }
+  }catch(e){ console.error('raio',e); }
+}
+function kmHaversine(a,b){ if(!a||!b||a.lat==null||b.lat==null)return null; const R=6371,tR=x=>x*Math.PI/180;
+  const dLa=tR(b.lat-a.lat),dLo=tR(b.lon-a.lon);
+  const s=Math.sin(dLa/2)**2+Math.cos(tR(a.lat))*Math.cos(tR(b.lat))*Math.sin(dLo/2)**2;
+  return 2*R*Math.asin(Math.min(1,Math.sqrt(s))); }
+function baseMun(){ return MUNI[S.baseMunId]||null; }
+function lojaMun(){ return S._lojaMunId?(MUNI[S._lojaMunId]||null):null; }
+function kmAuto(){ const d=kmHaversine(baseMun(),lojaMun()); return d==null?null:Math.round(d*1.25); }   // linha reta → km rodado aprox.
+function kmManualOn(){ return num(S.kmManual)>0; }
+function kmObra(){ return kmManualOn()?num(S.kmManual):kmAuto(); }
+function faixaDeKm(km){ const fs=ABRANGENCIA||[]; if(km==null||!fs.length)return null;
+  for(const f of fs){ const cap=num(f.km_ate); if(cap>0 && km<=cap) return f; }
+  return fs[fs.length-1]||null; }   // acima da última faixa fechada → faixa aberta
 let DIARIA_BASE={alim:0,hosp:0};   // padrão da empresa (cadastro em Gestão › Mão de obra)
 async function carregarDiariaBase(){
   try{ if(!EMPRESA_ID)return; const {data,error}=await SB.from('orc_diaria_base').select('alim,hosp').eq('empresa_id',EMPRESA_ID).limit(1);
