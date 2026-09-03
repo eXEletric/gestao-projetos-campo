@@ -2320,12 +2320,22 @@ function injectLoteBasePanel(){
     const ta=_lg('descGeralTa'); const anchor=ta?(ta.closest('.card')||ta.closest('section')||ta.parentElement):null;
     if(anchor&&anchor.parentElement){ anchor.parentElement.insertBefore(p,anchor); } else { document.body.appendChild(p); } }
   p.innerHTML=renderLoteBaseHtml();
+  updateRedeUnidades();   // reflete as unidades no cabeçalho (campo "Unidades")
 }
 function relabelRede(){ // no base do lote, o "cliente final / destino" representa a REDE (lojas ficam no painel abaixo)
   document.querySelectorAll('.ph-cap').forEach(cap=>{ cap.childNodes.forEach(n=>{ if(n.nodeType===3 && /cliente final/i.test(n.nodeValue||'')) n.nodeValue='Rede / lojas do lote '; }); });
   const fin=document.querySelector('[data-m="finNome"]');
   if(fin){ fin.value=''; fin.placeholder='Rede — definida pelas lojas do lote (painel abaixo) ↓'; fin.readOnly=true; fin.style.opacity='.75'; }
+  document.querySelectorAll('.ph-kv label').forEach(lb=>{ const t=(lb.textContent||'').trim().toLowerCase();
+    if(t.indexOf('unidade')>-1) lb.textContent='Unidades';   // Nº unidade → Unidades
+    else if(t==='endereço') lb.textContent='Região'; });
+  const num=document.querySelector('[data-m="finNum"]'); if(num){ num.readOnly=true; num.style.opacity='.9'; num.title='unidades do lote (definidas no painel abaixo)'; }
+  const reg=document.querySelector('[data-m="finEnd"]'); if(reg){ reg.placeholder='Região (digite — ex.: NE + CO, eixo BA)'; }
+  updateRedeUnidades();
 }
+function updateRedeUnidades(){ if(!isLoteBase())return; const num=document.querySelector('[data-m="finNum"]'); if(!num)return;
+  const list=(LOTE_UNITS||[]).map(o=>o.cliente_final||o.numero||'').filter(Boolean).join(' · ');
+  num.value=list; num.placeholder=(LOTE_UNITS&&LOTE_UNITS.length)?'':'as unidades aparecem aqui ao adicionar lojas ↓'; }
 function renderLoteBaseHtml(){
   const lojaOpts=(LOJAS||[]).filter(l=>!LOTE_UNITS.some(u=>(u.dados&&u.dados.lojaId)===l.id)).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
   const total=LOTE_UNITS.reduce((a,o)=>a+num(o.total),0);
