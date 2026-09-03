@@ -2125,7 +2125,7 @@ async function createLoteAndBase(nome,contr){
   const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contr,objeto:'[BASE] '+nome}).select('id').limit(1);
   if(!opp.error && opp.data[0]){ const baseOpp=opp.data[0].id; const numero=await proximoNumero();
     const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
-    await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:baseOpp,lote_id:lid,herda_base:false,numero,status:'rascunho',cliente_contratante:contrNome,dados:{_base:true},total:0});
+    await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:baseOpp,lote_id:lid,herda_base:false,numero,status:'rascunho',cliente_contratante:contrNome,dados:{_base:true,contratanteId:contr,cliNome:contrNome,numero},total:0});
     await SB.from('orcamento_lotes').update({base_oportunidade_id:baseOpp}).eq('id',lid);
   }
   return lid;
@@ -2199,7 +2199,7 @@ async function criarLote(){
     const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contr,objeto:'[BASE] '+nome}).select('id').limit(1);
     if(!opp.error && opp.data[0]){ const baseOpp=opp.data[0].id; const numero=await proximoNumero();
       const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
-      await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:baseOpp,lote_id:lid,herda_base:false,numero,status:'rascunho',cliente_contratante:contrNome,dados:{_base:true},total:0});
+      await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:baseOpp,lote_id:lid,herda_base:false,numero,status:'rascunho',cliente_contratante:contrNome,dados:{_base:true,contratanteId:contr,cliNome:contrNome,numero},total:0});
       await SB.from('orcamento_lotes').update({base_oportunidade_id:baseOpp}).eq('id',lid);
     }
     location.href='eX_Orcamento_PREVIEW.html?lote='+lid;
@@ -2275,7 +2275,9 @@ async function loteGerar(){
       const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:LOTE_ROW?LOTE_ROW.contratante_id:null,contemplado_id:l.id,objeto:(LOTE_ROW?LOTE_ROW.nome:'Lote')+' — '+l.nome}).select('id').limit(1);
       if(opp.error||!opp.data[0]) continue; const oppId=opp.data[0].id;
       const numero=await proximoNumero();
+      const _cn=(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):'');
       const dados=BASE_DADOS?JSON.parse(JSON.stringify(BASE_DADOS)):{}; delete dados._base; dados.abrSnap=null; dados.finNome=l.nome; dados.lojaId=l.id; dados.numero=numero;
+      if(LOTE_ROW&&LOTE_ROW.contratante_id){ dados.contratanteId=LOTE_ROW.contratante_id; dados.cliNome=_cn; }
       await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:oppId,lote_id:LOTE_ID,herda_base:true,numero,status:'rascunho',cliente_final:l.nome,cliente_contratante:(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):''),dados,total:BASE_TOTAL});
     }
     LOTE_PEND=[]; await loadLote(); renderLote(_lg('loteView'));
