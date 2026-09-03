@@ -1025,7 +1025,7 @@ async function carregarOrc(){
 }
 async function initOrc(){
   if(NOVA){ await initNova(); return; }   // ?nova → bifurcação Única × Lote (PRÉVIA)
-  if(LOTE){ await initLote(); return; }   // ?lote → tela mestra do lote (PRÉVIA)
+  if(LOTE && !OPP){ await initLote(); return; }   // ?lote sozinho (legado) → redireciona pro base
   if(!OPP){ await initList(); return; }   // sem ?opp → LISTA de orçamentos
   if(OPP&&SB){ try{
     const {data:{session}}=await SB.auth.getSession();
@@ -1045,6 +1045,7 @@ async function initOrc(){
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
   if(!CLOUD){ load(); }
   boot();
+  if(isLoteBase()){ try{ await initLoteBasePanel(); }catch(e){ console.error('lote base panel',e); } }   // base do lote = mestra: injeta o painel de lojas
 }
 
 /* ---------- LISTA de orçamentos (Comercial › Orçamentos) ---------- */
@@ -1068,11 +1069,11 @@ async function initList(){
   document.getElementById('orcRows').innerHTML='<tr><td colspan="6" style="padding:26px;text-align:center;color:var(--tx3)">Entre com login pra ver os orçamentos salvos.</td></tr>';
 }
 async function loadLotesList(){
-  try{ const {data}=await SB.from('orcamento_lotes').select('id,nome,status,created_at').is('deleted_at',null).order('created_at',{ascending:false});
+  try{ const {data}=await SB.from('orcamento_lotes').select('id,nome,status,base_oportunidade_id,created_at').is('deleted_at',null).order('created_at',{ascending:false});
     const host=document.getElementById('lotesList'); if(!host)return; const rows=data||[];
     if(!rows.length){ host.innerHTML=''; return; }
-    host.innerHTML=`<div style="margin:6px 0 14px"><div style="font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--tx3);margin:0 0 6px 2px">Lotes</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px">${rows.map(l=>`<a href="eX_Orcamento_PREVIEW.html?lote=${l.id}" style="display:inline-flex;align-items:center;gap:7px;border:1px solid var(--pri-line,#ddd3f6);background:var(--pri-bg,#efeafc);color:var(--pri-d);border-radius:10px;padding:8px 12px;font:600 13px inherit;text-decoration:none"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">apartment</span>${esc(l.nome||'Lote')}</a>`).join('')}</div></div>`;
+    host.innerHTML=`<div style="margin:6px 0 14px"><div style="font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--tx3);margin:0 0 6px 2px">Lotes (mestra)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">${rows.map(l=>`<a href="eX_Orcamento_PREVIEW.html?opp=${l.base_oportunidade_id||''}&lote=${l.id}" style="display:inline-flex;align-items:center;gap:7px;border:1px solid var(--pri-line,#ddd3f6);background:var(--pri-bg,#efeafc);color:var(--pri-d);border-radius:10px;padding:8px 12px;font:600 13px inherit;text-decoration:none"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">apartment</span>${esc(l.nome||'Lote')}</a>`).join('')}</div></div>`;
   }catch(e){ console.error('lotes list',e); }
 }
 async function loadList(){
@@ -2122,14 +2123,14 @@ function novaObjHint(v){ const el=_lg('nuObjHint'); if(!el)return; v=(v||'').tri
   el.style.color='var(--pri)'; el.innerHTML='<span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">search</span> '+m.length+' parecido(s)'+(exato?' · <b>já existe igual</b>':'')+': '+m.slice(0,3).map(o=>'“'+esc(o)+'”').join(', ')+(m.length>3?'…':''); }
 async function createLoteAndBase(nome,contr){
   const ins=await SB.from('orcamento_lotes').insert({empresa_id:EMPRESA_ID,nome,contratante_id:contr,status:'rascunho'}).select('id').limit(1);
-  if(ins.error) throw ins.error; const lid=ins.data[0].id;
+  if(ins.error) throw ins.error; const lid=ins.data[0].id; let baseOpp=null;
   const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contr,objeto:'[BASE] '+nome}).select('id').limit(1);
-  if(!opp.error && opp.data[0]){ const baseOpp=opp.data[0].id; const numero=await proximoNumero();
+  if(!opp.error && opp.data[0]){ baseOpp=opp.data[0].id; const numero=await proximoNumero();
     const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
     await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:baseOpp,lote_id:lid,herda_base:false,numero,status:'rascunho',cliente_contratante:contrNome,dados:{_base:true,contratanteId:contr,cliNome:contrNome,numero},total:0});
     await SB.from('orcamento_lotes').update({base_oportunidade_id:baseOpp}).eq('id',lid);
   }
-  return lid;
+  return {lid, baseOpp};
 }
 async function criarNova(){
   let contr=_lg('nuContr').value||null; const obj=(_lg('nuObj').value||'').trim();
@@ -2145,8 +2146,8 @@ async function criarNova(){
     const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
     if(NOVA_LOTE){
       const nome=obj||(contrNome+' — lote');
-      const lid=await createLoteAndBase(nome,contr);
-      location.href='eX_Orcamento_PREVIEW.html?lote='+lid;
+      const r=await createLoteAndBase(nome,contr);
+      location.href='eX_Orcamento_PREVIEW.html?opp='+(r.baseOpp||'')+'&lote='+r.lid;   // abre direto o BASE (mestra)
     } else {
       const lojaId=_lg('nuLoja').value||null; if(!lojaId){ alert('Escolha a loja.'); if(go)go.disabled=false; return; }
       const loja=(LOJAS||[]).find(l=>l.id===lojaId)||{};
@@ -2173,9 +2174,10 @@ async function initLote(){
     if(!session){ host.innerHTML='<div style="padding:30px">Entre com login pra usar o lote.</div>'; cloudMsg('faça login'); return; }
     CLOUD=true; cloudMsg('nuvem ✓');
     try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
-    await carregarClientes(); await carregarAbrangencia();
-    if(LOTE==='novo'){ renderLoteNovo(host); return; }
-    LOTE_ID=LOTE; await loadLote(); renderLote(host);
+    if(LOTE==='novo'){ location.href='eX_Orcamento_PREVIEW.html?nova'; return; }   // criar lote = Nova oportunidade (chave lote)
+    const l=await SB.from('orcamento_lotes').select('id,base_oportunidade_id').eq('id',LOTE).limit(1);
+    if(l.data&&l.data[0]&&l.data[0].base_oportunidade_id){ location.href='eX_Orcamento_PREVIEW.html?opp='+l.data[0].base_oportunidade_id+'&lote='+LOTE; return; }
+    host.innerHTML='<div style="padding:30px;color:var(--red)">Lote sem orçamento base.</div>';
   }catch(e){ console.error('initLote',e); host.innerHTML='<div style="padding:30px;color:var(--red)">Erro: '+esc(e.message||e)+'</div>'; }
 }
 function contratantes(){ return (CLIENTES||[]).filter(c=>!c.pai_id); }
@@ -2266,8 +2268,8 @@ function renderLote(host){
     <span style="align-self:center;font-size:12px;color:var(--tx3)">Fechar/congelar cada proposta é feito dentro dela (abrir → status).</span></div>
   `;
 }
-function lotePend(){ const id=_lg('lLoja').value; if(!id)return; const l=(LOJAS||[]).find(x=>x.id===id); if(!l)return; if(LOTE_PEND.some(p=>p.id===id)){alert('Essa loja já está na lista.');return;} LOTE_PEND.push(l); renderLote(_lg('loteView')); }
-function loteRmPend(i){ LOTE_PEND.splice(i,1); renderLote(_lg('loteView')); }
+function lotePend(){ const id=_lg('lLoja').value; if(!id)return; const l=(LOJAS||[]).find(x=>x.id===id); if(!l)return; if(LOTE_PEND.some(p=>p.id===id)){alert('Essa loja já está na lista.');return;} LOTE_PEND.push(l); loteRerender(); }
+function loteRmPend(i){ LOTE_PEND.splice(i,1); loteRerender(); }
 async function loteGerar(){
   if(!LOTE_PEND.length)return;
   const btn=event&&event.target; if(btn)btn.disabled=true;
@@ -2281,24 +2283,24 @@ async function loteGerar(){
       if(LOTE_ROW&&LOTE_ROW.contratante_id){ dados.contratanteId=LOTE_ROW.contratante_id; dados.cliNome=_cn; }
       await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:oppId,lote_id:LOTE_ID,herda_base:true,numero,status:'rascunho',cliente_final:l.nome,cliente_contratante:(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):''),dados,total:BASE_TOTAL});
     }
-    LOTE_PEND=[]; await loadLote(); renderLote(_lg('loteView'));
+    LOTE_PEND=[]; await loteReload();
   }catch(e){ console.error('gerar',e); alert('Erro ao gerar: '+(e.message||e)); if(btn)btn.disabled=false; }
 }
 async function loteResetUnit(id){ if(!confirm('Resetar esta unidade ao escopo base? As alterações feitas nela serão perdidas.'))return;
   const u=LOTE_UNITS.find(o=>o.id===id); if(!u)return;
   const dados=BASE_DADOS?JSON.parse(JSON.stringify(BASE_DADOS)):{}; delete dados._base; dados.abrSnap=null; dados.finNome=u.cliente_final; dados.lojaId=(u.dados&&u.dados.lojaId)||null; dados.numero=u.numero;
   const r=await SB.from('orcamentos').update({herda_base:true,dados,total:BASE_TOTAL}).eq('id',id); if(r.error){alert('Erro: '+r.error.message);return;}
-  await loadLote(); renderLote(_lg('loteView'));
+  await loteReload();
 }
 async function lotePropagar(){ if(!confirm('Aplicar o orçamento base em TODAS as unidades que estão “igual à base”? (as editadas não mudam)'))return;
   try{ for(const u of LOTE_UNITS){ if(!u.herda_base) continue; const dados=BASE_DADOS?JSON.parse(JSON.stringify(BASE_DADOS)):{}; delete dados._base; dados.abrSnap=(u.dados&&u.dados.abrSnap)||null; dados.finNome=u.cliente_final; dados.lojaId=(u.dados&&u.dados.lojaId)||null; dados.numero=u.numero;
       await SB.from('orcamentos').update({dados,total:BASE_TOTAL}).eq('id',u.id); }
-    await loadLote(); renderLote(_lg('loteView')); alert('Base propagada nas unidades “igual à base”.');
+    await loteReload(); alert('Base propagada nas unidades “igual à base”.');
   }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
 async function loteDelUnit(id,oppId){ if(!confirm('Excluir esta unidade do lote? A proposta individual dela é descartada.'))return;
   await SB.from('orcamentos').update({deleted_at:new Date().toISOString()}).eq('id',id);
   if(oppId) await SB.from('oportunidades').update({deleted_at:new Date().toISOString()}).eq('id',oppId);
-  await loadLote(); renderLote(_lg('loteView'));
+  await loteReload();
 }
 async function loteDesmembrar(){ if(!confirm('Desmembrar o lote? Cada unidade vira uma proposta avulsa e o lote deixa de existir. Não dá pra voltar atrás.'))return;
   try{ await SB.from('orcamentos').update({lote_id:null,herda_base:false}).eq('lote_id',LOTE_ID);
@@ -2306,6 +2308,69 @@ async function loteDesmembrar(){ if(!confirm('Desmembrar o lote? Cada unidade vi
     if(LOTE_ROW&&LOTE_ROW.base_oportunidade_id){ /* base fica como avulso também */ }
     alert('Lote desmembrado. As unidades agora são propostas avulsas.'); location.href='eX_Orcamento_PREVIEW.html';
   }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
+function loteRerender(){ if(_lg('loteBasePanel')) injectLoteBasePanel(); else if(_lg('loteView')) renderLote(_lg('loteView')); }
+async function loteReload(){ await loadLote(); loteRerender(); }
+
+/* ===== base DO LOTE = MESTRA: painel "Rede & lojas do lote" dentro do orçamento base ===== */
+function isLoteBase(){ return !!(S && S._base && S_LOTE_ID); }
+async function initLoteBasePanel(){ LOTE_ID=S_LOTE_ID; try{ await loadLote(); }catch(e){ console.error(e); } injectLoteBasePanel(); relabelRede(); }
+function injectLoteBasePanel(){
+  let p=_lg('loteBasePanel');
+  if(!p){ p=document.createElement('div'); p.id='loteBasePanel'; p.style.cssText='margin:0 0 16px';
+    const ta=_lg('descGeralTa'); const anchor=ta?(ta.closest('.card')||ta.closest('section')||ta.parentElement):null;
+    if(anchor&&anchor.parentElement){ anchor.parentElement.insertBefore(p,anchor); } else { document.body.appendChild(p); } }
+  p.innerHTML=renderLoteBaseHtml();
+}
+function relabelRede(){ // no base do lote, o "cliente final / destino" representa a REDE (lojas ficam no painel abaixo)
+  document.querySelectorAll('.ph-cap').forEach(cap=>{ cap.childNodes.forEach(n=>{ if(n.nodeType===3 && /cliente final/i.test(n.nodeValue||'')) n.nodeValue='Rede / lojas do lote '; }); });
+  const fin=document.querySelector('[data-m="finNome"]');
+  if(fin){ fin.value=''; fin.placeholder='Rede — definida pelas lojas do lote (painel abaixo) ↓'; fin.readOnly=true; fin.style.opacity='.75'; }
+}
+function renderLoteBaseHtml(){
+  const lojaOpts=(LOJAS||[]).filter(l=>!LOTE_UNITS.some(u=>(u.dados&&u.dados.lojaId)===l.id)).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
+  const total=LOTE_UNITS.reduce((a,o)=>a+num(o.total),0);
+  const baseT=num(S._total)||0;
+  const contrNome=S.cliNome||'';
+  const rows=LOTE_UNITS.length?LOTE_UNITS.map(o=>{ const st=unitStatus(o); return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line2)">
+      <div style="display:flex;align-items:center;gap:9px;min-width:0"><span style="width:28px;height:28px;border-radius:7px;background:var(--pri-bg);color:var(--pri);display:grid;place-items:center;flex:none"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">store</span></span>
+        <div style="min-width:0"><div style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.cliente_final||o.numero||'unidade')}</div><div style="font-size:11px;color:var(--tx3)">${esc(o.numero||'')}</div></div></div>
+      <span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;border-radius:20px;padding:3px 8px;color:${st.c};background:${st.bg};white-space:nowrap"><span class="material-symbols-rounded" style="font-size:12px">${st.i}</span>${st.t}</span>
+      <div style="display:flex;align-items:center;gap:7px;justify-self:end">
+        <span style="font-weight:800;font-variant-numeric:tabular-nums;font-size:13.5px;min-width:92px;text-align:right">${fmt(num(o.total))}</span>
+        <a href="eX_Orcamento_PREVIEW.html?opp=${o.oportunidade_id}&lote=${LOTE_ID}" class="lbtn"><span class="material-symbols-rounded">open_in_full</span>abrir</a>
+        ${o.herda_base?'':`<button class="lbtn" onclick="loteResetUnit('${o.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`}
+        <button class="lbtn danger" onclick="loteDelUnit('${o.id}','${o.oportunidade_id}')"><span class="material-symbols-rounded">delete</span></button>
+      </div></div>`; }).join(''):'<div style="padding:16px 14px;color:var(--tx3);font-size:13px">Nenhuma loja ainda — adicione a primeira acima.</div>';
+  return `<style>.lbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:5px 9px;font:600 12px inherit;cursor:pointer;text-decoration:none}.lbtn:hover{border-color:var(--pri);color:var(--pri)}.lbtn.danger{color:var(--red)}.lbtn.danger:hover{border-color:var(--red)}.lbtn .material-symbols-rounded{font-size:15px}</style>
+  <div style="background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8;flex-wrap:wrap">
+      <span class="material-symbols-rounded" style="color:var(--pri)">apartment</span><h3 style="margin:0;font-size:12px;font-weight:800;color:var(--pri);text-transform:uppercase;letter-spacing:.04em">Rede &amp; lojas do lote</h3>
+      <span style="font-size:12px;color:var(--tx3)">— cada loja é uma proposta que herda o escopo acima</span>
+      <span style="margin-left:auto;font-size:12px;color:var(--tx3)">${LOTE_UNITS.length} loja(s)</span></div>
+    <div style="padding:12px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line2)">
+      <select id="lbLoja" style="flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">${(LOJAS&&LOJAS.length)?'— escolha a loja —':'carregando lojas…'}</option>${lojaOpts}</select>
+      <button class="lbtn" style="padding:8px 13px;background:var(--pri);color:#fff;border-color:var(--pri)" onclick="loteAddLojaNow()"><span class="material-symbols-rounded" style="color:#fff">add</span>Adicionar loja</button>
+      ${LOTE_UNITS.some(u=>u.herda_base)?`<button class="lbtn" style="padding:8px 12px" onclick="lotePropagar()" title="reaplica o escopo base nas lojas que estão iguais à base"><span class="material-symbols-rounded">sync</span>Propagar base</button>`:''}
+    </div>
+    ${rows}
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;background:var(--surf2,#faf9fe);border-top:1px solid var(--line)">
+      <span style="font-size:12px;color:var(--tx3)">Escopo base / loja: <b style="color:var(--pri)">${fmt(baseT)}</b></span>
+      <span style="font-size:13px;font-weight:800">Total do lote: <span style="color:var(--pri);font-size:16px">${fmt(total)}</span></span></div>
+    ${LOTE_UNITS.length?`<div style="padding:8px 14px 12px"><button class="lbtn danger" onclick="loteDesmembrar()"><span class="material-symbols-rounded">call_split</span>Desmembrar lote</button></div>`:''}
+  </div>`;
+}
+async function loteAddLojaNow(){
+  const sel=_lg('lbLoja'); const lojaId=sel?sel.value:''; if(!lojaId){ alert('Escolha a loja.'); return; }
+  const l=(LOJAS||[]).find(x=>x.id===lojaId)||{};
+  try{
+    const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:(LOTE_ROW?LOTE_ROW.contratante_id:S.contratanteId)||null,contemplado_id:lojaId,objeto:(LOTE_ROW&&LOTE_ROW.nome?LOTE_ROW.nome:(S.cliNome||'Lote'))+' — '+l.nome}).select('id').limit(1);
+    if(opp.error||!opp.data[0]) throw (opp.error||new Error('sem oportunidade')); const oppId=opp.data[0].id;
+    const numero=await proximoNumero();
+    const dados=JSON.parse(JSON.stringify(S||{})); delete dados._base; dados.abrSnap=null; dados.finNome=l.nome; dados.lojaId=l.id; dados.numero=numero;
+    await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:oppId,lote_id:LOTE_ID,herda_base:true,numero,status:'rascunho',cliente_final:l.nome,cliente_contratante:S.cliNome||'',dados,total:num(S._total)||0});
+    await loteReload();
+  }catch(e){ console.error('add loja',e); alert('Erro: '+(e.message||e)); }
+}
 
 // RESPONSÁVEIS = colaboradores (Gestão › Equipe) com FUNÇÃO COMERCIAL delegada (ex.: "Comercial / Vendas")
 // Cascata (B): e-mail/telefone COMERCIAL do vendedor → se vazio, o geral do colaborador
