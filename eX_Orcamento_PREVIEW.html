@@ -1410,8 +1410,10 @@ function sanitize(){
   if(S.abrIdx===undefined)S.abrIdx=0;
   if(S.kmManual===undefined)S.kmManual=0;   // km rodado sobrescrito (0 = usa o automático base→cidade)
   if(S.abrSnap===undefined)S.abrSnap=null;   // congelamento da abrangência (null = calcula ao vivo)
-  if(!S.macro||typeof S.macro!=='object')S.macro={estruturas:[]};   // macro do lote (estrutura/frota selecionada)
+  if(!S.macro||typeof S.macro!=='object')S.macro={estruturas:[]};   // macro do lote (estrutura/frota + rota)
   if(!Array.isArray(S.macro.estruturas))S.macro.estruturas=[];
+  if(S.macro.rkm===undefined)S.macro.rkm=0;         // R$/km da rota macro
+  if(S.macro.kmManual===undefined)S.macro.kmManual=0;   // km da rota sobrescrito (0 = usa o automático)
   if(S.fatorLocal===undefined||num(S.fatorLocal)<=0)S.fatorLocal=1;
   if(!S.status)S.status='rascunho';
 }
@@ -2164,7 +2166,18 @@ async function criarNova(){
 let LOTE_ID=null, LOTE_ROW=null, LOTE_UNITS=[], LOTE_PEND=[], BASE_DADOS=null, BASE_TOTAL=0, LOTE_UNIT_ABR=[];
 let ESTRUTURAS=[];   // cadastro de estrutura/frota (van/caminhão/equipe) — orc_estruturas
 async function carregarEstruturas(){ try{ const {data,error}=await SB.from('orc_estruturas').select('id,nome,tipo,custo').is('deleted_at',null).eq('ativo',true).order('nome'); if(!error) ESTRUTURAS=(data||[]).map(e=>({id:e.id,nome:e.nome,tipo:e.tipo||'outro',custo:num(e.custo)})); }catch(e){ console.error('estruturas',e); } }
-function macroTotal(){ return ((S.macro&&S.macro.estruturas)||[]).reduce((a,e)=>a+num(e.custo),0); }
+// rota do circuito (macro): base → cidades → base, vizinho mais próximo, × 1,25 (rodovia)
+function loteRota(){ const base=baseMun(); const pts=[]; const seen=new Set();
+  (LOTE_UNIT_ABR||[]).forEach(x=>{ if(x.mu && x.mu.codigo_ibge && !seen.has(x.mu.codigo_ibge)){ seen.add(x.mu.codigo_ibge); pts.push(x.mu); } });
+  if(!base||!pts.length) return {km:0, path:[]};
+  let cur=base, rem=pts.slice(), total=0, path=[base.nome+'/'+base.uf];
+  while(rem.length){ let bi=0,bd=Infinity; rem.forEach((p,i)=>{ const d=kmHaversine(cur,p); if(d!=null&&d<bd){bd=d;bi=i;} }); total+=(bd===Infinity?0:bd); cur=rem[bi]; path.push(cur.nome+'/'+cur.uf); rem.splice(bi,1); }
+  const back=kmHaversine(cur,base); total+=(back==null?0:back); path.push(base.nome+'/'+base.uf);
+  return {km:Math.round(total*1.25), path}; }
+function macroKmManualOn(){ return num(S.macro&&S.macro.kmManual)>0; }
+function macroRotaKm(){ return macroKmManualOn()?num(S.macro.kmManual):loteRota().km; }
+function macroRotaCusto(){ return macroRotaKm()*num(S.macro&&S.macro.rkm); }
+function macroTotal(){ return ((S.macro&&S.macro.estruturas)||[]).reduce((a,e)=>a+num(e.custo),0) + macroRotaCusto(); }
 const ESTR_IC={van:'airport_shuttle',caminhao:'local_shipping',equipe:'groups',outro:'category'};
 async function computeLoteUnitsAbr(){
   LOTE_UNIT_ABR=[];
@@ -2176,7 +2189,7 @@ async function computeLoteUnitsAbr(){
     const base=baseMun();
     LOTE_UNIT_ABR=(LOTE_UNITS||[]).map(u=>{ const lid=u.dados&&u.dados.lojaId; const mid=lojaMun[lid]; const mu=mid?MUNI[mid]:null;
       const km=(mu&&base)?Math.round(kmHaversine(base,mu)*1.25):null; const f=faixaDeKm(km)||{};
-      return {nome:u.cliente_final, cidade:mu?(mu.nome+'/'+mu.uf):null, km, custo_pct:num(f.custo_pct), tempo_pct:num(f.tempo_pct)}; });
+      return {nome:u.cliente_final, cidade:mu?(mu.nome+'/'+mu.uf):null, mu, km, custo_pct:num(f.custo_pct), tempo_pct:num(f.tempo_pct)}; });
   }catch(e){ console.error('units abr',e); }
 }
 // #3 PRAZO CONSOLIDADO: prazo de cada unidade = obraPrazo() no dados dela (temp-swap de S)
@@ -2378,6 +2391,7 @@ function updateRedeUnidades(){ if(!isLoteBase())return; const num=document.query
 function renderLoteBaseHtml(){
   const lojaOpts=(LOJAS||[]).filter(l=>!LOTE_UNITS.some(u=>(u.dados&&u.dados.lojaId)===l.id)).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
   const macroT=macroTotal();
+  const rota=loteRota(); const rotaKm=macroRotaKm(); const rotaCusto=macroRotaCusto(); const rkm=num(S.macro&&S.macro.rkm);
   const total=LOTE_UNITS.reduce((a,o)=>a+num(o.total),0)+macroT;
   const baseT=num(S._total)||0;
   const contrNome=S.cliNome||'';
@@ -2416,11 +2430,19 @@ function renderLoteBaseHtml(){
         <span style="flex:1;font-size:13px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.nome)}</span>
         <span style="font-weight:700;font-variant-numeric:tabular-nums;font-size:13px">${fmt(num(e.custo))}</span>
         <button class="lbtn danger" onclick="macroRemove(${i})"><span class="material-symbols-rounded">close</span></button></div>`).join('')||'<div style="font-size:12.5px;color:var(--tx3);padding:2px 0 6px">Nenhuma estrutura no macro ainda.</div>'}
-      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:10px">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
         <select id="lbEstr" style="flex:1;min-width:180px;padding:8px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">${(ESTRUTURAS&&ESTRUTURAS.length)?'— estrutura do cadastro —':'cadastre uma estrutura (⚙)'}</option>${(ESTRUTURAS||[]).map(e=>`<option value="${e.id}">${esc(e.nome)} · ${fmt(num(e.custo))}</option>`).join('')}</select>
         <button class="lbtn" style="padding:8px 13px;border-color:#0f7b8a;color:#0c5f6b" onclick="macroAddEstrutura()"><span class="material-symbols-rounded" style="color:#0f7b8a">add</span>Adicionar ao macro</button>
-        <span style="margin-left:auto;font-size:12.5px">Macro: <b style="color:#0f7b8a">${fmt(macroT)}</b></span>
       </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0 2px;margin-top:8px;border-top:1px dashed var(--line2)">
+        <span class="material-symbols-rounded" style="font-size:18px;color:#0f7b8a">route</span>
+        <div style="flex:1;min-width:190px"><div style="font-size:13px;font-weight:600">Deslocamento — rota do circuito</div>
+          <div style="font-size:11px;color:var(--tx3);overflow:hidden;text-overflow:ellipsis">${rota.path.length?esc(rota.path.join(' → ')):'defina a base e adicione lojas'}</div></div>
+        <span style="display:inline-flex;align-items:center;gap:3px;border:1px solid var(--line2);border-radius:8px;padding:4px 7px;background:var(--surf)"><input value="${rotaKm?_d1(rotaKm):''}" inputmode="decimal" placeholder="km" onchange="setMacroKm(this.value)" title="km rodado — edite para sobrescrever" style="width:56px;border:0;background:transparent;color:var(--tx);font:700 12.5px inherit;text-align:right;outline:0;font-variant-numeric:tabular-nums">km ${macroKmManualOn()?`<button class="lbtn" style="padding:1px 5px" onclick="clearMacroKm()" title="voltar ao automático (${loteRota().km} km)"><span class="material-symbols-rounded" style="font-size:13px">restart_alt</span></button>`:'<span style="font-size:9.5px;color:#0f7b8a;font-weight:700">AUTO</span>'}</span>
+        <span style="font-size:12.5px;color:var(--tx3)">× R$</span><span style="display:inline-flex;align-items:center;border:1px solid var(--line2);border-radius:8px;padding:4px 7px;background:var(--surf)"><input value="${rkm?moneyVal(rkm):''}" inputmode="decimal" placeholder="0,00" onchange="setMacroRkm(this.value)" style="width:56px;border:0;background:transparent;color:var(--tx);font:700 12.5px inherit;text-align:right;outline:0;font-variant-numeric:tabular-nums"></span><span style="font-size:12px;color:var(--tx3)">/km</span>
+        <span style="font-size:12.5px">= <b style="color:#0f7b8a">${fmt(rotaCusto)}</b></span>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:8px;font-size:12.5px">Macro (frota + rota): <b style="color:#0f7b8a;margin-left:5px">${fmt(macroT)}</b></div>
     </div>
     ${(()=>{ const pr=lotePrazoResumo(); if(!pr.n) return ''; const same=Math.abs(pr.min.p-pr.max.p)<1e-9;
       return `<div style="display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:11px 14px;background:var(--pri-bg);border-top:1px solid var(--line);font-size:12.5px">
@@ -2455,6 +2477,10 @@ function macroAddEstrutura(){ const sel=_lg('lbEstr'); const id=sel?sel.value:''
   S.macro.estruturas.push({id:e.id,nome:e.nome,tipo:e.tipo,custo:num(e.custo)});
   save(); try{saveOrc();}catch(_){}; injectLoteBasePanel(); }
 function macroRemove(i){ if(!(S.macro&&S.macro.estruturas))return; S.macro.estruturas.splice(i,1); save(); try{saveOrc();}catch(_){}; injectLoteBasePanel(); }
+function _macroSave(){ save(); try{saveOrc();}catch(_){}; injectLoteBasePanel(); }
+function setMacroRkm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rkm=Math.max(0,num(v)); _macroSave(); }
+function setMacroKm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=Math.max(0,num(v)); _macroSave(); }
+function clearMacroKm(){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=0; _macroSave(); }
 // ---- CRUD do cadastro de estruturas/frota (orc_estruturas) ----
 function openEstruturasModal(){ let m=_lg('estrModal'); if(!m){ m=document.createElement('div'); m.id='estrModal'; m.className='modal-bg'; document.body.appendChild(m); } renderEstruturasModal(); m.classList.add('open'); }
 function closeEstruturas(){ const m=_lg('estrModal'); if(m)m.classList.remove('open'); }
