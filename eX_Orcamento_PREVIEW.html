@@ -1418,6 +1418,8 @@ function sanitize(){
   if(!Array.isArray(S.macro.estruturas))S.macro.estruturas=[];
   if(S.macro.rkm===undefined)S.macro.rkm=0;         // R$/km da rota macro
   if(S.macro.kmManual===undefined)S.macro.kmManual=0;   // km da rota sobrescrito (0 = usa o automático)
+  if(S.macro.modo!=='estimativa'&&S.macro.modo!=='detalhado')S.macro.modo='detalhado';   // detalhado × estimativa (multiplicador)
+  if(S.macro.qtd===undefined)S.macro.qtd=0;         // nº de unidades na estimativa (× base)
   if(S.fatorLocal===undefined||num(S.fatorLocal)<=0)S.fatorLocal=1;
   if(!S.status)S.status='rascunho';
 }
@@ -2403,15 +2405,18 @@ function renderLoteBaseHtml(){
   const lojaOpts=(LOJAS||[]).filter(l=>!LOTE_UNITS.some(u=>(u.dados&&u.dados.lojaId)===l.id)).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
   const macroT=macroTotal();
   const rota=loteRota(); const rotaKm=macroRotaKm(); const rotaCusto=macroRotaCusto(); const rkm=num(S.macro&&S.macro.rkm);
-  const total=LOTE_UNITS.reduce((a,o)=>a+num(o.total),0)+macroT;
-  const nUn=LOTE_UNITS.length; const vMed=nUn?(total-macroT)/nUn:0; const prz=lotePrazoResumo();
+  const modo=(S.macro&&S.macro.modo)||'detalhado'; const qtd=num(S.macro&&S.macro.qtd); const baseT=num(S._total)||0;
+  const unitsSum = modo==='estimativa' ? (baseT*qtd) : LOTE_UNITS.reduce((a,o)=>a+num(o.total),0);
+  const total = unitsSum + macroT;
+  const nUn = modo==='estimativa' ? qtd : LOTE_UNITS.length;
+  const vMed = modo==='estimativa' ? baseT : (LOTE_UNITS.length?unitsSum/LOTE_UNITS.length:0);
+  const prz=lotePrazoResumo();
   const kpis=nUn?`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px">
       <div style="border:1px solid var(--pri);background:var(--pri);color:#fff;border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;opacity:.85">Total do lote</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:19px;margin-top:4px;font-variant-numeric:tabular-nums">${fmt(total)}</div><div style="font-size:11px;opacity:.8">unidades + macro</div></div>
       <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Valor médio / unidade</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px;font-variant-numeric:tabular-nums">${fmt(vMed)}</div><div style="font-size:11px;color:var(--tx3)">só as unidades</div></div>
-      <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Prazo médio</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px">${prz.n?fmtPrazo(prz.media):'—'}</div><div style="font-size:11px;color:var(--tx3)">por unidade</div></div>
-      <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Faixa de prazo</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px">${prz.n?(Math.abs(prz.min.p-prz.max.p)<1e-9?fmtPrazo(prz.min.p):fmtPrazo(prz.min.p)+'–'+fmtPrazo(prz.max.p)):'—'}</div><div style="font-size:11px;color:var(--tx3)">menor → maior</div></div>
+      <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Prazo médio</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px">${modo==='estimativa'?fmtPrazo(obraPrazo()):(prz.n?fmtPrazo(prz.media):'—')}</div><div style="font-size:11px;color:var(--tx3)">${modo==='estimativa'?'do base':'por unidade'}</div></div>
+      <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Faixa de prazo</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px">${modo==='estimativa'?'—':(prz.n?(Math.abs(prz.min.p-prz.max.p)<1e-9?fmtPrazo(prz.min.p):fmtPrazo(prz.min.p)+'–'+fmtPrazo(prz.max.p)):'—')}</div><div style="font-size:11px;color:var(--tx3)">${modo==='estimativa'?'no detalhado':'menor → maior'}</div></div>
     </div>`:'';
-  const baseT=num(S._total)||0;
   const contrNome=S.cliNome||'';
   const rows=LOTE_UNITS.length?LOTE_UNITS.map(o=>{ const st=unitStatus(o); return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line2)">
       <div style="display:flex;align-items:center;gap:9px;min-width:0"><span style="width:28px;height:28px;border-radius:7px;background:var(--pri-bg);color:var(--pri);display:grid;place-items:center;flex:none"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">store</span></span>
@@ -2424,6 +2429,24 @@ function renderLoteBaseHtml(){
         ${o.herda_base?'':`<button class="lbtn" onclick="loteResetUnit('${o.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`}
         <button class="lbtn danger" onclick="loteDelUnit('${o.id}','${o.oportunidade_id}')"><span class="material-symbols-rounded">delete</span></button>
       </div></div>`; }).join(''):'<div style="padding:16px 14px;color:var(--tx3);font-size:13px">Nenhuma loja ainda — adicione a primeira acima.</div>';
+  const modoTog=`<div style="display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line2);align-items:center;flex-wrap:wrap">
+    <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.04em;margin-right:4px">Modo</span>
+    <button class="lbtn" style="${modo==='estimativa'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteModo('estimativa')"><span class="material-symbols-rounded" style="${modo==='estimativa'?'color:#fff':''}">calculate</span>Estimativa (× N)</button>
+    <button class="lbtn" style="${modo==='detalhado'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteModo('detalhado')"><span class="material-symbols-rounded" style="${modo==='detalhado'?'color:#fff':''}">splitscreen</span>Detalhado (unidades)</button>
+    <span style="margin-left:auto;font-size:11.5px;color:var(--tx3)">${modo==='estimativa'?'volume, sem loja a loja':'cada loja é uma proposta'}</span></div>`;
+  const addBar=`<div style="padding:12px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line2)">
+      <select id="lbLoja" style="flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">${(LOJAS&&LOJAS.length)?'— escolha a loja —':'carregando lojas…'}</option>${lojaOpts}</select>
+      <button class="lbtn" style="padding:8px 13px;background:var(--pri);color:#fff;border-color:var(--pri)" onclick="loteAddLojaNow()"><span class="material-symbols-rounded" style="color:#fff">add</span>Adicionar loja</button>
+      ${LOTE_UNITS.some(u=>u.herda_base)?`<button class="lbtn" style="padding:8px 12px" onclick="lotePropagar()" title="reaplica o escopo base nas lojas que estão iguais à base"><span class="material-symbols-rounded">sync</span>Propagar base</button>`:''}
+    </div>`;
+  const estimBlock=`<div style="padding:14px;border-bottom:1px solid var(--line2)">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:600">Nº de unidades</span>
+        <span style="display:inline-flex;align-items:center;border:1px solid var(--line2);border-radius:9px;padding:6px 10px;background:var(--surf)"><input value="${qtd||''}" inputmode="numeric" placeholder="ex.: 10" onchange="setLoteQtd(this.value)" style="width:60px;border:0;background:transparent;color:var(--tx);font:800 15px inherit;text-align:center;outline:0;font-variant-numeric:tabular-nums"></span>
+        <span style="font-size:13px;color:var(--tx3)">× base <b>${fmt(baseT)}</b> = <b style="color:var(--pri);font-size:15px">${fmt(baseT*qtd)}</b></span></div>
+      <div style="font-size:12px;color:var(--tx3);margin-top:8px"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">info</span> Estimativa por volume — sem cidade/abrangência por loja. Pra fechar, <b>detalhe em unidades</b> (aí entram km e prazo reais de cada uma).</div>
+      <button class="lbtn" style="margin-top:10px;background:var(--pri);color:#fff;border-color:var(--pri)" onclick="setLoteModo('detalhado')"><span class="material-symbols-rounded" style="color:#fff">splitscreen</span>Detalhar em unidades</button></div>`;
+  const corpo = modo==='estimativa' ? estimBlock : (addBar+rows);
   return `<style>.lbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:5px 9px;font:600 12px inherit;cursor:pointer;text-decoration:none}.lbtn:hover{border-color:var(--pri);color:var(--pri)}.lbtn.danger{color:var(--red)}.lbtn.danger:hover{border-color:var(--red)}.lbtn .material-symbols-rounded{font-size:15px}</style>
   <div style="background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden">
     <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8;flex-wrap:wrap">
@@ -2431,12 +2454,8 @@ function renderLoteBaseHtml(){
       <span style="font-size:12px;color:var(--tx3)">— cada loja é uma proposta que herda o escopo acima</span>
       <span style="margin-left:auto;font-size:12px;color:var(--tx3)">${LOTE_UNITS.length} loja(s)</span></div>
     ${kpis}
-    <div style="padding:12px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line2)">
-      <select id="lbLoja" style="flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">${(LOJAS&&LOJAS.length)?'— escolha a loja —':'carregando lojas…'}</option>${lojaOpts}</select>
-      <button class="lbtn" style="padding:8px 13px;background:var(--pri);color:#fff;border-color:var(--pri)" onclick="loteAddLojaNow()"><span class="material-symbols-rounded" style="color:#fff">add</span>Adicionar loja</button>
-      ${LOTE_UNITS.some(u=>u.herda_base)?`<button class="lbtn" style="padding:8px 12px" onclick="lotePropagar()" title="reaplica o escopo base nas lojas que estão iguais à base"><span class="material-symbols-rounded">sync</span>Propagar base</button>`:''}
-    </div>
-    ${rows}
+    ${modoTog}
+    ${corpo}
     <div style="border-top:1px solid var(--line);padding:13px 14px;background:#f2fafb">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
         <span class="material-symbols-rounded" style="color:#0f7b8a;font-size:19px">hub</span>
@@ -2583,6 +2602,8 @@ function _macroSave(){ save(); try{saveOrc();}catch(_){}; injectLoteBasePanel();
 function setMacroRkm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rkm=Math.max(0,num(v)); _macroSave(); }
 function setMacroKm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=Math.max(0,num(v)); _macroSave(); }
 function clearMacroKm(){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=0; _macroSave(); }
+function setLoteModo(m){ if(!S.macro)S.macro={estruturas:[]}; S.macro.modo=(m==='estimativa'?'estimativa':'detalhado'); _macroSave(); }
+function setLoteQtd(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.qtd=Math.max(0,parseInt(v)||0); _macroSave(); }
 // ---- CRUD do cadastro de estruturas/frota (orc_estruturas) ----
 function openEstruturasModal(){ let m=_lg('estrModal'); if(!m){ m=document.createElement('div'); m.id='estrModal'; m.className='modal-bg'; document.body.appendChild(m); } renderEstruturasModal(); m.classList.add('open'); }
 function closeEstruturas(){ const m=_lg('estrModal'); if(m)m.classList.remove('open'); }
