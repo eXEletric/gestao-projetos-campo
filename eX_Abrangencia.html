@@ -209,7 +209,17 @@ textarea.fi{resize:vertical;min-height:54px;font-family:inherit}
       <thead><tr><th>Base</th><th>Cidade</th><th class="c">UF</th><th class="c">padrão</th><th class="r"></th></tr></thead>
       <tbody id="origemRows"></tbody>
     </table></div>
-    <div class="hintbar">A eX <b>não tem base fixa</b>: a equipe se monta por obra. Aqui ficam as bases possíveis — <b>cada proposta escolhe uma</b>, e é dela que o raio é contado. Escolha o <b>estado</b> e depois a <b>cidade</b> — a base fica amarrada ao município do IBGE, com a coordenada dele. Não é a capital: base em Anápolis conta de Anápolis. <span id="avisoMun" hidden>· <b>Lista de cidades vazia:</b> rode o SQL_municipios.sql no Supabase.</span></div>
+    <div class="hintbar" id="hbBases">A eX <b>não tem base fixa</b>: a equipe se monta por obra. Aqui ficam as bases possíveis — <b>cada proposta escolhe uma</b>, e é dela que o raio é contado. Escolha o <b>estado</b> e depois a <b>cidade</b> — a base fica amarrada ao município do IBGE, com a coordenada dele. Não é a capital: base em Anápolis conta de Anápolis. <span id="avisoMun" hidden>· <b>Lista de cidades vazia:</b> rode o SQL_municipios.sql no Supabase.</span></div>
+  </div>
+
+  <!-- LOJAS PENDENTES DE MUNICÍPIO -->
+  <div class="card" id="cardPend" hidden>
+    <div class="ch"><span class="material-symbols-rounded">help</span><b>Lojas sem município</b><span class="sm" id="pendResumo"></span><span class="spacer"></span><button class="btn btn-p" style="padding:5px 11px;font-size:12px" onclick="savePendentes()"><span class="material-symbols-rounded">save</span>Salvar vínculos</button></div>
+    <div class="scroll"><table class="tbl">
+      <thead><tr><th>Loja</th><th>Endereço cadastrado</th><th class="c">UF</th><th>Cidade</th></tr></thead>
+      <tbody id="pendRows"></tbody>
+    </table></div>
+    <div class="hintbar">O endereço destas não diz a cidade — <b>o sistema não chuta</b>. Escolha a UF e a cidade; ao salvar, elas entram na contagem por estado e passam a valer pela distância real. As outras <b id="pendOk">—</b> já foram amarradas sozinhas pelo endereço.</div>
   </div>
 </div>
 
@@ -277,6 +287,7 @@ const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
 const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
 
 let UF={}, FAIXAS=[], ORIGENS=[], LOJAS_UF={}, CLOUD=false, EMPRESA_ID=null, TEM_TABELA=true, UF_EDIT=null;
+let PENDENTES=[], LOJAS_OK=0;
 
 const UFS=['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
 const GRID={RR:[3,1],AP:[4,1],AM:[2,2],PA:[3,2],MA:[4,2],CE:[5,2],RN:[6,2],
@@ -334,7 +345,7 @@ async function init(){
   }catch(e){ console.error(e); cloudMsg('erro nuvem'); } }
   if(!gradeOk()) montarAneis();
   definirOrigemInicial();
-  renderMapa(); renderContadores(); renderOrigemSel(); renderMapaLog(); renderFaixas(); renderEstados(); renderOrigens();
+  renderMapa(); renderContadores(); renderOrigemSel(); renderMapaLog(); renderFaixas(); renderEstados(); renderOrigens(); renderPendentes();
 }
 // base inicial da simulação: a origem marcada como padrão, senão a UF onde há mais obra
 function definirOrigemInicial(){
@@ -347,9 +358,20 @@ function definirOrigemInicial(){
 }
 
 async function carregar(){
-  const lj=await SB.from('lojas').select('endereco').is('deleted_at',null);
-  LOJAS_UF={};
-  (lj.data||[]).forEach(l=>{ const u=ufDoEndereco(l.endereco); if(u) LOJAS_UF[u]=(LOJAS_UF[u]||0)+1; });
+  // a UF vem do município amarrado; só cai na leitura do endereço quem ainda não tem
+  let lj=await SB.from('lojas').select('id,nome,endereco,municipio_id,municipios(uf,nome)').is('deleted_at',null);
+  if(lj.error) lj=await SB.from('lojas').select('id,nome,endereco').is('deleted_at',null);
+  LOJAS_UF={}; PENDENTES=[];
+  LOJAS_OK=0;
+  (lj.data||[]).forEach(l=>{
+    const u=(l.municipios&&l.municipios.uf)||null;
+    if(u){ LOJAS_UF[u]=(LOJAS_UF[u]||0)+1; LOJAS_OK++; return; }
+    if(l.municipio_id===undefined){          // banco antigo, sem a coluna: usa o endereço
+      const x=ufDoEndereco(l.endereco); if(x) LOJAS_UF[x]=(LOJAS_UF[x]||0)+1;
+      return;
+    }
+    PENDENTES.push({id:l.id,nome:l.nome,endereco:l.endereco,uf:'',cidade:'',municipio_id:null});
+  });
 
   const a=await SB.from('abrangencia_uf').select('*');
   if(a.error){ TEM_TABELA=false; }
@@ -813,6 +835,50 @@ function setCidade(i,valor){
   else  { o.municipio_id=null; o.lat=null; o.lon=null; }
   renderOrigemSel();
 }
+/* ---------- lojas que o endereço não resolve ---------- */
+async function abreCidadesPend(i){
+  const uf=(PENDENTES[i]||{}).uf; if(!uf)return;
+  const lista=await carregaMun(uf);
+  const dl=document.getElementById('pmun_'+i); if(dl) dl.innerHTML=lista.map(m=>`<option value="${esc(m.nome)}"></option>`).join('');
+}
+function setCidadePend(i,valor){
+  const p=PENDENTES[i]; if(!p)return;
+  p.cidade=valor;
+  const m=(MUN[p.uf]||[]).find(x=>x.nome===valor);
+  p.municipio_id=m?m.codigo_ibge:null;
+  renderPendentes();
+}
+function renderPendentes(){
+  const card=document.getElementById('cardPend'); if(!card)return;
+  if(!PENDENTES.length){ card.hidden=true; return; }
+  card.hidden=false;
+  document.getElementById('pendResumo').textContent='— '+PENDENTES.length+' de '+(LOJAS_OK+PENDENTES.length)+' precisam de você';
+  document.getElementById('pendOk').textContent=LOJAS_OK;
+  document.getElementById('pendRows').innerHTML=PENDENTES.map((p,i)=>`<tr>
+    <td class="nm" style="max-width:230px">${esc(p.nome||'')}</td>
+    <td style="max-width:280px;font-size:12px;color:var(--tx3)">${esc(p.endereco||'')||'<i>sem endereço</i>'}</td>
+    <td class="c"><input class="numin" style="width:52px;text-align:center;text-transform:uppercase" maxlength="2" value="${esc(p.uf||'')}" placeholder="UF"
+        oninput="PENDENTES[${i}].uf=this.value.toUpperCase()" onchange="abreCidadesPend(${i})"></td>
+    <td><input class="rgin" list="pmun_${i}" value="${esc(p.cidade||'')}" placeholder="${p.uf?'digite a cidade':'escolha a UF'}"
+        onfocus="abreCidadesPend(${i})" onchange="setCidadePend(${i},this.value)">
+      <datalist id="pmun_${i}"></datalist>
+      ${p.municipio_id?'<div class="faixa-lbl">IBGE '+p.municipio_id+'</div>':''}</td>
+  </tr>`).join('');
+}
+async function savePendentes(){
+  if(!CLOUD){ alert('Entre com login para salvar.'); return; }
+  const prontas=PENDENTES.filter(p=>p.municipio_id);
+  if(!prontas.length){ alert('Escolha a UF e a cidade de pelo menos uma loja.'); return; }
+  for(const p of prontas){
+    const r=await SB.from('lojas').update({municipio_id:p.municipio_id,municipio_origem:'manual',
+      updated_at:new Date().toISOString()}).eq('id',p.id);
+    if(r&&r.error){ alert('Erro ao vincular '+p.nome+': '+r.error.message); return; }
+  }
+  await carregar();
+  renderMapa(); renderContadores(); renderMapaLog(); renderFaixas(); renderEstados(); renderPendentes();
+  cloudMsg('nuvem ✓ · '+prontas.length+(prontas.length>1?' lojas vinculadas':' loja vinculada'));
+}
+
 function renderOrigens(){
   const rows=ORIGENS.map((o,i)=>`<tr>
     <td><input class="rgin" value="${esc(o.nome||'')}" placeholder="ex.: Base Anápolis" oninput="ORIGENS[${i}].nome=this.value"></td>
