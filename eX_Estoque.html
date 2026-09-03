@@ -437,7 +437,8 @@ async function excluir(){if(!editing||!editing.id)return;if(!confirm('Excluir es
 $('novo').onclick=novo;$('fechar').onclick=fechar;$('cancelar').onclick=fechar;$('salvar').onclick=salvar;$('excluir').onclick=excluir;
 $('busca').oninput=render;$('ov').onclick=e=>{if(e.target===$('ov'))fechar();};
 if(window.self!==window.top){var _h=document.getElementById('apphdr');if(_h)_h.style.display='none';document.body.style.padding='8px';}
-carregar();
+// aguarda a sessão hidratar do localStorage (mesma origem) antes de consultar — evita corrida como anon (necessário após fechar o RLS ao anon)
+(async function(){ try{ if(SB) await SB.auth.getSession(); }catch(e){} carregar(); })();
 </script>
 </body>
 </html>
