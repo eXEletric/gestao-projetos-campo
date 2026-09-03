@@ -2402,6 +2402,13 @@ function renderLoteBaseHtml(){
   const macroT=macroTotal();
   const rota=loteRota(); const rotaKm=macroRotaKm(); const rotaCusto=macroRotaCusto(); const rkm=num(S.macro&&S.macro.rkm);
   const total=LOTE_UNITS.reduce((a,o)=>a+num(o.total),0)+macroT;
+  const nUn=LOTE_UNITS.length; const vMed=nUn?(total-macroT)/nUn:0; const prz=lotePrazoResumo();
+  const kpis=nUn?`<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px">
+      <div style="border:1px solid var(--pri);background:var(--pri);color:#fff;border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;opacity:.85">Total do lote</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:19px;margin-top:4px;font-variant-numeric:tabular-nums">${fmt(total)}</div><div style="font-size:11px;opacity:.8">unidades + macro</div></div>
+      <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Valor médio / unidade</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px;font-variant-numeric:tabular-nums">${fmt(vMed)}</div><div style="font-size:11px;color:var(--tx3)">só as unidades</div></div>
+      <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Prazo médio</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px">${prz.n?fmtPrazo(prz.media):'—'}</div><div style="font-size:11px;color:var(--tx3)">por unidade</div></div>
+      <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Faixa de prazo</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px">${prz.n?(Math.abs(prz.min.p-prz.max.p)<1e-9?fmtPrazo(prz.min.p):fmtPrazo(prz.min.p)+'–'+fmtPrazo(prz.max.p)):'—'}</div><div style="font-size:11px;color:var(--tx3)">menor → maior</div></div>
+    </div>`:'';
   const baseT=num(S._total)||0;
   const contrNome=S.cliNome||'';
   const rows=LOTE_UNITS.length?LOTE_UNITS.map(o=>{ const st=unitStatus(o); return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line2)">
@@ -2409,7 +2416,7 @@ function renderLoteBaseHtml(){
         <div style="min-width:0"><div style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.cliente_final||o.numero||'unidade')}</div><div style="font-size:11px;color:var(--tx3)">${esc(o.numero||'')}</div></div></div>
       <span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;border-radius:20px;padding:3px 8px;color:${st.c};background:${st.bg};white-space:nowrap"><span class="material-symbols-rounded" style="font-size:12px">${st.i}</span>${st.t}</span>
       <div style="display:flex;align-items:center;gap:7px;justify-self:end">
-        <span style="font-size:12px;color:var(--tx3);min-width:70px;text-align:right;font-variant-numeric:tabular-nums" title="prazo desta unidade"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">schedule</span> ${num(o._prazo)?fmtPrazo(num(o._prazo)):'—'}</span>
+        ${(()=>{ const p=num(o._prazo); const many=(lotePrazoResumo().n>1); const isMax=many&&p&&Math.abs(p-lotePrazoResumo().max.p)<1e-9; const isMin=many&&p&&Math.abs(p-lotePrazoResumo().min.p)<1e-9&&!isMax; const col=isMax?'var(--pers,#b0701a)':(isMin?'var(--herd,#159a6a)':'var(--tx3)'); return `<span style="font-size:12px;color:${col};font-weight:${(isMax||isMin)?'700':'400'};min-width:78px;text-align:right;font-variant-numeric:tabular-nums" title="prazo desta unidade"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">schedule</span> ${p?fmtPrazo(p):'—'}${isMax?' ↑':''}${isMin?' ↓':''}</span>`; })()}
         <span style="font-weight:800;font-variant-numeric:tabular-nums;font-size:13.5px;min-width:92px;text-align:right">${fmt(num(o.total))}</span>
         <a href="eX_Orcamento_PREVIEW.html?opp=${o.oportunidade_id}&lote=${LOTE_ID}" class="lbtn"><span class="material-symbols-rounded">open_in_full</span>abrir</a>
         ${o.herda_base?'':`<button class="lbtn" onclick="loteResetUnit('${o.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`}
@@ -2421,6 +2428,7 @@ function renderLoteBaseHtml(){
       <span class="material-symbols-rounded" style="color:var(--pri)">apartment</span><h3 style="margin:0;font-size:12px;font-weight:800;color:var(--pri);text-transform:uppercase;letter-spacing:.04em">Rede &amp; lojas do lote</h3>
       <span style="font-size:12px;color:var(--tx3)">— cada loja é uma proposta que herda o escopo acima</span>
       <span style="margin-left:auto;font-size:12px;color:var(--tx3)">${LOTE_UNITS.length} loja(s)</span></div>
+    ${kpis}
     <div style="padding:12px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line2)">
       <select id="lbLoja" style="flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">${(LOJAS&&LOJAS.length)?'— escolha a loja —':'carregando lojas…'}</option>${lojaOpts}</select>
       <button class="lbtn" style="padding:8px 13px;background:var(--pri);color:#fff;border-color:var(--pri)" onclick="loteAddLojaNow()"><span class="material-symbols-rounded" style="color:#fff">add</span>Adicionar loja</button>
