@@ -1369,6 +1369,7 @@ usuarios:[
 
 /* ---------- carga / persistência ---------- */
 function sanitize(){
+  ['servicos','equip','despesas','materiais'].forEach(k=>{ if(!Array.isArray(S[k]))S[k]=[]; });   // garante os arrays dos blocos (base do lote / dados incompletos não quebram o render)
   // migra orçamentos antigos: respContato combinado → Fone + E-mail separados; e rede/nº do cliente final
   if(S.respFone===undefined)S.respFone=''; if(S.respEmail===undefined)S.respEmail='';
   if(S.respContato && !S.respFone && !S.respEmail){ const p=S.respContato.split(/·|\||;/).map(s=>s.trim()).filter(Boolean); p.forEach(x=>{ if(x.indexOf('@')>-1)S.respEmail=x; else if(!S.respFone)S.respFone=x; }); if(!S.respFone&&!S.respEmail){ if(S.respContato.indexOf('@')>-1)S.respEmail=S.respContato; else S.respFone=S.respContato; } }
