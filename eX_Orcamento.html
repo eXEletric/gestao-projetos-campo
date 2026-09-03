@@ -1116,7 +1116,12 @@ function blkMargemCtrl(cfg){ if(!cfg.custo) return '';
   return `<span class="blkmg pass" title="Este bloco entra a CUSTO — sem lucro. O imposto incide sobre tudo (repasse)."><span class="material-symbols-rounded">receipt_long</span>custo + imposto</span>`;
 }
 // ===== FATORES DA OBRA (gerais do orçamento) — só afetam serviços MONTADOS (com composição) =====
-function abrObra(){ return (ABRANGENCIA&&ABRANGENCIA[num(S.abrIdx)||0])||{custo_pct:0,tempo_pct:0}; }
+// a proposta usa a CÓPIA CONGELADA da faixa. Reajustar a régua depois não
+// mexe em proposta já feita — cada uma vale pela configuração que tinha.
+function abrObra(){
+  if(S.abrSnap && (S.abrSnap.custo_pct!=null)) return S.abrSnap;
+  return (ABRANGENCIA&&ABRANGENCIA[num(S.abrIdx)||0])||{custo_pct:0,tempo_pct:0};
+}
 function localMult(){ const f=num(S.fatorLocal); return f>0?f:1; }
 function obraMult(r){ if(!r||!r.composicao) return 1;   // tabelado/avulso não leva fator da obra
   return (1+num(abrObra().custo_pct)/100) * localMult(); }
@@ -1616,9 +1621,16 @@ function abrangenciaHtml(abrOpts){
       ? '<span class="abr-vazio">Nenhum local informado — diga onde é a obra para a faixa sair sozinha</span>'
       : `<b>${locais.length}</b> ${lote?'cidades':'cidade'}${lote||un>1?` · <b>${un}</b> ${un>1?'unidades':'unidade'}`:''}`
         + (km!=null?` · ${lote?'média ':''}<b>${km.toLocaleString('pt-BR')} km</b>`:' · <span class="abr-vazio">sem distância</span>');
-  const faixa = o
-      ? `<span class="abr-anel">anel ${o.i+1} · ${esc(o.a.rotulo||'')}</span>
-         <span class="abr-pcts">${pctTxt(o.a.custo_pct)} custo · ${pctTxt(o.a.tempo_pct)} prazo</span>`
+  // o que vale é a cópia congelada da proposta, não a régua de hoje
+  const val=abrObra(), snap=S.abrSnap;
+  const atual=(ABRANGENCIA||[])[num(S.abrIdx)||0];
+  const divergiu = snap && atual && (num(snap.custo_pct)!==num(atual.custo_pct) || num(snap.tempo_pct)!==num(atual.tempo_pct));
+  const rot = (snap&&snap.rotulo) || (o&&o.a.rotulo) || '';
+  const idx = (snap?snap.idx:(o?o.i:null));
+  const faixa = (o||snap)
+      ? `<span class="abr-anel">anel ${(idx??0)+1} · ${esc(rot)}</span>
+         <span class="abr-pcts">${pctTxt(val.custo_pct)} custo · ${pctTxt(val.tempo_pct)} prazo</span>`
+        + (divergiu?`<button class="abr-man" onclick="atualizaFaixa()" title="esta proposta guarda os percentuais de quando foi feita: ${pctTxt(snap.custo_pct)} custo · ${pctTxt(snap.tempo_pct)} prazo. A régua hoje está em ${pctTxt(atual.custo_pct)} · ${pctTxt(atual.tempo_pct)}."><span class="material-symbols-rounded">history</span>congelado · atualizar</button>`:'')
       : '<span class="abr-vazio">faixa indefinida</span>';
   const linhas = locais.map((l,i)=>`<div class="abr-l">
       <input class="abr-uf" maxlength="2" value="${esc(l.uf||'')}" placeholder="UF"
@@ -1727,10 +1739,12 @@ function locCidade(i,valor){
   else  { l.municipio_id=null; l.lat=null; l.lon=null; }
   refreshAbr();
 }
+// troca a cópia congelada pela régua de hoje — só quando VOCÊ manda
+function atualizaFaixa(){ congelaFaixa(num(S.abrIdx)||0); save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function setAbrManual(v){ S.abrManual=!!v; if(!v) aplicaAnel(); save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 
 function toggleFoCfg(){ S._foCfg=!S._foCfg; renderBlk(BLKS.find(b=>b.key==='servicos')); }
-function setAbr(v){ S.abrIdx=+v||0; S.abrManual=true; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function setAbr(v){ S.abrIdx=+v||0; S.abrManual=true; congelaFaixa(S.abrIdx); save(); recalc(); renderBlk(BLKS.find(b=>b.key==="servicos")); }
 function setAbrPct(j,field,v){ if(!ABRANGENCIA[j])return; ABRANGENCIA[j][field]=Math.max(0,num(v));
   if(CLOUD && !MODELO_V2){ SB.from('orc_abrangencia').update({[field]:ABRANGENCIA[j][field]}).eq('nivel',ABRANGENCIA[j].nivel).then(({error})=>{ if(error)console.error('abr cfg',error); }); }
   save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
@@ -2033,12 +2047,27 @@ function anelDoKm(km){
   for(const o of ord){ if(o.a.km_ate==null || km<=num(o.a.km_ate)) return o; }
   return ord[ord.length-1]||null;
 }
-// aplica a faixa derivada no motor que já existe (S.abrIdx)
+// aplica a faixa derivada no motor que já existe (S.abrIdx) e congela a cópia
 function aplicaAnel(){
-  if(S.abrManual) return;              // o usuário fixou a faixa na mão
+  if(S.abrManual){ congelaFaixa(num(S.abrIdx)||0); return false; }
   const o=anelDoKm(kmMedio());
-  if(o && S.abrIdx!==o.i){ S.abrIdx=o.i; return true; }
-  return false;
+  if(!o) return false;
+  const mudou=(S.abrIdx!==o.i);
+  S.abrIdx=o.i;
+  congelaFaixa(o.i);
+  return mudou;
+}
+// guarda na proposta a faixa como ela é HOJE: rótulo, percentuais, base e km
+function congelaFaixa(i){
+  const a=(ABRANGENCIA||[])[i]; if(!a) return;
+  const b=baseAtual();
+  S.abrSnap={
+    idx:i, faixa_id:a.id||null, rotulo:a.rotulo||'', km_ate:(a.km_ate??null),
+    custo_pct:num(a.custo_pct), tempo_pct:num(a.tempo_pct),
+    km_medio:kmMedio(), unidades:totalUnidades(),
+    base_id:b?b.id:null, base_nome:b?b.nome:null, base_municipio_id:b?b.municipio_id:null,
+    manual:!!S.abrManual, em:new Date().toISOString()
+  };
 }
 
 /* ---------- picker do cabeçalho (solução, cliente, responsável) ---------- */
