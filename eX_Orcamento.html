@@ -457,6 +457,38 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .fatobra .fo-row{display:flex;align-items:center;gap:9px}
 .fatobra .fo-row label{font-size:12px;font-weight:600;color:var(--tx2);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .fatobra .fo-row label .material-symbols-rounded{font-size:16px;color:var(--pri)}
+/* abrangência da proposta: onde é a obra e qual anel isso alcança */
+.abrbox{margin-top:9px;border:1px solid var(--line);border-radius:10px;background:var(--surf);overflow:hidden}
+.abr-hd{display:flex;align-items:center;gap:9px;padding:9px 11px;flex-wrap:wrap;font-size:12.5px}
+.abr-hd>.material-symbols-rounded{font-size:17px;color:var(--pri)}
+.abr-res b{color:var(--tx)}
+.abr-arrow{color:var(--tx3)}
+.abr-anel{font-weight:700;color:var(--pri);background:var(--pri-bg);border-radius:20px;padding:3px 10px;white-space:nowrap}
+.abr-pcts{font-size:11.5px;color:var(--tx2);font-variant-numeric:tabular-nums}
+.abr-vazio{color:var(--tx3);font-style:italic}
+.abr-cfgb{border:1px solid var(--line2);background:var(--surf);color:var(--tx2);font:600 11.5px inherit;
+  border-radius:20px;padding:5px 12px;cursor:pointer}
+.abr-cfgb:hover,.abr-cfgb.on{border-color:var(--pri);color:var(--pri);background:var(--pri-bg)}
+.abr-man{border:1px solid var(--amber);background:#fdf6ea;color:#8a5510;font:600 11px inherit;border-radius:20px;
+  padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:4px}
+.abr-man .material-symbols-rounded{font-size:14px}
+.abr-body{border-top:1px solid var(--line);padding:9px 11px 11px;background:var(--surf2)}
+.abr-h,.abr-l{display:grid;grid-template-columns:56px 1fr 92px 104px 30px;gap:8px;align-items:center}
+.abr-h{font-size:9.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:600;padding-bottom:5px}
+.abr-l{padding:3px 0}
+.abr-l input{padding:6px 8px;border:1px solid var(--line2);border-radius:7px;font-size:13px;background:var(--surf);width:100%}
+.abr-l input:focus{outline:none;border-color:var(--pri)}
+.abr-uf{text-align:center;text-transform:uppercase}
+.abr-un,.abr-km{display:flex;align-items:center;gap:4px}
+.abr-un input,.abr-km input{text-align:right;font-variant-numeric:tabular-nums}
+.abr-un i,.abr-km i{font-style:normal;font-size:10.5px;color:var(--tx3)}
+.abr-del{border:none;background:none;color:var(--tx3);cursor:pointer;border-radius:6px;display:inline-flex;padding:3px}
+.abr-del:hover{background:#fbeaec;color:var(--red,#a32d2d)}
+.abr-del .material-symbols-rounded{font-size:16px}
+.abr-foot{display:flex;align-items:center;gap:10px;margin-top:8px;flex-wrap:wrap}
+.abr-manlb{font-size:11.5px;color:var(--tx2);display:inline-flex;align-items:center;gap:5px;cursor:pointer}
+.abr-hint{font-size:10.5px;color:var(--tx3);margin-top:7px;line-height:1.5}
+.abr-hint b{color:var(--tx2)}
 .fatobra .fo-sel{flex:1;padding:7px 9px;border:1px solid var(--line2);border-radius:8px;font-size:13px;background:var(--surf);color:var(--tx)}
 .fatobra .fo-fl{display:inline-flex;align-items:center;gap:4px}
 .fatobra .flbtn{border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:7px;padding:6px 9px;font:600 12.5px inherit;cursor:pointer}
@@ -951,7 +983,7 @@ async function initOrc(){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
       USER_ID=session.user.id;
       try{ const p=await SB.from('perfis').select('nome,email,telefone,colaborador_id').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; USER_TELEFONE=p.data[0].telefone||''; USER_COLAB_ID=p.data[0].colaborador_id||null; } }catch(_){}
-      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia(); await carregarDiariaBase();
+      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia(); await carregarDiariaBase(); await carregarBases();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
       MANUAL = !!ORC_ID;   // já existia ao abrir → alterações exigem clicar Salvar; nova (ORC_ID null) → auto até nascer
       // vínculo: pega contratante/loja da OPORTUNIDADE (pra puxar dados ao vivo do CRM, mesmo em orçamentos antigos)
@@ -1575,8 +1607,61 @@ function setDiaModo(m){ if(!S.diarias)S.diarias={modo:'fim',alim:0,hosp:0}; S.di
 function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m="equipe"]'); if(el)el.value=S.equipe; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); recalc(); }   // efetivo dirige o custo dos serviços que o usam
 // ===== Fatores da obra (abrangência + fator do local) — só nos serviços montados =====
 function fatorMax(){ return num(S.fatorMax)>0?num(S.fatorMax):3; }
+// --- bloco da abrangência: onde é a obra, quantas unidades e qual anel isso alcança ---
+function abrangenciaHtml(abrOpts){
+  const km=kmMedio(), o=anelDoKm(km), locais=(S.locais||[]);
+  const un=totalUnidades(), lote=locais.length>1;
+  const pctTxt=n=>num(n)>0?('+'+num(n)+'%'):'0%';
+  const resumo = !locais.length
+      ? '<span class="abr-vazio">Nenhum local informado — diga onde é a obra para a faixa sair sozinha</span>'
+      : `<b>${locais.length}</b> ${lote?'cidades':'cidade'}${lote||un>1?` · <b>${un}</b> ${un>1?'unidades':'unidade'}`:''}`
+        + (km!=null?` · ${lote?'média ':''}<b>${km.toLocaleString('pt-BR')} km</b>`:' · <span class="abr-vazio">sem distância</span>');
+  const faixa = o
+      ? `<span class="abr-anel">anel ${o.i+1} · ${esc(o.a.rotulo||'')}</span>
+         <span class="abr-pcts">${pctTxt(o.a.custo_pct)} custo · ${pctTxt(o.a.tempo_pct)} prazo</span>`
+      : '<span class="abr-vazio">faixa indefinida</span>';
+  const linhas = locais.map((l,i)=>`<div class="abr-l">
+      <input class="abr-uf" maxlength="2" value="${esc(l.uf||'')}" placeholder="UF"
+        oninput="S.locais[${i}].uf=this.value.toUpperCase()" onchange="locUF(${i})">
+      <input class="abr-cid" list="lmun_${i}" value="${esc(l.cidade||'')}" placeholder="${l.uf?'cidade':'escolha a UF'}"
+        onfocus="locUF(${i})" onchange="locCidade(${i},this.value)">
+      <datalist id="lmun_${i}"></datalist>
+      <span class="abr-un"><input type="number" min="1" value="${Math.max(1,num(l.unidades)||1)}"
+        onchange="S.locais[${i}].unidades=Math.max(1,+this.value||1);save();refreshAbr()"><i>un.</i></span>
+      <span class="abr-km"><input type="number" min="0" step="10" value="${num(l.km)||''}"
+        placeholder="${l.lat!=null?(kmPontos(pontoBase(),[num(l.lat),num(l.lon)])??''):''}"
+        onchange="S.locais[${i}].km=+this.value||0;save();refreshAbr()"><i>km</i></span>
+      <button class="abr-del" onclick="locDel(${i})" title="remover"><span class="material-symbols-rounded">close</span></button>
+    </div>`).join('');
+  return `<div class="abrbox">
+    <div class="abr-hd">
+      <span class="material-symbols-rounded">pin_drop</span>
+      <span class="abr-res">${resumo}</span>
+      <span class="abr-arrow">→</span>
+      ${faixa}
+      <span class="spacer"></span>
+      ${S.abrManual?`<button class="abr-man on" onclick="setAbrManual(false)" title="voltar a derivar da distância"><span class="material-symbols-rounded">lock</span>faixa fixada</button>`:''}
+      <button class="abr-cfgb ${S._locCfg?'on':''}" onclick="toggleLocais()">${S._locCfg?'fechar':(locais.length?'editar locais':'informar locais')}</button>
+    </div>
+    ${S._locCfg?`<div class="abr-body">
+      <div class="abr-h"><span>UF</span><span>Cidade</span><span>Unidades</span><span>Km rodado</span><span></span></div>
+      ${linhas||'<div class="abr-vazio" style="padding:6px 2px">Nenhuma cidade ainda.</div>'}
+      <div class="abr-foot">
+        <button class="fo-cfg-add" onclick="locAdd()"><span class="material-symbols-rounded">add</span>${locais.length?'outra cidade (lote)':'adicionar cidade'}</button>
+        <span class="spacer"></span>
+        <label class="abr-manlb"><input type="checkbox" ${S.abrManual?'checked':''} onchange="setAbrManual(this.checked)"> escolher a faixa na mão</label>
+        ${S.abrManual?`<select class="fo-sel" style="max-width:230px" onchange="setAbr(this.value)">${abrOpts}</select>`:''}
+      </div>
+      <div class="abr-hint">O <b>km rodado</b> é opcional: em branco, vale a estimativa em cinza (linha reta × 1,25). Preencha quando a rota real importar — perto do corte de um anel, ela decide.</div>
+    </div>`:''}
+  </div>`;
+}
 function fatoresObraHtml(){
   const pct=n=>num(n)>0?('+'+num(n)+'%'):'—';
+  const b=baseAtual();
+  const baseOpts=(BASES.length
+      ? BASES.map(x=>`<option value="${x.id}" ${b&&x.id===b.id?'selected':''}>${esc(x.nome)}${x.cidade?' · '+esc(x.cidade):''}${x.uf?'/'+x.uf:''}</option>`).join('')
+      : '<option value="">— cadastre em Gestão › Abrangência —</option>');
   const abrOpts=(ABRANGENCIA||[]).map((a,j)=>`<option value="${j}" ${j==(num(S.abrIdx)||0)?'selected':''}>${esc(a.rotulo)}${(num(a.custo_pct)||num(a.tempo_pct))?' ('+pct(a.custo_pct)+' custo · '+pct(a.tempo_pct)+' prazo)':''}</option>`).join('');
   const fmax=fatorMax();
   const fl=Math.min(num(S.fatorLocal)||1,fmax);
@@ -1600,14 +1685,52 @@ function fatoresObraHtml(){
     <div class="fo-t"><span class="material-symbols-rounded">tune</span>Fatores da obra<span class="fo-h"> — aplicam ao custo dos serviços montados</span>
       <button class="fo-cfgbtn ${S._foCfg?'on':''}" onclick="toggleFoCfg()" title="Configurar as faixas"><span class="material-symbols-rounded">${S._foCfg?'expand_less':'settings'}</span></button></div>
     <div class="fo-grid">
-      <div class="fo-row"><label><span class="material-symbols-rounded">pin_drop</span>Abrangência</label><select class="fo-sel" onchange="setAbr(this.value)">${abrOpts}</select></div>
+      <div class="fo-row"><label><span class="material-symbols-rounded">my_location</span>Base desta proposta</label><select class="fo-sel" onchange="setBase(this.value)">${baseOpts}</select></div>
       <div class="fo-row"><label><span class="material-symbols-rounded">terrain</span>Fator do local</label><div class="fo-fl">${presets}<input class="fo-flin" value="${String(fl).replace('.',',')}" inputmode="decimal" onchange="setFatorLocal(this.value)" title="ou digite (até ${String(fmax).replace('.',',')}×)">×</div></div>
     </div>
+    ${abrangenciaHtml(abrOpts)}
     ${cfg}
   </div>`;
 }
+/* --- locais da obra: onde é, quantas unidades, e a faixa que isso alcança --- */
+function refreshAbr(){ aplicaAnel(); save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function toggleLocais(){
+  S._locCfg=!S._locCfg;
+  if(S._locCfg && !(S.locais||[]).length) locAdd(true);
+  else renderBlk(BLKS.find(b=>b.key==='servicos'));
+}
+function setBase(id){
+  S.baseId=id||null;
+  const b=baseAtual(); S.baseNome=b?b.nome:null;
+  (S.locais||[]).forEach(l=>{ if(!num(l.km)) l._rec=1; });   // estimativas mudam de base
+  refreshAbr();
+}
+function locAdd(silencioso){
+  if(!S.locais)S.locais=[];
+  const ult=S.locais[S.locais.length-1];
+  S.locais.push({uf:(ult&&ult.uf)||'',cidade:'',municipio_id:null,lat:null,lon:null,unidades:1,km:0});
+  if(!silencioso) save();
+  renderBlk(BLKS.find(b=>b.key==='servicos'));
+}
+function locDel(i){ (S.locais||[]).splice(i,1); refreshAbr(); }
+async function locUF(i){
+  const l=(S.locais||[])[i]; if(!l||!l.uf)return;
+  const lista=await munDaUF(l.uf);
+  const dl=document.getElementById('lmun_'+i);
+  if(dl) dl.innerHTML=lista.map(m=>`<option value="${esc(m.nome)}"></option>`).join('');
+}
+function locCidade(i,valor){
+  const l=(S.locais||[])[i]; if(!l)return;
+  l.cidade=valor;
+  const m=(MUN_CACHE[l.uf]||[]).find(x=>x.nome===valor);
+  if(m){ l.municipio_id=m.codigo_ibge; l.lat=m.lat; l.lon=m.lon; }
+  else  { l.municipio_id=null; l.lat=null; l.lon=null; }
+  refreshAbr();
+}
+function setAbrManual(v){ S.abrManual=!!v; if(!v) aplicaAnel(); save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+
 function toggleFoCfg(){ S._foCfg=!S._foCfg; renderBlk(BLKS.find(b=>b.key==='servicos')); }
-function setAbr(v){ S.abrIdx=+v||0; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function setAbr(v){ S.abrIdx=+v||0; S.abrManual=true; save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function setAbrPct(j,field,v){ if(!ABRANGENCIA[j])return; ABRANGENCIA[j][field]=Math.max(0,num(v));
   if(CLOUD && !MODELO_V2){ SB.from('orc_abrangencia').update({[field]:ABRANGENCIA[j][field]}).eq('nivel',ABRANGENCIA[j].nivel).then(({error})=>{ if(error)console.error('abr cfg',error); }); }
   save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
@@ -1854,6 +1977,68 @@ function saveNovoCat(){
       finish(data&&data[0]&&data[0].id);
     });
   } else { finish(null); }
+}
+
+/* ---------- ABRANGÊNCIA: base da proposta + locais da obra (lote) ----------
+   A base é escolhida NESTA proposta (não existe base fixa da empresa).
+   Os locais são as cidades atendidas; num lote, várias. A faixa não é
+   escolhida à mão: sai da distância média ponderada pelas unidades.      */
+let BASES=[], MUN_CACHE={};
+const FATOR_ROTA=1.25;   // linha reta -> aproximação de km rodado
+async function carregarBases(){
+  try{ const r=await SB.from('abrangencia_origens').select('*').eq('ativo',true).order('nome');
+    if(!r.error) BASES=r.data||[];
+  }catch(e){ console.error('bases',e); }
+}
+async function munDaUF(uf){
+  if(!uf) return [];
+  if(MUN_CACHE[uf]) return MUN_CACHE[uf];
+  try{ const r=await SB.from('municipios').select('codigo_ibge,nome,lat,lon').eq('uf',uf).order('nome');
+    MUN_CACHE[uf]=r.error?[]:(r.data||[]);
+  }catch(e){ MUN_CACHE[uf]=[]; }
+  return MUN_CACHE[uf];
+}
+function kmPontos(A,B){
+  if(!A||!B||A[0]==null||B[0]==null) return null;
+  const R=6371, rad=x=>x*Math.PI/180;
+  const dLat=rad(B[0]-A[0]), dLon=rad(B[1]-A[1]);
+  const h=Math.sin(dLat/2)**2+Math.cos(rad(A[0]))*Math.cos(rad(B[0]))*Math.sin(dLon/2)**2;
+  return Math.round(2*R*Math.asin(Math.sqrt(h))*FATOR_ROTA);
+}
+function baseAtual(){
+  const id=S.baseId;
+  return BASES.find(b=>String(b.id)===String(id)) || BASES.find(b=>b.padrao) || BASES[0] || null;
+}
+function pontoBase(){ const b=baseAtual(); return b&&b.lat!=null?[num(b.lat),num(b.lon)]:null; }
+// km de um local: o rodado informado vence; senão a estimativa
+function kmLocal(l){
+  if(num(l.km)>0) return num(l.km);
+  if(l.lat!=null) return kmPontos(pontoBase(),[num(l.lat),num(l.lon)]);
+  return null;
+}
+// média PONDERADA pelas unidades: dez obras numa cidade pesam dez vezes mais
+function kmMedio(){
+  const ls=(S.locais||[]).filter(l=>kmLocal(l)!=null);
+  if(!ls.length) return null;
+  let som=0, un=0;
+  ls.forEach(l=>{ const u=Math.max(1,num(l.unidades)||1); som+=kmLocal(l)*u; un+=u; });
+  return un?Math.round(som/un):null;
+}
+function totalUnidades(){ return (S.locais||[]).reduce((a,l)=>a+Math.max(1,num(l.unidades)||1),0); }
+// qual anel esse km alcança (as faixas vêm de orc_abrangencia, ordenadas)
+function anelDoKm(km){
+  if(km==null) return null;
+  const ord=(ABRANGENCIA||[]).map((a,i)=>({a,i}))
+    .sort((x,y)=>(x.a.km_ate==null?1e9:num(x.a.km_ate))-(y.a.km_ate==null?1e9:num(y.a.km_ate)));
+  for(const o of ord){ if(o.a.km_ate==null || km<=num(o.a.km_ate)) return o; }
+  return ord[ord.length-1]||null;
+}
+// aplica a faixa derivada no motor que já existe (S.abrIdx)
+function aplicaAnel(){
+  if(S.abrManual) return;              // o usuário fixou a faixa na mão
+  const o=anelDoKm(kmMedio());
+  if(o && S.abrIdx!==o.i){ S.abrIdx=o.i; return true; }
+  return false;
 }
 
 /* ---------- picker do cabeçalho (solução, cliente, responsável) ---------- */
