@@ -827,7 +827,6 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
         <div style="width:120px"><label style="font-size:11px;font-weight:600;color:var(--tx3);display:block;margin-bottom:4px">Estado</label>
           <select id="rcUf" class="cin" onchange="rcLoadCidades(this.value)" style="width:100%">
             <option value="">UF</option>
-            ${['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'].map(u=>`<option value="${u}">${u}</option>`).join('')}
           </select></div>
         <div style="flex:1"><label style="font-size:11px;font-weight:600;color:var(--tx3);display:block;margin-bottom:4px">Cidade</label>
           <select id="rcCidade" class="cin" style="width:100%" disabled><option value="">— escolha o estado primeiro —</option></select></div>
@@ -1747,7 +1746,13 @@ function setBaseMun(v){ v=+v||null; S.baseMunId=v; const o=(ORIGENS||[]).find(x=
 function setKmManual(v){ S.kmManual=Math.max(0,num(v)); _reFat(); }
 function clearKmManual(){ S.kmManual=0; _reFat(); }
 // fallback: loja sem municipio_id → escolher estado→cidade e salvar na loja
-function openRaioCidade(){ const m=document.getElementById('raioCidadeModal'); if(!m)return; document.getElementById('rcUf').value=''; document.getElementById('rcCidade').innerHTML='<option value="">— escolha o estado primeiro —</option>'; document.getElementById('rcCidade').disabled=true; m.classList.add('open'); }
+const UFS_BR=['AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO'];
+function openRaioCidade(){ const m=document.getElementById('raioCidadeModal'); if(!m)return;
+  const su=document.getElementById('rcUf');
+  // as UFs são montadas aqui: no HTML estático o template não é interpretado
+  if(su && su.options.length<=1) su.innerHTML='<option value="">UF</option>'+UFS_BR.map(u=>`<option value="${u}">${u}</option>`).join('');
+  if(su) su.value='';
+  document.getElementById('rcCidade').innerHTML='<option value="">— escolha o estado primeiro —</option>'; document.getElementById('rcCidade').disabled=true; m.classList.add('open'); }
 function closeRaioCidade(){ const m=document.getElementById('raioCidadeModal'); if(m)m.classList.remove('open'); }
 async function rcLoadCidades(uf){ const sel=document.getElementById('rcCidade'); if(!uf){ sel.innerHTML='<option value="">— escolha o estado —</option>'; sel.disabled=true; return; }
   sel.innerHTML='<option>carregando…</option>'; sel.disabled=true;
