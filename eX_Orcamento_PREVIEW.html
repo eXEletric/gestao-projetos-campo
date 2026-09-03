@@ -2132,7 +2132,7 @@ function novaObjHint(v){ const el=_lg('nuObjHint'); if(!el)return; v=(v||'').tri
 async function createLoteAndBase(nome,contr){
   const ins=await SB.from('orcamento_lotes').insert({empresa_id:EMPRESA_ID,nome,contratante_id:contr,status:'rascunho'}).select('id').limit(1);
   if(ins.error) throw ins.error; const lid=ins.data[0].id; let baseOpp=null;
-  const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contr,objeto:'[BASE] '+nome}).select('id').limit(1);
+  const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contr,objeto:'[BASE] '+nome,lote_id:lid}).select('id').limit(1);
   if(!opp.error && opp.data[0]){ baseOpp=opp.data[0].id; const numero=await proximoNumero();
     const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
     await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:baseOpp,lote_id:lid,herda_base:false,numero,status:'rascunho',cliente_contratante:contrNome,dados:{_base:true,contratanteId:contr,cliNome:contrNome,numero},total:0});
@@ -2248,7 +2248,7 @@ async function criarLote(){
   try{
     const ins=await SB.from('orcamento_lotes').insert({empresa_id:EMPRESA_ID,nome,contratante_id:contr,status:'rascunho'}).select('id').limit(1);
     if(ins.error) throw ins.error; const lid=ins.data[0].id;
-    const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contr,objeto:'[BASE] '+nome}).select('id').limit(1);
+    const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contr,objeto:'[BASE] '+nome,lote_id:lid}).select('id').limit(1);
     if(!opp.error && opp.data[0]){ const baseOpp=opp.data[0].id; const numero=await proximoNumero();
       const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
       await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:baseOpp,lote_id:lid,herda_base:false,numero,status:'rascunho',cliente_contratante:contrNome,dados:{_base:true,contratanteId:contr,cliNome:contrNome,numero},total:0});
@@ -2324,7 +2324,7 @@ async function loteGerar(){
   const btn=event&&event.target; if(btn)btn.disabled=true;
   try{
     for(const l of LOTE_PEND){
-      const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:LOTE_ROW?LOTE_ROW.contratante_id:null,contemplado_id:l.id,objeto:(LOTE_ROW?LOTE_ROW.nome:'Lote')+' — '+l.nome}).select('id').limit(1);
+      const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:LOTE_ROW?LOTE_ROW.contratante_id:null,contemplado_id:l.id,objeto:(LOTE_ROW?LOTE_ROW.nome:'Lote')+' — '+l.nome,lote_id:LOTE_ID}).select('id').limit(1);
       if(opp.error||!opp.data[0]) continue; const oppId=opp.data[0].id;
       const numero=await proximoNumero();
       const _cn=(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):'');
@@ -2481,7 +2481,7 @@ async function loteAddLojaNow(){
   const sel=_lg('lbLoja'); const lojaId=sel?sel.value:''; if(!lojaId){ alert('Escolha a loja.'); return; }
   const l=(LOJAS||[]).find(x=>x.id===lojaId)||{};
   try{
-    const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:(LOTE_ROW?LOTE_ROW.contratante_id:S.contratanteId)||null,contemplado_id:lojaId,objeto:(LOTE_ROW&&LOTE_ROW.nome?LOTE_ROW.nome:(S.cliNome||'Lote'))+' — '+l.nome}).select('id').limit(1);
+    const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:(LOTE_ROW?LOTE_ROW.contratante_id:S.contratanteId)||null,contemplado_id:lojaId,objeto:(LOTE_ROW&&LOTE_ROW.nome?LOTE_ROW.nome:(S.cliNome||'Lote'))+' — '+l.nome,lote_id:LOTE_ID}).select('id').limit(1);
     if(opp.error||!opp.data[0]) throw (opp.error||new Error('sem oportunidade')); const oppId=opp.data[0].id;
     const numero=await proximoNumero();
     const dados=JSON.parse(JSON.stringify(S||{})); delete dados._base; dados.abrSnap=null; dados.finNome=l.nome; dados.lojaId=l.id; dados.numero=numero;

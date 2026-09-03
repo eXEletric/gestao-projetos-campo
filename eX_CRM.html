@@ -63,6 +63,21 @@ select.fi{appearance:auto;cursor:pointer}
 .temp.frio{background:#e7f0fa;color:var(--blue)}.temp.morno{background:#faeeda;color:var(--amber)}.temp.quente{background:#fcebeb;color:var(--red)}
 .orcb{font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;margin-top:6px;text-transform:capitalize}
 .orcb .material-symbols-rounded{font-size:13px}
+/* card de LOTE (agrupado) */
+.kcard.lote{border:1.5px solid var(--pri);background:var(--pri-bg,#efeafc)}
+.lote-tag{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:var(--pri);border-radius:20px;padding:2px 8px;margin-bottom:6px}
+.lote-tag .material-symbols-rounded{font-size:11px;color:#fff}
+.orcb.loteb{color:var(--pri-d,#3f2c8f);background:#fff;border:1px solid var(--line)}
+.lexpand{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;color:var(--pri);margin-top:6px;cursor:pointer}
+.lexpand .material-symbols-rounded{font-size:14px;color:var(--pri)}
+.lote-units{display:none;margin-top:7px;border-top:1px dashed var(--line);padding-top:6px}
+.kcard.lote.open .lote-units{display:block}
+.lote-units .lu{display:flex;align-items:center;gap:5px;font-size:11px;color:var(--tx);padding:3px 0;text-decoration:none}
+.lote-units a.lu:hover{color:var(--pri)}
+.lote-units .lu .material-symbols-rounded{font-size:12px;color:var(--pri)}
+.lote-units .lu.more{color:var(--tx3);font-style:italic}
+.lopen{margin-top:6px;width:100%;border:1px solid var(--pri);background:var(--pri);color:#fff;border-radius:7px;padding:6px;font:700 11px inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:5px}
+.lopen .material-symbols-rounded{font-size:13px;color:#fff}
 .orcb.rascunho{color:var(--tx2);background:var(--surf2)}
 .orcb.enviado{color:var(--blue);background:#e7f0fa}
 .orcb.aprovado{color:var(--green);background:#e9f2dd}
@@ -462,13 +477,14 @@ function cUp(table,row){ if(!CLOUD)return; SB.from(table).upsert(row).then(({err
 function cDel(table,id){ if(!CLOUD)return; SB.from(table).update({deleted_at:new Date().toISOString()}).eq('id',id).then(({error})=>{ if(error)console.error('cloud del',table,error); }); }
 function cFases(){ if(!CLOUD)return; SB.from('crm_fases').upsert(S.colunas.map((f,i)=>mFase(f,i))).then(({error})=>{ if(error)console.error('cloud fases',error); }); }
 async function carregarNuvem(){
-  const [cl,fa,op,lj,vc,oc]=await Promise.all([
+  const [cl,fa,op,lj,vc,oc,lt]=await Promise.all([
     SB.from('clientes').select('*').is('deleted_at',null),
     SB.from('crm_fases').select('*').is('deleted_at',null).order('ordem'),
     SB.from('oportunidades').select('*').is('deleted_at',null),
     SB.from('lojas').select('*').is('deleted_at',null),
     SB.from('vinculos').select('*').is('deleted_at',null),
-    SB.from('orcamentos').select('oportunidade_id,status,total,numero').is('deleted_at',null).order('created_at',{ascending:true})
+    SB.from('orcamentos').select('oportunidade_id,status,total,numero').is('deleted_at',null).order('created_at',{ascending:true}),
+    SB.from('orcamento_lotes').select('id,nome,contratante_id,base_oportunidade_id').is('deleted_at',null)
   ]);
   if(cl.error||fa.error||op.error) throw (cl.error||fa.error||op.error);
   // orçamentos da nuvem (fonte da verdade do status/total do funil) — o mais recente por oportunidade vence
@@ -478,7 +494,8 @@ async function carregarNuvem(){
     clientes:(cl.data||[]).map(c=>({id:c.id,nome:c.nome,tipo:c.tipo,paiId:c.pai_id,cnpj:c.cnpj,contato:c.contato,fone:c.fone,email:c.email,endereco:c.endereco,obs:c.obs})),
     lojas:((lj&&lj.data)||[]).map(l=>({id:l.id,nome:l.nome,grupo:l.grupo,numero:l.numero,endereco:l.endereco,cnpj:l.cnpj,coordenada:l.coordenada,codigo:l.codigo_externo,contato:l.contato,fone:l.fone,email:l.email,obs:l.obs})),
     vinculos:((vc&&vc.data)||[]).map(v=>({id:v.id,lojaId:v.loja_id,contratanteId:v.contratante_id,papel:v.papel,obs:v.obs})),
-    oportunidades:(op.data||[]).map(o=>({id:o.id,contratanteId:o.contratante_id,contempladoId:o.contemplado_id,objeto:o.objeto,temperatura:o.temperatura,dataLimite:o.data_limite||'',colId:o.fase_id,obs:o.obs,faseDados:(o.fase_dados&&typeof o.fase_dados==='object'?o.fase_dados:{})}))
+    oportunidades:(op.data||[]).map(o=>({id:o.id,contratanteId:o.contratante_id,contempladoId:o.contemplado_id,objeto:o.objeto,temperatura:o.temperatura,dataLimite:o.data_limite||'',colId:o.fase_id,obs:o.obs,loteId:o.lote_id||null,faseDados:(o.fase_dados&&typeof o.fase_dados==='object'?o.fase_dados:{})})),
+    lotes:((lt&&lt.data)||[]).map(l=>({id:l.id,nome:l.nome,contratanteId:l.contratante_id,baseOppId:l.base_oportunidade_id}))
   };
   if(!S.colunas.length) await seedFases();
 }
@@ -638,12 +655,13 @@ function renderLojaDetail(){
 /* ===== FUNIL ===== */
 function renderBoard(){
   document.getElementById('board').innerHTML = S.colunas.map((col,ci)=>{
-    const cards=oppsIn(col.id).filter(matchQ);
+    const cards=oppsIn(col.id).filter(matchQ).filter(o=>!o.loteId);
+    const lotesCol=lotesInCol(col.id).filter(l=>matchQ({objeto:l.nome,contratanteId:l.contratanteId}));
     return `<div class="kcol ${col.fim?'fim':''}" ondragover="allow(event,this)" ondragleave="this.classList.remove('dragover')" ondrop="drop(event,'${col.id}',this)">
       <div class="kcol-h">
         ${col.fim?'<span class="material-symbols-rounded" style="font-size:15px;color:var(--green)">check_circle</span>':''}
         <span class="kcol-nm" title="Configurar fase (papel e trava)" onclick="openFaseCfg('${col.id}')">${esc(col.nome)}</span>
-        <span class="kcol-ct">${cards.length}</span>
+        <span class="kcol-ct">${cards.length+lotesCol.length}</span>
         <span class="kcol-acts">
           <button class="ib" onclick="openFaseCfg('${col.id}')" title="Configurar fase (papel e trava)"><span class="material-symbols-rounded">tune</span></button>
           <button class="ib" onclick="moveColuna('${col.id}',-1)" ${ci===0?'disabled':''}><span class="material-symbols-rounded">chevron_left</span></button>
@@ -653,6 +671,7 @@ function renderBoard(){
       </div>
       <div class="kcol-papel"><span class="material-symbols-rounded">${(PAPEL_DEF[col.papel||'captacao']||{}).ic||'label'}</span>${esc((PAPEL_DEF[col.papel||'captacao']||{}).nome||'')}${colGate(col.id)!=='nenhuma'?`<span class="kgate ${colGate(col.id)}" title="trava ${colGate(col.id)}"><span class="material-symbols-rounded">lock</span>${colGate(col.id)==='rigida'?'rígida':'suave'}</span>`:''}</div>
       <div class="kcol-body">
+        ${lotesCol.map(l=>loteCardHTML(l,ci)).join('')}
         ${cards.map(o=>oppCardHTML(o,ci)).join('')}
         <button class="kadd" onclick="novaOpp('${col.id}')">+ oportunidade</button>
       </div>
@@ -674,6 +693,31 @@ function oppCardHTML(o,ci){
     </div>
   </div>`;
 }
+/* ---- LOTE: agrupa as oportunidades do lote num card só (opção A) ---- */
+function baseOppOf(l){ return S.oportunidades.find(o=>o.id===l.baseOppId); }
+function lotesInCol(colId){ return (S.lotes||[]).filter(l=>{ const b=baseOppOf(l); return b && b.colId===colId; }); }
+function loteUnitsOf(loteId){ return S.oportunidades.filter(o=>o.loteId===loteId && !(o.objeto||'').startsWith('[BASE]')); }
+function loteTotal(loteId){ const idx=orcIndex(); return loteUnitsOf(loteId).reduce((a,u)=>a+((idx[u.id]&&idx[u.id].total)||0),0); }
+function loteToggle(el){ const c=el.closest('.kcard'); if(c)c.classList.toggle('open'); }
+function abrirLoteBaseById(loteId){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(l&&l.baseOppId) location.href='eX_Orcamento_PREVIEW.html?opp='+l.baseOppId+'&lote='+l.id; }
+function moveLote(loteId,dir){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(!l)return; const b=baseOppOf(l); if(!b)return; const i=colIdx(b.colId)+dir; if(i<0||i>=S.colunas.length)return; b.colId=S.colunas[i].id; save(); cUp('oportunidades',mOpp(b)); render(); }
+function loteCardHTML(l,ci){ const ct=cli(l.contratanteId); const us=loteUnitsOf(l.id); const tot=loteTotal(l.id);
+  const nm=(l.nome||'Lote').replace(/^\[BASE\]\s*/,''); const show=us.slice(0,4), extra=us.length-show.length;
+  return `<div class="kcard lote">
+    <div class="lote-tag"><span class="material-symbols-rounded">apartment</span>Lote</div>
+    <div class="kcard-nm">${esc(nm)}</div>
+    <div class="kcard-cli"><span class="material-symbols-rounded">business</span>${esc(ct?ct.nome:'—')}</div>
+    <div class="orcb loteb"><span class="material-symbols-rounded">store</span>${us.length} loja(s) · ${fmtBRL(tot)}</div>
+    <div class="lexpand" onclick="event.stopPropagation();loteToggle(this)"><span class="material-symbols-rounded">unfold_more</span>ver unidades</div>
+    <div class="lote-units">
+      ${show.map(u=>`<a class="lu" href="eX_Orcamento_PREVIEW.html?opp=${u.id}"><span class="material-symbols-rounded">description</span>${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</a>`).join('')}
+      ${extra>0?`<div class="lu more"><span class="material-symbols-rounded">more_horiz</span>…mais ${extra} unidade(s)</div>`:''}
+      <button class="lopen" onclick="event.stopPropagation();abrirLoteBaseById('${l.id}')"><span class="material-symbols-rounded">open_in_full</span>abrir a mestra do lote</button>
+    </div>
+    <div class="kcard-foot"><span class="temp quente" style="background:var(--pri)">Lote</span><span class="kmove">
+      <button title="Fase anterior" onclick="event.stopPropagation();moveLote('${l.id}',-1)" ${ci===0?'disabled':''}>‹</button>
+      <button title="Próxima fase" onclick="event.stopPropagation();moveLote('${l.id}',1)" ${ci===S.colunas.length-1?'disabled':''}>›</button></span></div>
+  </div>`; }
 function dragStart(e,id){ _drag=id; try{e.dataTransfer.setData('text/plain',id);e.dataTransfer.effectAllowed='move';}catch(_){} }
 function allow(e,el){ e.preventDefault(); if(el)el.classList.add('dragover'); }
 // trava pra SAIR da fase atual (base Pipefy): nenhuma=passa; suave=avisa e deixa; rígida=bloqueia
