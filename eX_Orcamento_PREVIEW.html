@@ -488,6 +488,12 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .fatobra .fo-row label{font-size:12px;font-weight:600;color:var(--tx2);display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .fatobra .fo-row label .material-symbols-rounded{font-size:16px;color:var(--pri)}
 .fatobra .fo-sel{flex:1;padding:7px 9px;border:1px solid var(--line2);border-radius:8px;font-size:13px;background:var(--surf);color:var(--tx)}
+.fatobra .fo-auto{flex:1;display:inline-flex;align-items:center;gap:9px;flex-wrap:wrap}
+.fatobra .fo-autopill{display:inline-flex;align-items:center;gap:6px;background:var(--pri-bg,#efeafc);border:1px solid #ddd3f6;color:var(--pri);border-radius:8px;padding:6px 11px;font-size:13px;font-weight:700}
+.fatobra .fo-autopill .material-symbols-rounded{font-size:16px;color:var(--pri)}
+.fatobra .fo-autopill small{font-weight:600;color:var(--pri);opacity:.8;font-size:11px}
+.fatobra .fo-autotag{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--tx3)}
+.fatobra .fo-autotag .material-symbols-rounded{font-size:14px;color:var(--tx3)}
 .fatobra .fo-fl{display:inline-flex;align-items:center;gap:4px}
 .fatobra .flbtn{border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:7px;padding:6px 9px;font:600 12.5px inherit;cursor:pointer}
 .fatobra .flbtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
@@ -1647,6 +1653,8 @@ function fatoresObraHtml(){
   const fl=Math.min(num(S.fatorLocal)||1,fmax);
   const presets=[[1,'1'],[1.5,'1,5'],[2,'2'],[3,'3']].filter(([f])=>f<=fmax).map(([f,l])=>`<button class="flbtn ${fl==f?'on':''}" onclick="setFatorLocal(${f})">${l}×</button>`).join('');
   const abrDesc={local:'na sua base / cidade',estadual:'dentro do estado',nacional:'outro estado ou país'};
+  const aSel=(ABRANGENCIA||[])[num(S.abrIdx)||0]||{};   // abrangência pré-selecionada (automática)
+  const aPct=(num(aSel.custo_pct)||num(aSel.tempo_pct))?` <small>${pct(aSel.custo_pct)} custo · ${pct(aSel.tempo_pct)} prazo</small>`:'';
   const cfg = S._foCfg ? `<div class="fo-cfg">
       <div class="fo-cfg-sec">Abrangência — <b>suas regiões</b>; quanto mais <b>longe</b>, mais <b>encarece</b> e <b>demora</b></div>
       <div class="fo-cfg-tbl">
@@ -1665,7 +1673,11 @@ function fatoresObraHtml(){
     <div class="fo-t"><span class="material-symbols-rounded">tune</span>Fatores da obra<span class="fo-h"> — aplicam ao custo dos serviços montados</span>
       <button class="fo-cfgbtn ${S._foCfg?'on':''}" onclick="toggleFoCfg()" title="Configurar as faixas"><span class="material-symbols-rounded">${S._foCfg?'expand_less':'settings'}</span></button></div>
     <div class="fo-grid">
-      <div class="fo-row"><label><span class="material-symbols-rounded">pin_drop</span>Abrangência</label><select class="fo-sel" onchange="setAbr(this.value)">${abrOpts}</select></div>
+      <div class="fo-row"><label><span class="material-symbols-rounded">pin_drop</span>Abrangência</label>
+        <div class="fo-auto">
+          <span class="fo-autopill"><span class="material-symbols-rounded">bolt</span>${esc(aSel.rotulo||'—')}${aPct}</span>
+          <span class="fo-autotag"><span class="material-symbols-rounded">my_location</span>automático · pela base de atendimento</span>
+        </div></div>
       <div class="fo-row"><label><span class="material-symbols-rounded">terrain</span>Fator do local</label><div class="fo-fl">${presets}<input class="fo-flin" value="${String(fl).replace('.',',')}" inputmode="decimal" onchange="setFatorLocal(this.value)" title="ou digite (até ${String(fmax).replace('.',',')}×)">×</div></div>
     </div>
     ${cfg}
