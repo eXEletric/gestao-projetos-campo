@@ -2390,8 +2390,13 @@ function relabelRede(){ // no base do lote, o "cliente final / destino" represen
   updateRedeUnidades();
 }
 function updateRedeUnidades(){ if(!isLoteBase())return; const num=document.querySelector('[data-m="finNum"]'); if(!num)return;
-  const list=(LOTE_UNITS||[]).map(o=>o.cliente_final||o.numero||'').filter(Boolean).join(' · ');
-  num.value=list; num.placeholder=(LOTE_UNITS&&LOTE_UNITS.length)?'':'as unidades aparecem aqui ao adicionar lojas ↓'; }
+  num.style.display='none';   // troca o input de linha única por uma lista que quebra
+  let d=document.getElementById('redeUnidadesList');
+  if(!d){ d=document.createElement('div'); d.id='redeUnidadesList'; d.style.cssText='display:flex;flex-wrap:wrap;gap:4px 5px;align-items:flex-start'; num.parentNode.insertBefore(d,num); }
+  const list=(LOTE_UNITS||[]);
+  d.innerHTML = list.length
+    ? list.map(o=>`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--pri-bg);color:var(--pri-d);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:600;max-width:100%"><span class="material-symbols-rounded" style="font-size:13px;color:var(--pri)">store</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px">${esc(o.cliente_final||o.numero||'unidade')}</span></span>`).join('')
+    : '<span style="font-size:12px;color:var(--tx3)">as unidades aparecem aqui ao adicionar lojas ↓</span>'; }
 function renderLoteBaseHtml(){
   const lojaOpts=(LOJAS||[]).filter(l=>!LOTE_UNITS.some(u=>(u.dados&&u.dados.lojaId)===l.id)).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
   const macroT=macroTotal();
