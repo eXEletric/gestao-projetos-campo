@@ -1055,8 +1055,9 @@ async function initList(){
   const mt=document.querySelector('.modtag'); if(mt)mt.innerHTML='<span class="material-symbols-rounded">request_quote</span>Orçamentos';
   const sub=document.querySelector('.sub'); if(sub)sub.textContent='Lista de orçamentos — clique para abrir. Novos orçamentos nascem do funil (Comercial › Funil).';
   const wrap=document.getElementById('orcList'); wrap.style.display='block';
-  wrap.innerHTML=`<div class="olbar" style="display:flex;gap:10px;align-items:center"><div class="olsearch" style="flex:1"><span class="material-symbols-rounded">search</span><input id="orcQ" oninput="renderList()" placeholder="Buscar por número, cliente ou solução…"></div>
-      <a href="eX_Orcamento_PREVIEW.html?nova" style="display:inline-flex;align-items:center;gap:6px;border:none;background:var(--pri);color:#fff;border-radius:9px;padding:9px 14px;font:700 13px inherit;text-decoration:none;white-space:nowrap"><span class="material-symbols-rounded" style="font-size:18px;color:#fff">note_add</span>Nova proposta</a></div>
+  wrap.innerHTML=`<div class="olbar" style="display:flex;gap:12px;align-items:center">
+      <a href="eX_Orcamento_PREVIEW.html?nova" style="display:inline-flex;align-items:center;gap:7px;border:none;background:var(--pri);color:#fff;border-radius:10px;padding:11px 18px;font:800 14px inherit;text-decoration:none;white-space:nowrap;box-shadow:0 4px 14px rgba(83,58,183,.28)"><span class="material-symbols-rounded" style="font-size:20px;color:#fff">add_circle</span>Nova oportunidade</a>
+      <div class="olsearch" style="flex:1"><span class="material-symbols-rounded">search</span><input id="orcQ" oninput="renderList()" placeholder="Buscar por número, cliente ou solução…"></div></div>
     <div id="lotesList"></div>
     <div class="scroll"><table class="oltbl"><thead><tr><th>Nº</th><th>Cliente</th><th>Solução / objeto</th><th>Data</th><th class="r">Total</th><th>Status</th></tr></thead><tbody id="orcRows"></tbody></table></div>`;
   if(SB){ try{
@@ -2049,8 +2050,8 @@ async function carregarClientes(){
 async function initNova(){
   document.querySelectorAll('.grid,#oppBanner').forEach(e=>{e.style.display='none';});
   const mode=document.querySelector('.appbar .mode'); if(mode)mode.style.display='none';
-  const mt=document.querySelector('.modtag'); if(mt)mt.innerHTML='<span class="material-symbols-rounded">note_add</span>Nova proposta';
-  const sub=document.querySelector('.sub'); if(sub)sub.textContent='Escolha o tipo da obra.';
+  const mt=document.querySelector('.modtag'); if(mt)mt.innerHTML='<span class="material-symbols-rounded">add_circle</span>Nova oportunidade';
+  const sub=document.querySelector('.sub'); if(sub)sub.textContent='Dados da oportunidade. Ligue a chave se for orçamento em lote.';
   let host=_lg('loteView'); if(!host){ host=document.createElement('div'); host.id='loteView'; host.style.cssText='max-width:820px;margin:0 auto;padding:6px 14px 70px'; (document.querySelector('.wrap')||document.body).appendChild(host); }
   host.innerHTML='<div style="padding:40px;text-align:center;color:var(--tx3)">Carregando…</div>';
   if(!SB){ host.innerHTML='<div style="padding:30px">Sem conexão.</div>'; return; }
@@ -2062,42 +2063,69 @@ async function initNova(){
     await carregarClientes(); renderNova(host);
   }catch(e){ console.error('initNova',e); host.innerHTML='<div style="padding:30px;color:var(--red)">Erro: '+esc(e.message||e)+'</div>'; }
 }
+let NOVA_LOTE=false;
 function renderNova(host){
   const contrOpts=contratantes().map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('');
-  const lojaOpts=(LOJAS||[]).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
   host.innerHTML=`
-  <div style="display:flex;align-items:center;gap:10px;margin:10px 0 20px"><span style="font-weight:800;font-size:19px">Nova proposta</span>
+  <div style="display:flex;align-items:center;gap:10px;margin:10px 0 18px"><span style="font-weight:800;font-size:19px">Nova oportunidade</span>
     <a href="eX_Orcamento_PREVIEW.html" style="margin-left:auto;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:6px 11px;font:600 12.5px inherit;text-decoration:none"><span class="material-symbols-rounded" style="font-size:15px">arrow_back</span>voltar</a></div>
-  <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px" id="novaGrid">
-    <div style="background:var(--surf);border:1.5px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 8px 26px rgba(60,40,140,.06)">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="width:38px;height:38px;border-radius:10px;background:var(--pri-bg);color:var(--pri);display:grid;place-items:center"><span class="material-symbols-rounded" style="color:var(--pri)">store</span></span><b style="font-size:15px">Obra única</b></div>
-      <div style="font-size:12.5px;color:var(--tx3);margin-bottom:14px">Uma loja, um orçamento.</div>
-      <label style="font-size:11px;font-weight:700;color:var(--tx3)">Contratante</label>
-      <select id="nuContr" style="width:100%;margin:5px 0 10px;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— selecione —</option>${contrOpts}</select>
-      <label style="font-size:11px;font-weight:700;color:var(--tx3)">Loja</label>
-      <select id="nuLoja" style="width:100%;margin:5px 0 16px;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— selecione —</option>${lojaOpts}</select>
-      <button onclick="criarUnica()" style="width:100%;border:none;background:var(--pri);color:#fff;border-radius:9px;padding:10px;font:700 13.5px inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px"><span class="material-symbols-rounded">add</span>Criar e abrir</button>
+  <div style="background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:20px;max-width:560px;box-shadow:0 8px 26px rgba(60,40,140,.06)">
+    <label style="font-size:11px;font-weight:700;color:var(--tx3)">Contratante</label>
+    <select id="nuContr" style="width:100%;margin:5px 0 12px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— selecione —</option>${contrOpts}</select>
+    <label style="font-size:11px;font-weight:700;color:var(--tx3)">Objeto / nome</label>
+    <input id="nuObj" style="width:100%;margin:5px 0 16px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)" placeholder="ex.: Automação de ar-condicionado">
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line2);border-radius:11px;background:var(--surf2,#faf9fe);margin-bottom:16px">
+      <div class="ex-switch ${NOVA_LOTE?'on':''}" onclick="toggleNovaLote()" title="orçamento em lote"><span class="lb off">NÃO</span><span class="lb onx">SIM</span><span class="kb"><span class="pin"></span></span></div>
+      <div style="flex:1"><b style="font-size:14px">Orçamento em lote</b><div style="font-size:12px;color:var(--tx3);margin-top:1px" id="nuLoteDesc"></div></div>
     </div>
-    <div style="background:var(--surf);border:1.5px solid var(--line);border-radius:14px;padding:18px;box-shadow:0 8px 26px rgba(60,40,140,.06);display:flex;flex-direction:column">
-      <div style="display:flex;align-items:center;gap:10px;margin-bottom:6px"><span style="width:38px;height:38px;border-radius:10px;background:var(--pri-bg);color:var(--pri);display:grid;place-items:center"><span class="material-symbols-rounded" style="color:var(--pri)">apartment</span></span><b style="font-size:15px">Obra em lote</b></div>
-      <div style="font-size:12.5px;color:var(--tx3);margin-bottom:14px">Várias unidades numa proposta só: monta um orçamento base e gera uma proposta por loja.</div>
-      <div style="flex:1"></div>
-      <a href="eX_Orcamento_PREVIEW.html?lote=novo" style="border:none;background:var(--pri);color:#fff;border-radius:9px;padding:10px;font:700 13.5px inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:6px;text-decoration:none"><span class="material-symbols-rounded">apartment</span>Montar lote</a>
-    </div>
-  </div>
-  <style>@media(max-width:640px){#novaGrid{grid-template-columns:1fr!important}}</style>`;
+    <div id="nuCond"></div>
+    <button id="nuGo" onclick="criarNova()" style="width:100%;border:none;background:var(--pri);color:#fff;border-radius:10px;padding:11px;font:700 14px inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px"></button>
+  </div>`;
+  renderNovaCond();
 }
-async function criarUnica(){
-  const contr=_lg('nuContr').value||null, lojaId=_lg('nuLoja').value||null;
-  if(!contr){ alert('Escolha o contratante.'); return; }
-  if(!lojaId){ alert('Escolha a loja.'); return; }
-  try{
-    const loja=(LOJAS||[]).find(l=>l.id===lojaId)||{};
+function renderNovaCond(){
+  const cond=_lg('nuCond'), go=_lg('nuGo'), desc=_lg('nuLoteDesc');
+  if(NOVA_LOTE){
+    if(desc)desc.textContent='Monta um orçamento base e gera uma proposta por unidade.';
+    if(cond)cond.innerHTML='<div style="display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--tx3);background:var(--pri-bg);border-radius:9px;padding:10px 12px;margin-bottom:16px"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">info</span>Na próxima tela você monta o base e adiciona as unidades (lojas) do lote.</div>';
+    if(go)go.innerHTML='<span class="material-symbols-rounded">apartment</span>Criar lote e montar base';
+  } else {
+    if(desc)desc.textContent='Desligado: uma loja, um orçamento.';
+    const lojaOpts=(LOJAS||[]).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
+    if(cond)cond.innerHTML='<label style="font-size:11px;font-weight:700;color:var(--tx3)">Loja / unidade</label><select id="nuLoja" style="width:100%;margin:5px 0 16px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— selecione —</option>'+lojaOpts+'</select>';
+    if(go)go.innerHTML='<span class="material-symbols-rounded">add</span>Criar oportunidade';
+  }
+}
+function toggleNovaLote(){ NOVA_LOTE=!NOVA_LOTE; document.querySelector('#loteView .ex-switch').classList.toggle('on',NOVA_LOTE); renderNovaCond(); }
+async function createLoteAndBase(nome,contr){
+  const ins=await SB.from('orcamento_lotes').insert({empresa_id:EMPRESA_ID,nome,contratante_id:contr,status:'rascunho'}).select('id').limit(1);
+  if(ins.error) throw ins.error; const lid=ins.data[0].id;
+  const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contr,objeto:'[BASE] '+nome}).select('id').limit(1);
+  if(!opp.error && opp.data[0]){ const baseOpp=opp.data[0].id; const numero=await proximoNumero();
     const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
-    const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contr,contemplado_id:lojaId,objeto:contrNome+' — '+(loja.nome||'')}).select('id').limit(1);
-    if(opp.error||!opp.data[0]) throw (opp.error||new Error('sem oportunidade'));
-    location.href='eX_Orcamento_PREVIEW.html?opp='+opp.data[0].id;
-  }catch(e){ console.error('criarUnica',e); alert('Erro: '+(e.message||e)); }
+    await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:baseOpp,lote_id:lid,herda_base:false,numero,status:'rascunho',cliente_contratante:contrNome,dados:{_base:true},total:0});
+    await SB.from('orcamento_lotes').update({base_oportunidade_id:baseOpp}).eq('id',lid);
+  }
+  return lid;
+}
+async function criarNova(){
+  const contr=_lg('nuContr').value||null; const obj=(_lg('nuObj').value||'').trim();
+  if(!contr){ alert('Escolha o contratante.'); return; }
+  const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
+  const go=_lg('nuGo'); if(go)go.disabled=true;
+  try{
+    if(NOVA_LOTE){
+      const nome=obj||(contrNome+' — lote');
+      const lid=await createLoteAndBase(nome,contr);
+      location.href='eX_Orcamento_PREVIEW.html?lote='+lid;
+    } else {
+      const lojaId=_lg('nuLoja').value||null; if(!lojaId){ alert('Escolha a loja.'); if(go)go.disabled=false; return; }
+      const loja=(LOJAS||[]).find(l=>l.id===lojaId)||{};
+      const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contr,contemplado_id:lojaId,objeto:obj||(contrNome+' — '+(loja.nome||''))}).select('id').limit(1);
+      if(opp.error||!opp.data[0]) throw (opp.error||new Error('sem oportunidade'));
+      location.href='eX_Orcamento_PREVIEW.html?opp='+opp.data[0].id;
+    }
+  }catch(e){ console.error('criarNova',e); alert('Erro: '+(e.message||e)); if(go)go.disabled=false; }
 }
 
 /* ============ PRÉVIA · PROPOSTA EM LOTE (tela mestra) ============ */
