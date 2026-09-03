@@ -2060,8 +2060,20 @@ async function initNova(){
     if(!session){ host.innerHTML='<div style="padding:30px">Entre com login.</div>'; cloudMsg('faça login'); return; }
     CLOUD=true; cloudMsg('nuvem ✓');
     try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
-    await carregarClientes(); renderNova(host);
+    await carregarClientes(); await carregarObjetos(); renderNova(host);
   }catch(e){ console.error('initNova',e); host.innerHTML='<div style="padding:30px;color:var(--red)">Erro: '+esc(e.message||e)+'</div>'; }
+}
+let NOVA_OBJS=[];
+async function carregarObjetos(){
+  try{ const [a,b]=await Promise.all([
+      SB.from('oportunidades').select('objeto').is('deleted_at',null),
+      SB.from('orcamentos').select('solucao').is('deleted_at',null)
+    ]);
+    const set=new Set();
+    (a.data||[]).forEach(r=>{ const o=(r.objeto||'').trim(); if(o && !/^\[BASE\]/.test(o)) set.add(o); });
+    (b.data||[]).forEach(r=>{ const s=(r.solucao||'').trim(); if(s) set.add(s); });
+    NOVA_OBJS=[...set].sort((x,y)=>x.localeCompare(y,'pt'));
+  }catch(e){ console.error('objetos',e); NOVA_OBJS=[]; }
 }
 let NOVA_LOTE=false;
 function renderNova(host){
@@ -2072,8 +2084,10 @@ function renderNova(host){
   <div style="background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:20px;max-width:560px;box-shadow:0 8px 26px rgba(60,40,140,.06)">
     <label style="font-size:11px;font-weight:700;color:var(--tx3)">Contratante</label>
     <select id="nuContr" style="width:100%;margin:5px 0 12px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— selecione —</option>${contrOpts}</select>
-    <label style="font-size:11px;font-weight:700;color:var(--tx3)">Objeto / nome</label>
-    <input id="nuObj" style="width:100%;margin:5px 0 16px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)" placeholder="ex.: Automação de ar-condicionado">
+    <label style="font-size:11px;font-weight:700;color:var(--tx3)">Objeto / nome <span style="font-weight:500;text-transform:none;color:var(--tx3)">— digite para reaproveitar um nome já usado</span></label>
+    <input id="nuObj" list="nuObjList" autocomplete="off" style="width:100%;margin:5px 0 4px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)" placeholder="ex.: Automação de ar-condicionado" oninput="novaObjHint(this.value)">
+    <datalist id="nuObjList">${(NOVA_OBJS||[]).map(o=>`<option value="${esc(o)}"></option>`).join('')}</datalist>
+    <div id="nuObjHint" style="font-size:11.5px;color:var(--tx3);margin:0 0 14px 2px">${(NOVA_OBJS||[]).length} nome(s) já cadastrados — comece a digitar para ver os parecidos.</div>
     <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line2);border-radius:11px;background:var(--surf2,#faf9fe);margin-bottom:16px">
       <div class="ex-switch ${NOVA_LOTE?'on':''}" onclick="toggleNovaLote()" title="orçamento em lote"><span class="lb off">NÃO</span><span class="lb onx">SIM</span><span class="kb"><span class="pin"></span></span></div>
       <div style="flex:1"><b style="font-size:14px">Orçamento em lote</b><div style="font-size:12px;color:var(--tx3);margin-top:1px" id="nuLoteDesc"></div></div>
@@ -2097,6 +2111,12 @@ function renderNovaCond(){
   }
 }
 function toggleNovaLote(){ NOVA_LOTE=!NOVA_LOTE; document.querySelector('#loteView .ex-switch').classList.toggle('on',NOVA_LOTE); renderNovaCond(); }
+function novaObjHint(v){ const el=_lg('nuObjHint'); if(!el)return; v=(v||'').trim().toLowerCase();
+  if(!v){ el.innerHTML=(NOVA_OBJS||[]).length+' nome(s) já cadastrados — comece a digitar para ver os parecidos.'; el.style.color='var(--tx3)'; return; }
+  const m=(NOVA_OBJS||[]).filter(o=>o.toLowerCase().includes(v));
+  if(!m.length){ el.innerHTML='<span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">new_releases</span> Nome novo — nenhum parecido encontrado.'; el.style.color='var(--tx3)'; return; }
+  const exato=m.some(o=>o.toLowerCase()===v);
+  el.style.color='var(--pri)'; el.innerHTML='<span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">search</span> '+m.length+' parecido(s)'+(exato?' · <b>já existe igual</b>':'')+': '+m.slice(0,3).map(o=>'“'+esc(o)+'”').join(', ')+(m.length>3?'…':''); }
 async function createLoteAndBase(nome,contr){
   const ins=await SB.from('orcamento_lotes').insert({empresa_id:EMPRESA_ID,nome,contratante_id:contr,status:'rascunho'}).select('id').limit(1);
   if(ins.error) throw ins.error; const lid=ins.data[0].id;
