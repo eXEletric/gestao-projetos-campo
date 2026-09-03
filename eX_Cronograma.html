@@ -429,7 +429,7 @@ body.papel-tecnico .adm-only{display:none !important}
 </head>
 <body>
 <div class="loginbg" id="loginbg">
-  <div class="logincard">
+  <div class="logincard" id="logincard">
     <img src="logo_ex.png" alt="eX Eletric" style="height:42px;border-radius:8px;margin-bottom:14px">
     <h2>Entrar</h2>
     <div class="lsub">eX Cronograma · acesso restrito</div>
@@ -439,11 +439,58 @@ body.papel-tecnico .adm-only{display:none !important}
     <label>Senha</label>
     <input id="login-senha" type="password" autocomplete="current-password" placeholder="••••••••" onkeydown="if(event.key==='Enter'){event.preventDefault();fazerLogin();}">
     <button class="lbtn" id="login-btn" onclick="fazerLogin()">Entrar</button>
+    <button type="button" id="login-forgot" onclick="esqueciSenha()" style="background:none;border:none;color:#b9a9ff;font-size:12px;cursor:pointer;margin-top:12px;text-decoration:underline">Esqueci minha senha</button>
+    <div id="login-info" style="display:none;color:#22d27f;font-size:12px;margin-top:10px;line-height:1.45"></div>
   </div>
+  <div class="logincard" id="recoverycard" style="display:none">
+    <img src="logo_ex.png" alt="eX Eletric" style="height:42px;border-radius:8px;margin-bottom:14px">
+    <h2>Nova senha</h2>
+    <div class="lsub">Defina uma nova senha para sua conta</div>
+    <div class="lerr" id="rec-erro"></div>
+    <label>Nova senha</label>
+    <input id="rec-senha" type="password" autocomplete="new-password" placeholder="mínimo 6 caracteres" onkeydown="if(event.key==='Enter'){event.preventDefault();definirNovaSenha();}">
+    <button class="lbtn" id="rec-btn" onclick="definirNovaSenha()">Salvar e entrar</button>
+  </div>
+</div>
+<div id="preview-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;align-items:center;gap:12px;justify-content:center;background:#7d68e0;color:#fff;font-size:13px;font-weight:600;padding:7px 14px;box-shadow:0 2px 10px rgba(0,0,0,.25)">
+  <span class="msr" style="font-size:18px;vertical-align:-4px">visibility</span>
+  <span class="pv-lb">Pré-visualizando</span>
+  <button onclick="clearPreview()" style="background:#fff;color:#533ab7;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">Sair da pré-visualização</button>
 </div>
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="sb-logo"><img src="logo_ex.png" class="sb-mark" alt="eX"><span class="sb-name">eX Cronograma</span><span class="sb-coll" onclick="toggleSidebar()" title="recolher">&#171;</span></div>
+    <style>
+      .sb-unit{margin:8px 8px 4px;background:rgba(255,255,255,.05);border:1px solid #2a2350;border-radius:10px;padding:6px}
+      .sidebar.mini .sb-unit{display:none}
+      .sb-unit-cur{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:7px;cursor:pointer;color:#e7e3f6;font-size:12.5px;font-weight:600}
+      .sb-unit-cur:hover{background:rgba(255,255,255,.05)}
+      .sb-unit-cur .msr{font-size:17px;color:#b9a9ff}
+      .sb-unit-cur .u-nm{flex:1;white-space:nowrap;overflow:hidden}
+      .sb-unit-cur .u-cv{font-size:9px;color:#8a7fbf}
+      .sb-unit-menu{margin-top:3px}
+      .sb-unit-opt{display:flex;align-items:center;gap:9px;padding:6px 8px;border-radius:7px;font-size:12.3px;color:#c8c0e6;cursor:pointer}
+      .sb-unit-opt:hover{background:rgba(255,255,255,.05)}
+      .sb-unit-opt.on{background:rgba(83,58,183,.28);cursor:default}
+      .sb-unit-opt .msr{font-size:16px;color:#9587c9}
+      .sb-unit-soon{margin-left:auto;font-size:9px;color:#8a7fbf;border:1px solid #3a3268;border-radius:9px;padding:0 6px}
+      .sb-pv{margin:2px 6px 4px 30px;padding:6px 8px;background:rgba(255,255,255,.04);border:1px solid #2a2350;border-radius:8px}
+      .sidebar.mini .sb-pv{display:none}
+      .sb-pv-hd{display:flex;align-items:center;gap:6px;font-size:10.5px;color:#8a7fbf;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+      .sb-pv-hd .msr{font-size:14px}
+      .sb-pv-btns{display:flex;gap:4px}
+      .sb-pv-btns button{flex:1;background:transparent;border:1px solid #3a3268;color:#c8c0e6;font-size:11px;border-radius:6px;padding:4px 0;cursor:pointer}
+      .sb-pv-btns button:hover{background:#533ab7;border-color:#533ab7;color:#fff}
+    </style>
+    <div class="sb-unit" title="Unidade de negócio (introdução — troca completa em breve)">
+      <div class="sb-unit-cur" onclick="var m=this.parentNode.querySelector('.sb-unit-menu');m.style.display=(m.style.display==='block'?'none':'block')">
+        <span class="msr">apartment</span><span class="u-nm">Campo &amp; Obras</span><span class="u-cv">&#9662;</span>
+      </div>
+      <div class="sb-unit-menu" style="display:none">
+        <div class="sb-unit-opt on"><span class="msr">apartment</span>Campo &amp; Obras</div>
+        <div class="sb-unit-opt" onclick="navSoon('Unidade: Oficina Elétrica',null);this.closest('.sb-unit-menu').style.display='none'"><span class="msr">bolt</span>Oficina Elétrica<span class="sb-unit-soon">em breve</span></div>
+      </div>
+    </div>
     <nav class="sb-nav">
       <button class="sb-i" onclick="navInicio(this)"><span class="ic"><span class="msr">space_dashboard</span></span><span class="lb">Painel Inicial</span></button>
       <button class="sb-i fut" onclick="navSoon('Tarefas',this)"><span class="ic"><span class="msr">checklist</span></span><span class="lb">Tarefas</span><span class="br">em breve</span></button>
@@ -474,17 +521,20 @@ body.papel-tecnico .adm-only{display:none !important}
         <button class="sb-i fut" onclick="navSoon('Propostas',this)"><span class="ic"><span class="msr">description</span></span><span class="lb">Propostas</span><span class="br">em breve</span></button>
         <button class="sb-i" onclick="navView('orcamento',this)"><span class="ic"><span class="msr">request_quote</span></span><span class="lb">Orçamentos</span></button>
         <button class="sb-i" onclick="navView('barramento',this);carregarBarramento()"><span class="ic"><span class="msr">bolt</span></span><span class="lb">Orç. de barramento</span></button>
-        <div style="font-size:10px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6a5f95;padding:11px 15px 4px">Cadastros</div>
-        <button class="sb-i" onclick="navView('clientes',this)"><span class="ic"><span class="msr">contacts</span></span><span class="lb">Clientes</span></button>
-        <button class="sb-i" onclick="navView('catservico',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Serviços</span></button>
-        <button class="sb-i" onclick="navView('catequip',this)"><span class="ic"><span class="msr">construction</span></span><span class="lb">Equipamentos</span></button>
-        <button class="sb-i" onclick="navView('catdespesa',this)"><span class="ic"><span class="msr">local_shipping</span></span><span class="lb">Deslocamento &amp; Despesas</span></button>
+        <div class="sb-grp sb-grp-nest" onclick="toggleGrp(this)"><span class="ic"><span class="msr">folder</span></span><span class="lb">Cadastros</span><span class="gchev">▶</span></div>
+        <div class="sb-sub sb-sub-nest">
+          <button class="sb-i" onclick="navView('clientes',this)"><span class="ic"><span class="msr">contacts</span></span><span class="lb">Clientes</span></button>
+          <button class="sb-i" onclick="navView('catservico',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Serviços</span></button>
+          <button class="sb-i" onclick="navView('catequip',this)"><span class="ic"><span class="msr">construction</span></span><span class="lb">Equipamentos</span></button>
+          <button class="sb-i" onclick="navView('catdespesa',this)"><span class="ic"><span class="msr">local_shipping</span></span><span class="lb">Deslocamento &amp; Despesas</span></button>
+        </div>
       </div>
 
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">business_center</span></span><span class="lb">Gestão</span><span class="gchev">▶</span></div>
       <div class="sb-sub">
         <button class="sb-i" onclick="navView('colab',this)"><span class="ic"><span class="msr">groups</span></span><span class="lb">Equipe</span></button>
         <button class="sb-i" onclick="navView('catmaobra',this)"><span class="ic"><span class="msr">badge</span></span><span class="lb">Mão de obra · valores</span></button>
+        <button class="sb-i" onclick="navView('abrangencia',this)"><span class="ic"><span class="msr">public</span></span><span class="lb">Abrangência</span></button>
         <button class="sb-i fut" onclick="navSoon('Atividades',this)"><span class="ic"><span class="msr">history</span></span><span class="lb">Atividades</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Financeiro',this)"><span class="ic"><span class="msr">monitoring</span></span><span class="lb">Financeiro</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Frota',this)"><span class="ic"><span class="msr">local_shipping</span></span><span class="lb">Frota</span><span class="br">em breve</span></button>
@@ -503,6 +553,14 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="sb-sub adm-only">
         <button class="sb-i" onclick="navEmpresa(this)"><span class="ic"><span class="msr">domain</span></span><span class="lb">Perfil da empresa</span></button>
         <button class="sb-i" onclick="navKits(this)"><span class="ic"><span class="msr">key</span></span><span class="lb">Kits de acesso</span></button>
+        <div class="sb-pv">
+          <div class="sb-pv-hd"><span class="msr">visibility</span><span>Ver por nível</span></div>
+          <div class="sb-pv-btns">
+            <button onclick="setPreview('fundador')">Fundador</button>
+            <button onclick="setPreview('adm')">Admin</button>
+            <button onclick="setPreview('tecnico')">Técnico</button>
+          </div>
+        </div>
         <div class="sb-grp sb-grp-nest" onclick="toggleGrp(this)"><span class="ic"><span class="msr">policy</span></span><span class="lb">Política</span><span class="gchev">▶</span></div>
         <div class="sb-sub sb-sub-nest">
           <button class="sb-i" onclick="abrirManualCartao()"><span class="ic"><span class="msr">credit_card</span></span><span class="lb">Manual do Cartão</span></button>
@@ -673,6 +731,10 @@ body.papel-tecnico .adm-only{display:none !important}
 
   <div class="view" id="v-catmaobra">
     <iframe id="catmaobra-frame" title="Mão de obra — tipos de profissional" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
+  </div>
+
+  <div class="view" id="v-abrangencia">
+    <iframe id="abrangencia-frame" title="Abrangência — onde a eX atende" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
   </div>
 
   <!-- PERFIL DA EMPRESA (página, só leitura) -->
@@ -1417,6 +1479,10 @@ const STORE_KEY='ex_crono_v9';
 const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
 const SB = (window.supabase && SB_URL) ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+// Ouvinte EARLY de recuperação de senha: o cliente processa o link do e-mail assim que é criado,
+// antes do listener do init() — então captamos o PASSWORD_RECOVERY já aqui pra não cair no auto-login.
+var _RECOVERY=false;
+if(SB){ SB.auth.onAuthStateChange(function(ev){ if(ev==='PASSWORD_RECOVERY'){ _RECOVERY=true; try{ if(typeof mostrarRecovery==='function') mostrarRecovery(); }catch(e){} } }); }
 // mapas de status/prioridade entre app e banco
 const ST2DB={todo:'a_fazer',wip:'em_andamento',done:'concluida',ice:'congelada'};
 const ST2APP={a_fazer:'todo',em_andamento:'wip',concluida:'done',congelada:'ice'};
@@ -1499,7 +1565,37 @@ function _gatingApply(allowed,papel){
     if(el.classList.contains('sb-grp')){ var sub=el.nextElementSibling; if(sub&&sub.classList&&sub.classList.contains('sb-sub'))sub.style.display=ok?'':'none'; }
   });
 }
+/* ===== VER POR NÍVEL (pré-visualização de hierarquia, só admin/fundador) ===== */
+var _PREVIEW_PAPEL=null;
+function _papelRank(p){ return p==='fundador'?3:(p==='adm'?2:1); }
+function _tecMods(){ // teto do nível técnico = módulos com papel_min<=tecnico (do catálogo alinhado)
+  try{ var L=(typeof KT_MODULOS_DEFAULT!=='undefined'?KT_MODULOS_DEFAULT:[]).filter(function(m){return !m.futuro && _papelRank(m.papel_min)<=_papelRank('tecnico');}).map(function(m){return m.id;}); if(L.length) return L; }catch(e){}
+  return ['painel','chat','operacao','almoxarifado','sst'];
+}
+function _previewBanner(){
+  var b=document.getElementById('preview-banner'); if(!b) return;
+  if(_PREVIEW_PAPEL){ var nm={tecnico:'Técnico',adm:'Administrador',fundador:'Fundador'}[_PREVIEW_PAPEL]||_PREVIEW_PAPEL;
+    var lb=b.querySelector('.pv-lb'); if(lb) lb.textContent='Pré-visualizando a barra como: '+nm;
+    b.style.display='flex';
+  } else b.style.display='none';
+}
+function setPreview(pv){
+  _PREVIEW_PAPEL=pv;
+  document.body.classList.toggle('papel-tecnico', pv==='tecnico');   // espelha itens adm-only
+  aplicarGating(); _previewBanner();
+  var m=document.getElementById('user-menu'); if(m) m.classList.remove('open');
+}
+function clearPreview(){
+  _PREVIEW_PAPEL=null;
+  aplicarPapel();          // restaura pelo papel real
+  aplicarGating(); _previewBanner();
+}
 async function aplicarGating(){
+  if(_PREVIEW_PAPEL){                                                                // modo "ver por nível"
+    if(_PREVIEW_PAPEL==='adm'||_PREVIEW_PAPEL==='fundador'){ _gatingApply(null,_PREVIEW_PAPEL); }
+    else { _gatingApply(_tecMods(),_PREVIEW_PAPEL); }
+    return;
+  }
   var P=(typeof _PERFIL!=='undefined'&&_PERFIL)||window._PERFIL||null;
   var papel=(P&&P.papel)||'';
   if(!P||papel==='adm'||papel==='fundador'){ _gatingApply(null,papel); return; }   // trava: admin/fundador vê tudo
@@ -2954,7 +3050,7 @@ function aplicarModoNav(){
 }
 function irLista(t){ S.emProjeto=false; save(); aplicarModoNav(); tab(t,document.getElementById(t==='modelos'?'nav-modelos-lbl':'nav-lista-lbl')); }
 function voltarProjetos(){ irLista('proj'); }
-function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='catservico')carregarCatServico();if(t==='catequip')carregarCatEquip();if(t==='catdespesa')carregarCatDespesa();if(t==='catmaobra')carregarCatMaoObra();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();
+function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='catservico')carregarCatServico();if(t==='catequip')carregarCatEquip();if(t==='catdespesa')carregarCatDespesa();if(t==='catmaobra')carregarCatMaoObra();if(t==='abrangencia')carregarAbrangenciaView();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();
   const cadBtn=document.getElementById('cad-btn');
   if(cadBtn&&!['colab','cat','mat','acessos','cfg'].includes(t)){cadBtn.classList.remove('active');cadBtn.innerHTML='Cadastros <span style="font-size:10px">▾</span>';document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.remove('active'));}
 }
@@ -3046,6 +3142,7 @@ function carregarBarramento(){ const f=document.getElementById('bar-frame'); if(
 function carregarCatEquip(){ const f=document.getElementById('catequip-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Catalogo.html?tipo=equipamento'); }
 function carregarCatDespesa(){ const f=document.getElementById('catdespesa-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Catalogo.html?tipo=despesa'); }
 function carregarCatMaoObra(){ const f=document.getElementById('catmaobra-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_MaoObra.html'); }
+function carregarAbrangenciaView(){ const f=document.getElementById('abrangencia-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Abrangencia.html'); }
 function navObras(el){ setSbActive(el); _obranav(true); irLista('proj'); }
 async function navEmpresa(el){ navView('empresa',el); await _hubEnsureEmpresa(); renderEmpresaView(); }
 function renderEmpresaView(){
@@ -3429,6 +3526,32 @@ async function fazerLogin(){
   const { error } = await SB.auth.signInWithPassword({ email, password: senha });
   btn.disabled=false; btn.textContent='Entrar';
   if(error){ loginErro('E-mail ou senha inválidos.'); console.warn('login:',error.message); }
+}
+function loginInfo(msg){ const e=document.getElementById('login-info'); if(e){ e.textContent=msg||''; e.style.display=msg?'block':'none'; } }
+function recErro(msg){ const e=document.getElementById('rec-erro'); if(e){ e.textContent=msg||''; e.style.display=msg?'block':'none'; } }
+async function esqueciSenha(){
+  if(!SB){ loginErro('Sem conexão com a nuvem.'); return; }
+  const email=(document.getElementById('login-email').value||'').trim();
+  if(!email){ loginInfo(''); loginErro('Digite seu e-mail no campo acima e clique de novo.'); return; }
+  loginErro(''); loginInfo('Enviando…');
+  const { error } = await SB.auth.resetPasswordForEmail(email, { redirectTo: location.origin+location.pathname });
+  if(error){ loginInfo(''); loginErro('Não deu pra enviar: '+error.message); console.warn('reset:',error.message); return; }
+  loginInfo('Link de redefinição enviado para '+email+'. Abra o e-mail (veja também o spam) e clique no link — ele traz você de volta aqui para criar a nova senha.');
+}
+function mostrarRecovery(){ loginVisivel(true); const l=document.getElementById('logincard'), r=document.getElementById('recoverycard'); if(l)l.style.display='none'; if(r)r.style.display='block'; }
+async function definirNovaSenha(){
+  if(!SB){ recErro('Sem conexão com a nuvem.'); return; }
+  const s=document.getElementById('rec-senha').value||'';
+  if(s.length<6){ recErro('A senha precisa de pelo menos 6 caracteres.'); return; }
+  const btn=document.getElementById('rec-btn'); btn.disabled=true; btn.textContent='Salvando…'; recErro('');
+  const { error } = await SB.auth.updateUser({ password: s });
+  btn.disabled=false; btn.textContent='Salvar e entrar';
+  if(error){ recErro('Não deu pra salvar: '+error.message); console.warn('updatepw:',error.message); return; }
+  _RECOVERY=false;
+  document.getElementById('rec-senha').value='';
+  const l=document.getElementById('logincard'), r=document.getElementById('recoverycard'); if(r)r.style.display='none'; if(l)l.style.display='block';
+  const { data:{ session } } = await SB.auth.getSession();
+  if(session && session.user){ if(!_USER) entrarApp(session); }
 }
 async function sair(){ if(SB) await SB.auth.signOut(); }
 async function carregarPerfil(uid){
@@ -3888,34 +4011,36 @@ function diaReabrir(){
 async function init(){
   if(!SB){ nuvemStatus('modo local','err'); loginVisivel(false); return; }
   SB.auth.onAuthStateChange((event,session)=>{
+    if(event==='PASSWORD_RECOVERY'){ _RECOVERY=true; mostrarRecovery(); return; }  // veio do link do e-mail: pedir nova senha, não entrar direto
+    if(_RECOVERY){ return; }                                                        // enquanto define a nova senha, ignora auto-login
     if(session && session.user){ if(!_USER) entrarApp(session); }
     else if(_USER){ aoDeslogar(); }
   });
   const { data:{ session } } = await SB.auth.getSession();
+  if(_RECOVERY){ mostrarRecovery(); return; }                                       // veio pelo link do e-mail: fica na tela "Nova senha", não entra
   if(session && session.user){ if(!_USER) await entrarApp(session); }
   else { loginVisivel(true); nuvemStatus('faça login','load'); }
 }
 /* ===================== KITS DE ACESSO — motor de grupos ===================== */
+/* Vocabulário POR ÁREA — espelha a tabela `modulos` do banco (o que o gating/view lê). NÃO usar ids finos (obras/diario/clientes…): a view junta em `modulos` e ids órfãos somem → gating abriria tudo. */
 var KT_MODULOS_DEFAULT=[
  {id:'painel',nome:'Painel Inicial',icone:'home',area:'principal',ordem:10,papel_min:'tecnico'},
- {id:'tarefas',nome:'Tarefas',icone:'checklist',area:'principal',ordem:20,papel_min:'tecnico'},
- {id:'agenda',nome:'Agenda',icone:'calendar_month',area:'principal',ordem:30,papel_min:'tecnico'},
- {id:'obras',nome:'Obras',icone:'account_tree',area:'operacao',ordem:40,papel_min:'tecnico'},
- {id:'diario',nome:'Diário de Obra',icone:'history_edu',area:'operacao',ordem:50,papel_min:'tecnico'},
- {id:'almoxarifado',nome:'Almoxarifado',icone:'warehouse',area:'gestao',ordem:60,papel_min:'tecnico'},
- {id:'estoque',nome:'Estoque (vendável)',icone:'sell',area:'gestao',ordem:65,papel_min:'adm',futuro:true},
- {id:'sst',nome:'SST',icone:'health_and_safety',area:'gestao',ordem:70,papel_min:'tecnico'},
- {id:'equipe',nome:'Equipe',icone:'groups',area:'gestao',ordem:80,papel_min:'adm'},
- {id:'clientes',nome:'Clientes',icone:'contacts',area:'gestao',ordem:90,papel_min:'adm'},
- {id:'financeiro',nome:'Financeiro',icone:'payments',area:'gestao',ordem:100,papel_min:'adm'},
- {id:'atividades',nome:'Atividades',icone:'manage_history',area:'gestao',ordem:110,papel_min:'adm'},
+ {id:'tarefas',nome:'Tarefas',icone:'checklist',area:'principal',ordem:20,papel_min:'tecnico',futuro:true},
+ {id:'agenda',nome:'Agenda',icone:'calendar_month',area:'principal',ordem:30,papel_min:'tecnico',futuro:true},
+ {id:'chat',nome:'Chat',icone:'forum',area:'principal',ordem:40,papel_min:'tecnico'},
+ {id:'operacao',nome:'Operação',icone:'account_tree',area:'operacao',ordem:50,papel_min:'tecnico'},
+ {id:'almoxarifado',nome:'Almoxarifado',icone:'warehouse',area:'operacao',ordem:55,papel_min:'tecnico'},
+ {id:'sst',nome:'Segurança do Trabalho',icone:'health_and_safety',area:'operacao',ordem:60,papel_min:'tecnico'},
+ {id:'comercial',nome:'Comercial',icone:'handshake',area:'gestao',ordem:70,papel_min:'adm'},
+ {id:'gestao',nome:'Gestão',icone:'insights',area:'gestao',ordem:80,papel_min:'adm'},
+ {id:'estoque',nome:'Estoque (vendável)',icone:'sell',area:'gestao',ordem:90,papel_min:'adm',futuro:true},
  {id:'config',nome:'Configurações',icone:'settings',area:'config',ordem:900,papel_min:'adm'}
 ];
 var KT_AREA_LBL={principal:'Principal',operacao:'Operação',gestao:'Gestão',config:'Configuração'};
 var KT_SUGERIDOS=[
- {nome:'Campo',icone:'construction',cor:'#22d27f',mods:['painel','tarefas','agenda','obras','diario','almoxarifado','sst']},
- {nome:'Escritório',icone:'business_center',cor:'#533ab7',mods:['painel','tarefas','agenda','clientes','financeiro','atividades']},
- {nome:'Supervisor',icone:'verified_user',cor:'#ba7517',mods:['painel','tarefas','agenda','obras','diario','almoxarifado','sst','equipe','clientes','atividades']}
+ {nome:'Campo',icone:'construction',cor:'#22d27f',mods:['painel','chat','operacao','almoxarifado','sst']},
+ {nome:'Escritório',icone:'business_center',cor:'#533ab7',mods:['painel','chat','comercial','gestao']},
+ {nome:'Supervisor',icone:'verified_user',cor:'#ba7517',mods:['painel','chat','operacao','almoxarifado','sst','comercial','gestao']}
 ];
 var KT_ICONES=['construction','business_center','verified_user','groups','engineering','badge','shield','handyman','apartment','key'];
 var KT_CORES=['#22d27f','#533ab7','#ba7517','#2f6fed','#a32d2d','#0ea5a5','#e0699f','#475569'];
