@@ -505,6 +505,13 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .fatobra .fo-kmrst .material-symbols-rounded{font-size:14px}
 .fatobra .fo-setcity{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--pri-line,#ddd3f6);background:var(--pri-bg,#efeafc);color:var(--pri);border-radius:8px;padding:6px 11px;font:700 12px inherit;cursor:pointer}
 .fatobra .fo-setcity .material-symbols-rounded{font-size:16px}
+.fatobra .fo-autopill.congelado{background:#eef1f7;border-color:#c9d2e3;color:#3a4a63}
+.fatobra .fo-autopill.congelado .material-symbols-rounded{color:#5a6b86}
+.fatobra .fo-autopill.congelado small{color:#3a4a63;opacity:.85}
+.fatobra .fo-kmtag.frozen{color:#3a4a63;background:#e6eaf2;border-color:#c9d2e3}
+.fatobra .fo-lock{display:inline-flex;align-items:center;gap:3px;border:1px solid var(--line2);background:var(--surf);color:var(--tx3);border-radius:7px;padding:3px 8px;font:700 10.5px inherit;cursor:pointer;text-transform:uppercase;letter-spacing:.02em}
+.fatobra .fo-lock:hover{border-color:#5a6b86;color:#3a4a63}
+.fatobra .fo-lock .material-symbols-rounded{font-size:14px}
 .fatobra .fo-fl{display:inline-flex;align-items:center;gap:4px}
 .fatobra .flbtn{border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:7px;padding:6px 9px;font:600 12.5px inherit;cursor:pointer}
 .fatobra .flbtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
@@ -1154,7 +1161,14 @@ function blkMargemCtrl(cfg){ if(!cfg.custo) return '';
   return `<span class="blkmg pass" title="Este bloco entra a CUSTO — sem lucro. O imposto incide sobre tudo (repasse)."><span class="material-symbols-rounded">receipt_long</span>custo + imposto</span>`;
 }
 // ===== FATORES DA OBRA (gerais do orçamento) — só afetam serviços MONTADOS (com composição) =====
-function abrObra(){ return faixaDeKm(kmObra())||{custo_pct:0,tempo_pct:0}; }   // abrangência = faixa automática pelo km (base → cidade da loja)
+function abrCongelada(){ return !!(S.abrSnap && typeof S.abrSnap==='object'); }   // proposta congelada = não recalcula
+function abrObra(){ if(abrCongelada()) return {custo_pct:num(S.abrSnap.custo_pct),tempo_pct:num(S.abrSnap.tempo_pct)};
+  return faixaDeKm(kmObra())||{custo_pct:0,tempo_pct:0}; }   // ao vivo: faixa pelo km (base → cidade da loja)
+function congelarAbr(){ const f=faixaDeKm(kmObra())||{custo_pct:0,tempo_pct:0}; const lm=lojaMun(), bm=baseMun();
+  S.abrSnap={ km:kmObra(), custo_pct:num(f.custo_pct), tempo_pct:num(f.tempo_pct), rotulo:f.rotulo||'',
+    base:S.baseNome||(bm?bm.nome:''), cidade:lm?(lm.nome+'/'+lm.uf):'', at:new Date().toISOString() }; }
+function descongelarAbr(){ S.abrSnap=null; }
+function toggleCongelarAbr(){ if(abrCongelada())descongelarAbr(); else congelarAbr(); save(); recalc(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
 function localMult(){ const f=num(S.fatorLocal); return f>0?f:1; }
 function obraMult(r){ if(!r||!r.composicao) return 1;   // tabelado/avulso não leva fator da obra
   return (1+num(abrObra().custo_pct)/100) * localMult(); }
@@ -1375,6 +1389,7 @@ function sanitize(){
   if(!Array.isArray(S.comprovantes))S.comprovantes=[];
   if(S.abrIdx===undefined)S.abrIdx=0;
   if(S.kmManual===undefined)S.kmManual=0;   // km rodado sobrescrito (0 = usa o automático base→cidade)
+  if(S.abrSnap===undefined)S.abrSnap=null;   // congelamento da abrangência (null = calcula ao vivo)
   if(S.fatorLocal===undefined||num(S.fatorLocal)<=0)S.fatorLocal=1;
   if(!S.status)S.status='rascunho';
 }
@@ -1711,8 +1726,11 @@ function fatoresObraHtml(){
       <div class="fo-row"><label><span class="material-symbols-rounded">warehouse</span>Base de atendimento</label><select class="fo-sel" onchange="setBaseMun(this.value)">${baseOpts||'<option>— cadastre uma base —</option>'}</select></div>
       <div class="fo-row"><label><span class="material-symbols-rounded">pin_drop</span>Abrangência</label>
         <div class="fo-auto">
-          ${ lm ? `<span class="fo-autopill"><span class="material-symbols-rounded">bolt</span>${esc(faixa.rotulo||'—')}${aPct}</span>
-            <span class="fo-km"><span class="material-symbols-rounded">route</span>${bm?esc(bm.nome+'/'+bm.uf):'base?'} → ${esc(lm.nome+'/'+lm.uf)}: <input class="fo-kmin" value="${km!=null?_d1(km):''}" inputmode="decimal" placeholder="km" onchange="setKmManual(this.value)" title="km rodado — edite para sobrescrever o automático">km ${kmManualOn()?`<button class="fo-kmrst" onclick="clearKmManual()" title="voltar ao automático (${kmAuto()!=null?_d1(kmAuto())+' km':'—'})"><span class="material-symbols-rounded">restart_alt</span>auto</button>`:'<span class="fo-kmtag">auto</span>'}</span>`
+          ${ abrCongelada() ? (()=>{ const sn=S.abrSnap; const p=(num(sn.custo_pct)||num(sn.tempo_pct))?` <small>${pct(sn.custo_pct)} custo · ${pct(sn.tempo_pct)} prazo</small>`:' <small>sem acréscimo</small>';
+              return `<span class="fo-autopill congelado"><span class="material-symbols-rounded">lock</span>${esc(sn.rotulo||'—')}${p}</span>
+              <span class="fo-km"><span class="fo-kmtag frozen">congelado</span>${sn.cidade?esc((sn.base||'base')+' → '+sn.cidade+(sn.km!=null?': '+_d1(sn.km)+' km':'')):'valor travado da proposta'} <button class="fo-kmrst" onclick="toggleCongelarAbr()" title="recalcular pela cidade/km atual"><span class="material-symbols-rounded">restart_alt</span>recalcular</button></span>`; })()
+            : lm ? `<span class="fo-autopill"><span class="material-symbols-rounded">bolt</span>${esc(faixa.rotulo||'—')}${aPct}</span>
+              <span class="fo-km"><span class="material-symbols-rounded">route</span>${bm?esc(bm.nome+'/'+bm.uf):'base?'} → ${esc(lm.nome+'/'+lm.uf)}: <input class="fo-kmin" value="${km!=null?_d1(km):''}" inputmode="decimal" placeholder="km" onchange="setKmManual(this.value)" title="km rodado — edite para sobrescrever o automático">km ${kmManualOn()?`<button class="fo-kmrst" onclick="clearKmManual()" title="voltar ao automático (${kmAuto()!=null?_d1(kmAuto())+' km':'—'})"><span class="material-symbols-rounded">restart_alt</span>auto</button>`:'<span class="fo-kmtag">auto</span>'} <button class="fo-lock" onclick="toggleCongelarAbr()" title="congelar este valor na proposta (não recalcula mais)"><span class="material-symbols-rounded">lock_open</span>congelar</button></span>`
             : `<span class="fo-autopill nocity"><span class="material-symbols-rounded">wrong_location</span>Loja sem cidade cadastrada</span><button class="fo-setcity" onclick="openRaioCidade()"><span class="material-symbols-rounded">add_location_alt</span>definir cidade da loja</button>` }
         </div></div>
       <div class="fo-row"><label><span class="material-symbols-rounded">terrain</span>Fator do local</label><div class="fo-fl">${presets}<input class="fo-flin" value="${String(fl).replace('.',',')}" inputmode="decimal" onchange="setFatorLocal(this.value)" title="ou digite (até ${String(fmax).replace('.',',')}×)">×</div></div>
@@ -2419,7 +2437,7 @@ function renderBanner(){ const el=document.getElementById('oppBanner'); if(!el){
 }
 /* ===== Comprovantes de fechamento (Fase 1) — a aprovação vira reflexo da PROVA ===== */
 const CMP_TIPOS={email:{nome:'E-mail de aprovação',ic:'mail'},os:{nome:'Ordem de serviço / pedido',ic:'receipt_long'},contrato:{nome:'Contrato / termo',ic:'history_edu'},outro:{nome:'Outro',ic:'attach_file'}};
-function syncStatusFromComprovantes(){ const has=(S.comprovantes||[]).length>0; if(has){ if(S.status!=='aprovado')S.status='aprovado'; } else if(S.status==='aprovado'){ S.status='enviado'; } }
+function syncStatusFromComprovantes(){ const has=(S.comprovantes||[]).length>0; if(has){ if(S.status!=='aprovado')S.status='aprovado'; if(!abrCongelada())congelarAbr(); } else if(S.status==='aprovado'){ S.status='enviado'; } }
 function onComprovantesChange(){ syncStatusFromComprovantes(); try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){} try{recalc();}catch(e){} writeback(S._total||0);
   if(OPP&&CLOUD){ pushOrc(); }   // fechamento é ação deliberada → grava o orçamento (dados+status) na nuvem
   renderBanner(); }
@@ -2475,6 +2493,7 @@ async function verComprovante(id){ const c=(S.comprovantes||[]).find(x=>x.id===i
   if(c.url.indexOf('anexos:')===0){ if(!SB){alert('Sem conexão.');return;} try{ const {data,error}=await SB.storage.from('anexos').createSignedUrl(c.url.slice(7),3600); if(error)throw error; window.open(data.signedUrl,'_blank'); }catch(e){ alert('Não foi possível abrir: '+(e.message||e)); } }
   else { window.open(c.url,'_blank'); } }
 function setStatus(s){ S.status=s;
+  if((s==='enviado'||s==='aprovado') && !abrCongelada())congelarAbr();   // enviar/aprovar CONGELA a abrangência (proposta passada não muda)
   try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){}   // local sempre
   try{recalc();}catch(e){} writeback(S._total||0);               // atualiza o índice local do funil
   // status é AÇÃO explícita: grava só o status na nuvem NA HORA (não arrasta edições de conteúdo não salvas)
