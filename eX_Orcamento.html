@@ -2100,7 +2100,7 @@ async function carregarMaoObra(){
   }catch(e){ console.error('maoobra',e); }
 }
 async function carregarAbrangencia(){
-  try{ const {data,error}=await SB.from('orc_abrangencia').select('nivel,rotulo,ordem,custo_pct,tempo_pct').order('ordem');
+  try{ const {data,error}=await SB.from('orc_abrangencia').select('id,nivel,rotulo,ordem,custo_pct,tempo_pct,km_ate').order('ordem');
     if(!error && data && data.length) ABRANGENCIA=data;
   }catch(e){ console.error('abrangencia',e); }
   if(!ABRANGENCIA.length) ABRANGENCIA=[{nivel:'local',rotulo:'Local',custo_pct:0,tempo_pct:0},{nivel:'estadual',rotulo:'Estadual',custo_pct:10,tempo_pct:8},{nivel:'nacional',rotulo:'Nacional',custo_pct:20,tempo_pct:15}];
