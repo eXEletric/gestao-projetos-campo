@@ -2083,7 +2083,8 @@ function renderNova(host){
     <a href="eX_Orcamento_PREVIEW.html" style="margin-left:auto;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:6px 11px;font:600 12.5px inherit;text-decoration:none"><span class="material-symbols-rounded" style="font-size:15px">arrow_back</span>voltar</a></div>
   <div style="background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:20px;max-width:560px;box-shadow:0 8px 26px rgba(60,40,140,.06)">
     <label style="font-size:11px;font-weight:700;color:var(--tx3)">Contratante</label>
-    <select id="nuContr" style="width:100%;margin:5px 0 12px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— selecione —</option>${contrOpts}</select>
+    <select id="nuContr" onchange="novaContrChange(this.value)" style="width:100%;margin:5px 0 8px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— selecione —</option>${contrOpts}<option value="__novo__">➕ Novo — candidato a contratante</option></select>
+    <div id="nuContrNovoWrap" style="display:none;margin:0 0 12px"><input id="nuContrNovo" style="width:100%;padding:9px 11px;border:1px solid var(--pers,#b0701a);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)" placeholder="Nome do candidato a contratante (prospecto)"><div style="font-size:11px;color:var(--pers,#b0701a);margin-top:4px"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">person_add</span> Vira um contratante marcado como candidato — dá pra confirmar depois no CRM.</div></div>
     <label style="font-size:11px;font-weight:700;color:var(--tx3)">Objeto / nome <span style="font-weight:500;text-transform:none;color:var(--tx3)">— digite para reaproveitar um nome já usado</span></label>
     <input id="nuObj" list="nuObjList" autocomplete="off" style="width:100%;margin:5px 0 4px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)" placeholder="ex.: Automação de ar-condicionado" oninput="novaObjHint(this.value)">
     <datalist id="nuObjList">${(NOVA_OBJS||[]).map(o=>`<option value="${esc(o)}"></option>`).join('')}</datalist>
@@ -2111,6 +2112,7 @@ function renderNovaCond(){
   }
 }
 function toggleNovaLote(){ NOVA_LOTE=!NOVA_LOTE; document.querySelector('#loteView .ex-switch').classList.toggle('on',NOVA_LOTE); renderNovaCond(); }
+function novaContrChange(v){ const w=_lg('nuContrNovoWrap'); if(w){ w.style.display=(v==='__novo__')?'block':'none'; if(v==='__novo__'){const i=_lg('nuContrNovo'); if(i)i.focus();} } }
 function novaObjHint(v){ const el=_lg('nuObjHint'); if(!el)return; v=(v||'').trim().toLowerCase();
   if(!v){ el.innerHTML=(NOVA_OBJS||[]).length+' nome(s) já cadastrados — comece a digitar para ver os parecidos.'; el.style.color='var(--tx3)'; return; }
   const m=(NOVA_OBJS||[]).filter(o=>o.toLowerCase().includes(v));
@@ -2129,11 +2131,17 @@ async function createLoteAndBase(nome,contr){
   return lid;
 }
 async function criarNova(){
-  const contr=_lg('nuContr').value||null; const obj=(_lg('nuObj').value||'').trim();
-  if(!contr){ alert('Escolha o contratante.'); return; }
-  const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
+  let contr=_lg('nuContr').value||null; const obj=(_lg('nuObj').value||'').trim();
   const go=_lg('nuGo'); if(go)go.disabled=true;
   try{
+    if(contr==='__novo__'){   // candidato a contratante: cria na hora
+      const nm=(_lg('nuContrNovo').value||'').trim();
+      if(!nm){ alert('Digite o nome do candidato a contratante.'); if(go)go.disabled=false; return; }
+      const ins=await SB.from('clientes').insert({empresa_id:EMPRESA_ID,tipo:'candidato',nome:nm}).select('id').limit(1);
+      if(ins.error) throw ins.error; contr=ins.data[0].id; (CLIENTES=CLIENTES||[]).push({id:contr,nome:nm,tipo:'candidato',pai_id:null});
+    }
+    if(!contr){ alert('Escolha o contratante.'); if(go)go.disabled=false; return; }
+    const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
     if(NOVA_LOTE){
       const nome=obj||(contrNome+' — lote');
       const lid=await createLoteAndBase(nome,contr);
