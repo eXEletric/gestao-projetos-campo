@@ -1746,7 +1746,7 @@ function fatoresObraHtml(){
       <div class="fo-row"><label><span class="material-symbols-rounded">warehouse</span>Base de atendimento</label><select class="fo-sel" onchange="setBaseMun(this.value)">${baseOpts||'<option>— cadastre uma base —</option>'}</select></div>
       <div class="fo-row"><label><span class="material-symbols-rounded">pin_drop</span>Abrangência</label>
         <div class="fo-auto">
-          ${ abrCongelada() ? (()=>{ const sn=S.abrSnap; const p=(num(sn.custo_pct)||num(sn.tempo_pct))?` <small>${pct(sn.custo_pct)} custo · ${pct(sn.tempo_pct)} prazo</small>`:' <small>sem acréscimo</small>';
+          ${ isLoteBase() ? loteAbrHtml() : abrCongelada() ? (()=>{ const sn=S.abrSnap; const p=(num(sn.custo_pct)||num(sn.tempo_pct))?` <small>${pct(sn.custo_pct)} custo · ${pct(sn.tempo_pct)} prazo</small>`:' <small>sem acréscimo</small>';
               return `<span class="fo-autopill congelado"><span class="material-symbols-rounded">lock</span>${esc(sn.rotulo||'—')}${p}</span>
               <span class="fo-km"><span class="fo-kmtag frozen">congelado</span>${sn.cidade?esc((sn.base||'base')+' → '+sn.cidade+(sn.km!=null?': '+_d1(sn.km)+' km':'')):'valor travado da proposta'} <button class="fo-kmrst" onclick="toggleCongelarAbr()" title="recalcular pela cidade/km atual"><span class="material-symbols-rounded">restart_alt</span>recalcular</button></span>`; })()
             : lm ? `<span class="fo-autopill"><span class="material-symbols-rounded">bolt</span>${esc(faixa.rotulo||'—')}${aPct}</span>
@@ -2159,7 +2159,25 @@ async function criarNova(){
 }
 
 /* ============ PRÉVIA · PROPOSTA EM LOTE (tela mestra) ============ */
-let LOTE_ID=null, LOTE_ROW=null, LOTE_UNITS=[], LOTE_PEND=[], BASE_DADOS=null, BASE_TOTAL=0;
+let LOTE_ID=null, LOTE_ROW=null, LOTE_UNITS=[], LOTE_PEND=[], BASE_DADOS=null, BASE_TOTAL=0, LOTE_UNIT_ABR=[];
+async function computeLoteUnitsAbr(){
+  LOTE_UNIT_ABR=[];
+  const ids=(LOTE_UNITS||[]).map(u=>u.dados&&u.dados.lojaId).filter(Boolean); if(!ids.length)return;
+  try{
+    const lj=await SB.from('lojas').select('id,municipio_id').in('id',ids); const lojaMun={}; (lj.data||[]).forEach(r=>lojaMun[r.id]=r.municipio_id);
+    const munIds=[...new Set(Object.values(lojaMun).filter(Boolean))].filter(m=>!MUNI[m]);
+    if(munIds.length){ const m=await SB.from('municipios').select('codigo_ibge,nome,uf,lat,lon').in('codigo_ibge',munIds); (m.data||[]).forEach(r=>MUNI[r.codigo_ibge]=r); }
+    const base=baseMun();
+    LOTE_UNIT_ABR=(LOTE_UNITS||[]).map(u=>{ const lid=u.dados&&u.dados.lojaId; const mid=lojaMun[lid]; const mu=mid?MUNI[mid]:null;
+      const km=(mu&&base)?Math.round(kmHaversine(base,mu)*1.25):null; const f=faixaDeKm(km)||{};
+      return {nome:u.cliente_final, cidade:mu?(mu.nome+'/'+mu.uf):null, km, custo_pct:num(f.custo_pct), tempo_pct:num(f.tempo_pct)}; });
+  }catch(e){ console.error('units abr',e); }
+}
+function loteAbrResumo(){ const a=LOTE_UNIT_ABR||[]; const comCid=a.filter(x=>x.cidade); const semCid=a.length-comCid.length;
+  const mc=comCid.length?Math.round(comCid.reduce((s,x)=>s+x.custo_pct,0)/comCid.length):0;
+  const mt=comCid.length?Math.round(comCid.reduce((s,x)=>s+x.tempo_pct,0)/comCid.length):0;
+  const min=comCid.length?Math.min(...comCid.map(x=>x.custo_pct)):0, max=comCid.length?Math.max(...comCid.map(x=>x.custo_pct)):0;
+  return {n:a.length, comCid:comCid.length, semCid, mediaCusto:mc, mediaTempo:mt, min, max}; }
 const _lg=s=>document.getElementById(s);
 async function initLote(){
   document.querySelectorAll('.grid,#oppBanner').forEach(e=>{e.style.display='none';});
@@ -2309,11 +2327,18 @@ async function loteDesmembrar(){ if(!confirm('Desmembrar o lote? Cada unidade vi
     alert('Lote desmembrado. As unidades agora são propostas avulsas.'); location.href='eX_Orcamento_PREVIEW.html';
   }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
 function loteRerender(){ if(_lg('loteBasePanel')) injectLoteBasePanel(); else if(_lg('loteView')) renderLote(_lg('loteView')); }
-async function loteReload(){ await loadLote(); loteRerender(); }
+async function loteReload(){ await loadLote(); if(isLoteBase()){ try{ await computeLoteUnitsAbr(); }catch(e){} } loteRerender(); if(isLoteBase()){ try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} } }
+function loteAbrHtml(){ const r=loteAbrResumo(); const pct=n=>num(n)>0?('+'+num(n)+'%'):'0%';
+  if(!r.n) return `<span class="fo-autopill nocity"><span class="material-symbols-rounded">wrong_location</span>Sem lojas ainda</span><span class="fo-autotag">adicione as lojas no painel acima ↑</span>`;
+  const faixa=r.min===r.max?pct(r.mediaCusto):(pct(r.min)+' a '+pct(r.max));
+  const lista=(LOTE_UNIT_ABR||[]).map(x=>x.cidade?(esc(x.cidade)+' <b style="color:var(--pri)">'+pct(x.custo_pct)+'</b>'):(esc((x.nome||'unidade').slice(0,20))+' <b style="color:var(--amber,#a45a00)">sem cidade</b>')).join(' · ');
+  return `<span class="fo-autopill"><span class="material-symbols-rounded">bolt</span>Por unidade · média ${pct(r.mediaCusto)} custo · ${pct(r.mediaTempo)} prazo</span>
+    <span class="fo-autotag"><span class="material-symbols-rounded">apartment</span>${r.comCid}/${r.n} com cidade${r.semCid?(' · '+r.semCid+' sem cidade'):''} · faixa ${faixa}</span>
+    <div style="flex-basis:100%;font-size:11.5px;color:var(--tx3);margin-top:5px;line-height:1.6">${lista}</div>`; }
 
 /* ===== base DO LOTE = MESTRA: painel "Rede & lojas do lote" dentro do orçamento base ===== */
 function isLoteBase(){ return !!(S && S._base && S_LOTE_ID); }
-async function initLoteBasePanel(){ LOTE_ID=S_LOTE_ID; try{ await loadLote(); }catch(e){ console.error(e); } injectLoteBasePanel(); relabelRede(); }
+async function initLoteBasePanel(){ LOTE_ID=S_LOTE_ID; try{ await loadLote(); await computeLoteUnitsAbr(); }catch(e){ console.error(e); } injectLoteBasePanel(); relabelRede(); try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} }
 function injectLoteBasePanel(){
   let p=_lg('loteBasePanel');
   if(!p){ p=document.createElement('div'); p.id='loteBasePanel'; p.style.cssText='margin:0 0 16px';
