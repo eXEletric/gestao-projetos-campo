@@ -243,6 +243,8 @@ select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 .diagear:hover{background:var(--pri-bg,#efeafc)}.diagear .material-symbols-rounded{font-size:17px}
 .dianote2{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--amber,#a45a00);background:#fdf5e7;padding:7px 13px;border-bottom:1px solid #f2e6cd}
 .dianote2 .material-symbols-rounded{font-size:16px}
+.revx{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#a45a00;background:#fde6cf;border:1px solid #f0cf9c;border-radius:20px;padding:1px 7px;margin-left:8px;vertical-align:middle;white-space:nowrap;cursor:help}
+.revx .material-symbols-rounded{font-size:12px;color:#a45a00}
 @media(max-width:820px){
   .moahd{display:none}
   .moarow{grid-template-columns:1fr;gap:0;padding:12px 13px}
@@ -2369,7 +2371,7 @@ function loteAbrHtml(){ const r=loteAbrResumo(); const pct=n=>num(n)>0?('+'+num(
 
 /* ===== base DO LOTE = MESTRA: painel "Rede & lojas do lote" dentro do orçamento base ===== */
 function isLoteBase(){ return !!(S && S._base && S_LOTE_ID); }
-async function initLoteBasePanel(){ LOTE_ID=S_LOTE_ID; if(!S.macro||typeof S.macro!=='object')S.macro={estruturas:[]}; try{ await loadLote(); await carregarEstruturas(); await computeLoteUnitsAbr(); computeLoteUnitsPrazo(); }catch(e){ console.error(e); } injectLoteBasePanel(); relabelRede(); try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} }
+async function initLoteBasePanel(){ LOTE_ID=S_LOTE_ID; if(!S.macro||typeof S.macro!=='object')S.macro={estruturas:[]}; try{ await loadLote(); await carregarEstruturas(); await computeLoteUnitsAbr(); computeLoteUnitsPrazo(); }catch(e){ console.error(e); } injectLoteBasePanel(); relabelRede(); try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} try{ marcarRevisaoBase(); }catch(e){} }
 function injectLoteBasePanel(){
   let p=_lg('loteBasePanel');
   if(!p){ p=document.createElement('div'); p.id='loteBasePanel'; p.style.cssText='margin:0 0 16px';
@@ -2556,6 +2558,27 @@ function verComoClienteLote(){
   ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(20,14,40,.55);overflow:auto';
 }
 function closeVerCliente(){ const ov=_lg('vcOverlay'); if(ov)ov.remove(); }
+// ---- REVISÃO do base: marca funções que podem sobrar aqui (são por unidade) ----
+function addRevx(el,motivo){ if(!el||el.dataset._revx)return; el.dataset._revx='1'; const b=document.createElement('span'); b.className='revx'; b.title=motivo||'revisar — pode sobrar no base do lote'; b.innerHTML='<span class="material-symbols-rounded">search</span>revisar'; el.appendChild(b); }
+function marcarRevisaoBase(){ if(!isLoteBase())return;
+  // painel direito (por id) — preço/fechamento são por proposta
+  const combo=_lg('ln_combo'); if(combo)addRevx(combo,'Valor combinado é por proposta/unidade');
+  const sp=_lg('s_prazo'); if(sp&&sp.parentElement)addRevx(sp.parentElement,'Prazo estimado é por unidade');
+  // blocos/seções por título (começa com…) — despesas/locações/diárias/comprovantes/status são por unidade/proposta
+  const CAND=[
+    {t:'comprovantes de fechamento',m:'Fechamento é por unidade — cada loja tem o seu'},
+    {t:'deslocamento e outras despesas',m:'Despesas variáveis (traslado etc.) são por unidade'},
+    {t:'despesas',m:'Despesas por unidade — revisar'},
+    {t:'locações',m:'Locações costumam ser por unidade — revisar'},
+  ];
+  const seen=new Set();
+  document.querySelectorAll('h2,h3,.modtag,.blk-hd,.efhd,.ph-cap,.bloco h3,span,div').forEach(el=>{
+    if(el.children.length>3||el.dataset._revx)return; const tx=(el.textContent||'').trim().toLowerCase(); if(!tx||tx.length>48)return;
+    for(const c of CAND){ if(!seen.has(c.t)&&tx.indexOf(c.t)===0){ seen.add(c.t); addRevx(el,c.m); break; } }
+  });
+  // status rascunho/enviado
+  const st=document.querySelector('.obst'); if(st&&st.parentElement)addRevx(st.parentElement,'Status (enviado/aprovado) é por proposta');
+}
 function _macroSave(){ save(); try{saveOrc();}catch(_){}; injectLoteBasePanel(); }
 function setMacroRkm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rkm=Math.max(0,num(v)); _macroSave(); }
 function setMacroKm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=Math.max(0,num(v)); _macroSave(); }
