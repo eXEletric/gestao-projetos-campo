@@ -452,6 +452,11 @@ body.papel-tecnico .adm-only{display:none !important}
     <button class="lbtn" id="rec-btn" onclick="definirNovaSenha()">Salvar e entrar</button>
   </div>
 </div>
+<div id="preview-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:9999;align-items:center;gap:12px;justify-content:center;background:#7d68e0;color:#fff;font-size:13px;font-weight:600;padding:7px 14px;box-shadow:0 2px 10px rgba(0,0,0,.25)">
+  <span class="msr" style="font-size:18px;vertical-align:-4px">visibility</span>
+  <span class="pv-lb">Pré-visualizando</span>
+  <button onclick="clearPreview()" style="background:#fff;color:#533ab7;border:none;border-radius:6px;padding:4px 12px;font-size:12px;font-weight:700;cursor:pointer">Sair da pré-visualização</button>
+</div>
 <div class="app">
   <aside class="sidebar" id="sidebar">
     <div class="sb-logo"><img src="logo_ex.png" class="sb-mark" alt="eX"><span class="sb-name">eX Cronograma</span><span class="sb-coll" onclick="toggleSidebar()" title="recolher">&#171;</span></div>
@@ -469,6 +474,13 @@ body.papel-tecnico .adm-only{display:none !important}
       .sb-unit-opt.on{background:rgba(83,58,183,.28);cursor:default}
       .sb-unit-opt .msr{font-size:16px;color:#9587c9}
       .sb-unit-soon{margin-left:auto;font-size:9px;color:#8a7fbf;border:1px solid #3a3268;border-radius:9px;padding:0 6px}
+      .sb-pv{margin:2px 6px 4px 30px;padding:6px 8px;background:rgba(255,255,255,.04);border:1px solid #2a2350;border-radius:8px}
+      .sidebar.mini .sb-pv{display:none}
+      .sb-pv-hd{display:flex;align-items:center;gap:6px;font-size:10.5px;color:#8a7fbf;text-transform:uppercase;letter-spacing:.4px;margin-bottom:5px}
+      .sb-pv-hd .msr{font-size:14px}
+      .sb-pv-btns{display:flex;gap:4px}
+      .sb-pv-btns button{flex:1;background:transparent;border:1px solid #3a3268;color:#c8c0e6;font-size:11px;border-radius:6px;padding:4px 0;cursor:pointer}
+      .sb-pv-btns button:hover{background:#533ab7;border-color:#533ab7;color:#fff}
     </style>
     <div class="sb-unit" title="Unidade de negócio (introdução — troca completa em breve)">
       <div class="sb-unit-cur" onclick="var m=this.parentNode.querySelector('.sb-unit-menu');m.style.display=(m.style.display==='block'?'none':'block')">
@@ -540,6 +552,14 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="sb-sub adm-only">
         <button class="sb-i" onclick="navEmpresa(this)"><span class="ic"><span class="msr">domain</span></span><span class="lb">Perfil da empresa</span></button>
         <button class="sb-i" onclick="navKits(this)"><span class="ic"><span class="msr">key</span></span><span class="lb">Kits de acesso</span></button>
+        <div class="sb-pv">
+          <div class="sb-pv-hd"><span class="msr">visibility</span><span>Ver por nível</span></div>
+          <div class="sb-pv-btns">
+            <button onclick="setPreview('fundador')">Fundador</button>
+            <button onclick="setPreview('adm')">Admin</button>
+            <button onclick="setPreview('tecnico')">Técnico</button>
+          </div>
+        </div>
         <div class="sb-grp sb-grp-nest" onclick="toggleGrp(this)"><span class="ic"><span class="msr">policy</span></span><span class="lb">Política</span><span class="gchev">▶</span></div>
         <div class="sb-sub sb-sub-nest">
           <button class="sb-i" onclick="abrirManualCartao()"><span class="ic"><span class="msr">credit_card</span></span><span class="lb">Manual do Cartão</span></button>
@@ -1540,7 +1560,37 @@ function _gatingApply(allowed,papel){
     if(el.classList.contains('sb-grp')){ var sub=el.nextElementSibling; if(sub&&sub.classList&&sub.classList.contains('sb-sub'))sub.style.display=ok?'':'none'; }
   });
 }
+/* ===== VER POR NÍVEL (pré-visualização de hierarquia, só admin/fundador) ===== */
+var _PREVIEW_PAPEL=null;
+function _papelRank(p){ return p==='fundador'?3:(p==='adm'?2:1); }
+function _tecMods(){ // teto do nível técnico = módulos com papel_min<=tecnico (do catálogo alinhado)
+  try{ var L=(typeof KT_MODULOS_DEFAULT!=='undefined'?KT_MODULOS_DEFAULT:[]).filter(function(m){return !m.futuro && _papelRank(m.papel_min)<=_papelRank('tecnico');}).map(function(m){return m.id;}); if(L.length) return L; }catch(e){}
+  return ['painel','chat','operacao','almoxarifado','sst'];
+}
+function _previewBanner(){
+  var b=document.getElementById('preview-banner'); if(!b) return;
+  if(_PREVIEW_PAPEL){ var nm={tecnico:'Técnico',adm:'Administrador',fundador:'Fundador'}[_PREVIEW_PAPEL]||_PREVIEW_PAPEL;
+    var lb=b.querySelector('.pv-lb'); if(lb) lb.textContent='Pré-visualizando a barra como: '+nm;
+    b.style.display='flex';
+  } else b.style.display='none';
+}
+function setPreview(pv){
+  _PREVIEW_PAPEL=pv;
+  document.body.classList.toggle('papel-tecnico', pv==='tecnico');   // espelha itens adm-only
+  aplicarGating(); _previewBanner();
+  var m=document.getElementById('user-menu'); if(m) m.classList.remove('open');
+}
+function clearPreview(){
+  _PREVIEW_PAPEL=null;
+  aplicarPapel();          // restaura pelo papel real
+  aplicarGating(); _previewBanner();
+}
 async function aplicarGating(){
+  if(_PREVIEW_PAPEL){                                                                // modo "ver por nível"
+    if(_PREVIEW_PAPEL==='adm'||_PREVIEW_PAPEL==='fundador'){ _gatingApply(null,_PREVIEW_PAPEL); }
+    else { _gatingApply(_tecMods(),_PREVIEW_PAPEL); }
+    return;
+  }
   var P=(typeof _PERFIL!=='undefined'&&_PERFIL)||window._PERFIL||null;
   var papel=(P&&P.papel)||'';
   if(!P||papel==='adm'||papel==='fundador'){ _gatingApply(null,papel); return; }   // trava: admin/fundador vê tudo
