@@ -1181,8 +1181,10 @@ function blkMargemCtrl(cfg){ if(!cfg.custo) return '';
 }
 // ===== FATORES DA OBRA (gerais do orçamento) — só afetam serviços MONTADOS (com composição) =====
 function abrCongelada(){ return !!(S.abrSnap && typeof S.abrSnap==='object'); }   // proposta congelada = não recalcula
-function abrObra(){ if(abrCongelada()) return {custo_pct:num(S.abrSnap.custo_pct),tempo_pct:num(S.abrSnap.tempo_pct)};
-  return faixaDeKm(kmObra())||{custo_pct:0,tempo_pct:0}; }   // ao vivo: faixa pelo km (base → cidade da loja)
+function isLoteUnit(){ return !!S_LOTE_ID && !(S&&S._base); }   // unidade de lote (não o base)
+function abrObra(){ let f = abrCongelada()? {custo_pct:num(S.abrSnap.custo_pct),tempo_pct:num(S.abrSnap.tempo_pct)} : (faixaDeKm(kmObra())||{custo_pct:0,tempo_pct:0});
+  if(isLoteUnit()) f={custo_pct:0, tempo_pct:num(f.tempo_pct)};   // #2: na unidade de lote o CUSTO do deslocamento está no macro (rota) — aqui só o PRAZO estica
+  return f; }
 function congelarAbr(){ const f=faixaDeKm(kmObra())||{custo_pct:0,tempo_pct:0}; const lm=lojaMun(), bm=baseMun();
   S.abrSnap={ km:kmObra(), custo_pct:num(f.custo_pct), tempo_pct:num(f.tempo_pct), rotulo:f.rotulo||'',
     base:S.baseNome||(bm?bm.nome:''), cidade:lm?(lm.nome+'/'+lm.uf):'', at:new Date().toISOString() }; }
@@ -1728,7 +1730,9 @@ function fatoresObraHtml(){
   const abrDesc={local:'na sua base / cidade',estadual:'dentro do estado',nacional:'outro estado ou país'};
   const km=kmObra(), faixa=faixaDeKm(km)||{}, lm=lojaMun(), bm=baseMun();
   const baseOpts=(ORIGENS||[]).map(o=>`<option value="${o.municipio_id}" ${o.municipio_id==S.baseMunId?'selected':''}>${esc(o.nome)}</option>`).join('');
-  const aPct=(num(faixa.custo_pct)||num(faixa.tempo_pct))?` <small>${pct(faixa.custo_pct)} custo · ${pct(faixa.tempo_pct)} prazo</small>`:' <small>sem acréscimo</small>';
+  const aPct=isLoteUnit()
+      ? ` <small>${pct(faixa.tempo_pct)} prazo · <span style="color:#0f7b8a">custo no macro do lote</span></small>`
+      : ((num(faixa.custo_pct)||num(faixa.tempo_pct))?` <small>${pct(faixa.custo_pct)} custo · ${pct(faixa.tempo_pct)} prazo</small>`:' <small>sem acréscimo</small>');
   const cfg = S._foCfg ? `<div class="fo-cfg">
       <div class="fo-cfg-sec">Abrangência — <b>suas regiões</b>; quanto mais <b>longe</b>, mais <b>encarece</b> e <b>demora</b></div>
       <div class="fo-cfg-tbl">
