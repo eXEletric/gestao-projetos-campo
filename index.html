@@ -1454,6 +1454,10 @@ const STORE_KEY='ex_crono_v9';
 const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
 const SB = (window.supabase && SB_URL) ? window.supabase.createClient(SB_URL, SB_KEY) : null;
+// Ouvinte EARLY de recuperação de senha: o cliente processa o link do e-mail assim que é criado,
+// antes do listener do init() — então captamos o PASSWORD_RECOVERY já aqui pra não cair no auto-login.
+var _RECOVERY=false;
+if(SB){ SB.auth.onAuthStateChange(function(ev){ if(ev==='PASSWORD_RECOVERY'){ _RECOVERY=true; try{ if(typeof mostrarRecovery==='function') mostrarRecovery(); }catch(e){} } }); }
 // mapas de status/prioridade entre app e banco
 const ST2DB={todo:'a_fazer',wip:'em_andamento',done:'concluida',ice:'congelada'};
 const ST2APP={a_fazer:'todo',em_andamento:'wip',concluida:'done',congelada:'ice'};
@@ -3467,7 +3471,6 @@ async function fazerLogin(){
   btn.disabled=false; btn.textContent='Entrar';
   if(error){ loginErro('E-mail ou senha inválidos.'); console.warn('login:',error.message); }
 }
-var _RECOVERY=false;
 function loginInfo(msg){ const e=document.getElementById('login-info'); if(e){ e.textContent=msg||''; e.style.display=msg?'block':'none'; } }
 function recErro(msg){ const e=document.getElementById('rec-erro'); if(e){ e.textContent=msg||''; e.style.display=msg?'block':'none'; } }
 async function esqueciSenha(){
@@ -3958,6 +3961,7 @@ async function init(){
     else if(_USER){ aoDeslogar(); }
   });
   const { data:{ session } } = await SB.auth.getSession();
+  if(_RECOVERY){ mostrarRecovery(); return; }                                       // veio pelo link do e-mail: fica na tela "Nova senha", não entra
   if(session && session.user){ if(!_USER) await entrarApp(session); }
   else { loginVisivel(true); nuvemStatus('faça login','load'); }
 }
