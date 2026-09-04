@@ -2439,10 +2439,17 @@ function renderLoteBaseHtml(){
     <button class="lbtn" style="${modo==='estimativa'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteModo('estimativa')"><span class="material-symbols-rounded" style="${modo==='estimativa'?'color:#fff':''}">calculate</span>Estimativa (× N)</button>
     <button class="lbtn" style="${modo==='detalhado'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteModo('detalhado')"><span class="material-symbols-rounded" style="${modo==='detalhado'?'color:#fff':''}">splitscreen</span>Detalhado (unidades)</button>
     <span style="margin-left:auto;font-size:11.5px;color:var(--tx3)">${modo==='estimativa'?'volume, sem loja a loja':'cada loja é uma proposta'}</span></div>`;
-  const addBar=`<div style="padding:12px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line2)">
-      <select id="lbLoja" style="flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">${(LOJAS&&LOJAS.length)?'— escolha a loja —':'carregando lojas…'}</option>${lojaOpts}</select>
-      <button class="lbtn" style="padding:8px 13px;background:var(--pri);color:#fff;border-color:var(--pri)" onclick="loteAddLojaNow()"><span class="material-symbols-rounded" style="color:#fff">add</span>Adicionar loja</button>
-      ${LOTE_UNITS.some(u=>u.herda_base)?`<button class="lbtn" style="padding:8px 12px" onclick="lotePropagar()" title="reaplica o escopo base nas lojas que estão iguais à base"><span class="material-symbols-rounded">sync</span>Propagar base</button>`:''}
+  const disp=(LOJAS||[]).filter(l=>!LOTE_UNITS.some(u=>(u.dados&&u.dados.lojaId)===l.id)).length;
+  const addBar=`<div style="padding:12px 14px;border-bottom:1px solid var(--line2)">
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">
+        <div style="flex:1;min-width:220px;position:relative">
+          <input id="lbLojaBusca" autocomplete="off" placeholder="${(LOJAS&&LOJAS.length)?'digite pra localizar a loja…':'carregando lojas…'}" oninput="lbFiltrarLojas(this.value)" onfocus="lbFiltrarLojas(this.value)" onblur="setTimeout(function(){var b=document.getElementById('lbLojaResults');if(b)b.style.display='none'},160)" style="width:100%;box-sizing:border-box;padding:9px 12px 9px 32px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)">
+          <span class="material-symbols-rounded" style="position:absolute;left:9px;top:9px;font-size:17px;color:var(--tx3)">search</span>
+          <div id="lbLojaResults" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;background:var(--surf);border:1px solid var(--line2);border-radius:10px;box-shadow:0 12px 32px rgba(20,10,50,.18);max-height:270px;overflow:auto;padding:4px"></div>
+        </div>
+        ${LOTE_UNITS.some(u=>u.herda_base)?`<button class="lbtn" style="padding:9px 12px" onclick="lotePropagar()" title="reaplica o escopo base nas lojas que estão iguais à base"><span class="material-symbols-rounded">sync</span>Propagar base</button>`:''}
+      </div>
+      <div style="font-size:11px;color:var(--tx3);margin-top:6px">digite e clique na loja pra adicionar${LOJAS&&LOJAS.length?` · ${disp} disponíve${disp===1?'l':'is'}`:''}</div>
     </div>`;
   const estimBlock=`<div style="padding:14px;border-bottom:1px solid var(--line2)">
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -2452,7 +2459,7 @@ function renderLoteBaseHtml(){
       <div style="font-size:12px;color:var(--tx3);margin-top:8px"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">info</span> Estimativa por volume — sem cidade/abrangência por loja. Pra fechar, <b>detalhe em unidades</b> (aí entram km e prazo reais de cada uma).</div>
       <button class="lbtn" style="margin-top:10px;background:var(--pri);color:#fff;border-color:var(--pri)" onclick="setLoteModo('detalhado')"><span class="material-symbols-rounded" style="color:#fff">splitscreen</span>Detalhar em unidades</button></div>`;
   const corpo = modo==='estimativa' ? estimBlock : (addBar+rows);
-  return `<style>.lbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:5px 9px;font:600 12px inherit;cursor:pointer;text-decoration:none}.lbtn:hover{border-color:var(--pri);color:var(--pri)}.lbtn.danger{color:var(--red)}.lbtn.danger:hover{border-color:var(--red)}.lbtn .material-symbols-rounded{font-size:15px}.loteKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px}@media(max-width:640px){.loteKpis{grid-template-columns:1fr 1fr}}</style>
+  return `<style>.lbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:5px 9px;font:600 12px inherit;cursor:pointer;text-decoration:none}.lbtn:hover{border-color:var(--pri);color:var(--pri)}.lbtn.danger{color:var(--red)}.lbtn.danger:hover{border-color:var(--red)}.lbtn .material-symbols-rounded{font-size:15px}.loteKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px}@media(max-width:640px){.loteKpis{grid-template-columns:1fr 1fr}}.lbres:hover{background:var(--pri-bg,#f0ecfb)}</style>
   <div style="background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden">
     <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8;flex-wrap:wrap">
       <span class="material-symbols-rounded" style="color:var(--pri)">apartment</span><h3 style="margin:0;font-size:12px;font-weight:800;color:var(--pri);text-transform:uppercase;letter-spacing:.04em">Rede &amp; lojas do lote</h3>
@@ -2504,8 +2511,20 @@ function renderLoteBaseHtml(){
       <button class="lbtn danger" onclick="loteDesmembrar()"><span class="material-symbols-rounded">call_split</span>Desmembrar lote</button></div>`:''}
   </div>`;
 }
-async function loteAddLojaNow(){
-  const sel=_lg('lbLoja'); const lojaId=sel?sel.value:''; if(!lojaId){ alert('Escolha a loja.'); return; }
+function lbFiltrarLojas(q){ const box=_lg('lbLojaResults'); if(!box)return;
+  q=(q||'').toLowerCase().trim();
+  const usados=new Set((LOTE_UNITS||[]).map(u=>u.dados&&u.dados.lojaId).filter(Boolean));
+  let arr=(LOJAS||[]).filter(l=>!usados.has(l.id));
+  if(q) arr=arr.filter(l=>((l.nome||'')+' '+(l.numero||'')+' '+(l.grupo||'')+' '+(l.endereco||'')).toLowerCase().includes(q));
+  const n=arr.length; arr=arr.slice(0,40);
+  box.innerHTML = arr.length
+    ? arr.map(l=>`<button type="button" class="lbres" onmousedown="event.preventDefault()" onclick="lbEscolherLoja('${l.id}')" style="display:flex;flex-direction:column;gap:1px;width:100%;text-align:left;border:none;background:transparent;padding:8px 10px;border-radius:7px;cursor:pointer"><span style="font-weight:600;font-size:13px;color:var(--tx)">${esc(l.nome)}</span>${(l.numero||l.grupo||l.endereco)?`<span style="font-size:11px;color:var(--tx3)">${esc([l.numero,l.grupo,l.endereco].filter(Boolean).join(' · '))}</span>`:''}</button>`).join('')+(n>40?`<div style="padding:6px 10px;font-size:11px;color:var(--tx3)">…mais ${n-40} — refine a busca</div>`:'')
+    : `<div style="padding:10px;color:var(--tx3);font-size:12.5px">${(LOJAS&&LOJAS.length)?'Nenhuma loja encontrada.':'Carregando lojas…'}</div>`;
+  box.style.display='block';
+}
+function lbEscolherLoja(id){ const box=_lg('lbLojaResults'); if(box)box.style.display='none'; const inp=_lg('lbLojaBusca'); if(inp)inp.value=''; loteAddLojaNow(id); }
+async function loteAddLojaNow(idArg){
+  const lojaId=idArg||(_lg('lbLoja')?_lg('lbLoja').value:''); if(!lojaId){ alert('Escolha a loja.'); return; }
   const l=(LOJAS||[]).find(x=>x.id===lojaId)||{};
   try{
     const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:(LOTE_ROW?LOTE_ROW.contratante_id:S.contratanteId)||null,contemplado_id:lojaId,objeto:(LOTE_ROW&&LOTE_ROW.nome?LOTE_ROW.nome:(S.cliNome||'Lote'))+' — '+l.nome,lote_id:LOTE_ID}).select('id').limit(1);
