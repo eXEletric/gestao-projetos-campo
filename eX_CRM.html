@@ -1030,7 +1030,7 @@ function renderLevMain(l,b,lev){
         : `<div class="lev-row"><span class="material-symbols-rounded" style="font-size:15px;color:var(--tx3)">event</span>Data<input type="date" value="${c.data||''}" onchange="levData('${b.id}',${i},this.value)"><input type="text" style="flex:1;min-width:130px" placeholder="link do relatório (Drive/PDF)…" value="${esc(c.link||'')}" oninput="levLink('${b.id}',${i},this.value)"></div>`}
     </div>`).join('') || '<div class="dmv-empty">Nenhuma candidata ainda — busque a loja abaixo (opcional).</div>';
   const anexos=(lev.anexos||[]).map((a,i)=>`<div class="lev-file"><span class="material-symbols-rounded">attach_file</span><a href="${esc(a.link||'#')}" target="_blank" style="text-decoration:none;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.nome||a.link)}</a><span class="material-symbols-rounded fx" onclick="levAnexDel('${b.id}',${i})">close</span></div>`).join('');
-  return `${oppFormHTML(b)}
+  return `${oppFormHTML(b,true)}
     <div class="dsec">
       <div class="dsec-t"><span class="material-symbols-rounded">fact_check</span>Levantamento — unidades candidatas <span style="color:var(--tx3);font-weight:500">(${(lev.cands||[]).length})</span></div>
       ${rows}
@@ -1115,8 +1115,8 @@ async function materializarLev(){
 }
 const _js=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 // formulário de processo da fase atual (campos configuráveis, base Pipefy)
-function oppFormHTML(o){
-  const fid=o.colId, campos=colCampos(fid); if(!campos.length) return '';
+function oppFormHTML(o,onlyReq){
+  const fid=o.colId; let campos=colCampos(fid); if(onlyReq)campos=campos.filter(c=>c.obr); if(!campos.length) return '';   // onlyReq = ficha enxuta (só obrigatórios) — usado no levantamento do lote
   const d=(o.faseDados&&o.faseDados[fid])||{};
   const rows=campos.map(c=>{ const v=d[c.id]!==undefined?d[c.id]:''; const req=c.obr?' <span style="color:var(--red)">*</span>':''; let inp='';
     const set=`setCampo('${o.id}','${fid}','${c.id}',this.value)`;
