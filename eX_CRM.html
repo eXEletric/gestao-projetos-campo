@@ -981,6 +981,7 @@ function renderLoteDetail(){
           ${di('Total do lote',fmtBRL(tot))}
           ${di('Unidades',us.length+' loja(s)')}
         </div>
+        ${b?oppFormHTML(b):''}
         <div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">store</span>Unidades do lote <span style="color:var(--tx3);font-weight:500">— clique numa loja p/ abrir a proposta dela</span></div>${unidades}</div>
       </div>
       <div class="detail-side">${b?oppMoverHTML(b):''}</div>
