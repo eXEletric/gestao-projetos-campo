@@ -260,6 +260,21 @@ select.fi{appearance:auto;cursor:pointer}
 .cfgm-atual{font-size:11px;font-weight:700;color:var(--pri);background:var(--pri-bg,#f0ecfb);border-radius:20px;padding:3px 10px;white-space:nowrap}
 .cfgm-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--line)}
 #cfgMoverModal{z-index:600}
+.lev-uni{border:1px solid var(--line);border-radius:10px;padding:10px 11px;margin-bottom:8px}
+.lev-top{display:flex;align-items:center;gap:9px;margin-bottom:8px}
+.lev-ico{width:28px;height:28px;border-radius:7px;background:var(--pri-bg,#efeafc);color:var(--pri);display:grid;place-items:center;flex:none}
+.lev-seg{display:inline-flex;flex-wrap:wrap;border:1px solid var(--line2);border-radius:9px;overflow:hidden}
+.lev-seg button{border:none;background:var(--surf);padding:5px 9px;font:inherit;font-size:11px;font-weight:700;color:var(--tx3);cursor:pointer;border-left:1px solid var(--line2);display:inline-flex;align-items:center;gap:4px}
+.lev-seg button:first-child{border-left:none}
+.lev-seg button.on.vis{background:#e6f6ee;color:#1a8a5a}
+.lev-seg button.on.mod{background:#fbf1e0;color:#a45a00}
+.lev-seg button.on.avis{background:#e7effb;color:#2563a8}
+.lev-seg button.on.nvis{background:#eef1f7;color:#6b6880}
+.lev-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--tx2)}
+.lev-row input[type=date],.lev-row input[type=text]{border:1px solid var(--line2);border-radius:8px;padding:5px 8px;font:inherit;font-size:12px;color:var(--tx);background:var(--surf)}
+.lev-file{display:flex;align-items:center;gap:9px;border:1px solid var(--line2);border-radius:9px;padding:8px 11px;margin-bottom:6px;font-size:12.5px}
+.lev-file .material-symbols-rounded{color:var(--pri);font-size:18px}
+.lev-file .fx{margin-left:auto;color:var(--tx3);cursor:pointer;font-size:16px}
 .dmvbtn.off{opacity:.5;background:var(--surf2);color:var(--tx3);text-decoration:line-through}
 .dmvbtn.off .ar{color:var(--tx3)}
 .dmv-anota{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--tx3);font-style:italic;margin-top:8px}
@@ -961,32 +976,142 @@ function renderLoteDetail(){
   if(!l){ el.innerHTML=''; if(SEL_LOTE)SEL_LOTE=null; return; }
   const b=baseOppOf(l), ct=cli(l.contratanteId), us=loteUnitsOf(l.id), tot=loteTotal(l.id), idx=orcIndex();
   const nm=(l.nome||'Lote').replace(/^\[BASE\]\s*/,''); const fase=b?colNome(b.colId):'—';
+  const papel=b?colPapel(b.colId):''; const isLev=(papel==='visita');   // fase de levantamento (visita técnica) — ainda sem proposta
+  const lev=b?levOf(b):{dataInicio:'',cands:[],anexos:[]};
+  const pend=(lev.cands||[]).filter(c=>!c.mat && c.st!=='nvis').length;
   const di=(lab,v)=>`<div class="di"><span class="l">${lab}</span><span class="v ${v?'':'empty'}">${v?esc(v):'—'}</span></div>`;
-  const unidades = us.length
-    ? us.map(u=>`<a class="lu" href="eX_Orcamento.html?opp=${u.id}" style="display:flex;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;margin-bottom:6px;text-decoration:none;color:var(--tx)"><span style="display:flex;align-items:center;gap:7px;min-width:0"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">store</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</span></span><span style="font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums">${idx[u.id]?fmtBRL(idx[u.id].total):'—'}</span></a>`).join('')
-    : '<div class="dmv-empty">Nenhuma unidade ainda — adicione as lojas no orçamento base (mestra).</div>';
-  const acts=`<button class="btn btn-s btn-p" onclick="abrirLoteBaseById('${l.id}')"><span class="material-symbols-rounded">open_in_full</span>Abrir a mestra</button>`
-    +`<button class="btn btn-s" style="color:var(--danger,#c0392b)" onclick="excluirLoteFunil('${l.id}')"><span class="material-symbols-rounded">delete</span>Excluir lote</button>`;
+  let acts='';
+  if(!isLev) acts+=`<button class="btn btn-s btn-p" onclick="abrirLoteBaseById('${l.id}')"><span class="material-symbols-rounded">open_in_full</span>Abrir a mestra</button>`;
+  acts+=`<button class="btn btn-s" style="color:var(--danger,#c0392b)" onclick="excluirLoteFunil('${l.id}')"><span class="material-symbols-rounded">delete</span>Excluir lote</button>`;
+  let main;
+  if(isLev){
+    main = renderLevMain(l,b,lev);
+  } else {
+    const unidades = us.length
+      ? us.map(u=>`<a class="lu" href="eX_Orcamento.html?opp=${u.id}" style="display:flex;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;margin-bottom:6px;text-decoration:none;color:var(--tx)"><span style="display:flex;align-items:center;gap:7px;min-width:0"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">store</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</span></span><span style="font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums">${idx[u.id]?fmtBRL(idx[u.id].total):'—'}</span></a>`).join('')
+      : '<div class="dmv-empty">Nenhuma unidade ainda — gere a partir do levantamento ou adicione na mestra.</div>';
+    const gerar = pend>0 ? `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">bolt</span>Levantamento pronto</div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--pri-bg,#efeafc);border:1px solid var(--line2);border-radius:10px;padding:11px 12px;font-size:12.5px;color:var(--tx2)"><span><b>${pend}</b> candidata(s) do levantamento ainda não viraram unidade.</span><button class="btn btn-s btn-p" style="margin-left:auto" onclick="openGerarLev('${l.id}')"><span class="material-symbols-rounded">rocket_launch</span>Selecionar e gerar unidades</button></div></div>` : '';
+    main = `<div class="dinfo">${di('Contratante',ct?ct.nome:'')}${di('Total do lote',fmtBRL(tot))}${di('Unidades',us.length+' loja(s)')}</div>
+      ${b?oppFormHTML(b):''}
+      ${gerar}
+      <div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">store</span>Unidades do lote <span style="color:var(--tx3);font-weight:500">— clique numa loja p/ abrir a proposta dela</span></div>${unidades}</div>`;
+  }
   el.innerHTML=`<div class="detail">
     <div class="dhead">
       <div class="davatar">${ini(ct?ct.nome:'?')}</div>
-      <div class="dt"><h2>${esc(nm)}</h2><div class="sub">Lote · fase <b>${esc(fase)}</b> · ${us.length} loja(s)</div>
-        <div class="chiprow"><span class="temp" style="background:var(--pri);color:#fff">Lote</span></div></div>
+      <div class="dt"><h2>${esc(nm)}</h2><div class="sub">Lote · fase <b>${esc(fase)}</b>${isLev?' · Levantamento':' · '+us.length+' loja(s)'}</div>
+        <div class="chiprow"><span class="temp" style="background:var(--pri);color:#fff">Lote</span>${isLev?'<span class="temp" style="background:#e7effb;color:#2563a8">Levantamento</span>':''}</div></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">${acts}</div>
     </div>
     <div class="detail-grid">
-      <div class="detail-main">
-        <div class="dinfo">
-          ${di('Contratante',ct?ct.nome:'')}
-          ${di('Total do lote',fmtBRL(tot))}
-          ${di('Unidades',us.length+' loja(s)')}
-        </div>
-        ${b?oppFormHTML(b):''}
-        <div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">store</span>Unidades do lote <span style="color:var(--tx3);font-weight:500">— clique numa loja p/ abrir a proposta dela</span></div>${unidades}</div>
-      </div>
+      <div class="detail-main">${main}</div>
       <div class="detail-side">${b?oppMoverHTML(b):''}</div>
     </div>
   </div>`;
+}
+/* ===== LEVANTAMENTO EM LOTE (fase Visita técnica) — candidatas antes da proposta ===== */
+function levOf(b){ b.faseDados=b.faseDados||{}; if(!b.faseDados.levantamento)b.faseDados.levantamento={dataInicio:'',cands:[],anexos:[]}; const L=b.faseDados.levantamento; L.cands=L.cands||[]; L.anexos=L.anexos||[]; return L; }
+function levSave(b){ save(); cUp('oportunidades',mOpp(b)); }
+function _levB(bid){ return S.oportunidades.find(o=>o.id===bid); }
+function renderLevMain(l,b,lev){
+  const cands=lev.cands||[];
+  const SEG=[['vis','Visitada','check_circle'],['mod','Modelo','star'],['avis','A visitar','schedule'],['nvis','Não visitar','block']];
+  const rows=cands.map((c,i)=>`
+    <div class="lev-uni">
+      <div class="lev-top">
+        <span class="lev-ico"><span class="material-symbols-rounded" style="font-size:16px">store</span></span>
+        <div style="flex:1;min-width:0"><div style="font-weight:700;font-size:13px">${esc(c.nome)}</div>${c.sub?`<div style="font-size:11px;color:var(--tx3)">${esc(c.sub)}</div>`:''}</div>
+        <span class="material-symbols-rounded" style="color:var(--tx3);cursor:pointer;font-size:18px" title="remover" onclick="levDel('${b.id}',${i})">close</span>
+      </div>
+      <div class="lev-seg">${SEG.map(s=>`<button class="${s[0]} ${c.st===s[0]?'on':''}" onclick="levSt('${b.id}',${i},'${s[0]}')"><span class="material-symbols-rounded" style="font-size:13px">${s[2]}</span>${s[1]}</button>`).join('')}</div>
+      ${c.st==='nvis'
+        ? `<div class="lev-row"><span style="font-weight:700;color:#6b6880;font-size:10.5px;text-transform:uppercase">Motivo</span>${['Inviável','Representada pelo modelo','Outros'].map(m=>`<span class="chip ${c.motivo===m?'on':''}" style="padding:4px 9px;font-size:11px" onclick="levMot('${b.id}',${i},'${m}')">${m}</span>`).join('')}${c.motivo==='Outros'?`<input type="text" placeholder="motivo…" value="${esc(c.motivoTxt||'')}" oninput="levMotTxt('${b.id}',${i},this.value)">`:''}</div>`
+        : `<div class="lev-row"><span class="material-symbols-rounded" style="font-size:15px;color:var(--tx3)">event</span>Data<input type="date" value="${c.data||''}" onchange="levData('${b.id}',${i},this.value)"><input type="text" style="flex:1;min-width:130px" placeholder="link do relatório (Drive/PDF)…" value="${esc(c.link||'')}" oninput="levLink('${b.id}',${i},this.value)"></div>`}
+    </div>`).join('') || '<div class="dmv-empty">Nenhuma candidata ainda — busque a loja abaixo (opcional).</div>';
+  const anexos=(lev.anexos||[]).map((a,i)=>`<div class="lev-file"><span class="material-symbols-rounded">attach_file</span><a href="${esc(a.link||'#')}" target="_blank" style="text-decoration:none;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.nome||a.link)}</a><span class="material-symbols-rounded fx" onclick="levAnexDel('${b.id}',${i})">close</span></div>`).join('');
+  return `${oppFormHTML(b)}
+    <div class="dsec">
+      <div class="dsec-t"><span class="material-symbols-rounded">fact_check</span>Levantamento — unidades candidatas <span style="color:var(--tx3);font-weight:500">(${(lev.cands||[]).length})</span></div>
+      ${rows}
+      <div style="position:relative;margin-top:8px">
+        <input class="fi" id="levBusca" autocomplete="off" placeholder="digite pra localizar a loja e adicionar…" oninput="levFiltrar('${b.id}',this.value)" onfocus="levFiltrar('${b.id}',this.value)" onblur="setTimeout(function(){var r=document.getElementById('levRes');if(r)r.style.display='none'},160)" style="width:100%;box-sizing:border-box;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)">
+        <div id="levRes" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:30;background:var(--surf);border:1px solid var(--line2);border-radius:10px;box-shadow:0 12px 30px rgba(20,10,50,.16);max-height:240px;overflow:auto;padding:4px"></div>
+      </div>
+    </div>
+    <div class="dsec">
+      <div class="dsec-t"><span class="material-symbols-rounded">attach_file</span>Anexos do levantamento</div>
+      ${anexos||'<div style="font-size:12px;color:var(--tx3);margin-bottom:6px">Nenhum anexo ainda.</div>'}
+      <button class="btn btn-s" onclick="levAnexAdd('${b.id}')"><span class="material-symbols-rounded">add_link</span>Anexar link do relatório</button>
+    </div>
+    <div style="display:flex;gap:8px;align-items:flex-start;background:var(--pri-bg,#efeafc);border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font-size:12px;color:var(--tx2)"><span class="material-symbols-rounded" style="color:var(--pri);font-size:16px">info</span><span>A proposta nasce quando você mover pra <b>Gerando proposta</b> (no painel ao lado) — aí você marca quais candidatas viram unidade.</span></div>`;
+}
+function levDataIni(bid,v){ const b=_levB(bid); if(!b)return; levOf(b).dataInicio=v; levSave(b); }
+function levSt(bid,i,s){ const b=_levB(bid); if(!b)return; const L=levOf(b); const c=L.cands[i]; if(!c)return; if(s==='mod'){ L.cands.forEach((x,j)=>{ if(j!==i&&x.st==='mod')x.st='vis'; }); } c.st=s; if(s==='nvis')c.data=''; levSave(b); renderLoteDetail(); }
+function levData(bid,i,v){ const b=_levB(bid); if(!b)return; levOf(b).cands[i].data=v; levSave(b); }
+function levLink(bid,i,v){ const b=_levB(bid); if(!b)return; levOf(b).cands[i].link=v; levSave(b); }
+function levMot(bid,i,m){ const b=_levB(bid); if(!b)return; levOf(b).cands[i].motivo=m; levSave(b); renderLoteDetail(); }
+function levMotTxt(bid,i,v){ const b=_levB(bid); if(!b)return; levOf(b).cands[i].motivoTxt=v; levSave(b); }
+function levDel(bid,i){ const b=_levB(bid); if(!b)return; levOf(b).cands.splice(i,1); levSave(b); renderLoteDetail(); }
+function levAnexAdd(bid){ const b=_levB(bid); if(!b)return; const link=prompt('Cole o link do relatório (Drive, PDF…):'); if(!link)return; const nome=prompt('Nome do anexo:','Relatório')||'Relatório'; levOf(b).anexos.push({nome:nome.trim(),link:link.trim()}); levSave(b); renderLoteDetail(); }
+function levAnexDel(bid,i){ const b=_levB(bid); if(!b)return; levOf(b).anexos.splice(i,1); levSave(b); renderLoteDetail(); }
+function levFiltrar(bid,q){ const box=document.getElementById('levRes'); if(!box)return; const b=_levB(bid); const L=b?levOf(b):{cands:[]};
+  q=(q||'').toLowerCase().trim(); const usados=new Set((L.cands||[]).map(c=>c.lojaId).filter(Boolean));
+  let arr=(S.lojas||[]).filter(x=>!usados.has(x.id));
+  if(q)arr=arr.filter(x=>((x.nome||'')+' '+(x.numero||'')+' '+(x.grupo||'')+' '+(x.endereco||'')).toLowerCase().includes(q));
+  arr=arr.slice(0,40);
+  box.innerHTML=arr.length?arr.map(x=>`<button type="button" onmousedown="event.preventDefault()" onclick="levAdd('${bid}','${x.id}')" style="display:block;width:100%;text-align:left;border:none;background:transparent;padding:8px 10px;border-radius:7px;cursor:pointer" onmouseover="this.style.background='var(--pri-bg,#efeafc)'" onmouseout="this.style.background=''"><div style="font-weight:600;font-size:13px;color:var(--tx)">${esc(x.nome)}</div><div style="font-size:11px;color:var(--tx3)">${esc([x.numero,x.grupo,x.endereco].filter(Boolean).join(' · '))}</div></button>`).join(''):`<div style="padding:10px;color:var(--tx3);font-size:12.5px">${(S.lojas&&S.lojas.length)?'Nada encontrado.':'Sem lojas cadastradas.'}</div>`;
+  box.style.display='block'; }
+function levAdd(bid,lojaId){ const b=_levB(bid); if(!b)return; const lj=(S.lojas||[]).find(x=>x.id===lojaId); if(!lj)return;
+  levOf(b).cands.push({lojaId, nome:lj.nome, sub:[lj.numero,lj.grupo,lj.endereco].filter(Boolean).join(' · '), st:'avis', data:'', motivo:'', motivoTxt:'', link:'', mat:false});
+  const box=document.getElementById('levRes'); if(box)box.style.display='none'; const inp=document.getElementById('levBusca'); if(inp)inp.value='';
+  levSave(b); renderLoteDetail(); }
+/* seleção → materializa as candidatas escolhidas em unidades (clona o dados do orçamento base) */
+let GERLEV=null;
+function openGerarLev(loteId){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(!l)return; const b=baseOppOf(l); if(!b)return;
+  const cands=(levOf(b).cands||[]).filter(c=>!c.mat && c.st!=='nvis');
+  if(!cands.length){ alert('Não há candidatas pendentes (as "Não visitar" ficam de fora).'); return; }
+  GERLEV={loteId, sel:new Set(cands.map(c=>c.lojaId))}; renderGerLev(); }
+function renderGerLev(){ if(!GERLEV)return; const l=(S.lotes||[]).find(x=>x.id===GERLEV.loteId); if(!l)return; const b=baseOppOf(l);
+  const cands=(levOf(b).cands||[]).filter(c=>!c.mat && c.st!=='nvis');
+  const STL={vis:'Visitada',mod:'Modelo',avis:'A visitar'};
+  const rows=cands.map(c=>{ const on=GERLEV.sel.has(c.lojaId);
+    return `<div class="cfgm-row" style="cursor:pointer" onclick="gerLevTog('${c.lojaId}')"><span style="display:flex;align-items:center;gap:10px;min-width:0"><span style="width:20px;height:20px;border-radius:6px;border:2px solid ${on?'var(--pri)':'var(--line2)'};background:${on?'var(--pri)':'transparent'};display:grid;place-items:center;flex:none"><span class="material-symbols-rounded" style="font-size:14px;color:#fff;opacity:${on?1:0}">check</span></span><span class="cfgm-nm">${esc(c.nome)}</span></span><span style="font-size:10px;font-weight:800;border-radius:20px;padding:2px 8px;background:var(--pri-bg,#efeafc);color:var(--pri);white-space:nowrap">${STL[c.st]||c.st}</span></div>`;
+  }).join('');
+  let ov=document.getElementById('gerLevModal'); if(!ov){ ov=document.createElement('div'); ov.id='gerLevModal'; ov.className='modal-bg'; ov.style.zIndex='600'; ov.onclick=function(e){ if(e.target===ov)closeGerLev(); }; document.body.appendChild(ov); }
+  const n=GERLEV.sel.size;
+  ov.innerHTML=`<div class="modal cfgm">
+    <div class="cfgm-head"><h3>Gerar unidades do levantamento</h3><button class="cfgm-x" onclick="closeGerLev()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="cfgm-sub">Marque quais candidatas viram <b>unidade da proposta</b>. As desmarcadas ficam de fora (dá pra gerar depois). As "Não visitar" não aparecem.</div>
+    <div class="cfgm-list">${rows||'<div style="padding:12px;color:var(--tx3)">Sem candidatas pendentes.</div>'}</div>
+    <div class="cfgm-foot"><button class="btn" onclick="closeGerLev()">Cancelar</button><button class="btn btn-p" onclick="materializarLev()"><span class="material-symbols-rounded">rocket_launch</span>Gerar ${n} unidade${n===1?'':'s'}</button></div>
+  </div>`; ov.classList.add('show'); }
+function gerLevTog(id){ if(!GERLEV)return; if(GERLEV.sel.has(id))GERLEV.sel.delete(id); else GERLEV.sel.add(id); renderGerLev(); }
+function closeGerLev(){ const ov=document.getElementById('gerLevModal'); if(ov)ov.classList.remove('show'); GERLEV=null; }
+async function materializarLev(){
+  if(!GERLEV)return; const loteId=GERLEV.loteId; const l=(S.lotes||[]).find(x=>x.id===loteId); if(!l)return; const b=baseOppOf(l); if(!b){closeGerLev();return;}
+  const L=levOf(b); const chosen=(L.cands||[]).filter(c=>!c.mat && c.st!=='nvis' && GERLEV.sel.has(c.lojaId));
+  if(!chosen.length){ alert('Selecione ao menos uma candidata.'); return; }
+  if(!(SB&&CLOUD)){ alert('Entre com login (nuvem) pra gerar as unidades.'); return; }
+  try{
+    const bq=await SB.from('orcamentos').select('dados,total').eq('oportunidade_id',b.id).is('deleted_at',null).order('created_at',{ascending:false}).limit(1);
+    const base=(bq.data&&bq.data[0])||{}; const baseDados=base.dados||{}; const baseTot=base.total||0;
+    const contrId=l.contratanteId||b.contratanteId||null; const contrNome=(cli(contrId)||{}).nome||'';
+    const ano=new Date().getFullYear();
+    for(const c of chosen){
+      const oppIns=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contrId,contemplado_id:c.lojaId,objeto:(l.nome||'Lote')+' — '+c.nome,lote_id:loteId,fase_id:b.colId}).select('id').limit(1);
+      if(oppIns.error||!oppIns.data[0]) throw (oppIns.error||new Error('falha ao criar oportunidade'));
+      const oppId=oppIns.data[0].id;
+      const dados=JSON.parse(JSON.stringify(baseDados)); delete dados._base; delete dados.macro; dados.abrSnap=null; dados.finNome=c.nome; dados.lojaId=c.lojaId;
+      const numero='ORÇ-'+ano+'-'+String(Math.floor(1000+Math.random()*9000));
+      const orcIns=await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:oppId,lote_id:loteId,herda_base:true,numero,status:'rascunho',cliente_final:c.nome,cliente_contratante:contrNome,dados,total:baseTot});
+      if(orcIns.error) throw orcIns.error;
+      c.mat=true;
+    }
+    levSave(b); closeGerLev();
+    await carregarNuvem(); render();
+    alert(chosen.length+' unidade(s) gerada(s) a partir do levantamento.');
+  }catch(e){ console.error(e); alert('Erro ao gerar: '+(e.message||e)); }
 }
 const _js=s=>String(s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
 // formulário de processo da fase atual (campos configuráveis, base Pipefy)
