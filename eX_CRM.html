@@ -246,6 +246,20 @@ select.fi{appearance:auto;cursor:pointer}
 .tg.sm{width:32px;height:18px}
 .tg.sm i{width:14px;height:14px}
 .tg.sm.on i{left:16px}
+.dmv-cfg{display:inline-flex;align-items:center;justify-content:center;gap:6px;width:100%;margin-top:10px;border:1px dashed var(--line2);background:transparent;color:var(--pri);border-radius:9px;padding:9px 12px;font:700 12.5px inherit;cursor:pointer}
+.dmv-cfg:hover{background:var(--pri-bg,#f0ecfb);border-style:solid}
+.dmv-cfg .material-symbols-rounded{font-size:16px}
+.cfgm-head{display:flex;align-items:center;justify-content:space-between;padding:16px 18px 0}
+.cfgm-head h3{margin:0;font-size:16px}
+.cfgm-x{border:none;background:transparent;cursor:pointer;color:var(--tx3);display:grid;place-items:center;width:30px;height:30px;border-radius:8px}
+.cfgm-x:hover{background:rgba(0,0,0,.06);color:var(--tx)}
+.cfgm-sub{padding:6px 18px 10px;font-size:12.5px;color:var(--tx3)}
+.cfgm-list{overflow:auto;padding:0 18px;flex:1 1 auto}
+.cfgm-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:13px 0;border-bottom:1px solid var(--line)}
+.cfgm-nm{font-size:13.5px;font-weight:600;color:var(--tx)}
+.cfgm-atual{font-size:11px;font-weight:700;color:var(--pri);background:var(--pri-bg,#f0ecfb);border-radius:20px;padding:3px 10px;white-space:nowrap}
+.cfgm-foot{display:flex;justify-content:flex-end;gap:8px;padding:14px 18px;border-top:1px solid var(--line)}
+#cfgMoverModal{z-index:600}
 .dmvbtn.off{opacity:.5;background:var(--surf2);color:var(--tx3);text-decoration:line-through}
 .dmvbtn.off .ar{color:var(--tx3)}
 .dmv-anota{display:flex;align-items:center;gap:5px;font-size:10.5px;color:var(--tx3);font-style:italic;margin-top:8px}
@@ -999,18 +1013,15 @@ function oppMoverHTML(o){
   const fid=o.colId, ci=colIdx(fid), gate=colGate(fid), falta=faltaParaSair(o,fid);
   const k=S.colunas.find(x=>x.id===fid), perm=(k&&k.destinos!=null)?k.destinos:null;
   const allowed=id=>(perm==null)||perm.includes(id);
-  const outras=S.colunas.filter(x=>x.id!==fid);
-  const lista=MASTER?outras:outras.filter(x=>allowed(x.id));   // admin vê todas (p/ ligar/desligar); operador só as liberadas
-  if(!lista.length) return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv-empty">Fase final — sem movimentação.</div></div>`;
-  const rows=lista.map(x=>{ const on=allowed(x.id), fwd=colIdx(x.id)>ci; let tag='',dis='';
-    if(!on){ dis='disabled'; }
-    else if(falta.length && fwd){ if(gate==='rigida'){ tag=`<span class="dmv-blk"><span class="material-symbols-rounded">lock</span>trava rígida</span>`; dis='disabled'; } else if(gate==='suave'){ tag=`<span class="dmv-warn"><span class="material-symbols-rounded">warning</span>avisa</span>`; } }
-    const chave=MASTER?`<span class="tg sm ${on?'on':''}" title="${on?'destino liberado — clique p/ bloquear':'destino bloqueado — clique p/ liberar'}" onclick="togDestFase('${fid}','${x.id}')"><i></i></span>`:'';
-    return `<div class="dmvrow">${chave}<button class="dmvbtn ${fwd?'':'back'} ${on?'':'off'}" ${dis} onclick="moverOppPara('${o.id}','${x.id}')"><span class="material-symbols-rounded ar">${fwd?'east':'west'}</span>${esc(x.nome)}${tag}</button></div>`;
+  const lista=S.colunas.filter(x=>x.id!==fid && allowed(x.id));   // MOVER = só os destinos LIBERADOS (usar); configurar é separado (só master)
+  const cfgLink=MASTER?`<button class="dmv-cfg" onclick="openConfigMover('${fid}')"><span class="material-symbols-rounded">tune</span>Configurar mover cards</button>`:'';
+  if(!lista.length) return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv-empty">${MASTER?'Nenhum destino liberado — configure abaixo.':'Sem destino liberado a partir desta fase.'}</div>${cfgLink}</div>`;
+  const rows=lista.map(x=>{ const fwd=colIdx(x.id)>ci; let tag='',dis='';
+    if(falta.length && fwd){ if(gate==='rigida'){ tag=`<span class="dmv-blk"><span class="material-symbols-rounded">lock</span>trava rígida</span>`; dis='disabled'; } else if(gate==='suave'){ tag=`<span class="dmv-warn"><span class="material-symbols-rounded">warning</span>avisa</span>`; } }
+    return `<div class="dmvrow"><button class="dmvbtn ${fwd?'':'back'}" ${dis} onclick="moverOppPara('${o.id}','${x.id}')"><span class="material-symbols-rounded ar">${fwd?'east':'west'}</span>${esc(x.nome)}${tag}</button></div>`;
   }).join('');
   const hint=(falta.length&&gate!=='nenhuma')?`<div class="dmv-hint"><span class="material-symbols-rounded">info</span>Falta: <b>${esc(falta.join(', '))}</b>. ${gate==='rigida'?'A trava rígida bloqueia o avanço.':'A trava suave avisa mas deixa avançar.'}</div>`:'';
-  const nota=MASTER?`<div class="dmv-anota"><span class="material-symbols-rounded">tune</span>A chave na frente libera/bloqueia o destino (admin).</div>`:'';
-  return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv">${rows}</div>${hint}${nota}</div>`;
+  return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv">${rows}</div>${hint}${cfgLink}</div>`;
 }
 // liga/desliga um destino a partir da fase (só quem tem acesso) — direto na tela do card
 function togDestFase(fromId,destId){ if(!MASTER){ alert('Sem acesso: ligar/desligar destinos é do administrador.'); return; }
@@ -1020,6 +1031,38 @@ function togDestFase(fromId,destId){ if(!MASTER){ alert('Sem acesso: ligar/desli
   const outras=S.colunas.filter(x=>x.id!==fromId).map(x=>x.id);
   if(k.destinos.length===outras.length) k.destinos=null;   // todas marcadas = sem restrição
   save(); cFases(); render(); }
+/* ===== Configurar mover cards (modal — só master/administrador master) ===== */
+let CFG_MOVER=null;
+function openConfigMover(fid){
+  if(!MASTER){ alert('Sem acesso: configurar os destinos é do administrador master.'); return; }
+  const k=S.colunas.find(x=>x.id===fid); if(!k)return;
+  const outras=S.colunas.filter(x=>x.id!==fid).map(x=>x.id);
+  const atual=(k.destinos==null)?outras.slice():k.destinos.slice();
+  CFG_MOVER={fid, sel:new Set(atual)}; renderConfigMover();
+}
+function renderConfigMover(){
+  if(!CFG_MOVER)return; const fid=CFG_MOVER.fid; const fnome=colNome(fid);
+  const rows=S.colunas.map(x=>{
+    if(x.id===fid) return `<div class="cfgm-row"><span class="cfgm-nm">${esc(x.nome)}</span><span class="cfgm-atual">Fase atual</span></div>`;
+    const on=CFG_MOVER.sel.has(x.id);
+    return `<div class="cfgm-row"><span class="cfgm-nm">${esc(x.nome)}</span><span class="tg ${on?'on':''}" onclick="cfgMoverTog('${x.id}')"><i></i></span></div>`;
+  }).join('');
+  let ov=document.getElementById('cfgMoverModal');
+  if(!ov){ ov=document.createElement('div'); ov.id='cfgMoverModal'; ov.className='modal-bg'; ov.onclick=e=>{ if(e.target===ov)closeConfigMover(); }; document.body.appendChild(ov); }
+  ov.innerHTML=`<div class="modal cfgm">
+    <div class="cfgm-head"><h3>Configurar mover cards</h3><button class="cfgm-x" onclick="closeConfigMover()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="cfgm-sub">Escolha para quais fases os cards podem ser movidos a partir de <b>${esc(fnome)}</b>.</div>
+    <div class="cfgm-list">${rows}</div>
+    <div class="cfgm-foot"><button class="btn" onclick="closeConfigMover()">Cancelar</button><button class="btn btn-p" onclick="salvarConfigMover()">Salvar</button></div>
+  </div>`;
+  ov.classList.add('show');
+}
+function cfgMoverTog(id){ if(!CFG_MOVER)return; if(CFG_MOVER.sel.has(id))CFG_MOVER.sel.delete(id); else CFG_MOVER.sel.add(id); renderConfigMover(); }
+function closeConfigMover(){ const ov=document.getElementById('cfgMoverModal'); if(ov)ov.classList.remove('show'); CFG_MOVER=null; }
+function salvarConfigMover(){ if(!CFG_MOVER)return; const k=S.colunas.find(x=>x.id===CFG_MOVER.fid);
+  if(k){ const outras=S.colunas.filter(x=>x.id!==CFG_MOVER.fid).map(x=>x.id); const sel=outras.filter(id=>CFG_MOVER.sel.has(id));
+    k.destinos=(sel.length===outras.length)?null:sel; save(); cFases(); }
+  closeConfigMover(); render(); }
 
 /* modal oportunidade */
 function novaOpp(colId){ openOpp(null, colId); }
