@@ -63,6 +63,13 @@ select.fi{appearance:auto;cursor:pointer}
 .cardmenu button.danger{color:var(--danger,#c0392b)}
 .cardmenu button.danger:hover{background:#fdecea}
 .cardmenu .material-symbols-rounded{font-size:17px}
+.detailmodal{position:fixed;inset:0;z-index:500;background:rgba(20,14,40,.55);display:none;overflow:auto;padding:20px}
+.detailmodal.show{display:block}
+.detailmodal-card{position:relative;background:var(--bg,#f5f5fb);width:min(1040px,95vw);margin:20px auto;border-radius:14px;box-shadow:0 30px 90px rgba(20,10,50,.42)}
+.detailmodal-bar{display:flex;justify-content:flex-end;padding:9px 10px 0}
+.detailmodal-x{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line);background:var(--surf,#fff);color:var(--tx);border-radius:9px;padding:7px 12px;font:700 12.5px inherit;cursor:pointer}
+.detailmodal-x:hover{border-color:var(--pri);color:var(--pri)}
+.detailmodal-x .material-symbols-rounded{font-size:17px}
 .kcard:hover{border-color:var(--line2);box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .kcard.sel{border-color:var(--pri);box-shadow:0 0 0 2px var(--pri-bg)}
 .kcard-nm{font-size:12.5px;font-weight:700;line-height:1.3}
@@ -270,7 +277,12 @@ select.fi{appearance:auto;cursor:pointer}
   <div class="view on" id="v-funil">
     <div style="margin-bottom:12px"><button class="btn btn-p" onclick="location.href='eX_Orcamento.html?nova'" title="começa uma oportunidade — escolha Obra única ou Orçamento em lote na própria tela"><span class="material-symbols-rounded">add</span>Nova oportunidade</button></div>
     <div class="board" id="board"></div>
-    <div id="oppDetail"></div>
+    <div class="detailmodal" id="detailModal" onclick="if(event.target===this)closeDetail()">
+      <div class="detailmodal-card">
+        <div class="detailmodal-bar"><button class="detailmodal-x" title="Fechar (Esc)" onclick="closeDetail()"><span class="material-symbols-rounded">close</span>Fechar</button></div>
+        <div id="oppDetail"></div>
+      </div>
+    </div>
   </div>
 
   <!-- CLIENTES -->
@@ -624,7 +636,10 @@ function setTab(t){ TAB=t; document.getElementById('tab-funil').classList.toggle
   document.getElementById('v-funil').classList.toggle('on',t==='funil'); document.getElementById('v-clientes').classList.toggle('on',t==='clientes');
   const qi=document.getElementById('q'); if(qi)qi.placeholder=(t==='clientes'?'Buscar contratante ou loja…':'Buscar oportunidade…');
   render(); }
-function render(){ if(TAB==='funil'){ renderBoard(); renderOppDetail(); } else if(CSUB==='lojas'){ renderLojaList(); renderLojaDetail(); } else { renderClist(); renderCdetail(); } }
+function render(){ if(TAB==='funil'){ renderBoard(); renderOppDetail(); syncDetailModal(); } else if(CSUB==='lojas'){ renderLojaList(); renderLojaDetail(); } else { renderClist(); renderCdetail(); } }
+function syncDetailModal(){ const m=document.getElementById('detailModal'); if(m)m.classList.toggle('show',!!(SELO||SEL_LOTE)); }
+function closeDetail(){ SELO=null; SEL_LOTE=null; const d=document.getElementById('oppDetail'); if(d)d.innerHTML=''; syncDetailModal(); }
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&(SELO||SEL_LOTE))closeDetail(); });
 function setCSub(sub){ CSUB=sub; SELC=null; SELL=null;
   document.getElementById('seg-ct').classList.toggle('on',sub==='contratantes');
   document.getElementById('seg-lj').classList.toggle('on',sub==='lojas');
@@ -693,7 +708,13 @@ function renderBoard(){
 function oppCardHTML(o,ci){
   const ct=cli(o.contratanteId), tc=(o.temperatura||'Morno').toLowerCase(), oc=orcIndex()[o.id];
   return `<div class="kcard ${SELO===o.id?'sel':''}" draggable="true" ondragstart="dragStart(event,'${o.id}')" ondragend="_drag=null" onclick="selOpp('${o.id}')">
-    <div class="kcard-nm">${esc(o.objeto||'(sem objeto)')}</div>
+    <button class="cardmenu-btn" title="Ações" onclick="event.stopPropagation();cardMenuToggle(this)"><span class="material-symbols-rounded">more_vert</span></button>
+    <div class="cardmenu">
+      <button onclick="event.stopPropagation();cardMenuClose();location.href='eX_Orcamento.html?opp=${o.id}'"><span class="material-symbols-rounded">request_quote</span>${oc?'Abrir orçamento':'Criar orçamento'}</button>
+      <button onclick="event.stopPropagation();cardMenuClose();openOpp('${o.id}')"><span class="material-symbols-rounded">edit</span>Editar</button>
+      <button class="danger" onclick="event.stopPropagation();cardMenuClose();excluirOppFunil('${o.id}')"><span class="material-symbols-rounded">delete</span>Excluir</button>
+    </div>
+    <div class="kcard-nm" style="padding-right:26px">${esc(o.objeto||'(sem objeto)')}</div>
     <div class="kcard-cli"><span class="material-symbols-rounded">business</span>${esc(ct?ct.nome:'—')}${o.contempladoId&&contempl(o.contempladoId)?' · '+esc(contempl(o.contempladoId).nome):''}</div>
     ${oc?`<div class="orcb ${esc(oc.status||'rascunho')}"><span class="material-symbols-rounded">request_quote</span>${fmtBRL(oc.total)} · ${esc(oc.status||'rascunho')}</div>`:''}
     <div class="kcard-foot">
@@ -721,6 +742,11 @@ function moveLote(loteId,dir){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(
 function cardMenuToggle(btn){ const m=btn.parentNode.querySelector('.cardmenu'); if(!m)return; const wasOpen=m.classList.contains('open'); cardMenuClose(); if(!wasOpen)m.classList.add('open'); }
 function cardMenuClose(){ document.querySelectorAll('.cardmenu.open').forEach(x=>x.classList.remove('open')); }
 document.addEventListener('click',cardMenuClose);
+function excluirOppFunil(id){ const o=S.oportunidades.find(x=>x.id===id); if(!o)return;
+  if(o.loteId){ alert('Esta oportunidade faz parte de um lote. Exclua pelo menu (⋮) do card do lote.'); return; }
+  if(!confirm('Excluir esta oportunidade?'))return;
+  S.oportunidades=S.oportunidades.filter(x=>x.id!==id); if(SELO===id)SELO=null;
+  save(); cDel('oportunidades',id); render(); }
 async function excluirLoteFunil(loteId){
   const l=(S.lotes||[]).find(x=>x.id===loteId); if(!l)return;
   const us=loteUnitsOf(loteId);
@@ -738,10 +764,9 @@ async function excluirLoteFunil(loteId){
 }
 function loteCardHTML(l,ci){ const ct=cli(l.contratanteId); const us=loteUnitsOf(l.id); const tot=loteTotal(l.id);
   const nm=(l.nome||'Lote').replace(/^\[BASE\]\s*/,''); const show=us.slice(0,4), extra=us.length-show.length;
-  return `<div class="kcard lote">
+  return `<div class="kcard lote" onclick="selLote('${l.id}')" title="abrir o lote">
     <button class="cardmenu-btn" title="Ações do lote" onclick="event.stopPropagation();cardMenuToggle(this)"><span class="material-symbols-rounded">more_vert</span></button>
     <div class="cardmenu">
-      <button onclick="event.stopPropagation();cardMenuClose();abrirLoteBaseById('${l.id}')"><span class="material-symbols-rounded">open_in_full</span>Abrir a mestra</button>
       <button class="danger" onclick="event.stopPropagation();cardMenuClose();excluirLoteFunil('${l.id}')"><span class="material-symbols-rounded">delete</span>Excluir lote</button>
     </div>
     <div class="lote-tag"><span class="material-symbols-rounded">apartment</span>Lote</div>
@@ -750,7 +775,7 @@ function loteCardHTML(l,ci){ const ct=cli(l.contratanteId); const us=loteUnitsOf
     <div class="orcb loteb"><span class="material-symbols-rounded">store</span>${us.length} loja(s) · ${fmtBRL(tot)}</div>
     <div class="lexpand" onclick="event.stopPropagation();loteToggle(this)"><span class="material-symbols-rounded">unfold_more</span>ver unidades</div>
     <div class="lote-units">
-      ${show.map(u=>`<a class="lu" href="eX_Orcamento.html?opp=${u.id}"><span class="material-symbols-rounded">description</span>${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</a>`).join('')}
+      ${show.map(u=>`<a class="lu" href="eX_Orcamento.html?opp=${u.id}" onclick="event.stopPropagation()"><span class="material-symbols-rounded">description</span>${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</a>`).join('')}
       ${extra>0?`<div class="lu more"><span class="material-symbols-rounded">more_horiz</span>…mais ${extra} unidade(s)</div>`:''}
     </div>
     <div class="kcard-foot"><span class="temp quente" style="background:var(--pri)">Lote</span><span class="kmove">
@@ -787,7 +812,9 @@ function moveOpp(id,dir){ const o=S.oportunidades.find(x=>x.id===id); if(!o)retu
   if(dir>0 && !passaGate(o,o.colId)) return;
   { const em=checaEntrada(o,destId); if(em){ alert(em); return; } }
   o.colId=destId; save(); cUp('oportunidades',mOpp(o)); render(); }
-function selOpp(id){ SELO=id; render(); const d=document.getElementById('oppDetail'); if(d)d.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+let SEL_LOTE=null;
+function selOpp(id){ SELO=id; SEL_LOTE=null; render(); const d=document.getElementById('oppDetail'); if(d)d.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+function selLote(id){ SEL_LOTE=id; SELO=null; render(); const d=document.getElementById('oppDetail'); if(d)d.scrollIntoView({behavior:'smooth',block:'nearest'}); }
 function toggleMaster(){ MASTER=!MASTER;
   const sw=document.getElementById('msw'), led=document.getElementById('mled'), lb=document.getElementById('mlb');
   if(sw)sw.classList.toggle('on',MASTER); if(led)led.classList.toggle('on',MASTER); if(lb)lb.textContent=MASTER?'Master':'Operador';
@@ -868,6 +895,7 @@ function moveColuna(id,dir){ const i=colIdx(id), j=i+dir; if(j<0||j>=S.colunas.l
 function delColuna(id){ if(S.colunas.length<=1)return; const n=oppsIn(id).length; const dest=S.colunas.find(k=>k.id!==id); if(!confirm(`Excluir a fase "${colNome(id)}"?`+(n?` As ${n} oportunidade(s) vão para "${dest.nome}".`:'')))return; const movidas=S.oportunidades.filter(o=>o.colId===id); S.oportunidades.forEach(o=>{if(o.colId===id)o.colId=dest.id;}); S.colunas=S.colunas.filter(k=>k.id!==id); save(); cDel('crm_fases',id); movidas.forEach(o=>cUp('oportunidades',mOpp(o))); cFases(); render(); }
 
 function renderOppDetail(){
+  if(SEL_LOTE) return renderLoteDetail();
   const el=document.getElementById('oppDetail');
   const o=SELO&&S.oportunidades.find(x=>x.id===SELO);
   if(!o){ el.innerHTML=''; if(SELO)SELO=null; return; }
@@ -910,6 +938,38 @@ function renderOppDetail(){
       <div class="detail-side">
         ${oppMoverHTML(o)}
       </div>
+    </div>
+  </div>`;
+}
+function renderLoteDetail(){
+  const el=document.getElementById('oppDetail'); if(!el)return;
+  const l=SEL_LOTE&&(S.lotes||[]).find(x=>x.id===SEL_LOTE);
+  if(!l){ el.innerHTML=''; if(SEL_LOTE)SEL_LOTE=null; return; }
+  const b=baseOppOf(l), ct=cli(l.contratanteId), us=loteUnitsOf(l.id), tot=loteTotal(l.id), idx=orcIndex();
+  const nm=(l.nome||'Lote').replace(/^\[BASE\]\s*/,''); const fase=b?colNome(b.colId):'—';
+  const di=(lab,v)=>`<div class="di"><span class="l">${lab}</span><span class="v ${v?'':'empty'}">${v?esc(v):'—'}</span></div>`;
+  const unidades = us.length
+    ? us.map(u=>`<a class="lu" href="eX_Orcamento.html?opp=${u.id}" style="display:flex;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;margin-bottom:6px;text-decoration:none;color:var(--tx)"><span style="display:flex;align-items:center;gap:7px;min-width:0"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">store</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</span></span><span style="font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums">${idx[u.id]?fmtBRL(idx[u.id].total):'—'}</span></a>`).join('')
+    : '<div class="dmv-empty">Nenhuma unidade ainda — adicione as lojas no orçamento base (mestra).</div>';
+  const acts=`<button class="btn btn-s btn-p" onclick="abrirLoteBaseById('${l.id}')"><span class="material-symbols-rounded">open_in_full</span>Abrir a mestra</button>`
+    +`<button class="btn btn-s" style="color:var(--danger,#c0392b)" onclick="excluirLoteFunil('${l.id}')"><span class="material-symbols-rounded">delete</span>Excluir lote</button>`;
+  el.innerHTML=`<div class="detail">
+    <div class="dhead">
+      <div class="davatar">${ini(ct?ct.nome:'?')}</div>
+      <div class="dt"><h2>${esc(nm)}</h2><div class="sub">Lote · fase <b>${esc(fase)}</b> · ${us.length} loja(s)</div>
+        <div class="chiprow"><span class="temp" style="background:var(--pri);color:#fff">Lote</span></div></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap">${acts}</div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-main">
+        <div class="dinfo">
+          ${di('Contratante',ct?ct.nome:'')}
+          ${di('Total do lote',fmtBRL(tot))}
+          ${di('Unidades',us.length+' loja(s)')}
+        </div>
+        <div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">store</span>Unidades do lote <span style="color:var(--tx3);font-weight:500">— clique numa loja p/ abrir a proposta dela</span></div>${unidades}</div>
+      </div>
+      <div class="detail-side">${b?oppMoverHTML(b):''}</div>
     </div>
   </div>`;
 }
