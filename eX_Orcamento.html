@@ -2485,6 +2485,7 @@ function renderLoteBaseHtml(){
         <span style="font-size:12.5px;color:var(--tx3)">× R$</span><span style="display:inline-flex;align-items:center;border:1px solid var(--line2);border-radius:8px;padding:4px 7px;background:var(--surf)"><input value="${rkm?moneyVal(rkm):''}" inputmode="decimal" placeholder="0,00" onchange="setMacroRkm(this.value)" style="width:56px;border:0;background:transparent;color:var(--tx);font:700 12.5px inherit;text-align:right;outline:0;font-variant-numeric:tabular-nums"></span><span style="font-size:12px;color:var(--tx3)">/km</span>
         <span style="font-size:12.5px">= <b style="color:#0f7b8a">${fmt(rotaCusto)}</b></span>
       </div>
+      ${(rotaKm>0 && rkm<=0)?`<div style="display:flex;align-items:center;gap:7px;margin-top:8px;padding:8px 11px;border:1px solid #f0b3ad;background:#fdecea;border-radius:9px;font-size:12px;color:#a12a1c;font-weight:600"><span class="material-symbols-rounded" style="font-size:16px">warning</span>Custo de rota zerado — há ${_d1(rotaKm)} km de deslocamento mas o R$/km está em branco. O frete do lote está saindo <b>grátis</b> — preencha o R$/km acima.</div>`:''}
       <div style="display:flex;justify-content:flex-end;margin-top:8px;font-size:12.5px">Macro (frota + rota): <b style="color:#0f7b8a;margin-left:5px">${fmt(macroT)}</b></div>
     </div>
     ${(()=>{ const pr=lotePrazoResumo(); if(!pr.n) return ''; const same=Math.abs(pr.min.p-pr.max.p)<1e-9;
