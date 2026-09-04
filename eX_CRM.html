@@ -258,7 +258,7 @@ select.fi{appearance:auto;cursor:pointer}
 
   <!-- FUNIL -->
   <div class="view on" id="v-funil">
-    <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="novaOpp()"><span class="material-symbols-rounded">add</span>Nova oportunidade</button><button class="btn" onclick="location.href='eX_Orcamento_PREVIEW.html?nova=lote'" title="cria um orçamento em lote (rede de lojas) — abre a base/mestra"><span class="material-symbols-rounded">apartment</span>Novo lote</button></div>
+    <div style="margin-bottom:12px"><button class="btn btn-p" onclick="location.href='eX_Orcamento_PREVIEW.html?nova'" title="começa uma oportunidade — escolha Obra única ou Orçamento em lote na própria tela"><span class="material-symbols-rounded">add</span>Nova oportunidade</button></div>
     <div class="board" id="board"></div>
     <div id="oppDetail"></div>
   </div>
@@ -708,6 +708,21 @@ function moveLote(loteId,dir){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(
   if(dir>0 && !passaGate(b,b.colId)) return;
   { const em=checaEntrada(b,destId); if(em){ alert(em); return; } }
   b.colId=destId; save(); cUp('oportunidades',mOpp(b)); render(); }
+async function excluirLoteFunil(loteId){
+  const l=(S.lotes||[]).find(x=>x.id===loteId); if(!l)return;
+  const us=loteUnitsOf(loteId);
+  if(!confirm('Excluir o lote "'+(l.nome||'')+'"'+(us.length?(' e suas '+us.length+' unidade(s)'):'')+'? As propostas do lote são descartadas. Não dá pra desfazer aqui.'))return;
+  try{
+    if(SB&&CLOUD){
+      await SB.from('orcamentos').update({deleted_at:new Date().toISOString()}).eq('lote_id',loteId);
+      await SB.from('oportunidades').update({deleted_at:new Date().toISOString()}).eq('lote_id',loteId);
+      await SB.from('orcamento_lotes').update({deleted_at:new Date().toISOString()}).eq('id',loteId);
+    }
+    S.lotes=(S.lotes||[]).filter(x=>x.id!==loteId);
+    S.oportunidades=(S.oportunidades||[]).filter(o=>o.loteId!==loteId);
+    save(); render();
+  }catch(e){ console.error(e); alert('Erro ao excluir: '+(e.message||e)); }
+}
 function loteCardHTML(l,ci){ const ct=cli(l.contratanteId); const us=loteUnitsOf(l.id); const tot=loteTotal(l.id);
   const nm=(l.nome||'Lote').replace(/^\[BASE\]\s*/,''); const show=us.slice(0,4), extra=us.length-show.length;
   return `<div class="kcard lote">
@@ -720,6 +735,7 @@ function loteCardHTML(l,ci){ const ct=cli(l.contratanteId); const us=loteUnitsOf
       ${show.map(u=>`<a class="lu" href="eX_Orcamento_PREVIEW.html?opp=${u.id}"><span class="material-symbols-rounded">description</span>${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</a>`).join('')}
       ${extra>0?`<div class="lu more"><span class="material-symbols-rounded">more_horiz</span>…mais ${extra} unidade(s)</div>`:''}
       <button class="lopen" onclick="event.stopPropagation();abrirLoteBaseById('${l.id}')"><span class="material-symbols-rounded">open_in_full</span>abrir a mestra do lote</button>
+      <button class="lopen" style="color:var(--danger,#c0392b);margin-top:6px" onclick="event.stopPropagation();excluirLoteFunil('${l.id}')"><span class="material-symbols-rounded">delete</span>excluir lote</button>
     </div>
     <div class="kcard-foot"><span class="temp quente" style="background:var(--pri)">Lote</span><span class="kmove">
       <button title="Fase anterior" onclick="event.stopPropagation();moveLote('${l.id}',-1)" ${ci===0?'disabled':''}>‹</button>
