@@ -3051,7 +3051,7 @@ function applyPrefill(){
   }catch(e){}
 }
 // info da oportunidade (lê o CRM) para o banner de vínculo
-function oppInfo(){ if(!OPP)return null; try{ const crm=JSON.parse(localStorage.getItem('ex_crm_v1')||'{}'); const o=(crm.oportunidades||[]).find(x=>x.id===OPP); if(!o)return null; const f=id=>(crm.clientes||[]).find(c=>c.id===id); const ct=f(o.contratanteId),cp=f(o.contempladoId); const col=(crm.colunas||[]).find(k=>k.id===o.colId); return {titulo:[ct&&ct.nome,cp&&cp.nome,o.objeto].filter(Boolean).join(' · '), fase:col?col.nome:''}; }catch(e){return null;} }
+function oppInfo(){ if(!OPP)return null; try{ const crm=JSON.parse(localStorage.getItem('ex_crm_v1')||'{}'); const o=(crm.oportunidades||[]).find(x=>x.id===OPP); if(!o)return null; const f=id=>(crm.clientes||[]).find(c=>c.id===id); const ct=f(o.contratanteId),cp=f(o.contempladoId); const col=(crm.colunas||[]).find(k=>k.id===o.colId); return {titulo:[ct&&ct.nome,cp&&cp.nome,o.objeto].filter(Boolean).join(' · '), fase:col?col.nome:'', papel:col?(col.papel||''):''}; }catch(e){return null;} }
 // grava total + status de volta no índice que o funil lê
 function writeback(total){ if(!OPP)return; try{ const idx=JSON.parse(localStorage.getItem('ex_orc_index')||'{}'); const info=oppInfo(); idx[OPP]={total:total, status:S.status||'rascunho', titulo:info?info.titulo:''}; localStorage.setItem('ex_orc_index',JSON.stringify(idx)); }catch(e){} }
 function renderBanner(){ const el=document.getElementById('oppBanner'); if(!el){ renderComprovantes(); return; } if(!OPP){ el.innerHTML=''; renderComprovantes(); return; }
@@ -3082,6 +3082,9 @@ function cmpRow(c){ const t=CMP_TIPOS[c.tipo]||CMP_TIPOS.outro; const meta=[c.or
   </div>`; }
 function renderComprovantes(){ const el=document.getElementById('comprovantesPanel'); if(!el)return; if(!OPP){ el.innerHTML=''; return; }
   const cs=S.comprovantes||[];
+  // comprovante de fechamento é da fase "Em negociação" — não aparece nas fases anteriores (some se ainda não há comprovante); persiste depois ou quando já existe prova; fail-open se a fase for desconhecida
+  const _i=oppInfo(); const _pap=_i&&_i.papel;
+  if(_pap && ['captacao','visita','proposta','pausa','perdido'].includes(_pap) && !cs.length){ el.innerHTML=''; return; }
   el.innerHTML=`<div class="cmp-wrap noprint">
     <div class="cmp-h"><span class="material-symbols-rounded">verified_user</span>Comprovantes de fechamento${cs.length?` <span class="cmp-count">${cs.length}</span>`:''}</div>
     <div class="cmp-hint">Anexe a prova da aprovação do cliente (e-mail, ordem de serviço, contrato). Com <b>1 comprovante</b>, a proposta vira <b>Aprovada</b>.</div>
