@@ -1031,6 +1031,7 @@ function renderLevMain(l,b,lev){
       ${c.st==='nvis'
         ? `<div class="lev-row"><span style="font-weight:700;color:#6b6880;font-size:10.5px;text-transform:uppercase">Motivo</span>${['Inviável','Representada pelo modelo','Outros'].map(m=>`<span class="chip ${c.motivo===m?'on':''}" style="padding:4px 9px;font-size:11px" onclick="levMot('${b.id}',${i},'${m}')">${m}</span>`).join('')}${c.motivo==='Outros'?`<input type="text" placeholder="motivo…" value="${esc(c.motivoTxt||'')}" oninput="levMotTxt('${b.id}',${i},this.value)">`:''}</div>`
         : `<div class="lev-row"><span class="material-symbols-rounded" style="font-size:15px;color:var(--tx3)">event</span>Data da visita<input type="date" value="${c.data||''}" onchange="levData('${b.id}',${i},this.value)"><span class="lev-rel ${c.link?'has':''}" onclick="levRel('${b.id}',${i})"><span class="material-symbols-rounded" style="font-size:15px">${c.link?'task':'note_add'}</span>${c.link?'relatório anexado':'anexar relatório'}</span></div>`}
+      <div class="lev-row" style="align-items:flex-start"><span class="material-symbols-rounded" style="font-size:15px;color:var(--tx3);margin-top:6px">notes</span><textarea placeholder="observações do levantamento (achados, restrições, prazo…)" onchange="levObs('${b.id}',${i},this.value)" style="flex:1;min-width:180px;min-height:40px;box-sizing:border-box;border:1px solid var(--line2);border-radius:8px;padding:6px 9px;font:inherit;font-size:12px;color:var(--tx);background:var(--surf);resize:vertical">${esc(c.obs||'')}</textarea></div>
     </div>`).join('') || '<div class="dmv-empty">Nenhuma candidata ainda — busque a loja abaixo (opcional).</div>';
   const anexos=(lev.anexos||[]).map((a,i)=>`<div class="lev-file"><span class="material-symbols-rounded">attach_file</span><a href="${esc(a.link||'#')}" target="_blank" style="text-decoration:none;color:var(--tx);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(a.nome||a.link)}</a><span class="material-symbols-rounded fx" onclick="levAnexDel('${b.id}',${i})">close</span></div>`).join('');
   return `${levFichaHTML(b)}
@@ -1060,6 +1061,7 @@ function levSt(bid,i,s){ const b=_levB(bid); if(!b)return; const L=levOf(b); con
 function levData(bid,i,v){ const b=_levB(bid); if(!b)return; levOf(b).cands[i].data=v; levSave(b); }
 function levLink(bid,i,v){ const b=_levB(bid); if(!b)return; levOf(b).cands[i].link=v; levSave(b); }
 function levRel(bid,i){ const b=_levB(bid); if(!b)return; const c=levOf(b).cands[i]; if(!c)return; const link=prompt('Link do relatório desta unidade (Drive, PDF…):', c.link||''); if(link===null)return; c.link=link.trim(); levSave(b); renderLoteDetail(); }
+function levObs(bid,i,v){ const b=_levB(bid); if(!b)return; levOf(b).cands[i].obs=v; levSave(b); }
 function levFichaHTML(b){ const fid=b.colId; const req=colCampos(fid).filter(c=>c.obr); if(!req.length) return '';
   const d=(b.faseDados&&b.faseDados[fid])||{};
   const cells=req.map(c=>{ const v=d[c.id]!==undefined?d[c.id]:'';
@@ -1084,7 +1086,7 @@ function levFiltrar(bid,q){ const box=document.getElementById('levRes'); if(!box
   box.innerHTML=arr.length?arr.map(x=>`<button type="button" onmousedown="event.preventDefault()" onclick="levAdd('${bid}','${x.id}')" style="display:block;width:100%;text-align:left;border:none;background:transparent;padding:8px 10px;border-radius:7px;cursor:pointer" onmouseover="this.style.background='var(--pri-bg,#efeafc)'" onmouseout="this.style.background=''"><div style="font-weight:600;font-size:13px;color:var(--tx)">${esc(x.nome)}</div><div style="font-size:11px;color:var(--tx3)">${esc([x.numero,x.grupo,x.endereco].filter(Boolean).join(' · '))}</div></button>`).join(''):`<div style="padding:10px;color:var(--tx3);font-size:12.5px">${(S.lojas&&S.lojas.length)?'Nada encontrado.':'Sem lojas cadastradas.'}</div>`;
   box.style.display='block'; }
 function levAdd(bid,lojaId){ const b=_levB(bid); if(!b)return; const lj=(S.lojas||[]).find(x=>x.id===lojaId); if(!lj)return;
-  levOf(b).cands.push({lojaId, nome:lj.nome, sub:[lj.numero,lj.grupo,lj.endereco].filter(Boolean).join(' · '), st:'avis', data:'', motivo:'', motivoTxt:'', link:'', mat:false});
+  levOf(b).cands.push({lojaId, nome:lj.nome, sub:[lj.numero,lj.grupo,lj.endereco].filter(Boolean).join(' · '), st:'avis', data:'', motivo:'', motivoTxt:'', link:'', obs:'', mat:false});
   const box=document.getElementById('levRes'); if(box)box.style.display='none'; const inp=document.getElementById('levBusca'); if(inp)inp.value='';
   levSave(b); renderLoteDetail(); }
 /* seleção → materializa as candidatas escolhidas em unidades (clona o dados do orçamento base) */
