@@ -52,7 +52,17 @@ select.fi{appearance:auto;cursor:pointer}
 .ib:hover{background:var(--surf);color:var(--pri)}.ib:disabled{opacity:.25;cursor:default}
 .ib.del:hover{background:#fcebeb;color:var(--red)}.ib .material-symbols-rounded{font-size:15px}
 .kcol-body{overflow-y:auto;display:flex;flex-direction:column;gap:8px;padding:2px}
-.kcard{background:var(--surf);border:1px solid var(--line);border-radius:9px;padding:10px 11px;cursor:pointer;transition:.1s}
+.kcard{background:var(--surf);border:1px solid var(--line);border-radius:9px;padding:10px 11px;cursor:pointer;transition:.1s;position:relative}
+.cardmenu-btn{position:absolute;top:7px;right:7px;width:26px;height:26px;border:none;background:transparent;border-radius:7px;color:var(--tx3);cursor:pointer;display:grid;place-items:center;z-index:3}
+.cardmenu-btn:hover{background:rgba(0,0,0,.07);color:var(--tx)}
+.cardmenu-btn .material-symbols-rounded{font-size:19px}
+.cardmenu{position:absolute;top:33px;right:7px;background:var(--surf,#fff);border:1px solid var(--line,#e5e5e5);border-radius:10px;box-shadow:0 12px 32px rgba(20,10,50,.20);padding:5px;display:none;flex-direction:column;gap:2px;z-index:30;min-width:180px}
+.cardmenu.open{display:flex}
+.cardmenu button{display:flex;align-items:center;gap:9px;border:none;background:transparent;padding:9px 10px;border-radius:7px;font:600 12.5px inherit;color:var(--tx);cursor:pointer;text-align:left;white-space:nowrap}
+.cardmenu button:hover{background:var(--pri-bg,#f0ecfb)}
+.cardmenu button.danger{color:var(--danger,#c0392b)}
+.cardmenu button.danger:hover{background:#fdecea}
+.cardmenu .material-symbols-rounded{font-size:17px}
 .kcard:hover{border-color:var(--line2);box-shadow:0 1px 4px rgba(0,0,0,.06)}
 .kcard.sel{border-color:var(--pri);box-shadow:0 0 0 2px var(--pri-bg)}
 .kcard-nm{font-size:12.5px;font-weight:700;line-height:1.3}
@@ -258,7 +268,7 @@ select.fi{appearance:auto;cursor:pointer}
 
   <!-- FUNIL -->
   <div class="view on" id="v-funil">
-    <div style="margin-bottom:12px"><button class="btn btn-p" onclick="location.href='eX_Orcamento_PREVIEW.html?nova'" title="começa uma oportunidade — escolha Obra única ou Orçamento em lote na própria tela"><span class="material-symbols-rounded">add</span>Nova oportunidade</button></div>
+    <div style="margin-bottom:12px"><button class="btn btn-p" onclick="location.href='eX_Orcamento.html?nova'" title="começa uma oportunidade — escolha Obra única ou Orçamento em lote na própria tela"><span class="material-symbols-rounded">add</span>Nova oportunidade</button></div>
     <div class="board" id="board"></div>
     <div id="oppDetail"></div>
   </div>
@@ -701,13 +711,16 @@ function lotesInCol(colId){ return (S.lotes||[]).filter(l=>{ const b=baseOppOf(l
 function loteUnitsOf(loteId){ return S.oportunidades.filter(o=>o.loteId===loteId && !(o.objeto||'').startsWith('[BASE]')); }
 function loteTotal(loteId){ const idx=orcIndex(); return loteUnitsOf(loteId).reduce((a,u)=>a+((idx[u.id]&&idx[u.id].total)||0),0); }
 function loteToggle(el){ const c=el.closest('.kcard'); if(c)c.classList.toggle('open'); }
-function abrirLoteBaseById(loteId){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(l&&l.baseOppId) location.href='eX_Orcamento_PREVIEW.html?opp='+l.baseOppId+'&lote='+l.id; }
+function abrirLoteBaseById(loteId){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(l&&l.baseOppId) location.href='eX_Orcamento.html?opp='+l.baseOppId+'&lote='+l.id; }
 function moveLote(loteId,dir){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(!l)return; const b=baseOppOf(l); if(!b)return; const i=colIdx(b.colId)+dir; if(i<0||i>=S.colunas.length)return; const destId=S.colunas[i].id;
   // #9: o lote respeita as mesmas travas de fase de uma oportunidade avulsa (gate/entrada/permitido)
   if(!podeMoverPara(b,destId)){ alert('Destino bloqueado a partir desta fase. Libere na configuração (chave na frente).'); return; }
   if(dir>0 && !passaGate(b,b.colId)) return;
   { const em=checaEntrada(b,destId); if(em){ alert(em); return; } }
   b.colId=destId; save(); cUp('oportunidades',mOpp(b)); render(); }
+function cardMenuToggle(btn){ const m=btn.parentNode.querySelector('.cardmenu'); if(!m)return; const wasOpen=m.classList.contains('open'); cardMenuClose(); if(!wasOpen)m.classList.add('open'); }
+function cardMenuClose(){ document.querySelectorAll('.cardmenu.open').forEach(x=>x.classList.remove('open')); }
+document.addEventListener('click',cardMenuClose);
 async function excluirLoteFunil(loteId){
   const l=(S.lotes||[]).find(x=>x.id===loteId); if(!l)return;
   const us=loteUnitsOf(loteId);
@@ -726,16 +739,19 @@ async function excluirLoteFunil(loteId){
 function loteCardHTML(l,ci){ const ct=cli(l.contratanteId); const us=loteUnitsOf(l.id); const tot=loteTotal(l.id);
   const nm=(l.nome||'Lote').replace(/^\[BASE\]\s*/,''); const show=us.slice(0,4), extra=us.length-show.length;
   return `<div class="kcard lote">
+    <button class="cardmenu-btn" title="Ações do lote" onclick="event.stopPropagation();cardMenuToggle(this)"><span class="material-symbols-rounded">more_vert</span></button>
+    <div class="cardmenu">
+      <button onclick="event.stopPropagation();cardMenuClose();abrirLoteBaseById('${l.id}')"><span class="material-symbols-rounded">open_in_full</span>Abrir a mestra</button>
+      <button class="danger" onclick="event.stopPropagation();cardMenuClose();excluirLoteFunil('${l.id}')"><span class="material-symbols-rounded">delete</span>Excluir lote</button>
+    </div>
     <div class="lote-tag"><span class="material-symbols-rounded">apartment</span>Lote</div>
-    <div class="kcard-nm">${esc(nm)}</div>
+    <div class="kcard-nm" style="padding-right:26px">${esc(nm)}</div>
     <div class="kcard-cli"><span class="material-symbols-rounded">business</span>${esc(ct?ct.nome:'—')}</div>
     <div class="orcb loteb"><span class="material-symbols-rounded">store</span>${us.length} loja(s) · ${fmtBRL(tot)}</div>
     <div class="lexpand" onclick="event.stopPropagation();loteToggle(this)"><span class="material-symbols-rounded">unfold_more</span>ver unidades</div>
     <div class="lote-units">
-      ${show.map(u=>`<a class="lu" href="eX_Orcamento_PREVIEW.html?opp=${u.id}"><span class="material-symbols-rounded">description</span>${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</a>`).join('')}
+      ${show.map(u=>`<a class="lu" href="eX_Orcamento.html?opp=${u.id}"><span class="material-symbols-rounded">description</span>${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</a>`).join('')}
       ${extra>0?`<div class="lu more"><span class="material-symbols-rounded">more_horiz</span>…mais ${extra} unidade(s)</div>`:''}
-      <button class="lopen" onclick="event.stopPropagation();abrirLoteBaseById('${l.id}')"><span class="material-symbols-rounded">open_in_full</span>abrir a mestra do lote</button>
-      <button class="lopen" style="color:var(--danger,#c0392b);margin-top:6px" onclick="event.stopPropagation();excluirLoteFunil('${l.id}')"><span class="material-symbols-rounded">delete</span>excluir lote</button>
     </div>
     <div class="kcard-foot"><span class="temp quente" style="background:var(--pri)">Lote</span><span class="kmove">
       <button title="Fase anterior" onclick="event.stopPropagation();moveLote('${l.id}',-1)" ${ci===0?'disabled':''}>‹</button>

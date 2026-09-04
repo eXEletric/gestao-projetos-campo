@@ -243,6 +243,8 @@ select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 .diagear:hover{background:var(--pri-bg,#efeafc)}.diagear .material-symbols-rounded{font-size:17px}
 .dianote2{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--amber,#a45a00);background:#fdf5e7;padding:7px 13px;border-bottom:1px solid #f2e6cd}
 .dianote2 .material-symbols-rounded{font-size:16px}
+.revx{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;letter-spacing:.03em;text-transform:uppercase;color:#a45a00;background:#fde6cf;border:1px solid #f0cf9c;border-radius:20px;padding:1px 7px;margin-left:8px;vertical-align:middle;white-space:nowrap;cursor:help}
+.revx .material-symbols-rounded{font-size:12px;color:#a45a00}
 @media(max-width:820px){
   .moahd{display:none}
   .moarow{grid-template-columns:1fr;gap:0;padding:12px 13px}
@@ -928,6 +930,9 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
 <script>
 "use strict";
 const OPP=(new URLSearchParams(location.search)).get('opp')||null;   // ?opp=<id> → orçamento desta oportunidade
+const LOTE=(new URLSearchParams(location.search)).get('lote')||null;  // ?lote=novo | ?lote=<id> → tela mestra do lote (PRÉVIA)
+const NOVA=(new URLSearchParams(location.search)).get('nova')!=null;  // ?nova → escolher Obra única × Obra em lote (PRÉVIA)
+let S_LOTE_ID=null;   // se este orçamento é uma unidade de lote (marca "editada" ao salvar)
 const STORE=OPP?('ex_orc_v6__'+OPP):'ex_orc_v6';
 /* ===== NUVEM (Supabase) — persiste o orçamento (retrato JSON) por oportunidade ===== */
 const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
@@ -1007,6 +1012,7 @@ function pushOrc(){
     cliente_contratante:S.cliNome||null, cliente_contato:S.cliContato||null, cliente_fone:S.cliFone||null, cliente_email:S.cliEmail||null,
     cliente_final:S.finNome||null, cliente_endereco:S.finEnd||null,
     total:S._total||0, custo:S._custo||0, lucro:S._lucro||0, dados:S };
+  if(S_LOTE_ID && !(S&&S._base)) p.herda_base=false;   // editou uma unidade de lote → deixa de ser "igual à base"
   if(ORC_ID){ SB.from('orcamentos').update(p).eq('id',ORC_ID).then(({error})=>{ if(error){console.error('orc up',error);cloudMsg('erro ao salvar');} }); }
   else { SB.from('orcamentos').insert(p).select('id').then(({data,error})=>{ if(error){console.error('orc ins',error);cloudMsg('erro ao salvar');return;} if(data&&data[0])ORC_ID=data[0].id; }); }
 }
@@ -1014,11 +1020,13 @@ function saveOrc(){ if(!(OPP&&CLOUD))return; clearTimeout(_saveT); _saveT=setTim
 async function carregarOrc(){
   const {data,error}=await SB.from('orcamentos').select('*').eq('oportunidade_id',OPP).is('deleted_at',null).order('created_at',{ascending:false}).limit(1);
   if(error) throw error;
-  if(data&&data.length){ ORC_ID=data[0].id; if(data[0].dados) S=data[0].dados; else S=orcVazio(); }
+  if(data&&data.length){ ORC_ID=data[0].id; S_LOTE_ID=data[0].lote_id||null; if(data[0].dados) S=data[0].dados; else S=orcVazio(); }
   else { ORC_ID=null; S=orcVazio(); S.numero=await proximoNumero(); stampNovo(); }   // orçamento novo nasce EM BRANCO + número automático único
   sanitize();
 }
 async function initOrc(){
+  if(NOVA){ await initNova(); return; }   // ?nova → bifurcação Única × Lote (PRÉVIA)
+  if(LOTE && !OPP){ await initLote(); return; }   // ?lote sozinho (legado) → redireciona pro base
   if(!OPP){ await initList(); return; }   // sem ?opp → LISTA de orçamentos
   if(OPP&&SB){ try{
     const {data:{session}}=await SB.auth.getSession();
@@ -1038,6 +1046,7 @@ async function initOrc(){
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
   if(!CLOUD){ load(); }
   boot();
+  if(isLoteBase()){ try{ await initLoteBasePanel(); }catch(e){ console.error('lote base panel',e); } }   // base do lote = mestra: injeta o painel de lojas
 }
 
 /* ---------- LISTA de orçamentos (Comercial › Orçamentos) ---------- */
@@ -1048,17 +1057,28 @@ async function initList(){
   const mt=document.querySelector('.modtag'); if(mt)mt.innerHTML='<span class="material-symbols-rounded">request_quote</span>Orçamentos';
   const sub=document.querySelector('.sub'); if(sub)sub.textContent='Lista de orçamentos — clique para abrir. Novos orçamentos nascem do funil (Comercial › Funil).';
   const wrap=document.getElementById('orcList'); wrap.style.display='block';
-  wrap.innerHTML=`<div class="olbar"><div class="olsearch"><span class="material-symbols-rounded">search</span><input id="orcQ" oninput="renderList()" placeholder="Buscar por número, cliente ou solução…"></div></div>
+  wrap.innerHTML=`<div class="olbar" style="display:flex;gap:12px;align-items:center">
+      <a href="eX_Orcamento.html?nova" style="display:inline-flex;align-items:center;gap:7px;border:none;background:var(--pri);color:#fff;border-radius:10px;padding:11px 18px;font:800 14px inherit;text-decoration:none;white-space:nowrap;box-shadow:0 4px 14px rgba(83,58,183,.28)"><span class="material-symbols-rounded" style="font-size:20px;color:#fff">add_circle</span>Nova oportunidade</a>
+      <div class="olsearch" style="flex:1"><span class="material-symbols-rounded">search</span><input id="orcQ" oninput="renderList()" placeholder="Buscar por número, cliente ou solução…"></div></div>
+    <div id="lotesList"></div>
     <div class="scroll"><table class="oltbl"><thead><tr><th>Nº</th><th>Cliente</th><th>Solução / objeto</th><th>Data</th><th class="r">Total</th><th>Status</th></tr></thead><tbody id="orcRows"></tbody></table></div>`;
   if(SB){ try{
     const {data:{session}}=await SB.auth.getSession();
-    if(session){ CLOUD=true; cloudMsg('nuvem ✓'); await loadList(); return; }
+    if(session){ CLOUD=true; cloudMsg('nuvem ✓'); await loadLotesList(); await loadList(); return; }
     else cloudMsg('faça login');
   }catch(e){ console.error(e); cloudMsg('erro nuvem'); } }
   document.getElementById('orcRows').innerHTML='<tr><td colspan="6" style="padding:26px;text-align:center;color:var(--tx3)">Entre com login pra ver os orçamentos salvos.</td></tr>';
 }
+async function loadLotesList(){
+  try{ const {data}=await SB.from('orcamento_lotes').select('id,nome,status,base_oportunidade_id,created_at').is('deleted_at',null).order('created_at',{ascending:false});
+    const host=document.getElementById('lotesList'); if(!host)return; const rows=data||[];
+    if(!rows.length){ host.innerHTML=''; return; }
+    host.innerHTML=`<div style="margin:6px 0 14px"><div style="font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--tx3);margin:0 0 6px 2px">Lotes (mestra)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px">${rows.map(l=>`<a href="eX_Orcamento.html?opp=${l.base_oportunidade_id||''}&lote=${l.id}" style="display:inline-flex;align-items:center;gap:7px;border:1px solid var(--pri-line,#ddd3f6);background:var(--pri-bg,#efeafc);color:var(--pri-d);border-radius:10px;padding:8px 12px;font:600 13px inherit;text-decoration:none"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">apartment</span>${esc(l.nome||'Lote')}</a>`).join('')}</div></div>`;
+  }catch(e){ console.error('lotes list',e); }
+}
 async function loadList(){
-  const {data,error}=await SB.from('orcamentos').select('id,numero,status,total,oportunidade_id,cliente_contratante,cliente_final,solucao,data_cotacao,created_at').is('deleted_at',null).order('created_at',{ascending:false});
+  const {data,error}=await SB.from('orcamentos').select('id,numero,status,total,oportunidade_id,cliente_contratante,cliente_final,solucao,data_cotacao,created_at,lote_id').is('deleted_at',null).is('lote_id',null).order('created_at',{ascending:false});
   if(error){ document.getElementById('orcRows').innerHTML='<tr><td colspan="6" style="padding:20px;color:var(--red)">Erro: '+esc(error.message)+'</td></tr>'; return; }
   _ORCS=data||[]; renderList();
 }
@@ -1162,8 +1182,10 @@ function blkMargemCtrl(cfg){ if(!cfg.custo) return '';
 }
 // ===== FATORES DA OBRA (gerais do orçamento) — só afetam serviços MONTADOS (com composição) =====
 function abrCongelada(){ return !!(S.abrSnap && typeof S.abrSnap==='object'); }   // proposta congelada = não recalcula
-function abrObra(){ if(abrCongelada()) return {custo_pct:num(S.abrSnap.custo_pct),tempo_pct:num(S.abrSnap.tempo_pct)};
-  return faixaDeKm(kmObra())||{custo_pct:0,tempo_pct:0}; }   // ao vivo: faixa pelo km (base → cidade da loja)
+function isLoteUnit(){ return !!S_LOTE_ID && !(S&&S._base); }   // unidade de lote (não o base)
+function abrObra(){ let f = abrCongelada()? {custo_pct:num(S.abrSnap.custo_pct),tempo_pct:num(S.abrSnap.tempo_pct)} : (faixaDeKm(kmObra())||{custo_pct:0,tempo_pct:0});
+  if(isLoteUnit()) f={custo_pct:0, tempo_pct:num(f.tempo_pct)};   // #2: na unidade de lote o CUSTO do deslocamento está no macro (rota) — aqui só o PRAZO estica
+  return f; }
 function congelarAbr(){ const f=faixaDeKm(kmObra())||{custo_pct:0,tempo_pct:0}; const lm=lojaMun(), bm=baseMun();
   S.abrSnap={ km:kmObra(), custo_pct:num(f.custo_pct), tempo_pct:num(f.tempo_pct), rotulo:f.rotulo||'',
     base:S.baseNome||(bm?bm.nome:''), cidade:lm?(lm.nome+'/'+lm.uf):'', at:new Date().toISOString() }; }
@@ -1351,6 +1373,7 @@ usuarios:[
 
 /* ---------- carga / persistência ---------- */
 function sanitize(){
+  ['servicos','equip','despesas','materiais'].forEach(k=>{ if(!Array.isArray(S[k]))S[k]=[]; });   // garante os arrays dos blocos (base do lote / dados incompletos não quebram o render)
   // migra orçamentos antigos: respContato combinado → Fone + E-mail separados; e rede/nº do cliente final
   if(S.respFone===undefined)S.respFone=''; if(S.respEmail===undefined)S.respEmail='';
   if(S.respContato && !S.respFone && !S.respEmail){ const p=S.respContato.split(/·|\||;/).map(s=>s.trim()).filter(Boolean); p.forEach(x=>{ if(x.indexOf('@')>-1)S.respEmail=x; else if(!S.respFone)S.respFone=x; }); if(!S.respFone&&!S.respEmail){ if(S.respContato.indexOf('@')>-1)S.respEmail=S.respContato; else S.respFone=S.respContato; } }
@@ -1390,6 +1413,12 @@ function sanitize(){
   if(S.abrIdx===undefined)S.abrIdx=0;
   if(S.kmManual===undefined)S.kmManual=0;   // km rodado sobrescrito (0 = usa o automático base→cidade)
   if(S.abrSnap===undefined)S.abrSnap=null;   // congelamento da abrangência (null = calcula ao vivo)
+  if(!S.macro||typeof S.macro!=='object')S.macro={estruturas:[]};   // macro do lote (estrutura/frota + rota)
+  if(!Array.isArray(S.macro.estruturas))S.macro.estruturas=[];
+  if(S.macro.rkm===undefined)S.macro.rkm=0;         // R$/km da rota macro
+  if(S.macro.kmManual===undefined)S.macro.kmManual=0;   // km da rota sobrescrito (0 = usa o automático)
+  if(S.macro.modo!=='estimativa'&&S.macro.modo!=='detalhado')S.macro.modo='detalhado';   // detalhado × estimativa (multiplicador)
+  if(S.macro.qtd===undefined)S.macro.qtd=0;         // nº de unidades na estimativa (× base)
   if(S.fatorLocal===undefined||num(S.fatorLocal)<=0)S.fatorLocal=1;
   if(!S.status)S.status='rascunho';
 }
@@ -1704,7 +1733,9 @@ function fatoresObraHtml(){
   const abrDesc={local:'na sua base / cidade',estadual:'dentro do estado',nacional:'outro estado ou país'};
   const km=kmObra(), faixa=faixaDeKm(km)||{}, lm=lojaMun(), bm=baseMun();
   const baseOpts=(ORIGENS||[]).map(o=>`<option value="${o.municipio_id}" ${o.municipio_id==S.baseMunId?'selected':''}>${esc(o.nome)}</option>`).join('');
-  const aPct=(num(faixa.custo_pct)||num(faixa.tempo_pct))?` <small>${pct(faixa.custo_pct)} custo · ${pct(faixa.tempo_pct)} prazo</small>`:' <small>sem acréscimo</small>';
+  const aPct=isLoteUnit()
+      ? ` <small>${pct(faixa.tempo_pct)} prazo · <span style="color:#0f7b8a">custo no macro do lote</span></small>`
+      : ((num(faixa.custo_pct)||num(faixa.tempo_pct))?` <small>${pct(faixa.custo_pct)} custo · ${pct(faixa.tempo_pct)} prazo</small>`:' <small>sem acréscimo</small>');
   const cfg = S._foCfg ? `<div class="fo-cfg">
       <div class="fo-cfg-sec">Abrangência — <b>suas regiões</b>; quanto mais <b>longe</b>, mais <b>encarece</b> e <b>demora</b></div>
       <div class="fo-cfg-tbl">
@@ -1726,7 +1757,7 @@ function fatoresObraHtml(){
       <div class="fo-row"><label><span class="material-symbols-rounded">warehouse</span>Base de atendimento</label><select class="fo-sel" onchange="setBaseMun(this.value)">${baseOpts||'<option>— cadastre uma base —</option>'}</select></div>
       <div class="fo-row"><label><span class="material-symbols-rounded">pin_drop</span>Abrangência</label>
         <div class="fo-auto">
-          ${ abrCongelada() ? (()=>{ const sn=S.abrSnap; const p=(num(sn.custo_pct)||num(sn.tempo_pct))?` <small>${pct(sn.custo_pct)} custo · ${pct(sn.tempo_pct)} prazo</small>`:' <small>sem acréscimo</small>';
+          ${ isLoteBase() ? loteAbrHtml() : abrCongelada() ? (()=>{ const sn=S.abrSnap; const p=(num(sn.custo_pct)||num(sn.tempo_pct))?` <small>${pct(sn.custo_pct)} custo · ${pct(sn.tempo_pct)} prazo</small>`:' <small>sem acréscimo</small>';
               return `<span class="fo-autopill congelado"><span class="material-symbols-rounded">lock</span>${esc(sn.rotulo||'—')}${p}</span>
               <span class="fo-km"><span class="fo-kmtag frozen">congelado</span>${sn.cidade?esc((sn.base||'base')+' → '+sn.cidade+(sn.km!=null?': '+_d1(sn.km)+' km':'')):'valor travado da proposta'} <button class="fo-kmrst" onclick="toggleCongelarAbr()" title="recalcular pela cidade/km atual"><span class="material-symbols-rounded">restart_alt</span>recalcular</button></span>`; })()
             : lm ? `<span class="fo-autopill"><span class="material-symbols-rounded">bolt</span>${esc(faixa.rotulo||'—')}${aPct}</span>
@@ -2028,6 +2059,587 @@ async function carregarClientes(){
     if(!l.error) LOJAS=(l.data||[]).map(x=>({id:x.id,tipo:'contemplado',nome:x.nome,grupo:x.grupo,numero:x.numero,contato:x.contato,endereco:x.endereco,fone:x.fone,email:x.email,cnpj:x.cnpj}));
   }catch(e){ console.error('clientes/lojas',e); }
 }
+/* ============ PRÉVIA · NOVA PROPOSTA (bifurcação Única × Lote) ============ */
+async function initNova(){
+  document.querySelectorAll('.grid,#oppBanner').forEach(e=>{e.style.display='none';});
+  const mode=document.querySelector('.appbar .mode'); if(mode)mode.style.display='none';
+  const mt=document.querySelector('.modtag'); if(mt)mt.innerHTML='<span class="material-symbols-rounded">add_circle</span>Nova oportunidade';
+  const sub=document.querySelector('.sub'); if(sub)sub.textContent='Dados da oportunidade. Ligue a chave se for orçamento em lote.';
+  let host=_lg('loteView'); if(!host){ host=document.createElement('div'); host.id='loteView'; host.style.cssText='max-width:820px;margin:0 auto;padding:6px 14px 70px'; (document.querySelector('.wrap')||document.body).appendChild(host); }
+  host.innerHTML='<div style="padding:40px;text-align:center;color:var(--tx3)">Carregando…</div>';
+  if(!SB){ host.innerHTML='<div style="padding:30px">Sem conexão.</div>'; return; }
+  try{
+    const {data:{session}}=await SB.auth.getSession();
+    if(!session){ host.innerHTML='<div style="padding:30px">Entre com login.</div>'; cloudMsg('faça login'); return; }
+    CLOUD=true; cloudMsg('nuvem ✓');
+    try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
+    await carregarClientes(); await carregarObjetos(); renderNova(host);
+  }catch(e){ console.error('initNova',e); host.innerHTML='<div style="padding:30px;color:var(--red)">Erro: '+esc(e.message||e)+'</div>'; }
+}
+let NOVA_OBJS=[];
+async function carregarObjetos(){
+  try{ const [a,b]=await Promise.all([
+      SB.from('oportunidades').select('objeto').is('deleted_at',null),
+      SB.from('orcamentos').select('solucao').is('deleted_at',null)
+    ]);
+    const set=new Set();
+    (a.data||[]).forEach(r=>{ const o=(r.objeto||'').trim(); if(o && !/^\[BASE\]/.test(o)) set.add(o); });
+    (b.data||[]).forEach(r=>{ const s=(r.solucao||'').trim(); if(s) set.add(s); });
+    NOVA_OBJS=[...set].sort((x,y)=>x.localeCompare(y,'pt'));
+  }catch(e){ console.error('objetos',e); NOVA_OBJS=[]; }
+}
+let NOVA_LOTE=((new URLSearchParams(location.search)).get('nova')==='lote');   // ?nova=lote → já entra com a chave de lote ligada (vindo do funil)
+function renderNova(host){
+  const contrOpts=contratantes().map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+  host.innerHTML=`
+  <div style="display:flex;align-items:center;gap:10px;margin:10px 0 18px"><span style="font-weight:800;font-size:19px">Nova oportunidade</span>
+    <a href="eX_Orcamento.html" style="margin-left:auto;display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:6px 11px;font:600 12.5px inherit;text-decoration:none"><span class="material-symbols-rounded" style="font-size:15px">arrow_back</span>voltar</a></div>
+  <div style="background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:20px;max-width:560px;box-shadow:0 8px 26px rgba(60,40,140,.06)">
+    <label style="font-size:11px;font-weight:700;color:var(--tx3)">Contratante</label>
+    <select id="nuContr" onchange="novaContrChange(this.value)" style="width:100%;margin:5px 0 8px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— selecione —</option>${contrOpts}<option value="__novo__">➕ Novo — candidato a contratante</option></select>
+    <div id="nuContrNovoWrap" style="display:none;margin:0 0 12px"><input id="nuContrNovo" style="width:100%;padding:9px 11px;border:1px solid var(--pers,#b0701a);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)" placeholder="Nome do candidato a contratante (prospecto)"><div style="font-size:11px;color:var(--pers,#b0701a);margin-top:4px"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">person_add</span> Vira um contratante marcado como candidato — dá pra confirmar depois no CRM.</div></div>
+    <label style="font-size:11px;font-weight:700;color:var(--tx3)">Objeto / nome <span style="font-weight:500;text-transform:none;color:var(--tx3)">— digite para reaproveitar um nome já usado</span></label>
+    <input id="nuObj" list="nuObjList" autocomplete="off" style="width:100%;margin:5px 0 4px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)" placeholder="ex.: Automação de ar-condicionado" oninput="novaObjHint(this.value)">
+    <datalist id="nuObjList">${(NOVA_OBJS||[]).map(o=>`<option value="${esc(o)}"></option>`).join('')}</datalist>
+    <div id="nuObjHint" style="font-size:11.5px;color:var(--tx3);margin:0 0 14px 2px">${(NOVA_OBJS||[]).length} nome(s) já cadastrados — comece a digitar para ver os parecidos.</div>
+    <div style="display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--line2);border-radius:11px;background:var(--surf2,#faf9fe);margin-bottom:16px">
+      <div class="ex-switch ${NOVA_LOTE?'on':''}" onclick="toggleNovaLote()" title="orçamento em lote"><span class="lb off">NÃO</span><span class="lb onx">SIM</span><span class="kb"><span class="pin"></span></span></div>
+      <div style="flex:1"><b style="font-size:14px">Orçamento em lote</b><div style="font-size:12px;color:var(--tx3);margin-top:1px" id="nuLoteDesc"></div></div>
+    </div>
+    <div id="nuCond"></div>
+    <button id="nuGo" onclick="criarNova()" style="width:100%;border:none;background:var(--pri);color:#fff;border-radius:10px;padding:11px;font:700 14px inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px"></button>
+  </div>`;
+  renderNovaCond();
+}
+function renderNovaCond(){
+  const cond=_lg('nuCond'), go=_lg('nuGo'), desc=_lg('nuLoteDesc');
+  if(NOVA_LOTE){
+    if(desc)desc.textContent='Monta um orçamento base e gera uma proposta por unidade.';
+    if(cond)cond.innerHTML='<div style="display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--tx3);background:var(--pri-bg);border-radius:9px;padding:10px 12px;margin-bottom:16px"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">info</span>Na próxima tela você monta o base e adiciona as unidades (lojas) do lote.</div>';
+    if(go)go.innerHTML='<span class="material-symbols-rounded">apartment</span>Criar lote e montar base';
+  } else {
+    if(desc)desc.textContent='Desligado: uma loja, um orçamento.';
+    const lojaOpts=(LOJAS||[]).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
+    if(cond)cond.innerHTML='<label style="font-size:11px;font-weight:700;color:var(--tx3)">Loja / unidade</label><select id="nuLoja" style="width:100%;margin:5px 0 16px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— selecione —</option>'+lojaOpts+'</select>';
+    if(go)go.innerHTML='<span class="material-symbols-rounded">add</span>Criar oportunidade';
+  }
+}
+function toggleNovaLote(){ NOVA_LOTE=!NOVA_LOTE; document.querySelector('#loteView .ex-switch').classList.toggle('on',NOVA_LOTE); renderNovaCond(); }
+function novaContrChange(v){ const w=_lg('nuContrNovoWrap'); if(w){ w.style.display=(v==='__novo__')?'block':'none'; if(v==='__novo__'){const i=_lg('nuContrNovo'); if(i)i.focus();} } }
+function novaObjHint(v){ const el=_lg('nuObjHint'); if(!el)return; v=(v||'').trim().toLowerCase();
+  if(!v){ el.innerHTML=(NOVA_OBJS||[]).length+' nome(s) já cadastrados — comece a digitar para ver os parecidos.'; el.style.color='var(--tx3)'; return; }
+  const m=(NOVA_OBJS||[]).filter(o=>o.toLowerCase().includes(v));
+  if(!m.length){ el.innerHTML='<span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">new_releases</span> Nome novo — nenhum parecido encontrado.'; el.style.color='var(--tx3)'; return; }
+  const exato=m.some(o=>o.toLowerCase()===v);
+  el.style.color='var(--pri)'; el.innerHTML='<span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">search</span> '+m.length+' parecido(s)'+(exato?' · <b>já existe igual</b>':'')+': '+m.slice(0,3).map(o=>'“'+esc(o)+'”').join(', ')+(m.length>3?'…':''); }
+async function createLoteAndBase(nome,contr){
+  const ins=await SB.from('orcamento_lotes').insert({empresa_id:EMPRESA_ID,nome,contratante_id:contr,status:'rascunho'}).select('id').limit(1);
+  if(ins.error) throw ins.error; const lid=ins.data[0].id; let baseOpp=null;
+  const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contr,objeto:'[BASE] '+nome,lote_id:lid}).select('id').limit(1);
+  if(!opp.error && opp.data[0]){ baseOpp=opp.data[0].id; const numero=await proximoNumero();
+    const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
+    await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:baseOpp,lote_id:lid,herda_base:false,numero,status:'rascunho',cliente_contratante:contrNome,dados:{_base:true,contratanteId:contr,cliNome:contrNome,numero},total:0});
+    await SB.from('orcamento_lotes').update({base_oportunidade_id:baseOpp}).eq('id',lid);
+  }
+  return {lid, baseOpp};
+}
+async function criarNova(){
+  let contr=_lg('nuContr').value||null; const obj=(_lg('nuObj').value||'').trim();
+  const go=_lg('nuGo'); if(go)go.disabled=true;
+  try{
+    if(contr==='__novo__'){   // candidato a contratante: cria na hora
+      const nm=(_lg('nuContrNovo').value||'').trim();
+      if(!nm){ alert('Digite o nome do candidato a contratante.'); if(go)go.disabled=false; return; }
+      const ins=await SB.from('clientes').insert({empresa_id:EMPRESA_ID,tipo:'candidato',nome:nm}).select('id').limit(1);
+      if(ins.error) throw ins.error; contr=ins.data[0].id; (CLIENTES=CLIENTES||[]).push({id:contr,nome:nm,tipo:'candidato',pai_id:null});
+    }
+    if(!contr){ alert('Escolha o contratante.'); if(go)go.disabled=false; return; }
+    const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
+    if(NOVA_LOTE){
+      const nome=obj||(contrNome+' — lote');
+      const r=await createLoteAndBase(nome,contr);
+      location.href='eX_Orcamento.html?opp='+(r.baseOpp||'')+'&lote='+r.lid;   // abre direto o BASE (mestra)
+    } else {
+      const lojaId=_lg('nuLoja').value||null; if(!lojaId){ alert('Escolha a loja.'); if(go)go.disabled=false; return; }
+      const loja=(LOJAS||[]).find(l=>l.id===lojaId)||{};
+      const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contr,contemplado_id:lojaId,objeto:obj||(contrNome+' — '+(loja.nome||''))}).select('id').limit(1);
+      if(opp.error||!opp.data[0]) throw (opp.error||new Error('sem oportunidade'));
+      location.href='eX_Orcamento.html?opp='+opp.data[0].id;
+    }
+  }catch(e){ console.error('criarNova',e); alert('Erro: '+(e.message||e)); if(go)go.disabled=false; }
+}
+
+/* ============ PRÉVIA · PROPOSTA EM LOTE (tela mestra) ============ */
+let LOTE_ID=null, LOTE_ROW=null, LOTE_UNITS=[], LOTE_PEND=[], BASE_DADOS=null, BASE_TOTAL=0, LOTE_UNIT_ABR=[];
+let ESTRUTURAS=[];   // cadastro de estrutura/frota (van/caminhão/equipe) — orc_estruturas
+async function carregarEstruturas(){ try{ const {data,error}=await SB.from('orc_estruturas').select('id,nome,tipo,custo').is('deleted_at',null).eq('ativo',true).order('nome'); if(!error) ESTRUTURAS=(data||[]).map(e=>({id:e.id,nome:e.nome,tipo:e.tipo||'outro',custo:num(e.custo)})); }catch(e){ console.error('estruturas',e); } }
+// rota do circuito (macro): base → cidades → base, vizinho mais próximo, × 1,25 (rodovia)
+function loteRota(){ const base=baseMun(); const pts=[]; const seen=new Set();
+  (LOTE_UNIT_ABR||[]).forEach(x=>{ if(x.mu && x.mu.codigo_ibge && !seen.has(x.mu.codigo_ibge)){ seen.add(x.mu.codigo_ibge); pts.push(x.mu); } });
+  if(!base||!pts.length) return {km:0, path:[]};
+  let cur=base, rem=pts.slice(), total=0, path=[base.nome+'/'+base.uf];
+  while(rem.length){ let bi=0,bd=Infinity; rem.forEach((p,i)=>{ const d=kmHaversine(cur,p); if(d!=null&&d<bd){bd=d;bi=i;} }); total+=(bd===Infinity?0:bd); cur=rem[bi]; path.push(cur.nome+'/'+cur.uf); rem.splice(bi,1); }
+  const back=kmHaversine(cur,base); total+=(back==null?0:back); path.push(base.nome+'/'+base.uf);
+  return {km:Math.round(total*1.25), path}; }
+function macroKmManualOn(){ return num(S.macro&&S.macro.kmManual)>0; }
+function macroRotaKm(){ return macroKmManualOn()?num(S.macro.kmManual):loteRota().km; }
+function macroRotaCusto(){ return macroRotaKm()*num(S.macro&&S.macro.rkm); }
+function macroTotal(){ return ((S.macro&&S.macro.estruturas)||[]).reduce((a,e)=>a+num(e.custo),0) + macroRotaCusto(); }
+const ESTR_IC={van:'airport_shuttle',caminhao:'local_shipping',equipe:'groups',outro:'category'};
+async function computeLoteUnitsAbr(){
+  LOTE_UNIT_ABR=[];
+  const ids=(LOTE_UNITS||[]).map(u=>u.dados&&u.dados.lojaId).filter(Boolean); if(!ids.length)return;
+  try{
+    const lj=await SB.from('lojas').select('id,municipio_id').in('id',ids); const lojaMun={}; (lj.data||[]).forEach(r=>lojaMun[r.id]=r.municipio_id);
+    const munIds=[...new Set(Object.values(lojaMun).filter(Boolean))].filter(m=>!MUNI[m]);
+    if(munIds.length){ const m=await SB.from('municipios').select('codigo_ibge,nome,uf,lat,lon').in('codigo_ibge',munIds); (m.data||[]).forEach(r=>MUNI[r.codigo_ibge]=r); }
+    const base=baseMun();
+    LOTE_UNIT_ABR=(LOTE_UNITS||[]).map(u=>{ const lid=u.dados&&u.dados.lojaId; const mid=lojaMun[lid]; const mu=mid?MUNI[mid]:null;
+      const km=(mu&&base)?Math.round(kmHaversine(base,mu)*1.25):null; const f=faixaDeKm(km)||{};
+      return {nome:u.cliente_final, cidade:mu?(mu.nome+'/'+mu.uf):null, mu, km, custo_pct:num(f.custo_pct), tempo_pct:num(f.tempo_pct)}; });
+  }catch(e){ console.error('units abr',e); }
+}
+// #3 PRAZO CONSOLIDADO: prazo de cada unidade = obraPrazo() no dados dela (temp-swap de S)
+function unitPrazoDias(dados){ if(!dados)return 0; const keep=S; try{ S=dados; return num(obraPrazo()); }catch(e){ return 0; } finally{ S=keep; } }
+function computeLoteUnitsPrazo(){ (LOTE_UNITS||[]).forEach((u,i)=>{
+  // #cálc1: usa a faixa fresca (LOTE_UNIT_ABR, calculada do banco) em vez do _lojaMunId cacheado; respeita unidade já congelada
+  const ab=(LOTE_UNIT_ABR||[])[i]; const hasSnap=u.dados&&u.dados.abrSnap&&typeof u.dados.abrSnap==='object';
+  const d=(!hasSnap&&ab&&ab.cidade)?Object.assign({},u.dados,{abrSnap:{custo_pct:0,tempo_pct:num(ab.tempo_pct)}}):u.dados;
+  u._prazo=unitPrazoDias(d); }); }
+function lotePrazoResumo(){ const ps=(LOTE_UNITS||[]).map(u=>({nome:(u.cliente_final||u.numero||'unidade'),p:num(u._prazo)})).filter(x=>x.p>0);
+  if(!ps.length) return {n:0}; const arr=ps.map(x=>x.p);
+  const media=arr.reduce((a,b)=>a+b,0)/ps.length;
+  const min=ps.reduce((a,b)=>b.p<a.p?b:a), max=ps.reduce((a,b)=>b.p>a.p?b:a);
+  return {n:ps.length, media, min, max}; }
+function loteAbrResumo(){ const a=LOTE_UNIT_ABR||[]; const comCid=a.filter(x=>x.cidade); const semCid=a.length-comCid.length;
+  const mc=comCid.length?Math.round(comCid.reduce((s,x)=>s+x.custo_pct,0)/comCid.length):0;
+  const mt=comCid.length?Math.round(comCid.reduce((s,x)=>s+x.tempo_pct,0)/comCid.length):0;
+  const min=comCid.length?Math.min(...comCid.map(x=>x.custo_pct)):0, max=comCid.length?Math.max(...comCid.map(x=>x.custo_pct)):0;
+  return {n:a.length, comCid:comCid.length, semCid, mediaCusto:mc, mediaTempo:mt, min, max}; }
+const _lg=s=>document.getElementById(s);
+async function initLote(){
+  document.querySelectorAll('.grid,#oppBanner').forEach(e=>{e.style.display='none';});
+  const mode=document.querySelector('.appbar .mode'); if(mode)mode.style.display='none';
+  const mt=document.querySelector('.modtag'); if(mt)mt.innerHTML='<span class="material-symbols-rounded">apartment</span>Proposta em lote';
+  const sub=document.querySelector('.sub'); if(sub)sub.textContent='Monte a base, liste as unidades e gere as propostas individuais.';
+  let host=_lg('loteView'); if(!host){ host=document.createElement('div'); host.id='loteView'; host.style.cssText='max-width:900px;margin:0 auto;padding:6px 14px 70px'; (document.querySelector('.wrap')||document.body).appendChild(host); }
+  host.innerHTML='<div style="padding:40px;text-align:center;color:var(--tx3)">Carregando…</div>';
+  if(!SB){ host.innerHTML='<div style="padding:30px">Sem conexão.</div>'; return; }
+  try{
+    const {data:{session}}=await SB.auth.getSession();
+    if(!session){ host.innerHTML='<div style="padding:30px">Entre com login pra usar o lote.</div>'; cloudMsg('faça login'); return; }
+    CLOUD=true; cloudMsg('nuvem ✓');
+    try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
+    if(LOTE==='novo'){ location.href='eX_Orcamento.html?nova'; return; }   // criar lote = Nova oportunidade (chave lote)
+    const l=await SB.from('orcamento_lotes').select('id,base_oportunidade_id').eq('id',LOTE).limit(1);
+    if(l.data&&l.data[0]&&l.data[0].base_oportunidade_id){ location.href='eX_Orcamento.html?opp='+l.data[0].base_oportunidade_id+'&lote='+LOTE; return; }
+    host.innerHTML='<div style="padding:30px;color:var(--red)">Lote sem orçamento base.</div>';
+  }catch(e){ console.error('initLote',e); host.innerHTML='<div style="padding:30px;color:var(--red)">Erro: '+esc(e.message||e)+'</div>'; }
+}
+function contratantes(){ return (CLIENTES||[]).filter(c=>!c.pai_id); }
+function renderLoteNovo(host){
+  const opts=contratantes().map(c=>`<option value="${c.id}">${esc(c.nome)}</option>`).join('');
+  host.innerHTML=`<div style="background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:20px;max-width:520px;margin:10px auto;box-shadow:0 8px 30px rgba(60,40,140,.07)">
+    <h2 style="margin:0 0 4px;font-size:18px;color:var(--pri)">Novo lote</h2>
+    <div style="color:var(--tx3);font-size:13px;margin-bottom:16px">Cria o orçamento base e agrupa as unidades.</div>
+    <label style="font-size:12px;font-weight:700;color:var(--tx3)">Nome do lote</label>
+    <input id="lnNome" style="width:100%;margin:5px 0 14px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;background:var(--surf);color:var(--tx)" placeholder="ex.: Copeland — Automação Assaí BA 2026">
+    <label style="font-size:12px;font-weight:700;color:var(--tx3)">Contratante</label>
+    <select id="lnContr" style="width:100%;margin:5px 0 18px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;background:var(--surf);color:var(--tx)"><option value="">— selecione —</option>${opts}</select>
+    <button onclick="criarLote()" style="width:100%;border:none;background:var(--pri);color:#fff;border-radius:10px;padding:11px;font:700 14px inherit;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px"><span class="material-symbols-rounded">add</span>Criar lote e montar a base</button>
+  </div>`;
+}
+async function criarLote(){
+  const nome=(_lg('lnNome').value||'').trim(), contr=_lg('lnContr').value||null;
+  if(!nome){ alert('Dê um nome ao lote.'); return; }
+  try{
+    const ins=await SB.from('orcamento_lotes').insert({empresa_id:EMPRESA_ID,nome,contratante_id:contr,status:'rascunho'}).select('id').limit(1);
+    if(ins.error) throw ins.error; const lid=ins.data[0].id;
+    const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contr,objeto:'[BASE] '+nome,lote_id:lid}).select('id').limit(1);
+    if(!opp.error && opp.data[0]){ const baseOpp=opp.data[0].id; const numero=await proximoNumero();
+      const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
+      await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:baseOpp,lote_id:lid,herda_base:false,numero,status:'rascunho',cliente_contratante:contrNome,dados:{_base:true,contratanteId:contr,cliNome:contrNome,numero},total:0});
+      await SB.from('orcamento_lotes').update({base_oportunidade_id:baseOpp}).eq('id',lid);
+    }
+    location.href='eX_Orcamento.html?lote='+lid;
+  }catch(e){ console.error(e); alert('Erro ao criar lote: '+(e.message||e)); }
+}
+async function loadLote(){
+  const l=await SB.from('orcamento_lotes').select('*').eq('id',LOTE_ID).limit(1); LOTE_ROW=(l.data&&l.data[0])||null;
+  if(LOTE_ROW&&LOTE_ROW.base_oportunidade_id){ const b=await SB.from('orcamentos').select('dados,total').eq('oportunidade_id',LOTE_ROW.base_oportunidade_id).is('deleted_at',null).order('created_at',{ascending:false}).limit(1);
+    if(b.data&&b.data[0]){ BASE_DADOS=b.data[0].dados||null; BASE_TOTAL=num(b.data[0].total); } }
+  const u=await SB.from('orcamentos').select('id,numero,total,status,herda_base,oportunidade_id,cliente_final,dados').eq('lote_id',LOTE_ID).is('deleted_at',null).order('created_at');
+  LOTE_UNITS=(u.data||[]).filter(o=>!(o.dados&&o.dados._base));
+}
+function unitStatus(o){ if(o.dados&&o.dados.abrSnap) return {k:'froz',t:'congelada',i:'lock',c:'#3a4a63',bg:'#eef1f7'}; if(o.herda_base) return {k:'herd',t:'igual à base',i:'link',c:'#127a54',bg:'#e6f6ee'}; return {k:'pers',t:'editada',i:'edit_document',c:'#b0701a',bg:'#fbf1e0'}; }
+function renderLote(host){
+  const nome=LOTE_ROW?esc(LOTE_ROW.nome||'Lote'):'Lote';
+  const contrNome=LOTE_ROW&&LOTE_ROW.contratante_id?esc((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):'';
+  const total=LOTE_UNITS.reduce((a,o)=>a+num(o.total),0);
+  const pendChips=LOTE_PEND.map((p,i)=>`<span style="display:inline-flex;align-items:center;gap:6px;background:var(--pri-bg);color:var(--pri-d);border-radius:8px;padding:5px 9px;font-size:12.5px;font-weight:600"><span class="material-symbols-rounded" style="font-size:15px;color:var(--pri)">store</span>${esc(p.nome)}<button onclick="loteRmPend(${i})" style="border:0;background:none;cursor:pointer;color:var(--tx3);display:inline-flex"><span class="material-symbols-rounded" style="font-size:15px">close</span></button></span>`).join('')||'<span style="color:var(--tx3);font-size:12.5px">Nenhuma pendente. Adicione lojas abaixo.</span>';
+  const lojaOpts=(LOJAS||[]).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
+  const unitRows=LOTE_UNITS.length?LOTE_UNITS.map(o=>{ const st=unitStatus(o); return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:11px 15px;border-top:1px solid var(--line2)">
+      <div style="display:flex;align-items:center;gap:10px;min-width:0"><span style="width:30px;height:30px;border-radius:8px;background:var(--pri-bg);color:var(--pri);display:grid;place-items:center;flex:none"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">description</span></span>
+        <div style="min-width:0"><div style="font-weight:600;font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.cliente_final||o.numero||'unidade')}</div><div style="font-size:11.5px;color:var(--tx3)">${esc(o.numero||'')}</div></div></div>
+      <span style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;border-radius:20px;padding:3px 9px;color:${st.c};background:${st.bg};white-space:nowrap"><span class="material-symbols-rounded" style="font-size:13px">${st.i}</span>${st.t}</span>
+      <div style="display:flex;align-items:center;gap:8px;justify-self:end">
+        <span style="font-weight:800;font-variant-numeric:tabular-nums;font-size:14px;min-width:96px;text-align:right">${fmt(num(o.total))}</span>
+        <a href="eX_Orcamento.html?opp=${o.oportunidade_id}" class="lbtn"><span class="material-symbols-rounded">open_in_full</span>abrir</a>
+        ${o.herda_base?'':`<button class="lbtn" onclick="loteResetUnit('${o.id}')"><span class="material-symbols-rounded">restart_alt</span>resetar</button>`}
+        <button class="lbtn danger" onclick="loteDelUnit('${o.id}','${o.oportunidade_id}')"><span class="material-symbols-rounded">delete</span></button>
+      </div>
+    </div>`; }).join(''):'<div style="padding:18px 15px;color:var(--tx3);font-size:13px">Nenhuma proposta gerada ainda.</div>';
+  host.innerHTML=`
+  <style>.lbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:5px 9px;font:600 12px inherit;cursor:pointer;text-decoration:none}.lbtn:hover{border-color:var(--pri);color:var(--pri)}.lbtn.danger{color:var(--red)}.lbtn.danger:hover{border-color:var(--red)}.lbtn .material-symbols-rounded{font-size:15px}.lcard{background:var(--surf);border:1px solid var(--line);border-radius:14px;box-shadow:0 1px 2px rgba(30,20,70,.05),0 8px 26px rgba(60,40,140,.06);overflow:hidden;margin-bottom:16px}.lsec{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--tx3);margin:0 0 8px 2px;display:flex;align-items:center;gap:6px}.lsec .material-symbols-rounded{font-size:15px;color:var(--pri)}</style>
+  <div style="display:flex;align-items:center;gap:12px;margin:6px 0 18px"><span style="width:40px;height:40px;border-radius:11px;background:var(--pri);color:#fff;display:grid;place-items:center"><span class="material-symbols-rounded" style="color:#fff">apartment</span></span>
+    <div><div style="font-family:inherit;font-weight:800;font-size:19px">${nome}</div><div style="font-size:13px;color:var(--tx3)">${contrNome?('Contratante: '+contrNome+' · '):''}${LOTE_UNITS.length} unidade(s)</div></div>
+    <a href="eX_Orcamento.html" class="lbtn" style="margin-left:auto"><span class="material-symbols-rounded">arrow_back</span>orçamentos</a></div>
+
+  <div class="lsec"><span class="material-symbols-rounded">tune</span>1 · Orçamento base (escopo comum)</div>
+  <div class="lcard"><div style="padding:15px 17px;display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div style="flex:1;min-width:200px"><div style="font-size:13.5px;color:var(--tx2)">Monte o orçamento padrão que todas as unidades herdam.</div>
+      <div style="font-weight:800;font-size:18px;color:var(--pri);margin-top:4px">${fmt(BASE_TOTAL)} <span style="font-size:12px;color:var(--tx3);font-weight:500">/ base atual</span></div></div>
+    ${LOTE_ROW&&LOTE_ROW.base_oportunidade_id?`<a href="eX_Orcamento.html?opp=${LOTE_ROW.base_oportunidade_id}" class="lbtn" style="padding:9px 14px"><span class="material-symbols-rounded">edit</span>Editar orçamento base</a>`:''}
+    ${LOTE_UNITS.length?`<button class="lbtn" style="padding:9px 14px" onclick="lotePropagar()"><span class="material-symbols-rounded">sync</span>Propagar base nas “iguais”</button>`:''}
+  </div></div>
+
+  <div class="lsec"><span class="material-symbols-rounded">add_location_alt</span>2 · Unidades do lote</div>
+  <div class="lcard"><div style="padding:15px 17px">
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px">${pendChips}</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <select id="lLoja" style="flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— escolha uma loja —</option>${lojaOpts}</select>
+      <button class="lbtn" style="padding:8px 13px" onclick="lotePend()"><span class="material-symbols-rounded">add</span>Adicionar</button>
+    </div>
+    <div style="margin-top:13px"><button onclick="loteGerar()" style="border:none;background:var(--pri);color:#fff;border-radius:10px;padding:10px 16px;font:700 13.5px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:7px" ${LOTE_PEND.length?'':'disabled style="opacity:.5"'}><span class="material-symbols-rounded">bolt</span>Gerar propostas individuais${LOTE_PEND.length?(' ('+LOTE_PEND.length+')'):''}</button></div>
+  </div></div>
+
+  <div class="lsec"><span class="material-symbols-rounded">splitscreen</span>3 · Propostas individuais</div>
+  <div class="lcard">${unitRows}</div>
+
+  <div class="lcard" style="background:var(--pri);color:#fff;border:none"><div style="padding:16px 18px">
+    <div style="display:flex;justify-content:space-between;align-items:center"><span style="opacity:.92;font-size:13px;display:flex;align-items:center;gap:7px"><span class="material-symbols-rounded">functions</span>Total do lote</span><span style="font-weight:800;font-size:23px">${fmt(total)}</span></div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:9px;padding-top:9px;border-top:1px solid rgba(255,255,255,.18)"><span style="opacity:.9;font-size:13px;display:flex;align-items:center;gap:7px"><span class="material-symbols-rounded">balance</span>Escopo base (equalizado)</span><span style="font-weight:700;font-size:15px">${fmt(BASE_TOTAL)}</span></div>
+  </div></div>
+  <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px"><button class="lbtn danger" onclick="loteDesmembrar()"><span class="material-symbols-rounded">call_split</span>Desmembrar lote</button>
+    <span style="align-self:center;font-size:12px;color:var(--tx3)">Fechar/congelar cada proposta é feito dentro dela (abrir → status).</span></div>
+  `;
+}
+function lotePend(){ const id=_lg('lLoja').value; if(!id)return; const l=(LOJAS||[]).find(x=>x.id===id); if(!l)return; if(LOTE_PEND.some(p=>p.id===id)){alert('Essa loja já está na lista.');return;} LOTE_PEND.push(l); loteRerender(); }
+function loteRmPend(i){ LOTE_PEND.splice(i,1); loteRerender(); }
+async function loteGerar(){
+  if(!LOTE_PEND.length)return;
+  const btn=event&&event.target; if(btn)btn.disabled=true;
+  try{
+    for(const l of LOTE_PEND){
+      const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:LOTE_ROW?LOTE_ROW.contratante_id:null,contemplado_id:l.id,objeto:(LOTE_ROW?LOTE_ROW.nome:'Lote')+' — '+l.nome,lote_id:LOTE_ID}).select('id').limit(1);
+      if(opp.error||!opp.data[0]) continue; const oppId=opp.data[0].id;
+      const numero=await proximoNumero();
+      const _cn=(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):'');
+      const dados=BASE_DADOS?JSON.parse(JSON.stringify(BASE_DADOS)):{}; delete dados._base; delete dados.macro; dados.abrSnap=null; dados.finNome=l.nome; dados.lojaId=l.id; dados.numero=numero;
+      if(LOTE_ROW&&LOTE_ROW.contratante_id){ dados.contratanteId=LOTE_ROW.contratante_id; dados.cliNome=_cn; }
+      await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:oppId,lote_id:LOTE_ID,herda_base:true,numero,status:'rascunho',cliente_final:l.nome,cliente_contratante:(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):''),dados,total:BASE_TOTAL});
+    }
+    LOTE_PEND=[]; await loteReload();
+  }catch(e){ console.error('gerar',e); alert('Erro ao gerar: '+(e.message||e)); if(btn)btn.disabled=false; }
+}
+async function loteResetUnit(id){ if(!confirm('Resetar esta unidade ao escopo base? As alterações feitas nela serão perdidas.'))return;
+  const u=LOTE_UNITS.find(o=>o.id===id); if(!u)return;
+  const dados=BASE_DADOS?JSON.parse(JSON.stringify(BASE_DADOS)):{}; delete dados._base; delete dados.macro; dados.abrSnap=null; dados.finNome=u.cliente_final; dados.lojaId=(u.dados&&u.dados.lojaId)||null; dados.numero=u.numero;
+  const r=await SB.from('orcamentos').update({herda_base:true,dados,total:BASE_TOTAL}).eq('id',id); if(r.error){alert('Erro: '+r.error.message);return;}
+  await loteReload();
+}
+async function lotePropagar(){ if(!confirm('Aplicar o orçamento base em TODAS as unidades que estão “igual à base”? (as editadas não mudam)'))return;
+  try{ for(const u of LOTE_UNITS){ if(!u.herda_base) continue; const dados=BASE_DADOS?JSON.parse(JSON.stringify(BASE_DADOS)):{}; delete dados._base; delete dados.macro; dados.abrSnap=(u.dados&&u.dados.abrSnap)||null; dados.finNome=u.cliente_final; dados.lojaId=(u.dados&&u.dados.lojaId)||null; dados.numero=u.numero;
+      await SB.from('orcamentos').update({dados,total:BASE_TOTAL}).eq('id',u.id); }
+    await loteReload(); alert('Base propagada nas unidades “igual à base”.');
+  }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
+async function loteDelUnit(id,oppId){ if(!confirm('Excluir esta unidade do lote? A proposta individual dela é descartada.'))return;
+  await SB.from('orcamentos').update({deleted_at:new Date().toISOString()}).eq('id',id);
+  if(oppId) await SB.from('oportunidades').update({deleted_at:new Date().toISOString()}).eq('id',oppId);
+  await loteReload();
+}
+async function loteDesmembrar(){ if(!confirm('Desmembrar o lote? Cada unidade vira uma proposta avulsa e o lote deixa de existir. Não dá pra voltar atrás.'))return;
+  try{ await SB.from('orcamentos').update({lote_id:null,herda_base:false}).eq('lote_id',LOTE_ID);
+    await SB.from('oportunidades').update({lote_id:null}).eq('lote_id',LOTE_ID);   // #2: solta as oportunidades (unidades + base) do lote, senão somem do funil
+    if(LOTE_ROW&&LOTE_ROW.base_oportunidade_id){ await SB.from('oportunidades').update({objeto:(LOTE_ROW.nome||'Proposta')+' — base'}).eq('id',LOTE_ROW.base_oportunidade_id); }   // tira o prefixo [BASE]
+    await SB.from('orcamento_lotes').update({deleted_at:new Date().toISOString()}).eq('id',LOTE_ID);
+    alert('Lote desmembrado. As unidades agora são propostas avulsas.'); location.href='eX_Orcamento.html';
+  }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
+function loteRerender(){ if(_lg('loteBasePanel')) injectLoteBasePanel(); else if(_lg('loteView')) renderLote(_lg('loteView')); }
+async function loteReload(){ await loadLote(); if(isLoteBase()){ try{ await computeLoteUnitsAbr(); computeLoteUnitsPrazo(); }catch(e){} } loteRerender(); if(isLoteBase()){ try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} } }
+function loteAbrHtml(){ const r=loteAbrResumo(); const pct=n=>num(n)>0?('+'+num(n)+'%'):'0%';
+  if(!r.n) return `<span class="fo-autopill nocity"><span class="material-symbols-rounded">wrong_location</span>Sem lojas ainda</span><span class="fo-autotag">adicione as lojas no painel acima ↑</span>`;
+  const faixa=r.min===r.max?pct(r.mediaCusto):(pct(r.min)+' a '+pct(r.max));
+  const lista=(LOTE_UNIT_ABR||[]).map(x=>x.cidade?(esc(x.cidade)+' <b style="color:var(--pri)">'+pct(x.custo_pct)+'</b>'):(esc((x.nome||'unidade').slice(0,20))+' <b style="color:var(--amber,#a45a00)">sem cidade</b>')).join(' · ');
+  return `<span class="fo-autopill"><span class="material-symbols-rounded">bolt</span>Por unidade · média ${pct(r.mediaCusto)} custo · ${pct(r.mediaTempo)} prazo</span>
+    <span class="fo-autotag"><span class="material-symbols-rounded">apartment</span>${r.comCid}/${r.n} com cidade${r.semCid?(' · '+r.semCid+' sem cidade'):''} · faixa ${faixa}</span>
+    <div style="flex-basis:100%;font-size:11.5px;color:var(--tx3);margin-top:5px;line-height:1.6">${lista}</div>`; }
+
+/* ===== base DO LOTE = MESTRA: painel "Rede & lojas do lote" dentro do orçamento base ===== */
+function isLoteBase(){ return !!(S && S._base && S_LOTE_ID); }
+async function initLoteBasePanel(){ LOTE_ID=S_LOTE_ID; if(!S.macro||typeof S.macro!=='object')S.macro={estruturas:[]}; try{ await loadLote(); await carregarEstruturas(); await computeLoteUnitsAbr(); computeLoteUnitsPrazo(); }catch(e){ console.error(e); } injectLoteBasePanel(); relabelRede(); try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} try{ marcarRevisaoBase(); }catch(e){} }
+function injectLoteBasePanel(){
+  let p=_lg('loteBasePanel');
+  if(!p){ p=document.createElement('div'); p.id='loteBasePanel'; p.style.cssText='margin:0 0 16px';
+    const ta=_lg('descGeralTa'); const anchor=ta?(ta.closest('.card')||ta.closest('section')||ta.parentElement):null;
+    if(anchor&&anchor.parentElement){ anchor.parentElement.insertBefore(p,anchor); } else { document.body.appendChild(p); } }
+  p.innerHTML=renderLoteBaseHtml();
+  updateRedeUnidades();   // reflete as unidades no cabeçalho (campo "Unidades")
+}
+function relabelRede(){ // no base do lote, o "cliente final / destino" representa a REDE (lojas ficam no painel abaixo)
+  document.querySelectorAll('.ph-cap').forEach(cap=>{ cap.childNodes.forEach(n=>{ if(n.nodeType===3 && /cliente final/i.test(n.nodeValue||'')) n.nodeValue='Rede / lojas do lote '; }); });
+  const fin=document.querySelector('[data-m="finNome"]');
+  if(fin){ fin.value=''; fin.placeholder='Rede — definida pelas lojas do lote (painel abaixo) ↓'; fin.readOnly=true; fin.style.opacity='.75'; }
+  const fpFinal=document.querySelector('[onclick="openHP(\'final\')"]'); if(fpFinal)fpFinal.style.display='none';   // #UI1: no base a rede vem das lojas — trava o picker que sobrescreveria
+  document.querySelectorAll('.ph-kv label').forEach(lb=>{ const t=(lb.textContent||'').trim().toLowerCase();
+    if(t.indexOf('unidade')>-1) lb.textContent='Unidades';   // Nº unidade → Unidades
+    else if(t==='endereço') lb.textContent='Região'; });
+  const num=document.querySelector('[data-m="finNum"]'); if(num){ num.readOnly=true; num.style.opacity='.9'; num.title='unidades do lote (definidas no painel abaixo)'; }
+  const reg=document.querySelector('[data-m="finEnd"]'); if(reg){ reg.placeholder='Região (digite — ex.: NE + CO, eixo BA)'; }
+  updateRedeUnidades();
+}
+function updateRedeUnidades(){ if(!isLoteBase())return; const num=document.querySelector('[data-m="finNum"]'); if(!num)return;
+  num.style.display='none';   // troca o input de linha única por uma lista que quebra
+  let d=document.getElementById('redeUnidadesList');
+  if(!d){ d=document.createElement('div'); d.id='redeUnidadesList'; d.style.cssText='display:flex;flex-wrap:wrap;gap:4px 5px;align-items:flex-start'; num.parentNode.insertBefore(d,num); }
+  const list=(LOTE_UNITS||[]);
+  d.innerHTML = list.length
+    ? list.map(o=>`<span style="display:inline-flex;align-items:center;gap:4px;background:var(--pri-bg);color:var(--pri-d);border-radius:6px;padding:2px 8px;font-size:12px;font-weight:600;max-width:100%"><span class="material-symbols-rounded" style="font-size:13px;color:var(--pri)">store</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px">${esc(o.cliente_final||o.numero||'unidade')}</span></span>`).join('')
+    : '<span style="font-size:12px;color:var(--tx3)">as unidades aparecem aqui ao adicionar lojas ↓</span>'; }
+function renderLoteBaseHtml(){
+  const lojaOpts=(LOJAS||[]).filter(l=>!LOTE_UNITS.some(u=>(u.dados&&u.dados.lojaId)===l.id)).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
+  const macroT=macroTotal();
+  const rota=loteRota(); const rotaKm=macroRotaKm(); const rotaCusto=macroRotaCusto(); const rkm=num(S.macro&&S.macro.rkm);
+  const modo=(S.macro&&S.macro.modo)||'detalhado'; const qtd=num(S.macro&&S.macro.qtd); const baseT=num(S._total)||0;
+  const unitsSum = modo==='estimativa' ? (baseT*qtd) : LOTE_UNITS.reduce((a,o)=>a+num(o.total),0);
+  const total = unitsSum + macroT;
+  const nUn = modo==='estimativa' ? qtd : LOTE_UNITS.length;
+  const vMed = modo==='estimativa' ? baseT : (LOTE_UNITS.length?unitsSum/LOTE_UNITS.length:0);
+  const prz=lotePrazoResumo();
+  const kpis=nUn?`<div class="loteKpis">
+      <div style="border:1px solid var(--pri);background:var(--pri);color:#fff;border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;opacity:.85">Total do lote</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:19px;margin-top:4px;font-variant-numeric:tabular-nums">${fmt(total)}</div><div style="font-size:11px;opacity:.8">unidades + macro</div></div>
+      <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Valor médio / unidade</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px;font-variant-numeric:tabular-nums">${fmt(vMed)}</div><div style="font-size:11px;color:var(--tx3)">só as unidades</div></div>
+      <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Prazo médio</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px">${modo==='estimativa'?fmtPrazo(obraPrazo()):(prz.n?fmtPrazo(prz.media):'—')}</div><div style="font-size:11px;color:var(--tx3)">${modo==='estimativa'?'do base':'por unidade'}</div></div>
+      <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Faixa de prazo</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px">${modo==='estimativa'?'—':(prz.n?(Math.abs(prz.min.p-prz.max.p)<1e-9?fmtPrazo(prz.min.p):fmtPrazo(prz.min.p)+'–'+fmtPrazo(prz.max.p)):'—')}</div><div style="font-size:11px;color:var(--tx3)">${modo==='estimativa'?'no detalhado':'menor → maior'}</div></div>
+    </div>`:'';
+  const contrNome=S.cliNome||'';
+  const rows=LOTE_UNITS.length?LOTE_UNITS.map(o=>{ const st=unitStatus(o); return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line2)">
+      <div style="display:flex;align-items:center;gap:9px;min-width:0"><span style="width:28px;height:28px;border-radius:7px;background:var(--pri-bg);color:var(--pri);display:grid;place-items:center;flex:none"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">store</span></span>
+        <div style="min-width:0"><div style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.cliente_final||o.numero||'unidade')}</div><div style="font-size:11px;color:var(--tx3)">${esc(o.numero||'')}</div></div></div>
+      <span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;border-radius:20px;padding:3px 8px;color:${st.c};background:${st.bg};white-space:nowrap"><span class="material-symbols-rounded" style="font-size:12px">${st.i}</span>${st.t}</span>
+      <div style="display:flex;align-items:center;gap:7px;justify-self:end">
+        ${(()=>{ const p=num(o._prazo); const many=(lotePrazoResumo().n>1); const isMax=many&&p&&Math.abs(p-lotePrazoResumo().max.p)<1e-9; const isMin=many&&p&&Math.abs(p-lotePrazoResumo().min.p)<1e-9&&!isMax; const col=isMax?'var(--pers,#b0701a)':(isMin?'var(--herd,#159a6a)':'var(--tx3)'); return `<span style="font-size:12px;color:${col};font-weight:${(isMax||isMin)?'700':'400'};min-width:78px;text-align:right;font-variant-numeric:tabular-nums" title="prazo desta unidade"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">schedule</span> ${p?fmtPrazo(p):'—'}${isMax?' ↑':''}${isMin?' ↓':''}</span>`; })()}
+        <span style="font-weight:800;font-variant-numeric:tabular-nums;font-size:13.5px;min-width:92px;text-align:right">${fmt(num(o.total))}</span>
+        <a href="eX_Orcamento.html?opp=${o.oportunidade_id}&lote=${LOTE_ID}" class="lbtn"><span class="material-symbols-rounded">open_in_full</span>abrir</a>
+        ${o.herda_base?'':`<button class="lbtn" onclick="loteResetUnit('${o.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`}
+        <button class="lbtn danger" onclick="loteDelUnit('${o.id}','${o.oportunidade_id}')"><span class="material-symbols-rounded">delete</span></button>
+      </div></div>`; }).join(''):'<div style="padding:16px 14px;color:var(--tx3);font-size:13px">Nenhuma loja ainda — adicione a primeira acima.</div>';
+  const modoTog=`<div style="display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line2);align-items:center;flex-wrap:wrap">
+    <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.04em;margin-right:4px">Modo</span>
+    <button class="lbtn" style="${modo==='estimativa'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteModo('estimativa')"><span class="material-symbols-rounded" style="${modo==='estimativa'?'color:#fff':''}">calculate</span>Estimativa (× N)</button>
+    <button class="lbtn" style="${modo==='detalhado'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteModo('detalhado')"><span class="material-symbols-rounded" style="${modo==='detalhado'?'color:#fff':''}">splitscreen</span>Detalhado (unidades)</button>
+    <span style="margin-left:auto;font-size:11.5px;color:var(--tx3)">${modo==='estimativa'?'volume, sem loja a loja':'cada loja é uma proposta'}</span></div>`;
+  const addBar=`<div style="padding:12px 14px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;border-bottom:1px solid var(--line2)">
+      <select id="lbLoja" style="flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">${(LOJAS&&LOJAS.length)?'— escolha a loja —':'carregando lojas…'}</option>${lojaOpts}</select>
+      <button class="lbtn" style="padding:8px 13px;background:var(--pri);color:#fff;border-color:var(--pri)" onclick="loteAddLojaNow()"><span class="material-symbols-rounded" style="color:#fff">add</span>Adicionar loja</button>
+      ${LOTE_UNITS.some(u=>u.herda_base)?`<button class="lbtn" style="padding:8px 12px" onclick="lotePropagar()" title="reaplica o escopo base nas lojas que estão iguais à base"><span class="material-symbols-rounded">sync</span>Propagar base</button>`:''}
+    </div>`;
+  const estimBlock=`<div style="padding:14px;border-bottom:1px solid var(--line2)">
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:13px;font-weight:600">Nº de unidades</span>
+        <span style="display:inline-flex;align-items:center;border:1px solid var(--line2);border-radius:9px;padding:6px 10px;background:var(--surf)"><input value="${qtd||''}" inputmode="numeric" placeholder="ex.: 10" onchange="setLoteQtd(this.value)" style="width:60px;border:0;background:transparent;color:var(--tx);font:800 15px inherit;text-align:center;outline:0;font-variant-numeric:tabular-nums"></span>
+        <span style="font-size:13px;color:var(--tx3)">× base <b>${fmt(baseT)}</b> = <b style="color:var(--pri);font-size:15px">${fmt(baseT*qtd)}</b></span></div>
+      <div style="font-size:12px;color:var(--tx3);margin-top:8px"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">info</span> Estimativa por volume — sem cidade/abrangência por loja. Pra fechar, <b>detalhe em unidades</b> (aí entram km e prazo reais de cada uma).</div>
+      <button class="lbtn" style="margin-top:10px;background:var(--pri);color:#fff;border-color:var(--pri)" onclick="setLoteModo('detalhado')"><span class="material-symbols-rounded" style="color:#fff">splitscreen</span>Detalhar em unidades</button></div>`;
+  const corpo = modo==='estimativa' ? estimBlock : (addBar+rows);
+  return `<style>.lbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:5px 9px;font:600 12px inherit;cursor:pointer;text-decoration:none}.lbtn:hover{border-color:var(--pri);color:var(--pri)}.lbtn.danger{color:var(--red)}.lbtn.danger:hover{border-color:var(--red)}.lbtn .material-symbols-rounded{font-size:15px}.loteKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px}@media(max-width:640px){.loteKpis{grid-template-columns:1fr 1fr}}</style>
+  <div style="background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden">
+    <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8;flex-wrap:wrap">
+      <span class="material-symbols-rounded" style="color:var(--pri)">apartment</span><h3 style="margin:0;font-size:12px;font-weight:800;color:var(--pri);text-transform:uppercase;letter-spacing:.04em">Rede &amp; lojas do lote</h3>
+      <span style="font-size:12px;color:var(--tx3)">— cada loja é uma proposta que herda o escopo acima</span>
+      <span style="margin-left:auto;font-size:12px;color:var(--tx3)">${LOTE_UNITS.length} loja(s)</span></div>
+    ${kpis}
+    ${modoTog}
+    ${corpo}
+    <div style="border-top:1px solid var(--line);padding:13px 14px;background:#f2fafb">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
+        <span class="material-symbols-rounded" style="color:#0f7b8a;font-size:19px">hub</span>
+        <b style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#0c5f6b">Macro da operação</b>
+        <span style="font-size:11.5px;color:var(--tx3)">estrutura/frota do lote — entra uma vez na mestra</span>
+        <button class="lbtn" style="margin-left:auto" onclick="openEstruturasModal()"><span class="material-symbols-rounded">settings</span>gerenciar cadastro</button>
+      </div>
+      ${((S.macro&&S.macro.estruturas)||[]).map((e,i)=>`<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px dashed var(--line2)">
+        <span class="material-symbols-rounded" style="font-size:17px;color:#0f7b8a">${ESTR_IC[e.tipo]||'category'}</span>
+        <span style="flex:1;font-size:13px;font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(e.nome)}</span>
+        <span style="font-weight:700;font-variant-numeric:tabular-nums;font-size:13px">${fmt(num(e.custo))}</span>
+        <button class="lbtn danger" onclick="macroRemove(${i})"><span class="material-symbols-rounded">close</span></button></div>`).join('')||'<div style="font-size:12.5px;color:var(--tx3);padding:2px 0 6px">Nenhuma estrutura no macro ainda.</div>'}
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px">
+        <select id="lbEstr" style="flex:1;min-width:180px;padding:8px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">${(ESTRUTURAS&&ESTRUTURAS.length)?'— estrutura do cadastro —':'cadastre uma estrutura (⚙)'}</option>${(ESTRUTURAS||[]).map(e=>`<option value="${e.id}">${esc(e.nome)} · ${fmt(num(e.custo))}</option>`).join('')}</select>
+        <button class="lbtn" style="padding:8px 13px;border-color:#0f7b8a;color:#0c5f6b" onclick="macroAddEstrutura()"><span class="material-symbols-rounded" style="color:#0f7b8a">add</span>Adicionar ao macro</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 0 2px;margin-top:8px;border-top:1px dashed var(--line2)">
+        <span class="material-symbols-rounded" style="font-size:18px;color:#0f7b8a">route</span>
+        <div style="flex:1;min-width:190px"><div style="font-size:13px;font-weight:600">Deslocamento — rota do circuito</div>
+          <div style="font-size:11px;color:var(--tx3);overflow:hidden;text-overflow:ellipsis">${rota.path.length?esc(rota.path.join(' → ')):'defina a base e adicione lojas'}</div></div>
+        <span style="display:inline-flex;align-items:center;gap:3px;border:1px solid var(--line2);border-radius:8px;padding:4px 7px;background:var(--surf)"><input value="${rotaKm?_d1(rotaKm):''}" inputmode="decimal" placeholder="km" onchange="setMacroKm(this.value)" title="km rodado — edite para sobrescrever" style="width:56px;border:0;background:transparent;color:var(--tx);font:700 12.5px inherit;text-align:right;outline:0;font-variant-numeric:tabular-nums">km ${macroKmManualOn()?`<button class="lbtn" style="padding:1px 5px" onclick="clearMacroKm()" title="voltar ao automático (${loteRota().km} km)"><span class="material-symbols-rounded" style="font-size:13px">restart_alt</span></button>`:'<span style="font-size:9.5px;color:#0f7b8a;font-weight:700">AUTO</span>'}</span>
+        <span style="font-size:12.5px;color:var(--tx3)">× R$</span><span style="display:inline-flex;align-items:center;border:1px solid var(--line2);border-radius:8px;padding:4px 7px;background:var(--surf)"><input value="${rkm?moneyVal(rkm):''}" inputmode="decimal" placeholder="0,00" onchange="setMacroRkm(this.value)" style="width:56px;border:0;background:transparent;color:var(--tx);font:700 12.5px inherit;text-align:right;outline:0;font-variant-numeric:tabular-nums"></span><span style="font-size:12px;color:var(--tx3)">/km</span>
+        <span style="font-size:12.5px">= <b style="color:#0f7b8a">${fmt(rotaCusto)}</b></span>
+      </div>
+      <div style="display:flex;justify-content:flex-end;margin-top:8px;font-size:12.5px">Macro (frota + rota): <b style="color:#0f7b8a;margin-left:5px">${fmt(macroT)}</b></div>
+    </div>
+    ${(()=>{ const pr=lotePrazoResumo(); if(!pr.n) return ''; const same=Math.abs(pr.min.p-pr.max.p)<1e-9;
+      return `<div style="display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;padding:11px 14px;background:var(--pri-bg);border-top:1px solid var(--line);font-size:12.5px">
+        <span style="font-weight:800;color:var(--pri-d);text-transform:uppercase;letter-spacing:.04em;font-size:11px"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">schedule</span> Prazo</span>
+        <span>média <b>${fmtPrazo(pr.media)}</b></span>
+        ${same?`<span>todas <b>${fmtPrazo(pr.min.p)}</b></span>`:`<span style="color:var(--herd,#159a6a)">menor <b>${fmtPrazo(pr.min.p)}</b> · ${esc((pr.min.nome||'').slice(0,22))}</span>
+        <span style="color:var(--amber,#b0701a)">maior <b>${fmtPrazo(pr.max.p)}</b> · ${esc((pr.max.nome||'').slice(0,22))}</span>
+        <span style="color:var(--tx3)">faixa ${fmtPrazo(pr.min.p)}–${fmtPrazo(pr.max.p)}</span>`}
+      </div>`; })()}
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;background:var(--surf2,#faf9fe);border-top:1px solid var(--line)">
+      <span style="font-size:12px;color:var(--tx3)">Unidades <b>${fmt(total-macroT)}</b> + Macro <b style="color:#0f7b8a">${fmt(macroT)}</b></span>
+      <span style="font-size:13px;font-weight:800">Total do lote: <span style="color:var(--pri);font-size:16px">${fmt(total)}</span></span></div>
+    ${LOTE_UNITS.length?`<div style="padding:10px 14px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="lbtn" style="background:var(--pri);color:#fff;border-color:var(--pri);padding:9px 15px" onclick="verComoClienteLote()"><span class="material-symbols-rounded" style="color:#fff">visibility</span>Ver como o cliente (documento + mapa)</button>
+      <button class="lbtn danger" onclick="loteDesmembrar()"><span class="material-symbols-rounded">call_split</span>Desmembrar lote</button></div>`:''}
+  </div>`;
+}
+async function loteAddLojaNow(){
+  const sel=_lg('lbLoja'); const lojaId=sel?sel.value:''; if(!lojaId){ alert('Escolha a loja.'); return; }
+  const l=(LOJAS||[]).find(x=>x.id===lojaId)||{};
+  try{
+    const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:(LOTE_ROW?LOTE_ROW.contratante_id:S.contratanteId)||null,contemplado_id:lojaId,objeto:(LOTE_ROW&&LOTE_ROW.nome?LOTE_ROW.nome:(S.cliNome||'Lote'))+' — '+l.nome,lote_id:LOTE_ID}).select('id').limit(1);
+    if(opp.error||!opp.data[0]) throw (opp.error||new Error('sem oportunidade')); const oppId=opp.data[0].id;
+    const numero=await proximoNumero();
+    const dados=JSON.parse(JSON.stringify(S||{})); delete dados._base; delete dados.macro; dados.abrSnap=null; dados.finNome=l.nome; dados.lojaId=l.id; dados.numero=numero;
+    await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:oppId,lote_id:LOTE_ID,herda_base:true,numero,status:'rascunho',cliente_final:l.nome,cliente_contratante:S.cliNome||'',dados,total:num(S._total)||0});
+    await loteReload();
+  }catch(e){ console.error('add loja',e); alert('Erro: '+(e.message||e)); }
+}
+// ---- macro do lote: estruturas selecionadas ----
+function macroAddEstrutura(){ const sel=_lg('lbEstr'); const id=sel?sel.value:''; if(!id){ alert('Escolha uma estrutura (ou cadastre no ⚙ gerenciar).'); return; }
+  const e=(ESTRUTURAS||[]).find(x=>x.id===id); if(!e)return;
+  if(!S.macro||typeof S.macro!=='object')S.macro={estruturas:[]}; if(!Array.isArray(S.macro.estruturas))S.macro.estruturas=[];
+  S.macro.estruturas.push({id:e.id,nome:e.nome,tipo:e.tipo,custo:num(e.custo)});
+  save(); try{saveOrc();}catch(_){}; injectLoteBasePanel(); }
+function macroRemove(i){ if(!(S.macro&&S.macro.estruturas))return; S.macro.estruturas.splice(i,1); save(); try{saveOrc();}catch(_){}; injectLoteBasePanel(); }
+// ---- mapa do lote (SVG por lat/lon) ----
+function buildLoteMapaSVG(){ const base=baseMun(); const us=(LOTE_UNIT_ABR||[]).map((x,i)=>({mu:x.mu,label:i+1})).filter(x=>x.mu);
+  if(!base||!us.length) return '<div style="padding:24px;text-align:center;color:#8a86a0;font-size:13px">Mapa indisponível — defina a base e a cidade das unidades.</div>';
+  const W=560,H=360,M=46; const all=[base,...us.map(u=>u.mu)];
+  const los=all.map(a=>a.lon), las=all.map(a=>a.lat);
+  let loMin=Math.min(...los),loMax=Math.max(...los),laMin=Math.min(...las),laMax=Math.max(...las);
+  const pl=(loMax-loMin)*0.14||1,pa=(laMax-laMin)*0.14||1; loMin-=pl;loMax+=pl;laMin-=pa;laMax+=pa;
+  const X=lo=>M+(lo-loMin)/((loMax-loMin)||1)*(W-2*M), Y=la=>M+(laMax-la)/((laMax-laMin)||1)*(H-2*M);
+  // rota nearest-neighbor
+  let cur=base, rem=us.slice(), order=[base]; while(rem.length){let bi=0,bd=1e9;rem.forEach((u,i)=>{const d=kmHaversine(cur,u.mu);if(d<bd){bd=d;bi=i;}});cur=rem[bi].mu;order.push(cur);rem.splice(bi,1);} order.push(base);
+  let g=''; for(let i=0;i<=4;i++){const gx=M+i/4*(W-2*M);g+=`<line x1="${gx}" y1="${M}" x2="${gx}" y2="${H-M}" style="stroke:#dcdcef;stroke-width:1"/>`;} for(let i=0;i<=4;i++){const gy=M+i/4*(H-2*M);g+=`<line x1="${M}" y1="${gy}" x2="${W-M}" y2="${gy}" style="stroke:#dcdcef;stroke-width:1"/>`;}
+  const pts=order.map(p=>`${X(p.lon).toFixed(1)},${Y(p.lat).toFixed(1)}`).join(' ');
+  const route=`<polyline points="${pts}" style="fill:none;stroke:#0f7b8a;stroke-width:2.2;opacity:.85" stroke-dasharray="7 6" stroke-linejoin="round"/>`;
+  const pin=(mu,txt,isBase)=>{const x=X(mu.lon),y=Y(mu.lat);const r=isBase?12:10;return `<g><circle cx="${x}" cy="${y}" r="${r}" style="fill:${isBase?'#3f2c8f':'#533ab7'};stroke:#fff;stroke-width:2.4"/><text x="${x}" y="${y+4}" text-anchor="middle" font-family="Sora,sans-serif" font-weight="800" font-size="${isBase?12:11}" fill="#fff">${txt}</text><text x="${x}" y="${y-15}" text-anchor="middle" font-size="11" font-weight="700" style="fill:#221c39">${esc(mu.nome+'/'+mu.uf)}</text></g>`;};
+  const pins=us.map(u=>pin(u.mu,u.label,false)).join('')+pin(base,'B',true);
+  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:#eef0fb;border-radius:10px">${g}${route}${pins}</svg>`; }
+// ---- Ver como o cliente (documento consolidado do lote) ----
+function verComoClienteLote(){
+  const contrNome=S.cliNome||(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):'')||'—';
+  const modo=(S.macro&&S.macro.modo)||'detalhado'; const qtd=num(S.macro&&S.macro.qtd); const baseT=num(S._total)||0;
+  const subUn = modo==='estimativa' ? baseT*qtd : LOTE_UNITS.reduce((a,o)=>a+num(o.total),0); const macroT=macroTotal(); const total=subUn+macroT;
+  const prz=lotePrazoResumo(); const nUn = modo==='estimativa'?qtd:LOTE_UNITS.length; const vMed=nUn?subUn/nUn:0;
+  const rota=loteRota();
+  const linhas = modo==='estimativa'
+    ? `<tr><td style="padding:11px 14px;border-bottom:1px solid #eee"><b>${qtd} unidade(s) · estimativa (× base)</b></td><td style="padding:11px 14px;border-bottom:1px solid #eee;text-align:center;font-variant-numeric:tabular-nums">${fmtPrazo(obraPrazo())}</td><td style="padding:11px 14px;border-bottom:1px solid #eee;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(subUn)}</td></tr>`
+    : LOTE_UNITS.map(o=>`<tr><td style="padding:11px 14px;border-bottom:1px solid #eee"><b>${esc(o.cliente_final||o.numero||'unidade')}</b></td><td style="padding:11px 14px;border-bottom:1px solid #eee;text-align:center;font-variant-numeric:tabular-nums">${num(o._prazo)?fmtPrazo(num(o._prazo)):'—'}</td><td style="padding:11px 14px;border-bottom:1px solid #eee;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(num(o.total))}</td></tr>`).join('');
+  const esc0=S.solTitulo?esc(S.solTitulo):'Serviço conforme escopo técnico padrão, aplicado em cada unidade da rede.';
+  const doc=`<div id="vcSheet" style="max-width:820px;margin:0 auto;background:#fff;color:#221c39;border-radius:12px;box-shadow:0 20px 60px rgba(20,10,50,.3);overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif">
+    <div style="height:6px;background:linear-gradient(90deg,#533ab7,#3f2c8f)"></div>
+    <div style="padding:30px 34px">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:1px solid #eee;padding-bottom:18px">
+        <div style="display:flex;align-items:center;gap:11px"><div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(155deg,#533ab7,#3f2c8f);color:#fff;display:grid;place-items:center;font-family:Sora;font-weight:800">eX</div><div><div style="font-weight:800;font-size:17px">eX Eletric</div><div style="font-size:11.5px;color:#7d7799">Automação &amp; Elétrica</div></div></div>
+        <div style="text-align:right;font-size:12px;color:#7d7799"><div style="font-weight:700;color:#3f2c8f;font-size:14px">${esc(S.numero||'ORÇ')}</div>Proposta em lote · ${nUn} unidades</div>
+      </div>
+      <div style="padding:18px 0;border-bottom:1px solid #eee">
+        <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7d7799">Contratante</div>
+        <div style="font-weight:700;font-size:16px;margin-top:3px">${esc(contrNome)}</div>
+        <div style="font-size:13px;color:#555;margin-top:10px">${esc0}</div>
+      </div>
+      ${modo==='estimativa'?'':`<div style="padding:18px 0 6px"><div style="font-size:12px;font-weight:800;color:#3f2c8f;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Unidades no mapa</div>${buildLoteMapaSVG()}
+        <div style="font-size:11.5px;color:#0f7b8a;margin-top:6px">Rota do circuito · ${rota.path.length?esc(rota.path.map(p=>p.split('/')[0]).join(' → ')):'—'} · ~ ${rota.km.toLocaleString('pt-BR')} km</div></div>`}
+      <div style="padding:14px 0"><table style="width:100%;border-collapse:collapse;font-size:13.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;padding:10px 14px;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#7d7799">Unidade</th><th style="padding:10px 14px;font-size:10.5px;text-transform:uppercase;color:#7d7799">Prazo</th><th style="text-align:right;padding:10px 14px;font-size:10.5px;text-transform:uppercase;color:#7d7799">Valor</th></tr></thead>
+        <tbody>${linhas}</tbody>
+        <tfoot>
+          <tr><td style="padding:10px 14px;color:#7d7799">Subtotal · ${nUn} unidades</td><td></td><td style="padding:10px 14px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(subUn)}</td></tr>
+          <tr><td style="padding:10px 14px;color:#7d7799">Mobilização &amp; logística (lote)</td><td></td><td style="padding:10px 14px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(macroT)}</td></tr>
+          <tr style="border-top:2px solid #ddd"><td style="padding:12px 14px;font-weight:800;color:#3f2c8f">Total da proposta</td><td></td><td style="padding:12px 14px;text-align:right;font-weight:800;font-size:17px;color:#3f2c8f;font-variant-numeric:tabular-nums">${fmt(total)}</td></tr>
+        </tfoot></table></div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap;padding-top:6px">
+        <div style="flex:1;min-width:150px;background:#f6f3fd;border:1px solid #eee;border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;text-transform:uppercase;color:#7d7799;font-weight:700">Valor médio / unidade</div><div style="font-weight:800;font-size:16px;font-variant-numeric:tabular-nums">${fmt(vMed)}</div></div>
+        <div style="flex:1;min-width:150px;background:#f6f3fd;border:1px solid #eee;border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;text-transform:uppercase;color:#7d7799;font-weight:700">Prazo por unidade</div><div style="font-weight:800;font-size:16px">${prz.n?(Math.abs(prz.min.p-prz.max.p)<1e-9?fmtPrazo(prz.min.p):fmtPrazo(prz.min.p)+' a '+fmtPrazo(prz.max.p)):'—'}</div></div>
+      </div>
+      <div style="margin-top:16px;font-size:11.5px;color:#7d7799;border-top:1px solid #eee;padding-top:12px">Proposta com validade de 15 dias. eX Eletric — Automação &amp; Elétrica.</div>
+    </div></div>`;
+  let ov=_lg('vcOverlay'); if(!ov){ ov=document.createElement('div'); ov.id='vcOverlay'; document.body.appendChild(ov); }
+  ov.innerHTML=`<style>@media print{body>*:not(#vcOverlay){display:none!important}#vcOverlay{position:static!important;background:#fff!important;padding:0!important}#vcBar{display:none!important}#vcSheet{box-shadow:none!important}}</style>
+    <div id="vcBar" style="position:sticky;top:0;display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;background:rgba(20,14,40,.06)">
+      <button onclick="window.print()" style="border:none;background:#533ab7;color:#fff;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
+      <button onclick="closeVerCliente()" style="border:1px solid #ccc;background:#fff;color:#333;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer">Fechar</button></div>
+    <div style="padding:22px 16px 60px">${doc}</div>`;
+  ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(20,14,40,.55);overflow:auto';
+}
+function closeVerCliente(){ const ov=_lg('vcOverlay'); if(ov)ov.remove(); }
+// ---- REVISÃO do base: marca funções que podem sobrar aqui (são por unidade) ----
+function addRevx(el,motivo){ if(!el||el.dataset._revx)return; el.dataset._revx='1'; const b=document.createElement('span'); b.className='revx'; b.title=motivo||'revisar — pode sobrar no base do lote'; b.innerHTML='<span class="material-symbols-rounded">search</span>revisar'; el.appendChild(b); }
+function marcarRevisaoBase(){ if(!isLoteBase())return;
+  // painel direito (por id) — preço/fechamento são por proposta
+  const combo=_lg('ln_combo'); if(combo)addRevx(combo,'Valor combinado é por proposta/unidade');
+  const sp=_lg('s_prazo'); if(sp&&sp.parentElement)addRevx(sp.parentElement,'Prazo estimado é por unidade');
+  const cmp=document.querySelector('.cmp-h'); if(cmp)addRevx(cmp,'Fechamento é por unidade — cada loja tem o seu');   // #UI2: por classe estável (o texto tem ícone antes)
+  // blocos/seções por título (começa com…) — despesas/locações são por unidade/proposta
+  const CAND=[
+    {t:'deslocamento e outras despesas',m:'Despesas variáveis (traslado etc.) são por unidade'},
+    {t:'despesas',m:'Despesas por unidade — revisar'},
+    {t:'locações',m:'Locações costumam ser por unidade — revisar'},
+  ];
+  const seen=new Set();
+  document.querySelectorAll('h2,h3,.modtag,.blk-hd,.efhd,.ph-cap,.bloco h3,span,div').forEach(el=>{
+    if(el.classList.contains('nm')||el.children.length>3||el.dataset._revx)return; const tx=(el.textContent||'').trim().toLowerCase(); if(!tx||tx.length>48)return;   // #UI2: pula os chips da barra de blocos (.nm)
+    for(const c of CAND){ if(!seen.has(c.t)&&tx.indexOf(c.t)===0){ seen.add(c.t); addRevx(el,c.m); break; } }
+  });
+  // status rascunho/enviado
+  const st=document.querySelector('.obst'); if(st&&st.parentElement)addRevx(st.parentElement,'Status (enviado/aprovado) é por proposta');
+}
+// #UI3: renderBlk troca o innerHTML do bloco e apaga a lupa injetada — re-aplica depois de cada render quando é o base do lote
+(function(){ const _rb=renderBlk; renderBlk=function(){ const r=_rb.apply(this,arguments); try{ if(isLoteBase()) marcarRevisaoBase(); }catch(_){}; return r; }; })();
+function _macroSave(){ save(); try{saveOrc();}catch(_){}; injectLoteBasePanel(); }
+function setMacroRkm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rkm=Math.max(0,num(v)); _macroSave(); }
+function setMacroKm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=Math.max(0,num(v)); _macroSave(); }
+function clearMacroKm(){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=0; _macroSave(); }
+function setLoteModo(m){ m=(m==='estimativa'?'estimativa':'detalhado');
+  if(m==='estimativa' && (LOTE_UNITS||[]).length>0){ if(!confirm('Já existem '+LOTE_UNITS.length+' loja(s) detalhada(s). No modo Estimativa o total passa a ser base × N e os valores reais dessas lojas são ignorados no total (não são apagados). Continuar?'))return; }
+  if(!S.macro)S.macro={estruturas:[]}; S.macro.modo=m; _macroSave(); }
+function setLoteQtd(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.qtd=Math.max(0,parseInt(v)||0); _macroSave(); }
+// ---- CRUD do cadastro de estruturas/frota (orc_estruturas) ----
+function openEstruturasModal(){ let m=_lg('estrModal'); if(!m){ m=document.createElement('div'); m.id='estrModal'; m.className='modal-bg'; document.body.appendChild(m); } renderEstruturasModal(); m.classList.add('open'); }
+function closeEstruturas(){ const m=_lg('estrModal'); if(m)m.classList.remove('open'); }
+function renderEstruturasModal(){ const m=_lg('estrModal'); if(!m)return;
+  const inS='padding:7px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)';
+  const rows=(ESTRUTURAS||[]).map(e=>`<div style="display:grid;grid-template-columns:1fr 116px 118px auto;gap:8px;align-items:center;padding:8px 0;border-top:1px solid var(--line2)">
+      <input value="${esc(e.nome)}" onchange="estrEdit('${e.id}','nome',this.value)" style="${inS}">
+      <select onchange="estrEdit('${e.id}','tipo',this.value)" style="${inS}">${['van','caminhao','equipe','outro'].map(t=>`<option value="${t}" ${e.tipo===t?'selected':''}>${t}</option>`).join('')}</select>
+      <span style="display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line2);border-radius:8px;padding:5px 8px;background:var(--surf)"><span style="font-size:12px;color:var(--tx3)">R$</span><input value="${e.custo?moneyVal(e.custo):''}" inputmode="decimal" placeholder="0,00" onchange="estrEdit('${e.id}','custo',this.value)" style="width:74px;border:0;background:transparent;color:var(--tx);font:700 13px inherit;text-align:right;outline:0;font-variant-numeric:tabular-nums"></span>
+      <button class="lbtn danger" onclick="estrDel('${e.id}')"><span class="material-symbols-rounded">delete</span></button></div>`).join('');
+  m.innerHTML=`<div class="modal" style="width:600px;max-width:100%">
+    <div class="mh"><span class="material-symbols-rounded">local_shipping</span><h3>Estruturas / frota</h3><button class="x" onclick="closeEstruturas()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div class="cmphint" style="margin-bottom:10px">Cadastro reaproveitável (van, caminhão, equipe base…). Selecione no <b>macro</b> do lote.</div>
+      <div style="display:grid;grid-template-columns:1fr 116px 118px auto;gap:8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3)"><span>Nome</span><span>Tipo</span><span>Custo</span><span></span></div>
+      ${rows||'<div style="color:var(--tx3);padding:12px 0;font-size:13px">Nenhuma estrutura ainda.</div>'}
+      <button class="lbtn" style="margin-top:12px" onclick="estrAdd()"><span class="material-symbols-rounded">add</span>Nova estrutura</button>
+    </div>
+    <div style="padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:flex-end"><button class="btn" onclick="closeEstruturas()">Fechar</button></div>
+  </div>`; }
+async function estrAdd(){ try{ const r=await SB.from('orc_estruturas').insert({empresa_id:EMPRESA_ID,nome:'Nova estrutura',tipo:'outro',custo:0}).select('id').limit(1); if(r.error)throw r.error; await carregarEstruturas(); renderEstruturasModal(); }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
+async function estrEdit(id,field,val){ const v=(field==='custo')?num(val):(val||'').trim(); try{ const r=await SB.from('orc_estruturas').update({[field]:v,updated_at:new Date().toISOString()}).eq('id',id); if(r.error)throw r.error; const e=(ESTRUTURAS||[]).find(x=>x.id===id); if(e)e[field]=v; if(field==='custo'||field==='nome'||field==='tipo'){ (S.macro&&S.macro.estruturas||[]).forEach(m=>{ if(m.id===id)m[field]=v; }); } if(isLoteBase())injectLoteBasePanel(); }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
+async function estrDel(id){ if(!confirm('Excluir esta estrutura do cadastro? (não afeta lotes já salvos)'))return; try{ const r=await SB.from('orc_estruturas').update({deleted_at:new Date().toISOString()}).eq('id',id); if(r.error)throw r.error; await carregarEstruturas(); renderEstruturasModal(); if(isLoteBase())injectLoteBasePanel(); }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
+
 // RESPONSÁVEIS = colaboradores (Gestão › Equipe) com FUNÇÃO COMERCIAL delegada (ex.: "Comercial / Vendas")
 // Cascata (B): e-mail/telefone COMERCIAL do vendedor → se vazio, o geral do colaborador
 async function carregarUsuarios(){
