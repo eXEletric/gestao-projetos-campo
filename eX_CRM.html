@@ -520,8 +520,8 @@ async function carregarNuvem(){
     lotes:((lt&&lt.data)||[]).map(l=>({id:l.id,nome:l.nome,contratanteId:l.contratante_id,baseOppId:l.base_oportunidade_id}))
   };
   if(!S.colunas.length) await seedFases();
-  // fallback: oportunidade sem fase (ex.: criada pelo Orçamento/lote) cai na 1ª coluna — senão some do board
-  { const _first=(S.colunas[0]||{}).id||null; if(_first) S.oportunidades.forEach(o=>{ if(!S.colunas.find(k=>k.id===o.colId)) o.colId=_first; }); }
+  // fallback: oportunidade sem fase (criada pelo Orçamento/lote) nasce em "Gerando proposta" (papel=proposta) — é uma proposta sendo feita; Leads como reserva
+  { const _alvo=((S.colunas.find(k=>k.papel==='proposta'))||S.colunas[0]||{}).id||null; if(_alvo) S.oportunidades.forEach(o=>{ if(!S.colunas.find(k=>k.id===o.colId)) o.colId=_alvo; }); }
 }
 async function seedFases(){
   const pad=[['Leads',0,'ativa','captacao','nenhuma'],['Visita técnica',1,'ativa','visita','nenhuma'],['Gerando proposta',2,'ativa','proposta','suave'],['Em negociação',3,'ativa','negociacao','nenhuma'],['Obra / execução',4,'ativa','execucao','suave'],['Concluído',5,'final','ganho','nenhuma'],['Geladeira',6,'ativa','pausa','nenhuma'],['Declinado',7,'ativa','perdido','nenhuma']];
