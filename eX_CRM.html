@@ -1122,10 +1122,12 @@ async function materializarLev(){
     const contrId=l.contratanteId||b.contratanteId||null; const contrNome=(cli(contrId)||{}).nome||'';
     const ano=new Date().getFullYear();
     for(const c of chosen){
-      const oppIns=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contrId,contemplado_id:c.lojaId,objeto:(l.nome||'Lote')+' — '+c.nome,lote_id:loteId,fase_id:b.colId}).select('id').limit(1);
+      const lj=(S.lojas||[]).find(x=>x.id===c.lojaId); const lojaNum=(lj&&lj.numero)?lj.numero:'';
+      const oppIns=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contrId,contemplado_id:c.lojaId,objeto:(l.nome||'Lote')+' — '+c.nome+(lojaNum?(' ('+lojaNum+')'):''),lote_id:loteId,fase_id:b.colId}).select('id').limit(1);
       if(oppIns.error||!oppIns.data[0]) throw (oppIns.error||new Error('falha ao criar oportunidade'));
       const oppId=oppIns.data[0].id;
-      const dados=JSON.parse(JSON.stringify(baseDados)); delete dados._base; delete dados.macro; dados.abrSnap=null; dados.finNome=c.nome; dados.lojaId=c.lojaId;
+      const dados=JSON.parse(JSON.stringify(baseDados)); delete dados._base; delete dados.macro; dados.abrSnap=null; dados.finNome=c.nome; dados.lojaId=c.lojaId; dados.finNum=lojaNum;
+      dados.levUnidade={status:c.st||'',data:c.data||'',relatorio:c.link||'',obs:c.obs||'',sub:c.sub||''};   // cada unidade leva o SEU levantamento
       const numero='ORÇ-'+ano+'-'+String(Math.floor(1000+Math.random()*9000));
       const orcIns=await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:oppId,lote_id:loteId,herda_base:true,numero,status:'rascunho',cliente_final:c.nome,cliente_contratante:contrNome,dados,total:baseTot});
       if(orcIns.error) throw orcIns.error;

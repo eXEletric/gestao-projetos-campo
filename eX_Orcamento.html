@@ -703,6 +703,7 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
   <div class="sub">Folha de cotação.</div>
 
   <div id="oppBanner"></div>
+  <div id="levUnidadePanel"></div>
   <div id="comprovantesPanel"></div>
   <div id="orcList" style="display:none"></div>
 
@@ -3065,7 +3066,18 @@ function renderBanner(){ const el=document.getElementById('oppBanner'); if(!el){
       : ['rascunho','enviado'].map(s=>`<button class="obst ${st===s?'on':''}" onclick="setStatus('${s}')">${s}</button>`).join('')}</div>
     <button class="btn btn-s" onclick="voltarFunil()"><span class="material-symbols-rounded">arrow_back</span>Funil</button>
   </div>`;
+  renderLevUnidade();
   renderComprovantes();
+}
+// painel do levantamento herdado do lote (cada unidade leva o seu)
+function renderLevUnidade(){ const el=document.getElementById('levUnidadePanel'); if(!el)return; const L=S&&S.levUnidade;
+  if(!OPP||!L||!(L.obs||L.data||L.relatorio)){ el.innerHTML=''; return; }
+  const stl={vis:'Visitada',mod:'Modelo',avis:'A visitar',nvis:'Não visitar'}[L.status]||'';
+  el.innerHTML=`<div class="cmp-wrap noprint" style="border-color:#bcd0ee">
+    <div class="cmp-h" style="color:#2563a8"><span class="material-symbols-rounded">fact_check</span>Levantamento desta unidade${stl?` · <span style="font-size:11.5px;font-weight:600">${esc(stl)}</span>`:''}${L.data?` · <span style="font-size:11.5px;font-weight:600">${esc(String(L.data).split('-').reverse().join('/'))}</span>`:''}</div>
+    ${L.obs?`<div class="cmp-hint" style="white-space:pre-wrap">${esc(L.obs)}</div>`:''}
+    ${L.relatorio?`<a class="btn btn-s" href="${esc(L.relatorio)}" target="_blank"><span class="material-symbols-rounded">description</span>Relatório da visita</a>`:''}
+  </div>`;
 }
 /* ===== Comprovantes de fechamento (Fase 1) — a aprovação vira reflexo da PROVA ===== */
 const CMP_TIPOS={email:{nome:'E-mail de aprovação',ic:'mail'},os:{nome:'Ordem de serviço / pedido',ic:'receipt_long'},contrato:{nome:'Contrato / termo',ic:'history_edu'},outro:{nome:'Outro',ic:'attach_file'}};
