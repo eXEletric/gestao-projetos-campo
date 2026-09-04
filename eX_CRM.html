@@ -258,7 +258,7 @@ select.fi{appearance:auto;cursor:pointer}
 
   <!-- FUNIL -->
   <div class="view on" id="v-funil">
-    <div style="margin-bottom:12px"><button class="btn btn-p" onclick="novaOpp()"><span class="material-symbols-rounded">add</span>Nova oportunidade</button></div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="novaOpp()"><span class="material-symbols-rounded">add</span>Nova oportunidade</button><button class="btn" onclick="location.href='eX_Orcamento_PREVIEW.html?nova=lote'" title="cria um orçamento em lote (rede de lojas) — abre a base/mestra"><span class="material-symbols-rounded">apartment</span>Novo lote</button></div>
     <div class="board" id="board"></div>
     <div id="oppDetail"></div>
   </div>
@@ -498,6 +498,8 @@ async function carregarNuvem(){
     lotes:((lt&&lt.data)||[]).map(l=>({id:l.id,nome:l.nome,contratanteId:l.contratante_id,baseOppId:l.base_oportunidade_id}))
   };
   if(!S.colunas.length) await seedFases();
+  // fallback: oportunidade sem fase (ex.: criada pelo Orçamento/lote) cai na 1ª coluna — senão some do board
+  { const _first=(S.colunas[0]||{}).id||null; if(_first) S.oportunidades.forEach(o=>{ if(!S.colunas.find(k=>k.id===o.colId)) o.colId=_first; }); }
 }
 async function seedFases(){
   const pad=[['Leads',0,'ativa','captacao','nenhuma'],['Visita técnica',1,'ativa','visita','nenhuma'],['Gerando proposta',2,'ativa','proposta','suave'],['Em negociação',3,'ativa','negociacao','nenhuma'],['Obra / execução',4,'ativa','execucao','suave'],['Concluído',5,'final','ganho','nenhuma'],['Geladeira',6,'ativa','pausa','nenhuma'],['Declinado',7,'ativa','perdido','nenhuma']];
@@ -700,7 +702,12 @@ function loteUnitsOf(loteId){ return S.oportunidades.filter(o=>o.loteId===loteId
 function loteTotal(loteId){ const idx=orcIndex(); return loteUnitsOf(loteId).reduce((a,u)=>a+((idx[u.id]&&idx[u.id].total)||0),0); }
 function loteToggle(el){ const c=el.closest('.kcard'); if(c)c.classList.toggle('open'); }
 function abrirLoteBaseById(loteId){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(l&&l.baseOppId) location.href='eX_Orcamento_PREVIEW.html?opp='+l.baseOppId+'&lote='+l.id; }
-function moveLote(loteId,dir){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(!l)return; const b=baseOppOf(l); if(!b)return; const i=colIdx(b.colId)+dir; if(i<0||i>=S.colunas.length)return; b.colId=S.colunas[i].id; save(); cUp('oportunidades',mOpp(b)); render(); }
+function moveLote(loteId,dir){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(!l)return; const b=baseOppOf(l); if(!b)return; const i=colIdx(b.colId)+dir; if(i<0||i>=S.colunas.length)return; const destId=S.colunas[i].id;
+  // #9: o lote respeita as mesmas travas de fase de uma oportunidade avulsa (gate/entrada/permitido)
+  if(!podeMoverPara(b,destId)){ alert('Destino bloqueado a partir desta fase. Libere na configuração (chave na frente).'); return; }
+  if(dir>0 && !passaGate(b,b.colId)) return;
+  { const em=checaEntrada(b,destId); if(em){ alert(em); return; } }
+  b.colId=destId; save(); cUp('oportunidades',mOpp(b)); render(); }
 function loteCardHTML(l,ci){ const ct=cli(l.contratanteId); const us=loteUnitsOf(l.id); const tot=loteTotal(l.id);
   const nm=(l.nome||'Lote').replace(/^\[BASE\]\s*/,''); const show=us.slice(0,4), extra=us.length-show.length;
   return `<div class="kcard lote">
