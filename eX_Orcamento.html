@@ -3149,7 +3149,7 @@ function setStatus(s){ S.status=s;
   else if(OPP&&CLOUD){ saveOrc(); }   // proposta nova ainda sem id: o insert automático leva o status
   renderBanner(); }
 // volta ao funil SEMPRE pelo shell (que tem o menu lateral): embutido → avisa o shell; avulso → abre o shell no funil
-function voltarFunil(){ try{ if(window.top!==window.self){ parent.postMessage({type:'exNav',view:'funil'},'*'); return; } }catch(e){} location.href='index.html#funil'; }
+function voltarFunil(){ try{ if(window.top!==window.self){ parent.postMessage({type:'exNav',view:'funil'},'*'); return; } }catch(e){} location.href='eX_CRM.html'; }
 
 /* ---------- blocos: liga/desliga ---------- */
 function renderBlocosBar(){
