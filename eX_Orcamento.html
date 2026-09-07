@@ -967,10 +967,10 @@ const TIPO_BLK={servico:'servicos',equipamento:'equip',despesa:'despesas',materi
 let CATALOGO={servicos:[],equip:[],despesas:[],materiais:[]};
 function catFor(blk){ return (CATALOGO[blk]&&CATALOGO[blk].length)?CATALOGO[blk]:(CAD[blk]||[]); }
 async function carregarCatalogo(){
-  try{ const {data,error}=await SB.from('orc_catalogo').select('id,tipo,nome,unidade,custo,margem,marca,categoria,composicao,codigo').is('deleted_at',null).eq('ativo',true).order('nome');
+  try{ const {data,error}=await SB.from('orc_catalogo').select('id,tipo,nome,unidade,custo,margem,marca,categoria,composicao').is('deleted_at',null).eq('ativo',true).order('nome');
     if(error) throw error;
     const g={servicos:[],equip:[],despesas:[],materiais:[]};
-    (data||[]).forEach(it=>{ const blk=TIPO_BLK[it.tipo]; if(blk) g[blk].push({id:it.id,nome:it.nome,custo:it.custo||0,und:it.unidade||'UND',margem:(it.margem==null?'':it.margem),marca:it.marca||'',categoria:it.categoria||'',composicao:(it.composicao&&typeof it.composicao==='object')?it.composicao:null,codigo:it.codigo||''}); });
+    (data||[]).forEach(it=>{ const blk=TIPO_BLK[it.tipo]; if(blk) g[blk].push({id:it.id,nome:it.nome,custo:it.custo||0,und:it.unidade||'UND',margem:(it.margem==null?'':it.margem),marca:it.marca||'',categoria:it.categoria||'',composicao:(it.composicao&&typeof it.composicao==='object')?it.composicao:null}); });
     CATALOGO=g;
   }catch(e){ console.error('catalogo',e); }
 }
@@ -986,19 +986,14 @@ async function carregarMateriaisEstoque(){
   }catch(e){ console.error('materiais estoque',e); }
 }
 let CATEGORIAS={servicos:[],equip:[],despesas:[],materiais:[]};
-let SIGLA_BY_CAT={};   // nome da categoria -> sigla (p/ gerar código do serviço)
 async function carregarCategorias(){
-  try{ const {data,error}=await SB.from('orc_categorias').select('nome,tipo,ordem,sigla').eq('ativo',true).is('deleted_at',null).order('ordem');
+  try{ const {data,error}=await SB.from('orc_categorias').select('nome,tipo,ordem').eq('ativo',true).is('deleted_at',null).order('ordem');
     if(error) throw error;
-    const g={servicos:[],equip:[],despesas:[],materiais:[]}; SIGLA_BY_CAT={};
-    (data||[]).forEach(c=>{ const blk=TIPO_BLK[c.tipo]; if(blk) g[blk].push(c.nome); if(c.sigla) SIGLA_BY_CAT[c.nome]=c.sigla; });
+    const g={servicos:[],equip:[],despesas:[],materiais:[]};
+    (data||[]).forEach(c=>{ const blk=TIPO_BLK[c.tipo]; if(blk) g[blk].push(c.nome); });
     CATEGORIAS=g;
   }catch(e){ console.error('categorias',e); }
 }
-// código do serviço = NNNN-SIGLA (mesmo padrão do Cadastro › Serviços). Número global = próximo da tabela orc_catalogo.
-function autoSiglaOrc(nome){ const stop=['DE','DA','DO','DAS','DOS','E','A','O','AS','OS','EM','PARA','POR','COM','P','C','AO','AOS']; const words=(nome||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().split(/[^A-Z0-9]+/).filter(w=>w&&stop.indexOf(w)<0); if(!words.length)return''; if(words.length===1)return words[0].slice(0,4); const n=Math.min(words.length,4),alloc=new Array(n).fill(1); let ex=4-n; for(let i=0;i<n&&ex>0;i++){alloc[i]++;ex--;} const tk=(w,k)=>{w=w.replace(/[^A-Z0-9]/g,'');if(!w)return'';if(k<=1)return w[0]||'';let o=w[0];for(let i=1;i<w.length&&o.length<k;i++){if('AEIOU'.indexOf(w[i])<0)o+=w[i];}for(let i=1;i<w.length&&o.length<k;i++){if(o.length<k)o+=w[i];}return o.slice(0,k);}; let s=''; for(let i=0;i<n;i++)s+=tk(words[i],alloc[i]); return s.slice(0,4); }
-function nextCodNum(){ let max=0; (CATALOGO.servicos||[]).forEach(it=>{ const m=String(it.codigo||'').match(/\d+/); if(m){ const nn=parseInt(m[0],10); if(nn>max)max=nn; } }); return max+1; }
-function codServico(cat,nome){ let sg=(cat&&SIGLA_BY_CAT[cat])||''; if(!sg) sg=autoSiglaOrc(cat||nome); if(!sg) return null; return String(nextCodNum()).padStart(4,'0')+'-'+sg; }
 function fillCateg(sel,blk,current){
   if(!sel)return; current=String(current||'').trim();
   const list=(CATEGORIAS[blk]||[]).slice();
@@ -2038,15 +2033,14 @@ function saveNovoCat(){
   // CRIAR no catálogo — item novo OU promover semente/avulso de uma linha existente
   const rowId=_ncEditRow;
   const oldCat = rowId ? ((S[blk].find(x=>x.id===rowId)||{}).catId||null) : null;
-  const codigo=(blk==='servicos')?codServico(cat,nome):null;   // costura: serviço nasce com código aqui também
   const finish=(id)=>{ id=id||uid();
-    CATALOGO[blk]=CATALOGO[blk]||[]; CATALOGO[blk].push({id,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||'',composicao:_ncComposicao||null,codigo:codigo||''});
+    CATALOGO[blk]=CATALOGO[blk]||[]; CATALOGO[blk].push({id,nome,custo,und,margem:(margem==null?'':margem),marca:'',categoria:cat||'',composicao:_ncComposicao||null});
     if(rowId){ // religa a linha (e irmãs com o mesmo catId antigo) ao cadastro criado
       (S[blk]||[]).forEach(r=>{ if(r.id===rowId || (oldCat && r.catId===oldCat)){ r.catId=id; r.desc=nome; r.custoBase=custo; r.und=und; r.margem=(margem==null?'':margem); if(r.usarBase) r.custoAlt=custo; if(_ncComposicao)r.composicao=JSON.parse(JSON.stringify(_ncComposicao)); } });
     } else { const nr=rowSvc(nome,1,und,custo,(margem==null?'':margem),id,''); if(_ncComposicao)nr.composicao=JSON.parse(JSON.stringify(_ncComposicao)); S[blk].push(nr); }
     save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closeNovoCat(); };
   if(CLOUD){
-    SB.from('orc_catalogo').insert({empresa_id:EMPRESA_ID,tipo:BLK_TIPO[blk],nome,unidade:und,custo,margem,categoria:cat,ativo:true,composicao:_ncComposicao||null,codigo}).select('id').then(({data,error})=>{
+    SB.from('orc_catalogo').insert({empresa_id:EMPRESA_ID,tipo:BLK_TIPO[blk],nome,unidade:und,custo,margem,categoria:cat,ativo:true,composicao:_ncComposicao||null}).select('id').then(({data,error})=>{
       if(error){ console.error(error); alert('Erro ao salvar no catálogo: '+error.message); return; }
       finish(data&&data[0]&&data[0].id);
     });

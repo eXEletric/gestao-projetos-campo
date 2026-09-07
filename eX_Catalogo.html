@@ -103,21 +103,18 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
   </div>
   <div class="sub" id="sub">Cadastro do catálogo de orçamento.</div>
   <div class="bar"><div class="search"><span class="material-symbols-rounded">search</span><input id="q" placeholder="Buscar…" oninput="render()"></div></div>
-  <div class="scroll"><table class="tbl"><thead><tr><th>Código</th><th>Nome</th><th>Categoria</th><th>Und</th><th class="r">Custo</th><th class="r">Margem</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+  <div class="scroll"><table class="tbl"><thead><tr><th>Nome</th><th>Categoria</th><th>Und</th><th class="r">Custo</th><th class="r">Margem</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
 </div>
 
 <div class="modal-bg" id="modal">
   <div class="modal">
     <div class="mh"><b id="mTitle">Item</b><button class="x" onclick="closeItem()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div class="frow" style="grid-template-columns:1fr 168px">
-        <div class="fg"><label class="fl">Categoria</label>
-          <div style="display:flex;gap:6px;align-items:stretch">
-            <select class="fi" id="f_categoria" onchange="onCategSel(this.value)" style="flex:1"></select>
-            <button type="button" title="Gerenciar categorias e siglas" onclick="openCategs()" style="flex:0 0 40px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center"><span class="material-symbols-rounded" style="font-size:19px">settings</span></button>
-          </div>
+      <div class="fg"><label class="fl">Categoria do serviço <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--tx3)">(classifica e ajuda a definir os profissionais)</span></label>
+        <div style="display:flex;gap:6px;align-items:stretch">
+          <select class="fi" id="f_categoria" onchange="onCategSel(this.value)" style="flex:1"></select>
+          <button type="button" title="Gerenciar categorias" onclick="openCategs()" style="flex:0 0 40px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center"><span class="material-symbols-rounded" style="font-size:19px">settings</span></button>
         </div>
-        <div class="fg"><label class="fl">Código (automático)</label><input class="fi" id="f_codigo" readonly placeholder="—" style="background:var(--surf2);color:var(--tx2);font-variant-numeric:tabular-nums;font-weight:600"></div>
       </div>
       <div class="fg"><label class="fl">Nome</label><input class="fi" id="f_nome"></div>
       <div class="fg" id="fg_compos" style="display:none">
@@ -150,8 +147,8 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
   <div class="modal">
     <div class="mh"><span class="material-symbols-rounded">category</span><b>Categorias de <span id="catgTipo">serviços</span></b><button class="x" onclick="closeCategs()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div style="display:flex;gap:8px;margin-bottom:6px"><input class="fi" id="catg_novo" placeholder="Nova categoria…" style="flex:1" onkeydown="if(event.key==='Enter')addCateg()"><button class="btn" style="background:var(--pri);color:#fff;border-color:var(--pri)" onclick="addCateg()"><span class="material-symbols-rounded">add</span>Adicionar</button></div>
-      <div class="hint" style="margin-bottom:12px">A <b>sigla</b> (prefixo do código, ex.: 0001-<b>AUT</b>) é gerada automaticamente. Edite pelo lápis de cada categoria.</div>
+      <div style="display:flex;gap:8px;margin-bottom:6px"><input class="fi" id="catg_novo" placeholder="Nova categoria de serviço…" style="flex:1" onkeydown="if(event.key==='Enter')addCateg()"><button class="btn" style="background:var(--pri);color:#fff;border-color:var(--pri)" onclick="addCateg()"><span class="material-symbols-rounded">add</span>Adicionar</button></div>
+      <div class="hint" style="margin-bottom:12px">A categoria do serviço ajuda a classificar e a definir os profissionais. (O código/sigla ficam na <b>Categoria da Oferta</b>, na proposta.)</div>
       <div id="catgList"></div>
     </div>
   </div>
@@ -162,8 +159,7 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
   <div class="modal">
     <div class="mh"><span class="material-symbols-rounded">category</span><b>Editar categoria</b><button class="x" onclick="closeCatEdit()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div class="fg"><label class="fl">Nome da categoria</label><input class="fi" id="ce_nome"></div>
-      <div class="fg"><label class="fl">Sigla (prefixo do código)</label><input class="fi" id="ce_sigla" maxlength="4" style="width:130px;text-transform:uppercase;text-align:center;font-weight:700;color:var(--pri)"><div class="hint" id="ce_hint"></div></div>
+      <div class="fg"><label class="fl">Nome da categoria de serviço</label><input class="fi" id="ce_nome"></div>
     </div>
     <div class="mf"><button class="btn" onclick="closeCatEdit()">Cancelar</button><span class="spacer"></span><button class="btn btn-p" onclick="salvarCatEdit()"><span class="material-symbols-rounded">check</span>Salvar</button></div>
   </div>
@@ -222,7 +218,7 @@ const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
 const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
 let ITENS=[], EDIT=null, CLOUD=false, EMPRESA_ID=null, CATEGS=[], _prevCateg='';
-let MAOOBRA=[], _COMPOS=null, _CODSEQ=null;   // mão de obra · composição do item aberto · sequência do código em edição
+let MAOOBRA=[], _COMPOS=null;   // mão de obra · composição do item aberto
 const uid=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);});
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const num=v=>{if(typeof v==='number')return isNaN(v)?0:v;let s=String(v||'').trim();if(!s)return 0;if(s.indexOf(',')>-1)s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?0:n;};
@@ -259,10 +255,9 @@ function render(){
   const q=(document.getElementById('q').value||'').toLowerCase();
   const rows=ITENS.filter(it=>((it.nome||'')+' '+(it.categoria||'')+' '+(it.marca||'')).toLowerCase().includes(q));
   const el=document.getElementById('rows');
-  if(!CLOUD){ el.innerHTML='<tr><td colspan="7" class="empty">Entre com login pra ver e cadastrar o catálogo.</td></tr>'; return; }
-  if(!rows.length){ el.innerHTML='<tr><td colspan="7" class="empty">'+(ITENS.length?'Nada encontrado.':'Catálogo vazio — clique em “Novo”.')+'</td></tr>'; return; }
+  if(!CLOUD){ el.innerHTML='<tr><td colspan="6" class="empty">Entre com login pra ver e cadastrar o catálogo.</td></tr>'; return; }
+  if(!rows.length){ el.innerHTML='<tr><td colspan="6" class="empty">'+(ITENS.length?'Nada encontrado.':'Catálogo vazio — clique em “Novo”.')+'</td></tr>'; return; }
   el.innerHTML=rows.map(it=>`<tr data-id="${it.id}">
-    <td class="cat" style="font-variant-numeric:tabular-nums;font-weight:600;color:var(--pri)">${esc(it.codigo||'—')}</td>
     <td class="nm">${esc(it.nome)}${it.marca?' <span style="color:var(--tx3);font-weight:400">· '+esc(it.marca)+'</span>':''}</td>
     <td class="cat">${esc(it.categoria||'—')}</td>
     <td>${esc(it.unidade||'UND')}</td>
@@ -287,71 +282,20 @@ function populaCategSelect(current){
 }
 function onCategSel(val){
   if(val==='__new'){
-    const nm=prompt('Nova categoria:');
-    if(nm&&nm.trim()){ const nome=nm.trim(); const sg=autoSigla(nome);
-      SB.from('orc_categorias').insert({empresa_id:EMPRESA_ID,tipo:TIPO,nome,sigla:sg||null,ordem:CATEGS.length+1}).select('id').then(({data,error})=>{
+    const nm=prompt('Nova categoria de serviço:');
+    if(nm&&nm.trim()){ const nome=nm.trim();
+      SB.from('orc_categorias').insert({empresa_id:EMPRESA_ID,tipo:TIPO,nome,ordem:CATEGS.length+1}).select('id').then(({data,error})=>{
         if(error){ alert('Erro ao criar categoria: '+error.message); populaCategSelect(_prevCateg); return; }
-        CATEGS.push({id:data&&data[0]&&data[0].id,nome,sigla:sg||null}); populaCategSelect(nome); _prevCateg=nome; refreshCodigoUI();
+        CATEGS.push({id:data&&data[0]&&data[0].id,nome}); populaCategSelect(nome); _prevCateg=nome;
       });
     } else populaCategSelect(_prevCateg);
-  } else { _prevCateg=val; refreshCodigoUI(); }
-}
-// sigla automática INTELIGENTE = acrônimo das palavras significativas (ignora conectivos), ~4 letras.
-// preserva o padrão do dono (ex.: MONTAGEM DE QD DE COMANDOS -> MTQC). Editável até existir serviço na categoria.
-const _SIG_STOP=new Set(['DE','DA','DO','DAS','DOS','E','A','O','AS','OS','EM','PARA','POR','COM','P','C','AO','AOS']);
-function _sigTake(w,k){ w=(w||'').replace(/[^A-Z0-9]/g,''); if(!w)return''; if(k<=1)return w[0]||''; let out=w[0]; const V='AEIOU'; for(let i=1;i<w.length&&out.length<k;i++){ if(V.indexOf(w[i])<0) out+=w[i]; } for(let i=1;i<w.length&&out.length<k;i++){ if(out.length<k) out+=w[i]; } return out.slice(0,k); }
-function autoSigla(nome){
-  const words=(nome||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().split(/[^A-Z0-9]+/).filter(w=>w&&!_SIG_STOP.has(w));
-  if(!words.length) return '';
-  if(words.length===1) return words[0].slice(0,4);
-  const n=Math.min(words.length,4); const alloc=new Array(n).fill(1); let extra=4-n; for(let i=0;i<n&&extra>0;i++){ alloc[i]++; extra--; }
-  let sig=''; for(let i=0;i<n;i++) sig+=_sigTake(words[i],alloc[i]);
-  return sig.slice(0,4);
-}
-function catUsada(nome){ return ITENS.some(it=> it.categoria===nome && it.codigo); }
-function refreshCodigoUI(){
-  const sf=document.getElementById('f_sigla'), hint=document.getElementById('siglaHint');
-  const catNome=document.getElementById('f_categoria').value;
-  const cat=CATEGS.find(c=>c.nome===catNome);
-  if(!cat){ if(sf){sf.value='';sf.readOnly=true;sf.style.background='var(--surf2)';} if(hint)hint.style.display='none'; gerarCodigo(); return; }
-  if(!cat.sigla){ cat.sigla=autoSigla(cat.nome); if(cat.id&&cat.sigla) SB.from('orc_categorias').update({sigla:cat.sigla}).eq('id',cat.id).then(()=>{}); }
-  const locked=catUsada(cat.nome);
-  if(sf){ sf.value=cat.sigla||''; sf.readOnly=locked; sf.style.background=locked?'var(--surf2)':''; }
-  if(hint){ hint.style.display='block'; hint.innerHTML = locked
-    ? '🔒 Sigla travada — já há serviço(s) nesta categoria (mudar bagunçaria os códigos antigos).'
-    : 'Sigla sugerida pelo nome (até 4 letras) — pode editar. Trava quando o 1º serviço for salvo.'; }
-  gerarCodigo();
-}
-function onSiglaInput(val){
-  const cat=CATEGS.find(c=>c.nome===document.getElementById('f_categoria').value); if(!cat)return;
-  cat.sigla=(val||'').trim().toUpperCase().slice(0,4)||null; gerarCodigo();
-}
-function onSiglaSave(){
-  const cat=CATEGS.find(c=>c.nome===document.getElementById('f_categoria').value); if(!cat||!cat.id)return;
-  SB.from('orc_categorias').update({sigla:cat.sigla}).eq('id',cat.id).then(({error})=>{ if(error)console.error('sigla',error); });
-}
-function gerarCodigo(){
-  const fc=document.getElementById('f_codigo'); if(!fc)return;
-  if(EDIT){ const it=ITENS.find(x=>x.id===EDIT); if(it&&it.codigo){ fc.value=it.codigo; return; } }
-  const catNome=document.getElementById('f_categoria').value;
-  if(!catNome||catNome==='__new'){ fc.value=''; fc.placeholder='—'; return; }
-  const cat=CATEGS.find(c=>c.nome===catNome);
-  if(!cat||!cat.sigla){ fc.value=''; fc.placeholder='defina a sigla'; return; }
-  let max=0; ITENS.forEach(it=>{ const m=String(it.codigo||'').match(/\d+/); if(m){ const n=parseInt(m[0],10); if(n>max)max=n; } });
-  if(_CODSEQ==null) _CODSEQ=max+1;
-  fc.value=String(_CODSEQ).padStart(4,'0')+'-'+cat.sigla;
+  } else { _prevCateg=val; }
 }
 /* gerenciador de categorias */
 let _catEdit=null;
 function openCatEdit(id){
   const c=CATEGS.find(x=>x.id===id); if(!c)return; _catEdit=id;
   document.getElementById('ce_nome').value=c.nome||'';
-  const sg=document.getElementById('ce_sigla'); sg.value=c.sigla||'';
-  const used=catUsada(c.nome);
-  sg.readOnly=used; sg.style.background=used?'var(--surf2)':'';
-  document.getElementById('ce_hint').innerHTML = used
-    ? '🔒 Sigla travada — já há serviço(s) nesta categoria (mudar bagunçaria os códigos já emitidos).'
-    : 'Até 4 letras — é o prefixo do código dos serviços desta categoria. Trava quando o 1º serviço for criado.';
   document.getElementById('catEditModal').classList.add('show');
   setTimeout(()=>document.getElementById('ce_nome').focus(),40);
 }
@@ -359,23 +303,18 @@ function closeCatEdit(){ document.getElementById('catEditModal').classList.remov
 function salvarCatEdit(){
   const c=CATEGS.find(x=>x.id===_catEdit); if(!c){ closeCatEdit(); return; }
   const nome=document.getElementById('ce_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
-  const used=catUsada(c.nome);
-  const novaSigla = used ? c.sigla : (document.getElementById('ce_sigla').value.trim().toUpperCase().slice(0,4) || autoSigla(nome));
-  const nomeAntigo=c.nome;
-  c.nome=nome; c.sigla=novaSigla;
-  SB.from('orc_categorias').update({nome,sigla:novaSigla}).eq('id',_catEdit).then(({error})=>{ if(error)alert('Erro ao salvar: '+error.message); });
+  const nomeAntigo=c.nome; c.nome=nome;
+  SB.from('orc_categorias').update({nome}).eq('id',_catEdit).then(({error})=>{ if(error)alert('Erro ao salvar: '+error.message); });
   if(nome!==nomeAntigo){ ITENS.forEach(it=>{ if(it.categoria===nomeAntigo){ it.categoria=nome; if(it.id) SB.from('orc_catalogo').update({categoria:nome}).eq('id',it.id).then(()=>{}); } }); }
   renderCategMgr(); render();
-  const fc=document.getElementById('f_categoria'); if(fc){ const cur=(fc.value===nomeAntigo)?nome:fc.value; populaCategSelect(cur); refreshCodigoUI(); }
+  const fc=document.getElementById('f_categoria'); if(fc){ const cur=(fc.value===nomeAntigo)?nome:fc.value; populaCategSelect(cur); }
   closeCatEdit();
 }
 document.getElementById('catEditModal').addEventListener('click',e=>{ if(e.target.id==='catEditModal')closeCatEdit(); });
 function openCategs(){
   if(!CLOUD){ alert('Entre com login pra gerenciar as categorias.'); return; }
-  // preenche automaticamente as siglas que estiverem em branco (sugestão pelo nome)
-  CATEGS.forEach(c=>{ if(!c.sigla){ const s=autoSigla(c.nome); if(s){ c.sigla=s; if(c.id) SB.from('orc_categorias').update({sigla:s}).eq('id',c.id).then(()=>{}); } } });
   document.getElementById('catgTipo').textContent=((LBL[TIPO]||LBL.servico)[0]).toLowerCase();
-  document.getElementById('catg_novo').value=''; const cs=document.getElementById('catg_sigla'); if(cs)cs.value=''; _siglaNovaManual=false;
+  document.getElementById('catg_novo').value='';
   renderCategMgr();
   document.getElementById('categModal').classList.add('show');
 }
@@ -383,32 +322,20 @@ function closeCategs(){ document.getElementById('categModal').classList.remove('
 function renderCategMgr(){
   const el=document.getElementById('catgList');
   if(!CATEGS.length){ el.innerHTML='<div style="color:var(--tx3);padding:14px;text-align:center;font-size:13px">Nenhuma categoria. Adicione acima.</div>'; return; }
-  el.innerHTML=CATEGS.map((c,i)=>{ const used=catUsada(c.nome); return `<div style="display:flex;align-items:center;gap:6px;padding:8px 4px;border-bottom:1px solid var(--line)">
-    <span title="${used?'sigla travada — já há serviços':'sigla (prefixo do código)'}" style="width:80px;text-align:center;font-weight:700;font-size:12px;border:1px solid var(--line2);border-radius:6px;padding:5px 4px;color:var(--pri);background:var(--surf2)">${esc(c.sigla||'—')}${used?' 🔒':''}</span>
+  el.innerHTML=CATEGS.map((c,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:8px 4px;border-bottom:1px solid var(--line)">
     <span style="flex:1;font-size:13px">${esc(c.nome)}</span>
     <button class="iconb" title="Subir" onclick="moveCateg('${c.id}',-1)" ${i===0?'disabled':''}><span class="material-symbols-rounded">arrow_upward</span></button>
     <button class="iconb" title="Descer" onclick="moveCateg('${c.id}',1)" ${i===CATEGS.length-1?'disabled':''}><span class="material-symbols-rounded">arrow_downward</span></button>
-    <button class="iconb" title="Editar (nome e sigla)" onclick="openCatEdit('${c.id}')"><span class="material-symbols-rounded">edit</span></button>
+    <button class="iconb" title="Renomear" onclick="openCatEdit('${c.id}')"><span class="material-symbols-rounded">edit</span></button>
     <button class="iconb del" title="Excluir" onclick="delCateg('${c.id}')"><span class="material-symbols-rounded">delete</span></button>
-  </div>`; }).join('');
-}
-let _siglaNovaManual=false;
-function sugereSiglaNova(){
-  if(_siglaNovaManual)return;
-  const cs=document.getElementById('catg_sigla'); const nv=document.getElementById('catg_novo');
-  if(cs&&nv) cs.value=autoSigla(nv.value);
+  </div>`).join('');
 }
 function addCateg(){
   const inp=document.getElementById('catg_novo'); const nome=inp.value.trim(); if(!nome)return;
-  const sinp=document.getElementById('catg_sigla'); let sg=(sinp?sinp.value:'').trim().toUpperCase().slice(0,4); if(!sg) sg=autoSigla(nome);
-  SB.from('orc_categorias').insert({empresa_id:EMPRESA_ID,tipo:TIPO,nome,sigla:sg||null,ordem:CATEGS.length+1}).select('id').then(({data,error})=>{
+  SB.from('orc_categorias').insert({empresa_id:EMPRESA_ID,tipo:TIPO,nome,ordem:CATEGS.length+1}).select('id').then(({data,error})=>{
     if(error){ alert('Erro: '+error.message); return; }
-    CATEGS.push({id:data&&data[0]&&data[0].id,nome,sigla:sg||null}); inp.value=''; if(sinp)sinp.value=''; _siglaNovaManual=false; renderCategMgr();
+    CATEGS.push({id:data&&data[0]&&data[0].id,nome}); inp.value=''; renderCategMgr();
   });
-}
-function setSigla(id,val){
-  const c=CATEGS.find(x=>x.id===id); if(!c)return; c.sigla=(val||'').trim().toUpperCase().slice(0,4)||null;
-  SB.from('orc_categorias').update({sigla:c.sigla}).eq('id',id).then(({error})=>{ if(error)alert('Erro ao salvar sigla: '+error.message); });
 }
 function renameCateg(id){
   const c=CATEGS.find(x=>x.id===id); if(!c)return; const nm=prompt('Renomear categoria:',c.nome); if(!nm||!nm.trim())return; const nome=nm.trim();
@@ -442,19 +369,15 @@ function openItem(id){
   _COMPOS = it?(it.composicao||null):null;
   document.getElementById('fg_compos').style.display=(TIPO==='servico')?'block':'none';
   compResumo();
-  _CODSEQ=null;
-  document.getElementById('f_codigo').value = it?(it.codigo||''):'';
-  gerarCodigo();
   document.getElementById('mDel').style.display=id?'inline-flex':'none';
   document.getElementById('modal').classList.add('show');
   setTimeout(()=>document.getElementById('f_nome').focus(),40);
 }
-function closeItem(){ document.getElementById('modal').classList.remove('show'); EDIT=null; _COMPOS=null; _CODSEQ=null; }
+function closeItem(){ document.getElementById('modal').classList.remove('show'); EDIT=null; _COMPOS=null; }
 function saveItem(){
   const nome=document.getElementById('f_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
   const mv=document.getElementById('f_margem').value.trim();
   const row={ empresa_id:EMPRESA_ID, tipo:TIPO, nome,
-    codigo:(document.getElementById('f_codigo').value.trim()||null),
     unidade:document.getElementById('f_unidade').value.trim()||'UND',
     custo:num(document.getElementById('f_custo').value),
     margem:mv===''?null:num(mv),
