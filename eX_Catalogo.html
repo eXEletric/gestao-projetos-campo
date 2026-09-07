@@ -54,6 +54,40 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .fi:focus{outline:none;border-color:var(--pri)}
 .frow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
 .hint{font-size:10px;color:var(--tx3);margin-top:3px}
+/* ---- compositor de custo (motor: equipe × tempo) ---- */
+#compModal{z-index:70}
+#compModal .modal{width:600px}
+.cmpsec{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin:2px 0 8px}
+.cmplbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);margin-bottom:5px;display:block}
+.cmpsel{width:100%;padding:8px 10px;border:1px solid var(--line2);border-radius:7px;font-size:13px;background:var(--surf);color:var(--tx)}
+.cmphint{font-size:12px;color:var(--tx3)}
+.cmptv{width:80px;padding:7px 9px;border:1px solid var(--line2);border-radius:7px;text-align:center;font-size:14px;font-variant-numeric:tabular-nums}
+.cmpseg{display:inline-flex;border:1px solid var(--line2);border-radius:8px;overflow:hidden}
+.cmpseg button{border:none;background:var(--surf);color:var(--tx2);font:600 12.5px inherit;padding:7px 13px;cursor:pointer}
+.cmpseg button.on{background:var(--pri);color:#fff}
+.cmphd{display:grid;grid-template-columns:1fr 140px 50px 72px 24px;gap:8px;font-size:9.5px;font-weight:700;text-transform:uppercase;color:var(--tx3);padding:0 2px 5px;text-align:center}
+.cmphd span:first-child{text-align:left}
+.cmprow{display:grid;grid-template-columns:1fr 140px 50px 72px 24px;gap:8px;align-items:center;padding:4px 0}
+.cmprow select{width:100%;padding:6px 7px;border:1px solid var(--line2);border-radius:7px;font-size:12.5px;background:var(--surf);color:var(--tx)}
+.cmprow .cmptrab{display:inline-flex;align-items:center;justify-content:center;gap:4px}
+.cmprow .cmptrab input{width:52px;padding:6px 4px;border:1px solid var(--line2);border-radius:7px;text-align:center;font:inherit;font-size:13px;font-variant-numeric:tabular-nums;background:var(--surf);color:var(--tx)}
+.cmprow .cmptrab .cmpu{width:76px;padding:6px 2px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:12px;background:var(--surf);color:var(--tx2)}
+.cmprow .cmpvh{text-align:right;font-size:12px;color:var(--tx3);font-variant-numeric:tabular-nums}
+.cmprow .cmpval{text-align:right;font-size:12.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--tx)}
+.cmprow .cmpdel{border:none;background:none;color:var(--tx3);cursor:pointer;padding:3px;border-radius:6px}
+.cmprow .cmpdel:hover{background:#fcebeb;color:var(--red)}.cmprow .cmpdel .material-symbols-rounded{font-size:16px}
+.cmpdrow{display:flex;align-items:center;gap:8px;padding:4px 0}
+.cmpdrow .cmpin{flex:1;padding:7px 9px;border:1px solid var(--line2);border-radius:7px;font-size:13px;background:var(--surf);color:var(--tx)}
+.cmpdrow .cmpin.val{flex:0 0 110px;text-align:right;font-variant-numeric:tabular-nums}
+.cmpdrow .cmprs{font-size:12px;color:var(--tx3)}
+.cmpdrow .cmpdel{border:none;background:none;color:var(--tx3);cursor:pointer;padding:3px;border-radius:6px}
+.cmpdrow .cmpdel:hover{background:#fcebeb;color:var(--red)}.cmpdrow .cmpdel .material-symbols-rounded{font-size:16px}
+.cmpadd{border:1px dashed var(--line2);background:transparent;color:var(--pri);font:600 12px inherit;border-radius:20px;padding:6px 12px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin-top:6px}
+.cmpadd:hover{background:var(--pri-bg);border-color:var(--pri)}.cmpadd .material-symbols-rounded{font-size:16px}
+.cmpres{margin-top:16px;background:var(--surf2);border-radius:10px;padding:12px 14px;display:flex;gap:26px;flex-wrap:wrap}
+.cmpres .cr{display:flex;flex-direction:column;gap:2px}.cmpres .cr span{font-size:11px;color:var(--tx3)}.cmpres .cr b{font-size:19px;font-variant-numeric:tabular-nums}
+.compbtn{font-size:13px;padding:8px 13px;border-radius:8px;border:1px solid var(--pri);background:var(--surf);color:var(--pri);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.compbtn:hover{background:var(--pri-bg)}.compbtn .material-symbols-rounded{font-size:18px}
 </style>
 </head>
 <body>
@@ -76,6 +110,13 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
     <div class="mh"><b id="mTitle">Item</b><button class="x" onclick="closeItem()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
       <div class="fg"><label class="fl">Nome</label><input class="fi" id="f_nome"></div>
+      <div class="fg" id="fg_compos" style="display:none">
+        <label class="fl">Composição de custo (o motor)</label>
+        <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+          <button type="button" class="compbtn" onclick="openCompFicha()"><span class="material-symbols-rounded">precision_manufacturing</span>Compor custo (equipe × tempo)</button>
+          <span id="compResumo" style="font-size:12px;color:var(--tx3)"></span>
+        </div>
+      </div>
       <div class="frow">
         <div class="fg"><label class="fl">Unidade</label>
           <select class="fi" id="f_unidade">
@@ -106,6 +147,50 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
   </div>
 </div>
 
+<!-- compositor de custo -->
+<div class="modal-bg" id="compModal">
+  <div class="modal">
+    <div class="mh"><b>Compor custo do serviço</b><button class="x" onclick="closeComp()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;align-items:flex-end">
+        <div style="flex:1;min-width:180px"><div class="cmpsec">Nome do serviço</div><textarea id="comp_nome" rows="1" oninput="agrow(this)" placeholder="ex.: Instalação de QA de automação" style="width:100%;padding:8px 10px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx);font-family:inherit;line-height:1.4;resize:none;overflow:hidden;min-height:36px"></textarea></div>
+        <div><div class="cmpsec">Unidade</div><select id="comp_und" class="cmpsel" style="width:96px"></select></div>
+      </div>
+      <div style="display:flex;gap:16px;flex-wrap:wrap;margin-bottom:14px">
+        <div><div class="cmpsec">Como o custo nasce</div><span class="cmpseg"><button id="comp_md_c" onclick="setCompModo('calc')">Calculado</button><button id="comp_md_m" onclick="setCompModo('manual')">Manual</button></span></div>
+        <div><div class="cmpsec">O valor é</div><span class="cmpseg"><button id="comp_bs_u" onclick="setCompBase('unidade')">Por unidade</button><button id="comp_bs_t" onclick="setCompBase('total')">Total do serviço</button></span></div>
+      </div>
+      <div id="comp_basehint" class="cmphint" style="margin:-6px 0 12px"></div>
+      <div id="comp_manualBox" style="display:none;margin-bottom:14px">
+        <label class="cmplbl">Valor do serviço (custo predeterminado)</label>
+        <div style="display:flex;align-items:center;gap:6px"><span style="color:var(--tx3);font-size:14px">R$</span><input id="comp_manual" class="cmptv" style="width:130px;text-align:right" inputmode="decimal" oninput="COMP.valorManual=num(this.value);compCalc()"></div>
+      </div>
+      <div id="comp_calcBox">
+      <div class="cmpsec" style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">Equipe (mão de obra) <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— função · <b>trabalho</b> (homem-dia) · R$/h. O custo NÃO muda com nº de pessoas — pessoas é prazo (decide na proposta).</span></div>
+      <div id="compMO"></div>
+      <button id="comp_addprof" class="cmpadd" onclick="compAddMO()"><span class="material-symbols-rounded">person_add</span>função</button>
+      <div class="cmpsec" style="margin-top:16px">Adicionais deste serviço <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— opcional; só o que é específico deste serviço (ex.: hora extra).</span></div>
+      <div id="compDesp"></div>
+      <button class="cmpadd" onclick="compAddDesp()"><span class="material-symbols-rounded">add</span>adicional</button>
+      <div style="margin-top:16px">
+        <label class="cmplbl">Dificuldade do serviço <span style="font-weight:400;color:var(--tx3);text-transform:none;letter-spacing:0">— intrínseca à tarefa; abrangência e local ficam no orçamento</span></label>
+        <select id="comp_dif" class="cmpsel" onchange="compRenderMO();compCalc()"></select>
+      </div>
+      </div><!-- /comp_calcBox -->
+      <div class="cmpres">
+        <div class="cr"><span>Mão de obra</span><b id="comp_mo">R$ 0,00</b></div>
+        <div class="cr"><span>Adicionais</span><b id="comp_dsp">R$ 0,00</b></div>
+        <div class="cr" style="border-left:1px solid var(--line2);padding-left:22px"><span>Custo do serviço</span><b id="comp_custo" style="color:var(--pri)">R$ 0,00</b></div>
+        <div class="cr"><span>Trabalho total</span><b id="comp_tempo" style="color:var(--pri)">0 homem-dia</b></div>
+      </div>
+    </div>
+    <div class="mf"><span class="spacer"></span>
+      <button class="btn" onclick="closeComp()">Cancelar</button>
+      <button class="btn btn-p" onclick="compAplicar()"><span class="material-symbols-rounded">check</span>Aplicar ao serviço</button>
+    </div>
+  </div>
+</div>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 "use strict";
@@ -115,10 +200,15 @@ const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
 const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
 let ITENS=[], EDIT=null, CLOUD=false, EMPRESA_ID=null, CATEGS=[], _prevCateg='';
+let MAOOBRA=[], _COMPOS=null;   // mão de obra (função×nível→R$/h) · composição do item aberto
 const uid=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);});
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const num=v=>{if(typeof v==='number')return isNaN(v)?0:v;let s=String(v||'').trim();if(!s)return 0;if(s.indexOf(',')>-1)s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?0:n;};
 const fmt=n=>'R$ '+(Math.round((+n||0)*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const fmtN=v=>num(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+function agrow(el){ if(!el)return; el.style.height='auto'; el.style.height=(el.scrollHeight)+'px'; }
+const UNDS=['UND','PÇ','M','M²','KM','L','KG','CX','CIRCT','DIÁRIA','HORA','DIA','SEMANA','MÊS','VB','GLOBAL'];
+function fillUnd(sel,val){ if(!sel)return; const v=(val||'UND'); let list=UNDS.slice(); if(v&&!list.includes(v))list.unshift(v); sel.innerHTML=list.map(u=>`<option value="${u}" ${u===v?'selected':''}>${u}</option>`).join(''); sel.value=v; }
 function cloudMsg(t){ const e=document.getElementById('cloudb'); if(e)e.textContent=t; }
 
 function applyTipo(){
@@ -138,7 +228,7 @@ async function init(){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
       const {data,error}=await SB.from('orc_catalogo').select('*').eq('tipo',TIPO).is('deleted_at',null).order('nome');
       if(error) throw error;
-      ITENS=data||[]; await carregarCategs(); CLOUD=true; cloudMsg('nuvem ✓');
+      ITENS=data||[]; await carregarCategs(); if(TIPO==='servico') await carregarMaoObra(); CLOUD=true; cloudMsg('nuvem ✓');
     } else cloudMsg('faça login');
   }catch(e){ console.error(e); cloudMsg('erro nuvem'); } }
   render();
@@ -238,11 +328,14 @@ function openItem(id){
   populaCategSelect(it?(it.categoria||''):'');
   document.getElementById('f_detalhes').value=it?(it.detalhes||''):'';
   document.getElementById('f_marca').value=it?(it.marca||''):'';
+  _COMPOS = it?(it.composicao||null):null;
+  document.getElementById('fg_compos').style.display=(TIPO==='servico')?'block':'none';
+  compResumo();
   document.getElementById('mDel').style.display=id?'inline-flex':'none';
   document.getElementById('modal').classList.add('show');
   setTimeout(()=>document.getElementById('f_nome').focus(),40);
 }
-function closeItem(){ document.getElementById('modal').classList.remove('show'); EDIT=null; }
+function closeItem(){ document.getElementById('modal').classList.remove('show'); EDIT=null; _COMPOS=null; }
 function saveItem(){
   const nome=document.getElementById('f_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
   const mv=document.getElementById('f_margem').value.trim();
@@ -252,6 +345,7 @@ function saveItem(){
     margem:mv===''?null:num(mv),
     categoria:(function(){const c=document.getElementById('f_categoria').value;return (c&&c!=='__new')?c:null;})(),
     detalhes:document.getElementById('f_detalhes').value.trim()||null,
+    composicao:(TIPO==='servico'?(_COMPOS||null):null),
     marca:(TIPO==='material')?(document.getElementById('f_marca').value.trim()||null):null };
   if(EDIT){ row.id=EDIT; } else { row.id=uid(); }
   SB.from('orc_catalogo').upsert(row).then(({error})=>{
@@ -271,6 +365,100 @@ function delDireto(id,fromModal){
     ITENS=ITENS.filter(x=>x.id!==id); if(fromModal)closeItem(); render();
   });
 }
+/* ================= COMPOSITOR DE CUSTO (motor: equipe × tempo) ================= */
+async function carregarMaoObra(){
+  try{ const {data,error}=await SB.from('mao_obra_ref').select('valor_hora, funcao:funcoes(nome), nivel:niveis(nome)');
+    if(!error) MAOOBRA=(data||[]).filter(x=>x.funcao&&x.nivel&&x.valor_hora!=null).map(x=>({funcao:x.funcao.nome,nivel:x.nivel.nome,vh:num(x.valor_hora)}));
+  }catch(e){ console.error('maoobra',e); }
+}
+const DIFIC=[{n:'Normal',mult:1.00},{n:'Moderada',mult:1.25},{n:'Alta',mult:1.50},{n:'Severa',mult:2.00}];
+const JORNADA=8;   // horas por dia (conversão dias↔horas)
+let COMP={mo:[],desp:[],dif:0,modo:'calc',base:'unidade',valorManual:0,_custo:0,_trab:0,_mo:0,_dsp:0};
+// normaliza a mão de obra da composição p/ {fn, trab(homem-dia)} — mesma forma do orçamento
+function moTrab(c){
+  const oldH=c?((c.un==='dias')?num(c.tv)*JORNADA:(c.un==='minutos')?num(c.tv)/60:num(c.tv)):0;
+  return ((c&&c.mo)||[]).map(x=>({fn:x.fn, trab:(x.trab!=null)?num(x.trab):(num(x.pes||0)*oldH/JORNADA), un:x.un||'di'}));
+}
+function trabToUn(trab,un){ return un==='h'?num(trab)*JORNADA : un==='min'?num(trab)*JORNADA*60 : num(trab); }
+function unToTrab(v,un){ v=num(v); return un==='h'?v/JORNADA : un==='min'?v/(JORNADA*60) : v; }
+function compDifMult(){ return (DIFIC[+(document.getElementById('comp_dif')||{}).value||0]||DIFIC[0]).mult; }
+function compRowValN(r){ const m=MAOOBRA[r.fn]||{vh:0}; return num(r.trab)*compDifMult()*num(m.vh)*JORNADA; }
+function compRowVal(i){ const r=COMP.mo[i]; if(!r)return; const e=document.getElementById('cmpval_'+i); if(e)e.textContent=fmt(compRowValN(r)); }
+function compSetTrab(i,v){ const r=COMP.mo[i]; if(!r)return; r.trab=unToTrab(v,r.un||'di'); compRowVal(i); compCalc(); }
+function compSetUn(i,u){ const r=COMP.mo[i]; if(!r)return; r.un=u; compRenderMO(); compCalc(); }
+function compMORow(r,i){
+  const opts=MAOOBRA.length?MAOOBRA.map((m,j)=>`<option value="${j}" ${j===r.fn?'selected':''}>${esc(m.funcao)} · ${esc(m.nivel)} (${fmt(m.vh)}/h)</option>`).join(''):'<option>— sem mão de obra cadastrada —</option>';
+  const m=MAOOBRA[r.fn]||{vh:0}; const un=r.un||'di';
+  const uns=[['di','dia'],['h','hora'],['min','minuto']].map(([v,l])=>`<option value="${v}" ${v===un?'selected':''}>${l}</option>`).join('');
+  const val=trabToUn(r.trab,un);
+  return `<div class="cmprow">
+    <select onchange="COMP.mo[${i}].fn=+this.value;compRenderMO();compCalc()">${opts}</select>
+    <span class="cmptrab"><input type="number" step="${un==='min'?'5':'0.5'}" min="0" value="${+val.toFixed(un==='di'?2:0)}" oninput="compSetTrab(${i},this.value)"><select class="cmpu" onchange="compSetUn(${i},this.value)">${uns}</select></span>
+    <span class="cmpvh">${fmt(m.vh)}/h</span>
+    <span class="cmpval" id="cmpval_${i}">${fmt(compRowValN(r))}</span>
+    <button class="cmpdel" onclick="COMP.mo.splice(${i},1);compRenderMO();compCalc()"><span class="material-symbols-rounded">close</span></button></div>`;
+}
+function compRenderMO(){
+  const hd='<div class="cmphd"><span>Função · nível</span><span>Trabalho</span><span>R$/h</span><span>Subtotal</span><span></span></div>';
+  const el=document.getElementById('compMO'); if(!el)return;
+  el.innerHTML=hd+COMP.mo.map(compMORow).join('');
+}
+function compAddMO(){ COMP.mo.push({fn:0,trab:1,un:'di'}); compRenderMO(); compCalc(); }
+function compRenderDesp(){ const el=document.getElementById('compDesp'); if(!el)return;
+  el.innerHTML=(COMP.desp||[]).map((d,i)=>`<div class="cmpdrow"><input class="cmpin" value="${esc(d.nome)}" placeholder="ex.: Hora extra" oninput="COMP.desp[${i}].nome=this.value"><span class="cmprs">R$</span><input class="cmpin val" value="${d.valor!=null&&d.valor!==''?String(d.valor).replace('.',','):''}" inputmode="decimal" oninput="COMP.desp[${i}].valor=num(this.value);compCalc()"><button class="cmpdel" onclick="COMP.desp.splice(${i},1);compRenderDesp();compCalc()"><span class="material-symbols-rounded">close</span></button></div>`).join('')
+    || '<div style="font-size:12px;color:var(--tx3);padding:2px 2px 6px">Sem adicionais neste serviço.</div>'; }
+function compAddDesp(){ if(!COMP.desp)COMP.desp=[]; COMP.desp.push({nome:'',valor:''}); compRenderDesp(); }
+function setCompModo(m,noCalc){ COMP.modo=m; const c=document.getElementById('comp_md_c'),mn=document.getElementById('comp_md_m'); if(c)c.classList.toggle('on',m==='calc'); if(mn)mn.classList.toggle('on',m==='manual'); const cb=document.getElementById('comp_calcBox'),mb=document.getElementById('comp_manualBox'); if(cb)cb.style.display=(m==='manual')?'none':''; if(mb)mb.style.display=(m==='manual')?'block':'none'; if(!noCalc)compCalc(); }
+function setCompBase(b,noCalc){ COMP.base=b; const u=document.getElementById('comp_bs_u'),t=document.getElementById('comp_bs_t'); if(u)u.classList.toggle('on',b==='unidade'); if(t)t.classList.toggle('on',b==='total'); const h=document.getElementById('comp_basehint'); if(h)h.textContent=(b==='total')?'É o TOTAL do serviço — na linha a quantidade trava em 1.':'Custo de 1 unidade — na linha você multiplica pela quantidade.'; if(!noCalc)compCalc(); }
+function compCalc(){
+  const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  if(COMP.modo==='manual'){ const custo=num(COMP.valorManual); COMP._mo=0;COMP._dsp=0;COMP._custo=custo;COMP._trab=0; set('comp_mo','—'); set('comp_dsp','—'); set('comp_custo',fmt(custo)); set('comp_tempo','—'); return; }
+  const dif=DIFIC[+document.getElementById('comp_dif').value||0]||DIFIC[0];
+  let mo=0, trabTot=0;
+  COMP.mo.forEach(r=>{ const m=MAOOBRA[r.fn]; if(!m)return; const t=num(r.trab)*dif.mult; trabTot+=t; mo+=t*num(m.vh)*JORNADA; });
+  const dsp=(COMP.desp||[]).reduce((a,d)=>a+num(d.valor),0);
+  const custo=mo+dsp;
+  COMP._mo=mo; COMP._dsp=dsp; COMP._custo=custo; COMP._trab=trabTot;
+  set('comp_mo',fmt(mo)); set('comp_dsp',fmt(dsp)); set('comp_custo',fmt(custo));
+  set('comp_tempo', trabTot.toLocaleString('pt-BR',{maximumFractionDigits:1})+' homem-dia');
+}
+function closeComp(){ document.getElementById('compModal').classList.remove('show'); }
+function openCompFicha(){
+  if(!CLOUD){ alert('Entre com login pra compor o custo.'); return; }
+  COMP={mo:[],desp:[],dif:0,modo:'calc',base:'unidade',valorManual:0,_custo:0,_trab:0,_mo:0,_dsp:0};
+  const c=_COMPOS;
+  if(c){ COMP.mo=moTrab(c); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; }
+  if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';
+  if(!COMP.mo.length) COMP.mo=[{fn:0,trab:1,un:'di'}];
+  const nmi=document.getElementById('comp_nome'); if(nmi){ nmi.value=(document.getElementById('f_nome').value||''); agrow(nmi); }
+  fillUnd(document.getElementById('comp_und'), document.getElementById('f_unidade').value||'UND');
+  document.getElementById('comp_dif').innerHTML=DIFIC.map((d,j)=>`<option value="${j}" ${j===COMP.dif?'selected':''}>${d.n} (×${d.mult.toFixed(2)})</option>`).join('');
+  const mvi=document.getElementById('comp_manual'); if(mvi)mvi.value=COMP.valorManual?String(COMP.valorManual).replace('.',','):'';
+  setCompModo(COMP.modo,true); setCompBase(COMP.base,true);
+  compRenderMO(); compRenderDesp(); compCalc();
+  document.getElementById('compModal').classList.add('show');
+}
+function compAplicar(){
+  COMP.dif=+document.getElementById('comp_dif').value||0;
+  compCalc();
+  COMP.valorManual=num((document.getElementById('comp_manual')||{}).value||COMP.valorManual);
+  const _nome=((document.getElementById('comp_nome')||{}).value||'').trim();
+  const _und=((document.getElementById('comp_und')||{}).value||'').trim()||'UND';
+  const receita={mo:COMP.mo.map(x=>({fn:x.fn,trab:num(x.trab),un:x.un||'di'})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,modo:COMP.modo||'calc',base:COMP.base||'unidade',valorManual:num(COMP.valorManual)};
+  _COMPOS=receita;
+  const nn=document.getElementById('f_nome'); if(nn && _nome)nn.value=_nome;
+  const fu=document.getElementById('f_unidade'); if(fu)fillUnd(fu,_und);
+  const fc=document.getElementById('f_custo'); if(fc)fc.value=fmtN(COMP._custo);
+  compResumo(); closeComp();
+}
+function compResumo(){
+  const el=document.getElementById('compResumo'); const fc=document.getElementById('f_custo'); if(!el)return;
+  const lock=v=>{ if(fc){ fc.readOnly=v; fc.style.background=v?'var(--surf2)':''; fc.title=v?'Custo definido pela composição — edite pelo botão Compor':''; } };
+  if(_COMPOS&&(_COMPOS.mo||[]).length&&(_COMPOS.modo||'calc')==='calc'){ el.innerHTML='<b style="color:var(--green)">Receita definida</b> — '+_COMPOS.mo.length+' função(ões). O custo vem da composição.'; lock(true); }
+  else if(_COMPOS&&_COMPOS.modo==='manual'){ el.innerHTML='<b style="color:var(--amber)">Custo manual</b> — definido na composição.'; lock(true); }
+  else { el.textContent='Sem composição — informe o custo manualmente ao lado.'; lock(false); }
+}
+document.getElementById('compModal').addEventListener('click',e=>{ if(e.target.id==='compModal')closeComp(); });
 init();
 </script>
 </body>
