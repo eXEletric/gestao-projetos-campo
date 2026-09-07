@@ -750,8 +750,11 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
             <div id="phCanal"></div>
           </div>
         </div>
-        <!-- SOLUÇÃO + ESCOPO -->
+        <!-- OFERTA (tipo) + SOLUÇÃO + ESCOPO -->
         <div class="ph-sol">
+          <div class="ph-soltag">Oferta (tipo)</div>
+          <select class="in ph-soltxt" id="ofertaSel" onchange="setOferta(this.value)" style="cursor:pointer"></select>
+          <div class="noprint" style="font-size:12px;color:var(--pri);font-weight:800;margin:6px 0 12px;font-variant-numeric:tabular-nums">Código: <span id="codigoFull">—</span></div>
           <div class="ph-soltag">Solução<button class="fpick noprint" onclick="openHP('solucao')"><span class="material-symbols-rounded">list</span>cadastro</button></div>
           <input class="in ph-soltxt" data-m="solTitulo" placeholder="Solução…">
           <div class="ph-esc"><label>Escopo</label><input class="in" data-m="solDesc" placeholder="Descrição do escopo…"></div>
@@ -1012,6 +1015,7 @@ function pushOrc(){
     prazo_dias:parseInt(S.prazoDias)||null, validade:S.validadeISO||null, data_cotacao:S.dataISO||null, id_externo:S.idpipe||null,
     cliente_contratante:S.cliNome||null, cliente_contato:S.cliContato||null, cliente_fone:S.cliFone||null, cliente_email:S.cliEmail||null,
     cliente_final:S.finNome||null, cliente_endereco:S.finEnd||null,
+    oferta_id:S.ofertaId||null, oferta_seq:S.ofertaSeq||null,
     total:S._total||0, custo:S._custo||0, lucro:S._lucro||0, dados:S };
   if(S_LOTE_ID && !(S&&S._base)) p.herda_base=false;   // editou uma unidade de lote → deixa de ser "igual à base"
   if(ORC_ID){ SB.from('orcamentos').update(p).eq('id',ORC_ID).then(({error})=>{ if(error){console.error('orc up',error);cloudMsg('erro ao salvar');} }); }
@@ -1035,7 +1039,7 @@ async function initOrc(){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
       USER_ID=session.user.id;
       try{ const p=await SB.from('perfis').select('nome,email,telefone,colaborador_id').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; USER_TELEFONE=p.data[0].telefone||''; USER_COLAB_ID=p.data[0].colaborador_id||null; } }catch(_){}
-      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia(); await carregarDiariaBase();
+      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarOfertas(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia(); await carregarDiariaBase();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
       MANUAL = !!ORC_ID;   // já existia ao abrir → alterações exigem clicar Salvar; nova (ORC_ID null) → auto até nascer
       // vínculo: pega contratante/loja da OPORTUNIDADE (pra puxar dados ao vivo do CRM, mesmo em orçamentos antigos)
@@ -2984,6 +2988,36 @@ function dragDrop(e,blk){
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc();
 }
 
+/* ---------- OFERTA (tipo) + código da proposta (ORÇ-2026-0045-AEME-01) ---------- */
+let OFERTAS_LIST=[];
+async function carregarOfertas(){
+  try{ const {data,error}=await SB.from('orc_categorias').select('id,nome,sigla').eq('tipo','oferta').eq('ativo',true).is('deleted_at',null).order('ordem'); if(!error) OFERTAS_LIST=data||[]; }catch(e){ console.error('ofertas',e); }
+}
+function fillOfertaSel(){
+  const sel=document.getElementById('ofertaSel'); if(!sel)return;
+  let o='<option value="">— escolha a oferta —</option>';
+  (OFERTAS_LIST||[]).forEach(of=>{ o+=`<option value="${of.id}"${of.id===S.ofertaId?' selected':''}>${esc(of.nome)}${of.sigla?' ('+esc(of.sigla)+')':''}</option>`; });
+  sel.innerHTML=o; sel.value=S.ofertaId||'';
+}
+function updateCodigoFull(){
+  const el=document.getElementById('codigoFull'); if(!el)return;
+  let cod=S.numero||'—';
+  if(S.ofertaSigla){ cod+='-'+S.ofertaSigla; if(S.ofertaSeq) cod+='-'+String(S.ofertaSeq).padStart(2,'0'); }
+  el.textContent=cod;
+}
+async function setOferta(id){
+  const changed=(S.ofertaId||'')!==(id||'');
+  S.ofertaId=id||null;
+  const of=(OFERTAS_LIST||[]).find(o=>o.id===id);
+  S.ofertaSigla=of?of.sigla:null; S.ofertaNome=of?of.nome:null;
+  if(!id){ S.ofertaSeq=null; updateCodigoFull(); save(); return; }
+  if(changed || !S.ofertaSeq){
+    try{ const {data}=await SB.from('orcamentos').select('oferta_seq').eq('oferta_id',id).neq('id',ORC_ID||'00000000-0000-0000-0000-000000000000').is('deleted_at',null).order('oferta_seq',{ascending:false}).limit(1);
+      const mx=(data&&data[0]&&data[0].oferta_seq)||0; S.ofertaSeq=mx+1;
+    }catch(e){ console.error('oferta_seq',e); S.ofertaSeq=1; }
+  }
+  updateCodigoFull(); save();
+}
 /* campos meta (inputs data-m) e fechamento (data-f) */
 function bindFields(){
   document.querySelectorAll('[data-m]').forEach(el=>{
@@ -2996,6 +3030,7 @@ function bindFields(){
       if(k==='margemBase') BLKS.filter(b=>b.custo).forEach(renderBlk); // re-renderiza linhas que herdam
       recalc();};
   });
+  fillOfertaSel(); updateCodigoFull();
 }
 
 /* ---------- fechamento ---------- */
