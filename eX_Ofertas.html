@@ -157,12 +157,12 @@ function salvar(){
     const c=OFERTAS.find(x=>x.id===EDIT); if(!c){ closeEdit(); return; }
     c.nome=nome; c.sigla=sigla||null;
     SB.from('orc_categorias').update({nome,sigla:c.sigla}).eq('id',EDIT).then(({error})=>{ if(error)alert('Erro: '+error.message); });
+    render(); closeEdit();
   } else {
     const row={id:uid(),empresa_id:EMPRESA_ID,tipo:'oferta',nome,sigla:sigla||null,ordem:OFERTAS.length+1,ativo:true};
-    SB.from('orc_categorias').insert(row).then(({error})=>{ if(error){alert('Erro: '+error.message);return;} });
-    OFERTAS.push(row);
+    SB.from('orc_categorias').insert(row).then(({error})=>{ if(error){alert('Erro: '+error.message);return;} OFERTAS.push(row); render(); });
+    closeEdit();
   }
-  render(); closeEdit();
 }
 function del(id){
   const c=OFERTAS.find(x=>x.id===id); if(!c)return;
