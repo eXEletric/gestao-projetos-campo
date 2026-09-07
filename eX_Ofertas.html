@@ -95,6 +95,17 @@ function autoSigla(nome){
   const tk=(w,k)=>{w=w.replace(/[^A-Z0-9]/g,'');if(!w)return'';if(k<=1)return w[0]||'';let o=w[0];for(let i=1;i<w.length&&o.length<k;i++){if('AEIOU'.indexOf(w[i])<0)o+=w[i];}for(let i=1;i<w.length&&o.length<k;i++){if(o.length<k)o+=w[i];}return o.slice(0,k);};
   let s=''; for(let i=0;i<n;i++)s+=tk(words[i],alloc[i]); return s.slice(0,4);
 }
+// alerta de segurança: nome que PARECE serviço (tarefa), não oferta (linha ampla)
+const _SERVICO_VERBOS=['INSTALACAO','INSTALACOES','INSTALAR','MONTAGEM','MONTAR','ADEQUACAO','ADEQUACOES','ADEQUAR','LANCAMENTO','FORNECIMENTO','FORNECER','SUBSTITUICAO','SUBSTITUIR','TROCA','REPARO','REPARAR','FABRICACAO','FABRICAR','COMISSIONAMENTO','ATERRAMENTO','PROGRAMACAO','CONFIGURACAO','LIGACAO','CONECTORIZACAO','CRIMPAGEM'];
+function pareceServico(nome){
+  const norm=(nome||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().trim();
+  const first=(norm.split(/[^A-Z]+/)[0])||'';
+  return _SERVICO_VERBOS.indexOf(first)>=0 ? first : null;
+}
+function confirmaOferta(nome){
+  const sv=pareceServico(nome); if(!sv) return true;
+  return confirm('⚠️ "'+nome+'" parece um SERVIÇO (começa com "'+sv+'"), não uma oferta.\n\n• OFERTA = linha ampla da empresa (ex.: Automação — Mercados, Quadros & Painéis, Infraestrutura).\n• SERVIÇO = tarefa específica (Instalação, Montagem, Adequação…) → vai no cadastro de Serviços.\n\nCadastrar como oferta mesmo assim?');
+}
 async function init(){
   if(SB){ try{
     const {data:{session}}=await SB.auth.getSession();
@@ -126,6 +137,7 @@ function render(){
 function add(){
   if(!CLOUD){ alert('Entre com login pra cadastrar.'); return; }
   const inp=document.getElementById('nova'); const nome=(inp.value||'').trim(); if(!nome)return;
+  if(!confirmaOferta(nome))return;
   const sigla=autoSigla(nome);
   const row={id:uid(),empresa_id:EMPRESA_ID,tipo:'oferta',nome,sigla:sigla||null,ordem:OFERTAS.length+1,ativo:true};
   SB.from('orc_categorias').insert(row).then(({error})=>{
@@ -152,6 +164,7 @@ function openEdit(id){
 function closeEdit(){ document.getElementById('editModal').classList.remove('show'); EDIT=null; }
 function salvar(){
   const nome=(document.getElementById('e_nome').value||'').trim(); if(!nome){ alert('Informe o nome.'); return; }
+  if(!confirmaOferta(nome))return;
   let sigla=(document.getElementById('e_sigla').value||'').trim().toUpperCase().slice(0,4); if(!sigla) sigla=autoSigla(nome);
   if(EDIT){
     const c=OFERTAS.find(x=>x.id===EDIT); if(!c){ closeEdit(); return; }
