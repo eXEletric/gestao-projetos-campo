@@ -97,18 +97,26 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
     <span class="modtag" id="tag"><span class="material-symbols-rounded">list_alt</span>Catálogo</span>
     <span id="cloudb" style="font-size:11px;color:var(--tx3)"></span>
     <span class="spacer"></span>
-    <button class="btn" onclick="openCategs()"><span class="material-symbols-rounded">category</span>Categorias</button>
     <button class="btn btn-p" onclick="openItem()"><span class="material-symbols-rounded">add</span><span id="btnNovo">Novo</span></button>
   </div>
   <div class="sub" id="sub">Cadastro do catálogo de orçamento.</div>
   <div class="bar"><div class="search"><span class="material-symbols-rounded">search</span><input id="q" placeholder="Buscar…" oninput="render()"></div></div>
-  <div class="scroll"><table class="tbl"><thead><tr><th>Nome</th><th>Categoria</th><th>Und</th><th class="r">Custo</th><th class="r">Margem</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+  <div class="scroll"><table class="tbl"><thead><tr><th>Código</th><th>Nome</th><th>Categoria</th><th>Und</th><th class="r">Custo</th><th class="r">Margem</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
 </div>
 
 <div class="modal-bg" id="modal">
   <div class="modal">
     <div class="mh"><b id="mTitle">Item</b><button class="x" onclick="closeItem()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
+      <div class="frow" style="grid-template-columns:1fr 200px">
+        <div class="fg"><label class="fl">Categoria</label>
+          <div style="display:flex;gap:6px;align-items:stretch">
+            <select class="fi" id="f_categoria" onchange="onCategSel(this.value)" style="flex:1"></select>
+            <button type="button" title="Gerenciar categorias e siglas" onclick="openCategs()" style="flex:0 0 40px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center"><span class="material-symbols-rounded" style="font-size:19px">settings</span></button>
+          </div>
+        </div>
+        <div class="fg"><label class="fl">Código (automático)</label><input class="fi" id="f_codigo" readonly placeholder="escolha a categoria" style="background:var(--surf2);color:var(--tx2);font-variant-numeric:tabular-nums"></div>
+      </div>
       <div class="fg"><label class="fl">Nome</label><input class="fi" id="f_nome"></div>
       <div class="fg" id="fg_compos" style="display:none">
         <label class="fl">Composição de custo (o motor)</label>
@@ -125,7 +133,6 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
         <div class="fg"><label class="fl">Custo (R$)</label><input class="fi" id="f_custo" inputmode="decimal"></div>
         <div class="fg"><label class="fl">Margem %</label><input class="fi" id="f_margem" inputmode="decimal" placeholder="padrão"><div class="hint">vazio = margem base do orçamento</div></div>
       </div>
-      <div class="fg"><label class="fl">Categoria</label><select class="fi" id="f_categoria" onchange="onCategSel(this.value)"></select></div>
       <div class="fg"><label class="fl">Detalhes</label><textarea class="fi" id="f_detalhes" rows="3" placeholder="Descrição do serviço, o que está incluso…" style="resize:vertical"></textarea></div>
       <div class="fg" id="fg_marca" style="display:none"><label class="fl">Marca</label><input class="fi" id="f_marca"></div>
     </div>
@@ -141,7 +148,8 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
   <div class="modal">
     <div class="mh"><span class="material-symbols-rounded">category</span><b>Categorias de <span id="catgTipo">serviços</span></b><button class="x" onclick="closeCategs()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div style="display:flex;gap:8px;margin-bottom:14px"><input class="fi" id="catg_novo" placeholder="Nova categoria…" style="flex:1" onkeydown="if(event.key==='Enter')addCateg()"><button class="btn" style="background:var(--pri);color:#fff;border-color:var(--pri)" onclick="addCateg()"><span class="material-symbols-rounded">add</span>Adicionar</button></div>
+      <div style="display:flex;gap:8px;margin-bottom:6px"><input class="fi" id="catg_sigla" placeholder="SIGLA" maxlength="6" style="width:90px;text-transform:uppercase;text-align:center;font-weight:700"><input class="fi" id="catg_novo" placeholder="Nova categoria…" style="flex:1" onkeydown="if(event.key==='Enter')addCateg()"><button class="btn" style="background:var(--pri);color:#fff;border-color:var(--pri)" onclick="addCateg()"><span class="material-symbols-rounded">add</span>Adicionar</button></div>
+      <div class="hint" style="margin-bottom:12px">A <b>sigla</b> vira o prefixo do código dos serviços (ex.: <b>AUT</b> → AUT-0001).</div>
       <div id="catgList"></div>
     </div>
   </div>
@@ -200,7 +208,7 @@ const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
 const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
 let ITENS=[], EDIT=null, CLOUD=false, EMPRESA_ID=null, CATEGS=[], _prevCateg='';
-let MAOOBRA=[], _COMPOS=null;   // mão de obra (função×nível→R$/h) · composição do item aberto
+let MAOOBRA=[], _COMPOS=null, _CODSEQ=null;   // mão de obra · composição do item aberto · sequência do código em edição
 const uid=()=>(window.crypto&&crypto.randomUUID)?crypto.randomUUID():'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g,c=>{const r=Math.random()*16|0;return (c==='x'?r:(r&0x3|0x8)).toString(16);});
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 const num=v=>{if(typeof v==='number')return isNaN(v)?0:v;let s=String(v||'').trim();if(!s)return 0;if(s.indexOf(',')>-1)s=s.replace(/\./g,'').replace(',','.');const n=parseFloat(s);return isNaN(n)?0:n;};
@@ -237,9 +245,10 @@ function render(){
   const q=(document.getElementById('q').value||'').toLowerCase();
   const rows=ITENS.filter(it=>((it.nome||'')+' '+(it.categoria||'')+' '+(it.marca||'')).toLowerCase().includes(q));
   const el=document.getElementById('rows');
-  if(!CLOUD){ el.innerHTML='<tr><td colspan="6" class="empty">Entre com login pra ver e cadastrar o catálogo.</td></tr>'; return; }
-  if(!rows.length){ el.innerHTML='<tr><td colspan="6" class="empty">'+(ITENS.length?'Nada encontrado.':'Catálogo vazio — clique em “Novo”.')+'</td></tr>'; return; }
+  if(!CLOUD){ el.innerHTML='<tr><td colspan="7" class="empty">Entre com login pra ver e cadastrar o catálogo.</td></tr>'; return; }
+  if(!rows.length){ el.innerHTML='<tr><td colspan="7" class="empty">'+(ITENS.length?'Nada encontrado.':'Catálogo vazio — clique em “Novo”.')+'</td></tr>'; return; }
   el.innerHTML=rows.map(it=>`<tr data-id="${it.id}">
+    <td class="cat" style="font-variant-numeric:tabular-nums;font-weight:600;color:var(--pri)">${esc(it.codigo||'—')}</td>
     <td class="nm">${esc(it.nome)}${it.marca?' <span style="color:var(--tx3);font-weight:400">· '+esc(it.marca)+'</span>':''}</td>
     <td class="cat">${esc(it.categoria||'—')}</td>
     <td>${esc(it.unidade||'UND')}</td>
@@ -252,7 +261,7 @@ function render(){
   </tr>`).join('');
 }
 async function carregarCategs(){
-  try{ const {data,error}=await SB.from('orc_categorias').select('id,nome').eq('tipo',TIPO).eq('ativo',true).is('deleted_at',null).order('ordem'); if(!error) CATEGS=data||[]; }catch(e){ console.error(e); }
+  try{ const {data,error}=await SB.from('orc_categorias').select('id,nome,sigla').eq('tipo',TIPO).eq('ativo',true).is('deleted_at',null).order('ordem'); if(!error) CATEGS=data||[]; }catch(e){ console.error(e); }
 }
 function populaCategSelect(current){
   const sel=document.getElementById('f_categoria');
@@ -266,12 +275,24 @@ function onCategSel(val){
   if(val==='__new'){
     const nm=prompt('Nova categoria:');
     if(nm&&nm.trim()){ const nome=nm.trim();
-      SB.from('orc_categorias').insert({empresa_id:EMPRESA_ID,tipo:TIPO,nome,ordem:CATEGS.length+1}).select('id').then(({data,error})=>{
+      const sg=((prompt('Sigla da categoria (2–4 letras) — vira o prefixo do código, ex.: AUT:','')||'').trim().toUpperCase());
+      SB.from('orc_categorias').insert({empresa_id:EMPRESA_ID,tipo:TIPO,nome,sigla:sg||null,ordem:CATEGS.length+1}).select('id').then(({data,error})=>{
         if(error){ alert('Erro ao criar categoria: '+error.message); populaCategSelect(_prevCateg); return; }
-        CATEGS.push({id:data&&data[0]&&data[0].id,nome}); populaCategSelect(nome);
+        CATEGS.push({id:data&&data[0]&&data[0].id,nome,sigla:sg||null}); populaCategSelect(nome); _prevCateg=nome; gerarCodigo();
       });
     } else populaCategSelect(_prevCateg);
-  } else _prevCateg=val;
+  } else { _prevCateg=val; gerarCodigo(); }
+}
+function gerarCodigo(){
+  const fc=document.getElementById('f_codigo'); if(!fc)return;
+  if(EDIT){ const it=ITENS.find(x=>x.id===EDIT); if(it&&it.codigo){ fc.value=it.codigo; return; } }
+  const catNome=document.getElementById('f_categoria').value;
+  if(!catNome||catNome==='__new'){ fc.value=''; fc.placeholder='escolha a categoria'; return; }
+  const cat=CATEGS.find(c=>c.nome===catNome);
+  if(!cat||!cat.sigla){ fc.value=''; fc.placeholder='defina a sigla no ⚙'; return; }
+  let max=0; ITENS.forEach(it=>{ const m=String(it.codigo||'').match(/(\d+)\s*$/); if(m){ const n=parseInt(m[1],10); if(n>max)max=n; } });
+  if(_CODSEQ==null) _CODSEQ=max+1;
+  fc.value=cat.sigla+'-'+String(_CODSEQ).padStart(4,'0');
 }
 /* gerenciador de categorias */
 function openCategs(){
@@ -285,6 +306,7 @@ function renderCategMgr(){
   const el=document.getElementById('catgList');
   if(!CATEGS.length){ el.innerHTML='<div style="color:var(--tx3);padding:14px;text-align:center;font-size:13px">Nenhuma categoria. Adicione acima.</div>'; return; }
   el.innerHTML=CATEGS.map((c,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:8px 4px;border-bottom:1px solid var(--line)">
+    <input value="${esc(c.sigla||'')}" placeholder="SIGLA" maxlength="6" onchange="setSigla('${c.id}',this.value)" title="Sigla — prefixo do código" style="width:76px;text-transform:uppercase;text-align:center;font-weight:700;font-size:12px;border:1px solid var(--line2);border-radius:6px;padding:5px 4px;color:var(--pri);background:var(--surf)">
     <span style="flex:1;font-size:13px">${esc(c.nome)}</span>
     <button class="iconb" title="Subir" onclick="moveCateg('${c.id}',-1)" ${i===0?'disabled':''}><span class="material-symbols-rounded">arrow_upward</span></button>
     <button class="iconb" title="Descer" onclick="moveCateg('${c.id}',1)" ${i===CATEGS.length-1?'disabled':''}><span class="material-symbols-rounded">arrow_downward</span></button>
@@ -294,10 +316,15 @@ function renderCategMgr(){
 }
 function addCateg(){
   const inp=document.getElementById('catg_novo'); const nome=inp.value.trim(); if(!nome)return;
-  SB.from('orc_categorias').insert({empresa_id:EMPRESA_ID,tipo:TIPO,nome,ordem:CATEGS.length+1}).select('id').then(({data,error})=>{
+  const sinp=document.getElementById('catg_sigla'); const sg=(sinp?sinp.value:'').trim().toUpperCase();
+  SB.from('orc_categorias').insert({empresa_id:EMPRESA_ID,tipo:TIPO,nome,sigla:sg||null,ordem:CATEGS.length+1}).select('id').then(({data,error})=>{
     if(error){ alert('Erro: '+error.message); return; }
-    CATEGS.push({id:data&&data[0]&&data[0].id,nome}); inp.value=''; renderCategMgr();
+    CATEGS.push({id:data&&data[0]&&data[0].id,nome,sigla:sg||null}); inp.value=''; if(sinp)sinp.value=''; renderCategMgr();
   });
+}
+function setSigla(id,val){
+  const c=CATEGS.find(x=>x.id===id); if(!c)return; c.sigla=(val||'').trim().toUpperCase()||null;
+  SB.from('orc_categorias').update({sigla:c.sigla}).eq('id',id).then(({error})=>{ if(error)alert('Erro ao salvar sigla: '+error.message); });
 }
 function renameCateg(id){
   const c=CATEGS.find(x=>x.id===id); if(!c)return; const nm=prompt('Renomear categoria:',c.nome); if(!nm||!nm.trim())return; const nome=nm.trim();
@@ -331,15 +358,19 @@ function openItem(id){
   _COMPOS = it?(it.composicao||null):null;
   document.getElementById('fg_compos').style.display=(TIPO==='servico')?'block':'none';
   compResumo();
+  _CODSEQ=null;
+  document.getElementById('f_codigo').value = it?(it.codigo||''):'';
+  gerarCodigo();
   document.getElementById('mDel').style.display=id?'inline-flex':'none';
   document.getElementById('modal').classList.add('show');
   setTimeout(()=>document.getElementById('f_nome').focus(),40);
 }
-function closeItem(){ document.getElementById('modal').classList.remove('show'); EDIT=null; _COMPOS=null; }
+function closeItem(){ document.getElementById('modal').classList.remove('show'); EDIT=null; _COMPOS=null; _CODSEQ=null; }
 function saveItem(){
   const nome=document.getElementById('f_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
   const mv=document.getElementById('f_margem').value.trim();
   const row={ empresa_id:EMPRESA_ID, tipo:TIPO, nome,
+    codigo:(document.getElementById('f_codigo').value.trim()||null),
     unidade:document.getElementById('f_unidade').value.trim()||'UND',
     custo:num(document.getElementById('f_custo').value),
     margem:mv===''?null:num(mv),
