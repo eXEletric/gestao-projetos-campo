@@ -57,6 +57,8 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 /* ---- compositor de custo (motor: equipe × tempo) ---- */
 #compModal{z-index:70}
 #compModal .modal{width:600px}
+#catEditModal{z-index:90}
+#catEditModal .modal{width:420px}
 .cmpsec{font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin:2px 0 8px}
 .cmplbl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);margin-bottom:5px;display:block}
 .cmpsel{width:100%;padding:8px 10px;border:1px solid var(--line2);border-radius:7px;font-size:13px;background:var(--surf);color:var(--tx)}
@@ -108,17 +110,15 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
   <div class="modal">
     <div class="mh"><b id="mTitle">Item</b><button class="x" onclick="closeItem()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div class="frow" style="grid-template-columns:1fr 92px 148px">
+      <div class="frow" style="grid-template-columns:1fr 168px">
         <div class="fg"><label class="fl">Categoria</label>
           <div style="display:flex;gap:6px;align-items:stretch">
             <select class="fi" id="f_categoria" onchange="onCategSel(this.value)" style="flex:1"></select>
             <button type="button" title="Gerenciar categorias e siglas" onclick="openCategs()" style="flex:0 0 40px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center"><span class="material-symbols-rounded" style="font-size:19px">settings</span></button>
           </div>
         </div>
-        <div class="fg"><label class="fl">Sigla</label><input class="fi" id="f_sigla" maxlength="4" placeholder="—" style="text-transform:uppercase;text-align:center;font-weight:700;color:var(--pri)" oninput="onSiglaInput(this.value)" onchange="onSiglaSave()"></div>
-        <div class="fg"><label class="fl">Código</label><input class="fi" id="f_codigo" readonly placeholder="—" style="background:var(--surf2);color:var(--tx2);font-variant-numeric:tabular-nums;font-weight:600"></div>
+        <div class="fg"><label class="fl">Código (automático)</label><input class="fi" id="f_codigo" readonly placeholder="—" style="background:var(--surf2);color:var(--tx2);font-variant-numeric:tabular-nums;font-weight:600"></div>
       </div>
-      <div class="hint" id="siglaHint" style="margin:-6px 0 10px;display:none"></div>
       <div class="fg"><label class="fl">Nome</label><input class="fi" id="f_nome"></div>
       <div class="fg" id="fg_compos" style="display:none">
         <label class="fl">Composição de custo (o motor)</label>
@@ -150,10 +150,22 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
   <div class="modal">
     <div class="mh"><span class="material-symbols-rounded">category</span><b>Categorias de <span id="catgTipo">serviços</span></b><button class="x" onclick="closeCategs()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div style="display:flex;gap:8px;margin-bottom:6px"><input class="fi" id="catg_sigla" placeholder="SIGLA" maxlength="4" style="width:90px;text-transform:uppercase;text-align:center;font-weight:700" oninput="_siglaNovaManual=true"><input class="fi" id="catg_novo" placeholder="Nova categoria…" style="flex:1" oninput="sugereSiglaNova()" onkeydown="if(event.key==='Enter')addCateg()"><button class="btn" style="background:var(--pri);color:#fff;border-color:var(--pri)" onclick="addCateg()"><span class="material-symbols-rounded">add</span>Adicionar</button></div>
-      <div class="hint" style="margin-bottom:12px">A <b>sigla</b> entra no código dos serviços (ex.: <b>AUT</b> → 0001-AUT). Sugerida pelo nome; edite se quiser.</div>
+      <div style="display:flex;gap:8px;margin-bottom:6px"><input class="fi" id="catg_novo" placeholder="Nova categoria…" style="flex:1" onkeydown="if(event.key==='Enter')addCateg()"><button class="btn" style="background:var(--pri);color:#fff;border-color:var(--pri)" onclick="addCateg()"><span class="material-symbols-rounded">add</span>Adicionar</button></div>
+      <div class="hint" style="margin-bottom:12px">A <b>sigla</b> (prefixo do código, ex.: 0001-<b>AUT</b>) é gerada automaticamente. Edite pelo lápis de cada categoria.</div>
       <div id="catgList"></div>
     </div>
+  </div>
+</div>
+
+<!-- editar categoria (nome + sigla) -->
+<div class="modal-bg" id="catEditModal">
+  <div class="modal">
+    <div class="mh"><span class="material-symbols-rounded">category</span><b>Editar categoria</b><button class="x" onclick="closeCatEdit()"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="mb">
+      <div class="fg"><label class="fl">Nome da categoria</label><input class="fi" id="ce_nome"></div>
+      <div class="fg"><label class="fl">Sigla (prefixo do código)</label><input class="fi" id="ce_sigla" maxlength="4" style="width:130px;text-transform:uppercase;text-align:center;font-weight:700;color:var(--pri)"><div class="hint" id="ce_hint"></div></div>
+    </div>
+    <div class="mf"><button class="btn" onclick="closeCatEdit()">Cancelar</button><span class="spacer"></span><button class="btn btn-p" onclick="salvarCatEdit()"><span class="material-symbols-rounded">check</span>Salvar</button></div>
   </div>
 </div>
 
@@ -330,6 +342,34 @@ function gerarCodigo(){
   fc.value=String(_CODSEQ).padStart(4,'0')+'-'+cat.sigla;
 }
 /* gerenciador de categorias */
+let _catEdit=null;
+function openCatEdit(id){
+  const c=CATEGS.find(x=>x.id===id); if(!c)return; _catEdit=id;
+  document.getElementById('ce_nome').value=c.nome||'';
+  const sg=document.getElementById('ce_sigla'); sg.value=c.sigla||'';
+  const used=catUsada(c.nome);
+  sg.readOnly=used; sg.style.background=used?'var(--surf2)':'';
+  document.getElementById('ce_hint').innerHTML = used
+    ? '🔒 Sigla travada — já há serviço(s) nesta categoria (mudar bagunçaria os códigos já emitidos).'
+    : 'Até 4 letras — é o prefixo do código dos serviços desta categoria. Trava quando o 1º serviço for criado.';
+  document.getElementById('catEditModal').classList.add('show');
+  setTimeout(()=>document.getElementById('ce_nome').focus(),40);
+}
+function closeCatEdit(){ document.getElementById('catEditModal').classList.remove('show'); _catEdit=null; }
+function salvarCatEdit(){
+  const c=CATEGS.find(x=>x.id===_catEdit); if(!c){ closeCatEdit(); return; }
+  const nome=document.getElementById('ce_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
+  const used=catUsada(c.nome);
+  const novaSigla = used ? c.sigla : (document.getElementById('ce_sigla').value.trim().toUpperCase().slice(0,4) || autoSigla(nome));
+  const nomeAntigo=c.nome;
+  c.nome=nome; c.sigla=novaSigla;
+  SB.from('orc_categorias').update({nome,sigla:novaSigla}).eq('id',_catEdit).then(({error})=>{ if(error)alert('Erro ao salvar: '+error.message); });
+  if(nome!==nomeAntigo){ ITENS.forEach(it=>{ if(it.categoria===nomeAntigo){ it.categoria=nome; if(it.id) SB.from('orc_catalogo').update({categoria:nome}).eq('id',it.id).then(()=>{}); } }); }
+  renderCategMgr(); render();
+  const fc=document.getElementById('f_categoria'); if(fc){ const cur=(fc.value===nomeAntigo)?nome:fc.value; populaCategSelect(cur); refreshCodigoUI(); }
+  closeCatEdit();
+}
+document.getElementById('catEditModal').addEventListener('click',e=>{ if(e.target.id==='catEditModal')closeCatEdit(); });
 function openCategs(){
   if(!CLOUD){ alert('Entre com login pra gerenciar as categorias.'); return; }
   // preenche automaticamente as siglas que estiverem em branco (sugestão pelo nome)
@@ -343,14 +383,14 @@ function closeCategs(){ document.getElementById('categModal').classList.remove('
 function renderCategMgr(){
   const el=document.getElementById('catgList');
   if(!CATEGS.length){ el.innerHTML='<div style="color:var(--tx3);padding:14px;text-align:center;font-size:13px">Nenhuma categoria. Adicione acima.</div>'; return; }
-  el.innerHTML=CATEGS.map((c,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:8px 4px;border-bottom:1px solid var(--line)">
-    <input value="${esc(c.sigla||'')}" placeholder="SIGLA" maxlength="4" onchange="setSigla('${c.id}',this.value)" title="Sigla — prefixo do código" style="width:76px;text-transform:uppercase;text-align:center;font-weight:700;font-size:12px;border:1px solid var(--line2);border-radius:6px;padding:5px 4px;color:var(--pri);background:var(--surf)">
+  el.innerHTML=CATEGS.map((c,i)=>{ const used=catUsada(c.nome); return `<div style="display:flex;align-items:center;gap:6px;padding:8px 4px;border-bottom:1px solid var(--line)">
+    <span title="${used?'sigla travada — já há serviços':'sigla (prefixo do código)'}" style="width:80px;text-align:center;font-weight:700;font-size:12px;border:1px solid var(--line2);border-radius:6px;padding:5px 4px;color:var(--pri);background:var(--surf2)">${esc(c.sigla||'—')}${used?' 🔒':''}</span>
     <span style="flex:1;font-size:13px">${esc(c.nome)}</span>
     <button class="iconb" title="Subir" onclick="moveCateg('${c.id}',-1)" ${i===0?'disabled':''}><span class="material-symbols-rounded">arrow_upward</span></button>
     <button class="iconb" title="Descer" onclick="moveCateg('${c.id}',1)" ${i===CATEGS.length-1?'disabled':''}><span class="material-symbols-rounded">arrow_downward</span></button>
-    <button class="iconb" title="Renomear" onclick="renameCateg('${c.id}')"><span class="material-symbols-rounded">edit</span></button>
+    <button class="iconb" title="Editar (nome e sigla)" onclick="openCatEdit('${c.id}')"><span class="material-symbols-rounded">edit</span></button>
     <button class="iconb del" title="Excluir" onclick="delCateg('${c.id}')"><span class="material-symbols-rounded">delete</span></button>
-  </div>`).join('');
+  </div>`; }).join('');
 }
 let _siglaNovaManual=false;
 function sugereSiglaNova(){
