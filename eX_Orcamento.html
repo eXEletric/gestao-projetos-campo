@@ -1070,12 +1070,20 @@ async function initList(){
   }catch(e){ console.error(e); cloudMsg('erro nuvem'); } }
   document.getElementById('orcRows').innerHTML='<tr><td colspan="6" style="padding:26px;text-align:center;color:var(--tx3)">Entre com login pra ver os orçamentos salvos.</td></tr>';
 }
+let _LOTES=[];
 async function loadLotesList(){
-  try{ const {data}=await SB.from('orcamento_lotes').select('id,nome,status,base_oportunidade_id,created_at').is('deleted_at',null).order('created_at',{ascending:false});
-    const host=document.getElementById('lotesList'); if(!host)return; const rows=data||[];
-    if(!rows.length){ host.innerHTML=''; return; }
-    host.innerHTML=`<div style="margin:6px 0 14px"><div style="font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--tx3);margin:0 0 6px 2px">Lotes (mestra)</div>
-      <div style="display:flex;flex-wrap:wrap;gap:8px">${rows.map(l=>`<a href="eX_Orcamento.html?opp=${l.base_oportunidade_id||''}&lote=${l.id}" style="display:inline-flex;align-items:center;gap:7px;border:1px solid var(--pri-line,#ddd3f6);background:var(--pri-bg,#efeafc);color:var(--pri-d);border-radius:10px;padding:8px 12px;font:600 13px inherit;text-decoration:none"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">apartment</span>${esc(l.nome||'Lote')}</a>`).join('')}</div></div>`;
+  try{
+    const {data}=await SB.from('orcamento_lotes').select('id,nome,contratante_id,status,base_oportunidade_id,created_at').is('deleted_at',null).order('created_at',{ascending:false});
+    const lotes=data||[]; const tot={}, cnt={};
+    if(lotes.length){
+      const {data:ts}=await SB.from('orcamentos').select('lote_id,total').is('deleted_at',null).not('lote_id','is',null);
+      (ts||[]).forEach(o=>{ if(o.lote_id){ tot[o.lote_id]=(tot[o.lote_id]||0)+num(o.total); cnt[o.lote_id]=(cnt[o.lote_id]||0)+1; } });
+    }
+    let cnames={}; const cids=[...new Set(lotes.map(l=>l.contratante_id).filter(Boolean))];
+    if(cids.length){ try{ const {data:cs}=await SB.from('clientes').select('id,nome').in('id',cids); (cs||[]).forEach(c=>cnames[c.id]=c.nome); }catch(_){} }
+    _LOTES=lotes.map(l=>({id:l.id,nome:l.nome,status:l.status,base_oportunidade_id:l.base_oportunidade_id,created_at:l.created_at,total:tot[l.id]||0,unidades:cnt[l.id]||0,contratante:cnames[l.contratante_id]||''}));
+    const host=document.getElementById('lotesList'); if(host)host.innerHTML='';   // lotes agora entram como LINHA na tabela (renderList)
+    renderList();
   }catch(e){ console.error('lotes list',e); }
 }
 async function loadList(){
@@ -1085,10 +1093,24 @@ async function loadList(){
 }
 function renderList(){
   const qi=document.getElementById('orcQ'); const q=(qi?qi.value:'').toLowerCase();
-  const rows=_ORCS.filter(o=>((o.numero||'')+' '+(o.cliente_contratante||'')+' '+(o.cliente_final||'')+' '+(o.solucao||'')).toLowerCase().includes(q));
   const el=document.getElementById('orcRows'); if(!el)return;
-  if(!rows.length){ el.innerHTML='<tr><td colspan="6" style="padding:26px;text-align:center;color:var(--tx3)">'+(_ORCS.length?'Nada encontrado.':'Nenhum orçamento ainda — gere um a partir do funil.')+'</td></tr>'; return; }
-  el.innerHTML=rows.map(o=>{
+  // LOTES como LINHA (proposta normal por fora; só muda por dentro) — com selo LOTE
+  const lotes=(_LOTES||[]).filter(l=>((l.nome||'')+' '+(l.contratante||'')).toLowerCase().includes(q));
+  const loteRows=lotes.map(l=>{
+    const dt=l.created_at?l.created_at.slice(0,10).split('-').reverse().join('/'):'—';
+    const st=l.status||'rascunho';
+    const un=l.unidades?`<span style="color:var(--tx3);font-size:11px"> · ${l.unidades} unid.</span>`:`<span style="color:var(--amber);font-size:11px"> · sem unidades</span>`;
+    return `<tr data-opp onclick="location.href='eX_Orcamento.html?opp=${l.base_oportunidade_id||''}&lote=${l.id}'" style="background:var(--pri-bg,#f3f0fc)">
+      <td class="num"><span style="display:inline-flex;align-items:center;gap:4px;font-weight:800;color:var(--pri)"><span class="material-symbols-rounded" style="font-size:15px">apartment</span>LOTE</span></td>
+      <td class="cli">${esc(l.contratante||'—')}</td>
+      <td class="sol">${esc(l.nome||'Lote')}${un}</td>
+      <td class="dt">${dt}</td>
+      <td class="tot">${fmt(l.total||0)}</td>
+      <td><span class="stb ${st}">${esc(st)}</span></td>
+    </tr>`;
+  }).join('');
+  const rows=(_ORCS||[]).filter(o=>((o.numero||'')+' '+(o.cliente_contratante||'')+' '+(o.cliente_final||'')+' '+(o.solucao||'')).toLowerCase().includes(q));
+  const orcRows=rows.map(o=>{
     const dt=o.data_cotacao?o.data_cotacao.split('-').reverse().join('/'):(o.created_at?o.created_at.slice(0,10).split('-').reverse().join('/'):'—');
     const cli=[o.cliente_contratante,o.cliente_final].filter(Boolean).join(' · ')||'—';
     const st=o.status||'rascunho';
@@ -1102,6 +1124,8 @@ function renderList(){
       <td><span class="stb ${st}">${esc(st)}</span></td>
     </tr>`;
   }).join('');
+  if(!loteRows && !orcRows){ el.innerHTML='<tr><td colspan="6" style="padding:26px;text-align:center;color:var(--tx3)">'+((_ORCS&&_ORCS.length)||(_LOTES&&_LOTES.length)?'Nada encontrado.':'Nenhum orçamento ainda — gere um a partir do funil.')+'</td></tr>'; return; }
+  el.innerHTML=loteRows+orcRows;
 }
 let S=null;
 
