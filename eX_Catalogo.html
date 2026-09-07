@@ -150,7 +150,7 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
   <div class="modal">
     <div class="mh"><span class="material-symbols-rounded">category</span><b>Categorias de <span id="catgTipo">serviços</span></b><button class="x" onclick="closeCategs()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div style="display:flex;gap:8px;margin-bottom:6px"><input class="fi" id="catg_sigla" placeholder="SIGLA" maxlength="4" style="width:90px;text-transform:uppercase;text-align:center;font-weight:700"><input class="fi" id="catg_novo" placeholder="Nova categoria…" style="flex:1" onkeydown="if(event.key==='Enter')addCateg()"><button class="btn" style="background:var(--pri);color:#fff;border-color:var(--pri)" onclick="addCateg()"><span class="material-symbols-rounded">add</span>Adicionar</button></div>
+      <div style="display:flex;gap:8px;margin-bottom:6px"><input class="fi" id="catg_sigla" placeholder="SIGLA" maxlength="4" style="width:90px;text-transform:uppercase;text-align:center;font-weight:700" oninput="_siglaNovaManual=true"><input class="fi" id="catg_novo" placeholder="Nova categoria…" style="flex:1" oninput="sugereSiglaNova()" onkeydown="if(event.key==='Enter')addCateg()"><button class="btn" style="background:var(--pri);color:#fff;border-color:var(--pri)" onclick="addCateg()"><span class="material-symbols-rounded">add</span>Adicionar</button></div>
       <div class="hint" style="margin-bottom:12px">A <b>sigla</b> vira o prefixo do código dos serviços (ex.: <b>AUT</b> → AUT-0001).</div>
       <div id="catgList"></div>
     </div>
@@ -322,8 +322,11 @@ function gerarCodigo(){
 /* gerenciador de categorias */
 function openCategs(){
   if(!CLOUD){ alert('Entre com login pra gerenciar as categorias.'); return; }
+  // preenche automaticamente as siglas que estiverem em branco (sugestão pelo nome)
+  CATEGS.forEach(c=>{ if(!c.sigla){ const s=autoSigla(c.nome); if(s){ c.sigla=s; if(c.id) SB.from('orc_categorias').update({sigla:s}).eq('id',c.id).then(()=>{}); } } });
   document.getElementById('catgTipo').textContent=((LBL[TIPO]||LBL.servico)[0]).toLowerCase();
-  document.getElementById('catg_novo').value=''; renderCategMgr();
+  document.getElementById('catg_novo').value=''; const cs=document.getElementById('catg_sigla'); if(cs)cs.value=''; _siglaNovaManual=false;
+  renderCategMgr();
   document.getElementById('categModal').classList.add('show');
 }
 function closeCategs(){ document.getElementById('categModal').classList.remove('show'); const s=document.getElementById('f_categoria'); if(s)populaCategSelect(s.value); }
@@ -339,12 +342,18 @@ function renderCategMgr(){
     <button class="iconb del" title="Excluir" onclick="delCateg('${c.id}')"><span class="material-symbols-rounded">delete</span></button>
   </div>`).join('');
 }
+let _siglaNovaManual=false;
+function sugereSiglaNova(){
+  if(_siglaNovaManual)return;
+  const cs=document.getElementById('catg_sigla'); const nv=document.getElementById('catg_novo');
+  if(cs&&nv) cs.value=autoSigla(nv.value);
+}
 function addCateg(){
   const inp=document.getElementById('catg_novo'); const nome=inp.value.trim(); if(!nome)return;
-  const sinp=document.getElementById('catg_sigla'); const sg=(sinp?sinp.value:'').trim().toUpperCase().slice(0,4);
+  const sinp=document.getElementById('catg_sigla'); let sg=(sinp?sinp.value:'').trim().toUpperCase().slice(0,4); if(!sg) sg=autoSigla(nome);
   SB.from('orc_categorias').insert({empresa_id:EMPRESA_ID,tipo:TIPO,nome,sigla:sg||null,ordem:CATEGS.length+1}).select('id').then(({data,error})=>{
     if(error){ alert('Erro: '+error.message); return; }
-    CATEGS.push({id:data&&data[0]&&data[0].id,nome,sigla:sg||null}); inp.value=''; if(sinp)sinp.value=''; renderCategMgr();
+    CATEGS.push({id:data&&data[0]&&data[0].id,nome,sigla:sg||null}); inp.value=''; if(sinp)sinp.value=''; _siglaNovaManual=false; renderCategMgr();
   });
 }
 function setSigla(id,val){
