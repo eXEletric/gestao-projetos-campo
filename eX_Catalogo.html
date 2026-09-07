@@ -315,9 +315,9 @@ function gerarCodigo(){
   if(!catNome||catNome==='__new'){ fc.value=''; fc.placeholder='—'; return; }
   const cat=CATEGS.find(c=>c.nome===catNome);
   if(!cat||!cat.sigla){ fc.value=''; fc.placeholder='defina a sigla'; return; }
-  let max=0; ITENS.forEach(it=>{ const m=String(it.codigo||'').match(/(\d+)\s*$/); if(m){ const n=parseInt(m[1],10); if(n>max)max=n; } });
+  let max=0; ITENS.forEach(it=>{ const m=String(it.codigo||'').match(/\d+/); if(m){ const n=parseInt(m[0],10); if(n>max)max=n; } });
   if(_CODSEQ==null) _CODSEQ=max+1;
-  fc.value=cat.sigla+'-'+String(_CODSEQ).padStart(4,'0');
+  fc.value=String(_CODSEQ).padStart(4,'0')+'-'+cat.sigla;
 }
 /* gerenciador de categorias */
 function openCategs(){
