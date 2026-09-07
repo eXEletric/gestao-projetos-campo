@@ -108,15 +108,17 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
   <div class="modal">
     <div class="mh"><b id="mTitle">Item</b><button class="x" onclick="closeItem()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div class="frow" style="grid-template-columns:1fr 200px">
+      <div class="frow" style="grid-template-columns:1fr 92px 148px">
         <div class="fg"><label class="fl">Categoria</label>
           <div style="display:flex;gap:6px;align-items:stretch">
             <select class="fi" id="f_categoria" onchange="onCategSel(this.value)" style="flex:1"></select>
             <button type="button" title="Gerenciar categorias e siglas" onclick="openCategs()" style="flex:0 0 40px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);color:var(--tx2);cursor:pointer;display:flex;align-items:center;justify-content:center"><span class="material-symbols-rounded" style="font-size:19px">settings</span></button>
           </div>
         </div>
-        <div class="fg"><label class="fl">Código (automático)</label><input class="fi" id="f_codigo" readonly placeholder="escolha a categoria" style="background:var(--surf2);color:var(--tx2);font-variant-numeric:tabular-nums"></div>
+        <div class="fg"><label class="fl">Sigla</label><input class="fi" id="f_sigla" maxlength="4" placeholder="—" style="text-transform:uppercase;text-align:center;font-weight:700;color:var(--pri)" oninput="onSiglaInput(this.value)" onchange="onSiglaSave()"></div>
+        <div class="fg"><label class="fl">Código</label><input class="fi" id="f_codigo" readonly placeholder="—" style="background:var(--surf2);color:var(--tx2);font-variant-numeric:tabular-nums;font-weight:600"></div>
       </div>
+      <div class="hint" id="siglaHint" style="margin:-6px 0 10px;display:none"></div>
       <div class="fg"><label class="fl">Nome</label><input class="fi" id="f_nome"></div>
       <div class="fg" id="fg_compos" style="display:none">
         <label class="fl">Composição de custo (o motor)</label>
@@ -274,22 +276,45 @@ function populaCategSelect(current){
 function onCategSel(val){
   if(val==='__new'){
     const nm=prompt('Nova categoria:');
-    if(nm&&nm.trim()){ const nome=nm.trim();
-      const sg=((prompt('Sigla da categoria (até 4 letras) — vira o prefixo do código, ex.: AUT:','')||'').trim().toUpperCase().slice(0,4));
+    if(nm&&nm.trim()){ const nome=nm.trim(); const sg=autoSigla(nome);
       SB.from('orc_categorias').insert({empresa_id:EMPRESA_ID,tipo:TIPO,nome,sigla:sg||null,ordem:CATEGS.length+1}).select('id').then(({data,error})=>{
         if(error){ alert('Erro ao criar categoria: '+error.message); populaCategSelect(_prevCateg); return; }
-        CATEGS.push({id:data&&data[0]&&data[0].id,nome,sigla:sg||null}); populaCategSelect(nome); _prevCateg=nome; gerarCodigo();
+        CATEGS.push({id:data&&data[0]&&data[0].id,nome,sigla:sg||null}); populaCategSelect(nome); _prevCateg=nome; refreshCodigoUI();
       });
     } else populaCategSelect(_prevCateg);
-  } else { _prevCateg=val; gerarCodigo(); }
+  } else { _prevCateg=val; refreshCodigoUI(); }
+}
+// sigla automática = 4 primeiras letras do nome (sem acento); editável até existir serviço na categoria
+function autoSigla(nome){ return (nome||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z]/g,'').toUpperCase().slice(0,4); }
+function catUsada(nome){ return ITENS.some(it=> it.categoria===nome && it.codigo); }
+function refreshCodigoUI(){
+  const sf=document.getElementById('f_sigla'), hint=document.getElementById('siglaHint');
+  const catNome=document.getElementById('f_categoria').value;
+  const cat=CATEGS.find(c=>c.nome===catNome);
+  if(!cat){ if(sf){sf.value='';sf.readOnly=true;sf.style.background='var(--surf2)';} if(hint)hint.style.display='none'; gerarCodigo(); return; }
+  if(!cat.sigla){ cat.sigla=autoSigla(cat.nome); if(cat.id&&cat.sigla) SB.from('orc_categorias').update({sigla:cat.sigla}).eq('id',cat.id).then(()=>{}); }
+  const locked=catUsada(cat.nome);
+  if(sf){ sf.value=cat.sigla||''; sf.readOnly=locked; sf.style.background=locked?'var(--surf2)':''; }
+  if(hint){ hint.style.display='block'; hint.innerHTML = locked
+    ? '🔒 Sigla travada — já há serviço(s) nesta categoria (mudar bagunçaria os códigos antigos).'
+    : 'Sigla sugerida pelo nome (até 4 letras) — pode editar. Trava quando o 1º serviço for salvo.'; }
+  gerarCodigo();
+}
+function onSiglaInput(val){
+  const cat=CATEGS.find(c=>c.nome===document.getElementById('f_categoria').value); if(!cat)return;
+  cat.sigla=(val||'').trim().toUpperCase().slice(0,4)||null; gerarCodigo();
+}
+function onSiglaSave(){
+  const cat=CATEGS.find(c=>c.nome===document.getElementById('f_categoria').value); if(!cat||!cat.id)return;
+  SB.from('orc_categorias').update({sigla:cat.sigla}).eq('id',cat.id).then(({error})=>{ if(error)console.error('sigla',error); });
 }
 function gerarCodigo(){
   const fc=document.getElementById('f_codigo'); if(!fc)return;
   if(EDIT){ const it=ITENS.find(x=>x.id===EDIT); if(it&&it.codigo){ fc.value=it.codigo; return; } }
   const catNome=document.getElementById('f_categoria').value;
-  if(!catNome||catNome==='__new'){ fc.value=''; fc.placeholder='escolha a categoria'; return; }
+  if(!catNome||catNome==='__new'){ fc.value=''; fc.placeholder='—'; return; }
   const cat=CATEGS.find(c=>c.nome===catNome);
-  if(!cat||!cat.sigla){ fc.value=''; fc.placeholder='defina a sigla no ⚙'; return; }
+  if(!cat||!cat.sigla){ fc.value=''; fc.placeholder='defina a sigla'; return; }
   let max=0; ITENS.forEach(it=>{ const m=String(it.codigo||'').match(/(\d+)\s*$/); if(m){ const n=parseInt(m[1],10); if(n>max)max=n; } });
   if(_CODSEQ==null) _CODSEQ=max+1;
   fc.value=cat.sigla+'-'+String(_CODSEQ).padStart(4,'0');
