@@ -74,7 +74,8 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
   <div class="modal">
     <div class="mh"><b id="mTitle">Editar oferta</b><button class="x" onclick="closeEdit()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
-      <div class="fg"><label class="fl">Nome da oferta</label><input class="fi" id="e_nome"></div>
+      <div class="fg"><label class="fl">Nome da oferta</label><input class="fi" id="e_nome" oninput="checkEditNome()"></div>
+      <div class="warn" id="e_warn" style="display:none"><span class="material-symbols-rounded">warning</span><span class="wtxt"></span></div>
       <div class="fg"><label class="fl">Sigla (prefixo do código)</label><input class="fi" id="e_sigla" maxlength="4" style="width:130px;text-transform:uppercase;text-align:center;font-weight:700;color:var(--pri)"><div class="hint" id="e_hint" style="margin:6px 0 0">Até 4 letras — vira o prefixo do código da proposta (0001-SIGLA).</div></div>
     </div>
     <div class="mf"><button class="btn" onclick="closeEdit()">Cancelar</button><span class="spacer"></span><button class="btn btn-p" onclick="salvar()"><span class="material-symbols-rounded">check</span>Salvar</button></div>
@@ -113,9 +114,11 @@ function checkOfertaNome(){
   if(sv){ inp.classList.add('warnb'); w.style.display='flex'; w.querySelector('.wtxt').innerHTML='Isto parece um <b>serviço</b> (começa com "'+sv+'"), não uma <b>oferta</b>. Oferta = linha ampla (ex.: Automação — Mercados); serviços vão no cadastro de Serviços. Você ainda pode adicionar, se for exceção.'; }
   else { inp.classList.remove('warnb'); w.style.display='none'; }
 }
-function confirmaOferta(nome){
-  const sv=pareceServico(nome); if(!sv) return true;
-  return confirm('⚠️ "'+nome+'" parece um SERVIÇO (começa com "'+sv+'"), não uma oferta.\n\n• OFERTA = linha ampla da empresa (ex.: Automação — Mercados, Quadros & Painéis, Infraestrutura).\n• SERVIÇO = tarefa específica (Instalação, Montagem, Adequação…) → vai no cadastro de Serviços.\n\nCadastrar como oferta mesmo assim?');
+function checkEditNome(){
+  const inp=document.getElementById('e_nome'), w=document.getElementById('e_warn'); if(!inp||!w)return;
+  const sv=pareceServico(inp.value);
+  if(sv){ inp.classList.add('warnb'); w.style.display='flex'; w.querySelector('.wtxt').innerHTML='Isto parece um <b>serviço</b> (começa com "'+sv+'"), não uma <b>oferta</b>. Serviços vão no cadastro de Serviços. Você ainda pode salvar, se for exceção.'; }
+  else { inp.classList.remove('warnb'); w.style.display='none'; }
 }
 async function init(){
   if(SB){ try{
@@ -148,7 +151,6 @@ function render(){
 function add(){
   if(!CLOUD){ alert('Entre com login pra cadastrar.'); return; }
   const inp=document.getElementById('nova'); const nome=(inp.value||'').trim(); if(!nome)return;
-  if(!confirmaOferta(nome))return;
   const sigla=autoSigla(nome);
   const row={id:uid(),empresa_id:EMPRESA_ID,tipo:'oferta',nome,sigla:sigla||null,ordem:OFERTAS.length+1,ativo:true};
   SB.from('orc_categorias').insert(row).then(({error})=>{
@@ -169,13 +171,13 @@ function openEdit(id){
   document.getElementById('mTitle').textContent=id?'Editar oferta':'Nova oferta';
   document.getElementById('e_nome').value=c?c.nome||'':'';
   document.getElementById('e_sigla').value=c?c.sigla||'':'';
+  checkEditNome();
   document.getElementById('editModal').classList.add('show');
   setTimeout(()=>document.getElementById('e_nome').focus(),40);
 }
 function closeEdit(){ document.getElementById('editModal').classList.remove('show'); EDIT=null; }
 function salvar(){
   const nome=(document.getElementById('e_nome').value||'').trim(); if(!nome){ alert('Informe o nome.'); return; }
-  if(!confirmaOferta(nome))return;
   let sigla=(document.getElementById('e_sigla').value||'').trim().toUpperCase().slice(0,4); if(!sigla) sigla=autoSigla(nome);
   if(EDIT){
     const c=OFERTAS.find(x=>x.id===EDIT); if(!c){ closeEdit(); return; }
