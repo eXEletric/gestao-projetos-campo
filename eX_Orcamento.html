@@ -650,6 +650,22 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
 .grouped-print .gp-l{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);font-weight:700}
 .grouped-print .gp-v{font-size:19px;font-weight:800;color:var(--tx);margin-top:2px}
 .grouped-print .gp-n{font-size:11px;color:var(--tx3);font-style:italic;margin-top:3px}
+/* diárias como linhas de despesa (derivadas, só leitura) + bloco de equipe (cliente/impressão) */
+.diaderv .svcnm{font-weight:600}
+.diaderv .bs-dia{font-size:10.5px;color:var(--tx3);margin-top:2px}
+.diaderv .idx .gg{color:var(--pri)}
+.clientonly{display:none}
+@media print{.clientonly{display:block!important}}
+body.viewing .clientonly{display:block!important}
+.eqprint{border:1px solid var(--line);border-radius:11px;padding:12px 14px;margin:2px 0 14px}
+.eqprint .eqhd{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:800;color:var(--tx)}
+.eqprint .eqhd .material-symbols-rounded{color:var(--pri);font-size:20px}
+.eqprint .eqcnt{margin-left:auto;font-size:11.5px;font-weight:700;color:var(--pri);background:var(--pri-bg);border-radius:20px;padding:2px 10px}
+.eqprint .eqsub{font-size:11px;color:var(--tx3);margin:2px 0 9px}
+.eqprint .eqtbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.eqprint .eqtbl th{font-size:9.5px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:700;text-align:left;padding:0 8px 6px}
+.eqprint .eqtbl th.r,.eqprint .eqtbl td.r{text-align:right;font-variant-numeric:tabular-nums}
+.eqprint .eqtbl td{padding:7px 8px;border-top:1px solid var(--line)}
 /* ===== CABEÇALHO DA PROPOSTA — cartão dividido (Opção B) ===== */
 .prophead{padding:0;overflow:hidden}
 .ph-grid{display:grid;grid-template-columns:1.3fr 1fr}
@@ -808,8 +824,8 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
           <div class="ln" id="ln_desc"><span class="lbl">Desconto <input class="pin" style="width:52px" data-f="descontoPct" inputmode="decimal">%</span><span class="val" id="s_desc">—</span></div>
           <div class="ln" id="ln_imp"><span class="lbl">Impostos <input class="pin" style="width:52px" data-f="impostoPct" inputmode="decimal">%</span><span class="val" id="s_imp">—</span></div>
           <div class="ln tt"><span class="lbl">Total</span><span class="val" id="s_total">R$ 0,00</span></div>
-          <div class="ln combo" id="ln_combo"><span class="lbl"><span class="material-symbols-rounded">handshake</span>Valor combinado</span><span class="val"><span style="color:var(--tx3);font-size:12px">R$</span> <input class="pin" id="in_combo" style="width:84px;text-align:right" inputmode="decimal" placeholder="—" onchange="setValorCombinado(this.value)"><button id="combo_clear" class="combo-x" onclick="clearCombo()" title="soltar — voltar às margens das abas" style="display:none"><span class="material-symbols-rounded">close</span></button></span></div>
-          <div class="combo-note" id="combo_note" style="display:none"></div>
+          <div class="ln combo noprint" id="ln_combo"><span class="lbl"><span class="material-symbols-rounded">handshake</span>Valor combinado</span><span class="val"><span style="color:var(--tx3);font-size:12px">R$</span> <input class="pin" id="in_combo" style="width:84px;text-align:right" inputmode="decimal" placeholder="—" onchange="setValorCombinado(this.value)"><button id="combo_clear" class="combo-x" onclick="clearCombo()" title="soltar — voltar às margens das abas" style="display:none"><span class="material-symbols-rounded">close</span></button></span></div>
+          <div class="combo-note noprint" id="combo_note" style="display:none"></div>
 
           <!-- VISÃO INTERNA -->
           <div class="intbox">
@@ -1276,6 +1292,39 @@ function diaValOn(){ return (diaOn('alim')?diaValKey('alim'):0)+(diaOn('hosp')?d
 function fnPessoaDias(f){ return diariasModo()==='fim' ? num(f.pes)*obraPrazo() : num(f.pes)*num(f.dias); } // pessoa-dias da função
 // custo das diárias da equipe (alimentação + hospedagem, por pessoa/dia) — gated pelas chaves
 function diariasCusto(){ return diaValOn()*obraPessoaDias(); }
+// diárias viram LINHAS DE DESPESA: qtd = nº de pessoas (UND); as diárias entram no valor unitário (sem "sensação de dias a mais")
+function diariasLinhas(){
+  const pes=aggMaoObra().reduce((a,f)=>a+num(f.pes),0), pd=obraPessoaDias();
+  const out=[]; if(pes<=0||pd<=0) return out;
+  const ppd=pd/pes;   // diárias por pessoa (= prazo, no modo "até o fim")
+  if(diaOn('alim')){ const u=diaValKey('alim'); if(u>0) out.push({key:'alim',ic:'restaurant',nome:'Alimentação da equipe',pes,dia:u,ppd,unit:u*ppd,total:u*pd}); }
+  if(diaOn('hosp')){ const u=diaValKey('hosp'); if(u>0) out.push({key:'hosp',ic:'hotel',nome:'Hospedagem e estadia',pes,dia:u,ppd,unit:u*ppd,total:u*pd}); }
+  return out;   // Σ total = diariasCusto()
+}
+function diariasRowsHtml(){   // <tr> derivadas dentro da tabela de Despesas (11 colunas, alinha com o print)
+  return diariasLinhas().map(d=>`<tr class="diaderv">
+    <td class="idx"><span class="material-symbols-rounded gg">${d.ic}</span></td>
+    <td class="svc"><div class="svcnm">${esc(d.nome)}</div><div class="bs-dia">${d.pes} colaborador${d.pes!=1?'es':''} · ${_d1(d.ppd)} diárias × ${fmt(d.dia)}/dia (no valor unitário)</div></td>
+    <td class="pint"></td><td class="r money pint"></td>
+    <td class="r">${d.pes}</td><td>UND</td>
+    <td class="r pint"></td><td class="r money pint"></td>
+    <td class="r money unit">${fmt(d.unit)}</td>
+    <td class="r money preco"><b>${fmt(d.total)}</b></td>
+    <td class="pint"></td>
+  </tr>`).join('');
+}
+function equipePrintHtml(){   // bloco "Equipe em campo" (só cliente/impressão) — quem e quantos, sem valor
+  const fs=aggMaoObra(); if(!fs.length) return '';
+  const pes=fs.reduce((a,f)=>a+num(f.pes),0);
+  const rows=fs.map(f=>`<tr><td>${esc(f.funcao)} · ${esc(f.nivel)}</td><td class="r">${f.pes}</td><td class="r">${fmtPrazo(diariasModo()==='fim'?obraPrazo():f.dias)}</td></tr>`).join('');
+  return `<div class="eqprint">
+    <div class="eqhd"><span class="material-symbols-rounded">groups</span>Equipe em campo<span class="eqcnt">${pes} colaborador${pes!=1?'es':''}</span></div>
+    <div class="eqsub">Mão de obra técnica já inclusa no valor dos Serviços.</div>
+    <table class="eqtbl"><thead><tr><th>Profissional</th><th class="r">Colaboradores</th><th class="r">Diárias</th></tr></thead><tbody>${rows}</tbody></table>
+  </div>`;
+}
+// subtotal exibido do bloco (o chip): Despesas inclui as diárias de campo
+function blkSubDisp(blk){ return blkSub(blk) + (blk==='despesas'?diariasCusto():0); }
 const qtyOf=r=> (r.gatilho&&r.gatilho!=='fixo') ? despMult(r) : (isTotal(r)?1:num(r.qtd));
 // MARGEM MANDA: o preço é SEMPRE custo × margem (acabou o "valor geral" que zerava). "Só o total" = só apresentação.
 function linePreco(r){
@@ -1583,6 +1632,7 @@ function renderBlk(cfg){
       </tr>`;
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${(cfg.mat?12:11)+(cfg.key==='servicos'?1:0)}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
+    if(cfg.key==='despesas' && !soT) body += diariasRowsHtml();   // alimentação + hospedagem como linhas de despesa (derivadas)
     if(soT){ foot=`<tfoot><tr class="ftot"><td class="ftl" colspan="${(cfg.mat?10:9)+(cfg.key==='servicos'?1:0)}">Total do bloco (agrupado)</td><td class="r money"><b>${fmt(blkSub(cfg.key))}</b></td><td colspan="1"></td></tr></tfoot>`; }
   }
   const obsTxt=(S.obs&&S.obs[cfg.key])||'';
@@ -1603,12 +1653,12 @@ function renderBlk(cfg){
         <button class="chip ${soT?'on':''}" onclick="toggleSoTotal('${cfg.key}')" title="Na proposta do cliente: agrupar os itens num total só (esconde item a item). Não muda o cálculo."><span class="material-symbols-rounded">${soT?'visibility_off':'format_list_bulleted'}</span>${soT?'Só o total':'Detalhado'}</button>
       </div>
       ${blkMargemCtrl(cfg)}
-      <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(sub)}</b></span>
+      <span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(blkSubDisp(cfg.key))}</b></span>
     </div>
     ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: a edição é igual (você vê e ajusta cada item), mas na <b>impressão / envio da proposta</b> os itens saem como <b>“incluso”</b> e o valor aparece só no <b>total agrupado</b> do bloco — não item por item.</span></div>`:''}
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button></div>
-    ${cfg.key==='servicos'?('<div id="svcTopPanels"><div id="fatoresPanel">'+fatoresObraHtml()+'</div><div id="maoObraPanel">'+efetivoHtml()+'</div></div>'):''}
+    ${cfg.key==='servicos'?('<div id="svcTopPanels"><div id="fatoresPanel">'+fatoresObraHtml()+'</div><div id="maoObraPanel">'+efetivoHtml()+'</div></div><div class="clientonly" id="equipePrint">'+equipePrintHtml()+'</div>'):''}
     ${obsHtml}`;
 }
 
@@ -1894,13 +1944,13 @@ function updBloco(blk,val){
   S.blocoTotal[blk]=val;
   (S.blocoEdited||(S.blocoEdited={}))[blk]=true;   // usuário digitou um total à mão → sobrescreve a soma dos itens
   const st=document.getElementById('st_'+blk);
-  if(st) st.innerHTML='Subtotal <b>'+fmt(blkSub(blk))+'</b>';
+  if(st) st.innerHTML='Subtotal <b>'+fmt(blkSubDisp(blk))+'</b>';
   recalc(); save();
 }
 
 /* ---------- edição ---------- */
 // atualiza SÓ o painel de mão de obra + os TOTAIS das diárias (não recria os inputs de diária → não apaga o que você digita)
-function refreshMaoPanel(){ const m=document.getElementById('maoObraPanel'); if(m) m.innerHTML=efetivoHtml(); }
+function refreshMaoPanel(){ const m=document.getElementById('maoObraPanel'); if(m) m.innerHTML=efetivoHtml(); const e=document.getElementById('equipePrint'); if(e) e.innerHTML=equipePrintHtml(); }
 function upd(blk,id,field,val){
   const r=S[blk].find(x=>x.id===id); if(!r)return;
   r[field]=val;
@@ -3141,8 +3191,8 @@ function recalc(){
   const marg=liquido?lucro/liquido*100:0;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   set('s_serv',fmt(preco.servicos)); set('s_equip',fmt(preco.equip));
-  set('s_desp',fmt(preco.despesas)); set('s_mat',fmt(preco.materiais));
-  set('s_diarias',fmt(diaP)); const lndia=document.getElementById('ln_diarias'); if(lndia) lndia.style.display=(diaC>0?'':'none');
+  set('s_desp',fmt(preco.despesas+diaP)); set('s_mat',fmt(preco.materiais));   // Despesas já inclui alimentação + hospedagem
+  set('s_diarias',fmt(diaP)); const lndia=document.getElementById('ln_diarias'); if(lndia) lndia.style.display='none';   // linha própria removida — vai dentro de Despesas
   set('s_bruto',fmt(bruto)); set('s_desc','− '+fmt(desc));
   set('s_total',fmt(total)); set('s_preco',fmt(total));
   set('s_imp','+ '+fmt(imp)); set('s_custo',fmt(custo));
