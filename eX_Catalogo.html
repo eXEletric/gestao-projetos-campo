@@ -331,7 +331,7 @@ function gerarCodServ(){
   if(!cat||!cat.sigla){ fc.value=''; fc.placeholder='defina a sigla (⚙)'; return; }
   let max=0; ITENS.forEach(it=>{ const m=String(it.codigo||'').match(/(\d+)\s*$/); if(m){ const n=parseInt(m[1],10); if(n>max)max=n; } });
   if(_CODSEQ==null) _CODSEQ=max+1;
-  fc.value=cat.sigla+'-'+String(_CODSEQ).padStart(4,'0');
+  fc.value=cat.sigla+'-'+String(_CODSEQ).padStart(2,'0');
 }
 /* gerenciador de categorias */
 let _catEdit=null;
