@@ -768,7 +768,7 @@ body.viewing .clientonly{display:block!important}
           <div class="ph-right">
             <div class="ph-rt">Proposta comercial</div>
             <div class="ph-kv2">
-              <label>Nº</label><input class="in mono ph-num" data-m="numero">
+              <label>Nº</label><input class="in mono ph-num" id="numeroFull" readonly title="Número da proposta — gerado automaticamente" style="pointer-events:none;cursor:default">
               <label>Emissão</label><input class="in" type="date" data-m="dataISO">
               <label>Validade <span class="valwarn noprint" id="valWarn"></span></label><input class="in" type="date" data-m="validadeISO" onchange="checkValidade()">
               <label class="noprint">Ref. externa</label><input class="in mono noprint" data-m="idpipe" placeholder="—">
@@ -1138,11 +1138,11 @@ function renderList(){
   const el=document.getElementById('orcRows'); if(!el)return;
   // LOTES como LINHA (proposta normal por fora; só muda por dentro) — com selo LOTE
   const lotes=(_LOTES||[]).filter(l=>((l.nome||'')+' '+(l.contratante||'')).toLowerCase().includes(q));
-  const loteRows=lotes.map(l=>{
+  const loteItems=lotes.map(l=>{
     const dt=l.created_at?l.created_at.slice(0,10).split('-').reverse().join('/'):'—';
     const st=l.status||'rascunho';
     const un=l.unidades?`<span style="color:var(--tx3);font-size:11px"> · ${l.unidades} unid.</span>`:`<span style="color:var(--amber);font-size:11px"> · sem unidades</span>`;
-    return `<tr data-opp onclick="location.href='eX_Orcamento.html?opp=${l.base_oportunidade_id||''}&lote=${l.id}'" style="background:var(--pri-bg,#f3f0fc)">
+    const html=`<tr data-opp onclick="location.href='eX_Orcamento.html?opp=${l.base_oportunidade_id||''}&lote=${l.id}'" style="background:var(--pri-bg,#f3f0fc)">
       <td class="num"><span style="font-variant-numeric:tabular-nums">${esc(l.codigo||'—')}</span> <span style="display:inline-flex;align-items:center;gap:2px;font-size:9px;font-weight:800;color:var(--pri);background:var(--pri-bg,#eeedfe);border-radius:10px;padding:1px 6px"><span class="material-symbols-rounded" style="font-size:11px">apartment</span>LOTE</span></td>
       <td class="cli">${esc(l.contratante||'—')}</td>
       <td class="sol">${esc(l.nome||'Lote')}${un}</td>
@@ -1150,14 +1150,15 @@ function renderList(){
       <td class="tot">${fmt(l.total||0)}</td>
       <td><span class="stb ${st}">${esc(st)}</span></td>
     </tr>`;
-  }).join('');
+    return {sort:(l.codigo||l.created_at||''), html};
+  });
   const rows=(_ORCS||[]).filter(o=>((o.numero||'')+' '+(o.cliente_contratante||'')+' '+(o.cliente_final||'')+' '+(o.solucao||'')).toLowerCase().includes(q));
-  const orcRows=rows.map(o=>{
+  const orcItems=rows.map(o=>{
     const dt=o.data_cotacao?o.data_cotacao.split('-').reverse().join('/'):(o.created_at?o.created_at.slice(0,10).split('-').reverse().join('/'):'—');
     const cli=[o.cliente_contratante,o.cliente_final].filter(Boolean).join(' · ')||'—';
     const st=o.status||'rascunho';
     const open=o.oportunidade_id?`onclick="location.href='eX_Orcamento.html?opp=${o.oportunidade_id}'"`:'';
-    return `<tr data-opp ${open}>
+    const html=`<tr data-opp ${open}>
       <td class="num">${esc(o.numero||'—')}</td>
       <td class="cli">${esc(cli)}</td>
       <td class="sol">${esc(o.solucao||'—')}</td>
@@ -1165,9 +1166,12 @@ function renderList(){
       <td class="tot">${fmt(o.total||0)}</td>
       <td><span class="stb ${st}">${esc(st)}</span></td>
     </tr>`;
-  }).join('');
-  if(!loteRows && !orcRows){ el.innerHTML='<tr><td colspan="6" style="padding:26px;text-align:center;color:var(--tx3)">'+((_ORCS&&_ORCS.length)||(_LOTES&&_LOTES.length)?'Nada encontrado.':'Nenhum orçamento ainda — gere um a partir do funil.')+'</td></tr>'; return; }
-  el.innerHTML=loteRows+orcRows;
+    return {sort:(o.numero||o.created_at||''), html};
+  });
+  // ordem NATURAL: lotes e orçamentos juntos, por número (decrescente) — o lote não fica mais fixo no topo
+  const items=[...loteItems,...orcItems].sort((a,b)=>String(b.sort).localeCompare(String(a.sort),'pt',{numeric:true}));
+  if(!items.length){ el.innerHTML='<tr><td colspan="6" style="padding:26px;text-align:center;color:var(--tx3)">'+((_ORCS&&_ORCS.length)||(_LOTES&&_LOTES.length)?'Nada encontrado.':'Nenhum orçamento ainda — gere um a partir do funil.')+'</td></tr>'; return; }
+  el.innerHTML=items.map(i=>i.html).join('');
 }
 let S=null;
 
@@ -1195,8 +1199,9 @@ function undSelect(blk,id,val,r){
   // UND atrelada ao CADASTRO: item do catálogo (catId) mostra a unidade só-leitura; avulso (sem cadastro) é editável
   if(r && r.catId) return `<span class="und-fix" title="unidade definida no cadastro do serviço">${esc(cur||'—')}</span>`;
   const opts=UNIDADES.slice(); if(cur && opts.indexOf(cur)<0) opts.unshift(cur);
-  return `<select class="cin un" onchange="upd('${blk}','${id}','und',this.value)">`
-    + opts.map(u=>`<option value="${esc(u)}"${u===cur?' selected':''}>${esc(u)}</option>`).join('') + `</select>`;
+  return `<select class="cin un noprint" onchange="upd('${blk}','${id}','und',this.value)">`
+    + opts.map(u=>`<option value="${esc(u)}"${u===cur?' selected':''}>${esc(u)}</option>`).join('') + `</select>`
+    + `<span class="und-fix clientonly">${esc(cur||'—')}</span>`;   // na proposta/impressão vira box (igual aos do catálogo)
 }
 function fillUnd(sel,val){ if(!sel)return; const cur=String(val||'').trim(); const opts=UNIDADES.slice(); if(cur && opts.indexOf(cur)<0) opts.unshift(cur);
   sel.innerHTML=opts.map(u=>`<option value="${esc(u)}"${u===cur?' selected':''}>${esc(u)}</option>`).join(''); sel.value=cur||opts[0]; }
@@ -1306,7 +1311,7 @@ function diariasRowsHtml(){   // <tr> derivadas dentro da tabela de Despesas (11
     <td class="idx dgrab"><span class="material-symbols-rounded gg">${d.ic}</span></td>
     <td class="svc"><div class="svcnm">${esc(d.nome)}</div><div class="bs-dia">${d.pes} colaborador${d.pes!=1?'es':''} · ${_d1(d.ppd)} diárias × ${fmt(d.dia)}/dia (no valor unitário)</div></td>
     <td class="pint"></td><td class="r money pint"></td>
-    <td class="r">${d.pes}</td><td>UND</td>
+    <td class="r">${d.pes}</td><td><span class="und-fix">UND</span></td>
     <td class="r pint"></td><td class="r money pint"></td>
     <td class="r money unit">${fmt(d.unit)}</td>
     <td class="r money preco"><b>${fmt(d.total)}</b></td>
@@ -3142,10 +3147,10 @@ function fillOfertaSel(){
   sel.innerHTML=o; sel.value=S.ofertaId||'';
 }
 function updateCodigoFull(){
-  const el=document.getElementById('codigoFull'); if(!el)return;
   let cod=S.numero||'—';
   if(S.ofertaSigla){ cod+='-'+S.ofertaSigla; if(S.ofertaSeq) cod+='-'+String(S.ofertaSeq).padStart(2,'0'); }
-  el.textContent=cod;
+  const el=document.getElementById('codigoFull'); if(el) el.textContent=cod;
+  const nf=document.getElementById('numeroFull'); if(nf) nf.value=cod;   // Nº do topo = código completo, só leitura
 }
 async function setOferta(id){
   const changed=(S.ofertaId||'')!==(id||'');
