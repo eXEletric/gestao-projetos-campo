@@ -50,6 +50,23 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .mh b{font-size:15px;font-weight:700}.mh .x{cursor:pointer;color:var(--tx3);background:none;border:none;display:flex}
 .mb{padding:16px 18px;overflow-y:auto}
 .mf{padding:12px 18px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:8px}
+.modal{position:relative}
+/* post-it de alerta flutuando sobre a caixa */
+.postit{position:absolute;top:52px;right:14px;max-width:255px;background:#fff8c5;border:1px solid #e6d97a;border-left:4px solid #d9b400;border-radius:9px;padding:9px 11px;font-size:12px;line-height:1.35;color:#6b5900;box-shadow:0 8px 22px rgba(0,0,0,.2);z-index:6;animation:ptin .18s ease}
+.postit.err{background:#ffe3e0;border-color:#f0a9a2;border-left-color:#c0392b;color:#8a2018}
+.postit .pt-t{font-weight:800;display:flex;align-items:center;gap:5px;margin-bottom:2px}
+.postit .material-symbols-rounded{font-size:16px}
+@keyframes ptin{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+/* janela de bifurcação dentro do modal */
+.bifover{position:absolute;inset:0;background:rgba(250,249,245,.88);display:flex;align-items:center;justify-content:center;padding:22px;z-index:10}
+.bifcard{background:var(--surf);border:1px solid var(--line);border-radius:13px;box-shadow:0 16px 48px rgba(0,0,0,.3);padding:22px;max-width:390px;text-align:center}
+.bifq{font-size:15px;font-weight:800;margin-bottom:12px}
+.bifnames{font-size:13px;color:var(--tx2);margin-bottom:18px;display:flex;flex-direction:column;gap:3px}
+.bifnames .bifarr{color:var(--tx3);font-size:11px}
+.bifnames #bifNew{font-weight:700;color:var(--tx)}
+.bifbtns{display:flex;flex-direction:column;gap:8px}
+.bifbtns .btn{justify-content:center;padding:10px 13px}
+.biflink{margin-top:12px;background:none;border:none;color:var(--tx3);cursor:pointer;font-size:12px;text-decoration:underline}
 .fg{margin-bottom:12px}.fl{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);margin-bottom:5px;display:block}
 .fi{width:100%;padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx);font-family:inherit}
 .fi:focus{outline:none;border-color:var(--pri)}
@@ -120,7 +137,7 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
         </div>
         <div class="fg"><label class="fl">Código</label><input class="fi" id="f_codigo" readonly placeholder="—" style="background:var(--surf2);color:var(--tx2);font-variant-numeric:tabular-nums;font-weight:600;text-align:center"></div>
       </div>
-      <div class="fg"><label class="fl">Nome</label><input class="fi" id="f_nome"></div>
+      <div class="fg"><label class="fl">Nome</label><input class="fi" id="f_nome" oninput="onNomeCheck()" autocomplete="off"></div>
       <div class="fg" id="fg_compos" style="display:none">
         <label class="fl">Composição de custo (o motor)</label>
         <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -144,6 +161,18 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
       <span class="spacer"></span>
       <button class="btn" id="mNovo" onclick="salvarNovo()" style="display:none;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">add</span>Salvar como novo</button>
       <button class="btn btn-p" id="mSave" onclick="saveItem()"><span class="material-symbols-rounded">check</span>Salvar</button>
+    </div>
+    <div class="postit" id="f_postit" hidden></div>
+    <div class="bifover" id="bifOver" hidden>
+      <div class="bifcard">
+        <div class="bifq">Você alterou o nome do serviço</div>
+        <div class="bifnames"><span id="bifOld"></span><span class="bifarr">▼</span><span id="bifNew"></span></div>
+        <div class="bifbtns">
+          <button class="btn btn-p" onclick="bifEscolha('novo')"><span class="material-symbols-rounded">add</span>Salvar como NOVO serviço</button>
+          <button class="btn" onclick="bifEscolha('sub')"><span class="material-symbols-rounded">save</span>Sobrescrever este serviço</button>
+        </div>
+        <button class="biflink" onclick="fecharBif()">Cancelar</button>
+      </div>
     </div>
   </div>
 </div>
@@ -464,20 +493,61 @@ function openItem(id){
   document.getElementById('mDel').style.display=id?'inline-flex':'none';
   document.getElementById('mNovo').style.display=id?'inline-flex':'none';
   document.getElementById('mSave').innerHTML=id?'<span class="material-symbols-rounded">check</span>Salvar alterações':'<span class="material-symbols-rounded">check</span>Salvar';
+  esconderPostit(); fecharBif();
   document.getElementById('modal').classList.add('show');
   setTimeout(()=>document.getElementById('f_nome').focus(),40);
 }
-function closeItem(){ document.getElementById('modal').classList.remove('show'); EDIT=null; _COMPOS=null; _CODSEQ=null; }
+function closeItem(){ document.getElementById('modal').classList.remove('show'); EDIT=null; _COMPOS=null; _CODSEQ=null; fecharBif(); esconderPostit(); }
+
+/* ---- detecção de nome duplicado / parecido ---- */
+function normNome(s){ return (s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^a-z0-9]+/g,' ').trim(); }
+function levDist(a,b){ a=a||''; b=b||''; const m=a.length,n=b.length; if(!m)return n; if(!n)return m; let prev=Array.from({length:n+1},(_,j)=>j),cur=new Array(n+1);
+  for(let i=1;i<=m;i++){ cur[0]=i; for(let j=1;j<=n;j++){ const c=a[i-1]===b[j-1]?0:1; cur[j]=Math.min(prev[j]+1,cur[j-1]+1,prev[j-1]+c); } [prev,cur]=[cur,prev]; } return prev[n]; }
+function dupExato(nome,exceptId){ const nn=normNome(nome); if(!nn)return null; return ITENS.find(x=>x.id!==exceptId && x.tipo===TIPO && normNome(x.nome)===nn); }
+function dupParecido(nome,exceptId){ const nn=normNome(nome); if(!nn)return null;
+  return ITENS.find(x=>{ if(x.id===exceptId||x.tipo!==TIPO)return false; const xn=normNome(x.nome); if(!xn||xn===nn)return false;
+    const d=levDist(nn,xn); return d<=2 || (nn.length>4 && (xn.includes(nn)||nn.includes(xn))); }); }
+
+/* ---- post-it flutuante sobre a caixa ---- */
+function mostrarPostit(html,erro){ const p=document.getElementById('f_postit'); if(!p)return; p.innerHTML=html; p.classList.toggle('err',!!erro); p.hidden=false; }
+function esconderPostit(){ const p=document.getElementById('f_postit'); if(p){ p.hidden=true; p.classList.remove('err'); } }
+function onNomeCheck(){
+  const nome=document.getElementById('f_nome').value.trim();
+  if(!nome){ esconderPostit(); return; }
+  const ex=dupExato(nome,EDIT);
+  if(ex){ mostrarPostit('<div class="pt-t"><span class="material-symbols-rounded">error</span>Nome já existe</div>Já há um serviço «'+esc(ex.nome)+'» ('+esc(ex.codigo||'sem código')+'). Não pode haver dois iguais.',true); return; }
+  const pc=dupParecido(nome,EDIT);
+  if(pc){ mostrarPostit('<div class="pt-t"><span class="material-symbols-rounded">info</span>Nome muito parecido</div>Parecido com «'+esc(pc.nome)+'» ('+esc(pc.codigo||'—')+'). Confira se não é o mesmo serviço.',false); return; }
+  esconderPostit();
+}
+
+/* ---- salvar: bifurca dentro da caixa quando o nome muda ---- */
 function saveItem(){
-  const nome=document.getElementById('f_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
-  // trava: se estou editando e o NOME mudou, pergunto antes de sobrescrever
+  const nome=document.getElementById('f_nome').value.trim();
+  if(!nome){ mostrarPostit('<div class="pt-t"><span class="material-symbols-rounded">error</span>Falta o nome</div>Informe o nome do serviço.',true); document.getElementById('f_nome').focus(); return; }
   if(EDIT){
     const orig=ITENS.find(x=>x.id===EDIT);
-    if(orig && (orig.nome||'').trim()!==nome){
-      const novo=confirm('Você mudou o nome:\n\n« '+(orig.nome||'')+' »\n→ « '+nome+' »\n\nSalvar como um NOVO serviço?\n\nOK = criar NOVO (mantém o original)\nCancelar = alterar o serviço atual');
-      if(novo){ EDIT=null; _CODSEQ=null; gerarCodServ(); }
-    }
+    if(orig && (orig.nome||'').trim()!==nome){ abrirBif(orig.nome||'',nome); return; }   // nome mudou → escolher novo x sobrescrever
   }
+  commitItem();
+}
+function abrirBif(oldN,newN){ document.getElementById('bifOld').textContent='« '+oldN+' »'; document.getElementById('bifNew').textContent='« '+newN+' »'; document.getElementById('bifOver').hidden=false; }
+function fecharBif(){ const b=document.getElementById('bifOver'); if(b)b.hidden=true; }
+function bifEscolha(op){
+  fecharBif();
+  if(op==='novo'){ EDIT=null; _CODSEQ=null; gerarCodServ(); }   // 'sub' mantém EDIT = sobrescreve
+  commitItem();
+}
+function salvarNovo(){
+  const nome=document.getElementById('f_nome').value.trim();
+  if(!nome){ mostrarPostit('<div class="pt-t"><span class="material-symbols-rounded">error</span>Falta o nome</div>Informe o nome do serviço.',true); return; }
+  EDIT=null; _CODSEQ=null; gerarCodServ();
+  commitItem();
+}
+function commitItem(){
+  const nome=document.getElementById('f_nome').value.trim();
+  const ex=dupExato(nome,EDIT);   // trava dura: nunca dois com o mesmo nome
+  if(ex){ mostrarPostit('<div class="pt-t"><span class="material-symbols-rounded">error</span>Nome idêntico bloqueado</div>Já existe «'+esc(ex.nome)+'» ('+esc(ex.codigo||'—')+'). Ajuste o nome — não dá pra ter dois serviços iguais.',true); document.getElementById('f_nome').focus(); return; }
   const mv=document.getElementById('f_margem').value.trim();
   const row={ empresa_id:EMPRESA_ID, tipo:TIPO, nome,
     codigo:(document.getElementById('f_codigo').value.trim()||null),
@@ -490,19 +560,12 @@ function saveItem(){
     marca:(TIPO==='material')?(document.getElementById('f_marca').value.trim()||null):null };
   if(EDIT){ row.id=EDIT; } else { row.id=uid(); }
   SB.from('orc_catalogo').upsert(row).then(({error})=>{
-    if(error){ console.error(error); alert('Erro ao salvar: '+error.message); return; }
+    if(error){ console.error(error); mostrarPostit('<div class="pt-t"><span class="material-symbols-rounded">error</span>Erro ao salvar</div>'+esc(error.message),true); return; }
     const i=ITENS.findIndex(x=>x.id===row.id);
     if(i>=0) ITENS[i]={...ITENS[i],...row}; else ITENS.push(row);
     ITENS.sort((a,b)=>(a.nome||'').localeCompare(b.nome||''));
     closeItem(); render();
   });
-}
-function salvarNovo(){
-  if(!document.getElementById('f_nome').value.trim()){ alert('Informe o nome.'); return; }
-  if(!confirm('Salvar como um NOVO serviço? O serviço atual não será alterado.')) return;
-  EDIT=null;                         // força criar novo — não sobrescreve o original
-  _CODSEQ=null; gerarCodServ();       // gera o próximo código da categoria
-  saveItem();
 }
 function delItem(){ if(EDIT) delDireto(EDIT,true); }
 function delDireto(id,fromModal){
