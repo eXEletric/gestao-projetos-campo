@@ -470,6 +470,14 @@ function openItem(id){
 function closeItem(){ document.getElementById('modal').classList.remove('show'); EDIT=null; _COMPOS=null; _CODSEQ=null; }
 function saveItem(){
   const nome=document.getElementById('f_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
+  // trava: se estou editando e o NOME mudou, pergunto antes de sobrescrever
+  if(EDIT){
+    const orig=ITENS.find(x=>x.id===EDIT);
+    if(orig && (orig.nome||'').trim()!==nome){
+      const novo=confirm('Você mudou o nome:\n\n« '+(orig.nome||'')+' »\n→ « '+nome+' »\n\nSalvar como um NOVO serviço?\n\nOK = criar NOVO (mantém o original)\nCancelar = alterar o serviço atual');
+      if(novo){ EDIT=null; _CODSEQ=null; gerarCodServ(); }
+    }
+  }
   const mv=document.getElementById('f_margem').value.trim();
   const row={ empresa_id:EMPRESA_ID, tipo:TIPO, nome,
     codigo:(document.getElementById('f_codigo').value.trim()||null),
