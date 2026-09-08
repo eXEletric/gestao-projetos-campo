@@ -396,6 +396,7 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .swmini .ex-switch{transform:scale(.58);transform-origin:right center}
 .swmini .swlbl{font-size:9px}
 .det{width:100%;min-width:150px}
+.sortth{cursor:pointer;user-select:none}.sortth:hover{color:var(--pri)}
 .mkwrap{display:flex;align-items:center;gap:3px;justify-content:flex-end;flex-wrap:wrap}
 .mkwrap .mk{width:46px;text-align:right}
 .mkwrap.base{opacity:.5}
@@ -1529,7 +1530,7 @@ function renderBlk(cfg){
         <td class="r pint"><span class="mgimp" id="tm_${r.id}">${fmtMg(margImpl)}</span></td>
         <td class="r">${soT?`<span class="incl printonly">incluso</span>`:''}<span class="rsw${soT?' noprint':''}"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
-        <td class="pint rowact">${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+        <td class="pint rowact">${editCad}<button class="swp" onclick="dupRow('${cfg.key}','${r.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?11:10}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
@@ -1539,7 +1540,7 @@ function renderBlk(cfg){
   } else if(cfg.custo){
     // MODELO base+margem: custo (do cadastro, usar/alterar) → margem → preço e lucro
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
-    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}${cfg.key==='servicos'?'<th>Detalhes do serviço</th>':'<th class="pint">Valor</th>'}<th class="r pint">Custo un.</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r pint">Custo total<span class="thsub">sem margem</span></th><th class="r">Unitário<span class="thsub">c/ margem</span></th><th class="r">Total<span class="thsub">c/ margem</span></th><th class="pint"></th>`;
+    cols = `<th>#</th><th class="sortth" onclick="sortBlk('${cfg.key}','desc')">${nomeLbl}${sortArrow(cfg.key,'desc')}</th>${cfg.mat?'<th>Marca</th>':''}${cfg.key==='servicos'?'<th>Detalhes do serviço</th>':'<th class="pint">Valor</th>'}<th class="r pint sortth" onclick="sortBlk('${cfg.key}','custo')">Custo un.${sortArrow(cfg.key,'custo')}</th><th class="r sortth" onclick="sortBlk('${cfg.key}','qtd')">Qtd${sortArrow(cfg.key,'qtd')}</th><th class="sortth" onclick="sortBlk('${cfg.key}','und')">Und${sortArrow(cfg.key,'und')}</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r pint sortth" onclick="sortBlk('${cfg.key}','custot')">Custo total<span class="thsub">sem margem</span>${sortArrow(cfg.key,'custot')}</th><th class="r sortth" onclick="sortBlk('${cfg.key}','unit')">Unitário<span class="thsub">c/ margem</span>${sortArrow(cfg.key,'unit')}</th><th class="r sortth" onclick="sortBlk('${cfg.key}','preco')">Total<span class="thsub">c/ margem</span>${sortArrow(cfg.key,'preco')}</th><th class="pint"></th>`;
     body=rows.map((r,i)=>{
       const preco=linePreco(r), custo=lineCusto(r), unit=lineUnit(r);
       const propria=!(r.margem===''||r.margem==null);
@@ -1566,7 +1567,7 @@ function renderBlk(cfg){
         <td class="r money custot pint" id="tc_${r.id}">${fmt(custo)}</td>
         <td class="r money unit" id="tu_${r.id}">${fmt(unit)}</td>
         <td class="r money preco" id="tp_${r.id}"><b>${fmt(preco)}</b></td>
-        <td class="pint rowact">${editCad}<button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+        <td class="pint rowact">${editCad}<button class="swp" onclick="dupRow('${cfg.key}','${r.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${cfg.mat?12:11}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
@@ -2971,6 +2972,26 @@ function renderDescGeral(){
 function toggleDescGeral(){ const on=S.descGeralOn!==false; S.descGeralOn=!on; save(); renderDescGeral(); }
 function updDescGeral(v){ S.descGeral=v; const p=document.getElementById('descGeralPrint'); if(p)p.textContent=v; save(); }
 function delRow(blk,id){ S[blk]=S[blk].filter(x=>x.id!==id); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
+function dupRow(blk,id){ const arr=S[blk]; if(!arr)return; const i=arr.findIndex(x=>x.id===id); if(i<0)return; const cp=JSON.parse(JSON.stringify(arr[i])); cp.id=uid(); arr.splice(i+1,0,cp); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
+/* ordenar bloco pelo título da coluna (clica alterna crescente/decrescente) */
+let _SORT={};
+function sortArrow(key,kind){ const s=_SORT[key]; return (s&&s.kind===kind)?(s.dir>0?' ▲':' ▼'):''; }
+function _sortVal(kind,r){ switch(kind){
+    case 'desc': return (r.desc||'').toLowerCase();
+    case 'custo': return num(custoUn(r));
+    case 'qtd': return num(qtyOf(r));
+    case 'und': return (r.und||'').toLowerCase();
+    case 'custot': return num(lineCusto(r));
+    case 'unit': return num(lineUnit(r));
+    case 'preco': return num(linePreco(r));
+  } return 0; }
+function sortBlk(key,kind){
+  const s=_SORT[key]; const dir=(s&&s.kind===kind)?-s.dir:1; _SORT[key]={kind,dir};
+  (S[key]||[]).sort((a,b)=>{ const va=_sortVal(kind,a), vb=_sortVal(kind,b);
+    if(typeof va==='string'||typeof vb==='string') return dir*String(va).localeCompare(String(vb),'pt',{numeric:true});
+    return dir*((va||0)-(vb||0)); });
+  save(); renderBlk(BLKS.find(b=>b.key===key)); recalc();
+}
 
 /* ---------- arrastar para reordenar (dentro do mesmo bloco) ---------- */
 let DRAG=null;
