@@ -1643,7 +1643,7 @@ function aggMaoObra(){
     return {...f, horas:f.trab*JORNADA, custo:f.trab*f.vh*JORNADA, pes, dias:(f.trab/pes)*tm}; })
     .sort((a,b)=>b.horas-a.horas);
 }
-function pesFn(k,d){ if(!S.pessoasFn)S.pessoasFn={}; S.pessoasFn[k]=Math.max(1,(+S.pessoasFn[k]||1)+d); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); }
+function pesFn(k,d){ if(!S.pessoasFn)S.pessoasFn={}; S.pessoasFn[k]=Math.max(1,(+S.pessoasFn[k]||1)+d); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); const db=BLKS.find(b=>b.key==='despesas'); if(db){try{renderBlk(db);}catch(e){}} recalc(); }
 // prazo legível: ≥1 dia → "X dias"; <1 dia → horas; <1h → minutos (abreviação por extenso)
 function fmtPrazo(d){ d=num(d); if(d<=0) return '0';
   if(d>=1){ const v=_d1(d); return v+(v==='1'?' dia':' dias'); }
