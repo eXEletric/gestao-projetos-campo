@@ -218,7 +218,7 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 <script>
 "use strict";
 const TIPO=(new URLSearchParams(location.search)).get('tipo')||'servico';
-const LBL={servico:['Serviços','build','serviço'],equipamento:['Equipamentos','construction','equipamento'],despesa:['Despesas','local_shipping','despesa'],material:['Materiais','inventory_2','material']};
+const LBL={servico:['Serviços Comerciais','build','serviço'],equipamento:['Equipamentos','construction','equipamento'],despesa:['Despesas','local_shipping','despesa'],material:['Materiais','inventory_2','material']};
 const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
 const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
 const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
