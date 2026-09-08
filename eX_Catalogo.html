@@ -29,6 +29,7 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .search .material-symbols-rounded{font-size:18px;color:var(--tx3)}
 .tbl{width:100%;border-collapse:collapse;font-size:12.5px}
 .tbl th{font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);font-weight:600;text-align:left;padding:0 10px 7px;border-bottom:1px solid var(--line2);white-space:nowrap}
+.tbl th.sortc{cursor:pointer;user-select:none}.tbl th.sortc:hover{color:var(--pri)}
 .tbl th.r{text-align:right}
 .tbl td{padding:9px 10px;border-bottom:1px solid var(--line);vertical-align:middle}
 .tbl tr[data-id]:hover td{background:var(--surf2)}
@@ -103,7 +104,7 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
   </div>
   <div class="sub" id="sub">Cadastro do catálogo de orçamento.</div>
   <div class="bar"><div class="search"><span class="material-symbols-rounded">search</span><input id="q" placeholder="Buscar…" oninput="render()"></div></div>
-  <div class="scroll"><table class="tbl"><thead><tr><th>Código</th><th>Nome</th><th>Categoria</th><th>Und</th><th class="r">Custo</th><th class="r">Margem</th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
+  <div class="scroll"><table class="tbl"><thead><tr><th class="sortc" onclick="sortCat('codigo')">Código<span id="sa_codigo"></span></th><th class="sortc" onclick="sortCat('nome')">Nome<span id="sa_nome"></span></th><th class="sortc" onclick="sortCat('categoria')">Categoria<span id="sa_categoria"></span></th><th class="sortc" onclick="sortCat('unidade')">Und<span id="sa_unidade"></span></th><th class="r sortc" onclick="sortCat('custo')">Custo<span id="sa_custo"></span></th><th class="r sortc" onclick="sortCat('margem')">Margem<span id="sa_margem"></span></th><th></th></tr></thead><tbody id="rows"></tbody></table></div>
 </div>
 
 <div class="modal-bg" id="modal">
@@ -270,10 +271,31 @@ function render(){
     <td class="r">${fmt(it.custo)}</td>
     <td class="r">${it.margem==null?'<span style="color:var(--tx3)">padrão</span>':(it.margem+'%')}</td>
     <td><div class="acts">
+      <button class="iconb" onclick="dupItem('${it.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button>
       <button class="iconb" onclick="openItem('${it.id}')"><span class="material-symbols-rounded">edit</span></button>
       <button class="iconb del" onclick="delDireto('${it.id}')"><span class="material-symbols-rounded">delete</span></button>
     </div></td>
   </tr>`).join('');
+}
+/* ordenar o catálogo pelo título da coluna (alterna crescente/decrescente) */
+let _CATSORT={f:'nome',dir:1};
+function sortCat(f){
+  _CATSORT=(_CATSORT.f===f)?{f,dir:-_CATSORT.dir}:{f,dir:1}; const dir=_CATSORT.dir;
+  ITENS.sort((a,b)=>{
+    if(f==='custo'||f==='margem'){ return dir*((num(a[f])||0)-(num(b[f])||0)); }
+    return dir*String(a[f]||'').localeCompare(String(b[f]||''),'pt',{numeric:true});
+  });
+  ['codigo','nome','categoria','unidade','custo','margem'].forEach(k=>{ const e=document.getElementById('sa_'+k); if(e)e.textContent=(k===f)?(dir>0?' ▲':' ▼'):''; });
+  render();
+}
+/* duplicar / clonar um serviço (novo código na mesma sigla) */
+function dupItem(id){
+  if(!CLOUD){ alert('Entre com login.'); return; }
+  const it=ITENS.find(x=>x.id===id); if(!it)return;
+  const sig=(String(it.codigo||'').split('-')[0])||''; let novoCod=null;
+  if(sig){ let max=0; const pre=sig+'-'; ITENS.forEach(x=>{ const c=String(x.codigo||''); if(c.indexOf(pre)===0){ const m=c.slice(pre.length).match(/^(\d+)/); if(m){ const n=parseInt(m[1],10); if(n>max)max=n; } } }); novoCod=sig+'-'+String(max+1).padStart(3,'0'); }
+  const row={ id:uid(), empresa_id:EMPRESA_ID, tipo:TIPO, nome:(it.nome||'')+' (cópia)', codigo:novoCod, unidade:it.unidade||'UND', custo:it.custo||0, margem:(it.margem==null?null:it.margem), categoria:it.categoria||null, detalhes:it.detalhes||null, composicao:it.composicao||null, marca:it.marca||null };
+  SB.from('orc_catalogo').insert(row).then(({error})=>{ if(error){ alert('Erro ao duplicar: '+error.message); return; } ITENS.push(row); render(); });
 }
 async function carregarCategs(){
   try{ const {data,error}=await SB.from('orc_categorias').select('id,nome,sigla,grupo').eq('tipo',TIPO).eq('ativo',true).is('deleted_at',null).order('ordem'); if(!error) CATEGS=data||[]; }catch(e){ console.error(e); }
