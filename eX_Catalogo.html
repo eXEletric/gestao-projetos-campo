@@ -329,9 +329,10 @@ function gerarCodServ(){
   const cat=CATEGS.find(c=>c.nome===catNome);
   if(cat && !cat.sigla){ cat.sigla=autoSigla2(cat.nome); if(cat.id&&cat.sigla) SB.from('orc_categorias').update({sigla:cat.sigla}).eq('id',cat.id).then(()=>{}); }
   if(!cat||!cat.sigla){ fc.value=''; fc.placeholder='defina a sigla (⚙)'; return; }
-  let max=0; ITENS.forEach(it=>{ const m=String(it.codigo||'').match(/(\d+)\s*$/); if(m){ const n=parseInt(m[1],10); if(n>max)max=n; } });
-  if(_CODSEQ==null) _CODSEQ=max+1;
-  fc.value=cat.sigla+'-'+String(_CODSEQ).padStart(2,'0');
+  // sequência POR SIGLA: maior número entre serviços da mesma sigla + 1
+  let max=0; const pre=cat.sigla+'-';
+  ITENS.forEach(it=>{ const c=String(it.codigo||''); if(c.indexOf(pre)===0){ const m=c.slice(pre.length).match(/^(\d+)/); if(m){ const n=parseInt(m[1],10); if(n>max)max=n; } } });
+  fc.value=cat.sigla+'-'+String(max+1).padStart(2,'0');
 }
 /* gerenciador de categorias */
 let _catEdit=null;
