@@ -1303,7 +1303,7 @@ function diariasLinhas(){
 }
 function diariasRowsHtml(){   // <tr> derivadas dentro da tabela de Despesas (11 colunas, alinha com o print)
   return diariasLinhas().map(d=>`<tr class="diaderv">
-    <td class="idx"><span class="material-symbols-rounded gg">${d.ic}</span></td>
+    <td class="idx dgrab"><span class="material-symbols-rounded gg">${d.ic}</span></td>
     <td class="svc"><div class="svcnm">${esc(d.nome)}</div><div class="bs-dia">${d.pes} colaborador${d.pes!=1?'es':''} · ${_d1(d.ppd)} diárias × ${fmt(d.dia)}/dia (no valor unitário)</div></td>
     <td class="pint"></td><td class="r money pint"></td>
     <td class="r">${d.pes}</td><td>UND</td>
