@@ -1085,7 +1085,12 @@ async function loadLotesList(){
     }
     let cnames={}; const cids=[...new Set(lotes.map(l=>l.contratante_id).filter(Boolean))];
     if(cids.length){ try{ const {data:cs}=await SB.from('clientes').select('id,nome').in('id',cids); (cs||[]).forEach(c=>cnames[c.id]=c.nome); }catch(_){} }
-    _LOTES=lotes.map(l=>({id:l.id,nome:l.nome,status:l.status,base_oportunidade_id:l.base_oportunidade_id,created_at:l.created_at,total:tot[l.id]||0,unidades:cnt[l.id]||0,contratante:cnames[l.contratante_id]||''}));
+    // número/código do lote = do orçamento BASE (numero + oferta) — lote é proposta normal por fora
+    let binfo={}; const bids=[...new Set(lotes.map(l=>l.base_oportunidade_id).filter(Boolean))];
+    if(bids.length){ try{ const {data:bs}=await SB.from('orcamentos').select('oportunidade_id,numero,oferta_id,oferta_seq').in('oportunidade_id',bids).is('deleted_at',null); (bs||[]).forEach(b=>{ if(!binfo[b.oportunidade_id]) binfo[b.oportunidade_id]=b; }); }catch(_){} }
+    let ofsig={}; const ofids=[...new Set(Object.values(binfo).map(b=>b.oferta_id).filter(Boolean))];
+    if(ofids.length){ try{ const {data:ofs}=await SB.from('orc_categorias').select('id,sigla').in('id',ofids); (ofs||[]).forEach(o=>ofsig[o.id]=o.sigla); }catch(_){} }
+    _LOTES=lotes.map(l=>{ const b=binfo[l.base_oportunidade_id]||{}; let cod=b.numero||'—'; if(b.oferta_id&&ofsig[b.oferta_id]){ cod+='-'+ofsig[b.oferta_id]; if(b.oferta_seq) cod+='-'+String(b.oferta_seq).padStart(2,'0'); } return {id:l.id,nome:l.nome,status:l.status,base_oportunidade_id:l.base_oportunidade_id,created_at:l.created_at,total:tot[l.id]||0,unidades:cnt[l.id]||0,contratante:cnames[l.contratante_id]||'',codigo:cod}; });
     const host=document.getElementById('lotesList'); if(host)host.innerHTML='';   // lotes agora entram como LINHA na tabela (renderList)
     renderList();
   }catch(e){ console.error('lotes list',e); }
@@ -1105,7 +1110,7 @@ function renderList(){
     const st=l.status||'rascunho';
     const un=l.unidades?`<span style="color:var(--tx3);font-size:11px"> · ${l.unidades} unid.</span>`:`<span style="color:var(--amber);font-size:11px"> · sem unidades</span>`;
     return `<tr data-opp onclick="location.href='eX_Orcamento.html?opp=${l.base_oportunidade_id||''}&lote=${l.id}'" style="background:var(--pri-bg,#f3f0fc)">
-      <td class="num"><span style="display:inline-flex;align-items:center;gap:4px;font-weight:800;color:var(--pri)"><span class="material-symbols-rounded" style="font-size:15px">apartment</span>LOTE</span></td>
+      <td class="num"><span style="font-variant-numeric:tabular-nums">${esc(l.codigo||'—')}</span> <span style="display:inline-flex;align-items:center;gap:2px;font-size:9px;font-weight:800;color:var(--pri);background:var(--pri-bg,#eeedfe);border-radius:10px;padding:1px 6px"><span class="material-symbols-rounded" style="font-size:11px">apartment</span>LOTE</span></td>
       <td class="cli">${esc(l.contratante||'—')}</td>
       <td class="sol">${esc(l.nome||'Lote')}${un}</td>
       <td class="dt">${dt}</td>
