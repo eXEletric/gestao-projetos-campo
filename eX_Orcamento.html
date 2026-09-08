@@ -390,6 +390,12 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .swcell{display:flex;flex-direction:column;align-items:flex-start;gap:3px;white-space:nowrap}
 .swlbl{font-size:10.5px;font-weight:600}
 .swlbl.on{color:var(--green)}.swlbl.off{color:var(--amber)}
+/* custo com a chave mini empilhada embaixo (bloco Serviços) */
+.custocell{display:flex;flex-direction:column;align-items:flex-end;gap:1px}
+.swmini{display:flex;align-items:center;gap:3px;justify-content:flex-end;height:16px;margin-top:1px}
+.swmini .ex-switch{transform:scale(.58);transform-origin:right center}
+.swmini .swlbl{font-size:9px}
+.det{width:100%;min-width:150px}
 .mkwrap{display:flex;align-items:center;gap:3px;justify-content:flex-end;flex-wrap:wrap}
 .mkwrap .mk{width:46px;text-align:right}
 .mkwrap.base{opacity:.5}
@@ -1497,7 +1503,7 @@ function renderBlk(cfg){
     // na IMPRESSÃO some tudo isso e o cliente vê só Descrição · Qtd · Und · Preço (= valor geral).
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
     const fmtMg=m=>(m==null?'—':String(m).replace('.',',')+'%');
-    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r"><span class="pint">Valor (geral)</span><span class="printonly">Preço</span></th><th class="r pint">Lucro</th><th class="pint"></th>`;
+    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}${cfg.key==='servicos'?'<th>Detalhes do serviço</th>':'<th class="pint">Valor</th>'}<th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r"><span class="pint">Valor (geral)</span><span class="printonly">Preço</span></th><th class="r pint">Lucro</th><th class="pint"></th>`;
     body=rows.map((r,i)=>{
       const cu=custoUn(r), custo=num(r.qtd)*cu, preco=num(r.geral), lucro=preco-custo;
       const margImpl = custo>0?(Math.round((preco/custo-1)*1000)/10):null;
@@ -1512,15 +1518,12 @@ function renderBlk(cfg){
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${despGatCtrl(cfg,r)}</td>
         ${marcaCell}
-        <td class="pint">
-          <div class="swcell">
-            <div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar">
-              <span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span>
-            </div>
-            <span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'usar base':'alterar'}</span>
-          </div>
-        </td>
-        <td class="r money pint">${custoCell}</td>
+        ${cfg.key==='servicos'
+          ? `<td><input class="cin det" value="${esc(r.detalhe||'')}" placeholder="detalhes do serviço…" oninput="upd('${cfg.key}','${r.id}','detalhe',this.value)"></td>`
+          : `<td class="pint"><div class="swcell"><div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar"><span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span></div><span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'usar base':'alterar'}</span></div></td>`}
+        ${cfg.key==='servicos'
+          ? `<td class="r pint"><div class="custocell">${custoCell}<div class="swmini"><div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar"><span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span></div><span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'base':'alterar'}</span></div></div></td>`
+          : `<td class="r money pint">${custoCell}</td>`}
         <td class="r">${qtdCellHtml(cfg,r)}</td>
         <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
         <td class="r pint"><span class="mgimp" id="tm_${r.id}">${fmtMg(margImpl)}</span></td>
@@ -1536,7 +1539,7 @@ function renderBlk(cfg){
   } else if(cfg.custo){
     // MODELO base+margem: custo (do cadastro, usar/alterar) → margem → preço e lucro
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
-    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}<th class="pint">Valor</th><th class="r pint">Custo un.</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r pint">Custo total<span class="thsub">sem margem</span></th><th class="r">Unitário<span class="thsub">c/ margem</span></th><th class="r">Total<span class="thsub">c/ margem</span></th><th class="pint"></th>`;
+    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.mat?'<th>Marca</th>':''}${cfg.key==='servicos'?'<th>Detalhes do serviço</th>':'<th class="pint">Valor</th>'}<th class="r pint">Custo un.</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r pint">Custo total<span class="thsub">sem margem</span></th><th class="r">Unitário<span class="thsub">c/ margem</span></th><th class="r">Total<span class="thsub">c/ margem</span></th><th class="pint"></th>`;
     body=rows.map((r,i)=>{
       const preco=linePreco(r), custo=lineCusto(r), unit=lineUnit(r);
       const propria=!(r.margem===''||r.margem==null);
@@ -1551,15 +1554,12 @@ function renderBlk(cfg){
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${despGatCtrl(cfg,r)}</td>
         ${marcaCell}
-        <td class="pint">
-          <div class="swcell">
-            <div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar">
-              <span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span>
-            </div>
-            <span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'usar base':'alterar'}</span>
-          </div>
-        </td>
-        <td class="r money pint">${custoCell}</td>
+        ${cfg.key==='servicos'
+          ? `<td><input class="cin det" value="${esc(r.detalhe||'')}" placeholder="detalhes do serviço…" oninput="upd('${cfg.key}','${r.id}','detalhe',this.value)"></td>`
+          : `<td class="pint"><div class="swcell"><div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar"><span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span></div><span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'usar base':'alterar'}</span></div></td>`}
+        ${cfg.key==='servicos'
+          ? `<td class="r pint"><div class="custocell">${custoCell}<div class="swmini"><div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar"><span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span></div><span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'base':'alterar'}</span></div></div></td>`
+          : `<td class="r money pint">${custoCell}</td>`}
         <td class="r">${qtdCellHtml(cfg,r)}</td>
         <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
         <td class="r pint"><div class="mkwrap ${propria?'own':'base'}">${propria?'<span class="mkne" title="diferente da margem base">&ne;</span>':''}<input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(baseMg(cfg.key))}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span class="mkpc">%</span>${propria?`<span class="mkwarn material-symbols-rounded" title="margem própria — fora da base ${num(baseMg(cfg.key))}%">warning</span><button class="mkreset" title="voltar à margem base" onclick="resetMargem('${cfg.key}','${r.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</div></td>
