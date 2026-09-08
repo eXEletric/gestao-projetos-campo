@@ -995,12 +995,13 @@ async function carregarCatalogo(){
 }
 // materiais vêm do ESTOQUE (tabela `materiais`) — fonte única; cadastro em Gestão › Materiais
 async function carregarMateriaisEstoque(){
-  try{ const {data,error}=await SB.from('materiais').select('id,descricao_padronizada,unidade,marca,custo_compra,preco_venda').is('deleted_at',null).order('descricao_padronizada');
+  try{ const {data,error}=await SB.from('materiais').select('id,descricao_padronizada,unidade,marca,custo_compra,preco_venda,subgrupo,grupo:grupos_materiais(nome)').is('deleted_at',null).order('descricao_padronizada');
     if(error) throw error;
     CATALOGO.materiais=(data||[]).map(m=>{
       const cc=(m.custo_compra!=null)?m.custo_compra:null, pv=(m.preco_venda!=null)?m.preco_venda:null;
       const custo=(cc!=null)?cc:(pv!=null?pv:0);
-      return { id:m.id, nome:m.descricao_padronizada||'(sem descrição)', custo, und:m.unidade||'UND', marca:m.marca||'', margem:(cc!=null?25:''), categoria:'' };
+      const grp=(m.grupo&&m.grupo.nome)?m.grupo.nome:'';
+      return { id:m.id, nome:m.descricao_padronizada||'(sem descrição)', custo, und:m.unidade||'UND', marca:m.marca||'', margem:(cc!=null?25:''), categoria:grp, subgrupo:m.subgrupo||'' };
     });
   }catch(e){ console.error('materiais estoque',e); }
 }
