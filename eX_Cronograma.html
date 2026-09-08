@@ -3143,16 +3143,17 @@ function setSbActive(el){ document.querySelectorAll('.sb-i').forEach(function(b)
 function toggleGrp(el){ if(!el.classList.contains('open')){ var sibs=el.parentNode?el.parentNode.children:[]; for(var i=0;i<sibs.length;i++){ var s=sibs[i]; if(s!==el&&s.classList&&s.classList.contains('sb-grp')&&s.classList.contains('open')){ s.classList.remove('open'); var ss=s.nextElementSibling; if(ss&&ss.classList)ss.classList.remove('show'); } } } var op=el.classList.toggle('open'); var sub=el.nextElementSibling; if(sub&&sub.classList)sub.classList.toggle('show'); if(op)_pop(el); }
 function _obranav(show){ var ob=document.querySelector('.obranav'); if(ob)ob.style.display=show?'':'none'; }
 function navView(t,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; tab(t,null); }
-function carregarOrcamento(){ const f=document.getElementById('orc-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Orcamento.html'); }
-function carregarClientes(){ const f=document.getElementById('cli-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_CRM.html?m=clientes'); }
-function carregarFunil(){ const f=document.getElementById('fun-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_CRM.html?m=funil'); }
-function carregarCatOferta(){ const f=document.getElementById('catoferta-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Ofertas.html'); }
-function carregarCatServico(){ const f=document.getElementById('catserv-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Catalogo.html?tipo=servico'); }
-function carregarBarramento(){ const f=document.getElementById('bar-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Orcamento_Barramento.html'); }
-function carregarCatEquip(){ const f=document.getElementById('catequip-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Catalogo.html?tipo=equipamento'); }
-function carregarCatDespesa(){ const f=document.getElementById('catdespesa-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Catalogo.html?tipo=despesa'); }
-function carregarCatMaoObra(){ const f=document.getElementById('catmaobra-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_MaoObra.html'); }
-function carregarAbrangenciaView(){ const f=document.getElementById('abrangencia-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Abrangencia.html'); }
+const _CBV='v='+Date.now();   // cache-bust por sessão: cada recarga do shell traz os quadros embutidos frescos
+function carregarOrcamento(){ const f=document.getElementById('orc-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Orcamento.html?'+_CBV); }
+function carregarClientes(){ const f=document.getElementById('cli-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_CRM.html?m=clientes&'+_CBV); }
+function carregarFunil(){ const f=document.getElementById('fun-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_CRM.html?m=funil&'+_CBV); }
+function carregarCatOferta(){ const f=document.getElementById('catoferta-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Ofertas.html?'+_CBV); }
+function carregarCatServico(){ const f=document.getElementById('catserv-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Catalogo.html?tipo=servico&'+_CBV); }
+function carregarBarramento(){ const f=document.getElementById('bar-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Orcamento_Barramento.html?'+_CBV); }
+function carregarCatEquip(){ const f=document.getElementById('catequip-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Catalogo.html?tipo=equipamento&'+_CBV); }
+function carregarCatDespesa(){ const f=document.getElementById('catdespesa-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Catalogo.html?tipo=despesa&'+_CBV); }
+function carregarCatMaoObra(){ const f=document.getElementById('catmaobra-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_MaoObra.html?'+_CBV); }
+function carregarAbrangenciaView(){ const f=document.getElementById('abrangencia-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Abrangencia.html?'+_CBV); }
 function navObras(el){ setSbActive(el); _obranav(true); irLista('proj'); }
 async function navEmpresa(el){ navView('empresa',el); await _hubEnsureEmpresa(); renderEmpresaView(); }
 function renderEmpresaView(){
