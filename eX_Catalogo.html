@@ -163,6 +163,7 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
     <div class="mh"><span class="material-symbols-rounded">category</span><b>Editar categoria</b><button class="x" onclick="closeCatEdit()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
       <div class="fg"><label class="fl">Nome da categoria de serviço</label><input class="fi" id="ce_nome"></div>
+      <div class="fg"><label class="fl">Área (agrupa na lista e no seletor)</label><select class="fi" id="ce_grupo"></select></div>
       <div class="fg"><label class="fl">Sigla (3 letras — prefixo do código do serviço)</label><input class="fi" id="ce_sigla" maxlength="3" style="width:100px;text-transform:uppercase;text-align:center;font-weight:700;color:var(--pri)"><div class="hint">Ex.: <b>ATI</b> → ATI-0001. Sugerida pelo nome; edite se colidir com outra.</div></div>
     </div>
     <div class="mf"><button class="btn" onclick="closeCatEdit()">Cancelar</button><span class="spacer"></span><button class="btn btn-p" onclick="salvarCatEdit()"><span class="material-symbols-rounded">check</span>Salvar</button></div>
@@ -275,12 +276,26 @@ function render(){
   </tr>`).join('');
 }
 async function carregarCategs(){
-  try{ const {data,error}=await SB.from('orc_categorias').select('id,nome,sigla').eq('tipo',TIPO).eq('ativo',true).is('deleted_at',null).order('ordem'); if(!error) CATEGS=data||[]; }catch(e){ console.error(e); }
+  try{ const {data,error}=await SB.from('orc_categorias').select('id,nome,sigla,grupo').eq('tipo',TIPO).eq('ativo',true).is('deleted_at',null).order('ordem'); if(!error) CATEGS=data||[]; }catch(e){ console.error(e); }
 }
+// áreas (grupos) das categorias de serviço — ordem fixa de exibição
+const AREAS=['Automação & Controle','Elétrica & Infraestrutura','Quadros (Oficina)','Climatização & Refrigeração','Energia','Iluminação','Entrega & Pós'];
+function areasOrdenadas(){
+  const has=[...new Set(CATEGS.map(c=>c.grupo||'').filter(Boolean))];
+  const ord=AREAS.filter(a=>has.includes(a)); has.forEach(a=>{ if(!ord.includes(a))ord.push(a); });
+  if(CATEGS.some(c=>!c.grupo)) ord.push('');   // sem área no fim
+  return ord;
+}
+function catsDoGrupo(g){ return CATEGS.filter(c=>(c.grupo||'')===g); }
 function populaCategSelect(current){
   const sel=document.getElementById('f_categoria');
   let o='<option value="">— sem categoria —</option>';
-  CATEGS.forEach(c=>{ o+=`<option value="${esc(c.nome)}">${esc(c.nome)}</option>`; });
+  areasOrdenadas().forEach(g=>{
+    const cs=catsDoGrupo(g); if(!cs.length)return;
+    o+=`<optgroup label="${esc(g||'Sem área')}">`;
+    cs.forEach(c=>{ o+=`<option value="${esc(c.nome)}">${c.sigla?esc(c.sigla)+' · ':''}${esc(c.nome)}</option>`; });
+    o+='</optgroup>';
+  });
   if(current && !CATEGS.some(c=>c.nome===current)) o+=`<option value="${esc(current)}">${esc(current)} (fora da lista)</option>`;
   o+='<option value="__new">+ Nova categoria…</option>';
   sel.innerHTML=o; sel.value=current||''; _prevCateg=current||'';
@@ -320,10 +335,18 @@ function gerarCodServ(){
 }
 /* gerenciador de categorias */
 let _catEdit=null;
+function fillGrupoSel(cur){
+  const sel=document.getElementById('ce_grupo'); if(!sel)return;
+  let o=''; AREAS.forEach(a=>{ o+=`<option value="${esc(a)}"${a===cur?' selected':''}>${esc(a)}</option>`; });
+  if(cur && !AREAS.includes(cur)) o+=`<option value="${esc(cur)}" selected>${esc(cur)}</option>`;
+  o+='<option value="">— Sem área —</option>';
+  sel.innerHTML=o; sel.value=cur||'';
+}
 function openCatEdit(id){
   const c=CATEGS.find(x=>x.id===id); if(!c)return; _catEdit=id;
   document.getElementById('ce_nome').value=c.nome||'';
   document.getElementById('ce_sigla').value=c.sigla||autoSigla2(c.nome||'');
+  fillGrupoSel(c.grupo||'');
   document.getElementById('catEditModal').classList.add('show');
   setTimeout(()=>document.getElementById('ce_nome').focus(),40);
 }
@@ -332,8 +355,9 @@ function salvarCatEdit(){
   const c=CATEGS.find(x=>x.id===_catEdit); if(!c){ closeCatEdit(); return; }
   const nome=document.getElementById('ce_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
   const sigla=(document.getElementById('ce_sigla').value||'').trim().toUpperCase().slice(0,3) || autoSigla2(nome);
-  const nomeAntigo=c.nome; c.nome=nome; c.sigla=sigla||null;
-  SB.from('orc_categorias').update({nome,sigla:c.sigla}).eq('id',_catEdit).then(({error})=>{ if(error)alert('Erro ao salvar: '+error.message); });
+  const grupo=(document.getElementById('ce_grupo')?document.getElementById('ce_grupo').value:'')||null;
+  const nomeAntigo=c.nome; c.nome=nome; c.sigla=sigla||null; c.grupo=grupo;
+  SB.from('orc_categorias').update({nome,sigla:c.sigla,grupo}).eq('id',_catEdit).then(({error})=>{ if(error)alert('Erro ao salvar: '+error.message); });
   if(nome!==nomeAntigo){ ITENS.forEach(it=>{ if(it.categoria===nomeAntigo){ it.categoria=nome; if(it.id) SB.from('orc_catalogo').update({categoria:nome}).eq('id',it.id).then(()=>{}); } }); }
   renderCategMgr(); render();
   const fc=document.getElementById('f_categoria'); if(fc){ const cur=(fc.value===nomeAntigo)?nome:fc.value; populaCategSelect(cur); gerarCodServ(); }
@@ -352,14 +376,20 @@ function closeCategs(){ document.getElementById('categModal').classList.remove('
 function renderCategMgr(){
   const el=document.getElementById('catgList');
   if(!CATEGS.length){ el.innerHTML='<div style="color:var(--tx3);padding:14px;text-align:center;font-size:13px">Nenhuma categoria. Adicione acima.</div>'; return; }
-  el.innerHTML=CATEGS.map((c,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:8px 4px;border-bottom:1px solid var(--line)">
-    <span title="sigla (prefixo do código do serviço)" style="width:44px;text-align:center;font-weight:800;font-size:12px;border:1px solid var(--line2);border-radius:6px;padding:5px 2px;color:var(--pri);background:var(--surf2)">${esc(c.sigla||'—')}</span>
-    <span style="flex:1;font-size:13px">${esc(c.nome)}</span>
-    <button class="iconb" title="Subir" onclick="moveCateg('${c.id}',-1)" ${i===0?'disabled':''}><span class="material-symbols-rounded">arrow_upward</span></button>
-    <button class="iconb" title="Descer" onclick="moveCateg('${c.id}',1)" ${i===CATEGS.length-1?'disabled':''}><span class="material-symbols-rounded">arrow_downward</span></button>
-    <button class="iconb" title="Renomear" onclick="openCatEdit('${c.id}')"><span class="material-symbols-rounded">edit</span></button>
-    <button class="iconb del" title="Excluir" onclick="delCateg('${c.id}')"><span class="material-symbols-rounded">delete</span></button>
-  </div>`).join('');
+  let h='';
+  areasOrdenadas().forEach(g=>{
+    const cs=catsDoGrupo(g); if(!cs.length)return;
+    h+=`<div style="display:flex;align-items:center;gap:6px;margin:12px 2px 4px;font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--pri);background:var(--pri-bg);border-radius:7px;padding:6px 10px"><span class="material-symbols-rounded" style="font-size:15px">folder</span>${esc(g||'Sem área')}<span style="margin-left:auto;font-weight:600;color:var(--tx3);letter-spacing:0;text-transform:none">${cs.length}</span></div>`;
+    h+=cs.map((c,i)=>`<div style="display:flex;align-items:center;gap:6px;padding:7px 4px;border-bottom:1px solid var(--line)">
+      <span title="sigla (prefixo do código do serviço)" style="width:50px;text-align:center;font-weight:800;font-size:12px;border:1px solid var(--line2);border-radius:6px;padding:5px 2px;color:var(--pri);background:var(--surf2)">${esc(c.sigla||'—')}</span>
+      <span style="flex:1;font-size:13px">${esc(c.nome)}</span>
+      <button class="iconb" title="Subir" onclick="moveCateg('${c.id}',-1)" ${i===0?'disabled':''}><span class="material-symbols-rounded">arrow_upward</span></button>
+      <button class="iconb" title="Descer" onclick="moveCateg('${c.id}',1)" ${i===cs.length-1?'disabled':''}><span class="material-symbols-rounded">arrow_downward</span></button>
+      <button class="iconb" title="Editar (nome, sigla, área)" onclick="openCatEdit('${c.id}')"><span class="material-symbols-rounded">edit</span></button>
+      <button class="iconb del" title="Excluir" onclick="delCateg('${c.id}')"><span class="material-symbols-rounded">delete</span></button>
+    </div>`).join('');
+  });
+  el.innerHTML=h;
 }
 function addCateg(){
   const inp=document.getElementById('catg_novo'); const nome=inp.value.trim(); if(!nome)return;
@@ -378,10 +408,13 @@ function delCateg(id){
   SB.from('orc_categorias').update({deleted_at:new Date().toISOString()}).eq('id',id).then(({error})=>{ if(error){alert('Erro: '+error.message);return;} CATEGS=CATEGS.filter(x=>x.id!==id); renderCategMgr(); });
 }
 function moveCateg(id,dir){
-  const i=CATEGS.findIndex(x=>x.id===id), j=i+dir; if(j<0||j>=CATEGS.length)return;
-  [CATEGS[i],CATEGS[j]]=[CATEGS[j],CATEGS[i]];
-  SB.from('orc_categorias').update({ordem:i}).eq('id',CATEGS[i].id).then(()=>{});
-  SB.from('orc_categorias').update({ordem:j}).eq('id',CATEGS[j].id).then(()=>{});
+  const c=CATEGS.find(x=>x.id===id); if(!c)return;
+  const cs=catsDoGrupo(c.grupo||''); const gi=cs.findIndex(x=>x.id===id), gj=gi+dir;
+  if(gj<0||gj>=cs.length)return;                          // move só dentro da mesma área
+  const a=cs[gi], b=cs[gj]; const oa=a.ordem, ob=b.ordem; a.ordem=ob; b.ordem=oa;
+  CATEGS.sort((x,y)=>(x.ordem||0)-(y.ordem||0));
+  SB.from('orc_categorias').update({ordem:a.ordem}).eq('id',a.id).then(()=>{});
+  SB.from('orc_categorias').update({ordem:b.ordem}).eq('id',b.id).then(()=>{});
   renderCategMgr();
 }
 function openItem(id){
