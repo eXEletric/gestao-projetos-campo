@@ -163,7 +163,7 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
     <div class="mh"><span class="material-symbols-rounded">category</span><b>Editar categoria</b><button class="x" onclick="closeCatEdit()"><span class="material-symbols-rounded">close</span></button></div>
     <div class="mb">
       <div class="fg"><label class="fl">Nome da categoria de serviço</label><input class="fi" id="ce_nome"></div>
-      <div class="fg"><label class="fl">Sigla (2 letras — prefixo do código do serviço)</label><input class="fi" id="ce_sigla" maxlength="2" style="width:90px;text-transform:uppercase;text-align:center;font-weight:700;color:var(--pri)"><div class="hint">Ex.: <b>AU</b> → AU-0001. Sugerida pelo nome; edite se colidir com outra.</div></div>
+      <div class="fg"><label class="fl">Sigla (3 letras — prefixo do código do serviço)</label><input class="fi" id="ce_sigla" maxlength="3" style="width:100px;text-transform:uppercase;text-align:center;font-weight:700;color:var(--pri)"><div class="hint">Ex.: <b>ATI</b> → ATI-0001. Sugerida pelo nome; edite se colidir com outra.</div></div>
     </div>
     <div class="mf"><button class="btn" onclick="closeCatEdit()">Cancelar</button><span class="spacer"></span><button class="btn btn-p" onclick="salvarCatEdit()"><span class="material-symbols-rounded">check</span>Salvar</button></div>
   </div>
@@ -300,8 +300,10 @@ function onCategSel(val){
 function autoSigla2(nome){
   const stop=['DE','DA','DO','DAS','DOS','E','A','O','AS','OS','EM','PARA','POR','COM'];
   const w=(nome||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase().split(/[^A-Z0-9]+/).filter(x=>x&&stop.indexOf(x)<0);
-  if(!w.length)return''; if(w.length===1)return w[0].slice(0,2);
-  return ((w[0][0]||'')+(w[1][0]||'')).slice(0,2);
+  if(!w.length)return''; if(w.length===1)return w[0].slice(0,3);
+  const n=Math.min(w.length,3),alloc=new Array(n).fill(1); let ex=3-n; for(let i=0;i<n&&ex>0;i++){alloc[i]++;ex--;}
+  const tk=(x,k)=>{if(k<=1)return x[0]||'';let o=x[0];for(let i=1;i<x.length&&o.length<k;i++){if('AEIOU'.indexOf(x[i])<0)o+=x[i];}for(let i=1;i<x.length&&o.length<k;i++){if(o.length<k)o+=x[i];}return o.slice(0,k);};
+  let s=''; for(let i=0;i<n;i++)s+=tk(w[i],alloc[i]); return s.slice(0,3);
 }
 // código do serviço = SIGLA(2) + nº único global (ex.: AU-0001)
 function gerarCodServ(){
@@ -329,7 +331,7 @@ function closeCatEdit(){ document.getElementById('catEditModal').classList.remov
 function salvarCatEdit(){
   const c=CATEGS.find(x=>x.id===_catEdit); if(!c){ closeCatEdit(); return; }
   const nome=document.getElementById('ce_nome').value.trim(); if(!nome){ alert('Informe o nome.'); return; }
-  const sigla=(document.getElementById('ce_sigla').value||'').trim().toUpperCase().slice(0,2) || autoSigla2(nome);
+  const sigla=(document.getElementById('ce_sigla').value||'').trim().toUpperCase().slice(0,3) || autoSigla2(nome);
   const nomeAntigo=c.nome; c.nome=nome; c.sigla=sigla||null;
   SB.from('orc_categorias').update({nome,sigla:c.sigla}).eq('id',_catEdit).then(({error})=>{ if(error)alert('Erro ao salvar: '+error.message); });
   if(nome!==nomeAntigo){ ITENS.forEach(it=>{ if(it.categoria===nomeAntigo){ it.categoria=nome; if(it.id) SB.from('orc_catalogo').update({categoria:nome}).eq('id',it.id).then(()=>{}); } }); }
