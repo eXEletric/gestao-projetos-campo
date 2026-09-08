@@ -431,6 +431,15 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .pkitem:hover{background:var(--pri-bg);border-color:var(--pri)}
 .pkitem .pknm{flex:1;min-width:0}
 .pkitem .pkcusto{font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums;white-space:nowrap}
+.pkgroup{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--pri);background:var(--pri-bg);border-radius:7px;padding:5px 9px;margin:10px 0 6px}
+.pkgroup:first-child{margin-top:0}
+.pkgroup .pkgcount{margin-left:auto;background:var(--surf);color:var(--tx3);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:700}
+.pkrow{display:flex;align-items:stretch;gap:6px;margin-bottom:6px}
+.pkrow .pkitem{margin-bottom:0;flex:1}
+.pkedit,.pkdel{border:1px solid var(--line);border-radius:9px;background:var(--surf);cursor:pointer;color:var(--tx3);padding:0 10px;display:flex;align-items:center}
+.pkedit:hover{border-color:var(--pri);color:var(--pri)}
+.pkdel:hover{border-color:#c0392b;color:#c0392b}
+.pkedit .material-symbols-rounded,.pkdel .material-symbols-rounded{font-size:18px}
 .hpsrch{display:flex;align-items:center;gap:7px;border:1px solid var(--line2);border-radius:8px;padding:8px 11px;margin-bottom:9px;position:sticky;top:0;background:var(--surf);z-index:1}
 .hpsrch input{border:none;outline:none;background:none;font-size:13px;width:100%;color:var(--tx)}
 .hpsrch .material-symbols-rounded{font-size:18px;color:var(--tx3)}
@@ -1943,19 +1952,71 @@ function qtdCellHtml(cfg,r){
 /* ---------- picker do cadastro ---------- */
 const UND_DFLT={servicos:'SERV',equip:'DIA',despesas:'UND',materiais:'PÇ'};
 let PICK_TARGET=null;   // id da linha sendo TROCADA (null = adicionar nova)
+let _PICK_BLK=null;
 function openPick(blk,target){
-  PICK_TARGET = target || null;
+  PICK_TARGET = target || null; _PICK_BLK=blk;
   const cfg=BLKS.find(b=>b.key===blk), cad=catFor(blk);
-  const list=cad.map(c=>`<button class="pkitem" onclick="pickCad('${blk}','${c.id}')"><span class="pknm">${esc(c.nome)}${c.marca?' — '+esc(c.marca):''}</span><span class="pkcusto">custo ${fmt(c.custo)}/${esc(c.und||UND_DFLT[blk])}</span></button>`).join('');
   const isCat = !cfg.mat && cfg.custo;
   const avAction = (isCat && CLOUD) ? `openNovoCat('${blk}')` : `addAvulso('${blk}')`;
   const avLabel = cfg.mat ? 'Material genérico / avulso (sem preço fixo)' : ('+ Novo '+cfg.sing+((isCat&&CLOUD)?' (cadastrar no catálogo)':' (fora do cadastro)'));
   const avulso = `<button class="pkitem avulso" onclick="${avAction}"><span class="material-symbols-rounded">${(isCat&&CLOUD)?'note_add':'edit_note'}</span>${avLabel}</button>`;
   document.getElementById('pickTitle').textContent=(PICK_TARGET?'Trocar '+cfg.sing+' (mantém a posição)':'Adicionar '+cfg.sing);
-  document.getElementById('pickBody').innerHTML=(cad.length?list:'<div style="color:var(--tx3);padding:12px;font-size:12px">Cadastro vazio.</div>')+avulso;
+  const srch = cad.length>6 ? `<div class="hpsrch"><span class="material-symbols-rounded">search</span><input id="pkq" placeholder="Buscar ${esc(cfg.sing)}…" oninput="pickFilter(this.value)"></div>` : '';
+  document.getElementById('pickBody').innerHTML=srch+'<div id="pkList">'+(cad.length?pickListHTML(blk,''):'<div style="color:var(--tx3);padding:12px;font-size:12px">Cadastro vazio.</div>')+'</div>'+avulso;
   document.getElementById('pickModal').classList.add('open');
+  if(srch) setTimeout(()=>{const q=document.getElementById('pkq');if(q)q.focus();},40);
 }
-function closePick(){ document.getElementById('pickModal').classList.remove('open'); PICK_TARGET=null; }
+// lista do seletor AGRUPADA POR CATEGORIA (padrão do sistema p/ facilitar a inserção)
+function pickListHTML(blk,q){
+  q=(q||'').toLowerCase().trim();
+  let cad=catFor(blk);
+  if(q) cad=cad.filter(c=>((c.nome||'')+' '+(c.marca||'')+' '+(c.categoria||'')).toLowerCase().includes(q));
+  if(!cad.length) return '<div style="color:var(--tx3);padding:12px;font-size:12px">Nada encontrado.</div>';
+  const groups={}, order=[];
+  cad.forEach(c=>{ const g=(c.categoria&&String(c.categoria).trim())||'— Sem categoria'; if(!groups[g]){groups[g]=[];order.push(g);} groups[g].push(c); });
+  order.sort((a,b)=> a==='— Sem categoria'?1 : b==='— Sem categoria'?-1 : a.localeCompare(b));
+  return order.map(g=>{
+    const items=groups[g].slice().sort((x,y)=>(x.nome||'').localeCompare(y.nome||''));
+    return `<div class="pkgroup">${esc(g)}<span class="pkgcount">${items.length}</span></div>`+
+      items.map(c=>{
+        const real=(CATALOGO[blk]||[]).some(x=>x.id===c.id);
+        const acts=(CLOUD&&real)?`<button class="pkedit" title="Editar no catálogo" onclick="event.stopPropagation();pickEdit('${blk}','${c.id}')"><span class="material-symbols-rounded">edit</span></button><button class="pkdel" title="Excluir do catálogo" onclick="event.stopPropagation();pickDelete('${blk}','${c.id}')"><span class="material-symbols-rounded">delete</span></button>`:'';
+        return `<div class="pkrow"><button class="pkitem" onclick="pickCad('${blk}','${c.id}')"><span class="pknm">${esc(c.nome)}${c.marca?' — '+esc(c.marca):''}</span><span class="pkcusto">custo ${fmt(c.custo)}/${esc(c.und||UND_DFLT[blk])}</span></button>${acts}</div>`;
+      }).join('');
+  }).join('');
+}
+// editar um item do catálogo direto do seletor (reusa o modal Novo/Editar do cadastro)
+function pickEdit(blk,catId){
+  const c=(catFor(blk)||[]).find(x=>x.id===catId); if(!c)return;
+  const realCat=(CATALOGO[blk]||[]).some(x=>x.id===catId);
+  PICK_TARGET=null; _ncBlk=blk; _ncEditRow=null; _ncEdit = realCat ? catId : null;
+  closePick();
+  const sing=(BLKS.find(b=>b.key===blk)||{}).sing||'item';
+  document.getElementById('novoCatTitle').textContent = realCat ? ('Editar '+sing+' no cadastro') : ('Cadastrar '+sing+' no catálogo');
+  document.getElementById('nc_nome').value=c.nome||''; agrow(document.getElementById('nc_nome'));
+  fillUnd(document.getElementById('nc_und'), c.und||UND_DFLT[blk]||'UND');
+  document.getElementById('nc_custo').value=(c.custo!=null&&c.custo!==''?moneyVal(c.custo):'');
+  document.getElementById('nc_margem').value=(c.margem===''||c.margem==null?'':c.margem);
+  fillCateg(document.getElementById('nc_cat'),blk,c.categoria||'');
+  _ncComposicao=c.composicao||null; _ncNew=false;
+  ncComposBox(blk);
+  document.getElementById('novoCatModal').classList.add('open');
+  setTimeout(()=>document.getElementById('nc_nome').focus(),40);
+}
+// excluir (soft-delete) um item do catálogo direto do seletor
+function pickDelete(blk,catId){
+  const c=(catFor(blk)||[]).find(x=>x.id===catId); if(!c)return;
+  const usadoAqui=(S[blk]||[]).some(r=>r.catId===catId);
+  let msg='Excluir "'+(c.nome||'')+'" do catálogo?';
+  if(usadoAqui) msg+='\n\nATENÇÃO: este item está em uso nesta proposta. As linhas já inseridas permanecem, mas ele deixa de aparecer para novas inserções.';
+  if(!confirm(msg)) return;
+  const done=()=>{ CATALOGO[blk]=(CATALOGO[blk]||[]).filter(x=>x.id!==catId); const q=document.getElementById('pkq'); pickFilter(q?q.value:''); };
+  if(CLOUD){
+    SB.from('orc_catalogo').update({deleted_at:new Date().toISOString()}).eq('id',catId).then(({error})=>{ if(error){ console.error(error); alert('Erro ao excluir: '+error.message); return; } done(); });
+  } else done();
+}
+function pickFilter(q){ const el=document.getElementById('pkList'); if(el&&_PICK_BLK) el.innerHTML=pickListHTML(_PICK_BLK,q); }
+function closePick(){ document.getElementById('pickModal').classList.remove('open'); PICK_TARGET=null; _PICK_BLK=null; }
 function pickCad(blk,cid){
   const c=catFor(blk).find(x=>x.id===cid); if(!c)return;
   if(PICK_TARGET){                                   // TROCA: substitui o item na mesma posição, mantendo a qtd
