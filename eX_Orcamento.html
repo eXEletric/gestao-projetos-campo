@@ -1160,7 +1160,7 @@ const fmtN=v=>num(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFrac
 const moneyVal=v=>(v===''||v==null)?'':fmtN(v);                                                   // valor inicial do campo (formatado)
 const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 /* unidades — lista suspensa (evita digitação livre) */
-const UNIDADES=['UND','SERV','PÇ','CJ','KIT','M','M²','M³','KM','KG','L','H','DIA','MÊS','VB','PT','LOTE'];
+const UNIDADES=['SERV','UND','PÇ','CJ','KIT','M','M²','M³','KM','CIRCT','DISP','KG','L','H','DIA','MÊS','VB','PT','LOTE'];
 // caixa de texto que cresce conforme escreve (nome do serviço)
 function agrow(el){ if(!el)return; el.style.height='auto'; el.style.height=(el.scrollHeight)+'px'; }
 function undSelect(blk,id,val,r){
@@ -1938,7 +1938,7 @@ function qtdCellHtml(cfg,r){
 }
 
 /* ---------- picker do cadastro ---------- */
-const UND_DFLT={servicos:'UND',equip:'DIA',despesas:'UND',materiais:'PÇ'};
+const UND_DFLT={servicos:'SERV',equip:'DIA',despesas:'UND',materiais:'PÇ'};
 let PICK_TARGET=null;   // id da linha sendo TROCADA (null = adicionar nova)
 function openPick(blk,target){
   PICK_TARGET = target || null;

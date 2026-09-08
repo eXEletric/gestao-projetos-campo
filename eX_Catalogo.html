@@ -130,7 +130,7 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
       <div class="frow">
         <div class="fg"><label class="fl">Unidade</label>
           <select class="fi" id="f_unidade">
-            <option>UND</option><option>PÇ</option><option>M</option><option>M²</option><option>KM</option><option>L</option><option>KG</option><option>CX</option><option>CIRCT</option><option>DIÁRIA</option><option>HORA</option><option>DIA</option><option>SEMANA</option><option>MÊS</option><option>VB</option><option>GLOBAL</option>
+            <option>SERV</option><option>UND</option><option>PÇ</option><option>M</option><option>M²</option><option>KM</option><option>L</option><option>KG</option><option>CX</option><option>CIRCT</option><option>DISP</option><option>DIÁRIA</option><option>HORA</option><option>DIA</option><option>SEMANA</option><option>MÊS</option><option>VB</option><option>GLOBAL</option>
           </select></div>
         <div class="fg"><label class="fl">Custo (R$)</label><input class="fi" id="f_custo" inputmode="decimal"></div>
         <div class="fg"><label class="fl">Margem %</label><input class="fi" id="f_margem" inputmode="decimal" placeholder="padrão"><div class="hint">vazio = margem base do orçamento</div></div>
@@ -230,7 +230,7 @@ const num=v=>{if(typeof v==='number')return isNaN(v)?0:v;let s=String(v||'').tri
 const fmt=n=>'R$ '+(Math.round((+n||0)*100)/100).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const fmtN=v=>num(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 function agrow(el){ if(!el)return; el.style.height='auto'; el.style.height=(el.scrollHeight)+'px'; }
-const UNDS=['UND','PÇ','M','M²','KM','L','KG','CX','CIRCT','DIÁRIA','HORA','DIA','SEMANA','MÊS','VB','GLOBAL'];
+const UNDS=['SERV','UND','PÇ','M','M²','KM','L','KG','CX','CIRCT','DISP','DIÁRIA','HORA','DIA','SEMANA','MÊS','VB','GLOBAL'];
 function fillUnd(sel,val){ if(!sel)return; const v=(val||'UND'); let list=UNDS.slice(); if(v&&!list.includes(v))list.unshift(v); sel.innerHTML=list.map(u=>`<option value="${u}" ${u===v?'selected':''}>${u}</option>`).join(''); sel.value=v; }
 function cloudMsg(t){ const e=document.getElementById('cloudb'); if(e)e.textContent=t; }
 
@@ -423,7 +423,7 @@ function openItem(id){
   const it=id?ITENS.find(x=>x.id===id):null;
   document.getElementById('mTitle').textContent=(id?'Editar ':'Novo ')+(LBL[TIPO]||LBL.servico)[2];
   document.getElementById('f_nome').value=it?it.nome||'':'';
-  const uSel=document.getElementById('f_unidade'), uv=it?(it.unidade||'UND'):'UND';
+  const uSel=document.getElementById('f_unidade'), uv=it?(it.unidade||'UND'):(TIPO==='servico'?'SERV':'UND');
   if(uv && ![...uSel.options].some(o=>o.value===uv)){ const op=document.createElement('option'); op.value=uv; op.textContent=uv; uSel.appendChild(op); }
   uSel.value=uv;
   document.getElementById('f_custo').value=it?(it.custo??''):'';
