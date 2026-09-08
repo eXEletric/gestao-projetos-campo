@@ -332,7 +332,7 @@ function gerarCodServ(){
   // sequência POR SIGLA: maior número entre serviços da mesma sigla + 1
   let max=0; const pre=cat.sigla+'-';
   ITENS.forEach(it=>{ const c=String(it.codigo||''); if(c.indexOf(pre)===0){ const m=c.slice(pre.length).match(/^(\d+)/); if(m){ const n=parseInt(m[1],10); if(n>max)max=n; } } });
-  fc.value=cat.sigla+'-'+String(max+1).padStart(2,'0');
+  fc.value=cat.sigla+'-'+String(max+1).padStart(3,'0');
 }
 /* gerenciador de categorias */
 let _catEdit=null;
