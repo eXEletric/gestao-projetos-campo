@@ -3274,7 +3274,7 @@ function renderBanner(){ const el=document.getElementById('oppBanner'); if(!el){
     <div class="ob-st">${aprovada
       ? `<span class="obst-aprov"><span class="material-symbols-rounded">verified</span>Aprovada</span>`
       : ['rascunho','enviado'].map(s=>`<button class="obst ${st===s?'on':''}" onclick="setStatus('${s}')">${s}</button>`).join('')}</div>
-    <button class="btn btn-s" onclick="voltarFunil()"><span class="material-symbols-rounded">arrow_back</span>Funil</button>
+    <button class="btn btn-s" onclick="voltarFunil()"><span class="material-symbols-rounded">arrow_back</span>${(new URLSearchParams(location.search)).get('from')==='funil'?'Funil':'Orçamentos'}</button>
   </div>`;
   renderLevUnidade();
   renderComprovantes();
@@ -3359,7 +3359,12 @@ function setStatus(s){ S.status=s;
   else if(OPP&&CLOUD){ saveOrc(); }   // proposta nova ainda sem id: o insert automático leva o status
   renderBanner(); }
 // volta ao funil SEMPRE pelo shell (que tem o menu lateral): embutido → avisa o shell; avulso → abre o shell no funil
-function voltarFunil(){ try{ if(window.top!==window.self){ parent.postMessage({type:'exNav',view:'funil'},'*'); return; } }catch(e){} location.href='eX_CRM.html'; }
+function voltarFunil(){
+  var from=(new URLSearchParams(location.search)).get('from');
+  if(from!=='funil'){ location.href='eX_Orcamento.html'; return; }   // veio do menu Orçamentos → volta pra LISTA de orçamentos
+  try{ if(window.top!==window.self){ parent.postMessage({type:'exNav',view:'funil'},'*'); return; } }catch(e){}   // veio do funil → volta pro funil
+  location.href='eX_CRM.html';
+}
 
 /* ---------- blocos: liga/desliga ---------- */
 function renderBlocosBar(){

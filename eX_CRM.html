@@ -765,7 +765,7 @@ function loteUnitsOf(loteId){ return S.oportunidades.filter(o=>o.loteId===loteId
 function loteTotal(loteId){ const idx=orcIndex(); return loteUnitsOf(loteId).reduce((a,u)=>a+((idx[u.id]&&idx[u.id].total)||0),0); }
 function loteToggle(el){ const c=el.closest('.kcard'); if(c)c.classList.toggle('open'); }
 // abre um orçamento (mestra ou unidade): no shell vai pro MÓDULO Orçamentos (persiste no reload); standalone navega direto
-function abrirOrcNoShell(qs){ if(window.parent&&window.parent!==window){ try{ window.parent.postMessage({type:'exNav',view:'orcamento',qs:qs},'*'); return; }catch(_){} } location.href='eX_Orcamento.html'+qs; }
+function abrirOrcNoShell(qs){ var q=qs+((qs.indexOf('?')>=0?'&':'?')+'from=funil'); if(window.parent&&window.parent!==window){ try{ window.parent.postMessage({type:'exNav',view:'orcamento',qs:q},'*'); return; }catch(_){} } location.href='eX_Orcamento.html'+q; }
 function abrirLoteBaseById(loteId){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(l&&l.baseOppId) abrirOrcNoShell('?opp='+l.baseOppId+'&lote='+l.id); }
 function moveLote(loteId,dir){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(!l)return; const b=baseOppOf(l); if(!b)return; const i=colIdx(b.colId)+dir; if(i<0||i>=S.colunas.length)return; const destId=S.colunas[i].id;
   // #9: o lote respeita as mesmas travas de fase de uma oportunidade avulsa (gate/entrada/permitido)
