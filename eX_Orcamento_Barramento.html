@@ -237,6 +237,8 @@ body.viewing .cjhint{display:none}
   <!-- ===== BARRA SUPERIOR ===== -->
   <div class="appbar">
     <span class="logo"><b>e</b>X</span>
+    <a id="voltarApp" href="index.html" title="Voltar ao menu do app" style="display:none;align-items:center;gap:5px;text-decoration:none;border:1px solid var(--line2,#ccc);border-radius:8px;padding:6px 11px;color:var(--tx2,#555);font:600 12.5px inherit"><span class="material-symbols-rounded" style="font-size:16px">arrow_back</span>App</a>
+    <script>/* módulo aberto fora do app (nível-topo) → volta ao menu; embutido no iframe fica escondido */try{if(window.top===window.self){document.getElementById('voltarApp').style.display='inline-flex';}}catch(e){}</script>
     <span class="modtag"><span class="material-symbols-rounded">bolt</span>Orçamento · Barramentos</span>
     <span class="orcbar">
       <span class="material-symbols-rounded" style="font-size:17px;color:var(--tx3)">folder_open</span>

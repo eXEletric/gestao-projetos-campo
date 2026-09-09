@@ -726,6 +726,7 @@ body.viewing .clientonly{display:block!important}
   <!-- ===== BARRA SUPERIOR ===== -->
   <div class="appbar">
     <span class="logo" id="appLogo"><b>e</b>X</span>
+    <a id="voltarApp" href="index.html" class="btn" style="display:none;align-items:center;gap:5px;text-decoration:none" title="Voltar ao menu do app"><span class="material-symbols-rounded">arrow_back</span>App</a>
     <span class="modtag"><span class="material-symbols-rounded">request_quote</span>Orçamento</span>
     <span class="spacer"></span>
     <div class="mode">
@@ -736,6 +737,7 @@ body.viewing .clientonly{display:block!important}
     <button class="btn btnsalvar" id="btnSalvar" onclick="salvarManual()"><span class="material-symbols-rounded">save</span>Salvar</button>
     <button class="btn" onclick="window.print()"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
   </div>
+  <script>/* página-módulo aberta fora do app (nível-topo) → oferecer volta ao menu; embutida no iframe fica escondida */try{if(window.top===window.self){var _va=document.getElementById('voltarApp');if(_va)_va.style.display='inline-flex';}}catch(e){}</script>
   <div class="sub">Folha de cotação.</div>
 
   <div id="oppBanner"></div>
