@@ -557,6 +557,11 @@ body.papel-tecnico .adm-only{display:none !important}
         <button class="sb-i fut" onclick="navSoon('Uniformes',this)"><span class="ic"><span class="msr">checkroom</span></span><span class="lb">Uniformes</span><span class="br">em breve</span></button>
       </div>
 
+      <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">storefront</span></span><span class="lb">Lojas</span><span class="gchev">▶</span></div>
+      <div class="sb-sub">
+        <button class="sb-i" onclick="navView('lojas',this)"><span class="ic"><span class="msr">sell</span></span><span class="lb">Catálogo vendável</span></button>
+      </div>
+
       <div class="sb-foot">
       <div class="sb-grp adm-only" onclick="toggleGrp(this)"><span class="ic"><span class="msr">settings</span></span><span class="lb">Configurações</span><span class="gchev">▶</span></div>
       <div class="sb-sub adm-only">
@@ -711,7 +716,18 @@ body.papel-tecnico .adm-only{display:none !important}
 
   <!-- MATERIAIS -->
   <div class="view" id="v-mat">
-    <iframe id="mat-frame" title="Cadastro de Materiais / Estoque" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
+    <div class="topbar"><span class="pname">Materiais</span><button class="btn btn-p btn-s" onclick="openMat(null)">+ Novo material</button></div>
+    <div class="note">Cadastro único (<b>materiais</b>) · alimenta Almoxarifado, Lojas e Orçamento. <span id="mat-count"></span></div>
+    <input class="tin" id="mat-busca" placeholder="Buscar por descrição, código, marca…" style="width:100%;margin-bottom:12px" oninput="renderMatList()">
+    <div id="mat-list"><div class="empty">Carregando materiais…</div></div>
+  </div>
+
+  <!-- LOJAS (revenda · vendável) -->
+  <div class="view" id="v-lojas">
+    <div class="topbar"><span class="pname">Lojas · catálogo vendável</span><button class="btn btn-p btn-s" onclick="openMat(null)">+ Novo item</button></div>
+    <div class="note">Lista curada (só itens marcados <b>vendável</b>) — puxa do mesmo acervo <b>materiais</b>. <span id="lojas-count"></span></div>
+    <input class="tin" id="lojas-busca" placeholder="Buscar por descrição, código, marca…" style="width:100%;margin-bottom:12px" oninput="renderLojas()">
+    <div id="lojas-list"><div class="empty">Carregando…</div></div>
   </div>
 
   <div class="view" id="v-orcamento">
@@ -1459,6 +1475,11 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="fg"><label class="fl">Modelo</label><input class="fi" id="mt-mod"></div>
       <div class="fg"><label class="fl">Unidade</label><input class="fi" id="mt-un" value="UND"></div>
       <div class="fg"><label class="fl">Qtd mínima estoque</label><input class="fi" id="mt-qtd" type="number" step="0.01" placeholder="0"></div>
+    </div>
+    <div class="frow3">
+      <div class="fg"><label class="fl">Custo de compra <span style="color:var(--tx3)">(compõe serviço)</span></label><input class="fi" id="mt-custo" type="number" step="0.01" placeholder="R$"></div>
+      <div class="fg"><label class="fl">Preço de venda</label><input class="fi" id="mt-pv" type="number" step="0.01" placeholder="R$"></div>
+      <div class="fg"><label class="fl">Nas Lojas?</label><label style="display:flex;align-items:center;gap:8px;padding-top:9px;font-size:12px;color:var(--tx2)"><input type="checkbox" id="mt-vend"> vendável</label></div>
     </div>
     <div class="fg"><label class="fl">Observações</label><input class="fi" id="mt-obs"></div>
     <div class="note" id="mt-fotos-nota">Fotos do item: ativaremos o envio ao ligar o armazenamento (Storage).</div>
@@ -2653,10 +2674,9 @@ function addCat(){const v=document.getElementById('new-cat').value.trim();if(v){
 function rmCat(i){const par=S.categorias[i];S.categorias.splice(i,1);renderCfg();save();if(SB)softDel('categorias',par[0]);}
 
 /* ===== MATERIAIS (catálogo de tipos, na nuvem) ===== */
-let MATS=[], GRUPOS_MAT=[], MARCAS=[]; let MEDIT=null, MSEQ=0;
+let MATS=[], GRUPOS_MAT=[], MARCAS=[], LOJAS=[]; let MEDIT=null, MSEQ=0;
 function grpMatNome(id){const g=GRUPOS_MAT.find(x=>x.id===id);return g?g.nome:'';}
 async function carregarMateriais(){
-  const _mf=document.getElementById('mat-frame'); if(_mf){ if(!_mf.getAttribute('src')) _mf.setAttribute('src','eX_Estoque.html'); return; }
   if(!SB){ document.getElementById('mat-list').innerHTML='<div class="empty">Sem conexão com a nuvem.</div>'; return; }
   document.getElementById('mat-list').innerHTML='<div class="empty">Carregando materiais…</div>';
   const [r,g,mk]=await Promise.all([
@@ -2677,7 +2697,7 @@ function renderMatList(){
   document.getElementById('mat-list').innerHTML = lista.length ? `
     <div class="mtbl-wrap"><table class="mtbl">
       <thead><tr>
-        <th>Código</th><th>Descrição padronizada</th><th>Grupo</th><th>Marca / Modelo</th><th>Medida / Cor</th><th>Un</th><th>Mín</th><th>Cód. barras</th><th></th>
+        <th>Código</th><th>Descrição padronizada</th><th>Grupo</th><th>Marca / Modelo</th><th class="num">Preço</th><th>Medida / Cor</th><th>Un</th><th>Mín</th><th>Cód. barras</th><th></th>
       </tr></thead>
       <tbody>${lista.map(m=>`
         <tr onclick="openMat('${esc(m.id)}')">
@@ -2685,6 +2705,7 @@ function renderMatList(){
           <td><div class="desc">${m.descricao_padronizada||'(sem descrição)'}</div>${m.descricao_fabricante?`<div class="sub">${m.descricao_fabricante}</div>`:''}</td>
           <td class="grp">${grpMatNome(m.grupo_material_id)||''}</td>
           <td>${m.marca||''}${m.modelo?`<div class="sub">${m.modelo}</div>`:''}</td>
+          <td class="num">${m.preco_venda!=null?('R$ '+Number(m.preco_venda).toFixed(2)):''}${m.vendavel?`<div class="sub" style="color:#0f8f5b">loja</div>`:''}</td>
           <td>${dim(m.medida)}${dim(m.material_cor)?`<div class="sub">${dim(m.material_cor)}</div>`:''}</td>
           <td>${m.unidade||'UND'}</td>
           <td class="num">${m.quantidade_minima!=null?m.quantidade_minima:''}</td>
@@ -2692,6 +2713,36 @@ function renderMatList(){
           <td class="acts"><button class="ib" onclick="event.stopPropagation();openMat('${esc(m.id)}')" title="editar">✎</button><button class="ib del" onclick="event.stopPropagation();delMat('${esc(m.id)}')" title="excluir">×</button></td>
         </tr>`).join('')}</tbody>
     </table></div>` : '<div class="empty">'+(q?'Nenhum material encontrado.':'Nenhum material ainda. Clique em "+ Novo material" ou importe sua planilha no Supabase.')+'</div>';
+}
+async function carregarLojas(){
+  if(!SB){ document.getElementById('lojas-list').innerHTML='<div class="empty">Sem conexão com a nuvem.</div>'; return; }
+  document.getElementById('lojas-list').innerHTML='<div class="empty">Carregando…</div>';
+  if(!GRUPOS_MAT.length){ const g=await SB.from('grupos_materiais').select('*').eq('ativo',true).order('ordem'); GRUPOS_MAT=g.data||[]; }
+  const r=await SB.from('materiais').select('*').eq('vendavel',true).is('deleted_at',null).order('descricao_padronizada');
+  if(r.error){ document.getElementById('lojas-list').innerHTML='<div class="empty">Erro: '+r.error.message+'</div>'; return; }
+  LOJAS=r.data||[]; renderLojas();
+}
+function renderLojas(){
+  const q=(document.getElementById('lojas-busca').value||'').toLowerCase().trim();
+  const lista=LOJAS.filter(m=>{ if(!q)return true; return [m.descricao_padronizada,m.codigo_interno,m.marca,grpMatNome(m.grupo_material_id)].some(x=>(x||'').toLowerCase().indexOf(q)>=0); });
+  document.getElementById('lojas-count').textContent='· '+LOJAS.length+' vendáveis';
+  const esc=s=>(s||'').replace(/'/g,"\\'");
+  const rs=v=>v!=null?('R$ '+Number(v).toFixed(2)):'—';
+  const mg=m=>(m.custo_compra&&m.preco_venda)?Math.round((m.preco_venda/m.custo_compra-1)*100)+'%':'';
+  document.getElementById('lojas-list').innerHTML = lista.length ? `
+    <div class="mtbl-wrap"><table class="mtbl">
+      <thead><tr><th>Código</th><th>Descrição</th><th>Grupo</th><th class="num">Custo</th><th class="num">Margem</th><th class="num">Preço venda</th><th></th></tr></thead>
+      <tbody>${lista.map(m=>`
+        <tr onclick="openMat('${esc(m.id)}')">
+          <td>${m.codigo_interno?`<span class="cod">${m.codigo_interno}</span>`:''}</td>
+          <td><div class="desc">${m.descricao_padronizada||'(sem descrição)'}</div>${m.marca?`<div class="sub">${m.marca}</div>`:''}</td>
+          <td class="grp">${grpMatNome(m.grupo_material_id)||''}</td>
+          <td class="num">${rs(m.custo_compra)}</td>
+          <td class="num">${mg(m)}</td>
+          <td class="num" style="color:#0f8f5b;font-weight:600">${rs(m.preco_venda)}</td>
+          <td class="acts"><button class="ib" onclick="event.stopPropagation();openMat('${esc(m.id)}')" title="editar">✎</button></td>
+        </tr>`).join('')}</tbody>
+    </table></div>` : '<div class="empty">Nenhum item vendável ainda. Marque um material como <b>vendável</b> no cadastro (Materiais) e ele aparece aqui.</div>';
 }
 function _matSelects(){
   const gsel=document.getElementById('mt-grupo');
@@ -2723,6 +2774,9 @@ function openMat(id){
   document.getElementById('mt-mod').value=v('modelo');
   document.getElementById('mt-qtd').value=v('quantidade_minima');
   document.getElementById('mt-obs').value=v('obs');
+  document.getElementById('mt-custo').value=MEDIT&&MEDIT.custo_compra!=null?MEDIT.custo_compra:'';
+  document.getElementById('mt-pv').value=MEDIT&&MEDIT.preco_venda!=null?MEDIT.preco_venda:'';
+  document.getElementById('mt-vend').checked=MEDIT?!!MEDIT.vendavel:false;
   document.getElementById('modalM').classList.add('show');
   if(!id) gerarCodInterno();
 }
@@ -2734,7 +2788,7 @@ async function gerarCodInterno(){
   const r=await SB.from('materiais').select('seq_grupo').eq('grupo_material_id',gsel.value).not('seq_grupo','is',null).order('seq_grupo',{ascending:false}).limit(1);
   let next=1; if(!r.error && r.data && r.data.length && r.data[0].seq_grupo) next=r.data[0].seq_grupo+1;
   MSEQ=next;
-  document.getElementById('mt-ci').value=sigla+'/'+String(next).padStart(3,'0');
+  document.getElementById('mt-ci').value=sigla+'-'+String(next).padStart(3,'0');
 }
 function closeMat(){document.getElementById('modalM').classList.remove('show');MEDIT=null;}
 async function saveMat(){
@@ -2754,7 +2808,10 @@ async function saveMat(){
     modelo:document.getElementById('mt-mod').value.trim()||null,
     marca:document.getElementById('mt-marca').value.trim()||null,
     quantidade_minima:num(document.getElementById('mt-qtd').value),
-    obs:document.getElementById('mt-obs').value.trim()||null
+    obs:document.getElementById('mt-obs').value.trim()||null,
+    custo_compra:num(document.getElementById('mt-custo').value),
+    preco_venda:num(document.getElementById('mt-pv').value),
+    vendavel:document.getElementById('mt-vend').checked
   };
   if(!row.descricao_padronizada && !row.codigo_barras){ alert('Informe ao menos a descrição ou o código de barras.'); return; }
   let r;
@@ -3065,7 +3122,7 @@ function aplicarModoNav(){
 }
 function irLista(t){ S.emProjeto=false; save(); aplicarModoNav(); tab(t,document.getElementById(t==='modelos'?'nav-modelos-lbl':'nav-lista-lbl')); }
 function voltarProjetos(){ irLista('proj'); }
-function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='catoferta')carregarCatOferta();if(t==='catservico')carregarCatServico();if(t==='catequip')carregarCatEquip();if(t==='catdespesa')carregarCatDespesa();if(t==='catmaobra')carregarCatMaoObra();if(t==='abrangencia')carregarAbrangenciaView();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();if(t==='barramento'&&typeof carregarBarramento==='function')carregarBarramento();
+function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='lojas')carregarLojas();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='catoferta')carregarCatOferta();if(t==='catservico')carregarCatServico();if(t==='catequip')carregarCatEquip();if(t==='catdespesa')carregarCatDespesa();if(t==='catmaobra')carregarCatMaoObra();if(t==='abrangencia')carregarAbrangenciaView();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();if(t==='barramento'&&typeof carregarBarramento==='function')carregarBarramento();
   const cadBtn=document.getElementById('cad-btn');
   if(cadBtn&&!['colab','cat','mat','acessos','cfg'].includes(t)){cadBtn.classList.remove('active');cadBtn.innerHTML='Cadastros <span style="font-size:10px">▾</span>';document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.remove('active'));}
 }
