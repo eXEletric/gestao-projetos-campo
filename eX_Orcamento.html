@@ -2551,9 +2551,16 @@ async function loteDelUnit(id,oppId){ if(!confirm('Excluir esta unidade do lote?
 }
 async function loteDesmembrar(){
   const _n=(LOTE_UNITS||[]).length;
-  if(!confirm('⚠️ DESMEMBRAR O LOTE — AÇÃO IRREVERSÍVEL\n\nO lote será DISSOLVIDO de vez:\n\n• As '+_n+' unidades viram propostas AVULSAS e independentes.\n• Acaba a base, o vínculo "igual à base", o macro e o rateio.\n• Cada proposta passa a andar sozinha (número, aprovação e obra separados).\n• NÃO dá pra reagrupar num lote depois.\n\nSó faça se cada loja for mesmo negociada/faturada em separado.\n\nDesmembrar as '+_n+' unidade(s) agora?'))return;
+  const _per=(_n && macroTotal()>0)?macroTotal()/_n:0;
+  if(!confirm('⚠️ DESMEMBRAR O LOTE — AÇÃO IRREVERSÍVEL\n\nO lote será DISSOLVIDO de vez:\n\n• As '+_n+' unidades viram propostas AVULSAS e independentes.\n• Acaba a base e o vínculo "igual à base".\n'+(_per>0?('• O macro é RATEADO e EMBUTIDO em cada proposta ('+fmt(_per)+'/loja) — cada loja leva sua fatia da logística.\n'):'')+'• Cada proposta passa a andar sozinha (número, aprovação e obra separados).\n• NÃO dá pra reagrupar num lote depois.\n\nSó faça se cada loja for mesmo negociada/faturada em separado.\n\nDesmembrar as '+_n+' unidade(s) agora?'))return;
   if(!confirm('Tem certeza? Esta ação NÃO pode ser desfeita.'))return;
-  try{ await SB.from('orcamentos').update({lote_id:null,herda_base:false}).eq('lote_id',LOTE_ID);
+  try{
+    if(_per>0){ for(const u of (LOTE_UNITS||[])){   // embute a fatia do macro em cada unidade (vira despesa real na proposta avulsa)
+      const d=(u.dados&&typeof u.dados==='object')?JSON.parse(JSON.stringify(u.dados)):{}; d.despesas=Array.isArray(d.despesas)?d.despesas:[];
+      d.despesas.push({id:uid(),desc:'Despesa global de deslocamento (rateio do lote)',qtd:1,und:'UND',custoBase:_per,usarBase:true,custoAlt:_per,margem:''});
+      await SB.from('orcamentos').update({dados:d, total:num(u.total)+_per}).eq('id',u.id);
+    } }
+    await SB.from('orcamentos').update({lote_id:null,herda_base:false}).eq('lote_id',LOTE_ID);
     await SB.from('oportunidades').update({lote_id:null}).eq('lote_id',LOTE_ID);   // #2: solta as oportunidades (unidades + base) do lote, senão somem do funil
     if(LOTE_ROW&&LOTE_ROW.base_oportunidade_id){ await SB.from('oportunidades').update({objeto:(LOTE_ROW.nome||'Proposta')+' — base'}).eq('id',LOTE_ROW.base_oportunidade_id); }   // tira o prefixo [BASE]
     await SB.from('orcamento_lotes').update({deleted_at:new Date().toISOString()}).eq('id',LOTE_ID);
