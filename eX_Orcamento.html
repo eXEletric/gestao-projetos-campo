@@ -1346,7 +1346,7 @@ function equipePrintHtml(){   // bloco "Equipe em campo" (só cliente/impressão
   </div>`;
 }
 // subtotal exibido do bloco (o chip): Despesas inclui as diárias de campo + rateio do macro (unidade de lote)
-function blkSubDisp(blk){ return blkSub(blk) + (blk==='despesas'?(diariasCusto()+ratioUnit()):0); }
+function blkSubDisp(blk){ return blkSub(blk) + (blk==='despesas'?(diariasCusto()+(comboActive()?0:ratioUnit())):0); }
 /* RATEIO DO MACRO DO LOTE — só apresentação (não altera o total GRAVADO da unidade; o total do lote = Σ unidades + macro, uma vez) */
 let _RATEIO_UNIT=0;   // fatia do macro rateada nesta unidade (setada no boot da unidade de lote, modo "rateado")
 function ratioUnit(){ return isLoteUnit()? num(_RATEIO_UNIT) : 0; }
@@ -1670,7 +1670,7 @@ function renderBlk(cfg){
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${(cfg.mat?12:11)+(cfg.key==='servicos'?1:0)}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
     if(cfg.key==='despesas' && !soT) body += diariasRowsHtml();   // alimentação + hospedagem como linhas de despesa (derivadas)
-    if(cfg.key==='despesas' && !soT) body += rateioRowHtml();      // rateio do macro do lote (unidade, modo rateado)
+    if(cfg.key==='despesas' && !soT && !comboActive()) body += rateioRowHtml();   // rateio do macro no PREÇO só sem valor combinado (com combinado vira custo interno)
     if(soT){ foot=`<tfoot><tr class="ftot"><td class="ftl" colspan="${(cfg.mat?10:9)+(cfg.key==='servicos'?1:0)}">Total do bloco (agrupado)</td><td class="r money"><b>${fmt(blkSub(cfg.key))}</b></td><td colspan="1"></td></tr></tfoot>`; }
   }
   const obsTxt=(S.obs&&S.obs[cfg.key])||'';
@@ -2611,15 +2611,16 @@ function renderLoteBaseHtml(){
   const lojaOpts=(LOJAS||[]).filter(l=>!LOTE_UNITS.some(u=>(u.dados&&u.dados.lojaId)===l.id)).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
   const macroT=macroTotal();
   const rateado=!!(S.macro&&S.macro.rateio); const rateioPer=(LOTE_UNITS.length&&macroT>0)?macroT/LOTE_UNITS.length:0;
+  const comboOn=comboActive();   // valor combinado é soberano → macro não soma ao preço (vira custo interno)
   const rota=loteRota(); const rotaKm=macroRotaKm(); const rotaCusto=macroRotaCusto(); const rkm=num(S.macro&&S.macro.rkm);
   const modo=(S.macro&&S.macro.modo)||'detalhado'; const qtd=num(S.macro&&S.macro.qtd); const baseT=num(S._total)||0;
   const unitsSum = modo==='estimativa' ? (baseT*qtd) : LOTE_UNITS.reduce((a,o)=>a+num(o.total),0);
-  const total = unitsSum + macroT;
+  const total = unitsSum + (comboOn?0:macroT);   // com valor combinado, o macro NÃO entra no preço (é custo interno)
   const nUn = modo==='estimativa' ? qtd : LOTE_UNITS.length;
-  const vMed = modo==='estimativa' ? baseT : (LOTE_UNITS.length?(unitsSum+(rateado?macroT:0))/LOTE_UNITS.length:0);   // rateado → média já com a fatia do macro
+  const vMed = modo==='estimativa' ? baseT : (LOTE_UNITS.length?(unitsSum+((rateado&&!comboOn)?macroT:0))/LOTE_UNITS.length:0);   // rateado (sem combinado) → média já com a fatia do macro
   const prz=lotePrazoResumo();
   const kpis=nUn?`<div class="loteKpis">
-      <div style="border:1px solid var(--pri);background:var(--pri);color:#fff;border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;opacity:.85">Total do lote</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:19px;margin-top:4px;font-variant-numeric:tabular-nums">${fmt(total)}</div><div style="font-size:11px;opacity:.8">${rateado?'com rateio por loja':'unidades + macro'}</div></div>
+      <div style="border:1px solid var(--pri);background:var(--pri);color:#fff;border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;opacity:.85">Total do lote</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:19px;margin-top:4px;font-variant-numeric:tabular-nums">${fmt(total)}</div><div style="font-size:11px;opacity:.8">${comboOn?'valor combinado · macro no custo':(rateado?'com rateio por loja':'unidades + macro')}</div></div>
       <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Valor médio / unidade</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px;font-variant-numeric:tabular-nums">${fmt(vMed)}</div><div style="font-size:11px;color:var(--tx3)">só as unidades</div></div>
       <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Prazo médio</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px">${modo==='estimativa'?fmtPrazo(obraPrazo()):(prz.n?fmtPrazo(prz.media):'—')}</div><div style="font-size:11px;color:var(--tx3)">${modo==='estimativa'?'do base':'por unidade'}</div></div>
       <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Faixa de prazo</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px">${modo==='estimativa'?'—':(prz.n?(Math.abs(prz.min.p-prz.max.p)<1e-9?fmtPrazo(prz.min.p):fmtPrazo(prz.min.p)+'–'+fmtPrazo(prz.max.p)):'—')}</div><div style="font-size:11px;color:var(--tx3)">${modo==='estimativa'?'no detalhado':'menor → maior'}</div></div>
@@ -2631,7 +2632,7 @@ function renderLoteBaseHtml(){
       <span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;border-radius:20px;padding:3px 8px;color:${st.c};background:${st.bg};white-space:nowrap"><span class="material-symbols-rounded" style="font-size:12px">${st.i}</span>${st.t}</span>
       <div style="display:flex;align-items:center;gap:7px;justify-self:end">
         ${(()=>{ const p=num(o._prazo); const many=(lotePrazoResumo().n>1); const isMax=many&&p&&Math.abs(p-lotePrazoResumo().max.p)<1e-9; const isMin=many&&p&&Math.abs(p-lotePrazoResumo().min.p)<1e-9&&!isMax; const col=isMax?'var(--pers,#b0701a)':(isMin?'var(--herd,#159a6a)':'var(--tx3)'); return `<span style="font-size:12px;color:${col};font-weight:${(isMax||isMin)?'700':'400'};min-width:78px;text-align:right;font-variant-numeric:tabular-nums" title="prazo desta unidade"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">schedule</span> ${p?fmtPrazo(p):'—'}${isMax?' ↑':''}${isMin?' ↓':''}</span>`; })()}
-        <span style="font-weight:800;font-variant-numeric:tabular-nums;font-size:13.5px;min-width:92px;text-align:right" title="${rateado?'42.000 base + rateio da logística':''}">${fmt(num(o.total)+(rateado?rateioPer:0))}</span>
+        <span style="font-weight:800;font-variant-numeric:tabular-nums;font-size:13.5px;min-width:92px;text-align:right" title="${(rateado&&!comboOn)?'base + rateio da logística':(comboOn?'valor combinado (macro no custo)':'')}">${fmt(num(o.total)+((rateado&&!comboOn)?rateioPer:0))}</span>
         <a href="eX_Orcamento.html?opp=${o.oportunidade_id}&lote=${LOTE_ID}" class="lbtn"><span class="material-symbols-rounded">open_in_full</span>abrir</a>
         ${o.herda_base?'':`<button class="lbtn" onclick="loteResetUnit('${o.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`}
         <button class="lbtn danger" onclick="loteDelUnit('${o.id}','${o.oportunidade_id}')"><span class="material-symbols-rounded">delete</span></button>
@@ -2712,7 +2713,7 @@ function renderLoteBaseHtml(){
         <span style="color:var(--tx3)">faixa ${fmtPrazo(pr.min.p)}–${fmtPrazo(pr.max.p)}</span>`}
       </div>`; })()}
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;background:var(--surf2,#faf9fe);border-top:1px solid var(--line)">
-      <span style="font-size:12px;color:var(--tx3)">${rateado?('Unidades <b>'+fmt(total)+'</b> · macro rateado nas '+LOTE_UNITS.length+' lojas ('+fmt(rateioPer)+'/loja)'):('Unidades <b>'+fmt(total-macroT)+'</b> + Macro <b style="color:#0f7b8a">'+fmt(macroT)+'</b>')}</span>
+      <span style="font-size:12px;color:var(--tx3)">${comboOn?('Unidades <b>'+fmt(unitsSum)+'</b> · macro <b style="color:#0f7b8a">'+fmt(macroT)+'</b> = custo interno (não cobrado — valor combinado)'):(rateado?('Unidades <b>'+fmt(total)+'</b> · macro rateado nas '+LOTE_UNITS.length+' lojas ('+fmt(rateioPer)+'/loja)'):('Unidades <b>'+fmt(total-macroT)+'</b> + Macro <b style="color:#0f7b8a">'+fmt(macroT)+'</b>'))}</span>
       <span style="font-size:13px;font-weight:800">Total do lote: <span style="color:var(--pri);font-size:16px">${fmt(total)}</span></span></div>
     ${LOTE_UNITS.length?`<div style="padding:10px 14px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <button class="lbtn" style="background:var(--pri);color:#fff;border-color:var(--pri);padding:9px 15px" onclick="verComoClienteLote()"><span class="material-symbols-rounded" style="color:#fff">visibility</span>Ver como o cliente (documento + mapa)</button>
@@ -3241,21 +3242,21 @@ function recalc(){
   BLKS.forEach(b=>{ const on=blocoAtivo(b.key); preco[b.key]=on?blkSub(b.key):0; cst[b.key]=on?blkCusto(b.key):0; });
   // DIÁRIAS da equipe (alimentação+hospedagem): entram a CUSTO (sem lucro); o imposto incide sobre tudo depois
   const diaC=diariasCusto(), diaP=diaC;
+  const rat=ratioUnit(); const ratPreco=comboActive()?0:rat; const ratCusto=comboActive()?rat:0;   // VALOR COMBINADO É SOBERANO: com ele, o rateio do macro vira CUSTO (reduz a margem, não soma ao preço); sem ele, soma ao preço
   const bruto=preco.servicos+preco.equip+preco.despesas+preco.materiais+diaP;
   const desc=bruto*num(S.descontoPct)/100;
   const liquido=bruto-desc;                                 // valor antes do imposto
   const imp=liquido*num(S.impostoPct)/100;
   const total=liquido+imp;                                  // imposto SOMA ao total (repasse ao cliente)
-  const custo=cst.servicos+cst.equip+cst.despesas+cst.materiais+diaC;   // custo real (auto)
+  const custo=cst.servicos+cst.equip+cst.despesas+cst.materiais+diaC+ratCusto;   // custo real (auto) — inclui o rateio do macro quando há valor combinado
   const lucro=liquido-custo;                                // imposto é repasse — NÃO reduz o lucro
   const marg=liquido?lucro/liquido*100:0;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
-  const rat=ratioUnit();   // rateio do macro do lote (só exibição — NÃO altera S._total gravado)
   set('s_serv',fmt(preco.servicos)); set('s_equip',fmt(preco.equip));
-  set('s_desp',fmt(preco.despesas+diaP+rat)); set('s_mat',fmt(preco.materiais));   // Despesas inclui alimentação + hospedagem + rateio do lote
+  set('s_desp',fmt(preco.despesas+diaP+ratPreco)); set('s_mat',fmt(preco.materiais));   // Despesas inclui alimentação + hospedagem + rateio (só quando NÃO há valor combinado)
   set('s_diarias',fmt(diaP)); const lndia=document.getElementById('ln_diarias'); if(lndia) lndia.style.display='none';   // linha própria removida — vai dentro de Despesas
-  set('s_bruto',fmt(bruto+rat)); set('s_desc','− '+fmt(desc));
-  set('s_total',fmt(total+rat)); set('s_preco',fmt(total+rat));
+  set('s_bruto',fmt(bruto+ratPreco)); set('s_desc','− '+fmt(desc));
+  set('s_total',fmt(total+ratPreco)); set('s_preco',fmt(total+ratPreco));
   set('s_imp','+ '+fmt(imp)); set('s_custo',fmt(custo));
   const lu=document.getElementById('s_lucro'), mg=document.getElementById('s_marg');
   if(lu)lu.textContent=fmt(lucro); if(mg)mg.textContent=marg.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
