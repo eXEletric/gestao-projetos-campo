@@ -3280,7 +3280,10 @@ function renderFrente(){
 window.addEventListener('message',function(e){
   var d=e.data||{};
   if(d && d.type==='eXsst:ready'){ _frenteReady=true; frentePushCtx(); }
-  if(d && d.type==='exNav' && d.view){ try{ navView(d.view,null); }catch(_){} }
+  if(d && d.type==='exNav' && d.view){ try{
+    if(d.view==='orcamento' && d.qs){ _ORC_QS=d.qs; try{ localStorage.setItem('ex_orc_qs',d.qs); }catch(_){} }   // abrir a mestra/unidade vinda do funil no MÓDULO Orçamentos (persiste no reload)
+    navView(d.view,null);
+  }catch(_){} }
   if(d && d.type==='exOrcOpen'){   // o iframe do orçamento informa o que está aberto (?opp=..) → persiste p/ reload
     _ORC_QS=(d.qs||'').trim(); if(_ORC_QS==='?') _ORC_QS='';
     try{ if(_ORC_QS) localStorage.setItem('ex_orc_qs',_ORC_QS); else localStorage.removeItem('ex_orc_qs'); }catch(_){}

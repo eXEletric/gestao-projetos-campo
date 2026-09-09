@@ -764,7 +764,9 @@ function lotesInCol(colId){ return (S.lotes||[]).filter(l=>{ const b=baseOppOf(l
 function loteUnitsOf(loteId){ return S.oportunidades.filter(o=>o.loteId===loteId && !(o.objeto||'').startsWith('[BASE]')); }
 function loteTotal(loteId){ const idx=orcIndex(); return loteUnitsOf(loteId).reduce((a,u)=>a+((idx[u.id]&&idx[u.id].total)||0),0); }
 function loteToggle(el){ const c=el.closest('.kcard'); if(c)c.classList.toggle('open'); }
-function abrirLoteBaseById(loteId){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(l&&l.baseOppId) location.href='eX_Orcamento.html?opp='+l.baseOppId+'&lote='+l.id; }
+// abre um orçamento (mestra ou unidade): no shell vai pro MÓDULO Orçamentos (persiste no reload); standalone navega direto
+function abrirOrcNoShell(qs){ if(window.parent&&window.parent!==window){ try{ window.parent.postMessage({type:'exNav',view:'orcamento',qs:qs},'*'); return; }catch(_){} } location.href='eX_Orcamento.html'+qs; }
+function abrirLoteBaseById(loteId){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(l&&l.baseOppId) abrirOrcNoShell('?opp='+l.baseOppId+'&lote='+l.id); }
 function moveLote(loteId,dir){ const l=(S.lotes||[]).find(x=>x.id===loteId); if(!l)return; const b=baseOppOf(l); if(!b)return; const i=colIdx(b.colId)+dir; if(i<0||i>=S.colunas.length)return; const destId=S.colunas[i].id;
   // #9: o lote respeita as mesmas travas de fase de uma oportunidade avulsa (gate/entrada/permitido)
   if(!podeMoverPara(b,destId)){ alert('Destino bloqueado a partir desta fase. Libere na configuração (chave na frente).'); return; }
@@ -807,7 +809,7 @@ function loteCardHTML(l,ci){ const ct=cli(l.contratanteId); const us=loteUnitsOf
     <div class="orcb loteb"><span class="material-symbols-rounded">store</span>${us.length} loja(s) · ${fmtBRL(tot)}</div>
     <div class="lexpand" onclick="event.stopPropagation();loteToggle(this)"><span class="material-symbols-rounded">unfold_more</span>ver unidades</div>
     <div class="lote-units">
-      ${show.map(u=>`<a class="lu" href="eX_Orcamento.html?opp=${u.id}" onclick="event.stopPropagation()"><span class="material-symbols-rounded">description</span>${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</a>`).join('')}
+      ${show.map(u=>`<a class="lu" style="cursor:pointer" onclick="event.stopPropagation();abrirOrcNoShell('?opp=${u.id}')"><span class="material-symbols-rounded">description</span>${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</a>`).join('')}
       ${extra>0?`<div class="lu more"><span class="material-symbols-rounded">more_horiz</span>…mais ${extra} unidade(s)</div>`:''}
     </div>
     <div class="kcard-foot"><span class="temp quente" style="background:var(--pri)">Lote</span><span class="kmove">
@@ -846,7 +848,10 @@ function moveOpp(id,dir){ const o=S.oportunidades.find(x=>x.id===id); if(!o)retu
   o.colId=destId; save(); cUp('oportunidades',mOpp(o)); render(); }
 let SEL_LOTE=null;
 function selOpp(id){ SELO=id; SEL_LOTE=null; render(); const d=document.getElementById('oppDetail'); if(d)d.scrollIntoView({behavior:'smooth',block:'nearest'}); }
-function selLote(id){ SEL_LOTE=id; SELO=null; render(); const d=document.getElementById('oppDetail'); if(d)d.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+function selLote(id){
+  const l=(S.lotes||[]).find(x=>x.id===id); const b=l&&baseOppOf(l); const isLev=!!(b&&colPapel(b.colId)==='visita');
+  if(l && l.baseOppId && !isLev){ abrirLoteBaseById(id); return; }   // fase proposta+ → abre a MESTRA (gerenciamento das unidades); levantamento mantém o painel
+  SEL_LOTE=id; SELO=null; render(); const d=document.getElementById('oppDetail'); if(d)d.scrollIntoView({behavior:'smooth',block:'nearest'}); }
 function toggleMaster(){ MASTER=!MASTER;
   const sw=document.getElementById('msw'), led=document.getElementById('mled'), lb=document.getElementById('mlb');
   if(sw)sw.classList.toggle('on',MASTER); if(led)led.classList.toggle('on',MASTER); if(lb)lb.textContent=MASTER?'Master':'Operador';
@@ -991,7 +996,7 @@ function renderLoteDetail(){
     main = renderLevMain(l,b,lev);
   } else {
     const unidades = us.length
-      ? us.map(u=>`<a class="lu" href="eX_Orcamento.html?opp=${u.id}" style="display:flex;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;margin-bottom:6px;text-decoration:none;color:var(--tx)"><span style="display:flex;align-items:center;gap:7px;min-width:0"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">store</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</span></span><span style="font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums">${idx[u.id]?fmtBRL(idx[u.id].total):'—'}</span></a>`).join('')
+      ? us.map(u=>`<a class="lu" onclick="abrirOrcNoShell('?opp=${u.id}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;margin-bottom:6px;text-decoration:none;color:var(--tx)"><span style="display:flex;align-items:center;gap:7px;min-width:0"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">store</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</span></span><span style="font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums">${idx[u.id]?fmtBRL(idx[u.id].total):'—'}</span></a>`).join('')
       : '<div class="dmv-empty">Nenhuma unidade ainda — gere a partir do levantamento ou adicione na mestra.</div>';
     const gerar = pend>0 ? `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">bolt</span>Levantamento pronto</div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--pri-bg,#efeafc);border:1px solid var(--line2);border-radius:10px;padding:11px 12px;font-size:12.5px;color:var(--tx2)"><span><b>${pend}</b> candidata(s) do levantamento ainda não viraram unidade.</span><button class="btn btn-s btn-p" style="margin-left:auto" onclick="openGerarLev('${l.id}')"><span class="material-symbols-rounded">rocket_launch</span>Selecionar e gerar unidades</button></div></div>` : '';
