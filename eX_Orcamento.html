@@ -1054,6 +1054,7 @@ function pushOrc(){
     cliente_final:S.finNome||null, cliente_endereco:S.finEnd||null,
     oferta_id:S.ofertaId||null, oferta_seq:S.ofertaSeq||null,
     total:S._total||0, custo:S._custo||0, lucro:S._lucro||0, dados:S };
+  if(S&&S._base&&S_LOTE_ID){ S.macro=S.macro||{estruturas:[]}; S.macro._total=macroTotal(); S.macro._nun=(LOTE_UNITS||[]).length; p.dados=S; }   // base: grava o macro (total/nº) pras unidades ratearem
   if(S_LOTE_ID && !(S&&S._base)) p.herda_base=false;   // editou uma unidade de lote → deixa de ser "igual à base"
   if(ORC_ID){ SB.from('orcamentos').update(p).eq('id',ORC_ID).then(({error})=>{ if(error){console.error('orc up',error);cloudMsg('erro ao salvar');return;}
     // BASE do lote mudou → sincroniza o TOTAL das unidades "igual à base" (elas não têm trabalho próprio; corrige o total do lote sem precisar propagar)
@@ -1086,6 +1087,12 @@ async function initOrc(){
       if(OPP && !S.contratanteId){ try{ const {data}=await SB.from('oportunidades').select('contratante_id,contemplado_id').eq('id',OPP).limit(1); if(data&&data[0]){ if(data[0].contratante_id)S.contratanteId=data[0].contratante_id; if(data[0].contemplado_id)S.lojaId=data[0].contemplado_id; } }catch(_){} }
       if(OPP && !S.lojaId){ try{ const {data}=await SB.from('oportunidades').select('contemplado_id').eq('id',OPP).limit(1); if(data&&data[0]&&data[0].contemplado_id)S.lojaId=data[0].contemplado_id; }catch(_){} }
       await carregarRaio();
+      // UNIDADE DE LOTE: lê o macro da base pra ratear a fatia da logística (só exibição)
+      if(S_LOTE_ID && !(S&&S._base)){ try{
+        const {data:bd}=await SB.from('orcamentos').select('dados').eq('lote_id',S_LOTE_ID).is('deleted_at',null);
+        let m=null,n=0; (bd||[]).forEach(r=>{ const d=r.dados||{}; if(d._base){ m=d.macro; } else { n++; } });
+        if(m && m.rateio && num(m._total)>0){ const nn=num(m._nun)||n||1; _RATEIO_UNIT=num(m._total)/nn; }
+      }catch(e){ console.error('rateio lote',e); } }
       refreshClienteLive();
     } else { cloudMsg('modo local (sem login)'); }
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
@@ -1336,8 +1343,23 @@ function equipePrintHtml(){   // bloco "Equipe em campo" (só cliente/impressão
     <table class="eqtbl"><thead><tr><th>Profissional</th><th class="r">Colaboradores</th><th class="r">Diárias</th></tr></thead><tbody>${rows}</tbody></table>
   </div>`;
 }
-// subtotal exibido do bloco (o chip): Despesas inclui as diárias de campo
-function blkSubDisp(blk){ return blkSub(blk) + (blk==='despesas'?diariasCusto():0); }
+// subtotal exibido do bloco (o chip): Despesas inclui as diárias de campo + rateio do macro (unidade de lote)
+function blkSubDisp(blk){ return blkSub(blk) + (blk==='despesas'?(diariasCusto()+ratioUnit()):0); }
+/* RATEIO DO MACRO DO LOTE — só apresentação (não altera o total GRAVADO da unidade; o total do lote = Σ unidades + macro, uma vez) */
+let _RATEIO_UNIT=0;   // fatia do macro rateada nesta unidade (setada no boot da unidade de lote, modo "rateado")
+function ratioUnit(){ return isLoteUnit()? num(_RATEIO_UNIT) : 0; }
+function rateioRowHtml(){ const r=ratioUnit(); if(r<=0) return '';
+  return `<tr class="diaderv">
+    <td class="idx dgrab"><span class="material-symbols-rounded gg">hub</span></td>
+    <td class="svc"><div class="svcnm">Despesa global de deslocamento</div><div class="bs-dia">rateio do lote — sua fatia da logística compartilhada (Van + rota ÷ nº de lojas)</div></td>
+    <td class="pint"></td><td class="r money pint"></td>
+    <td class="r">1</td><td><span class="und-fix">UND</span></td>
+    <td class="r pint"></td><td class="r money pint"></td>
+    <td class="r money unit">${fmt(r)}</td>
+    <td class="r money preco"><b>${fmt(r)}</b></td>
+    <td class="pint"></td>
+  </tr>`;
+}
 const qtyOf=r=> (r.gatilho&&r.gatilho!=='fixo') ? despMult(r) : (isTotal(r)?1:num(r.qtd));
 // MARGEM MANDA: o preço é SEMPRE custo × margem (acabou o "valor geral" que zerava). "Só o total" = só apresentação.
 function linePreco(r){
@@ -1646,6 +1668,7 @@ function renderBlk(cfg){
     }).join('');
     if(!rows.length) body=`<tr><td colspan="${(cfg.mat?12:11)+(cfg.key==='servicos'?1:0)}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
     if(cfg.key==='despesas' && !soT) body += diariasRowsHtml();   // alimentação + hospedagem como linhas de despesa (derivadas)
+    if(cfg.key==='despesas' && !soT) body += rateioRowHtml();      // rateio do macro do lote (unidade, modo rateado)
     if(soT){ foot=`<tfoot><tr class="ftot"><td class="ftl" colspan="${(cfg.mat?10:9)+(cfg.key==='servicos'?1:0)}">Total do bloco (agrupado)</td><td class="r money"><b>${fmt(blkSub(cfg.key))}</b></td><td colspan="1"></td></tr></tfoot>`; }
   }
   const obsTxt=(S.obs&&S.obs[cfg.key])||'';
@@ -2575,6 +2598,7 @@ function updateRedeUnidades(){ if(!isLoteBase())return; const num=document.query
 function renderLoteBaseHtml(){
   const lojaOpts=(LOJAS||[]).filter(l=>!LOTE_UNITS.some(u=>(u.dados&&u.dados.lojaId)===l.id)).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
   const macroT=macroTotal();
+  const rateado=!!(S.macro&&S.macro.rateio); const rateioPer=(LOTE_UNITS.length&&macroT>0)?macroT/LOTE_UNITS.length:0;
   const rota=loteRota(); const rotaKm=macroRotaKm(); const rotaCusto=macroRotaCusto(); const rkm=num(S.macro&&S.macro.rkm);
   const modo=(S.macro&&S.macro.modo)||'detalhado'; const qtd=num(S.macro&&S.macro.qtd); const baseT=num(S._total)||0;
   const unitsSum = modo==='estimativa' ? (baseT*qtd) : LOTE_UNITS.reduce((a,o)=>a+num(o.total),0);
@@ -2640,6 +2664,12 @@ function renderLoteBaseHtml(){
         <b style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:#0c5f6b">Macro da operação</b>
         <span style="font-size:11.5px;color:var(--tx3)">estrutura/frota do lote — entra uma vez na mestra</span>
         <button class="lbtn" style="margin-left:auto" onclick="openEstruturasModal()"><span class="material-symbols-rounded">settings</span>gerenciar cadastro</button>
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:2px 0 8px">
+        <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.04em;margin-right:2px">Apresentação</span>
+        <button class="lbtn" style="${!rateado?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setMacroRateio(false)"><span class="material-symbols-rounded" style="${!rateado?'color:#fff':''}">functions</span>Global (no lote)</button>
+        <button class="lbtn" style="${rateado?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setMacroRateio(true)"><span class="material-symbols-rounded" style="${rateado?'color:#fff':''}">call_split</span>Rateado por unidade</button>
+        ${rateado&&rateioPer>0?`<span style="margin-left:auto;font-size:12px;color:var(--pri);font-weight:700">${fmt(rateioPer)}/loja · em cada proposta</span>`:'<span style="margin-left:auto;font-size:11.5px;color:var(--tx3)">soma à parte no total do lote</span>'}
       </div>
       ${((S.macro&&S.macro.estruturas)||[]).map((e,i)=>`<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px dashed var(--line2)">
         <span class="material-symbols-rounded" style="font-size:17px;color:#0f7b8a">${ESTR_IC[e.tipo]||'category'}</span>
@@ -2798,6 +2828,7 @@ function _macroSave(){ save(); try{saveOrc();}catch(_){}; injectLoteBasePanel();
 function setMacroRkm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rkm=Math.max(0,num(v)); _macroSave(); }
 function setMacroKm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=Math.max(0,num(v)); _macroSave(); }
 function clearMacroKm(){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=0; _macroSave(); }
+function setMacroRateio(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rateio=!!v; S.macro._total=macroTotal(); S.macro._nun=(LOTE_UNITS||[]).length; save(); try{ pushOrc(); }catch(_){}; injectLoteBasePanel(); }
 function setLoteModo(m){ m=(m==='estimativa'?'estimativa':'detalhado');
   if(m==='estimativa' && (LOTE_UNITS||[]).length>0){ if(!confirm('Já existem '+LOTE_UNITS.length+' loja(s) detalhada(s). No modo Estimativa o total passa a ser base × N e os valores reais dessas lojas são ignorados no total (não são apagados). Continuar?'))return; }
   if(!S.macro)S.macro={estruturas:[]}; S.macro.modo=m; _macroSave(); }
@@ -3207,11 +3238,12 @@ function recalc(){
   const lucro=liquido-custo;                                // imposto é repasse — NÃO reduz o lucro
   const marg=liquido?lucro/liquido*100:0;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
+  const rat=ratioUnit();   // rateio do macro do lote (só exibição — NÃO altera S._total gravado)
   set('s_serv',fmt(preco.servicos)); set('s_equip',fmt(preco.equip));
-  set('s_desp',fmt(preco.despesas+diaP)); set('s_mat',fmt(preco.materiais));   // Despesas já inclui alimentação + hospedagem
+  set('s_desp',fmt(preco.despesas+diaP+rat)); set('s_mat',fmt(preco.materiais));   // Despesas inclui alimentação + hospedagem + rateio do lote
   set('s_diarias',fmt(diaP)); const lndia=document.getElementById('ln_diarias'); if(lndia) lndia.style.display='none';   // linha própria removida — vai dentro de Despesas
-  set('s_bruto',fmt(bruto)); set('s_desc','− '+fmt(desc));
-  set('s_total',fmt(total)); set('s_preco',fmt(total));
+  set('s_bruto',fmt(bruto+rat)); set('s_desc','− '+fmt(desc));
+  set('s_total',fmt(total+rat)); set('s_preco',fmt(total+rat));
   set('s_imp','+ '+fmt(imp)); set('s_custo',fmt(custo));
   const lu=document.getElementById('s_lucro'), mg=document.getElementById('s_marg');
   if(lu)lu.textContent=fmt(lucro); if(mg)mg.textContent=marg.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
