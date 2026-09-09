@@ -1055,7 +1055,10 @@ function pushOrc(){
     oferta_id:S.ofertaId||null, oferta_seq:S.ofertaSeq||null,
     total:S._total||0, custo:S._custo||0, lucro:S._lucro||0, dados:S };
   if(S_LOTE_ID && !(S&&S._base)) p.herda_base=false;   // editou uma unidade de lote → deixa de ser "igual à base"
-  if(ORC_ID){ SB.from('orcamentos').update(p).eq('id',ORC_ID).then(({error})=>{ if(error){console.error('orc up',error);cloudMsg('erro ao salvar');} }); }
+  if(ORC_ID){ SB.from('orcamentos').update(p).eq('id',ORC_ID).then(({error})=>{ if(error){console.error('orc up',error);cloudMsg('erro ao salvar');return;}
+    // BASE do lote mudou → sincroniza o TOTAL das unidades "igual à base" (elas não têm trabalho próprio; corrige o total do lote sem precisar propagar)
+    if(S&&S._base&&S_LOTE_ID){ SB.from('orcamentos').update({total:num(S._total)||0}).eq('lote_id',S_LOTE_ID).eq('herda_base',true).is('deleted_at',null).then(({error:e2})=>{ if(e2)console.error('sync total lote',e2); }); }
+  }); }
   else { SB.from('orcamentos').insert(p).select('id').then(({data,error})=>{ if(error){console.error('orc ins',error);cloudMsg('erro ao salvar');return;} if(data&&data[0])ORC_ID=data[0].id; }); }
 }
 function saveOrc(){ if(!(OPP&&CLOUD))return; clearTimeout(_saveT); _saveT=setTimeout(pushOrc,1200); }
@@ -2489,6 +2492,7 @@ async function loteGerar(){
   const btn=event&&event.target; if(btn)btn.disabled=true;
   try{
     for(const l of LOTE_PEND){
+      if((LOTE_UNITS||[]).some(u=>((u.dados&&u.dados.lojaId)===l.id)||((u.cliente_final||'')===(l.nome||'')))){ continue; }   // já existe unidade dessa loja → não duplica
       const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:LOTE_ROW?LOTE_ROW.contratante_id:null,contemplado_id:l.id,objeto:(LOTE_ROW?LOTE_ROW.nome:'Lote')+' — '+l.nome,lote_id:LOTE_ID}).select('id').limit(1);
       if(opp.error||!opp.data[0]) continue; const oppId=opp.data[0].id;
       const numero=await proximoNumero();
@@ -2506,7 +2510,11 @@ async function loteResetUnit(id){ if(!confirm('Resetar esta unidade ao escopo ba
   const r=await SB.from('orcamentos').update({herda_base:true,dados,total:BASE_TOTAL}).eq('id',id); if(r.error){alert('Erro: '+r.error.message);return;}
   await loteReload();
 }
-async function lotePropagar(){ if(!confirm('Aplicar o orçamento base em TODAS as unidades que estão “igual à base”? (as editadas não mudam)'))return;
+async function lotePropagar(){
+  const alvo=(LOTE_UNITS||[]).filter(u=>u.herda_base).length;
+  const editadas=(LOTE_UNITS||[]).length-alvo;
+  if(!alvo){ alert('Nenhuma unidade “igual à base” para propagar — as editadas ficam como estão.'); return; }
+  if(!confirm('⚠️ PROPAGAR A BASE\n\nVai SOBRESCREVER o escopo de '+alvo+' unidade(s) “igual à base” com o conteúdo da base atual.\nTudo que houver nessas unidades e não estiver na base será PERDIDO.\n\n'+editadas+' unidade(s) EDITADA(s) ficam PROTEGIDAS (não mudam).\n\nConfirmar a propagação em '+alvo+' unidade(s)?')) return;
   try{ for(const u of LOTE_UNITS){ if(!u.herda_base) continue; const dados=BASE_DADOS?JSON.parse(JSON.stringify(BASE_DADOS)):{}; delete dados._base; delete dados.macro; dados.abrSnap=(u.dados&&u.dados.abrSnap)||null; dados.finNome=u.cliente_final; dados.lojaId=(u.dados&&u.dados.lojaId)||null; dados.numero=u.numero;
       await SB.from('orcamentos').update({dados,total:BASE_TOTAL}).eq('id',u.id); }
     await loteReload(); alert('Base propagada nas unidades “igual à base”.');
