@@ -43,6 +43,12 @@ h1{font-size:20px;font-weight:600}
 .tabmenu button:hover{background:var(--surf2)}
 .tabmenu button.active{color:var(--pri);font-weight:600;background:var(--pri-bg)}
 .view{display:none}.view.active{display:block}
+/* abas do Comercial (Funil | Propostas) no topo da view */
+.cml-tabs{display:flex;align-items:center;gap:4px;border-bottom:2px solid var(--line);margin:0 0 12px}
+.cml-tab{display:inline-flex;align-items:center;gap:7px;padding:9px 16px;font-size:13.5px;font-weight:700;color:var(--tx3);border:none;background:none;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-2px;font-family:inherit}
+.cml-tab .msr{font-size:18px}
+.cml-tab:hover{color:var(--tx2)}
+.cml-tab.on{color:var(--pri);border-bottom-color:var(--pri)}
 .topbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:14px}
 .pn{font-family:ui-monospace,monospace;font-size:12px;background:var(--pri-bg);color:var(--pri);padding:4px 10px;border-radius:5px}
 .pname{font-size:16px;font-weight:600;flex:1;min-width:160px}
@@ -517,9 +523,7 @@ body.papel-tecnico .adm-only{display:none !important}
 
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">sell</span></span><span class="lb">Comercial</span><span class="gchev">▶</span></div>
       <div class="sb-sub">
-        <button class="sb-i" onclick="navView('funil',this)"><span class="ic"><span class="msr">view_kanban</span></span><span class="lb">Funil</span></button>
-        <button class="sb-i fut" onclick="navSoon('Propostas',this)"><span class="ic"><span class="msr">description</span></span><span class="lb">Propostas</span><span class="br">em breve</span></button>
-        <button class="sb-i" onclick="navView('orcamento',this)"><span class="ic"><span class="msr">request_quote</span></span><span class="lb">Orçamentos</span></button>
+        <button class="sb-i" onclick="navView('funil',this)"><span class="ic"><span class="msr">view_kanban</span></span><span class="lb">Funil &amp; Propostas</span></button>
         <div class="sb-grp sb-grp-nest" onclick="toggleGrp(this)"><span class="ic"><span class="msr">electrical_services</span></span><span class="lb">Oficina de Quadros</span><span class="gchev">▶</span></div>
         <div class="sb-sub sb-sub-nest">
           <button class="sb-i" onclick="navView('barramento',this);carregarBarramento()"><span class="ic"><span class="msr">bolt</span></span><span class="lb">Orç. de barramento</span></button>
@@ -711,7 +715,8 @@ body.papel-tecnico .adm-only{display:none !important}
   </div>
 
   <div class="view" id="v-orcamento">
-    <iframe id="orc-frame" title="Orçamento" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
+    <div class="cml-tabs"><button class="cml-tab" onclick="abaFunil()"><span class="msr">view_kanban</span>Funil</button><button class="cml-tab on" onclick="abaPropostas()"><span class="msr">request_quote</span>Propostas</button></div>
+    <iframe id="orc-frame" title="Orçamento" style="width:100%;height:calc(100vh - 175px);min-height:480px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
   </div>
 
   <div class="view" id="v-clientes">
@@ -719,7 +724,8 @@ body.papel-tecnico .adm-only{display:none !important}
   </div>
 
   <div class="view" id="v-funil">
-    <iframe id="fun-frame" title="Funil comercial" style="width:100%;height:calc(100vh - 130px);min-height:520px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
+    <div class="cml-tabs"><button class="cml-tab on" onclick="abaFunil()"><span class="msr">view_kanban</span>Funil</button><button class="cml-tab" onclick="abaPropostas()"><span class="msr">request_quote</span>Propostas</button></div>
+    <iframe id="fun-frame" title="Funil comercial" style="width:100%;height:calc(100vh - 175px);min-height:480px;border:1px solid var(--line);border-radius:12px;background:var(--surf);display:block"></iframe>
   </div>
 
   <div class="view" id="v-catoferta">
@@ -3110,6 +3116,10 @@ function navFromHash(){ var h=(location.hash||'').replace('#','').trim().toLower
   try{ navView(t,null); }catch(e){ return false; } return true; }
 window.addEventListener('hashchange',function(){ try{ navFromHash(); }catch(e){} });
 function restoreView(){ try{ if(!navFromHash()) navInicio(null); }catch(e){ try{navInicio(null);}catch(_){} } }  // restaura a seção pela URL (#orcamento…) — chamado DEPOIS do boot (senão _CBV/S ainda não existem)
+/* abas do Comercial (Funil | Propostas) */
+function _cmlSb(){ try{ return document.querySelector('.sb-i[onclick*="navView(\'funil\'"]'); }catch(_){ return null; } }
+function abaFunil(){ navView('funil', _cmlSb()); }
+function abaPropostas(){ _ORC_QS=''; try{ localStorage.removeItem('ex_orc_qs'); }catch(_){}; navView('orcamento', _cmlSb()); }   // clicar na aba Propostas → LISTA limpa
 async function bootNuvem(){
   if(!SB){ nuvemStatus('modo local','err'); return; }
   nuvemStatus('conectando…','load');
@@ -3149,7 +3159,7 @@ function _obranav(show){ var ob=document.querySelector('.obranav'); if(ob)ob.sty
 var _ORC_QS='';   // query do orçamento aberto no iframe (ex.: "?opp=..&lote=..") — persiste o orçamento entre reloads
 function navView(t,el){
   var fromClick=!!el;   // clique no menu (abre a LISTA) × restauração pelo hash (reabre o que estava)
-  if(!el){ try{ el=document.querySelector('.sb-i[onclick*="navView(\''+t+'\'"]'); }catch(_){} }   // veio do hash: acha o botão do menu p/ destacar
+  if(!el){ var _k=(t==='orcamento'?'funil':t); try{ el=document.querySelector('.sb-i[onclick*="navView(\''+_k+'\'"]'); }catch(_){} }   // veio do hash: acha o botão do menu p/ destacar (orçamento usa o item "Funil & Propostas")
   if(t==='orcamento'){
     if(fromClick){ _ORC_QS=''; try{ localStorage.removeItem('ex_orc_qs'); }catch(_){} }           // clicou em Orçamentos → lista limpa
     else { try{ _ORC_QS=localStorage.getItem('ex_orc_qs')||''; }catch(_){ _ORC_QS=''; } }         // reload → reabre o orçamento que estava
