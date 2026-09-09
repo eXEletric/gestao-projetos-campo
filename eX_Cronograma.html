@@ -3109,7 +3109,7 @@ function navFromHash(){ var h=(location.hash||'').replace('#','').trim().toLower
   if(!document.getElementById('v-'+t)) return false;   // view desconhecida → cai no início
   try{ navView(t,null); }catch(e){ return false; } return true; }
 window.addEventListener('hashchange',function(){ try{ navFromHash(); }catch(e){} });
-try{ if(!navFromHash()) navInicio(null); }catch(e){ try{navInicio(null);}catch(_){} }  // landing: apresentação inicial, ou a rota vinda do hash (#funil, #orcamento…)
+function restoreView(){ try{ if(!navFromHash()) navInicio(null); }catch(e){ try{navInicio(null);}catch(_){} } }  // restaura a seção pela URL (#orcamento…) — chamado DEPOIS do boot (senão _CBV/S ainda não existem)
 async function bootNuvem(){
   if(!SB){ nuvemStatus('modo local','err'); return; }
   nuvemStatus('conectando…','load');
@@ -3146,13 +3146,21 @@ function _pop(host){ if(!host)return; var ic=host.querySelector('.ic'); if(ic){i
 function setSbActive(el){ document.querySelectorAll('.sb-i').forEach(function(b){b.classList.remove('on');}); if(el&&el.classList){el.classList.add('on');_pop(el);} }
 function toggleGrp(el){ if(!el.classList.contains('open')){ var sibs=el.parentNode?el.parentNode.children:[]; for(var i=0;i<sibs.length;i++){ var s=sibs[i]; if(s!==el&&s.classList&&s.classList.contains('sb-grp')&&s.classList.contains('open')){ s.classList.remove('open'); var ss=s.nextElementSibling; if(ss&&ss.classList)ss.classList.remove('show'); } } } var op=el.classList.toggle('open'); var sub=el.nextElementSibling; if(sub&&sub.classList)sub.classList.toggle('show'); if(op)_pop(el); }
 function _obranav(show){ var ob=document.querySelector('.obranav'); if(ob)ob.style.display=show?'':'none'; }
+var _ORC_QS='';   // query do orçamento aberto no iframe (ex.: "?opp=..&lote=..") — persiste o orçamento entre reloads
 function navView(t,el){
+  var fromClick=!!el;   // clique no menu (abre a LISTA) × restauração pelo hash (reabre o que estava)
   if(!el){ try{ el=document.querySelector('.sb-i[onclick*="navView(\''+t+'\'"]'); }catch(_){} }   // veio do hash: acha o botão do menu p/ destacar
+  if(t==='orcamento'){
+    if(fromClick){ _ORC_QS=''; try{ localStorage.removeItem('ex_orc_qs'); }catch(_){} }           // clicou em Orçamentos → lista limpa
+    else { try{ _ORC_QS=localStorage.getItem('ex_orc_qs')||''; }catch(_){ _ORC_QS=''; } }         // reload → reabre o orçamento que estava
+  }
   setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; tab(t,null);
   try{ history.replaceState(null,document.title,'#'+t); }catch(_){}   // guarda a view na URL → reload (inclusive Ctrl+Shift+R) volta pra ela
 }
 const _CBV='v='+Date.now();   // cache-bust por sessão: cada recarga do shell traz os quadros embutidos frescos
-function carregarOrcamento(){ const f=document.getElementById('orc-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Orcamento.html?'+_CBV); }
+function carregarOrcamento(){ const f=document.getElementById('orc-frame'); if(!f)return;
+  const want='eX_Orcamento.html?'+(_ORC_QS?(_ORC_QS.replace(/^\?/,'')+'&'):'')+_CBV;   // reabre o orçamento salvo (_ORC_QS) ou a lista
+  if(f.getAttribute('src')!==want) f.setAttribute('src',want); }
 function carregarClientes(){ const f=document.getElementById('cli-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_CRM.html?m=clientes&'+_CBV); }
 function carregarFunil(){ const f=document.getElementById('fun-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_CRM.html?m=funil&'+_CBV); }
 function carregarCatOferta(){ const f=document.getElementById('catoferta-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Ofertas.html?'+_CBV); }
@@ -3273,6 +3281,10 @@ window.addEventListener('message',function(e){
   var d=e.data||{};
   if(d && d.type==='eXsst:ready'){ _frenteReady=true; frentePushCtx(); }
   if(d && d.type==='exNav' && d.view){ try{ navView(d.view,null); }catch(_){} }
+  if(d && d.type==='exOrcOpen'){   // o iframe do orçamento informa o que está aberto (?opp=..) → persiste p/ reload
+    _ORC_QS=(d.qs||'').trim(); if(_ORC_QS==='?') _ORC_QS='';
+    try{ if(_ORC_QS) localStorage.setItem('ex_orc_qs',_ORC_QS); else localStorage.removeItem('ex_orc_qs'); }catch(_){}
+  }
 });
 
 /* ----- SST Fase 1: Responsável técnico (SESMT) ----- */
@@ -3673,6 +3685,7 @@ async function entrarApp(session){
   await bootNuvem();
   await carregarVinculos();
   if(_PERFIL && _PERFIL.papel==='tecnico' && S.projetos.length===1){ S.ativo=S.projetos[0].id; S.emProjeto=true; aplicarModoNav(); tab('acomp',document.getElementById('tab-acomp')); }
+  else { try{ restoreView(); }catch(e){} }   // app pronto (_CBV/S ok) → restaura a seção da URL, ou início
 }
 function aoDeslogar(){ _USER=null;_PERFIL=null;window._PERFIL=null; pintarUsuario(); nuvemStatus('faça login','load'); loginVisivel(true); }
 /* ===================================================================
@@ -4028,7 +4041,7 @@ function diaReabrir(){
 }
 
 async function init(){
-  if(!SB){ nuvemStatus('modo local','err'); loginVisivel(false); return; }
+  if(!SB){ nuvemStatus('modo local','err'); loginVisivel(false); try{ restoreView(); }catch(e){} return; }
   SB.auth.onAuthStateChange((event,session)=>{
     if(event==='PASSWORD_RECOVERY'){ _RECOVERY=true; mostrarRecovery(); return; }  // veio do link do e-mail: pedir nova senha, não entrar direto
     if(_RECOVERY){ return; }                                                        // enquanto define a nova senha, ignora auto-login

@@ -1088,6 +1088,7 @@ async function initOrc(){
   }catch(e){ console.error(e); cloudMsg('erro nuvem — modo local'); CLOUD=false; } }
   if(!CLOUD){ load(); }
   boot();
+  try{ if(window.parent && window.parent!==window) window.parent.postMessage({type:'exOrcOpen', qs: location.search||''}, '*'); }catch(_){}   // avisa o shell qual orçamento está aberto (p/ persistir no reload)
   if(isLoteBase()){ try{ await initLoteBasePanel(); }catch(e){ console.error('lote base panel',e); } }   // base do lote = mestra: injeta o painel de lojas
 }
 
