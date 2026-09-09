@@ -3059,7 +3059,7 @@ function aplicarModoNav(){
 }
 function irLista(t){ S.emProjeto=false; save(); aplicarModoNav(); tab(t,document.getElementById(t==='modelos'?'nav-modelos-lbl':'nav-lista-lbl')); }
 function voltarProjetos(){ irLista('proj'); }
-function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='catoferta')carregarCatOferta();if(t==='catservico')carregarCatServico();if(t==='catequip')carregarCatEquip();if(t==='catdespesa')carregarCatDespesa();if(t==='catmaobra')carregarCatMaoObra();if(t==='abrangencia')carregarAbrangenciaView();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();
+function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='catoferta')carregarCatOferta();if(t==='catservico')carregarCatServico();if(t==='catequip')carregarCatEquip();if(t==='catdespesa')carregarCatDespesa();if(t==='catmaobra')carregarCatMaoObra();if(t==='abrangencia')carregarAbrangenciaView();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();if(t==='barramento'&&typeof carregarBarramento==='function')carregarBarramento();
   const cadBtn=document.getElementById('cad-btn');
   if(cadBtn&&!['colab','cat','mat','acessos','cfg'].includes(t)){cadBtn.classList.remove('active');cadBtn.innerHTML='Cadastros <span style="font-size:10px">▾</span>';document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.remove('active'));}
 }
@@ -3103,7 +3103,11 @@ function importObra(){
 }
 function renderAll(){refreshHeaders();render();renderAcomp();renderProjetos();aplicarModoNav();checkObraPendente();}
 renderAll(); // render local primeiro (instantâneo)
-function navFromHash(){ var h=(location.hash||'').replace('#','').trim().toLowerCase(); if(!h) return false; var map={funil:'funil',orcamento:'orcamento',orc:'orcamento',clientes:'clientes',crm:'clientes',obras:'proj',inicio:'__inicio'}; var t=map[h]; if(!t) return false; if(t==='__inicio'){ navInicio(null); return true; } try{ navView(t,null); }catch(e){ return false; } return true; }
+function navFromHash(){ var h=(location.hash||'').replace('#','').trim().toLowerCase(); if(!h) return false;
+  var alias={orc:'orcamento',crm:'clientes',obras:'proj',inicio:'__inicio'}; var t=alias[h]||h;
+  if(t==='__inicio'){ navInicio(null); return true; }
+  if(!document.getElementById('v-'+t)) return false;   // view desconhecida → cai no início
+  try{ navView(t,null); }catch(e){ return false; } return true; }
 window.addEventListener('hashchange',function(){ try{ navFromHash(); }catch(e){} });
 try{ if(!navFromHash()) navInicio(null); }catch(e){ try{navInicio(null);}catch(_){} }  // landing: apresentação inicial, ou a rota vinda do hash (#funil, #orcamento…)
 async function bootNuvem(){
@@ -3142,7 +3146,11 @@ function _pop(host){ if(!host)return; var ic=host.querySelector('.ic'); if(ic){i
 function setSbActive(el){ document.querySelectorAll('.sb-i').forEach(function(b){b.classList.remove('on');}); if(el&&el.classList){el.classList.add('on');_pop(el);} }
 function toggleGrp(el){ if(!el.classList.contains('open')){ var sibs=el.parentNode?el.parentNode.children:[]; for(var i=0;i<sibs.length;i++){ var s=sibs[i]; if(s!==el&&s.classList&&s.classList.contains('sb-grp')&&s.classList.contains('open')){ s.classList.remove('open'); var ss=s.nextElementSibling; if(ss&&ss.classList)ss.classList.remove('show'); } } } var op=el.classList.toggle('open'); var sub=el.nextElementSibling; if(sub&&sub.classList)sub.classList.toggle('show'); if(op)_pop(el); }
 function _obranav(show){ var ob=document.querySelector('.obranav'); if(ob)ob.style.display=show?'':'none'; }
-function navView(t,el){ setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; tab(t,null); }
+function navView(t,el){
+  if(!el){ try{ el=document.querySelector('.sb-i[onclick*="navView(\''+t+'\'"]'); }catch(_){} }   // veio do hash: acha o botão do menu p/ destacar
+  setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; tab(t,null);
+  try{ history.replaceState(null,document.title,'#'+t); }catch(_){}   // guarda a view na URL → reload (inclusive Ctrl+Shift+R) volta pra ela
+}
 const _CBV='v='+Date.now();   // cache-bust por sessão: cada recarga do shell traz os quadros embutidos frescos
 function carregarOrcamento(){ const f=document.getElementById('orc-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_Orcamento.html?'+_CBV); }
 function carregarClientes(){ const f=document.getElementById('cli-frame'); if(f&&!f.getAttribute('src')) f.setAttribute('src','eX_CRM.html?m=clientes&'+_CBV); }
@@ -4241,7 +4249,7 @@ function _iniModoEfetivo(){ return _iniPapel()==='tecnico' ? 'tecnico' : INI_MOD
 function toggleDrawer(){ var sb=document.getElementById('sidebar'),bd=document.getElementById('sbBackdrop'); if(!sb)return; if(sb.classList.contains('drawer')){ closeDrawer(); } else { sb.classList.remove('mini'); sb.classList.add('drawer'); if(bd)bd.classList.add('on'); } }
 function closeDrawer(){ var sb=document.getElementById('sidebar'),bd=document.getElementById('sbBackdrop'); if(sb)sb.classList.remove('drawer'); if(bd)bd.classList.remove('on'); }
 document.addEventListener('click',function(e){ if(window.innerWidth<=640 && e.target.closest && e.target.closest('#sidebar .sb-i')) closeDrawer(); });
-function navInicio(el){ if(el&&typeof setSbActive==='function')setSbActive(el); if(typeof _obranav==='function')_obranav(false); document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var v=document.getElementById('v-inicio'); if(v)v.classList.add('active'); renderInicio(); try{mtabSync();}catch(e){} }
+function navInicio(el){ if(el&&typeof setSbActive==='function')setSbActive(el); if(typeof _obranav==='function')_obranav(false); document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active');}); var v=document.getElementById('v-inicio'); if(v)v.classList.add('active'); renderInicio(); try{mtabSync();}catch(e){} try{ history.replaceState(null,document.title,'#inicio'); }catch(_){} }
 function mtabSync(){
   var v=(document.querySelector('.view.active')||{}).id||'';
   var m = (v==='v-inicio') ? 'inicio' : (['v-proj','v-acomp','v-crono','v-diario','v-modelos'].indexOf(v)>=0 ? 'obras' : '');
