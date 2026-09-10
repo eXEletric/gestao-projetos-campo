@@ -554,7 +554,7 @@ body.papel-tecnico .adm-only{display:none !important}
 
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">warehouse</span></span><span class="lb">Almoxarifado</span><span class="gchev">▶</span></div>
       <div class="sb-sub">
-        <button class="sb-i fut" onclick="navSoon('Estoque · saldo',this)"><span class="ic"><span class="msr">inventory</span></span><span class="lb">Estoque · saldo</span><span class="br">em breve</span></button>
+        <button class="sb-i" onclick="navView('almox',this)"><span class="ic"><span class="msr">inventory</span></span><span class="lb">Estoque · saldo</span></button>
         <button class="sb-i fut" onclick="navSoon('Ferramentas',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Ferramentas</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('EPIs',this)"><span class="ic"><span class="msr">masks</span></span><span class="lb">EPIs</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Uniformes',this)"><span class="ic"><span class="msr">checkroom</span></span><span class="lb">Uniformes</span><span class="br">em breve</span></button>
@@ -731,6 +731,19 @@ body.papel-tecnico .adm-only{display:none !important}
     <div class="note">Lista curada (só itens marcados <b>vendável</b>) — puxa do mesmo acervo <b>materiais</b>. <span id="lojas-count"></span></div>
     <input class="tin" id="lojas-busca" placeholder="Buscar por descrição, código, marca…" style="width:100%;margin-bottom:12px" oninput="renderLojas()">
     <div id="lojas-list"><div class="empty">Carregando…</div></div>
+  </div>
+
+  <!-- ALMOXARIFADO · SALDO (lente operacional sobre materiais) -->
+  <div class="view" id="v-almox">
+    <div class="topbar"><span class="pname">Almoxarifado · saldo</span>
+      <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
+        <select class="tin" id="almox-local" style="width:auto" onchange="renderAlmox()"></select>
+        <button class="btn btn-p btn-s" onclick="openAj(null)">+ Lançar saldo</button>
+      </div>
+    </div>
+    <div class="note">Lente operacional: <b>o que eu tenho</b> (saldo por local). Cadastrar ≠ ter estoque — só aparece com saldo quem foi movimentado. <span id="almox-count"></span></div>
+    <input class="tin" id="almox-busca" placeholder="Buscar por descrição, código…" style="width:100%;margin-bottom:12px" oninput="renderAlmox()">
+    <div id="almox-list"><div class="empty">Carregando saldos…</div></div>
   </div>
 
   <div class="view" id="v-orcamento">
@@ -1455,6 +1468,16 @@ body.papel-tecnico .adm-only{display:none !important}
       </div>
       <div class="fg"><label class="fl">Código interno <span style="color:var(--green)">(automático)</span></label><input class="fi" id="mt-ci" readonly style="background:var(--surf2)"></div>
     </div>
+    <div class="fg"><label class="fl">Categoria <span style="color:var(--tx3)">(natureza — define a gaveta no Almoxarifado)</span></label>
+      <select class="fi" id="mt-cat">
+        <option value="">— selecione —</option>
+        <option value="material">Material</option>
+        <option value="consumivel">Consumível</option>
+        <option value="ferramenta">Ferramenta</option>
+        <option value="epi">EPI</option>
+        <option value="uniforme">Uniforme</option>
+      </select>
+    </div>
     <div class="fg"><label class="fl">Código de barras (fabricante) <span style="color:var(--blue)">— chave</span></label>
       <div style="display:flex;gap:8px"><input class="fi" id="mt-cb" placeholder="escaneie ou digite" style="flex:1"><button class="btn" onclick="scanCodigo()" title="escanear com a câmera">📷</button></div>
     </div>
@@ -1488,6 +1511,28 @@ body.papel-tecnico .adm-only{display:none !important}
     <div class="note" id="mt-fotos-nota">Fotos do item: ativaremos o envio ao ligar o armazenamento (Storage).</div>
   </div>
   <div class="mf"><button class="btn" onclick="closeMat()">Cancelar</button><button class="btn btn-p" onclick="saveMat()">Salvar material</button></div>
+</div></div>
+
+<!-- AJUSTE DE SALDO (Almoxarifado) -->
+<div class="modal-bg" id="modalAj"><div class="modal" style="max-width:420px">
+  <div class="mh"><b>Ajustar saldo</b><button class="x" onclick="closeAj()">&times;</button></div>
+  <div class="mb">
+    <div class="fg" id="aj-mat-wrap"><label class="fl">Material</label>
+      <select class="fi" id="aj-mat"></select>
+    </div>
+    <div class="note" id="aj-item" style="margin-top:0;display:none"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Quantidade em estoque</label><input class="fi" id="aj-qtd" type="number" step="0.01" placeholder="0"></div>
+      <div class="fg"><label class="fl">Local</label><input class="fi" id="aj-local-nm" readonly style="background:var(--surf2)"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Mínimo <span style="color:var(--tx3)">(opcional)</span></label><input class="fi" id="aj-min" type="number" step="0.01" placeholder="—"></div>
+      <div class="fg"><label class="fl">Máximo <span style="color:var(--tx3)">(opcional)</span></label><input class="fi" id="aj-max" type="number" step="0.01" placeholder="—"></div>
+    </div>
+    <div class="fg"><label class="fl">Observação</label><input class="fi" id="aj-obs" placeholder="contagem, entrada manual…"></div>
+    <div class="note" style="font-size:11px">Grava o saldo e registra um movimento de <b>ajuste</b> (rastreável).</div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeAj()">Cancelar</button><button class="btn btn-p" onclick="saveAj()">Salvar saldo</button></div>
 </div></div>
 
 <!-- ÁREA DO DESENVOLVEDOR (Master/Admin) -->
@@ -2679,6 +2724,8 @@ function rmCat(i){const par=S.categorias[i];S.categorias.splice(i,1);renderCfg()
 /* ===== MATERIAIS (catálogo de tipos, na nuvem) ===== */
 let MATS=[], GRUPOS_MAT=[], MARCAS=[], LOJAS=[]; let MEDIT=null, MSEQ=0;
 function grpMatNome(id){const g=GRUPOS_MAT.find(x=>x.id===id);return g?g.nome:'';}
+const CAT_MAT={material:{l:'Material',c:'#3b82f6',ic:'category'},consumivel:{l:'Consumível',c:'#8b5cf6',ic:'inventory'},ferramenta:{l:'Ferramenta',c:'#f59e0b',ic:'build'},epi:{l:'EPI',c:'#ef4444',ic:'masks'},uniforme:{l:'Uniforme',c:'#14b8a6',ic:'checkroom'}};
+function catBadge(cat){const c=CAT_MAT[cat];return c?`<span style="display:inline-block;font-size:9px;font-weight:600;padding:1px 7px;border-radius:10px;background:${c.c}22;color:${c.c};margin-left:6px;vertical-align:middle">${c.l}</span>`:'';}
 async function carregarMateriais(){
   if(!SB){ document.getElementById('mat-list').innerHTML='<div class="empty">Sem conexão com a nuvem.</div>'; return; }
   document.getElementById('mat-list').innerHTML='<div class="empty">Carregando materiais…</div>';
@@ -2705,7 +2752,7 @@ function renderMatList(){
       <tbody>${lista.map(m=>`
         <tr onclick="openMat('${esc(m.id)}')">
           <td>${m.codigo_interno?`<span class="cod">${m.codigo_interno}</span>`:''}</td>
-          <td><div class="desc">${m.descricao_padronizada||'(sem descrição)'}</div>${m.descricao_fabricante?`<div class="sub">${m.descricao_fabricante}</div>`:''}</td>
+          <td><div class="desc">${m.descricao_padronizada||'(sem descrição)'}${catBadge(m.categoria)}</div>${m.descricao_fabricante?`<div class="sub">${m.descricao_fabricante}</div>`:''}</td>
           <td class="grp">${grpMatNome(m.grupo_material_id)||''}</td>
           <td>${m.marca||''}${m.modelo?`<div class="sub">${m.modelo}</div>`:''}</td>
           <td class="num">${m.preco_venda!=null?('R$ '+Number(m.preco_venda).toFixed(2)):''}${m.vendavel?`<div class="sub" style="color:#0f8f5b">loja</div>`:''}</td>
@@ -2780,6 +2827,7 @@ function openMat(id){
   document.getElementById('mt-custo').value=MEDIT&&MEDIT.custo_compra!=null?MEDIT.custo_compra:'';
   document.getElementById('mt-pv').value=MEDIT&&MEDIT.preco_venda!=null?MEDIT.preco_venda:'';
   document.getElementById('mt-vend').checked=MEDIT?!!MEDIT.vendavel:false;
+  document.getElementById('mt-cat').value=v('categoria');
   document.getElementById('modalM').classList.add('show');
   if(!id) gerarCodInterno();
 }
@@ -2814,7 +2862,8 @@ async function saveMat(){
     obs:document.getElementById('mt-obs').value.trim()||null,
     custo_compra:num(document.getElementById('mt-custo').value),
     preco_venda:num(document.getElementById('mt-pv').value),
-    vendavel:document.getElementById('mt-vend').checked
+    vendavel:document.getElementById('mt-vend').checked,
+    categoria:document.getElementById('mt-cat').value||null
   };
   if(!row.descricao_padronizada && !row.codigo_barras){ alert('Informe ao menos a descrição ou o código de barras.'); return; }
   let r;
@@ -2828,6 +2877,100 @@ async function delMat(id){
   const r=await SB.from('materiais').update({deleted_at:new Date().toISOString()}).eq('id',id);
   if(r.error){ alert('Erro: '+r.error.message); return; }
   carregarMateriais();
+}
+
+/* ===== ALMOXARIFADO · SALDO (lente sobre materiais) ===== */
+let ALMOX=[], ALMOX_LOCAIS=[], ALMOX_LOCAL='', AJEDIT=null;
+function fmtN(v){ if(v==null||v==='')return ''; const n=Number(v); return Number.isInteger(n)?String(n):n.toFixed(2); }
+async function carregarAlmox(){
+  if(!SB){ document.getElementById('almox-list').innerHTML='<div class="empty">Sem conexão com a nuvem.</div>'; return; }
+  document.getElementById('almox-list').innerHTML='<div class="empty">Carregando saldos…</div>';
+  if(!GRUPOS_MAT.length){ const g=await SB.from('grupos_materiais').select('*').eq('ativo',true).order('ordem'); GRUPOS_MAT=g.data||[]; }
+  if(!MATS.length){ const rm=await SB.from('materiais').select('*').is('deleted_at',null).order('descricao_padronizada'); MATS=rm.data||[]; }
+  const [rl,rs]=await Promise.all([
+    SB.from('locais').select('*').is('deleted_at',null).eq('ativo',true).order('nome'),
+    SB.from('saldos').select('*, materiais(*)')
+  ]);
+  ALMOX_LOCAIS=rl.data||[];
+  if(rs.error){ document.getElementById('almox-list').innerHTML='<div class="empty">Erro: '+rs.error.message+'</div>'; return; }
+  ALMOX=rs.data||[];
+  const sel=document.getElementById('almox-local');
+  sel.innerHTML=ALMOX_LOCAIS.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
+  if(!ALMOX_LOCAL || !ALMOX_LOCAIS.some(l=>l.id===ALMOX_LOCAL)) ALMOX_LOCAL=ALMOX_LOCAIS.length?ALMOX_LOCAIS[0].id:'';
+  sel.value=ALMOX_LOCAL;
+  renderAlmox();
+}
+function renderAlmox(){
+  const sel=document.getElementById('almox-local'); ALMOX_LOCAL=sel.value||ALMOX_LOCAL;
+  const q=(document.getElementById('almox-busca').value||'').toLowerCase().trim();
+  let rows=ALMOX.filter(s=>s.local_id===ALMOX_LOCAL && s.materiais);
+  rows=rows.filter(s=>{ if(!q)return true; const m=s.materiais; return [m.descricao_padronizada,m.codigo_interno,m.codigo_barras,m.marca].some(x=>(x||'').toLowerCase().indexOf(q)>=0); });
+  document.getElementById('almox-count').textContent='· '+rows.length+' com saldo';
+  if(!rows.length){ document.getElementById('almox-list').innerHTML='<div class="empty">Nenhum saldo neste local ainda. Use <b>+ Lançar saldo</b> para registrar a primeira contagem.</div>'; return; }
+  const order=['material','consumivel','ferramenta','epi','uniforme',''];
+  const grupos={}; rows.forEach(s=>{ const c=s.materiais.categoria||''; (grupos[c]=grupos[c]||[]).push(s); });
+  let html='';
+  order.forEach(c=>{ const arr=grupos[c]; if(!arr||!arr.length)return;
+    const meta=CAT_MAT[c]||{l:'Sem categoria',c:'#94a3b8',ic:'help'};
+    html+=`<div style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:13px;margin:16px 0 6px;color:var(--tx1)"><span class="msr" style="color:${meta.c};font-size:18px">${meta.ic}</span> ${meta.l} <span style="background:var(--surf2);border-radius:10px;padding:1px 9px;font-size:11px;color:var(--tx2);font-weight:600">${arr.length}</span></div>`;
+    html+='<div class="mtbl-wrap"><table class="mtbl"><thead><tr><th>Código</th><th>Descrição</th><th class="num">Saldo</th><th class="num">Mín</th><th class="num">Máx</th><th>Un</th><th></th></tr></thead><tbody>';
+    arr.sort((a,b)=>(a.materiais.descricao_padronizada||'').localeCompare(b.materiais.descricao_padronizada||''));
+    arr.forEach(s=>{ const m=s.materiais; const low=(s.minimo!=null && s.quantidade!=null && Number(s.quantidade)<Number(s.minimo));
+      html+=`<tr onclick="openAj('${s.id}')">
+        <td>${m.codigo_interno?`<span class="cod">${m.codigo_interno}</span>`:''}</td>
+        <td><div class="desc">${m.descricao_padronizada||'(sem descrição)'}</div>${m.marca?`<div class="sub">${m.marca}</div>`:''}</td>
+        <td class="num" style="font-weight:700${low?';color:#e11d48':''}">${fmtN(s.quantidade)}${low?' <span class="msr" style="font-size:14px;vertical-align:-2px" title="abaixo do mínimo">warning</span>':''}</td>
+        <td class="num sub">${s.minimo!=null?fmtN(s.minimo):''}</td>
+        <td class="num sub">${s.maximo!=null?fmtN(s.maximo):''}</td>
+        <td>${m.unidade||'UND'}</td>
+        <td class="acts"><button class="ib" onclick="event.stopPropagation();openAj('${s.id}')" title="ajustar">✎</button></td>
+      </tr>`;
+    });
+    html+='</tbody></table></div>';
+  });
+  document.getElementById('almox-list').innerHTML=html;
+}
+function ajMatOptions(selId){
+  const order=['material','consumivel','ferramenta','epi','uniforme',''];
+  const byc={}; MATS.forEach(m=>{const c=m.categoria||'';(byc[c]=byc[c]||[]).push(m);});
+  let h='<option value="">— escolha o material —</option>';
+  order.forEach(c=>{ const arr=byc[c]; if(!arr||!arr.length)return; arr.sort((a,b)=>(a.descricao_padronizada||'').localeCompare(b.descricao_padronizada||''));
+    const lbl=(CAT_MAT[c]||{l:'Sem categoria'}).l;
+    h+=`<optgroup label="${lbl}">`+arr.map(m=>`<option value="${m.id}">${(m.codigo_interno?m.codigo_interno+' · ':'')+(m.descricao_padronizada||'(sem descrição)')}</option>`).join('')+'</optgroup>';
+  });
+  const s=document.getElementById('aj-mat'); s.innerHTML=h; s.value=selId||'';
+}
+function openAj(saldoId){
+  const loc=ALMOX_LOCAIS.find(l=>l.id===ALMOX_LOCAL);
+  document.getElementById('aj-local-nm').value=loc?loc.nome:'';
+  AJEDIT=saldoId?ALMOX.find(s=>s.id===saldoId):null;
+  ajMatOptions(AJEDIT?AJEDIT.material_id:'');
+  const wrap=document.getElementById('aj-mat-wrap'), item=document.getElementById('aj-item');
+  if(AJEDIT){ wrap.style.display='none'; item.style.display='block'; const m=AJEDIT.materiais||{};
+    item.innerHTML='<b>'+(m.descricao_padronizada||'(sem descrição)')+'</b>'+(m.codigo_interno?' · '+m.codigo_interno:'');
+    document.getElementById('aj-qtd').value=AJEDIT.quantidade!=null?AJEDIT.quantidade:'';
+    document.getElementById('aj-min').value=AJEDIT.minimo!=null?AJEDIT.minimo:'';
+    document.getElementById('aj-max').value=AJEDIT.maximo!=null?AJEDIT.maximo:'';
+  } else { wrap.style.display='block'; item.style.display='none';
+    document.getElementById('aj-qtd').value=''; document.getElementById('aj-min').value=''; document.getElementById('aj-max').value=''; }
+  document.getElementById('aj-obs').value='';
+  document.getElementById('modalAj').classList.add('show');
+}
+function closeAj(){ document.getElementById('modalAj').classList.remove('show'); AJEDIT=null; }
+async function saveAj(){
+  const num=(x)=>{const n=parseFloat(x);return isNaN(n)?null:n;};
+  const matId=AJEDIT?AJEDIT.material_id:document.getElementById('aj-mat').value;
+  if(!matId){ alert('Escolha o material.'); return; }
+  if(!ALMOX_LOCAL){ alert('Sem local definido.'); return; }
+  const nova=num(document.getElementById('aj-qtd').value);
+  if(nova==null){ alert('Informe a quantidade em estoque.'); return; }
+  const minimo=num(document.getElementById('aj-min').value), maximo=num(document.getElementById('aj-max').value);
+  const antiga=AJEDIT?Number(AJEDIT.quantidade||0):0;
+  const up=await SB.from('saldos').upsert({material_id:matId,local_id:ALMOX_LOCAL,quantidade:nova,minimo:minimo,maximo:maximo},{onConflict:'material_id,local_id'});
+  if(up.error){ alert('Erro ao salvar saldo: '+up.error.message); return; }
+  const delta=nova-antiga;
+  if(delta!==0){ await SB.from('movimentacoes').insert({tipo:'ajuste',material_id:matId,quantidade:Math.abs(delta),local_destino_id:ALMOX_LOCAL,obs:(document.getElementById('aj-obs').value.trim()||('ajuste de saldo ('+(delta>0?'+':'')+fmtN(delta)+')')),data:new Date().toISOString()}); }
+  closeAj(); carregarAlmox();
 }
 async function addGrupoMat(){
   const nome=prompt('Nome do grupo de material (ex: Cabos):'); if(!nome)return;
@@ -3125,7 +3268,7 @@ function aplicarModoNav(){
 }
 function irLista(t){ S.emProjeto=false; save(); aplicarModoNav(); tab(t,document.getElementById(t==='modelos'?'nav-modelos-lbl':'nav-lista-lbl')); }
 function voltarProjetos(){ irLista('proj'); }
-function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='lojas')carregarLojas();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='catoferta')carregarCatOferta();if(t==='catservico')carregarCatServico();if(t==='catequip')carregarCatEquip();if(t==='catdespesa')carregarCatDespesa();if(t==='catmaobra')carregarCatMaoObra();if(t==='abrangencia')carregarAbrangenciaView();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();if(t==='barramento'&&typeof carregarBarramento==='function')carregarBarramento();
+function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='lojas')carregarLojas();if(t==='almox')carregarAlmox();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='catoferta')carregarCatOferta();if(t==='catservico')carregarCatServico();if(t==='catequip')carregarCatEquip();if(t==='catdespesa')carregarCatDespesa();if(t==='catmaobra')carregarCatMaoObra();if(t==='abrangencia')carregarAbrangenciaView();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();if(t==='barramento'&&typeof carregarBarramento==='function')carregarBarramento();
   const cadBtn=document.getElementById('cad-btn');
   if(cadBtn&&!['colab','cat','mat','acessos','cfg'].includes(t)){cadBtn.classList.remove('active');cadBtn.innerHTML='Cadastros <span style="font-size:10px">▾</span>';document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.remove('active'));}
 }
@@ -4388,7 +4531,7 @@ function iniGo(id){
     else if(id==='diario'){ iniDiario(); }
     else if(id==='sst'){ navSST('painel',null); }
     else if(id==='equipe'){ navView('colab',null); }
-    else if(id==='almoxarifado'){ navView('mat',null); }
+    else if(id==='almoxarifado'){ navView('almox',null); }
     else if(id==='kits'){ navKits(null); }
     else if(id==='politica'){ navPolitica(null); }
     else if(id==='config'){ navEmpresa(null); }
