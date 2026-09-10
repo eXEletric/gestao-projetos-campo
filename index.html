@@ -529,16 +529,6 @@ body.papel-tecnico .adm-only{display:none !important}
           <button class="sb-i" onclick="navView('barramento',this);carregarBarramento()"><span class="ic"><span class="msr">bolt</span></span><span class="lb">Orç. de barramento</span></button>
           <button class="sb-i fut" onclick="navSoon('Montagem de quadros',this)"><span class="ic"><span class="msr">grid_view</span></span><span class="lb">Montagem de quadros</span><span class="br">em breve</span></button>
         </div>
-        <div class="sb-grp sb-grp-nest" onclick="toggleGrp(this)"><span class="ic"><span class="msr">folder</span></span><span class="lb">Cadastros</span><span class="gchev">▶</span></div>
-        <div class="sb-sub sb-sub-nest">
-          <button class="sb-i" onclick="navView('clientes',this)"><span class="ic"><span class="msr">contacts</span></span><span class="lb">Clientes</span></button>
-          <button class="sb-i" onclick="navView('catoferta',this)"><span class="ic"><span class="msr">sell</span></span><span class="lb">Categorias Comerciais</span></button>
-          <button class="sb-i" onclick="navView('catservico',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Serviços Comerciais</span></button>
-          <button class="sb-i" onclick="navView('catequip',this)"><span class="ic"><span class="msr">construction</span></span><span class="lb">Equipamentos</span></button>
-          <button class="sb-i" onclick="navView('catdespesa',this)"><span class="ic"><span class="msr">local_shipping</span></span><span class="lb">Deslocamento &amp; Despesas</span></button>
-          <button class="sb-i" onclick="navView('catmaobra',this)"><span class="ic"><span class="msr">badge</span></span><span class="lb">Mão de obra · valores</span></button>
-          <button class="sb-i" onclick="navView('abrangencia',this)"><span class="ic"><span class="msr">public</span></span><span class="lb">Abrangência</span></button>
-        </div>
       </div>
 
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">business_center</span></span><span class="lb">Gestão</span><span class="gchev">▶</span></div>
@@ -549,9 +539,22 @@ body.papel-tecnico .adm-only{display:none !important}
         <button class="sb-i fut" onclick="navSoon('Frota',this)"><span class="ic"><span class="msr">local_shipping</span></span><span class="lb">Frota</span><span class="br">em breve</span></button>
       </div>
 
+      <!-- CADASTROS · base/fonte-mãe (tudo que o Orçamento consome) -->
+      <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">folder</span></span><span class="lb">Cadastros</span><span class="gchev">▶</span></div>
+      <div class="sb-sub">
+        <button class="sb-i" onclick="navView('mat',this)"><span class="ic"><span class="msr">category</span></span><span class="lb">Materiais · catálogo</span></button>
+        <button class="sb-i" onclick="navView('clientes',this)"><span class="ic"><span class="msr">contacts</span></span><span class="lb">Clientes</span></button>
+        <button class="sb-i" onclick="navView('catoferta',this)"><span class="ic"><span class="msr">sell</span></span><span class="lb">Categorias Comerciais</span></button>
+        <button class="sb-i" onclick="navView('catservico',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Serviços Comerciais</span></button>
+        <button class="sb-i" onclick="navView('catequip',this)"><span class="ic"><span class="msr">construction</span></span><span class="lb">Equipamentos</span></button>
+        <button class="sb-i" onclick="navView('catdespesa',this)"><span class="ic"><span class="msr">local_shipping</span></span><span class="lb">Deslocamento &amp; Despesas</span></button>
+        <button class="sb-i" onclick="navView('catmaobra',this)"><span class="ic"><span class="msr">badge</span></span><span class="lb">Mão de obra · valores</span></button>
+        <button class="sb-i" onclick="navView('abrangencia',this)"><span class="ic"><span class="msr">public</span></span><span class="lb">Abrangência</span></button>
+      </div>
+
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">warehouse</span></span><span class="lb">Almoxarifado</span><span class="gchev">▶</span></div>
       <div class="sb-sub">
-        <button class="sb-i" onclick="navView('mat',this)"><span class="ic"><span class="msr">category</span></span><span class="lb">Materiais</span></button>
+        <button class="sb-i fut" onclick="navSoon('Estoque · saldo',this)"><span class="ic"><span class="msr">inventory</span></span><span class="lb">Estoque · saldo</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Ferramentas',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Ferramentas</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('EPIs',this)"><span class="ic"><span class="msr">masks</span></span><span class="lb">EPIs</span><span class="br">em breve</span></button>
         <button class="sb-i fut" onclick="navSoon('Uniformes',this)"><span class="ic"><span class="msr">checkroom</span></span><span class="lb">Uniformes</span><span class="br">em breve</span></button>
