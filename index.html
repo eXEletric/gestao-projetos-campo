@@ -737,8 +737,10 @@ body.papel-tecnico .adm-only{display:none !important}
   <!-- ALMOXARIFADO · SALDO (lente operacional sobre materiais) -->
   <div class="view" id="v-almox">
     <div class="topbar"><span class="pname">Almoxarifado · saldo</span>
-      <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
+      <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap">
         <select class="tin" id="almox-local" style="width:auto" onchange="renderAlmox()"></select>
+        <button class="btn btn-s" onclick="addLocal()" title="criar novo local"><span class="msr" style="font-size:15px;vertical-align:-3px">add_location_alt</span> Local</button>
+        <button class="btn btn-s" onclick="openTransf()" title="transferir entre locais"><span class="msr" style="font-size:15px;vertical-align:-3px">swap_horiz</span> Transferir</button>
         <button class="btn btn-p btn-s" onclick="openAj(null)">+ Lançar saldo</button>
       </div>
     </div>
@@ -749,7 +751,12 @@ body.papel-tecnico .adm-only{display:none !important}
 
   <!-- GAVETA (Almoxarifado · por natureza) — entrada de cadastro por categoria -->
   <div class="view" id="v-gaveta">
-    <div class="topbar"><span class="pname" id="gaveta-title">Gaveta</span><button class="btn btn-p btn-s" id="gaveta-add" onclick="openMatGaveta()">+ Novo</button></div>
+    <div class="topbar"><span class="pname" id="gaveta-title">Gaveta</span>
+      <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
+        <select class="tin" id="gaveta-local" style="width:auto" onchange="gavetaLocalChanged()"></select>
+        <button class="btn btn-p btn-s" id="gaveta-add" onclick="openMatGaveta()">+ Novo</button>
+      </div>
+    </div>
     <div class="note" id="gaveta-note"></div>
     <input class="tin" id="gaveta-busca" placeholder="Buscar por descrição, código, marca…" style="width:100%;margin-bottom:12px" oninput="renderGaveta()">
     <div id="gaveta-list"><div class="empty">Carregando…</div></div>
@@ -1583,6 +1590,22 @@ body.papel-tecnico .adm-only{display:none !important}
     <div class="note" style="font-size:11px">Dar entrada: <b>soma</b> no saldo do local, registra movimento de <b>entrada</b> e (se marcado) grava o custo unitário no material.</div>
   </div>
   <div class="mf"><button class="btn" onclick="closeNF()">Cancelar</button><button class="btn btn-p" onclick="saveNF()">Dar entrada</button></div>
+</div></div>
+
+<!-- MODAL TRANSFERÊNCIA ENTRE LOCAIS -->
+<div class="modal-bg" id="modalTransf"><div class="modal" style="max-width:440px">
+  <div class="mh"><b>Transferir entre locais</b><button class="x" onclick="closeTransf()">&times;</button></div>
+  <div class="mb">
+    <div class="fg"><label class="fl">Material</label><select class="fi" id="tr-mat"></select></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">De (origem)</label><select class="fi" id="tr-orig"></select></div>
+      <div class="fg"><label class="fl">Para (destino)</label><select class="fi" id="tr-dest"></select></div>
+    </div>
+    <div class="fg"><label class="fl">Quantidade</label><input class="fi" id="tr-qtd" type="number" step="0.01" placeholder="0"></div>
+    <div class="note" id="tr-saldo" style="font-size:11px;margin-top:0"></div>
+    <div class="note" style="font-size:11px">Baixa na origem, entra no destino e registra um movimento de <b>transferência</b> (rastreável).</div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeTransf()">Cancelar</button><button class="btn btn-p" onclick="saveTransf()">Transferir</button></div>
 </div></div>
 
 <!-- ÁREA DO DESENVOLVEDOR (Master/Admin) -->
@@ -2935,7 +2958,7 @@ async function delMat(id){
 }
 
 /* ===== GAVETAS (Almoxarifado · por natureza) — cadastro por categoria ===== */
-let GAVETA_CAT=null;
+let GAVETA_CAT=null, GAVETA_LOCAL='', GAVETA_SALDO={};
 const GAVETA_DEF={
   ferramenta:{t:'Ferramentas & Patrimônio',novo:'ferramenta',note:'Natureza <b>Ferramenta</b>. Empréstimo/devolução e patrimônio entram na próxima etapa — aqui você já cadastra item por item.'},
   epi:{t:'EPIs',novo:'EPI',note:'Natureza <b>EPI</b>. Ficha NR-6, CA e validade entram na próxima etapa — aqui você já cadastra item por item.'},
@@ -2954,8 +2977,23 @@ function openMatGaveta(){ openMat(null, GAVETA_CAT); }
 async function carregarGaveta(){
   if(!GAVETA_CAT) GAVETA_CAT='ferramenta';
   if(!MATS.length){ await carregarMateriais(); }
+  await _ensureLocais();
+  const sel=document.getElementById('gaveta-local');
+  if(sel){ sel.innerHTML=ALMOX_LOCAIS.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
+    if(!GAVETA_LOCAL||!ALMOX_LOCAIS.some(l=>l.id===GAVETA_LOCAL)) GAVETA_LOCAL=ALMOX_LOCAL||(ALMOX_LOCAIS[0]&&ALMOX_LOCAIS[0].id)||'';
+    sel.value=GAVETA_LOCAL; }
+  await _loadGavetaSaldo();
   renderGaveta();
 }
+async function _loadGavetaSaldo(){
+  GAVETA_SALDO={};
+  if(!SB||!GAVETA_LOCAL) return;
+  const r=await SB.from('saldos').select('material_id,quantidade,minimo').eq('local_id',GAVETA_LOCAL);
+  (r.data||[]).forEach(s=>{ GAVETA_SALDO[s.material_id]={q:Number(s.quantidade||0),min:s.minimo}; });
+}
+function gavetaLocalChanged(){ const sel=document.getElementById('gaveta-local'); GAVETA_LOCAL=sel.value; _loadGavetaSaldo().then(renderGaveta); }
+function _gavSaldoCell(m){ const sd=GAVETA_SALDO[m.id]; const q=sd?sd.q:0; const mn=(sd&&sd.min!=null)?sd.min:m.quantidade_minima; const low=(mn!=null&&q<Number(mn));
+  return `<td class="num" style="font-weight:700${low?';color:#e11d48':''}">${fmtN(q)}${low?' <span class="msr" style="font-size:13px;vertical-align:-2px" title="abaixo do mínimo">warning</span>':''}</td>`; }
 function renderGaveta(){
   if(!GAVETA_CAT) return;
   const q=(document.getElementById('gaveta-busca').value||'').toLowerCase().trim();
@@ -2966,13 +3004,14 @@ function renderGaveta(){
   const d=GAVETA_DEF[GAVETA_CAT]||{novo:'item'};
   document.getElementById('gaveta-list').innerHTML = lista.length ? `
     <div class="mtbl-wrap"><table class="mtbl">
-      <thead><tr><th>Código</th><th>Descrição padronizada</th><th>Grupo</th><th>Marca / Modelo</th><th>Un</th><th>Mín</th><th></th></tr></thead>
+      <thead><tr><th>Código</th><th>Descrição padronizada</th><th>Grupo</th><th>Marca / Modelo</th><th class="num">Saldo</th><th>Un</th><th>Mín</th><th></th></tr></thead>
       <tbody>${lista.map(m=>`
         <tr onclick="openMat('${esc(m.id)}')">
           <td>${m.codigo_interno?`<span class="cod">${m.codigo_interno}</span>`:''}</td>
           <td><div class="desc">${m.descricao_padronizada||'(sem descrição)'}</div>${m.descricao_fabricante?`<div class="sub">${m.descricao_fabricante}</div>`:''}</td>
           <td class="grp">${grpMatNome(m.grupo_material_id)||''}</td>
           <td>${m.marca||''}${m.modelo?`<div class="sub">${m.modelo}</div>`:''}</td>
+          ${_gavSaldoCell(m)}
           <td>${m.unidade||''}</td>
           <td>${m.quantidade_minima!=null?m.quantidade_minima:''}</td>
           <td><span class="msr" style="font-size:16px;color:var(--tx3)">edit</span></td>
@@ -3188,6 +3227,60 @@ async function saveNF(){
   closeNF(); carregarNF();
   try{ if(document.getElementById('v-almox').classList.contains('active')) carregarAlmox(); }catch(_){}
   alert('Entrada registrada: '+itens.length+' item(ns) somado(s) ao estoque.');
+}
+
+/* ===== LOCAIS + TRANSFERÊNCIA ENTRE LOCAIS ===== */
+async function addLocal(){
+  if(!SB){ alert('Sem conexão.'); return; }
+  const nome=prompt('Nome do novo local (ex.: Veículo João, Obra Assaí Feira):'); if(!nome)return;
+  const tipo=((prompt('Tipo: base, remoto, movel ou veiculo','base')||'base').trim().toLowerCase());
+  const ok=['base','remoto','movel','veiculo'].includes(tipo)?tipo:'base';
+  const r=await SB.from('locais').insert({nome:nome.trim(),tipo:ok,ativo:true}).select().single();
+  if(r.error){ alert('Erro: '+r.error.message); return; }
+  ALMOX_LOCAIS.push(r.data);
+  if(document.getElementById('v-almox').classList.contains('active')) carregarAlmox();
+  else if(document.getElementById('v-gaveta').classList.contains('active')) carregarGaveta();
+  alert('Local criado: '+r.data.nome);
+}
+let TR_SALDOS=[];
+async function openTransf(){
+  if(!SB){ alert('Sem conexão.'); return; }
+  if(!MATS.length){ const rm=await SB.from('materiais').select('*').is('deleted_at',null).order('descricao_padronizada'); MATS=rm.data||[]; }
+  await _ensureLocais();
+  if(ALMOX_LOCAIS.length<2){ alert('Você precisa de ao menos 2 locais para transferir. Use "+ Local" para criar outro.'); return; }
+  document.getElementById('tr-mat').innerHTML=matOptionsHTML('');
+  const opts=ALMOX_LOCAIS.map(l=>`<option value="${l.id}">${l.nome}</option>`).join('');
+  const o=document.getElementById('tr-orig'), d=document.getElementById('tr-dest');
+  o.innerHTML=opts; d.innerHTML=opts;
+  o.value=ALMOX_LOCAL||ALMOX_LOCAIS[0].id;
+  const outra=ALMOX_LOCAIS.find(l=>l.id!==o.value); d.value=outra?outra.id:ALMOX_LOCAIS[0].id;
+  document.getElementById('tr-qtd').value=''; document.getElementById('tr-saldo').textContent='';
+  const rs=await SB.from('saldos').select('material_id,local_id,quantidade'); TR_SALDOS=rs.data||[];
+  document.getElementById('tr-mat').onchange=trShowSaldo; o.onchange=trShowSaldo; trShowSaldo();
+  document.getElementById('modalTransf').classList.add('show');
+}
+function trShowSaldo(){
+  const mid=document.getElementById('tr-mat').value, oid=document.getElementById('tr-orig').value;
+  const s=TR_SALDOS.find(x=>x.material_id===mid&&x.local_id===oid);
+  document.getElementById('tr-saldo').textContent = mid ? ('Saldo na origem: '+fmtN(s?s.quantidade:0)) : '';
+}
+function closeTransf(){ document.getElementById('modalTransf').classList.remove('show'); }
+async function saveTransf(){
+  const mid=document.getElementById('tr-mat').value; if(!mid){ alert('Escolha o material.'); return; }
+  const oid=document.getElementById('tr-orig').value, did=document.getElementById('tr-dest').value;
+  if(oid===did){ alert('Origem e destino devem ser diferentes.'); return; }
+  const q=parseFloat(document.getElementById('tr-qtd').value); if(isNaN(q)||q<=0){ alert('Informe a quantidade.'); return; }
+  const so=TR_SALDOS.find(x=>x.material_id===mid&&x.local_id===oid); const base=so?Number(so.quantidade||0):0;
+  if(q>base){ if(!confirm('A origem tem só '+fmtN(base)+'. Transferir assim mesmo?')) return; }
+  const upo=await SB.from('saldos').upsert({material_id:mid,local_id:oid,quantidade:base-q},{onConflict:'material_id,local_id'});
+  if(upo.error){ alert('Erro na origem: '+upo.error.message); return; }
+  const sd=TR_SALDOS.find(x=>x.material_id===mid&&x.local_id===did); const bd=sd?Number(sd.quantidade||0):0;
+  await SB.from('saldos').upsert({material_id:mid,local_id:did,quantidade:bd+q},{onConflict:'material_id,local_id'});
+  await SB.from('movimentacoes').insert({tipo:'transferencia',material_id:mid,quantidade:q,local_origem_id:oid,local_destino_id:did,data:new Date().toISOString()});
+  closeTransf();
+  if(document.getElementById('v-almox').classList.contains('active')) carregarAlmox();
+  if(document.getElementById('v-gaveta').classList.contains('active')) carregarGaveta();
+  alert('Transferência registrada.');
 }
 async function addGrupoMat(){
   const nome=prompt('Nome do grupo de material (ex: Cabos):'); if(!nome)return;
