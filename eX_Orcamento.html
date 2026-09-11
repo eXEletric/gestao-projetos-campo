@@ -1092,8 +1092,9 @@ async function initOrc(){
       // UNIDADE DE LOTE: lê o macro da base pra ratear a fatia da logística (só exibição)
       if(S_LOTE_ID && !(S&&S._base)){ try{
         const {data:bd}=await SB.from('orcamentos').select('dados').eq('lote_id',S_LOTE_ID).is('deleted_at',null);
-        let m=null,n=0; (bd||[]).forEach(r=>{ const d=r.dados||{}; if(d._base){ m=d.macro; } else { n++; } });
+        let m=null,n=0,baseSo=null; (bd||[]).forEach(r=>{ const d=r.dados||{}; if(d._base){ m=d.macro; baseSo=d.soTotal; } else { n++; } });
         if(m && m.rateio && num(m._total)>0){ const nn=num(m._nun)||n||1; _RATEIO_UNIT=num(m._total)/nn; }
+        if(baseSo && typeof baseSo==='object'){ S.soTotal=Object.assign({servicos:false,equip:false,despesas:false,materiais:false}, baseSo); }   // "só o total" segue a mestra (fonte única)
       }catch(e){ console.error('rateio lote',e); } }
       refreshClienteLive();
     } else { cloudMsg('modo local (sem login)'); }
@@ -1976,6 +1977,8 @@ function toggleSoTotal(blk){
   if(next){ (S.blocoEdited||(S.blocoEdited={}))[blk]=false; S.blocoTotal[blk]=effBlocoTotal(blk); }
   S.soTotal[blk]=next; save();
   renderBlk(BLKS.find(b=>b.key===blk)); recalc();
+  // lote: a mestra controla o "só o total"; grava na nuvem pras unidades acompanharem ao abrir
+  if(S&&S._base&&S_LOTE_ID&&OPP&&CLOUD){ try{ pushOrc(); cloudMsg('detalhe propagado às unidades ✓'); }catch(_){}}
 }
 function updBloco(blk,val){
   S.blocoTotal[blk]=val;
