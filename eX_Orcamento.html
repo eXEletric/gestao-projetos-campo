@@ -1082,7 +1082,7 @@ async function initOrc(){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
       USER_ID=session.user.id;
       try{ const p=await SB.from('perfis').select('nome,email,telefone,colaborador_id').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; USER_TELEFONE=p.data[0].telefone||''; USER_COLAB_ID=p.data[0].colaborador_id||null; } }catch(_){}
-      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarOfertas(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia(); await carregarDiariaBase();
+      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarOfertas(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia(); await carregarDiariaBase(); await carregarModelos();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
       MANUAL = !!ORC_ID;   // já existia ao abrir → alterações exigem clicar Salvar; nova (ORC_ID null) → auto até nascer
       // vínculo: pega contratante/loja da OPORTUNIDADE (pra puxar dados ao vivo do CRM, mesmo em orçamentos antigos)
@@ -2570,6 +2570,28 @@ async function loteResetCampo(unitId,campo){
     await loteReload();
   }catch(e){ console.error('resetCampo',e); alert('Erro: '+(e.message||e)); }
 }
+/* ===== Escopo padrão reutilizável — modelos (1.2) ===== */
+var MODELOS_LIST=[];
+async function carregarModelos(){ try{ const {data,error}=await SB.from('orc_modelos').select('id,nome,descricao,dados').eq('ativo',true).is('deleted_at',null).order('nome'); if(!error) MODELOS_LIST=data||[]; }catch(e){ console.error('modelos',e); } }
+var MODELO_KEYS=['servicos','materiais','despesas','equip','macro','diarias','soTotal','solTitulo','solDesc','margemBase','impostoPct','pessoasFn','efetivo'];
+function modeloSnapshot(){ const d={}; MODELO_KEYS.forEach(function(k){ if(S[k]!==undefined){ try{ d[k]=JSON.parse(JSON.stringify(S[k])); }catch(_){ d[k]=S[k]; } } }); if(d.macro){ delete d.macro._total; delete d.macro._nun; } return d; }
+async function salvarComoModelo(){
+  if(!(OPP&&CLOUD)){ alert('Disponível só com a nuvem ligada.'); return; }
+  const sug=(S.solTitulo||S.cliNome||'')+(S.solTitulo?'':' — escopo');
+  const nome=prompt('Nome do modelo (escopo padrão reutilizável):', sug); if(!nome||!nome.trim()) return;
+  try{ const {error}=await SB.from('orc_modelos').insert({empresa_id:EMPRESA_ID,nome:nome.trim(),dados:modeloSnapshot()}); if(error) throw error;
+    await carregarModelos(); try{ injectLoteBasePanel(); }catch(_){} try{ cloudMsg('modelo salvo ✓'); }catch(_){}
+  }catch(e){ console.error('salvarModelo',e); alert('Erro ao salvar modelo: '+(e.message||e)); }
+}
+async function aplicarModeloNaBase(){
+  const sel=_lg('lbModelo'); const id=sel&&sel.value; if(!id){ alert('Escolha um modelo na lista.'); return; }
+  const m=(MODELOS_LIST||[]).find(x=>x.id===id); if(!m){ alert('Modelo não encontrado.'); return; }
+  if(!confirm('Aplicar o modelo “'+m.nome+'” na BASE?\n\nO escopo atual da base (serviços, materiais, macro, diárias) será SUBSTITUÍDO pelo do modelo.\nAs unidades que seguem a base acompanham; as editadas ficam protegidas.')) return;
+  const d=m.dados||{}; MODELO_KEYS.forEach(function(k){ if(d[k]!==undefined){ try{ S[k]=JSON.parse(JSON.stringify(d[k])); }catch(_){ S[k]=d[k]; } } });
+  save(); try{ recalc(); }catch(_){}
+  try{ if(OPP&&CLOUD&&ORC_ID){ await SB.from('orcamentos').update({dados:S,total:num(S._total)||0}).eq('id',ORC_ID); } }catch(e){ console.error('aplicar modelo update',e); }
+  location.reload();
+}
 async function lotePropagar(){
   const alvo=(LOTE_UNITS||[]).filter(u=>u.herda_base).length;
   const editadas=(LOTE_UNITS||[]).length-alvo;
@@ -2696,7 +2718,15 @@ function renderLoteBaseHtml(){
         <span style="font-size:13px;color:var(--tx3)">× base <b>${fmt(baseT)}</b> = <b style="color:var(--pri);font-size:15px">${fmt(baseT*qtd)}</b></span></div>
       <div style="font-size:12px;color:var(--tx3);margin-top:8px"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">info</span> Estimativa por volume — sem cidade/abrangência por loja. Pra fechar, <b>detalhe em unidades</b> (aí entram km e prazo reais de cada uma).</div>
       <button class="lbtn" style="margin-top:10px;background:var(--pri);color:#fff;border-color:var(--pri)" onclick="setLoteModo('detalhado')"><span class="material-symbols-rounded" style="color:#fff">splitscreen</span>Detalhar em unidades</button></div>`;
-  const corpo = modo==='estimativa' ? estimBlock : (addBar+rows);
+  const modelosStrip=`<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line2);flex-wrap:wrap;background:#faf9ff">
+      <span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">bookmark</span>
+      <b style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)">Escopo padrão (modelo)</b>
+      <button class="lbtn" onclick="salvarComoModelo()"><span class="material-symbols-rounded">bookmark_add</span>Salvar como modelo</button>
+      <select id="lbModelo" style="min-width:170px;padding:7px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— aplicar um modelo —</option>${(MODELOS_LIST||[]).map(m=>`<option value="${m.id}">${esc(m.nome)}</option>`).join('')}</select>
+      <button class="lbtn" onclick="aplicarModeloNaBase()"><span class="material-symbols-rounded">download</span>Aplicar na base</button>
+      <span style="font-size:11.5px;color:var(--tx3);margin-left:auto">salve o escopo atual como modelo, ou traga um modelo pra base</span>
+    </div>`;
+  const corpo = modelosStrip + (modo==='estimativa' ? estimBlock : (addBar+rows));
   return `<style>.lbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:5px 9px;font:600 12px inherit;cursor:pointer;text-decoration:none}.lbtn:hover{border-color:var(--pri);color:var(--pri)}.lbtn.danger{color:var(--red)}.lbtn.danger:hover{border-color:var(--red)}.lbtn .material-symbols-rounded{font-size:15px}.loteKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px}@media(max-width:640px){.loteKpis{grid-template-columns:1fr 1fr}}.lbres:hover{background:var(--pri-bg,#f0ecfb)}</style>
   <div style="background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden">
     <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8;flex-wrap:wrap">
