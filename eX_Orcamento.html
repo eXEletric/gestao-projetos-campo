@@ -2369,6 +2369,7 @@ async function criarNova(){
 
 /* ============ PRÉVIA · PROPOSTA EM LOTE (tela mestra) ============ */
 let LOTE_ID=null, LOTE_ROW=null, LOTE_UNITS=[], LOTE_PEND=[], BASE_DADOS=null, BASE_TOTAL=0, LOTE_UNIT_ABR=[];
+let LOTE_VIEW='lev';   // 2.2: modo de ver a mestra — 'lev' (levantado, loja a loja) × 'pad' (escopo padrão somado)
 let ESTRUTURAS=[];   // cadastro de estrutura/frota (van/caminhão/equipe) — orc_estruturas
 async function carregarEstruturas(){ try{ const {data,error}=await SB.from('orc_estruturas').select('id,nome,tipo,custo').is('deleted_at',null).eq('ativo',true).order('nome'); if(!error) ESTRUTURAS=(data||[]).map(e=>({id:e.id,nome:e.nome,tipo:e.tipo||'outro',custo:num(e.custo)})); }catch(e){ console.error('estruturas',e); } }
 // rota do circuito (macro): base → cidades → base, vizinho mais próximo, × 1,25 (rodovia)
@@ -2750,7 +2751,13 @@ function renderLoteBaseHtml(){
       <span>sempre na lista abaixo (interno)</span>
       <button class="lbtn" style="margin-left:auto;${ccp?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setColCustoProposta(${ccp?'false':'true'})"><span class="material-symbols-rounded" style="${ccp?'color:#fff':''}">${ccp?'visibility':'visibility_off'}</span>${ccp?'aparece na proposta do cliente':'só interno (não vai pro cliente)'}</button>
     </div>`;
-  const corpo = modelosStrip + custoChaveStrip + (modo==='estimativa' ? estimBlock : (addBar+rows));
+  const viewTog=`<div style="display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line2);align-items:center;flex-wrap:wrap">
+      <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.04em;margin-right:4px">Ver</span>
+      <button class="lbtn" style="${LOTE_VIEW==='pad'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteView('pad')"><span class="material-symbols-rounded" style="${LOTE_VIEW==='pad'?'color:#fff':''}">bookmark</span>Escopo padrão</button>
+      <button class="lbtn" style="${LOTE_VIEW==='lev'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteView('lev')"><span class="material-symbols-rounded" style="${LOTE_VIEW==='lev'?'color:#fff':''}">fact_check</span>Levantado</button>
+      <span style="margin-left:auto;font-size:11.5px;color:var(--tx3)">${LOTE_VIEW==='pad'?'somatória do que será feito':'cada loja com o real'}</span>
+    </div>`;
+  const corpo = modelosStrip + viewTog + (LOTE_VIEW==='pad' ? resumoEscopoHtml() : (custoChaveStrip + (modo==='estimativa' ? estimBlock : (addBar+rows))));
   return `<style>.lbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:5px 9px;font:600 12px inherit;cursor:pointer;text-decoration:none}.lbtn:hover{border-color:var(--pri);color:var(--pri)}.lbtn.danger{color:var(--red)}.lbtn.danger:hover{border-color:var(--red)}.lbtn .material-symbols-rounded{font-size:15px}.loteKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px}@media(max-width:640px){.loteKpis{grid-template-columns:1fr 1fr}}.lbres:hover{background:var(--pri-bg,#f0ecfb)}</style>
   <div style="background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden">
     <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8;flex-wrap:wrap">
@@ -2932,6 +2939,21 @@ function setMacroRkm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rkm=Math.m
 function setMacroKm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=Math.max(0,num(v)); _macroSave(); }
 function clearMacroKm(){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=0; _macroSave(); }
 function setColCustoProposta(v){ S.colCustoProposta=!!v; save(); if(OPP&&CLOUD){ try{ pushOrc(); }catch(_){}} try{ injectLoteBasePanel(); }catch(_){} }
+function setLoteView(v){ LOTE_VIEW=(v==='pad')?'pad':'lev'; try{ injectLoteBasePanel(); }catch(_){} }   // 2.2
+function resumoEscopoHtml(){
+  const map={};
+  (LOTE_UNITS||[]).forEach(function(u){ const sv=(u.dados&&u.dados.servicos)||[]; sv.forEach(function(r){ const k=r.desc||'—'; if(!map[k])map[k]={desc:k,und:r.und||'',qtd:0}; map[k].qtd+=num(r.qtd); }); });
+  const rows=Object.keys(map).map(function(k){return map[k];}).filter(function(r){return r.qtd>0;});
+  let matTot=0; (LOTE_UNITS||[]).forEach(function(u){ const ms=(u.dados&&u.dados.materiais)||[]; ms.forEach(function(m){ matTot+=num(m.qtd)*((m.usarBase!==false)?num(m.custoBase):num(m.custoAlt)); }); });
+  const body=rows.length?rows.map(function(r){ return '<tr><td style="padding:9px 14px;border-bottom:1px solid var(--line)">'+esc(r.desc)+'</td><td style="padding:9px 14px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;font-weight:700">'+_d1(r.qtd)+'</td><td style="padding:9px 14px;border-bottom:1px solid var(--line);color:var(--tx3)">'+esc(r.und)+'</td></tr>'; }).join(''):'<tr><td colspan="3" style="padding:16px 14px;color:var(--tx3)">Sem serviços no escopo ainda.</td></tr>';
+  return '<div style="padding:4px 0">'
+    +'<div style="padding:10px 14px;color:var(--tx3);font-size:12px">Somatória do escopo em '+((LOTE_UNITS||[]).length)+' loja(s) — tudo que será feito no lote.</div>'
+    +'<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'
+    +'<th style="text-align:left;padding:0 14px 7px;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);border-bottom:1px solid var(--line2)">Serviço (escopo)</th>'
+    +'<th style="text-align:right;padding:0 14px 7px;font-size:10px;text-transform:uppercase;color:var(--tx3);border-bottom:1px solid var(--line2)">Σ do lote</th>'
+    +'<th style="text-align:left;padding:0 14px 7px;font-size:10px;text-transform:uppercase;color:var(--tx3);border-bottom:1px solid var(--line2)">und</th></tr></thead><tbody>'+body+'</tbody></table>'
+    +'<div style="padding:12px 14px;color:var(--tx3);font-size:12px">Material do lote (somado): <b style="color:var(--pri)">'+fmt(matTot)+'</b></div></div>';
+}
 function setMacroRateio(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rateio=!!v; S.macro._total=macroTotal(); S.macro._nun=(LOTE_UNITS||[]).length; save(); try{ pushOrc(); }catch(_){}; injectLoteBasePanel(); }
 function setLoteModo(m){ m=(m==='estimativa'?'estimativa':'detalhado');
   if(m==='estimativa' && (LOTE_UNITS||[]).length>0){ if(!confirm('Já existem '+LOTE_UNITS.length+' loja(s) detalhada(s). No modo Estimativa o total passa a ser base × N e os valores reais dessas lojas são ignorados no total (não são apagados). Continuar?'))return; }
