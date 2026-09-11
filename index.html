@@ -752,8 +752,9 @@ body.papel-tecnico .adm-only{display:none !important}
   <!-- GAVETA (Almoxarifado · por natureza) — entrada de cadastro por categoria -->
   <div class="view" id="v-gaveta">
     <div class="topbar"><span class="pname" id="gaveta-title">Gaveta</span>
-      <div style="display:flex;gap:8px;align-items:center;margin-left:auto">
+      <div style="display:flex;gap:8px;align-items:center;margin-left:auto;flex-wrap:wrap">
         <select class="tin" id="gaveta-local" style="width:auto" onchange="gavetaLocalChanged()"></select>
+        <button class="btn btn-s" id="gaveta-fichas" onclick="openFicha()" style="display:none"><span class="msr" style="font-size:15px;vertical-align:-3px">assignment_ind</span> Fichas</button>
         <button class="btn btn-p btn-s" id="gaveta-add" onclick="openMatGaveta()">+ Novo</button>
       </div>
     </div>
@@ -1626,6 +1627,51 @@ body.papel-tecnico .adm-only{display:none !important}
     </div>
   </div>
   <div class="mf"><button class="btn" onclick="closeUnid()">Fechar</button></div>
+</div></div>
+
+<!-- MODAL DETALHE EPI (CA / validade / tamanho) -->
+<div class="modal-bg" id="modalEpi"><div class="modal" style="max-width:460px">
+  <div class="mh"><b>Detalhe · <span id="epi-title">EPI</span></b><button class="x" onclick="closeEpi()">&times;</button></div>
+  <div class="mb">
+    <div class="frow">
+      <div class="fg"><label class="fl">CA <span style="color:var(--tx3)">(Certificado de Aprovação)</span></label><input class="fi" id="epi-ca"></div>
+      <div class="fg"><label class="fl">Validade do CA</label><input class="fi" id="epi-val" type="date"></div>
+    </div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Tamanho(s)</label><input class="fi" id="epi-tam" placeholder="ex.: P, M, G ou 42"></div>
+      <div class="fg"><label class="fl">Uso</label><select class="fi" id="epi-uso"><option value="comum">Comum</option><option value="individual">Individual</option></select></div>
+    </div>
+    <label class="fl" style="display:flex;align-items:center;gap:8px;margin-top:10px;font-weight:400"><input type="checkbox" id="epi-reap" checked> Reaproveitável <span style="color:var(--tx3)">(descartável = desmarcar)</span></label>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeEpi()">Cancelar</button><button class="btn btn-p" onclick="saveEpiDet()">Salvar detalhe</button></div>
+</div></div>
+
+<!-- MODAL ENTREGA DE EPI -->
+<div class="modal-bg" id="modalEntrega"><div class="modal" style="max-width:470px">
+  <div class="mh"><b>Entregar</b><button class="x" onclick="closeEntrega()">&times;</button></div>
+  <div class="mb">
+    <div class="note" id="ent-mat" style="margin-top:0;font-weight:600"></div>
+    <div class="note" id="ent-ca" style="margin-top:0;font-size:11px"></div>
+    <div class="fg"><label class="fl">Colaborador</label><select class="fi" id="ent-colab"></select></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Quantidade</label><input class="fi" id="ent-qtd" type="number" step="1" value="1"></div>
+      <div class="fg"><label class="fl">Tamanho</label><input class="fi" id="ent-tam"></div>
+    </div>
+    <div class="fg"><label class="fl">Baixa do local</label><select class="fi" id="ent-local"></select></div>
+    <div class="fg"><label class="fl">Observação</label><input class="fi" id="ent-obs" placeholder="motivo, troca…"></div>
+    <div class="note" style="font-size:11px">Baixa o saldo do local e lança a entrega na <b>ficha NR-6</b> do colaborador.</div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeEntrega()">Cancelar</button><button class="btn btn-p" onclick="saveEntrega()">Registrar entrega</button></div>
+</div></div>
+
+<!-- MODAL FICHA DE EPI (NR-6) -->
+<div class="modal-bg" id="modalFicha"><div class="modal" style="max-width:620px">
+  <div class="mh"><b>Ficha de EPI · NR-6</b><button class="x" onclick="closeFicha()">&times;</button></div>
+  <div class="mb">
+    <div class="fg"><label class="fl">Colaborador</label><select class="fi" id="ficha-colab" onchange="fichaLoad()"></select></div>
+    <div id="ficha-list"></div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeFicha()">Fechar</button></div>
 </div></div>
 
 <!-- ÁREA DO DESENVOLVEDOR (Master/Admin) -->
@@ -2989,6 +3035,7 @@ function navGaveta(cat,el){
   document.getElementById('gaveta-title').textContent=d.t;
   document.getElementById('gaveta-note').innerHTML=d.note+' <span id="gaveta-count"></span>';
   document.getElementById('gaveta-add').textContent='+ Novo '+d.novo;
+  var fb=document.getElementById('gaveta-fichas'); if(fb)fb.style.display=(cat==='epi'||cat==='uniforme')?'':'none';
   var b=document.getElementById('gaveta-busca'); if(b)b.value='';
   setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; tab('gaveta',null);
   try{ history.replaceState(null,document.title,'#gaveta-'+cat); }catch(_){}
@@ -3034,7 +3081,7 @@ function renderGaveta(){
           ${_gavSaldoCell(m)}
           <td>${m.unidade||''}</td>
           <td>${m.quantidade_minima!=null?m.quantidade_minima:''}</td>
-          <td class="acts" style="white-space:nowrap">${GAVETA_CAT==='ferramenta'?`<button class="ib" onclick="event.stopPropagation();openUnid('${esc(m.id)}')" title="unidades / empréstimo"><span class="msr" style="font-size:16px">handshake</span></button> `:''}<span class="msr" style="font-size:16px;color:var(--tx3)">edit</span></td>
+          <td class="acts" style="white-space:nowrap">${GAVETA_CAT==='ferramenta'?`<button class="ib" onclick="event.stopPropagation();openUnid('${esc(m.id)}')" title="unidades / empréstimo"><span class="msr" style="font-size:16px">handshake</span></button> `:''}${(GAVETA_CAT==='epi'||GAVETA_CAT==='uniforme')?`<button class="ib" onclick="event.stopPropagation();openEntrega('${esc(m.id)}')" title="entregar"><span class="msr" style="font-size:16px">assignment_turned_in</span></button> <button class="ib" onclick="event.stopPropagation();openEpiDet('${esc(m.id)}')" title="detalhe (CA/validade/tamanho)"><span class="msr" style="font-size:16px">badge</span></button> `:''}<span class="msr" style="font-size:16px;color:var(--tx3)">edit</span></td>
         </tr>`).join('')}</tbody>
     </table></div>` : `<div class="empty">Nenhum item nesta gaveta ainda. Clique em “+ Novo ${d.novo}” para cadastrar.</div>`;
 }
@@ -3361,6 +3408,89 @@ async function devolverUnid(uid){
   u.situacao='disponivel'; u.colaborador_id=null; renderUnid();
 }
 function closeUnid(){ document.getElementById('modalUnid').classList.remove('show'); UNID_MAT=null; }
+
+/* ===== EPI/UNIFORME: detalhe + entrega + ficha NR-6 (2c-2) ===== */
+let EPI_MAT=null, ENT_MAT=null;
+async function openEpiDet(matId){
+  if(!SB){ alert('Sem conexão.'); return; }
+  EPI_MAT=MATS.find(m=>m.id===matId)||{id:matId};
+  document.getElementById('epi-title').textContent=EPI_MAT.descricao_padronizada||'EPI';
+  const r=await SB.from('epi_detalhe').select('*').eq('material_id',matId).maybeSingle();
+  const d=r.data||{};
+  document.getElementById('epi-ca').value=d.ca||'';
+  document.getElementById('epi-val').value=d.validade_ca||'';
+  document.getElementById('epi-tam').value=d.tamanho||'';
+  document.getElementById('epi-uso').value=d.uso||'comum';
+  document.getElementById('epi-reap').checked=(d.reaproveitavel!=null)?!!d.reaproveitavel:true;
+  document.getElementById('modalEpi').classList.add('show');
+}
+async function saveEpiDet(){
+  if(!EPI_MAT) return;
+  const row={ material_id:EPI_MAT.id, ca:document.getElementById('epi-ca').value.trim()||null,
+    validade_ca:document.getElementById('epi-val').value||null, tamanho:document.getElementById('epi-tam').value.trim()||null,
+    uso:document.getElementById('epi-uso').value||'comum', reaproveitavel:document.getElementById('epi-reap').checked,
+    is_uniforme:(GAVETA_CAT==='uniforme') };
+  const r=await SB.from('epi_detalhe').upsert(row,{onConflict:'material_id'});
+  if(r.error){ alert('Erro: '+r.error.message); return; }
+  document.getElementById('modalEpi').classList.remove('show');
+}
+function closeEpi(){ document.getElementById('modalEpi').classList.remove('show'); EPI_MAT=null; }
+async function openEntrega(matId){
+  if(!SB){ alert('Sem conexão.'); return; }
+  ENT_MAT=MATS.find(m=>m.id===matId)||{id:matId};
+  await _ensureLocais();
+  document.getElementById('ent-mat').textContent=(ENT_MAT.codigo_interno?ENT_MAT.codigo_interno+' · ':'')+(ENT_MAT.descricao_padronizada||'EPI');
+  document.getElementById('ent-colab').innerHTML=colabOpts('');
+  const lsel=document.getElementById('ent-local'); lsel.innerHTML=ALMOX_LOCAIS.map(l=>`<option value="${l.id}">${l.nome}</option>`).join(''); lsel.value=ALMOX_LOCAL||'';
+  document.getElementById('ent-qtd').value='1'; document.getElementById('ent-obs').value='';
+  const r=await SB.from('epi_detalhe').select('*').eq('material_id',matId).maybeSingle(); const d=r.data||{};
+  document.getElementById('ent-tam').value=d.tamanho||'';
+  document.getElementById('ent-ca').textContent = d.ca?('CA '+d.ca+(d.validade_ca?(' · validade '+new Date(d.validade_ca+'T00:00').toLocaleDateString('pt-BR')):'')) : 'Sem CA cadastrado — defina em Detalhe (badge).';
+  ENT_MAT._ca=d.ca||null;
+  document.getElementById('modalEntrega').classList.add('show');
+}
+function closeEntrega(){ document.getElementById('modalEntrega').classList.remove('show'); ENT_MAT=null; }
+async function saveEntrega(){
+  if(!ENT_MAT) return;
+  const cid=document.getElementById('ent-colab').value; if(!cid){ alert('Escolha o colaborador.'); return; }
+  const localId=document.getElementById('ent-local').value; if(!localId){ alert('Escolha o local.'); return; }
+  const q=parseFloat(document.getElementById('ent-qtd').value); if(isNaN(q)||q<=0){ alert('Informe a quantidade.'); return; }
+  const tam=document.getElementById('ent-tam').value.trim();
+  const cur=await SB.from('saldos').select('quantidade').eq('material_id',ENT_MAT.id).eq('local_id',localId).maybeSingle();
+  const base=(cur.data&&cur.data.quantidade!=null)?Number(cur.data.quantidade):0;
+  if(q>base){ if(!confirm('Saldo no local é '+fmtN(base)+'. Entregar assim mesmo?')) return; }
+  const up=await SB.from('saldos').upsert({material_id:ENT_MAT.id,local_id:localId,quantidade:base-q},{onConflict:'material_id,local_id'});
+  if(up.error){ alert('Erro no saldo: '+up.error.message); return; }
+  const extra=document.getElementById('ent-obs').value.trim();
+  const obs='EPI'+(ENT_MAT._ca?(' · CA '+ENT_MAT._ca):'')+(tam?(' · tam '+tam):'')+(extra?(' · '+extra):'');
+  await SB.from('movimentacoes').insert({tipo:'entrega',material_id:ENT_MAT.id,quantidade:q,colaborador_id:cid,local_origem_id:localId,obs,data:new Date().toISOString()});
+  closeEntrega();
+  if(document.getElementById('v-gaveta').classList.contains('active')) carregarGaveta();
+  alert('Entrega registrada na ficha de '+colabNome(cid)+'.');
+}
+async function openFicha(){
+  if(!SB){ alert('Sem conexão.'); return; }
+  document.getElementById('ficha-colab').innerHTML=colabOpts('');
+  document.getElementById('ficha-list').innerHTML='<div class="empty" style="padding:14px">Escolha um colaborador para ver a ficha.</div>';
+  document.getElementById('modalFicha').classList.add('show');
+}
+async function fichaLoad(){
+  const cid=document.getElementById('ficha-colab').value;
+  const box=document.getElementById('ficha-list');
+  if(!cid){ box.innerHTML='<div class="empty" style="padding:14px">Escolha um colaborador.</div>'; return; }
+  box.innerHTML='<div class="empty" style="padding:14px">Carregando…</div>';
+  const r=await SB.from('movimentacoes').select('*, materiais(descricao_padronizada,codigo_interno)').eq('tipo','entrega').eq('colaborador_id',cid).order('data',{ascending:false});
+  const movs=r.data||[];
+  box.innerHTML = movs.length ? `
+    <div class="mtbl-wrap"><table class="mtbl"><thead><tr><th>Data</th><th>Item</th><th class="num">Qtd</th><th>CA / tamanho / obs</th></tr></thead>
+    <tbody>${movs.map(mv=>`<tr>
+      <td>${mv.data?new Date(mv.data).toLocaleDateString('pt-BR'):''}</td>
+      <td><div class="desc">${(mv.materiais&&mv.materiais.descricao_padronizada)||'(item)'}</div>${(mv.materiais&&mv.materiais.codigo_interno)?`<div class="sub">${mv.materiais.codigo_interno}</div>`:''}</td>
+      <td class="num">${fmtN(mv.quantidade)}</td>
+      <td class="sub">${((mv.obs||'').replace(/^EPI\s*·?\s*/,''))||''}</td>
+    </tr>`).join('')}</tbody></table></div>` : '<div class="empty" style="padding:14px">Nenhuma entrega registrada para este colaborador.</div>';
+}
+function closeFicha(){ document.getElementById('modalFicha').classList.remove('show'); }
 async function addGrupoMat(){
   const nome=prompt('Nome do grupo de material (ex: Cabos):'); if(!nome)return;
   const sigla=((prompt('Sigla para o código interno (ex: CAB):','')||'').toUpperCase().trim()); if(!sigla){alert('Sigla obrigatória.');return;}
