@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eX · CRM — Tratativas da proposta (modelo)</title>
+<meta name="theme-color" content="#533ab7">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,0,0&display=swap" rel="stylesheet">
+<style>
+/* tokens e peças copiados do eX_CRM.html vigente */
+:root{
+  --bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);
+  --tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--pri:#533ab7;--pri-bg:#eeedfe;
+  --blue:#185fa5;--green:#3b6d11;--amber:#ba7517;--red:#a32d2d;--teal:#0f6e56;
+}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
+.material-symbols-rounded{font-family:'Material Symbols Rounded';line-height:1;vertical-align:middle;font-size:20px}
+.app{max-width:1320px;margin:0 auto;padding:16px 18px 60px}
+.appbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px}
+.logo{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--pri)}.logo b{color:var(--tx)}
+.modtag{font-size:12px;font-weight:600;color:var(--tx2);background:var(--surf2);padding:4px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px}
+.modtag .material-symbols-rounded{font-size:16px;color:var(--pri)}
+.spacer{flex:1}
+.btn{font-size:13px;padding:8px 13px;border-radius:8px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--surf2)}
+.btn .material-symbols-rounded{font-size:18px}
+.btn-p{background:var(--pri);color:#fff;border-color:var(--pri)}.btn-p:hover{background:#472f9e}
+.btn-g{background:var(--green);color:#fff;border-color:var(--green)}
+.btn-s{font-size:12px;padding:5px 10px}
+.lead{font-size:13px;color:var(--tx2);max-width:860px;margin:2px 0 12px}
+.hlsw{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:600;color:var(--tx2);cursor:pointer;user-select:none}
+.hlsw i{width:30px;height:17px;border-radius:9px;background:var(--line2);position:relative;transition:.15s}
+.hlsw i:after{content:'';position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;transition:.15s}
+.hlsw.on i{background:var(--pri)}.hlsw.on i:after{left:15px}
+
+/* filtros "de quem é a vez" */
+.filters{display:flex;gap:7px;flex-wrap:wrap;margin:6px 0 12px}
+.fchip{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:600;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:20px;padding:6px 12px;cursor:pointer}
+.fchip .material-symbols-rounded{font-size:16px}
+.fchip b{font-size:11px;background:var(--surf2);border-radius:10px;padding:0 7px;color:var(--tx2)}
+.fchip.on{background:var(--pri);border-color:var(--pri);color:#fff}.fchip.on b{background:rgba(255,255,255,.25);color:#fff}
+
+/* KANBAN (igual ao CRM) */
+.board{display:flex;gap:12px;overflow-x:auto;padding-bottom:10px;align-items:flex-start}
+.kcol{flex:0 0 262px;background:var(--surf2);border-radius:12px;padding:8px;display:flex;flex-direction:column}
+.kcol.fim{background:#eaf2e3}
+.kcol-h{display:flex;align-items:center;gap:6px;padding:4px 6px 8px}
+.kcol-nm{font-size:12.5px;font-weight:700;flex:1}
+.kcol-ct{font-size:11px;font-weight:700;color:var(--tx2);background:var(--surf);border-radius:10px;padding:1px 8px}
+.kcol-papel{display:flex;align-items:center;gap:4px;padding:0 6px 8px;font-size:10.5px;font-weight:600;color:var(--tx3);text-transform:uppercase;letter-spacing:.02em}
+.kcol-papel .material-symbols-rounded{font-size:13px;color:var(--pri)}
+.kcol-body{display:flex;flex-direction:column;gap:8px;padding:2px;min-height:40px}
+.kcard{background:var(--surf);border:1px solid var(--line);border-radius:9px;padding:10px 11px;cursor:pointer;transition:.1s;position:relative}
+.kcard:hover{border-color:var(--line2);box-shadow:0 1px 4px rgba(0,0,0,.06)}
+.kcard.sel{border-color:var(--pri);box-shadow:0 0 0 2px var(--pri-bg)}
+.kcard.dim{opacity:.28}
+.kcard-nm{font-size:12.5px;font-weight:700;line-height:1.3}
+.kcard-cli{font-size:11px;color:var(--tx3);margin-top:3px;display:flex;align-items:center;gap:4px}
+.kcard-cli .material-symbols-rounded{font-size:12px}
+.kcard-foot{display:flex;align-items:center;gap:6px;margin-top:8px}
+.temp{font-size:9.5px;font-weight:700;padding:2px 7px;border-radius:10px}
+.temp.frio{background:#e7f0fa;color:var(--blue)}.temp.morno{background:#faeeda;color:var(--amber)}.temp.quente{background:#fcebeb;color:var(--red)}
+.orcb{font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;margin-top:6px}
+.orcb .material-symbols-rounded{font-size:13px}
+.orcb.rascunho{color:var(--tx2);background:var(--surf2)}
+.orcb.enviado{color:var(--blue);background:#e7f0fa}
+.orcb.aprovado{color:var(--green);background:#e9f2dd}
+.orcb.recusado{color:var(--red);background:#fcebeb}
+/* NOVO no card */
+.vez{font-size:10.5px;font-weight:700;display:inline-flex;align-items:center;gap:4px;padding:3px 8px;border-radius:8px;margin-top:6px}
+.vez .material-symbols-rounded{font-size:14px}
+.vez.ex{background:var(--pri-bg);color:var(--pri)}.vez.cli{background:#e7f0fa;color:var(--blue)}.vez.ok{background:#e9f2dd;color:var(--green)}.vez.no{background:#fcebeb;color:var(--red)}
+.prox{font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;margin-top:5px}
+.prox .material-symbols-rounded{font-size:15px}
+.prox.amber{color:var(--amber)}.prox.red{color:var(--red)}.prox.pri{color:var(--pri)}.prox.green{color:var(--green)}.prox.gray{color:var(--tx3)}
+.lastev{font-size:10.5px;color:var(--tx3);display:inline-flex;align-items:center;gap:3px;margin-left:auto;white-space:nowrap}
+.lastev .material-symbols-rounded{font-size:13px}
+body.hl .nv{outline:1.5px dashed var(--pri);outline-offset:2px}
+
+/* DETALHE (igual ao CRM) */
+.detail{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-top:14px}
+.dhead{display:flex;align-items:flex-start;gap:12px;margin-bottom:6px;flex-wrap:wrap}
+.davatar{width:44px;height:44px;border-radius:11px;background:var(--pri-bg);color:var(--pri);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:16px;flex-shrink:0}
+.dhead .dt{flex:1;min-width:220px}.dhead .dt h2{font-size:17px;font-weight:700}
+.dhead .dt .sub{font-size:12px;color:var(--tx2);margin-top:2px}
+.chiprow{display:flex;gap:6px;flex-wrap:wrap;margin:4px 0 2px}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.dgrid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:18px;margin-top:14px}
+@media(max-width:900px){.dgrid{grid-template-columns:1fr}}
+.sech{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);display:flex;align-items:center;gap:6px;margin-bottom:8px}
+.sech .material-symbols-rounded{font-size:16px;color:var(--pri)}
+/* faixa de status */
+.strip{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:16px}
+@media(max-width:700px){.strip{grid-template-columns:repeat(2,1fr)}}
+.tile{background:var(--surf2);border-radius:10px;padding:9px 11px}
+.tile .l{font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);font-weight:700}
+.tile .v{font-size:13px;font-weight:700;margin-top:2px;display:flex;align-items:center;gap:5px}
+.tile .v .material-symbols-rounded{font-size:16px}
+.tile .s{font-size:11px;color:var(--tx2)}
+.tile.ex .v{color:var(--pri)}.tile.cli .v{color:var(--blue)}.tile.ok .v{color:var(--green)}.tile.no .v{color:var(--red)}.tile.warn .v{color:var(--amber)}
+/* linha do tempo */
+.tl{position:relative;padding-left:4px}
+.ev{display:flex;gap:11px;position:relative;padding-bottom:14px}
+.ev:before{content:'';position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--line)}
+.ev:last-child:before{display:none}
+.evic{flex:0 0 32px;height:32px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--surf2);color:var(--tx2)}
+.evic .material-symbols-rounded{font-size:17px}
+.evic.blue{background:#e7f0fa;color:var(--blue)}.evic.pri{background:var(--pri-bg);color:var(--pri)}.evic.green{background:#e9f2dd;color:var(--green)}.evic.red{background:#fcebeb;color:var(--red)}.evic.amber{background:#faeeda;color:var(--amber)}
+.evb{flex:1;min-width:0;padding-top:4px}
+.evt{font-size:13px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.rv{font-size:10px;font-weight:800;background:var(--tx);color:#fff;border-radius:5px;padding:1px 6px}
+.rv.old{background:var(--tx3)}
+.evm{font-size:11.5px;color:var(--tx3);margin-top:1px}
+.evq{font-size:12px;color:var(--tx2);background:var(--surf2);border-left:3px solid var(--line2);border-radius:0 8px 8px 0;padding:7px 10px;margin-top:6px;white-space:pre-wrap}
+.att{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--pri);background:var(--pri-bg);border-radius:7px;padding:3px 8px;margin-top:6px;margin-right:5px}
+.att .material-symbols-rounded{font-size:14px}
+.evnew{animation:flash 1.2s ease}
+@keyframes flash{0%{background:#fff6c7}100%{background:transparent}}
+.empty{font-size:12.5px;color:var(--tx3);font-style:italic;padding:10px 0}
+/* formulário registrar resposta */
+.form{background:#f7f5ff;border:1.5px solid #cfc6f5;border-radius:12px;padding:14px;margin-bottom:16px}
+.form h3{font-size:13.5px;font-weight:800;color:var(--pri);display:flex;align-items:center;gap:6px;margin-bottom:10px}
+.frow{margin-bottom:10px}
+.frow>label{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);margin-bottom:5px}
+.opts{display:flex;gap:6px;flex-wrap:wrap}
+.opt{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:600;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:6px 10px;cursor:pointer}
+.opt .material-symbols-rounded{font-size:16px}
+.opt.on{border-color:var(--pri);background:var(--pri);color:#fff}
+.opt.on.g{background:var(--green);border-color:var(--green)}.opt.on.r{background:var(--red);border-color:var(--red)}
+.fin{width:100%;border:1px solid var(--line2);border-radius:8px;padding:8px 10px;font-size:12.5px;color:var(--tx);background:var(--surf);outline:none}
+.fin:focus{border-color:var(--pri)}
+textarea.fin{height:70px;resize:vertical}
+.warn{font-size:12px;color:var(--amber);background:#faeeda;border-radius:8px;padding:7px 10px;margin-top:6px;display:flex;gap:6px;align-items:flex-start}
+.warn .material-symbols-rounded{font-size:16px}
+.fact{display:flex;gap:6px;justify-content:flex-end;margin-top:4px}
+/* lateral */
+.side{display:flex;flex-direction:column;gap:12px}
+.box{background:var(--surf2);border:1px solid var(--line);border-radius:12px;padding:12px 13px}
+.box p{font-size:12px;color:var(--tx2);margin-top:5px}
+.box b{color:var(--tx)}
+.rule{display:flex;gap:8px;font-size:12px;color:var(--tx2);padding:6px 0;border-top:1px dashed var(--line)}
+.rule:first-of-type{border-top:none}
+.rule .material-symbols-rounded{font-size:16px;color:var(--pri);flex-shrink:0;margin-top:1px}
+.toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#241c40;color:#f0edfb;font-size:12.5px;line-height:1.45;padding:11px 16px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:560px;opacity:0;pointer-events:none;transition:.25s;z-index:50}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.foot{margin-top:20px;display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:10px}
+.fcard{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.fcard h4{font-size:12.5px;font-weight:800;display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.fcard h4 .material-symbols-rounded{font-size:18px;color:var(--pri)}
+.fcard p{font-size:12px;color:var(--tx2)}
+</style>
+</head>
+<body class="hl">
+<div class="app">
+  <div class="appbar">
+    <span class="logo"><b>e</b>X</span>
+    <span class="modtag"><span class="material-symbols-rounded">view_kanban</span>Comercial › Funil · MODELO de tratativas</span>
+    <span class="spacer"></span>
+    <span class="hlsw on" id="hlsw" onclick="toggleHL()"><i></i>Destacar o que é novo</span>
+    <button class="btn btn-s" onclick="resetDemo()"><span class="material-symbols-rounded">restart_alt</span>Recomeçar</button>
+  </div>
+  <p class="lead">Como as tratativas aparecem <b>no funil do CRM</b>. É a <b>mesma linha do tempo da proposta</b>, só vista daqui. Clique num card, registre uma resposta do cliente e veja o card, a vez e a fase se ajustarem sozinhos. O que está com <span style="outline:1.5px dashed var(--pri);outline-offset:2px;border-radius:4px;padding:0 3px">borda tracejada</span> é novo; o resto já existe no CRM.</p>
+
+  <div class="filters nv" id="filters"></div>
+  <div class="board" id="board"></div>
+  <div id="detail"></div>
+
+  <div class="foot">
+    <div class="fcard"><h4><span class="material-symbols-rounded">sync_alt</span>Fonte única</h4><p>A linha do tempo é <b>uma só</b>: gravada uma vez (evento ligado à oportunidade + revisão) e mostrada na proposta e no CRM. Registrou em um lugar, aparece no outro.</p></div>
+    <div class="fcard"><h4><span class="material-symbols-rounded">sports_score</span>De quem é a vez</h4><p>Automático. Enviou ou cobrou → <b>aguardando cliente</b>. O cliente respondeu → <b>vez da eX</b>. Aprovou → vez da eX (emitir a OS). Ninguém precisa marcar.</p></div>
+    <div class="fcard"><h4><span class="material-symbols-rounded">move_down</span>A fase anda sozinha</h4><p>Envio → <b>Em negociação</b>. Recusa → <b>Declinado</b> (com motivo). OS emitida → <b>Obra / execução</b>. As travas de fase que já existem continuam valendo.</p></div>
+    <div class="fcard"><h4><span class="material-symbols-rounded">task_alt</span>Vira tarefa</h4><p>Toda "vez da eX" e toda cobrança vencida aparecem nas <b>Tarefas</b> do responsável. Isso facilita, não fiscaliza.</p></div>
+    <div class="fcard"><h4><span class="material-symbols-rounded">forum</span>Não é só e-mail</h4><p>Ligação, WhatsApp e reunião entram no mesmo registro, só muda o canal. O e-mail continua sendo o fio principal, com a TAG no assunto.</p></div>
+  </div>
+</div>
+<div class="toast" id="toast"></div>
+
+<script>
+const HOJE='11/09';
+const COLS=[
+  {id:'prop',nome:'Gerando proposta',papel:'Proposta',ic:'request_quote'},
+  {id:'neg',nome:'Em negociação',papel:'Negociação',ic:'handshake'},
+  {id:'obra',nome:'Obra / execução',papel:'Execução / Obra',ic:'construction'},
+  {id:'decl',nome:'Declinado',papel:'Perdido',ic:'do_not_disturb_on'}
+];
+const SEED=[
+  {id:'a',col:'neg',obj:'Automação das câmaras frias',ct:'Copeland',cp:'Atacadão Rio Verde',num:'ORÇ-2026-0051',total:43665.55,temp:'Quente',contato:'Denis Ferraz',validade:'30/09',rev:1,status:'enviado',vez:'cli',
+    prox:{t:'Cobrar retorno hoje',c:'amber',ic:'notifications_active',k:'cobrar'},
+    ev:[{t:'envio',rev:1,d:'08/09',canal:'e-mail',txt:'R1 enviada para Denis Ferraz',att:'ORÇ-2026-0051_R1.pdf'},
+        {t:'agenda',d:'08/09',txt:'Cobrança agendada para 11/09 (3 dias úteis)'}]},
+  {id:'b',col:'neg',obj:'Retrofit do QGBT',ct:'Copeland',cp:'Assaí Feira de Santana',num:'ORÇ-2026-0048',total:28900,temp:'Morno',contato:'Denis Ferraz',validade:'03/10',rev:1,status:'enviado',vez:'ex',
+    prox:{t:'Criar R2 (pedido de ajuste)',c:'pri',ic:'edit_document',k:'r2'},
+    ev:[{t:'envio',rev:1,d:'03/09',canal:'e-mail',txt:'R1 enviada para Denis Ferraz',att:'ORÇ-2026-0048_R1.pdf'},
+        {t:'ajuste',rev:1,d:'10/09',canal:'e-mail',txt:'Cliente pediu ajuste',q:'Retirar o item 4 (cabo 95 mm), nós vamos fornecer. Manter o restante.',att:'RE_[ORÇ-2026-0048 R1].eml'}]},
+  {id:'c',col:'neg',obj:'Instalação do QD de força',ct:'GPA',cp:'Pão de Açúcar Pituba',num:'ORÇ-2026-0039',total:61200,temp:'Quente',contato:'Compras GPA',validade:'24/09',rev:2,status:'aprovado',vez:'ok',
+    prox:{t:'Emitir a OS interna',c:'green',ic:'assignment',k:'os'},
+    ev:[{t:'envio',rev:1,d:'25/08',canal:'e-mail',txt:'R1 enviada para Compras GPA',att:'ORÇ-2026-0039_R1.pdf'},
+        {t:'ajuste',rev:1,d:'27/08',canal:'e-mail',txt:'Cliente pediu ajuste',q:'Prazo de 20 dias não atende. Conseguem 15?'},
+        {t:'rev',rev:2,d:'28/08',txt:'R2 criada a partir do pedido (prazo 15 dias)'},
+        {t:'envio',rev:2,d:'28/08',canal:'e-mail',txt:'R2 enviada no mesmo fio',att:'ORÇ-2026-0039_R2.pdf'},
+        {t:'contato',rev:2,d:'02/09',canal:'telefone',txt:'Ligação registrada',q:'Comprador confirmou que vai aprovar; formaliza por e-mail.'},
+        {t:'aprov',rev:2,d:'04/09',canal:'e-mail',txt:'Cliente aprovou a R2',att:'Aprovação_GPA.eml',extra:'comprovante criado na proposta'}]},
+  {id:'d',col:'neg',obj:'Infraestrutura elétrica',ct:'Economart',cp:'Economart Lauro de Freitas',num:'ORÇ-2026-0044',total:17350,temp:'Frio',contato:'Gerência Economart',validade:'14/09',rev:1,status:'enviado',vez:'cli',
+    prox:{t:'Validade vence em 3 dias',c:'red',ic:'event_busy',k:'cobrar'},
+    ev:[{t:'envio',rev:1,d:'18/08',canal:'e-mail',txt:'R1 enviada para Gerência Economart',att:'ORÇ-2026-0044_R1.pdf'},
+        {t:'cobranca',rev:1,d:'25/08',canal:'e-mail',txt:'Cobrança enviada no mesmo fio'},
+        {t:'cobranca',rev:1,d:'01/09',canal:'WhatsApp',txt:'Cobrança por WhatsApp',q:'Disse que está com a diretoria.'},
+        {t:'cobranca',rev:1,d:'08/09',canal:'e-mail',txt:'Cobrança enviada no mesmo fio'}]},
+  {id:'e',col:'prop',obj:'Iluminação do estacionamento',ct:'Assaí',cp:'Assaí Camaçari',num:'ORÇ-2026-0053',total:9800,temp:'Morno',contato:'—',validade:'—',rev:0,status:'rascunho',vez:null,
+    prox:{t:'Enviar proposta',c:'gray',ic:'send',k:'abrir'},ev:[]},
+  {id:'f',col:'decl',obj:'SPDA do galpão',ct:'Atacadão',cp:'Atacadão Camaçari',num:'ORÇ-2026-0036',total:22400,temp:'Frio',contato:'Manutenção Atacadão',validade:'—',rev:1,status:'recusado',vez:'no',motivo:'preço',
+    prox:null,
+    ev:[{t:'envio',rev:1,d:'12/08',canal:'e-mail',txt:'R1 enviada',att:'ORÇ-2026-0036_R1.pdf'},
+        {t:'recusa',rev:1,d:'22/08',canal:'e-mail',txt:'Cliente recusou · motivo: preço',q:'Fechamos com outro fornecedor, valor abaixo.'}]}
+];
+const EVI={envio:['send','blue'],agenda:['event','gray'],cobranca:['notifications_active','amber'],ajuste:['reply','pri'],duvida:['help','blue'],rev:['edit_document','pri'],aprov:['verified','green'],recusa:['do_not_disturb_on','red'],contato:['call','gray'],os:['assignment','green']};
+const CANAL_IC={'e-mail':'mail','telefone':'call','WhatsApp':'chat','reunião':'groups'};
+const VEZ={ex:['reply','Vez da eX','ex'],cli:['hourglass_top','Aguardando cliente','cli'],ok:['verified','Aprovada','ok'],no:['do_not_disturb_on','Recusada','no']};
+let S, SEL='b', FIL='todos', FORM=null;
+const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const brl=v=>'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
+const ms=(i,st)=>`<span class="material-symbols-rounded"${st?` style="${st}"`:''}>${i}</span>`;
+function resetDemo(){ S=JSON.parse(JSON.stringify(SEED)); SEL='b'; FIL='todos'; FORM=null; render(); }
+function toggleHL(){ document.body.classList.toggle('hl'); document.getElementById('hlsw').classList.toggle('on'); }
+function toast(t){ const el=document.getElementById('toast'); el.innerHTML=t; el.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('on'),4200); }
+const opp=id=>S.find(o=>o.id===id);
+function diasDesde(d){ const [dd,mm]=d.split('/').map(Number),[hd,hm]=HOJE.split('/').map(Number); return (hm*31+hd)-(mm*31+dd); }
+function ultimoEnvio(o){ const e=[...o.ev].reverse().find(x=>x.t==='envio'||x.t==='cobranca'); return e; }
+function ultimaResp(o){ return [...o.ev].reverse().find(x=>['ajuste','duvida','aprov','recusa','contato'].includes(x.t)); }
+function revsEnviadas(o){ return [...new Set(o.ev.filter(e=>e.t==='envio').map(e=>e.rev))]; }
+function vezTxt(o){ if(!o.vez)return''; const v=VEZ[o.vez]; let t=v[1];
+  if(o.vez==='cli'){ const u=ultimoEnvio(o); if(u){ const dd=diasDesde(u.d); t+=' · '+(dd?dd+'d':'hoje'); } }
+  if(o.vez==='ex'){ const r=ultimaResp(o); if(r)t+=' · desde '+r.d; }
+  return t; }
+/* ---- filtros ---- */
+const FILTROS=[
+  {k:'todos',n:'Todos',ic:'apps',f:o=>true},
+  {k:'ex',n:'Vez da eX',ic:'reply',f:o=>o.vez==='ex'||o.vez==='ok'},
+  {k:'cli',n:'Aguardando cliente',ic:'hourglass_top',f:o=>o.vez==='cli'},
+  {k:'cobrar',n:'Cobrar hoje',ic:'notifications_active',f:o=>o.prox&&o.prox.c==='amber'},
+  {k:'venc',n:'Validade vencendo',ic:'event_busy',f:o=>o.prox&&o.prox.c==='red'}
+];
+function renderFiltros(){ document.getElementById('filters').innerHTML=FILTROS.map(x=>`<button class="fchip ${FIL===x.k?'on':''}" onclick="FIL='${x.k}';render()">${ms(x.ic)}${x.n} <b>${S.filter(x.f).length}</b></button>`).join(''); }
+/* ---- card ---- */
+function card(o){
+  const pass=(FILTROS.find(x=>x.k===FIL)||FILTROS[0]).f(o);
+  const tc=o.temp.toLowerCase(); const r=o.rev?`R${o.rev} · `:'';
+  const stl={rascunho:'rascunho',enviado:'enviada',aprovado:'aprovada',recusado:'recusada'}[o.status];
+  const le=o.ev.length?o.ev[o.ev.length-1]:null;
+  return `<div class="kcard ${SEL===o.id?'sel':''} ${pass?'':'dim'}" onclick="selOpp('${o.id}')">
+    <div class="kcard-nm">${esc(o.obj)}</div>
+    <div class="kcard-cli">${ms('business')}${esc(o.ct)} · ${esc(o.cp)}</div>
+    <div class="orcb ${o.status}">${ms('request_quote')}${brl(o.total)} · ${r?`<span class="nv" style="border-radius:4px;padding:0 2px">${r}</span>`:''}${stl}</div>
+    ${o.vez?`<div><span class="vez ${VEZ[o.vez][2]} nv">${ms(VEZ[o.vez][0])}${esc(vezTxt(o))}${o.motivo?' · '+esc(o.motivo):''}</span></div>`:''}
+    ${o.prox?`<div class="prox ${o.prox.c} nv">${ms(o.prox.ic)}${esc(o.prox.t)}</div>`:''}
+    <div class="kcard-foot"><span class="temp ${tc}">${esc(o.temp)}</span>
+      ${le?`<span class="lastev nv">${ms(EVI[le.t][0])}${esc(({envio:'enviada',agenda:'agendada',cobranca:'cobrança',ajuste:'pediu ajuste',duvida:'dúvida',rev:'revisão',aprov:'aprovou',recusa:'recusou',contato:'contato',os:'OS'})[le.t])} ${esc(le.d)}</span>`:''}
+    </div>
+  </div>`;
+}
+function renderBoard(){ document.getElementById('board').innerHTML=COLS.map(c=>{ const its=S.filter(o=>o.col===c.id);
+  return `<div class="kcol ${c.id==='obra'?'fim':''}"><div class="kcol-h"><span class="kcol-nm">${c.nome}</span><span class="kcol-ct">${its.length}</span></div>
+    <div class="kcol-papel">${ms(c.ic)}${c.papel}</div><div class="kcol-body">${its.map(card).join('')}</div></div>`; }).join(''); }
+function selOpp(id){ SEL=id; FORM=null; render(); document.getElementById('detail').scrollIntoView({behavior:'smooth',block:'start'}); }
+/* ---- detalhe ---- */
+function evHTML(e,o,isNew){ const [ic,cl]=EVI[e.t]; const velho=e.rev&&e.rev<o.rev;
+  return `<div class="ev ${isNew?'evnew':''}"><div class="evic ${cl}">${ms(ic)}</div><div class="evb">
+    <div class="evt">${esc(e.txt)} ${e.rev?`<span class="rv ${velho?'old':''}">R${e.rev}</span>`:''}</div>
+    <div class="evm">${esc(e.d)}${e.canal?` · ${ms(CANAL_IC[e.canal]||'mail','font-size:13px')} ${esc(e.canal)}`:''} · por André</div>
+    ${e.q?`<div class="evq">${esc(e.q)}</div>`:''}
+    ${e.att?`<span class="att">${ms(/\.pdf$/.test(e.att)?'picture_as_pdf':'attach_file')}${esc(e.att)}</span>`:''}${e.extra?`<span class="att" style="background:#e9f2dd;color:var(--green)">${ms('verified_user')}${esc(e.extra)}</span>`:''}
+  </div></div>`; }
+function acoes(o){ let a='';
+  if(o.prox&&o.prox.k==='r2') a+=`<button class="btn btn-s btn-p" onclick="criarR2()">${ms('edit_document')}Criar R${o.rev+1}</button>`;
+  if(o.prox&&o.prox.k==='enviarR') a+=`<button class="btn btn-s btn-p" onclick="enviarRev()">${ms('send')}Enviar R${o.rev}</button>`;
+  if(o.prox&&o.prox.k==='os') a+=`<button class="btn btn-s btn-g" onclick="emitirOS()">${ms('assignment')}Emitir OS interna</button>`;
+  if(['neg'].includes(o.col)&&o.status!=='aprovado') a+=`<button class="btn btn-s ${o.vez==='cli'?'btn-p':''}" onclick="abrirForm()">${ms('add_comment')}Registrar resposta</button>`;
+  if(o.vez==='cli') a+=`<button class="btn btn-s" onclick="cobrar()">${ms('notifications_active')}Cobrar cliente</button>`;
+  a+=`<button class="btn btn-s" onclick="toast('Abre a proposta <b>${o.num}</b> no módulo Orçamento, na mesma linha do tempo.')">${ms('request_quote')}${o.status==='rascunho'?'Abrir e enviar proposta':'Abrir proposta'}</button>`;
+  return a; }
+function tiles(o){
+  if(!o.rev) return `<div class="tile"><div class="l">Revisão</div><div class="v">—</div><div class="s">ainda não enviada</div></div><div class="tile"><div class="l">Vez</div><div class="v">—</div><div class="s">as tratativas começam no envio</div></div><div class="tile"><div class="l">Enviada para</div><div class="v">—</div></div><div class="tile"><div class="l">Validade</div><div class="v">—</div></div>`;
+  const env=[...o.ev].reverse().find(e=>e.t==='envio'); const v=VEZ[o.vez]||['','—',''];
+  const venc=o.prox&&o.prox.c==='red';
+  return `<div class="tile"><div class="l">Revisão vigente</div><div class="v">${ms('description')}R${o.rev}</div><div class="s">${o.rev>1?`R1${o.rev>2?'…R'+(o.rev-1):''} substituída`:'primeira versão'}</div></div>
+    <div class="tile ${v[2]}"><div class="l">De quem é a vez</div><div class="v">${ms(v[0])}${esc(v[1])}</div><div class="s">${esc(vezTxt(o).split(' · ')[1]||'')}</div></div>
+    <div class="tile"><div class="l">Enviada para</div><div class="v" style="font-size:12.5px">${ms('mail')}${esc(o.contato)}</div><div class="s">${env?'em '+env.d:'—'}</div></div>
+    <div class="tile ${venc?'no':''}"><div class="l">Validade</div><div class="v">${ms(venc?'event_busy':'event_available')}${esc(o.validade)}</div><div class="s">${venc?'vence em 3 dias':'dentro do prazo'}</div></div>`; }
+function formHTML(o){ if(!FORM)return''; const revs=revsEnviadas(o); const f=FORM;
+  const T=[['ajuste','Pediu ajuste','reply',''],['aprov','Aprovou','verified','g'],['recusa','Recusou','do_not_disturb_on','r'],['duvida','Dúvida / outro','help','']];
+  const C=['e-mail','telefone','WhatsApp','reunião'];
+  const M=['preço','prazo','escopo','concorrente','cliente sem verba','outro'];
+  const velha=f.rev<o.rev;
+  return `<div class="form nv"><h3>${ms('add_comment')}Registrar resposta do cliente</h3>
+    <div class="frow"><label>O que o cliente disse?</label><div class="opts">${T.map(t=>`<button class="opt ${t[3]} ${f.tipo===t[0]?'on':''}" onclick="FORM.tipo='${t[0]}';renderDetail()">${ms(t[2])}${t[1]}</button>`).join('')}</div></div>
+    ${f.tipo==='recusa'?`<div class="frow"><label>Motivo (obrigatório)</label><div class="opts">${M.map(m=>`<button class="opt r ${f.motivo===m?'on':''}" onclick="FORM.motivo='${m}';renderDetail()">${m}</button>`).join('')}</div></div>`:''}
+    <div class="frow"><label>Por onde?</label><div class="opts">${C.map(c=>`<button class="opt ${f.canal===c?'on':''}" onclick="FORM.canal='${c}';renderDetail()">${ms(CANAL_IC[c])}${c}</button>`).join('')}</div></div>
+    <div class="frow"><label>Sobre qual revisão?</label><select class="fin" style="width:auto" onchange="FORM.rev=+this.value;renderDetail()">${revs.map(r=>`<option value="${r}" ${f.rev===r?'selected':''}>R${r}${r===o.rev?' (vigente)':' (substituída)'}</option>`).join('')}</select>
+      ${velha?`<div class="warn">${ms('warning')}A R${f.rev} foi substituída pela R${o.rev}. ${f.tipo==='aprov'?'Aprovar uma revisão antiga congela <b>esses</b> preços na OS. Confirme se é isso mesmo.':'Confira se o cliente respondeu à versão certa.'}</div>`:''}</div>
+    <div class="frow"><label>Cole o e-mail ou anexe (.eml, print, PDF)</label><textarea class="fin" id="fq" placeholder="Cole aqui o trecho da resposta…">${esc(f.q||'')}</textarea>
+      <div style="margin-top:6px"><button class="btn btn-s" onclick="FORM.att='RE_[${o.num} R${f.rev}].eml';FORM.q=document.getElementById('fq').value;renderDetail()">${ms('attach_file')}${f.att?esc(f.att):'Anexar arquivo'}</button></div></div>
+    <div class="fact"><button class="btn btn-s" onclick="FORM=null;renderDetail()">Cancelar</button><button class="btn btn-s btn-p" onclick="salvarResp()">${ms('check')}${velha&&f.tipo==='aprov'?'Confirmar e registrar':'Registrar'}</button></div>
+  </div>`; }
+function renderDetail(){ const o=opp(SEL); const el=document.getElementById('detail'); if(!o){el.innerHTML='';return;}
+  const col=COLS.find(c=>c.id===o.col); const n=o._new||0; o._new=0;
+  el.innerHTML=`<div class="detail">
+    <div class="dhead"><div class="davatar">${esc(o.ct.slice(0,2).toUpperCase())}</div>
+      <div class="dt"><h2>${esc(o.ct)} · ${esc(o.cp)} · ${esc(o.obj)}</h2><div class="sub">Oportunidade · fase <b>${col.nome}</b> <span style="color:var(--tx3)">· ${col.papel}</span> · proposta <b>${o.num}</b></div>
+        <div class="chiprow"><span class="temp ${o.temp.toLowerCase()}">${o.temp}</span></div></div>
+      <div class="acts nv">${acoes(o)}</div></div>
+    <div class="dgrid"><div>
+      <div class="strip nv">${tiles(o)}</div>
+      ${formHTML(o)}
+      <div class="sech">${ms('timeline')}Tratativas <span style="font-weight:600;text-transform:none;letter-spacing:0">· a mesma linha do tempo da proposta</span></div>
+      <div class="tl nv">${o.ev.length?[...o.ev].reverse().map((e,i)=>evHTML(e,o,i<n)).join(''):'<div class="empty">Nenhuma tratativa ainda. Começa quando a proposta é enviada pelo botão “Enviar proposta”.</div>'}</div>
+    </div>
+    <div class="side">
+      <div class="box nv"><div class="sech" style="margin:0">${ms('bolt')}Próxima ação</div>
+        ${o.prox?`<p style="font-size:13px;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:6px">${ms(o.prox.ic,'font-size:18px')}${esc(o.prox.t)}</p><p>Aparece também nas <b>Tarefas</b> do responsável.</p>`:'<p>Nada pendente.</p>'}</div>
+      <div class="box"><div class="sech" style="margin:0">${ms('rule')}Como o CRM reage</div>
+        <div class="rule">${ms('send')}<span>Enviou pelo botão → card entra em <b>Em negociação</b>, a vez passa a ser do cliente e a cobrança fica agendada.</span></div>
+        <div class="rule">${ms('reply')}<span>O cliente respondeu → a <b>vez é da eX</b> e aparece a próxima ação certa (criar R2, responder).</span></div>
+        <div class="rule">${ms('verified')}<span>Aprovou → vira <b>comprovante</b> ligado à revisão e libera a OS.</span></div>
+        <div class="rule">${ms('do_not_disturb_on')}<span>Recusou → exige motivo e o card vai para <b>Declinado</b>.</span></div>
+      </div>
+    </div></div>
+  </div>`; }
+function render(){ renderFiltros(); renderBoard(); renderDetail(); }
+/* ---- ações ---- */
+function push(o,e){ o.ev.push(e); o._new=1; }
+function abrirForm(){ const o=opp(SEL); FORM={tipo:'ajuste',canal:'e-mail',rev:o.rev,q:'',att:'',motivo:''}; renderDetail(); }
+function salvarResp(){ const o=opp(SEL), f=FORM; const q=(document.getElementById('fq')||{}).value||f.q;
+  if(f.tipo==='recusa'&&!f.motivo){ toast('Escolha o <b>motivo</b> da recusa. Sem motivo não dá pra aprender por que perdemos.'); return; }
+  const base={rev:f.rev,d:HOJE,canal:f.canal,q:q.trim(),att:f.att};
+  if(f.tipo==='ajuste'){ push(o,{...base,t:'ajuste',txt:'Cliente pediu ajuste'}); o.vez='ex'; o.prox={t:`Criar R${o.rev+1} (pedido de ajuste)`,c:'pri',ic:'edit_document',k:'r2'}; toast('Registrado. Agora a <b>vez é da eX</b>, e o card mostra a próxima ação: criar a próxima revisão.'); }
+  if(f.tipo==='duvida'){ push(o,{...base,t:'duvida',txt:'Cliente mandou uma dúvida'}); o.vez='ex'; o.prox={t:'Responder a dúvida',c:'pri',ic:'reply',k:'resp'}; toast('Registrado. A <b>vez é da eX</b>: responder no mesmo fio.'); }
+  if(f.tipo==='aprov'){ push(o,{...base,t:'aprov',txt:`Cliente aprovou a R${f.rev}`,extra:'comprovante criado na proposta'}); o.status='aprovado'; o.vez='ok'; o.prox={t:'Emitir a OS interna',c:'green',ic:'assignment',k:'os'}; toast(`Aprovada. O comprovante foi para a proposta <b>já ligado à R${f.rev}</b>. Próximo passo: emitir a OS.`); }
+  if(f.tipo==='recusa'){ push(o,{...base,t:'recusa',txt:'Cliente recusou · motivo: '+f.motivo}); o.status='recusado'; o.vez='no'; o.motivo=f.motivo; o.prox=null; o.col='decl'; toast('Recusada. O card foi para <b>Declinado</b> com o motivo registrado.'); }
+  FORM=null; render(); }
+function cobrar(){ const o=opp(SEL); push(o,{t:'cobranca',rev:o.rev,d:HOJE,canal:'e-mail',txt:'Cobrança enviada no mesmo fio'}); o.prox={t:'Cobrar de novo em 14/09',c:'gray',ic:'schedule',k:'cobrar'};
+  toast(`Abre o seu e-mail já respondendo o fio <b>Re: [${o.num} R${o.rev}]</b> com um texto de cobrança. A cobrança fica registrada e a próxima é agendada.`); render(); }
+function criarR2(){ const o=opp(SEL); o.rev+=1; push(o,{t:'rev',rev:o.rev,d:HOJE,txt:`R${o.rev} criada a partir do pedido do cliente`}); o.status='rascunho'; o.prox={t:`Enviar R${o.rev}`,c:'pri',ic:'send',k:'enviarR'};
+  toast(`Abre a proposta como <b>R${o.rev}</b>, uma cópia da R${o.rev-1} com o pedido anexado. A R${o.rev-1} fica intacta.`); render(); }
+function enviarRev(){ const o=opp(SEL); push(o,{t:'envio',rev:o.rev,d:HOJE,canal:'e-mail',txt:`R${o.rev} enviada no mesmo fio`,att:`${o.num}_R${o.rev}.pdf`}); o.status='enviado'; o.vez='cli'; o.prox={t:'Cobrar retorno em 14/09',c:'gray',ic:'schedule',k:'cobrar'};
+  toast(`Passou pela checagem, congelou a R${o.rev}, gerou o PDF e enviou no mesmo fio. Agora está <b>aguardando o cliente</b>.`); render(); }
+function emitirOS(){ const o=opp(SEL); push(o,{t:'os',rev:o.rev,d:HOJE,txt:`OS interna emitida a partir da R${o.rev} aprovada`}); o.col='obra'; o.prox=null; o.vez=null;
+  toast(`Portão 2: a OS herda a <b>R${o.rev} aprovada</b> (baseline) e o card vai para <b>Obra / execução</b>.`); render(); }
+resetDemo();
+</script>
+</body>
+</html>
