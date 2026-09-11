@@ -555,9 +555,9 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">warehouse</span></span><span class="lb">Almoxarifado</span><span class="gchev">▶</span></div>
       <div class="sb-sub">
         <button class="sb-i" onclick="navView('almox',this)"><span class="ic"><span class="msr">inventory</span></span><span class="lb">Estoque · saldo</span></button>
-        <button class="sb-i fut" onclick="navSoon('Ferramentas',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Ferramentas</span><span class="br">em breve</span></button>
-        <button class="sb-i fut" onclick="navSoon('EPIs',this)"><span class="ic"><span class="msr">masks</span></span><span class="lb">EPIs</span><span class="br">em breve</span></button>
-        <button class="sb-i fut" onclick="navSoon('Uniformes',this)"><span class="ic"><span class="msr">checkroom</span></span><span class="lb">Uniformes</span><span class="br">em breve</span></button>
+        <button class="sb-i" onclick="navGaveta('ferramenta',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Ferramentas</span></button>
+        <button class="sb-i" onclick="navGaveta('epi',this)"><span class="ic"><span class="msr">masks</span></span><span class="lb">EPIs</span></button>
+        <button class="sb-i" onclick="navGaveta('uniforme',this)"><span class="ic"><span class="msr">checkroom</span></span><span class="lb">Uniformes</span></button>
       </div>
 
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">storefront</span></span><span class="lb">Lojas</span><span class="gchev">▶</span></div>
@@ -744,6 +744,14 @@ body.papel-tecnico .adm-only{display:none !important}
     <div class="note">Lente operacional: <b>o que eu tenho</b> (saldo por local). Cadastrar ≠ ter estoque — só aparece com saldo quem foi movimentado. <span id="almox-count"></span></div>
     <input class="tin" id="almox-busca" placeholder="Buscar por descrição, código…" style="width:100%;margin-bottom:12px" oninput="renderAlmox()">
     <div id="almox-list"><div class="empty">Carregando saldos…</div></div>
+  </div>
+
+  <!-- GAVETA (Almoxarifado · por natureza) — entrada de cadastro por categoria -->
+  <div class="view" id="v-gaveta">
+    <div class="topbar"><span class="pname" id="gaveta-title">Gaveta</span><button class="btn btn-p btn-s" id="gaveta-add" onclick="openMatGaveta()">+ Novo</button></div>
+    <div class="note" id="gaveta-note"></div>
+    <input class="tin" id="gaveta-busca" placeholder="Buscar por descrição, código, marca…" style="width:100%;margin-bottom:12px" oninput="renderGaveta()">
+    <div id="gaveta-list"><div class="empty">Carregando…</div></div>
   </div>
 
   <div class="view" id="v-orcamento">
@@ -2806,7 +2814,7 @@ function _setOpt(id,val){
   else { na.checked=false; inp.value=val||''; inp.disabled=false; inp.style.opacity=1; }
 }
 function toggleNA(id){ const inp=document.getElementById(id), na=document.getElementById(id+'-na'); if(na.checked){inp.value='';inp.disabled=true;inp.style.opacity=.45;} else {inp.disabled=false;inp.style.opacity=1;} }
-function openMat(id){
+function openMat(id,presetCat){
   MEDIT = id?MATS.find(m=>m.id===id):null; MSEQ=0;
   _matSelects();
   const v=(k)=>MEDIT?(MEDIT[k]!=null?MEDIT[k]:''):'';
@@ -2828,6 +2836,7 @@ function openMat(id){
   document.getElementById('mt-pv').value=MEDIT&&MEDIT.preco_venda!=null?MEDIT.preco_venda:'';
   document.getElementById('mt-vend').checked=MEDIT?!!MEDIT.vendavel:false;
   document.getElementById('mt-cat').value=v('categoria');
+  if(!id && presetCat) document.getElementById('mt-cat').value=presetCat;
   document.getElementById('modalM').classList.add('show');
   if(!id) gerarCodInterno();
 }
@@ -2870,13 +2879,63 @@ async function saveMat(){
   if(MEDIT){ r=await SB.from('materiais').update(row).eq('id',MEDIT.id); }
   else { r=await SB.from('materiais').insert({...row,empresa_id:_emp()}); }
   if(r.error){ alert('Erro ao salvar: '+r.error.message); return; }
-  closeMat(); carregarMateriais();
+  closeMat(); await carregarMateriais(); _syncListasMat();
+}
+function _syncListasMat(){
+  var g=document.getElementById('v-gaveta'); if(g&&g.classList.contains('active'))renderGaveta();
+  var l=document.getElementById('v-lojas'); if(l&&l.classList.contains('active'))renderLojas();
 }
 async function delMat(id){
   if(!confirm('Excluir este material?')) return;
   const r=await SB.from('materiais').update({deleted_at:new Date().toISOString()}).eq('id',id);
   if(r.error){ alert('Erro: '+r.error.message); return; }
-  carregarMateriais();
+  await carregarMateriais(); _syncListasMat();
+}
+
+/* ===== GAVETAS (Almoxarifado · por natureza) — cadastro por categoria ===== */
+let GAVETA_CAT=null;
+const GAVETA_DEF={
+  ferramenta:{t:'Ferramentas & Patrimônio',novo:'ferramenta',note:'Natureza <b>Ferramenta</b>. Empréstimo/devolução e patrimônio entram na próxima etapa — aqui você já cadastra item por item.'},
+  epi:{t:'EPIs',novo:'EPI',note:'Natureza <b>EPI</b>. Ficha NR-6, CA e validade entram na próxima etapa — aqui você já cadastra item por item.'},
+  uniforme:{t:'Uniformes',novo:'uniforme',note:'Natureza <b>Uniforme</b>. Entrega e tamanho entram na próxima etapa — aqui você já cadastra item por item.'}
+};
+function navGaveta(cat,el){
+  GAVETA_CAT=cat; const d=GAVETA_DEF[cat]||{t:'Gaveta',novo:'item',note:''};
+  document.getElementById('gaveta-title').textContent=d.t;
+  document.getElementById('gaveta-note').innerHTML=d.note+' <span id="gaveta-count"></span>';
+  document.getElementById('gaveta-add').textContent='+ Novo '+d.novo;
+  var b=document.getElementById('gaveta-busca'); if(b)b.value='';
+  setSbActive(el); _obranav(false); if(window.S)S.emProjeto=false; tab('gaveta',null);
+  try{ history.replaceState(null,document.title,'#gaveta-'+cat); }catch(_){}
+}
+function openMatGaveta(){ openMat(null, GAVETA_CAT); }
+async function carregarGaveta(){
+  if(!GAVETA_CAT) GAVETA_CAT='ferramenta';
+  if(!MATS.length){ await carregarMateriais(); }
+  renderGaveta();
+}
+function renderGaveta(){
+  if(!GAVETA_CAT) return;
+  const q=(document.getElementById('gaveta-busca').value||'').toLowerCase().trim();
+  const base=MATS.filter(m=>m.categoria===GAVETA_CAT);
+  const lista=base.filter(m=>{ if(!q)return true; return [m.descricao_padronizada,m.descricao_fabricante,m.codigo_interno,m.codigo_barras,m.marca,m.modelo,grpMatNome(m.grupo_material_id)].some(x=>(x||'').toLowerCase().indexOf(q)>=0); });
+  const cc=document.getElementById('gaveta-count'); if(cc)cc.textContent='· '+base.length+' cadastrados';
+  const esc=s=>(s||'').replace(/'/g,"\\'");
+  const d=GAVETA_DEF[GAVETA_CAT]||{novo:'item'};
+  document.getElementById('gaveta-list').innerHTML = lista.length ? `
+    <div class="mtbl-wrap"><table class="mtbl">
+      <thead><tr><th>Código</th><th>Descrição padronizada</th><th>Grupo</th><th>Marca / Modelo</th><th>Un</th><th>Mín</th><th></th></tr></thead>
+      <tbody>${lista.map(m=>`
+        <tr onclick="openMat('${esc(m.id)}')">
+          <td>${m.codigo_interno?`<span class="cod">${m.codigo_interno}</span>`:''}</td>
+          <td><div class="desc">${m.descricao_padronizada||'(sem descrição)'}</div>${m.descricao_fabricante?`<div class="sub">${m.descricao_fabricante}</div>`:''}</td>
+          <td class="grp">${grpMatNome(m.grupo_material_id)||''}</td>
+          <td>${m.marca||''}${m.modelo?`<div class="sub">${m.modelo}</div>`:''}</td>
+          <td>${m.unidade||''}</td>
+          <td>${m.quantidade_minima!=null?m.quantidade_minima:''}</td>
+          <td><span class="msr" style="font-size:16px;color:var(--tx3)">edit</span></td>
+        </tr>`).join('')}</tbody>
+    </table></div>` : `<div class="empty">Nenhum item nesta gaveta ainda. Clique em “+ Novo ${d.novo}” para cadastrar.</div>`;
 }
 
 /* ===== ALMOXARIFADO · SALDO (lente sobre materiais) ===== */
@@ -3268,7 +3327,7 @@ function aplicarModoNav(){
 }
 function irLista(t){ S.emProjeto=false; save(); aplicarModoNav(); tab(t,document.getElementById(t==='modelos'?'nav-modelos-lbl':'nav-lista-lbl')); }
 function voltarProjetos(){ irLista('proj'); }
-function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='lojas')carregarLojas();if(t==='almox')carregarAlmox();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='catoferta')carregarCatOferta();if(t==='catservico')carregarCatServico();if(t==='catequip')carregarCatEquip();if(t==='catdespesa')carregarCatDespesa();if(t==='catmaobra')carregarCatMaoObra();if(t==='abrangencia')carregarAbrangenciaView();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();if(t==='barramento'&&typeof carregarBarramento==='function')carregarBarramento();
+function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='lojas')carregarLojas();if(t==='almox')carregarAlmox();if(t==='gaveta')carregarGaveta();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='catoferta')carregarCatOferta();if(t==='catservico')carregarCatServico();if(t==='catequip')carregarCatEquip();if(t==='catdespesa')carregarCatDespesa();if(t==='catmaobra')carregarCatMaoObra();if(t==='abrangencia')carregarAbrangenciaView();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();if(t==='barramento'&&typeof carregarBarramento==='function')carregarBarramento();
   const cadBtn=document.getElementById('cad-btn');
   if(cadBtn&&!['colab','cat','mat','acessos','cfg'].includes(t)){cadBtn.classList.remove('active');cadBtn.innerHTML='Cadastros <span style="font-size:10px">▾</span>';document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.remove('active'));}
 }
