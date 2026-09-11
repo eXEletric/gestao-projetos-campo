@@ -1732,7 +1732,10 @@ function aggMaoObra(){
     return {...f, horas:f.trab*JORNADA, custo:f.trab*f.vh*JORNADA, pes, dias:(f.trab/pes)*tm}; })
     .sort((a,b)=>b.horas-a.horas);
 }
-function pesFn(k,d){ if(!S.pessoasFn)S.pessoasFn={}; S.pessoasFn[k]=Math.max(1,(+S.pessoasFn[k]||1)+d); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); const db=BLKS.find(b=>b.key==='despesas'); if(db){try{renderBlk(db);}catch(e){}} recalc(); }
+function pesFn(k,d){ if(!S.pessoasFn)S.pessoasFn={}; S.pessoasFn[k]=Math.max(1,(+S.pessoasFn[k]||1)+d); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); const db=BLKS.find(b=>b.key==='despesas'); if(db){try{renderBlk(db);}catch(e){}} recalc();
+  if(S&&!S._base&&S_LOTE_ID){ marcarCampoProprio('pessoasFn'); }                                   // loja editou a equipe → campo próprio
+  else if(S&&S._base&&S_LOTE_ID){ try{ computeLoteUnitsPrazo(); injectLoteBasePanel(); }catch(_){} }  // mestra: reflete o novo prazo nas lojas que seguem
+}
 // prazo legível: ≥1 dia → "X dias"; <1 dia → horas; <1h → minutos (abreviação por extenso)
 function fmtPrazo(d){ d=num(d); if(d<=0) return '0';
   if(d>=1){ const v=_d1(d); return v+(v==='1'?' dia':' dias'); }
@@ -1856,7 +1859,7 @@ function diaRefreshTotals(){ const fs=aggMaoObra()||[]; const cnt=obraPessoaDias
 function setDiaModo(m){ if(!S.diarias)S.diarias={modo:'fim'}; S.diarias.modo=(m==='exec'?'exec':'fim'); save();
   refreshMaoPanel();   // agora as diárias vivem dentro da mão de obra
   recalc(); const db=BLKS.find(b=>b.key==='despesas'); if(db){try{renderBlk(db);}catch(e){}} }
-function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m="equipe"]'); if(el)el.value=S.equipe; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); recalc(); }   // efetivo dirige o custo dos serviços que o usam
+function efApply(){ S.equipe=efFrase(); const el=document.querySelector('[data-m="equipe"]'); if(el)el.value=S.equipe; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); recalc(); if(S&&!S._base&&S_LOTE_ID){ marcarCampoProprio('efetivo'); } }   // efetivo dirige o custo dos serviços que o usam; na loja, editar marca campo próprio
 // ===== Fatores da obra (abrangência + fator do local) — só nos serviços montados =====
 function fatorMax(){ return num(S.fatorMax)>0?num(S.fatorMax):3; }
 function fatoresObraHtml(){
@@ -2391,10 +2394,17 @@ async function computeLoteUnitsAbr(){
 }
 // #3 PRAZO CONSOLIDADO: prazo de cada unidade = obraPrazo() no dados dela (temp-swap de S)
 function unitPrazoDias(dados){ if(!dados)return 0; const keep=S; try{ S=dados; return num(obraPrazo()); }catch(e){ return 0; } finally{ S=keep; } }
-function computeLoteUnitsPrazo(){ (LOTE_UNITS||[]).forEach((u,i)=>{
+function computeLoteUnitsPrazo(){
+  // 2.1: unidade que SEGUE a mestra usa a equipe da mestra pra calcular o prazo (a editada usa a própria)
+  const basePes=(isLoteBase()?(S&&S.pessoasFn):(BASE_DADOS&&BASE_DADOS.pessoasFn))||null;
+  const baseEf =(isLoteBase()?(S&&S.efetivo):(BASE_DADOS&&BASE_DADOS.efetivo))||null;
+  (LOTE_UNITS||[]).forEach((u,i)=>{
   // #cálc1: usa a faixa fresca (LOTE_UNIT_ABR, calculada do banco) em vez do _lojaMunId cacheado; respeita unidade já congelada
   const ab=(LOTE_UNIT_ABR||[])[i]; const hasSnap=u.dados&&u.dados.abrSnap&&typeof u.dados.abrSnap==='object';
-  const d=(!hasSnap&&ab&&ab.cidade)?Object.assign({},u.dados,{abrSnap:{custo_pct:0,tempo_pct:num(ab.tempo_pct)}}):u.dados;
+  const d=Object.assign({},u.dados); const ov=(u.dados&&u.dados._ov)||{};
+  if(!ov.pessoasFn && basePes) d.pessoasFn=basePes;   // segue a equipe da mestra
+  if(!ov.efetivo && baseEf) d.efetivo=baseEf;
+  if(!hasSnap&&ab&&ab.cidade) d.abrSnap={custo_pct:0,tempo_pct:num(ab.tempo_pct)};
   u._prazo=unitPrazoDias(d); }); }
 function lotePrazoResumo(){ const ps=(LOTE_UNITS||[]).map(u=>({nome:(u.cliente_final||u.numero||'unidade'),p:num(u._prazo)})).filter(x=>x.p>0);
   if(!ps.length) return {n:0}; const arr=ps.map(x=>x.p);
@@ -2542,7 +2552,7 @@ async function loteResetUnit(id){ if(!confirm('Resetar esta unidade ao escopo ba
 /* ===== Motor de governança do lote por campo (1.1) =====
    A MESTRA governa certos campos; a unidade SEGUE, a menos que tenha S._ov[campo]=true (editou aquele campo).
    Puxa na abertura · edição marca "campo próprio" · reset limpa e volta a seguir. */
-var GOV_CAMPOS=['soTotal'];   // 2.1 acrescenta 'efetivo','pessoasFn'
+var GOV_CAMPOS=['soTotal','pessoasFn','efetivo'];   // mestra governa: detalhe do material + equipe (2.1)
 function herdarCamposDaMestra(baseDados){
   if(!S._ov||typeof S._ov!=='object') S._ov={};
   GOV_CAMPOS.forEach(function(k){
