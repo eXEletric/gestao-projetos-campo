@@ -2757,7 +2757,16 @@ function renderLoteBaseHtml(){
       <button class="lbtn" style="${LOTE_VIEW==='lev'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteView('lev')"><span class="material-symbols-rounded" style="${LOTE_VIEW==='lev'?'color:#fff':''}">fact_check</span>Levantado</button>
       <span style="margin-left:auto;font-size:11.5px;color:var(--tx3)">${LOTE_VIEW==='pad'?'somatória do que será feito':'cada loja com o real'}</span>
     </div>`;
-  const corpo = modelosStrip + viewTog + (LOTE_VIEW==='pad' ? resumoEscopoHtml() : (custoChaveStrip + (modo==='estimativa' ? estimBlock : (addBar+rows))));
+  const cnpjC=contratanteCnpj();
+  const condStrip=`<div style="padding:12px 14px;border-top:1px solid var(--line2);background:#faf9ff">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">gavel</span><b style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)">Condições comerciais &amp; partes</b></div>
+      <textarea onchange="setCond('condComerciais',this.value)" rows="2" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx);resize:vertical" placeholder="Condições de pagamento, prazo, garantia…">${esc(condComerciais())}</textarea>
+      <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--tx3)">
+        <label style="flex:1;min-width:180px">CNPJ eX (contratada)<input value="${esc(S.cnpjEmpresa||'')}" onchange="setCond('cnpjEmpresa',this.value)" placeholder="00.000.000/0001-00" style="width:100%;box-sizing:border-box;margin-top:3px;padding:7px 9px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"></label>
+        <div style="flex:1;min-width:180px">CNPJ contratante<div style="margin-top:6px;font-size:13px;color:var(--tx)">${cnpjC?esc(cnpjC):'<span style="color:var(--tx3)">— do cadastro do cliente —</span>'}</div></div>
+      </div>
+    </div>`;
+  const corpo = modelosStrip + viewTog + (LOTE_VIEW==='pad' ? resumoEscopoHtml() : (custoChaveStrip + (modo==='estimativa' ? estimBlock : (addBar+rows)))) + condStrip;
   return `<style>.lbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:5px 9px;font:600 12px inherit;cursor:pointer;text-decoration:none}.lbtn:hover{border-color:var(--pri);color:var(--pri)}.lbtn.danger{color:var(--red)}.lbtn.danger:hover{border-color:var(--red)}.lbtn .material-symbols-rounded{font-size:15px}.loteKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px}@media(max-width:640px){.loteKpis{grid-template-columns:1fr 1fr}}.lbres:hover{background:var(--pri-bg,#f0ecfb)}</style>
   <div style="background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden">
     <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8;flex-wrap:wrap">
@@ -2869,6 +2878,7 @@ function verComoClienteLote(){
   const modo=(S.macro&&S.macro.modo)||'detalhado'; const qtd=num(S.macro&&S.macro.qtd); const baseT=num(S._total)||0;
   const subUn = modo==='estimativa' ? baseT*qtd : LOTE_UNITS.reduce((a,o)=>a+num(o.total),0); const macroT=macroTotal(); const total=subUn+macroT;
   const cc=!!S.colCustoProposta; const sumCusto=(modo==='estimativa')?0:LOTE_UNITS.reduce((a,o)=>a+num(o._custo),0); const sumLucro=subUn-sumCusto;   // 2.3: custo/lucro por loja na proposta (chave)
+  const cnpjC=contratanteCnpj();   // 2.4
   const prz=lotePrazoResumo(); const nUn = modo==='estimativa'?qtd:LOTE_UNITS.length; const vMed=nUn?subUn/nUn:0;
   const rota=loteRota();
   const linhas = modo==='estimativa'
@@ -2879,12 +2889,13 @@ function verComoClienteLote(){
     <div style="height:6px;background:linear-gradient(90deg,#533ab7,#3f2c8f)"></div>
     <div style="padding:30px 34px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:1px solid #eee;padding-bottom:18px">
-        <div style="display:flex;align-items:center;gap:11px"><div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(155deg,#533ab7,#3f2c8f);color:#fff;display:grid;place-items:center;font-family:Sora;font-weight:800">eX</div><div><div style="font-weight:800;font-size:17px">eX Eletric</div><div style="font-size:11.5px;color:#7d7799">Automação &amp; Elétrica</div></div></div>
+        <div style="display:flex;align-items:center;gap:11px"><div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(155deg,#533ab7,#3f2c8f);color:#fff;display:grid;place-items:center;font-family:Sora;font-weight:800">eX</div><div><div style="font-weight:800;font-size:17px">eX Eletric</div><div style="font-size:11.5px;color:#7d7799">Automação &amp; Elétrica</div>${S.cnpjEmpresa?`<div style="font-size:11px;color:#7d7799">CNPJ ${esc(S.cnpjEmpresa)}</div>`:''}</div></div>
         <div style="text-align:right;font-size:12px;color:#7d7799"><div style="font-weight:700;color:#3f2c8f;font-size:14px">${esc(S.numero||'ORÇ')}</div>Proposta em lote · ${nUn} unidades</div>
       </div>
       <div style="padding:18px 0;border-bottom:1px solid #eee">
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7d7799">Contratante</div>
         <div style="font-weight:700;font-size:16px;margin-top:3px">${esc(contrNome)}</div>
+        ${cnpjC?`<div style="font-size:12px;color:#7d7799;margin-top:2px">CNPJ: ${esc(cnpjC)}</div>`:''}
         <div style="font-size:13px;color:#555;margin-top:10px">${esc0}</div>
       </div>
       ${modo==='estimativa'?'':`<div style="padding:18px 0 6px"><div style="font-size:12px;font-weight:800;color:#3f2c8f;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Unidades no mapa</div>${buildLoteMapaSVG()}
@@ -2900,6 +2911,7 @@ function verComoClienteLote(){
         <div style="flex:1;min-width:150px;background:#f6f3fd;border:1px solid #eee;border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;text-transform:uppercase;color:#7d7799;font-weight:700">Valor médio / unidade</div><div style="font-weight:800;font-size:16px;font-variant-numeric:tabular-nums">${fmt(vMed)}</div></div>
         <div style="flex:1;min-width:150px;background:#f6f3fd;border:1px solid #eee;border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;text-transform:uppercase;color:#7d7799;font-weight:700">Prazo por unidade</div><div style="font-weight:800;font-size:16px">${prz.n?(Math.abs(prz.min.p-prz.max.p)<1e-9?fmtPrazo(prz.min.p):fmtPrazo(prz.min.p)+' a '+fmtPrazo(prz.max.p)):'—'}</div></div>
       </div>
+      ${condComerciais()?`<div style="margin-top:16px;border-top:1px solid #eee;padding-top:12px"><div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7d7799;margin-bottom:5px">Condições comerciais</div><div style="font-size:12.5px;color:#555;white-space:pre-wrap">${esc(condComerciais())}</div></div>`:''}
       <div style="margin-top:16px;font-size:11.5px;color:#7d7799;border-top:1px solid #eee;padding-top:12px">Proposta com validade de 15 dias. eX Eletric — Automação &amp; Elétrica.</div>
     </div></div>`;
   let ov=_lg('vcOverlay'); if(!ov){ ov=document.createElement('div'); ov.id='vcOverlay'; document.body.appendChild(ov); }
@@ -2940,6 +2952,10 @@ function setMacroKm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=Ma
 function clearMacroKm(){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=0; _macroSave(); }
 function setColCustoProposta(v){ S.colCustoProposta=!!v; save(); if(OPP&&CLOUD){ try{ pushOrc(); }catch(_){}} try{ injectLoteBasePanel(); }catch(_){} }
 function setLoteView(v){ LOTE_VIEW=(v==='pad')?'pad':'lev'; try{ injectLoteBasePanel(); }catch(_){} }   // 2.2
+var DEFAULT_COND='Pagamento: 50% do total do lote na entrada; saldo pago a cada loja concluída, mediante emissão da nota fiscal — unidade a unidade.';   // 2.4
+function condComerciais(){ return (S.condComerciais!==undefined && S.condComerciais!==null)?S.condComerciais:DEFAULT_COND; }
+function setCond(k,v){ S[k]=v; save(); if(OPP&&CLOUD){ try{ saveOrc(); }catch(_){}} }
+function contratanteCnpj(){ const id=S.contratanteId||(LOTE_ROW&&LOTE_ROW.contratante_id); const c=(CLIENTES||[]).find(function(x){return x.id===id;}); return (c&&c.cnpj)||''; }
 function resumoEscopoHtml(){
   const map={};
   (LOTE_UNITS||[]).forEach(function(u){ const sv=(u.dados&&u.dados.servicos)||[]; sv.forEach(function(r){ const k=r.desc||'—'; if(!map[k])map[k]={desc:k,und:r.und||'',qtd:0}; map[k].qtd+=num(r.qtd); }); });
