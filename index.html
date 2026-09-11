@@ -741,6 +741,7 @@ body.papel-tecnico .adm-only{display:none !important}
         <select class="tin" id="almox-local" style="width:auto" onchange="renderAlmox()"></select>
         <button class="btn btn-s" onclick="addLocal()" title="criar novo local"><span class="msr" style="font-size:15px;vertical-align:-3px">add_location_alt</span> Local</button>
         <button class="btn btn-s" onclick="openTransf()" title="transferir entre locais"><span class="msr" style="font-size:15px;vertical-align:-3px">swap_horiz</span> Transferir</button>
+        <button class="btn btn-s" onclick="openAplicar()" title="baixa por consumo na obra"><span class="msr" style="font-size:15px;vertical-align:-3px">engineering</span> Aplicar</button>
         <button class="btn btn-p btn-s" onclick="openAj(null)">+ Lançar saldo</button>
       </div>
     </div>
@@ -1672,6 +1673,23 @@ body.papel-tecnico .adm-only{display:none !important}
     <div id="ficha-list"></div>
   </div>
   <div class="mf"><button class="btn" onclick="closeFicha()">Fechar</button></div>
+</div></div>
+
+<!-- MODAL APLICAR NA OBRA (baixa por consumo) -->
+<div class="modal-bg" id="modalAplicar"><div class="modal" style="max-width:460px">
+  <div class="mh"><b>Aplicar na obra</b><button class="x" onclick="closeAplicar()">&times;</button></div>
+  <div class="mb">
+    <div class="fg"><label class="fl">Material</label><select class="fi" id="ap-mat"></select></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Obra</label><select class="fi" id="ap-obra"></select></div>
+      <div class="fg"><label class="fl">Baixa do local</label><select class="fi" id="ap-local"></select></div>
+    </div>
+    <div class="fg"><label class="fl">Quantidade</label><input class="fi" id="ap-qtd" type="number" step="0.01" placeholder="0"></div>
+    <div class="note" id="ap-saldo" style="font-size:11px;margin-top:0"></div>
+    <div class="fg"><label class="fl">Observação</label><input class="fi" id="ap-obs" placeholder="onde aplicou, tarefa…"></div>
+    <div class="note" style="font-size:11px">Consumo na obra: baixa o saldo do local e registra um movimento de <b>aplicação</b> vinculado à obra.</div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeAplicar()">Cancelar</button><button class="btn btn-p" onclick="saveAplicar()">Aplicar</button></div>
 </div></div>
 
 <!-- ÁREA DO DESENVOLVEDOR (Master/Admin) -->
@@ -3491,6 +3509,44 @@ async function fichaLoad(){
     </tr>`).join('')}</tbody></table></div>` : '<div class="empty" style="padding:14px">Nenhuma entrega registrada para este colaborador.</div>';
 }
 function closeFicha(){ document.getElementById('modalFicha').classList.remove('show'); }
+
+/* ===== APLICAR NA OBRA (baixa por consumo) — 2c ===== */
+let AP_SALDOS=[];
+async function openAplicar(){
+  if(!SB){ alert('Sem conexão.'); return; }
+  if(!MATS.length){ const rm=await SB.from('materiais').select('*').is('deleted_at',null).order('descricao_padronizada'); MATS=rm.data||[]; }
+  await _ensureLocais();
+  document.getElementById('ap-mat').innerHTML=matOptionsHTML('');
+  const lsel=document.getElementById('ap-local'); lsel.innerHTML=ALMOX_LOCAIS.map(l=>`<option value="${l.id}">${l.nome}</option>`).join(''); lsel.value=ALMOX_LOCAL||'';
+  const ob=await SB.from('projetos').select('id,nome,numero_externo').is('deleted_at',null).order('created_at',{ascending:false});
+  const obras=ob.data||[];
+  const osel=document.getElementById('ap-obra'); osel.innerHTML=obras.length?obras.map(o=>`<option value="${o.id}">${(o.numero_externo?o.numero_externo+' · ':'')+((o.nome||'').replace(/"/g,'')||'(obra)')}</option>`).join(''):'<option value="">— nenhuma obra —</option>';
+  document.getElementById('ap-qtd').value=''; document.getElementById('ap-obs').value=''; document.getElementById('ap-saldo').textContent='';
+  const rs=await SB.from('saldos').select('material_id,local_id,quantidade'); AP_SALDOS=rs.data||[];
+  document.getElementById('ap-mat').onchange=apShowSaldo; lsel.onchange=apShowSaldo; apShowSaldo();
+  document.getElementById('modalAplicar').classList.add('show');
+}
+function apShowSaldo(){
+  const mid=document.getElementById('ap-mat').value, lid=document.getElementById('ap-local').value;
+  const s=AP_SALDOS.find(x=>x.material_id===mid&&x.local_id===lid);
+  document.getElementById('ap-saldo').textContent = mid?('Saldo no local: '+fmtN(s?s.quantidade:0)):'';
+}
+function closeAplicar(){ document.getElementById('modalAplicar').classList.remove('show'); }
+async function saveAplicar(){
+  const mid=document.getElementById('ap-mat').value; if(!mid){ alert('Escolha o material.'); return; }
+  const oid=document.getElementById('ap-obra').value; if(!oid){ alert('Escolha a obra.'); return; }
+  const lid=document.getElementById('ap-local').value; if(!lid){ alert('Escolha o local.'); return; }
+  const q=parseFloat(document.getElementById('ap-qtd').value); if(isNaN(q)||q<=0){ alert('Informe a quantidade.'); return; }
+  const s=AP_SALDOS.find(x=>x.material_id===mid&&x.local_id===lid); const base=s?Number(s.quantidade||0):0;
+  if(q>base){ if(!confirm('Saldo no local é '+fmtN(base)+'. Aplicar assim mesmo?')) return; }
+  const up=await SB.from('saldos').upsert({material_id:mid,local_id:lid,quantidade:base-q},{onConflict:'material_id,local_id'});
+  if(up.error){ alert('Erro no saldo: '+up.error.message); return; }
+  await SB.from('movimentacoes').insert({tipo:'aplicacao',material_id:mid,quantidade:q,local_origem_id:lid,projeto_id:oid,obs:document.getElementById('ap-obs').value.trim()||null,data:new Date().toISOString()});
+  closeAplicar();
+  if(document.getElementById('v-almox').classList.contains('active')) carregarAlmox();
+  if(document.getElementById('v-gaveta').classList.contains('active')) carregarGaveta();
+  alert('Aplicação registrada na obra.');
+}
 async function addGrupoMat(){
   const nome=prompt('Nome do grupo de material (ex: Cabos):'); if(!nome)return;
   const sigla=((prompt('Sigla para o código interno (ex: CAB):','')||'').toUpperCase().trim()); if(!sigla){alert('Sigla obrigatória.');return;}
