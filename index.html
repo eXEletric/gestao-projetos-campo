@@ -555,6 +555,7 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="sb-grp" onclick="toggleGrp(this)"><span class="ic"><span class="msr">warehouse</span></span><span class="lb">Almoxarifado</span><span class="gchev">▶</span></div>
       <div class="sb-sub">
         <button class="sb-i" onclick="navView('almox',this)"><span class="ic"><span class="msr">inventory</span></span><span class="lb">Estoque · saldo</span></button>
+        <button class="sb-i" onclick="navView('nf',this)"><span class="ic"><span class="msr">receipt_long</span></span><span class="lb">Entrada / Notas</span></button>
         <button class="sb-i" onclick="navGaveta('ferramenta',this)"><span class="ic"><span class="msr">build</span></span><span class="lb">Ferramentas</span></button>
         <button class="sb-i" onclick="navGaveta('epi',this)"><span class="ic"><span class="msr">masks</span></span><span class="lb">EPIs</span></button>
         <button class="sb-i" onclick="navGaveta('uniforme',this)"><span class="ic"><span class="msr">checkroom</span></span><span class="lb">Uniformes</span></button>
@@ -752,6 +753,14 @@ body.papel-tecnico .adm-only{display:none !important}
     <div class="note" id="gaveta-note"></div>
     <input class="tin" id="gaveta-busca" placeholder="Buscar por descrição, código, marca…" style="width:100%;margin-bottom:12px" oninput="renderGaveta()">
     <div id="gaveta-list"><div class="empty">Carregando…</div></div>
+  </div>
+
+  <!-- ENTRADA POR NF (Almoxarifado · compra → estoque) -->
+  <div class="view" id="v-nf">
+    <div class="topbar"><span class="pname">Entrada por NF</span><button class="btn btn-p btn-s" onclick="openNF()">+ Nova entrada</button></div>
+    <div class="note">Compra chega → lança a NF (fornecedor, pedido, itens) → dar entrada <b>soma no saldo</b> e alimenta o custo. <span id="nf-count"></span></div>
+    <input class="tin" id="nf-busca" placeholder="Buscar por fornecedor, número, pedido…" style="width:100%;margin-bottom:12px" oninput="renderNF()">
+    <div id="nf-list"><div class="empty">Carregando…</div></div>
   </div>
 
   <div class="view" id="v-orcamento">
@@ -1541,6 +1550,35 @@ body.papel-tecnico .adm-only{display:none !important}
     <div class="note" style="font-size:11px">Grava o saldo e registra um movimento de <b>ajuste</b> (rastreável).</div>
   </div>
   <div class="mf"><button class="btn" onclick="closeAj()">Cancelar</button><button class="btn btn-p" onclick="saveAj()">Salvar saldo</button></div>
+</div></div>
+
+<!-- MODAL ENTRADA POR NF -->
+<div class="modal-bg" id="modalNF"><div class="modal" style="max-width:700px">
+  <div class="mh"><b>Nova entrada por NF</b><button class="x" onclick="closeNF()">&times;</button></div>
+  <div class="mb">
+    <div class="frow3">
+      <div class="fg"><label class="fl">Fornecedor</label><input class="fi" id="nf-forn"></div>
+      <div class="fg"><label class="fl">Número da NF</label><input class="fi" id="nf-num"></div>
+      <div class="fg"><label class="fl">Data emissão</label><input class="fi" id="nf-data" type="date"></div>
+    </div>
+    <div class="frow3">
+      <div class="fg"><label class="fl">Pedido / OC <span style="color:var(--tx3)">(opcional)</span></label><input class="fi" id="nf-pedido"></div>
+      <div class="fg"><label class="fl">Local de entrada</label><select class="fi" id="nf-local"></select></div>
+      <div class="fg"><label class="fl">Chave de acesso <span style="color:var(--tx3)">(opcional)</span></label><input class="fi" id="nf-chave"></div>
+    </div>
+    <div class="fg"><label class="fl">Anexo da NF <span style="color:var(--tx3)">(PDF/XML)</span></label>
+      <div style="display:flex;gap:8px;align-items:center"><button class="btn" type="button" disabled style="opacity:.55" title="disponível ao ligar o armazenamento">📎 Anexar arquivo</button><span class="note" style="margin:0;font-size:11px">registra a NF agora; o arquivo entra ao ligar o Storage</span></div>
+    </div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin:15px 0 7px"><b style="font-size:13px">Itens da nota</b><button class="btn btn-s" type="button" onclick="addNFItem()">+ Item</button></div>
+    <div id="nf-itens"></div>
+    <div class="frow">
+      <div class="fg"><label class="fl">Valor total <span style="color:var(--tx3)">(auto)</span></label><input class="fi" id="nf-total" readonly style="background:var(--surf2)"></div>
+      <div class="fg"><label class="fl">Custo</label><label style="display:flex;align-items:center;gap:8px;padding-top:9px;font-size:12px;color:var(--tx2)"><input type="checkbox" id="nf-custo" checked> atualizar custo dos materiais</label></div>
+    </div>
+    <div class="fg"><label class="fl">Observação</label><input class="fi" id="nf-obs"></div>
+    <div class="note" style="font-size:11px">Dar entrada: <b>soma</b> no saldo do local, registra movimento de <b>entrada</b> e (se marcado) grava o custo unitário no material.</div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeNF()">Cancelar</button><button class="btn btn-p" onclick="saveNF()">Dar entrada</button></div>
 </div></div>
 
 <!-- ÁREA DO DESENVOLVEDOR (Master/Admin) -->
@@ -3031,6 +3069,105 @@ async function saveAj(){
   if(delta!==0){ await SB.from('movimentacoes').insert({tipo:'ajuste',material_id:matId,quantidade:Math.abs(delta),local_destino_id:ALMOX_LOCAL,obs:(document.getElementById('aj-obs').value.trim()||('ajuste de saldo ('+(delta>0?'+':'')+fmtN(delta)+')')),data:new Date().toISOString()}); }
   closeAj(); carregarAlmox();
 }
+
+/* ===== ENTRADA POR NF (compra → estoque) ===== */
+let NFS=[], NFSEQ=0;
+function matOptionsHTML(selId){
+  const order=['material','consumivel','ferramenta','epi','uniforme',''];
+  const byc={}; MATS.forEach(m=>{const c=m.categoria||'';(byc[c]=byc[c]||[]).push(m);});
+  let h='<option value="">— material —</option>';
+  order.forEach(c=>{ const arr=byc[c]; if(!arr||!arr.length)return; arr.sort((a,b)=>(a.descricao_padronizada||'').localeCompare(b.descricao_padronizada||''));
+    const lbl=(CAT_MAT[c]||{l:'Sem categoria'}).l;
+    h+=`<optgroup label="${lbl}">`+arr.map(m=>`<option value="${m.id}"${m.id===selId?' selected':''}>${(m.codigo_interno?m.codigo_interno+' · ':'')+(m.descricao_padronizada||'(sem descrição)')}</option>`).join('')+'</optgroup>';
+  });
+  return h;
+}
+async function _ensureLocais(){
+  if(!ALMOX_LOCAIS.length){ const rl=await SB.from('locais').select('*').is('deleted_at',null).eq('ativo',true).order('nome'); ALMOX_LOCAIS=rl.data||[]; }
+  if((!ALMOX_LOCAL||!ALMOX_LOCAIS.some(l=>l.id===ALMOX_LOCAL))&&ALMOX_LOCAIS.length) ALMOX_LOCAL=ALMOX_LOCAIS[0].id;
+}
+async function carregarNF(){
+  if(!SB){ document.getElementById('nf-list').innerHTML='<div class="empty">Sem conexão.</div>'; return; }
+  if(!MATS.length){ const rm=await SB.from('materiais').select('*').is('deleted_at',null).order('descricao_padronizada'); MATS=rm.data||[]; }
+  await _ensureLocais();
+  const r=await SB.from('notas_fiscais').select('*, nf_itens(id)').is('deleted_at',null).order('created_at',{ascending:false});
+  if(r.error){ document.getElementById('nf-list').innerHTML='<div class="empty">Erro: '+r.error.message+'</div>'; return; }
+  NFS=r.data||[]; renderNF();
+}
+function renderNF(){
+  const q=(document.getElementById('nf-busca').value||'').toLowerCase().trim();
+  const lista=NFS.filter(n=>{ if(!q)return true; return [n.fornecedor,n.numero,n.pedido].some(x=>(x||'').toLowerCase().indexOf(q)>=0); });
+  document.getElementById('nf-count').textContent='· '+NFS.length+' notas';
+  document.getElementById('nf-list').innerHTML = lista.length ? `
+    <div class="mtbl-wrap"><table class="mtbl">
+      <thead><tr><th>Fornecedor</th><th>NF</th><th>Pedido</th><th>Data</th><th class="num">Itens</th><th class="num">Valor</th><th></th></tr></thead>
+      <tbody>${lista.map(n=>`
+        <tr>
+          <td><div class="desc">${n.fornecedor||'(sem fornecedor)'}</div></td>
+          <td>${n.numero?`<span class="cod">${n.numero}</span>`:''}</td>
+          <td>${n.pedido||''}</td>
+          <td>${n.data_emissao?new Date(n.data_emissao+'T00:00').toLocaleDateString('pt-BR'):''}</td>
+          <td class="num">${(n.nf_itens||[]).length}</td>
+          <td class="num">${n.valor_total!=null?('R$ '+Number(n.valor_total).toFixed(2)):''}</td>
+          <td>${n.conciliada?'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:#eaf3de;color:#3b6d11">deu entrada</span>':''}</td>
+        </tr>`).join('')}</tbody>
+    </table></div>` : `<div class="empty">Nenhuma nota ainda. Clique em <b>+ Nova entrada</b> para lançar a primeira.</div>`;
+}
+function nfItemRow(seq){
+  return `<div class="nfi-row" id="nfi-${seq}" style="display:grid;grid-template-columns:1fr 84px 104px 30px;gap:8px;align-items:center;margin-bottom:8px">
+    <select class="fi" id="nfi-mat-${seq}">${matOptionsHTML('')}</select>
+    <input class="fi" id="nfi-qtd-${seq}" type="number" step="0.01" placeholder="Qtd" oninput="recalcNF()">
+    <input class="fi" id="nfi-val-${seq}" type="number" step="0.01" placeholder="R$ un" oninput="recalcNF()">
+    <button class="ib" type="button" onclick="var e=document.getElementById('nfi-${seq}');if(e)e.remove();recalcNF()" title="remover">✕</button>
+  </div>`;
+}
+function addNFItem(){ NFSEQ++; document.getElementById('nf-itens').insertAdjacentHTML('beforeend', nfItemRow(NFSEQ)); }
+function recalcNF(){
+  let tot=0; document.querySelectorAll('#nf-itens .nfi-row').forEach(r=>{ const seq=r.id.split('-')[1];
+    const q=parseFloat((document.getElementById('nfi-qtd-'+seq)||{}).value)||0; const v=parseFloat((document.getElementById('nfi-val-'+seq)||{}).value)||0; tot+=q*v; });
+  document.getElementById('nf-total').value=tot?('R$ '+tot.toFixed(2)):'';
+}
+async function openNF(){
+  if(!SB){ alert('Sem conexão com a nuvem.'); return; }
+  if(!MATS.length){ const rm=await SB.from('materiais').select('*').is('deleted_at',null).order('descricao_padronizada'); MATS=rm.data||[]; }
+  await _ensureLocais();
+  const lsel=document.getElementById('nf-local'); lsel.innerHTML=ALMOX_LOCAIS.map(l=>`<option value="${l.id}">${l.nome}</option>`).join(''); lsel.value=ALMOX_LOCAL||'';
+  document.getElementById('nf-forn').value=''; document.getElementById('nf-num').value='';
+  document.getElementById('nf-data').value=new Date().toISOString().slice(0,10);
+  document.getElementById('nf-pedido').value=''; document.getElementById('nf-chave').value='';
+  document.getElementById('nf-obs').value=''; document.getElementById('nf-total').value=''; document.getElementById('nf-custo').checked=true;
+  document.getElementById('nf-itens').innerHTML=''; NFSEQ=0; addNFItem();
+  document.getElementById('modalNF').classList.add('show');
+}
+function closeNF(){ document.getElementById('modalNF').classList.remove('show'); }
+async function saveNF(){
+  const gnum=x=>{const n=parseFloat(x);return isNaN(n)?null:n;};
+  const localId=document.getElementById('nf-local').value; if(!localId){ alert('Escolha o local de entrada.'); return; }
+  const itens=[]; document.querySelectorAll('#nf-itens .nfi-row').forEach(r=>{ const seq=r.id.split('-')[1];
+    const mid=document.getElementById('nfi-mat-'+seq).value; const q=gnum(document.getElementById('nfi-qtd-'+seq).value); const v=gnum(document.getElementById('nfi-val-'+seq).value);
+    if(mid && q!=null && q>0) itens.push({material_id:mid, quantidade:q, valor_unit:v}); });
+  if(!itens.length){ alert('Adicione ao menos um item com material e quantidade.'); return; }
+  let total=0; itens.forEach(i=>{ total+= i.quantidade*(i.valor_unit||0); });
+  const nfRow={ fornecedor:document.getElementById('nf-forn').value.trim()||null, numero:document.getElementById('nf-num').value.trim()||null,
+    data_emissao:document.getElementById('nf-data').value||null, pedido:document.getElementById('nf-pedido').value.trim()||null,
+    chave_acesso:document.getElementById('nf-chave').value.trim()||null, local_id:localId, valor_total:total||null,
+    obs:document.getElementById('nf-obs').value.trim()||null, conciliada:true };
+  const ins=await SB.from('notas_fiscais').insert(nfRow).select().single();
+  if(ins.error){ alert('Erro ao salvar NF: '+ins.error.message); return; }
+  const nfId=ins.data.id; const upCusto=document.getElementById('nf-custo').checked;
+  for(const it of itens){
+    const m=MATS.find(x=>x.id===it.material_id)||{};
+    await SB.from('nf_itens').insert({nota_fiscal_id:nfId, material_id:it.material_id, descricao:m.descricao_padronizada||null, codigo:m.codigo_interno||null, quantidade:it.quantidade, valor_unit:it.valor_unit});
+    const cur=await SB.from('saldos').select('quantidade').eq('material_id',it.material_id).eq('local_id',localId).maybeSingle();
+    const base=(cur.data&&cur.data.quantidade!=null)?Number(cur.data.quantidade):0;
+    await SB.from('saldos').upsert({material_id:it.material_id, local_id:localId, quantidade:base+it.quantidade},{onConflict:'material_id,local_id'});
+    await SB.from('movimentacoes').insert({tipo:'entrada', material_id:it.material_id, quantidade:it.quantidade, local_destino_id:localId, nota_fiscal_id:nfId, data:new Date().toISOString()});
+    if(upCusto && it.valor_unit!=null){ await SB.from('materiais').update({custo_compra:it.valor_unit}).eq('id',it.material_id); const lm=MATS.find(x=>x.id===it.material_id); if(lm)lm.custo_compra=it.valor_unit; }
+  }
+  closeNF(); carregarNF();
+  try{ if(document.getElementById('v-almox').classList.contains('active')) carregarAlmox(); }catch(_){}
+  alert('Entrada registrada: '+itens.length+' item(ns) somado(s) ao estoque.');
+}
 async function addGrupoMat(){
   const nome=prompt('Nome do grupo de material (ex: Cabos):'); if(!nome)return;
   const sigla=((prompt('Sigla para o código interno (ex: CAB):','')||'').toUpperCase().trim()); if(!sigla){alert('Sigla obrigatória.');return;}
@@ -3327,7 +3464,7 @@ function aplicarModoNav(){
 }
 function irLista(t){ S.emProjeto=false; save(); aplicarModoNav(); tab(t,document.getElementById(t==='modelos'?'nav-modelos-lbl':'nav-lista-lbl')); }
 function voltarProjetos(){ irLista('proj'); }
-function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='lojas')carregarLojas();if(t==='almox')carregarAlmox();if(t==='gaveta')carregarGaveta();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='catoferta')carregarCatOferta();if(t==='catservico')carregarCatServico();if(t==='catequip')carregarCatEquip();if(t==='catdespesa')carregarCatDespesa();if(t==='catmaobra')carregarCatMaoObra();if(t==='abrangencia')carregarAbrangenciaView();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();if(t==='barramento'&&typeof carregarBarramento==='function')carregarBarramento();
+function tab(t,el){document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));if(el)el.classList.add('active');document.getElementById('v-'+t).classList.add('active');if(t==='proj')renderProjetos();if(t==='modelos')renderModelos();if(t==='acomp')renderAcomp();if(t==='colab')renderColab();if(t==='cat')renderCat();if(t==='mat')carregarMateriais();if(t==='lojas')carregarLojas();if(t==='almox')carregarAlmox();if(t==='gaveta')carregarGaveta();if(t==='nf')carregarNF();if(t==='orcamento')carregarOrcamento();if(t==='clientes')carregarClientes();if(t==='funil')carregarFunil();if(t==='catoferta')carregarCatOferta();if(t==='catservico')carregarCatServico();if(t==='catequip')carregarCatEquip();if(t==='catdespesa')carregarCatDespesa();if(t==='catmaobra')carregarCatMaoObra();if(t==='abrangencia')carregarAbrangenciaView();if(t==='cfg')renderCfg();if(t==='acessos')carregarAcessos();if(t==='diario')renderDiario();if(t==='barramento'&&typeof carregarBarramento==='function')carregarBarramento();
   const cadBtn=document.getElementById('cad-btn');
   if(cadBtn&&!['colab','cat','mat','acessos','cfg'].includes(t)){cadBtn.classList.remove('active');cadBtn.innerHTML='Cadastros <span style="font-size:10px">▾</span>';document.querySelectorAll('#cad-menu button').forEach(b=>b.classList.remove('active'));}
 }
