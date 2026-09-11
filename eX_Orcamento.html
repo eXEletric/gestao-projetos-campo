@@ -2763,7 +2763,7 @@ function renderLoteBaseHtml(){
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">gavel</span><b style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)">Condições comerciais &amp; partes</b></div>
       <textarea onchange="setCond('condComerciais',this.value)" rows="2" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx);resize:vertical" placeholder="Condições de pagamento, prazo, garantia…">${esc(condComerciais())}</textarea>
       <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--tx3)">
-        <label style="flex:1;min-width:180px">CNPJ eX (contratada)<input value="${esc(S.cnpjEmpresa||'')}" onchange="setCond('cnpjEmpresa',this.value)" placeholder="00.000.000/0001-00" style="width:100%;box-sizing:border-box;margin-top:3px;padding:7px 9px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"></label>
+        <div style="flex:1;min-width:180px">CNPJ eX (contratada)<div style="margin-top:6px;font-size:13px;color:var(--tx)">${empresaCnpj()?esc(empresaCnpj()):'<span style="color:var(--tx3)">— do cadastro da empresa —</span>'}</div></div>
         <div style="flex:1;min-width:180px">CNPJ contratante<div style="margin-top:6px;font-size:13px;color:var(--tx)">${cnpjC?esc(cnpjC):'<span style="color:var(--tx3)">— do cadastro do cliente —</span>'}</div></div>
       </div>
       <div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--tx3)">
@@ -2896,7 +2896,7 @@ function verComoClienteLote(){
     <div style="height:6px;background:linear-gradient(90deg,#533ab7,#3f2c8f)"></div>
     <div style="padding:30px 34px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:1px solid #eee;padding-bottom:18px">
-        <div style="display:flex;align-items:center;gap:11px"><div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(155deg,#533ab7,#3f2c8f);color:#fff;display:grid;place-items:center;font-family:Sora;font-weight:800">eX</div><div><div style="font-weight:800;font-size:17px">eX Eletric</div><div style="font-size:11.5px;color:#7d7799">Automação &amp; Elétrica</div>${S.cnpjEmpresa?`<div style="font-size:11px;color:#7d7799">CNPJ ${esc(S.cnpjEmpresa)}</div>`:''}</div></div>
+        <div style="display:flex;align-items:center;gap:11px"><div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(155deg,#533ab7,#3f2c8f);color:#fff;display:grid;place-items:center;font-family:Sora;font-weight:800">eX</div><div><div style="font-weight:800;font-size:17px">eX Eletric</div><div style="font-size:11.5px;color:#7d7799">Automação &amp; Elétrica</div>${empresaCnpj()?`<div style="font-size:11px;color:#7d7799">CNPJ ${esc(empresaCnpj())}</div>`:''}</div></div>
         <div style="text-align:right;font-size:12px;color:#7d7799"><div style="font-weight:700;color:#3f2c8f;font-size:14px">${esc(S.numero||'ORÇ')}</div>Proposta em lote · ${nUn} unidades</div>
       </div>
       <div style="padding:18px 0;border-bottom:1px solid #eee">
@@ -2965,6 +2965,8 @@ function condComerciais(){ return (S.condComerciais!==undefined && S.condComerci
 function setCond(k,v){ S[k]=v; save(); if(OPP&&CLOUD){ try{ saveOrc(); }catch(_){}} }
 function contratanteCnpj(){ const id=S.contratanteId||(LOTE_ROW&&LOTE_ROW.contratante_id); const c=(CLIENTES||[]).find(function(x){return x.id===id;}); return (c&&c.cnpj)||''; }
 function lojaLabel(o){ const n=(o&&o.dados&&o.dados.finNum)||''; return (n?n+' · ':'')+((o&&(o.cliente_final||o.numero))||'unidade'); }   // nº da loja + nome
+function fmtCnpj(v){ v=(v||'').replace(/\D/g,''); if(v.length!==14) return v||''; return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12); }
+function empresaCnpj(){ return (S.cnpjEmpresa && String(S.cnpjEmpresa).trim())? S.cnpjEmpresa : fmtCnpj((typeof EMP!=='undefined'&&EMP&&EMP.cnpj)||''); }   // eX: manual (se houver) senão do cadastro da empresa
 function resumoEscopoHtml(){
   const map={};
   (LOTE_UNITS||[]).forEach(function(u){ const sv=(u.dados&&u.dados.servicos)||[]; sv.forEach(function(r){ const k=r.desc||'—'; if(!map[k])map[k]={desc:k,und:r.und||'',qtd:0}; map[k].qtd+=num(r.qtd); }); });
@@ -3019,8 +3021,8 @@ async function carregarUsuarios(){
 let CANAL={email:'',fone:'',mostrar:false};
 let EMP={logo:'',nome:''};
 async function carregarEmpresaCanal(){
-  try{ if(!EMPRESA_ID)return; const {data,error}=await SB.from('empresas').select('nome,logo_url,email_comercial,telefone_comercial,mostrar_canal_comercial').eq('id',EMPRESA_ID).limit(1);
-    if(!error && data && data[0]){ CANAL={email:data[0].email_comercial||'',fone:data[0].telefone_comercial||'',mostrar:data[0].mostrar_canal_comercial!==false}; EMP={logo:data[0].logo_url||'',nome:data[0].nome||''}; } }catch(e){ console.error('canal empresa',e); }
+  try{ if(!EMPRESA_ID)return; const {data,error}=await SB.from('empresas').select('nome,logo_url,email_comercial,telefone_comercial,mostrar_canal_comercial,cnpj').eq('id',EMPRESA_ID).limit(1);
+    if(!error && data && data[0]){ CANAL={email:data[0].email_comercial||'',fone:data[0].telefone_comercial||'',mostrar:data[0].mostrar_canal_comercial!==false}; EMP={logo:data[0].logo_url||'',nome:data[0].nome||'',cnpj:data[0].cnpj||''}; } }catch(e){ console.error('canal empresa',e); }
 }
 function renderBrand(){ const el=document.getElementById('phBrand');
   const nome=EMP.nome||'eX Eletric';
