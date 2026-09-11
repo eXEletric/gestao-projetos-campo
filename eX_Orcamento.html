@@ -596,6 +596,13 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
 #previewBar .pv-btn:hover{background:rgba(255,255,255,.18)}
 #previewBar .pv-print{background:#fff;color:#2b2440;border-color:#fff}
 @media print{#previewBar{display:none!important}}
+/* não vaza pro cliente (achado no envio, 11/09): margem do bloco ("Margem 30%", "custo + imposto") e o rótulo "c/ margem" das colunas */
+@media print{.blkmg,.thsub{display:none!important}}
+body.viewing .blkmg,body.viewing .thsub{display:none!important}
+/* coluna "#": a célula da linha tem a classe .dgrab (puxador) e sumia inteira no papel → cabeçalho deslizava uma coluna. Mostra o nº, esconde só o ícone */
+@media print{td.idx.dgrab{display:table-cell!important}td.idx.dgrab .material-symbols-rounded{display:none!important}.in::placeholder,.cin::placeholder,.pin::placeholder{color:transparent!important}}
+body.viewing td.idx.dgrab{display:table-cell!important}body.viewing td.idx.dgrab .material-symbols-rounded{display:none!important}
+body.viewing .in::placeholder,body.viewing .cin::placeholder,body.viewing .pin::placeholder{color:transparent!important}
 
 /* impressão */
 @media print{
@@ -3606,5 +3613,6 @@ function toggleBloco(k){ S.blocoOn[k]=!blocoAtivo(k); save(); renderBlk(BLKS.fin
 function boot(){ BLKS.forEach(renderBlk); applyBlocoVis(); renderDescGeral(); bindFields(); applyPrefill(); recalc(); try{syncStatusFromComprovantes();}catch(e){} renderBanner(); renderCanal(); renderBrand(); if(MANUAL&&_lastSaved==='')_lastSaved=_hhmm(); renderSaveState(); }
 initOrc();
 </script>
+<script src="eX_Envio.js"></script><!-- envio da proposta por e-mail + revisões congeladas (módulo à parte; ver eX_Envio.js) -->
 </body>
 </html>
