@@ -1608,6 +1608,26 @@ body.papel-tecnico .adm-only{display:none !important}
   <div class="mf"><button class="btn" onclick="closeTransf()">Cancelar</button><button class="btn btn-p" onclick="saveTransf()">Transferir</button></div>
 </div></div>
 
+<!-- MODAL UNIDADES / EMPRÉSTIMO (ferramentas) -->
+<div class="modal-bg" id="modalUnid"><div class="modal" style="max-width:540px">
+  <div class="mh"><b>Unidades · <span id="unid-title">Ferramenta</span></b><button class="x" onclick="closeUnid()">&times;</button></div>
+  <div class="mb">
+    <div class="note" id="unid-sum" style="margin-top:0"></div>
+    <div id="unid-list"></div>
+    <div style="border-top:1px solid var(--line);margin-top:12px;padding-top:12px">
+      <label class="fl">Nova unidade</label>
+      <div style="display:grid;grid-template-columns:1fr 1fr auto auto;gap:8px;align-items:center">
+        <input class="fi" id="un-serial" placeholder="Nº de série">
+        <input class="fi" id="un-patr" placeholder="Patrimônio">
+        <select class="fi" id="un-estado" style="width:auto"><option value="novo">Novo</option><option value="bom" selected>Bom</option><option value="desgaste">Desgaste</option><option value="danificado">Danificado</option></select>
+        <button class="btn btn-p btn-s" onclick="addUnid()">+ Add</button>
+      </div>
+      <div class="note" style="font-size:11px">Cada unidade é rastreada individualmente. Empréstimo marca <b>em uso</b> e registra quem está com ela.</div>
+    </div>
+  </div>
+  <div class="mf"><button class="btn" onclick="closeUnid()">Fechar</button></div>
+</div></div>
+
 <!-- ÁREA DO DESENVOLVEDOR (Master/Admin) -->
 <div class="dev-ov" id="dev-ov">
   <div class="dev-bar">
@@ -3014,7 +3034,7 @@ function renderGaveta(){
           ${_gavSaldoCell(m)}
           <td>${m.unidade||''}</td>
           <td>${m.quantidade_minima!=null?m.quantidade_minima:''}</td>
-          <td><span class="msr" style="font-size:16px;color:var(--tx3)">edit</span></td>
+          <td class="acts" style="white-space:nowrap">${GAVETA_CAT==='ferramenta'?`<button class="ib" onclick="event.stopPropagation();openUnid('${esc(m.id)}')" title="unidades / empréstimo"><span class="msr" style="font-size:16px">handshake</span></button> `:''}<span class="msr" style="font-size:16px;color:var(--tx3)">edit</span></td>
         </tr>`).join('')}</tbody>
     </table></div>` : `<div class="empty">Nenhum item nesta gaveta ainda. Clique em “+ Novo ${d.novo}” para cadastrar.</div>`;
 }
@@ -3282,6 +3302,65 @@ async function saveTransf(){
   if(document.getElementById('v-gaveta').classList.contains('active')) carregarGaveta();
   alert('Transferência registrada.');
 }
+
+/* ===== UNIDADES / EMPRÉSTIMO (ferramentas serializadas) — 2c ===== */
+let UNID_MAT=null, UNIDS=[];
+const EST_UN={novo:'Novo',bom:'Bom',desgaste:'Desgaste',danificado:'Danificado'};
+function _colabList(){ return (window.S&&S.colab?S.colab:[]).filter(c=>c&&c.ativo!==false).slice().sort((a,b)=>(a.nome||'').localeCompare(b.nome||'')); }
+function colabOpts(sel){ return '<option value="">— colaborador —</option>'+_colabList().map(c=>`<option value="${c.id}"${c.id===sel?' selected':''}>${(c.nome||'').replace(/"/g,'')}</option>`).join(''); }
+function colabNome(id){ const c=(window.S&&S.colab?S.colab:[]).find(x=>x.id===id); return c?(c.nome||'—'):'—'; }
+async function openUnid(matId){
+  if(!SB){ alert('Sem conexão.'); return; }
+  UNID_MAT=MATS.find(m=>m.id===matId)||{id:matId};
+  await _ensureLocais();
+  const r=await SB.from('unidades').select('*').eq('material_id',matId).is('deleted_at',null).eq('ativo',true).order('created_at');
+  UNIDS=r.data||[];
+  document.getElementById('unid-title').textContent=UNID_MAT.descricao_padronizada||'Ferramenta';
+  document.getElementById('un-serial').value=''; document.getElementById('un-patr').value=''; document.getElementById('un-estado').value='bom';
+  renderUnid();
+  document.getElementById('modalUnid').classList.add('show');
+}
+function _situBadge(s){ const map={disponivel:['#3b6d11','#eaf3de','disponível'],em_uso:['#185fa5','#e6f1fb','em uso'],manutencao:['#8a5410','#faeeda','manutenção'],baixada:['#a32d2d','#fce9e9','baixada']}; const m=map[s]||['#5f5e5a','#eeeeee',s||'—']; return `<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:${m[1]};color:${m[0]}">${m[2]}</span>`; }
+function renderUnid(){
+  const disp=UNIDS.filter(u=>u.situacao==='disponivel').length, uso=UNIDS.filter(u=>u.situacao==='em_uso').length;
+  document.getElementById('unid-sum').textContent=UNIDS.length+' unidade(s) · '+disp+' disponível(is) · '+uso+' em uso';
+  document.getElementById('unid-list').innerHTML = UNIDS.length ? UNIDS.map(u=>`
+    <div style="display:flex;align-items:center;gap:8px;padding:9px 0;border-bottom:1px solid var(--line)">
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:600">${u.serial||u.patrimonio||'(sem série)'} ${_situBadge(u.situacao)}</div>
+        <div style="font-size:11px;color:var(--tx3)">${u.patrimonio?('patrim. '+u.patrimonio+' · '):''}estado: ${EST_UN[u.estado]||u.estado||'—'}${u.situacao==='em_uso'?(' · com <b>'+colabNome(u.colaborador_id)+'</b>'):''}</div>
+      </div>
+      ${u.situacao==='disponivel'?`<select class="fi" id="emp-${u.id}" style="width:150px">${colabOpts('')}</select><button class="btn btn-s btn-p" onclick="emprestarUnid('${u.id}')">Emprestar</button>`
+        : u.situacao==='em_uso'?`<button class="btn btn-s" onclick="devolverUnid('${u.id}')">Devolver</button>`
+        : ''}
+    </div>`).join('') : '<div class="empty" style="padding:14px">Nenhuma unidade cadastrada. Registre a primeira abaixo.</div>';
+}
+async function addUnid(){
+  if(!UNID_MAT){ return; }
+  const serial=document.getElementById('un-serial').value.trim()||null;
+  const patr=document.getElementById('un-patr').value.trim()||null;
+  if(!serial && !patr){ alert('Informe ao menos o nº de série ou o patrimônio.'); return; }
+  const estado=document.getElementById('un-estado').value||'bom';
+  const r=await SB.from('unidades').insert({material_id:UNID_MAT.id,serial,patrimonio:patr,estado,situacao:'disponivel',local_id:ALMOX_LOCAL||null,ativo:true}).select().single();
+  if(r.error){ alert('Erro: '+r.error.message); return; }
+  UNIDS.push(r.data); document.getElementById('un-serial').value=''; document.getElementById('un-patr').value=''; renderUnid();
+}
+async function emprestarUnid(uid){
+  const sel=document.getElementById('emp-'+uid); const cid=sel?sel.value:''; if(!cid){ alert('Escolha o colaborador.'); return; }
+  const u=UNIDS.find(x=>x.id===uid); if(!u)return;
+  const r=await SB.from('unidades').update({situacao:'em_uso',colaborador_id:cid}).eq('id',uid);
+  if(r.error){ alert('Erro: '+r.error.message); return; }
+  await SB.from('movimentacoes').insert({tipo:'emprestimo',material_id:u.material_id,unidade_id:uid,quantidade:1,colaborador_id:cid,local_origem_id:u.local_id||ALMOX_LOCAL||null,data:new Date().toISOString()});
+  u.situacao='em_uso'; u.colaborador_id=cid; renderUnid();
+}
+async function devolverUnid(uid){
+  const u=UNIDS.find(x=>x.id===uid); if(!u)return;
+  const r=await SB.from('unidades').update({situacao:'disponivel',colaborador_id:null}).eq('id',uid);
+  if(r.error){ alert('Erro: '+r.error.message); return; }
+  await SB.from('movimentacoes').insert({tipo:'devolucao',material_id:u.material_id,unidade_id:uid,quantidade:1,colaborador_id:u.colaborador_id||null,local_destino_id:u.local_id||ALMOX_LOCAL||null,data:new Date().toISOString()});
+  u.situacao='disponivel'; u.colaborador_id=null; renderUnid();
+}
+function closeUnid(){ document.getElementById('modalUnid').classList.remove('show'); UNID_MAT=null; }
 async function addGrupoMat(){
   const nome=prompt('Nome do grupo de material (ex: Cabos):'); if(!nome)return;
   const sigla=((prompt('Sigla para o código interno (ex: CAB):','')||'').toUpperCase().trim()); if(!sigla){alert('Sigla obrigatória.');return;}
