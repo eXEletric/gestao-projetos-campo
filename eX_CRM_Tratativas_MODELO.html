@@ -78,6 +78,22 @@ body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .lastev{font-size:10.5px;color:var(--tx3);display:inline-flex;align-items:center;gap:3px;margin-left:auto;white-space:nowrap}
 .lastev .material-symbols-rounded{font-size:13px}
 body.hl .nv{outline:1.5px dashed var(--pri);outline-offset:2px}
+/* marcação de APROVADA */
+.kcard.aprov{border-left:4px solid var(--green);background:linear-gradient(90deg,#f1f7e9,#fff 65%)}
+.kcard.aprov .kcard-nm{padding-right:80px}
+.aprovtag{position:absolute;top:8px;right:8px;font-size:9px;font-weight:800;letter-spacing:.04em;color:#fff;background:var(--green);border-radius:6px;padding:2px 6px;display:inline-flex;align-items:center;gap:3px}
+.aprovtag .material-symbols-rounded{font-size:12px}
+.pontatag{font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--amber);border:1px solid #e6c98f;background:#fff8ea;border-radius:5px;padding:1px 5px;margin-left:4px}
+.aprovban{display:flex;gap:12px;align-items:center;background:#eef6e6;border:1.5px solid #b9d69b;border-radius:12px;padding:11px 14px;margin-bottom:14px}
+.aprovban>.material-symbols-rounded{font-size:30px;color:var(--green)}
+.aprovban .t{font-size:13.5px;font-weight:800;color:var(--green)}
+.aprovban .m{font-size:12px;color:var(--tx2);margin-top:1px}
+.ponta{display:flex;gap:8px;align-items:flex-start;font-size:12px;color:var(--tx2);padding:7px 0;border-top:1px dashed var(--line)}
+.ponta:first-of-type{border-top:none}
+.ponta .material-symbols-rounded{font-size:17px;flex-shrink:0}
+.ponta.ok .material-symbols-rounded{color:var(--green)}.ponta.open .material-symbols-rounded{color:var(--amber)}
+.ponta b{color:var(--tx)}
+.btn-ghost{border-style:dashed;color:var(--tx3)}
 
 /* DETALHE (igual ao CRM) */
 .detail{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:18px 20px;margin-top:14px}
@@ -170,7 +186,7 @@ textarea.fin{height:70px;resize:vertical}
   <div class="foot">
     <div class="fcard"><h4><span class="material-symbols-rounded">sync_alt</span>Fonte única</h4><p>A linha do tempo é <b>uma só</b>: gravada uma vez (evento ligado à oportunidade + revisão) e mostrada na proposta e no CRM. Registrou em um lugar, aparece no outro.</p></div>
     <div class="fcard"><h4><span class="material-symbols-rounded">sports_score</span>De quem é a vez</h4><p>Automático. Enviou ou cobrou → <b>aguardando cliente</b>. O cliente respondeu → <b>vez da eX</b>. Aprovou → vez da eX (emitir a OS). Ninguém precisa marcar.</p></div>
-    <div class="fcard"><h4><span class="material-symbols-rounded">move_down</span>A fase anda sozinha</h4><p>Envio → <b>Em negociação</b>. Recusa → <b>Declinado</b> (com motivo). OS emitida → <b>Obra / execução</b>. As travas de fase que já existem continuam valendo.</p></div>
+    <div class="fcard"><h4><span class="material-symbols-rounded">move_down</span>A fase anda sozinha</h4><p>Envio → <b>Em negociação</b>. Aprovou → <b>selo verde</b> e libera <b>Mover para Execução</b> (sem aprovação, não entra). Recusa → <b>Declinado</b> (com motivo). Em Execução, "obra a criar" fica como <b>ponta visível</b> até o Operacional receber a obra.</p></div>
     <div class="fcard"><h4><span class="material-symbols-rounded">task_alt</span>Vira tarefa</h4><p>Toda "vez da eX" e toda cobrança vencida aparecem nas <b>Tarefas</b> do responsável. Isso facilita, não fiscaliza.</p></div>
     <div class="fcard"><h4><span class="material-symbols-rounded">forum</span>Não é só e-mail</h4><p>Ligação, WhatsApp e reunião entram no mesmo registro, só muda o canal. O e-mail continua sendo o fio principal, com a TAG no assunto.</p></div>
   </div>
@@ -195,7 +211,7 @@ const SEED=[
     ev:[{t:'envio',rev:1,d:'03/09',canal:'e-mail',txt:'R1 enviada para Denis Ferraz',att:'ORÇ-2026-0048_R1.pdf'},
         {t:'ajuste',rev:1,d:'10/09',canal:'e-mail',txt:'Cliente pediu ajuste',q:'Retirar o item 4 (cabo 95 mm), nós vamos fornecer. Manter o restante.',att:'RE_[ORÇ-2026-0048 R1].eml'}]},
   {id:'c',col:'neg',obj:'Instalação do QD de força',ct:'GPA',cp:'Pão de Açúcar Pituba',num:'ORÇ-2026-0039',total:61200,temp:'Quente',contato:'Compras GPA',validade:'24/09',rev:2,status:'aprovado',vez:'ok',
-    prox:{t:'Emitir a OS interna',c:'green',ic:'assignment',k:'os'},
+    prox:{t:'Mover para Execução',c:'green',ic:'move_down',k:'exec'},
     ev:[{t:'envio',rev:1,d:'25/08',canal:'e-mail',txt:'R1 enviada para Compras GPA',att:'ORÇ-2026-0039_R1.pdf'},
         {t:'ajuste',rev:1,d:'27/08',canal:'e-mail',txt:'Cliente pediu ajuste',q:'Prazo de 20 dias não atende. Conseguem 15?'},
         {t:'rev',rev:2,d:'28/08',txt:'R2 criada a partir do pedido (prazo 15 dias)'},
@@ -213,16 +229,21 @@ const SEED=[
   {id:'f',col:'decl',obj:'SPDA do galpão',ct:'Atacadão',cp:'Atacadão Camaçari',num:'ORÇ-2026-0036',total:22400,temp:'Frio',contato:'Manutenção Atacadão',validade:'—',rev:1,status:'recusado',vez:'no',motivo:'preço',
     prox:null,
     ev:[{t:'envio',rev:1,d:'12/08',canal:'e-mail',txt:'R1 enviada',att:'ORÇ-2026-0036_R1.pdf'},
-        {t:'recusa',rev:1,d:'22/08',canal:'e-mail',txt:'Cliente recusou · motivo: preço',q:'Fechamos com outro fornecedor, valor abaixo.'}]}
+        {t:'recusa',rev:1,d:'22/08',canal:'e-mail',txt:'Cliente recusou · motivo: preço',q:'Fechamos com outro fornecedor, valor abaixo.'}]},
+  {id:'g',col:'obra',obj:'Montagem do QD de comandos',ct:'Copeland',cp:'Atacadão Juazeiro',num:'ORÇ-2026-0031',total:35400,temp:'Quente',contato:'Denis Ferraz',validade:'—',rev:1,status:'aprovado',vez:null,
+    prox:{t:'Obra: a criar no Operacional',c:'amber',ic:'pending_actions',k:'obra'},
+    ev:[{t:'envio',rev:1,d:'12/08',canal:'e-mail',txt:'R1 enviada para Denis Ferraz',att:'ORÇ-2026-0031_R1.pdf'},
+        {t:'aprov',rev:1,d:'20/08',canal:'e-mail',txt:'Cliente aprovou a R1',att:'Aprovação_Copeland.eml',extra:'comprovante criado na proposta'},
+        {t:'fase',rev:1,d:'21/08',txt:'Movida para Obra / execução'}]}
 ];
-const EVI={envio:['send','blue'],agenda:['event','gray'],cobranca:['notifications_active','amber'],ajuste:['reply','pri'],duvida:['help','blue'],rev:['edit_document','pri'],aprov:['verified','green'],recusa:['do_not_disturb_on','red'],contato:['call','gray'],os:['assignment','green']};
+const EVI={fase:['move_down','green'],envio:['send','blue'],agenda:['event','gray'],cobranca:['notifications_active','amber'],ajuste:['reply','pri'],duvida:['help','blue'],rev:['edit_document','pri'],aprov:['verified','green'],recusa:['do_not_disturb_on','red'],contato:['call','gray'],os:['assignment','green']};
 const CANAL_IC={'e-mail':'mail','telefone':'call','WhatsApp':'chat','reunião':'groups'};
 const VEZ={ex:['reply','Vez da eX','ex'],cli:['hourglass_top','Aguardando cliente','cli'],ok:['verified','Aprovada','ok'],no:['do_not_disturb_on','Recusada','no']};
 let S, SEL='b', FIL='todos', FORM=null;
 const esc=s=>String(s==null?'':s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const brl=v=>'R$ '+Number(v).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
 const ms=(i,st)=>`<span class="material-symbols-rounded"${st?` style="${st}"`:''}>${i}</span>`;
-function resetDemo(){ S=JSON.parse(JSON.stringify(SEED)); SEL='b'; FIL='todos'; FORM=null; render(); }
+function resetDemo(){ S=JSON.parse(JSON.stringify(SEED)); SEL='c'; FIL='todos'; FORM=null; render(); }
 function toggleHL(){ document.body.classList.toggle('hl'); document.getElementById('hlsw').classList.toggle('on'); }
 function toast(t){ const el=document.getElementById('toast'); el.innerHTML=t; el.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('on'),4200); }
 const opp=id=>S.find(o=>o.id===id);
@@ -233,14 +254,17 @@ function revsEnviadas(o){ return [...new Set(o.ev.filter(e=>e.t==='envio').map(e
 function vezTxt(o){ if(!o.vez)return''; const v=VEZ[o.vez]; let t=v[1];
   if(o.vez==='cli'){ const u=ultimoEnvio(o); if(u){ const dd=diasDesde(u.d); t+=' · '+(dd?dd+'d':'hoje'); } }
   if(o.vez==='ex'){ const r=ultimaResp(o); if(r)t+=' · desde '+r.d; }
+  if(o.vez==='ok'){ const a=aprovEv(o); if(a)t+=' · R'+a.rev+' · '+a.d; }
   return t; }
+function aprovEv(o){ return [...o.ev].reverse().find(x=>x.t==='aprov'); }
 /* ---- filtros ---- */
 const FILTROS=[
   {k:'todos',n:'Todos',ic:'apps',f:o=>true},
   {k:'ex',n:'Vez da eX',ic:'reply',f:o=>o.vez==='ex'||o.vez==='ok'},
   {k:'cli',n:'Aguardando cliente',ic:'hourglass_top',f:o=>o.vez==='cli'},
-  {k:'cobrar',n:'Cobrar hoje',ic:'notifications_active',f:o=>o.prox&&o.prox.c==='amber'},
-  {k:'venc',n:'Validade vencendo',ic:'event_busy',f:o=>o.prox&&o.prox.c==='red'}
+  {k:'cobrar',n:'Cobrar hoje',ic:'notifications_active',f:o=>o.prox&&o.prox.k==='cobrar'&&o.prox.c==='amber'},
+  {k:'venc',n:'Validade vencendo',ic:'event_busy',f:o=>o.prox&&o.prox.c==='red'},
+  {k:'obra',n:'Obra a criar',ic:'pending_actions',f:o=>o.prox&&o.prox.k==='obra'}
 ];
 function renderFiltros(){ document.getElementById('filters').innerHTML=FILTROS.map(x=>`<button class="fchip ${FIL===x.k?'on':''}" onclick="FIL='${x.k}';render()">${ms(x.ic)}${x.n} <b>${S.filter(x.f).length}</b></button>`).join(''); }
 /* ---- card ---- */
@@ -249,14 +273,16 @@ function card(o){
   const tc=o.temp.toLowerCase(); const r=o.rev?`R${o.rev} · `:'';
   const stl={rascunho:'rascunho',enviado:'enviada',aprovado:'aprovada',recusado:'recusada'}[o.status];
   const le=o.ev.length?o.ev[o.ev.length-1]:null;
-  return `<div class="kcard ${SEL===o.id?'sel':''} ${pass?'':'dim'}" onclick="selOpp('${o.id}')">
+  const ap=o.status==='aprovado';
+  return `<div class="kcard ${ap?'aprov':''} ${SEL===o.id?'sel':''} ${pass?'':'dim'}" onclick="selOpp('${o.id}')">
+    ${ap?`<span class="aprovtag nv">${ms('verified')}APROVADA</span>`:''}
     <div class="kcard-nm">${esc(o.obj)}</div>
     <div class="kcard-cli">${ms('business')}${esc(o.ct)} · ${esc(o.cp)}</div>
     <div class="orcb ${o.status}">${ms('request_quote')}${brl(o.total)} · ${r?`<span class="nv" style="border-radius:4px;padding:0 2px">${r}</span>`:''}${stl}</div>
     ${o.vez?`<div><span class="vez ${VEZ[o.vez][2]} nv">${ms(VEZ[o.vez][0])}${esc(vezTxt(o))}${o.motivo?' · '+esc(o.motivo):''}</span></div>`:''}
-    ${o.prox?`<div class="prox ${o.prox.c} nv">${ms(o.prox.ic)}${esc(o.prox.t)}</div>`:''}
+    ${o.prox?`<div class="prox ${o.prox.c} nv">${ms(o.prox.ic)}${esc(o.prox.t)}${o.prox.k==='obra'?'<span class="pontatag">ponta</span>':''}</div>`:''}
     <div class="kcard-foot"><span class="temp ${tc}">${esc(o.temp)}</span>
-      ${le?`<span class="lastev nv">${ms(EVI[le.t][0])}${esc(({envio:'enviada',agenda:'agendada',cobranca:'cobrança',ajuste:'pediu ajuste',duvida:'dúvida',rev:'revisão',aprov:'aprovou',recusa:'recusou',contato:'contato',os:'OS'})[le.t])} ${esc(le.d)}</span>`:''}
+      ${le?`<span class="lastev nv">${ms(EVI[le.t][0])}${esc(({envio:'enviada',agenda:'agendada',cobranca:'cobrança',ajuste:'pediu ajuste',duvida:'dúvida',rev:'revisão',aprov:'aprovou',recusa:'recusou',contato:'contato',os:'OS',fase:'execução'})[le.t])} ${esc(le.d)}</span>`:''}
     </div>
   </div>`;
 }
@@ -275,9 +301,11 @@ function evHTML(e,o,isNew){ const [ic,cl]=EVI[e.t]; const velho=e.rev&&e.rev<o.r
 function acoes(o){ let a='';
   if(o.prox&&o.prox.k==='r2') a+=`<button class="btn btn-s btn-p" onclick="criarR2()">${ms('edit_document')}Criar R${o.rev+1}</button>`;
   if(o.prox&&o.prox.k==='enviarR') a+=`<button class="btn btn-s btn-p" onclick="enviarRev()">${ms('send')}Enviar R${o.rev}</button>`;
-  if(o.prox&&o.prox.k==='os') a+=`<button class="btn btn-s btn-g" onclick="emitirOS()">${ms('assignment')}Emitir OS interna</button>`;
+  if(o.prox&&o.prox.k==='exec') a+=`<button class="btn btn-s btn-g" onclick="moverExec()">${ms('move_down')}Mover para Execução</button>`;
+  if(o.prox&&o.prox.k==='obra') a+=`<button class="btn btn-s btn-ghost" onclick="criarObra()">${ms('construction')}Criar obra no Operacional</button>`;
   if(['neg'].includes(o.col)&&o.status!=='aprovado') a+=`<button class="btn btn-s ${o.vez==='cli'?'btn-p':''}" onclick="abrirForm()">${ms('add_comment')}Registrar resposta</button>`;
   if(o.vez==='cli') a+=`<button class="btn btn-s" onclick="cobrar()">${ms('notifications_active')}Cobrar cliente</button>`;
+  if(o.col==='neg'&&o.status!=='aprovado'&&o.rev) a+=`<button class="btn btn-s btn-ghost" onclick="toast('<b>Trava:</b> só entra em Execução com a proposta <b>aprovada</b> (1 comprovante registrado). Evita abrir obra de proposta que o cliente não fechou.')">${ms('lock')}Mover para Execução</button>`;
   a+=`<button class="btn btn-s" onclick="toast('Abre a proposta <b>${o.num}</b> no módulo Orçamento, na mesma linha do tempo.')">${ms('request_quote')}${o.status==='rascunho'?'Abrir e enviar proposta':'Abrir proposta'}</button>`;
   return a; }
 function tiles(o){
@@ -311,22 +339,36 @@ function renderDetail(){ const o=opp(SEL); const el=document.getElementById('det
         <div class="chiprow"><span class="temp ${o.temp.toLowerCase()}">${o.temp}</span></div></div>
       <div class="acts nv">${acoes(o)}</div></div>
     <div class="dgrid"><div>
+      ${aprovBanner(o)}
       <div class="strip nv">${tiles(o)}</div>
       ${formHTML(o)}
       <div class="sech">${ms('timeline')}Tratativas <span style="font-weight:600;text-transform:none;letter-spacing:0">· a mesma linha do tempo da proposta</span></div>
       <div class="tl nv">${o.ev.length?[...o.ev].reverse().map((e,i)=>evHTML(e,o,i<n)).join(''):'<div class="empty">Nenhuma tratativa ainda. Começa quando a proposta é enviada pelo botão “Enviar proposta”.</div>'}</div>
     </div>
     <div class="side">
+      ${pontasBox(o)}
       <div class="box nv"><div class="sech" style="margin:0">${ms('bolt')}Próxima ação</div>
         ${o.prox?`<p style="font-size:13px;font-weight:700;color:var(--tx);display:flex;align-items:center;gap:6px">${ms(o.prox.ic,'font-size:18px')}${esc(o.prox.t)}</p><p>Aparece também nas <b>Tarefas</b> do responsável.</p>`:'<p>Nada pendente.</p>'}</div>
       <div class="box"><div class="sech" style="margin:0">${ms('rule')}Como o CRM reage</div>
         <div class="rule">${ms('send')}<span>Enviou pelo botão → card entra em <b>Em negociação</b>, a vez passa a ser do cliente e a cobrança fica agendada.</span></div>
         <div class="rule">${ms('reply')}<span>O cliente respondeu → a <b>vez é da eX</b> e aparece a próxima ação certa (criar R2, responder).</span></div>
-        <div class="rule">${ms('verified')}<span>Aprovou → vira <b>comprovante</b> ligado à revisão e libera a OS.</span></div>
+        <div class="rule">${ms('verified')}<span>Aprovou → <b>selo verde</b> no card, comprovante ligado à revisão e preços congelados. Libera <b>Mover para Execução</b>.</span></div>
+        <div class="rule">${ms('lock')}<span>Sem aprovação, o card <b>não entra</b> em Execução.</span></div>
         <div class="rule">${ms('do_not_disturb_on')}<span>Recusou → exige motivo e o card vai para <b>Declinado</b>.</span></div>
       </div>
     </div></div>
   </div>`; }
+function aprovBanner(o){ if(o.status!=='aprovado')return''; const a=aprovEv(o); if(!a)return'';
+  return `<div class="aprovban nv">${ms('verified')}<div><div class="t">APROVADA · R${a.rev} · ${esc(a.d)}</div>
+    <div class="m">Por ${esc(a.canal)} de ${esc(o.contato)} · comprovante na proposta · <b>preços da R${a.rev} congelados</b> (é o que a execução vai herdar). Esta proposta não aceita mais revisão.</div></div></div>`; }
+function pontasBox(o){ if(o.status!=='aprovado')return'';
+  const naObra=o.col==='obra';
+  return `<div class="box nv" style="background:#fffaf0;border-color:#e6c98f"><div class="sech" style="margin:0;color:var(--amber)">${ms('pending_actions','color:var(--amber)')}Da aprovação até a obra</div>
+    <div class="ponta ok">${ms('check_circle')}<span><b>Aprovada</b> · comprovante ligado à R${o.rev}</span></div>
+    <div class="ponta ${naObra?'ok':'open'}">${ms(naObra?'check_circle':'radio_button_unchecked')}<span><b>Em Execução</b> no funil${naObra?'':' · falta mover'}</span></div>
+    <div class="ponta open">${ms('radio_button_unchecked')}<span><b>OS interna</b> (executor + assinatura) <span class="pontatag">a construir</span></span></div>
+    <div class="ponta open">${ms('radio_button_unchecked')}<span><b>Obra criada no Operacional</b> com os serviços da R${o.rev} <span class="pontatag">ponta · lá na frente</span></span></div>
+    <p style="font-size:11.5px">Enquanto a obra não existir, o card mostra <b>"Obra: a criar"</b>, fica no filtro <b>Obra a criar</b> e aparece nas Tarefas. Não some da vista.</p></div>`; }
 function render(){ renderFiltros(); renderBoard(); renderDetail(); }
 /* ---- ações ---- */
 function push(o,e){ o.ev.push(e); o._new=1; }
@@ -336,7 +378,7 @@ function salvarResp(){ const o=opp(SEL), f=FORM; const q=(document.getElementByI
   const base={rev:f.rev,d:HOJE,canal:f.canal,q:q.trim(),att:f.att};
   if(f.tipo==='ajuste'){ push(o,{...base,t:'ajuste',txt:'Cliente pediu ajuste'}); o.vez='ex'; o.prox={t:`Criar R${o.rev+1} (pedido de ajuste)`,c:'pri',ic:'edit_document',k:'r2'}; toast('Registrado. Agora a <b>vez é da eX</b>, e o card mostra a próxima ação: criar a próxima revisão.'); }
   if(f.tipo==='duvida'){ push(o,{...base,t:'duvida',txt:'Cliente mandou uma dúvida'}); o.vez='ex'; o.prox={t:'Responder a dúvida',c:'pri',ic:'reply',k:'resp'}; toast('Registrado. A <b>vez é da eX</b>: responder no mesmo fio.'); }
-  if(f.tipo==='aprov'){ push(o,{...base,t:'aprov',txt:`Cliente aprovou a R${f.rev}`,extra:'comprovante criado na proposta'}); o.status='aprovado'; o.vez='ok'; o.prox={t:'Emitir a OS interna',c:'green',ic:'assignment',k:'os'}; toast(`Aprovada. O comprovante foi para a proposta <b>já ligado à R${f.rev}</b>. Próximo passo: emitir a OS.`); }
+  if(f.tipo==='aprov'){ push(o,{...base,t:'aprov',txt:`Cliente aprovou a R${f.rev}`,extra:'comprovante criado na proposta'}); o.status='aprovado'; o.vez='ok'; o.prox={t:'Mover para Execução',c:'green',ic:'move_down',k:'exec'}; toast(`<b>Aprovada.</b> Card com selo verde, comprovante ligado à <b>R${f.rev}</b> e preços congelados. Próximo passo: mover para Execução.`); }
   if(f.tipo==='recusa'){ push(o,{...base,t:'recusa',txt:'Cliente recusou · motivo: '+f.motivo}); o.status='recusado'; o.vez='no'; o.motivo=f.motivo; o.prox=null; o.col='decl'; toast('Recusada. O card foi para <b>Declinado</b> com o motivo registrado.'); }
   FORM=null; render(); }
 function cobrar(){ const o=opp(SEL); push(o,{t:'cobranca',rev:o.rev,d:HOJE,canal:'e-mail',txt:'Cobrança enviada no mesmo fio'}); o.prox={t:'Cobrar de novo em 14/09',c:'gray',ic:'schedule',k:'cobrar'};
@@ -345,8 +387,9 @@ function criarR2(){ const o=opp(SEL); o.rev+=1; push(o,{t:'rev',rev:o.rev,d:HOJE
   toast(`Abre a proposta como <b>R${o.rev}</b>, uma cópia da R${o.rev-1} com o pedido anexado. A R${o.rev-1} fica intacta.`); render(); }
 function enviarRev(){ const o=opp(SEL); push(o,{t:'envio',rev:o.rev,d:HOJE,canal:'e-mail',txt:`R${o.rev} enviada no mesmo fio`,att:`${o.num}_R${o.rev}.pdf`}); o.status='enviado'; o.vez='cli'; o.prox={t:'Cobrar retorno em 14/09',c:'gray',ic:'schedule',k:'cobrar'};
   toast(`Passou pela checagem, congelou a R${o.rev}, gerou o PDF e enviou no mesmo fio. Agora está <b>aguardando o cliente</b>.`); render(); }
-function emitirOS(){ const o=opp(SEL); push(o,{t:'os',rev:o.rev,d:HOJE,txt:`OS interna emitida a partir da R${o.rev} aprovada`}); o.col='obra'; o.prox=null; o.vez=null;
-  toast(`Portão 2: a OS herda a <b>R${o.rev} aprovada</b> (baseline) e o card vai para <b>Obra / execução</b>.`); render(); }
+function moverExec(){ const o=opp(SEL); push(o,{t:'fase',rev:o.rev,d:HOJE,txt:'Movida para Obra / execução'}); o.col='obra'; o.vez=null; o.prox={t:'Obra: a criar no Operacional',c:'amber',ic:'pending_actions',k:'obra'};
+  toast(`Card em <b>Obra / execução</b>, ainda com o selo de aprovada. A obra no Operacional fica como <b>ponta visível</b>: "Obra: a criar".`); render(); }
+function criarObra(){ toast(`<b>Ponta a resolver lá na frente.</b> Aqui nasce a OS interna e a obra no Cronograma com os serviços da <b>R${opp(SEL).rev} aprovada</b>. Hoje existe um "Gerar obra" provisório, mas ele lê uma cópia local do orçamento e não confere a aprovação.`); }
 resetDemo();
 </script>
 </body>
