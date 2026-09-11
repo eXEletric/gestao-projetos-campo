@@ -1566,8 +1566,12 @@ body.papel-tecnico .adm-only{display:none !important}
       <div class="fg"><label class="fl">Local de entrada</label><select class="fi" id="nf-local"></select></div>
       <div class="fg"><label class="fl">Chave de acesso <span style="color:var(--tx3)">(opcional)</span></label><input class="fi" id="nf-chave"></div>
     </div>
-    <div class="fg"><label class="fl">Anexo da NF <span style="color:var(--tx3)">(PDF/XML)</span></label>
-      <div style="display:flex;gap:8px;align-items:center"><button class="btn" type="button" disabled style="opacity:.55" title="disponível ao ligar o armazenamento">📎 Anexar arquivo</button><span class="note" style="margin:0;font-size:11px">registra a NF agora; o arquivo entra ao ligar o Storage</span></div>
+    <div class="fg"><label class="fl">Anexo da NF <span style="color:var(--tx3)">(PDF, XML ou imagem)</span></label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <input type="file" id="nf-file" accept=".pdf,.xml,image/*" style="display:none" onchange="nfFilePicked()">
+        <button class="btn" type="button" onclick="document.getElementById('nf-file').click()"><span class="msr" style="font-size:16px;vertical-align:-3px">attach_file</span> Anexar arquivo</button>
+        <span id="nf-file-nm" class="note" style="margin:0;font-size:11px">nenhum arquivo</span>
+      </div>
     </div>
     <div style="display:flex;align-items:center;justify-content:space-between;margin:15px 0 7px"><b style="font-size:13px">Itens da nota</b><button class="btn btn-s" type="button" onclick="addNFItem()">+ Item</button></div>
     <div id="nf-itens"></div>
@@ -3071,7 +3075,8 @@ async function saveAj(){
 }
 
 /* ===== ENTRADA POR NF (compra → estoque) ===== */
-let NFS=[], NFSEQ=0;
+let NFS=[], NFSEQ=0, NF_ANEXO=null;
+function nfFilePicked(){ const f=(document.getElementById('nf-file').files||[])[0]; NF_ANEXO=f||null; document.getElementById('nf-file-nm').textContent=f?f.name:'nenhum arquivo'; }
 function matOptionsHTML(selId){
   const order=['material','consumivel','ferramenta','epi','uniforme',''];
   const byc={}; MATS.forEach(m=>{const c=m.categoria||'';(byc[c]=byc[c]||[]).push(m);});
@@ -3109,7 +3114,7 @@ function renderNF(){
           <td>${n.data_emissao?new Date(n.data_emissao+'T00:00').toLocaleDateString('pt-BR'):''}</td>
           <td class="num">${(n.nf_itens||[]).length}</td>
           <td class="num">${n.valor_total!=null?('R$ '+Number(n.valor_total).toFixed(2)):''}</td>
-          <td>${n.conciliada?'<span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:#eaf3de;color:#3b6d11">deu entrada</span>':''}</td>
+          <td style="white-space:nowrap">${(n.foto_url||n.xml_url)?`<a href="${n.foto_url||n.xml_url}" target="_blank" rel="noopener" title="abrir anexo" style="color:var(--pri);text-decoration:none"><span class="msr" style="font-size:16px;vertical-align:-3px">attach_file</span></a>`:''}${n.conciliada?' <span style="font-size:10px;font-weight:600;padding:2px 8px;border-radius:10px;background:#eaf3de;color:#3b6d11">deu entrada</span>':''}</td>
         </tr>`).join('')}</tbody>
     </table></div>` : `<div class="empty">Nenhuma nota ainda. Clique em <b>+ Nova entrada</b> para lançar a primeira.</div>`;
 }
@@ -3137,6 +3142,7 @@ async function openNF(){
   document.getElementById('nf-pedido').value=''; document.getElementById('nf-chave').value='';
   document.getElementById('nf-obs').value=''; document.getElementById('nf-total').value=''; document.getElementById('nf-custo').checked=true;
   document.getElementById('nf-itens').innerHTML=''; NFSEQ=0; addNFItem();
+  NF_ANEXO=null; document.getElementById('nf-file').value=''; document.getElementById('nf-file-nm').textContent='nenhum arquivo';
   document.getElementById('modalNF').classList.add('show');
 }
 function closeNF(){ document.getElementById('modalNF').classList.remove('show'); }
@@ -3163,6 +3169,21 @@ async function saveNF(){
     await SB.from('saldos').upsert({material_id:it.material_id, local_id:localId, quantidade:base+it.quantidade},{onConflict:'material_id,local_id'});
     await SB.from('movimentacoes').insert({tipo:'entrada', material_id:it.material_id, quantidade:it.quantidade, local_destino_id:localId, nota_fiscal_id:nfId, data:new Date().toISOString()});
     if(upCusto && it.valor_unit!=null){ await SB.from('materiais').update({custo_compra:it.valor_unit}).eq('id',it.material_id); const lm=MATS.find(x=>x.id===it.material_id); if(lm)lm.custo_compra=it.valor_unit; }
+  }
+  if(NF_ANEXO){
+    try{
+      const rs=await SB.auth.getSession(); const sess=rs.data&&rs.data.session;
+      if(!sess){ alert('NF salva. Faça login para anexar o arquivo.'); }
+      else {
+        const ext=((NF_ANEXO.name||'').split('.').pop()||'bin').toLowerCase();
+        const path='nf/'+nfId+'/'+Date.now()+'.'+ext;
+        const up=await SB.storage.from('anexos').upload(path,NF_ANEXO,{upsert:true,contentType:NF_ANEXO.type||'application/octet-stream'});
+        if(up.error) throw up.error;
+        const sg=await SB.storage.from('anexos').createSignedUrl(path,60*60*24*365);
+        const url=(sg.data&&sg.data.signedUrl)||'';
+        if(url){ const col=(ext==='xml')?'xml_url':'foto_url'; const patch={}; patch[col]=url; await SB.from('notas_fiscais').update(patch).eq('id',nfId); }
+      }
+    }catch(e){ alert('NF salva, mas o anexo não subiu: '+((e&&e.message)||e)); }
   }
   closeNF(); carregarNF();
   try{ if(document.getElementById('v-almox').classList.contains('active')) carregarAlmox(); }catch(_){}
