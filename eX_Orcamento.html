@@ -2266,7 +2266,7 @@ async function initNova(){
     if(!session){ host.innerHTML='<div style="padding:30px">Entre com login.</div>'; cloudMsg('faça login'); return; }
     CLOUD=true; cloudMsg('nuvem ✓');
     try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
-    await carregarClientes(); await carregarObjetos(); renderNova(host);
+    await carregarClientes(); await carregarObjetos(); await carregarModelos(); renderNova(host);
   }catch(e){ console.error('initNova',e); host.innerHTML='<div style="padding:30px;color:var(--red)">Erro: '+esc(e.message||e)+'</div>'; }
 }
 let NOVA_OBJS=[];
@@ -2308,7 +2308,9 @@ function renderNovaCond(){
   const cond=_lg('nuCond'), go=_lg('nuGo'), desc=_lg('nuLoteDesc');
   if(NOVA_LOTE){
     if(desc)desc.textContent='Monta um orçamento base e gera uma proposta por unidade.';
-    if(cond)cond.innerHTML='<div style="display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--tx3);background:var(--pri-bg);border-radius:9px;padding:10px 12px;margin-bottom:16px"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">info</span>Na próxima tela você monta o base e adiciona as unidades (lojas) do lote.</div>';
+    if(cond)cond.innerHTML='<label style="font-size:11px;font-weight:700;color:var(--tx3)">Modelo (escopo padrão) <span style="font-weight:500;text-transform:none;color:var(--tx3)">— opcional</span></label>'
+      +'<select id="nuModelo" style="width:100%;margin:5px 0 14px;padding:9px 11px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— sem modelo (escopo em branco) —</option>'+((MODELOS_LIST||[]).map(function(m){return '<option value="'+m.id+'">'+esc(m.nome)+'</option>';}).join(''))+'</select>'
+      +'<div style="display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--tx3);background:var(--pri-bg);border-radius:9px;padding:10px 12px;margin-bottom:16px"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">info</span>Com um modelo, a base já nasce com o escopo pronto. Na próxima tela você adiciona as lojas.</div>';
     if(go)go.innerHTML='<span class="material-symbols-rounded">apartment</span>Criar lote e montar base';
   } else {
     if(desc)desc.textContent='Desligado: uma loja, um orçamento.';
@@ -2325,13 +2327,15 @@ function novaObjHint(v){ const el=_lg('nuObjHint'); if(!el)return; v=(v||'').tri
   if(!m.length){ el.innerHTML='<span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">new_releases</span> Nome novo — nenhum parecido encontrado.'; el.style.color='var(--tx3)'; return; }
   const exato=m.some(o=>o.toLowerCase()===v);
   el.style.color='var(--pri)'; el.innerHTML='<span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">search</span> '+m.length+' parecido(s)'+(exato?' · <b>já existe igual</b>':'')+': '+m.slice(0,3).map(o=>'“'+esc(o)+'”').join(', ')+(m.length>3?'…':''); }
-async function createLoteAndBase(nome,contr){
+async function createLoteAndBase(nome,contr,modeloId){
   const ins=await SB.from('orcamento_lotes').insert({empresa_id:EMPRESA_ID,nome,contratante_id:contr,status:'rascunho'}).select('id').limit(1);
   if(ins.error) throw ins.error; const lid=ins.data[0].id; let baseOpp=null;
   const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:contr,objeto:'[BASE] '+nome,lote_id:lid}).select('id').limit(1);
   if(!opp.error && opp.data[0]){ baseOpp=opp.data[0].id; const numero=await proximoNumero();
     const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
-    await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:baseOpp,lote_id:lid,herda_base:false,numero,status:'rascunho',cliente_contratante:contrNome,dados:{_base:true,contratanteId:contr,cliNome:contrNome,numero},total:0});
+    let dados={_base:true,contratanteId:contr,cliNome:contrNome,numero};
+    if(modeloId){ const mm=(MODELOS_LIST||[]).find(function(x){return x.id===modeloId;}); if(mm&&mm.dados){ (MODELO_KEYS||[]).forEach(function(k){ if(mm.dados[k]!==undefined){ try{ dados[k]=JSON.parse(JSON.stringify(mm.dados[k])); }catch(_){ dados[k]=mm.dados[k]; } } }); } }   // 1.3: nasce com o escopo do modelo
+    await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:baseOpp,lote_id:lid,herda_base:false,numero,status:'rascunho',cliente_contratante:contrNome,dados:dados,total:0});
     await SB.from('orcamento_lotes').update({base_oportunidade_id:baseOpp}).eq('id',lid);
   }
   return {lid, baseOpp};
@@ -2350,7 +2354,8 @@ async function criarNova(){
     const contrNome=(contratantes().find(c=>c.id===contr)||{}).nome||'';
     if(NOVA_LOTE){
       const nome=obj||(contrNome+' — lote');
-      const r=await createLoteAndBase(nome,contr);
+      const modeloId=(_lg('nuModelo')&&_lg('nuModelo').value)||null;
+      const r=await createLoteAndBase(nome,contr,modeloId);
       location.href='eX_Orcamento.html?opp='+(r.baseOpp||'')+'&lote='+r.lid;   // abre direto o BASE (mestra)
     } else {
       const lojaId=_lg('nuLoja').value||null; if(!lojaId){ alert('Escolha a loja.'); if(go)go.disabled=false; return; }
