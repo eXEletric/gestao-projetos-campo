@@ -1092,9 +1092,9 @@ async function initOrc(){
       // UNIDADE DE LOTE: lê o macro da base pra ratear a fatia da logística (só exibição)
       if(S_LOTE_ID && !(S&&S._base)){ try{
         const {data:bd}=await SB.from('orcamentos').select('dados').eq('lote_id',S_LOTE_ID).is('deleted_at',null);
-        let m=null,n=0,baseSo=null; (bd||[]).forEach(r=>{ const d=r.dados||{}; if(d._base){ m=d.macro; baseSo=d.soTotal; } else { n++; } });
+        let m=null,n=0,baseDados=null; (bd||[]).forEach(r=>{ const d=r.dados||{}; if(d._base){ m=d.macro; baseDados=d; } else { n++; } });
         if(m && m.rateio && num(m._total)>0){ const nn=num(m._nun)||n||1; _RATEIO_UNIT=num(m._total)/nn; }
-        if(baseSo && typeof baseSo==='object'){ S.soTotal=Object.assign({servicos:false,equip:false,despesas:false,materiais:false}, baseSo); }   // "só o total" segue a mestra (fonte única)
+        if(baseDados) herdarCamposDaMestra(baseDados);   // motor de governança: puxa os campos que a mestra governa (salvo os marcados como próprios)
       }catch(e){ console.error('rateio lote',e); } }
       refreshClienteLive();
     } else { cloudMsg('modo local (sem login)'); }
@@ -1979,6 +1979,7 @@ function toggleSoTotal(blk){
   renderBlk(BLKS.find(b=>b.key===blk)); recalc();
   // lote: a mestra controla o "só o total"; grava na nuvem pras unidades acompanharem ao abrir
   if(S&&S._base&&S_LOTE_ID&&OPP&&CLOUD){ try{ pushOrc(); cloudMsg('detalhe propagado às unidades ✓'); }catch(_){}}
+  else if(S&&!S._base&&S_LOTE_ID){ marcarCampoProprio('soTotal'); }   // unidade editou o detalhe → vira "campo próprio" (para de seguir a mestra)
 }
 function updBloco(blk,val){
   S.blocoTotal[blk]=val;
@@ -2538,6 +2539,37 @@ async function loteResetUnit(id){ if(!confirm('Resetar esta unidade ao escopo ba
   const r=await SB.from('orcamentos').update({herda_base:true,dados,total:BASE_TOTAL}).eq('id',id); if(r.error){alert('Erro: '+r.error.message);return;}
   await loteReload();
 }
+/* ===== Motor de governança do lote por campo (1.1) =====
+   A MESTRA governa certos campos; a unidade SEGUE, a menos que tenha S._ov[campo]=true (editou aquele campo).
+   Puxa na abertura · edição marca "campo próprio" · reset limpa e volta a seguir. */
+var GOV_CAMPOS=['soTotal'];   // 2.1 acrescenta 'efetivo','pessoasFn'
+function herdarCamposDaMestra(baseDados){
+  if(!S._ov||typeof S._ov!=='object') S._ov={};
+  GOV_CAMPOS.forEach(function(k){
+    if(S._ov[k]) return;                         // campo próprio → não puxa da mestra
+    if(baseDados[k]===undefined) return;
+    try{ S[k]=JSON.parse(JSON.stringify(baseDados[k])); }catch(_){ S[k]=baseDados[k]; }
+  });
+}
+function marcarCampoProprio(campo){               // unidade editou um campo governado → para de seguir a mestra
+  if(!S||S._base||!S_LOTE_ID) return;
+  if(!S._ov||typeof S._ov!=='object') S._ov={};
+  if(!S._ov[campo]){ S._ov[campo]=true; save(); if(OPP&&CLOUD){ try{ pushOrc(); }catch(_){}} try{ cloudMsg('campo próprio nesta loja ✓'); }catch(_){} }
+}
+function ovCampos(o){ var v=o&&o.dados&&o.dados._ov; return v?Object.keys(v).filter(function(k){return v[k];}):[]; }
+function ovBadgeHtml(o){ var ov=ovCampos(o); if(!ov.length) return '';
+  return '<div style="margin-top:3px"><span title="campos próprios: '+ov.join(', ')+' — a mestra não sobrescreve" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;border-radius:20px;padding:2px 7px;color:#b0701a;background:#fbf1e0"><span class="material-symbols-rounded" style="font-size:11px">tune</span>campo próprio</span></div>'; }
+async function loteResetCampo(unitId,campo){
+  if(!confirm('Resetar o campo “'+campo+'” desta loja e voltar a seguir a mestra?\nA edição desse campo nesta loja será perdida.')) return;
+  try{
+    const u=(LOTE_UNITS||[]).find(o=>o.id===unitId); if(!u)return;
+    const d=(u.dados&&typeof u.dados==='object')?JSON.parse(JSON.stringify(u.dados)):{};
+    if(d._ov) delete d._ov[campo];
+    if(BASE_DADOS && BASE_DADOS[campo]!==undefined){ try{ d[campo]=JSON.parse(JSON.stringify(BASE_DADOS[campo])); }catch(_){ d[campo]=BASE_DADOS[campo]; } }
+    const r=await SB.from('orcamentos').update({dados:d}).eq('id',unitId); if(r.error){alert('Erro: '+r.error.message);return;}
+    await loteReload();
+  }catch(e){ console.error('resetCampo',e); alert('Erro: '+(e.message||e)); }
+}
 async function lotePropagar(){
   const alvo=(LOTE_UNITS||[]).filter(u=>u.herda_base).length;
   const editadas=(LOTE_UNITS||[]).length-alvo;
@@ -2631,7 +2663,7 @@ function renderLoteBaseHtml(){
   const contrNome=S.cliNome||'';
   const rows=LOTE_UNITS.length?LOTE_UNITS.map(o=>{ const st=unitStatus(o); return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line2)">
       <div style="display:flex;align-items:center;gap:9px;min-width:0"><span style="width:28px;height:28px;border-radius:7px;background:var(--pri-bg);color:var(--pri);display:grid;place-items:center;flex:none"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">store</span></span>
-        <div style="min-width:0"><div style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.cliente_final||o.numero||'unidade')}</div><div style="font-size:11px;color:var(--tx3)">${esc(o.numero||'')}</div></div></div>
+        <div style="min-width:0"><div style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(o.cliente_final||o.numero||'unidade')}</div><div style="font-size:11px;color:var(--tx3)">${esc(o.numero||'')}</div>${ovBadgeHtml(o)}</div></div>
       <span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;border-radius:20px;padding:3px 8px;color:${st.c};background:${st.bg};white-space:nowrap"><span class="material-symbols-rounded" style="font-size:12px">${st.i}</span>${st.t}</span>
       <div style="display:flex;align-items:center;gap:7px;justify-self:end">
         ${(()=>{ const p=num(o._prazo); const many=(lotePrazoResumo().n>1); const isMax=many&&p&&Math.abs(p-lotePrazoResumo().max.p)<1e-9; const isMin=many&&p&&Math.abs(p-lotePrazoResumo().min.p)<1e-9&&!isMax; const col=isMax?'var(--pers,#b0701a)':(isMin?'var(--herd,#159a6a)':'var(--tx3)'); return `<span style="font-size:12px;color:${col};font-weight:${(isMax||isMin)?'700':'400'};min-width:78px;text-align:right;font-variant-numeric:tabular-nums" title="prazo desta unidade"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">schedule</span> ${p?fmtPrazo(p):'—'}${isMax?' ↑':''}${isMin?' ↓':''}</span>`; })()}
