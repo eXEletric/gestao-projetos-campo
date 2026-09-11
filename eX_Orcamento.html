@@ -2887,6 +2887,8 @@ function verComoClienteLote(){
   const subUn = modo==='estimativa' ? baseT*qtd : LOTE_UNITS.reduce((a,o)=>a+num(o.total),0); const macroT=macroTotal(); const comboOn=comboActive(); const total=subUn+(comboOn?0:macroT);   // combinado soberano: macro é custo interno, não soma no preço do cliente
   const cc=!!S.colCustoProposta; const sumCusto=(modo==='estimativa')?0:LOTE_UNITS.reduce((a,o)=>a+num(o._custo),0); const sumLucro=subUn-sumCusto;   // 2.3: custo/lucro por loja na proposta (chave)
   const cnpjC=contratanteCnpj();   // 2.4
+  const prazoSoma=(LOTE_UNITS||[]).reduce((a,o)=>a+num(o._prazo),0);   // prazo total = soma das unidades (o todo)
+  const prazoExib=num(S.prazoLoteDias)>0?(_d1(num(S.prazoLoteDias))+' dias corridos'):(prazoSoma>0?_d1(prazoSoma)+' dias corridos (soma das unidades)':'');
   const prz=lotePrazoResumo(); const nUn = modo==='estimativa'?qtd:LOTE_UNITS.length; const vMed=nUn?subUn/nUn:0;
   const rota=loteRota();
   const linhas = modo==='estimativa'
@@ -2919,7 +2921,7 @@ function verComoClienteLote(){
         <div style="flex:1;min-width:150px;background:#f6f3fd;border:1px solid #eee;border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;text-transform:uppercase;color:#7d7799;font-weight:700">Valor médio / unidade</div><div style="font-weight:800;font-size:16px;font-variant-numeric:tabular-nums">${fmt(vMed)}</div></div>
         <div style="flex:1;min-width:150px;background:#f6f3fd;border:1px solid #eee;border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;text-transform:uppercase;color:#7d7799;font-weight:700">Prazo por unidade</div><div style="font-weight:800;font-size:16px">${prz.n?(Math.abs(prz.min.p-prz.max.p)<1e-9?fmtPrazo(prz.min.p):fmtPrazo(prz.min.p)+' a '+fmtPrazo(prz.max.p)):'—'}</div></div>
       </div>
-      ${(S.prazoLoteDias||S.dataInicio||S.dataFim)?`<div style="margin-top:14px;border-top:1px solid #eee;padding-top:12px;font-size:13px;color:#333"><b style="color:#3f2c8f">Prazo de execução:</b> ${S.prazoLoteDias?esc(S.prazoLoteDias)+' dias corridos':''}${(S.dataInicio||S.dataFim)?` · ${S.dataInicio?esc(S.dataInicio.split('-').reverse().join('/')):'—'} a ${S.dataFim?esc(S.dataFim.split('-').reverse().join('/')):'—'}`:''}</div>`:''}
+      ${(prazoExib||S.dataInicio||S.dataFim)?`<div style="margin-top:14px;border-top:1px solid #eee;padding-top:12px;font-size:13px;color:#333"><b style="color:#3f2c8f">Prazo de execução:</b> ${prazoExib}${(S.dataInicio||S.dataFim)?` · ${S.dataInicio?esc(S.dataInicio.split('-').reverse().join('/')):'—'} a ${S.dataFim?esc(S.dataFim.split('-').reverse().join('/')):'—'}`:''}</div>`:''}
       ${condComerciais()?`<div style="margin-top:16px;border-top:1px solid #eee;padding-top:12px"><div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7d7799;margin-bottom:5px">Condições comerciais</div><div style="font-size:12.5px;color:#555;white-space:pre-wrap">${esc(condComerciais())}</div></div>`:''}
       <div style="margin-top:16px;font-size:11.5px;color:#7d7799;border-top:1px solid #eee;padding-top:12px">Proposta com validade de 15 dias. eX Eletric — Automação &amp; Elétrica.</div>
     </div></div>`;
