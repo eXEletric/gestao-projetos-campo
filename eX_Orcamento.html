@@ -2773,7 +2773,13 @@ function renderLoteBaseHtml(){
       </div>
     </div>`;
   const colHeader=`<div style="display:flex;align-items:center;gap:7px;justify-content:flex-end;padding:7px 14px 5px;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);border-bottom:1px solid var(--line)"><span style="min-width:82px;text-align:right">prazo</span><span style="min-width:120px;text-align:right">custo · lucro</span><span style="min-width:92px;text-align:right">valor fechado</span><span style="width:112px">&nbsp;</span></div>`;
-  const corpo = modelosStrip + viewTog + (LOTE_VIEW==='pad' ? resumoEscopoHtml() : (custoChaveStrip + (modo==='estimativa' ? estimBlock : (addBar+(LOTE_UNITS.length?colHeader:'')+rows)))) + condStrip;
+  const mm=S.matModo||'qtd'; const mmb=function(v,l){return `<button class="lbtn" style="${mm===v?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setMatModo('${v}')">${l}</button>`;};
+  const matModoStrip=`<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line2);flex-wrap:wrap;font-size:12px;color:var(--tx3)">
+      <span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">inventory_2</span>
+      <b style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)">Material no documento</b>
+      ${mmb('qtd','Quantidade')}${mmb('val','Valor')}${mmb('lista','Lista + total')}${mmb('tot','Só total')}
+    </div>`;
+  const corpo = modelosStrip + viewTog + (LOTE_VIEW==='pad' ? resumoEscopoHtml() : (custoChaveStrip + matModoStrip + (modo==='estimativa' ? estimBlock : (addBar+(LOTE_UNITS.length?colHeader:'')+rows)))) + condStrip;
   return `<style>.lbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:5px 9px;font:600 12px inherit;cursor:pointer;text-decoration:none}.lbtn:hover{border-color:var(--pri);color:var(--pri)}.lbtn.danger{color:var(--red)}.lbtn.danger:hover{border-color:var(--red)}.lbtn .material-symbols-rounded{font-size:15px}.loteKpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:14px}@media(max-width:640px){.loteKpis{grid-template-columns:1fr 1fr}}.lbres:hover{background:var(--pri-bg,#f0ecfb)}</style>
   <div style="background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden">
     <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8;flex-wrap:wrap">
@@ -2889,6 +2895,17 @@ function verComoClienteLote(){
   const cnpjC=contratanteCnpj();   // 2.4
   const prazoSoma=(LOTE_UNITS||[]).reduce((a,o)=>a+num(o._prazo),0);   // prazo total = soma das unidades (o todo)
   const prazoExib=num(S.prazoLoteDias)>0?(_d1(num(S.prazoLoteDias))+' dias corridos'):(prazoSoma>0?_d1(prazoSoma)+' dias corridos (soma das unidades)':'');
+  var _secTit='font-size:12px;font-weight:800;color:#3f2c8f;text-transform:uppercase;letter-spacing:.04em;margin:16px 0 6px';
+  var _th='padding:7px 12px;font-size:10px;text-transform:uppercase;color:#7d7799';
+  var _td='padding:6px 12px;border-bottom:1px solid #f0f0f4';
+  var _tf='padding:9px 12px;font-weight:800;color:#3f2c8f;border-top:2px solid #ddd';
+  const escopoSec=`<div><div style="${_secTit}">Escopo consolidado — serviços</div><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;${_th}">Serviço</th><th style="text-align:right;${_th}">Σ do lote</th><th style="${_th}">Und</th></tr></thead><tbody>${loteServSoma().map(function(r){return '<tr><td style="'+_td+'">'+esc(r.desc)+'</td><td style="'+_td+';text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+_d1(r.qtd)+'</td><td style="'+_td+';color:#7d7799">'+esc(r.und)+'</td></tr>';}).join('')}</tbody></table></div>`;
+  const matModo=S.matModo||'qtd'; const matRows=loteMatSoma(); const matTotalDoc=matRows.reduce(function(a,r){return a+r.custo;},0);
+  var matSec='<div style="'+_secTit+'">Materiais aplicados</div>';
+  if(matModo==='tot'){ matSec+='<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 12px;border:1px solid #e3ddf6;border-radius:10px;background:#f6f3fd"><span style="font-weight:700;color:#3f2c8f">Material aplicado no lote</span><span style="font-size:18px;font-weight:800;color:#3f2c8f;font-variant-numeric:tabular-nums">'+fmt(matTotalDoc)+'</span></div>'; }
+  else if(matModo==='lista'){ matSec+='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Material aplicado</th><th style="'+_th+'">Und</th></tr></thead><tbody>'+matRows.map(function(r){return '<tr><td style="'+_td+'">'+esc(r.desc)+'</td><td style="'+_td+';color:#7d7799">'+esc(r.und)+'</td></tr>';}).join('')+'</tbody><tfoot><tr><td style="'+_tf+'">Total de material</td><td style="'+_tf+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(matTotalDoc)+'</td></tr></tfoot></table>'; }
+  else if(matModo==='val'){ matSec+='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Material</th><th style="text-align:right;'+_th+'">Qtd</th><th style="'+_th+'">Und</th><th style="text-align:right;'+_th+'">Valor</th></tr></thead><tbody>'+matRows.map(function(r){return '<tr><td style="'+_td+'">'+esc(r.desc)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+_d1(r.qtd)+'</td><td style="'+_td+';color:#7d7799">'+esc(r.und)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+(r.custo>0?fmt(r.custo):'—')+'</td></tr>';}).join('')+'</tbody><tfoot><tr><td style="'+_tf+'">Total de material</td><td></td><td></td><td style="'+_tf+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(matTotalDoc)+'</td></tr></tfoot></table>'; }
+  else { matSec+='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Material</th><th style="text-align:right;'+_th+'">Qtd</th><th style="'+_th+'">Und</th></tr></thead><tbody>'+matRows.map(function(r){return '<tr><td style="'+_td+'">'+esc(r.desc)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+_d1(r.qtd)+'</td><td style="'+_td+';color:#7d7799">'+esc(r.und)+'</td></tr>';}).join('')+'</tbody></table>'; }
   const prz=lotePrazoResumo(); const nUn = modo==='estimativa'?qtd:LOTE_UNITS.length; const vMed=nUn?subUn/nUn:0;
   const rota=loteRota();
   const linhas = modo==='estimativa'
@@ -2917,6 +2934,8 @@ function verComoClienteLote(){
           ${comboOn?'':`<tr><td style="padding:10px 14px;color:#7d7799">Mobilização &amp; logística (lote)</td><td></td>${cc?'<td></td><td></td>':''}<td style="padding:10px 14px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(macroT)}</td></tr>`}
           <tr style="border-top:2px solid #ddd"><td style="padding:12px 14px;font-weight:800;color:#3f2c8f">Total da proposta</td><td></td>${cc?'<td></td><td></td>':''}<td style="padding:12px 14px;text-align:right;font-weight:800;font-size:17px;color:#3f2c8f;font-variant-numeric:tabular-nums">${fmt(total)}</td></tr>
         </tfoot></table></div>
+      ${escopoSec}
+      ${matSec}
       <div style="display:flex;gap:12px;flex-wrap:wrap;padding-top:6px">
         <div style="flex:1;min-width:150px;background:#f6f3fd;border:1px solid #eee;border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;text-transform:uppercase;color:#7d7799;font-weight:700">Valor médio / unidade</div><div style="font-weight:800;font-size:16px;font-variant-numeric:tabular-nums">${fmt(vMed)}</div></div>
         <div style="flex:1;min-width:150px;background:#f6f3fd;border:1px solid #eee;border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;text-transform:uppercase;color:#7d7799;font-weight:700">Prazo por unidade</div><div style="font-weight:800;font-size:16px">${prz.n?(Math.abs(prz.min.p-prz.max.p)<1e-9?fmtPrazo(prz.min.p):fmtPrazo(prz.min.p)+' a '+fmtPrazo(prz.max.p)):'—'}</div></div>
@@ -2963,6 +2982,9 @@ function setMacroKm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=Ma
 function clearMacroKm(){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=0; _macroSave(); }
 function setColCustoProposta(v){ S.colCustoProposta=!!v; save(); if(OPP&&CLOUD){ try{ pushOrc(); }catch(_){}} try{ injectLoteBasePanel(); }catch(_){} }
 function setLoteView(v){ LOTE_VIEW=(v==='pad')?'pad':'lev'; try{ injectLoteBasePanel(); }catch(_){} }   // 2.2
+function loteServSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.servicos)||[]).forEach(function(r){var k=r.desc||'—'; if(!m[k])m[k]={desc:k,und:r.und||'',qtd:0}; m[k].qtd+=num(r.qtd);});}); return Object.keys(m).map(function(k){return m[k];}).filter(function(r){return r.qtd>0;}).sort(function(a,b){return a.desc.localeCompare(b.desc,'pt');}); }
+function loteMatSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.materiais)||[]).forEach(function(r){var k=r.desc||'—'; if(!m[k])m[k]={desc:k,und:r.und||'',qtd:0,custo:0}; m[k].qtd+=num(r.qtd); m[k].custo+=num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt));});}); return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.custo-a.custo;}); }
+function setMatModo(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ injectLoteBasePanel(); }catch(_){} }   // 7: modo de exibir material no documento
 var DEFAULT_COND='Pagamento: 50% do total do lote na entrada; saldo pago a cada loja concluída, mediante emissão da nota fiscal — unidade a unidade.';   // 2.4
 function condComerciais(){ return (S.condComerciais!==undefined && S.condComerciais!==null)?S.condComerciais:DEFAULT_COND; }
 function setCond(k,v){ S[k]=v; save(); if(OPP&&CLOUD){ try{ saveOrc(); }catch(_){}} }
