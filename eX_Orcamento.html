@@ -1597,7 +1597,30 @@ const BLKS=[
   {key:"materiais",titulo:"Materiais empregados",icon:"inventory_2",obs:true,mat:true,custo:true,soCad:false,sing:"material"}
 ];
 
+function renderLoteMatBlock(cfg){   // master: bloco "Materiais empregados" = material somado das 16 lojas (só leitura) + seletor de modo
+  const mm=S.matModo||'qtd';
+  const rows=loteMatSoma(); const tot=rows.reduce(function(a,r){return a+r.custo;},0);
+  const mmb=function(v,l){return '<button class="lbtn" style="'+(mm===v?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'" onclick="setMatModo(\''+v+'\')">'+l+'</button>';};
+  const sel='<div class="modosw" style="gap:6px;flex-wrap:wrap">'+mmb('qtd','Quantidade')+mmb('val','Valor')+mmb('lista','Lista + total')+mmb('tot','Só total')+'</div>';
+  const bOn=blocoAtivo('materiais'); var inner='';
+  if(!rows.length){ inner='<div style="color:var(--tx3);padding:14px;font-size:13px">Sem material nas lojas ainda — o material é carregado loja a loja.</div>'; }
+  else if(mm==='tot'){ inner='<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 14px"><span style="font-weight:700;color:var(--pri)">Material do lote (somado)</span><b style="font-size:18px;color:var(--pri);font-variant-numeric:tabular-nums">'+fmt(tot)+'</b></div>'; }
+  else { var head,brs,csp;
+    if(mm==='lista'){ head='<th>#</th><th>Material aplicado</th><th>Und</th>'; csp=2; brs=rows.map(function(r,i){return '<tr><td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td><td>'+esc(r.und)+'</td></tr>';}).join(''); }
+    else if(mm==='val'){ head='<th>#</th><th>Material</th><th class="r">Qtd</th><th>Und</th><th class="r">Valor</th>'; csp=4; brs=rows.map(function(r,i){return '<tr><td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td><td class="r">'+_d1(r.qtd)+'</td><td>'+esc(r.und)+'</td><td class="r money">'+(r.custo>0?fmt(r.custo):'—')+'</td></tr>';}).join(''); }
+    else { head='<th>#</th><th>Material</th><th class="r">Σ qtd</th><th>Und</th>'; csp=3; brs=rows.map(function(r,i){return '<tr><td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td><td class="r">'+_d1(r.qtd)+'</td><td>'+esc(r.und)+'</td></tr>';}).join(''); }
+    inner='<div class="scroll"><table class="tbl"><thead><tr>'+head+'</tr></thead><tbody>'+brs+'</tbody><tfoot><tr class="ftot"><td class="ftl" colspan="'+csp+'">Material do lote (somado)</td><td class="r"><b>'+fmt(tot)+'</b></td></tr></tfoot></table></div>';
+  }
+  document.getElementById('blk_materiais').innerHTML=
+    '<div class="blkhead">'
+    +'<button class="blktog '+(bOn?'on':'off')+'" onclick="toggleBloco(\'materiais\')" title="'+(bOn?'Bloco incluído na proposta — clique para remover':'Bloco removido — clique para incluir')+'"><span class="blktog-sw"><i></i></span><span class="blktog-lb">'+(bOn?'na proposta':'removido')+'</span></button>'
+    +'<span class="ic"><span class="material-symbols-rounded">'+cfg.icon+'</span></span>'
+    +'<h2>'+cfg.titulo+'</h2>'+sel+'</div>'
+    +'<div class="sotot-hint noprint" style="margin:0"><span class="material-symbols-rounded">info</span><span>Somatório das 16 lojas (só leitura). O material é editado loja a loja.</span></div>'
+    +inner;
+}
 function renderBlk(cfg){
+  if(isLoteBase() && cfg.key==='materiais'){ renderLoteMatBlock(cfg); return; }
   const modo=S.modos[cfg.key]||'unit';
   const soT = !!(S.soTotal && S.soTotal[cfg.key]);   // "só o total" = apresentação (agrupar na proposta), independente do modo
   (S[cfg.key]||[]).forEach(r=>r._blk=cfg.key);   // marca o bloco (p/ margem base certa)
@@ -2648,7 +2671,7 @@ async function loteDesmembrar(){
     alert('Lote desmembrado. As unidades agora são propostas avulsas.'); location.href='eX_Orcamento.html';
   }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
 function loteRerender(){ if(_lg('loteBasePanel')) injectLoteBasePanel(); else if(_lg('loteView')) renderLote(_lg('loteView')); }
-async function loteReload(){ await loadLote(); if(isLoteBase()){ try{ await computeLoteUnitsAbr(); computeLoteUnitsPrazo(); }catch(e){} } loteRerender(); if(isLoteBase()){ try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} } }
+async function loteReload(){ await loadLote(); if(isLoteBase()){ try{ await computeLoteUnitsAbr(); computeLoteUnitsPrazo(); }catch(e){} } loteRerender(); if(isLoteBase()){ try{ renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(e){} } }
 function loteAbrHtml(){ const r=loteAbrResumo(); const pct=n=>num(n)>0?('+'+num(n)+'%'):'0%';
   if(!r.n) return `<span class="fo-autopill nocity"><span class="material-symbols-rounded">wrong_location</span>Sem lojas ainda</span><span class="fo-autotag">adicione as lojas no painel acima ↑</span>`;
   const faixa=r.min===r.max?pct(r.mediaCusto):(pct(r.min)+' a '+pct(r.max));
@@ -2659,7 +2682,7 @@ function loteAbrHtml(){ const r=loteAbrResumo(); const pct=n=>num(n)>0?('+'+num(
 
 /* ===== base DO LOTE = MESTRA: painel "Rede & lojas do lote" dentro do orçamento base ===== */
 function isLoteBase(){ return !!(S && S._base && S_LOTE_ID); }
-async function initLoteBasePanel(){ LOTE_ID=S_LOTE_ID; if(!S.macro||typeof S.macro!=='object')S.macro={estruturas:[]}; try{ await loadLote(); await carregarEstruturas(); await computeLoteUnitsAbr(); computeLoteUnitsPrazo(); }catch(e){ console.error(e); } injectLoteBasePanel(); relabelRede(); try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} try{ marcarRevisaoBase(); }catch(e){} }
+async function initLoteBasePanel(){ LOTE_ID=S_LOTE_ID; if(!S.macro||typeof S.macro!=='object')S.macro={estruturas:[]}; try{ await loadLote(); await carregarEstruturas(); await computeLoteUnitsAbr(); computeLoteUnitsPrazo(); }catch(e){ console.error(e); } injectLoteBasePanel(); relabelRede(); try{ renderBlk(BLKS.find(b=>b.key==='servicos')); }catch(e){} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(e){} try{ marcarRevisaoBase(); }catch(e){} }
 function injectLoteBasePanel(){
   let p=_lg('loteBasePanel');
   if(!p){ p=document.createElement('div'); p.id='loteBasePanel'; p.style.cssText='margin:0 0 16px';
@@ -2765,7 +2788,7 @@ function renderLoteBaseHtml(){
       <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.04em;margin-right:4px">Ver</span>
       <button class="lbtn" style="${LOTE_VIEW==='pad'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteView('pad')"><span class="material-symbols-rounded" style="${LOTE_VIEW==='pad'?'color:#fff':''}">summarize</span>Escopo somado</button>
       <button class="lbtn" style="${LOTE_VIEW==='lev'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteView('lev')"><span class="material-symbols-rounded" style="${LOTE_VIEW==='lev'?'color:#fff':''}">store</span>Por loja</button>
-      <span style="margin-left:auto;font-size:11.5px;color:var(--tx3)">${LOTE_VIEW==='pad'?'serviços + materiais somados do lote':'cada loja: valor · custo · lucro'}</span>
+      <span style="margin-left:auto;font-size:11.5px;color:var(--tx3)">${LOTE_VIEW==='pad'?'serviços somados do lote':'cada loja: valor · custo · lucro'}</span>
     </div>`;
   const cnpjC=contratanteCnpj();
   const condStrip=`<div style="padding:12px 14px;border-top:1px solid var(--line2);background:#faf9ff">
@@ -2782,13 +2805,7 @@ function renderLoteBaseHtml(){
       </div>
     </div>`;
   const colHeader=`<div style="display:flex;align-items:center;gap:7px;justify-content:flex-end;padding:7px 14px 5px;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);border-bottom:1px solid var(--line)"><span style="min-width:82px;text-align:right">prazo</span><span style="min-width:120px;text-align:right">custo · lucro</span><span style="min-width:92px;text-align:right">valor fechado</span><span style="width:112px">&nbsp;</span></div>`;
-  const mm=S.matModo||'qtd'; const mmb=function(v,l){return `<button class="lbtn" style="${mm===v?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setMatModo('${v}')">${l}</button>`;};
-  const matModoStrip=`<div style="display:flex;align-items:center;gap:8px;padding:8px 14px;border-bottom:1px solid var(--line2);flex-wrap:wrap;font-size:12px;color:var(--tx3)">
-      <span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">inventory_2</span>
-      <b style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)">Material no documento</b>
-      ${mmb('qtd','Quantidade')}${mmb('val','Valor')}${mmb('lista','Lista + total')}${mmb('tot','Só total')}
-    </div>`;
-  const corpo = modelosStrip + viewTog + (LOTE_VIEW==='pad' ? (matModoStrip + resumoEscopoHtml()) : (custoChaveStrip + (modo==='estimativa' ? estimBlock : (addBar+(LOTE_UNITS.length?colHeader:'')+rows)))) + condStrip;
+  const corpo = modelosStrip + viewTog + (LOTE_VIEW==='pad' ? resumoEscopoHtml() : (custoChaveStrip + (modo==='estimativa' ? estimBlock : (addBar+(LOTE_UNITS.length?colHeader:'')+rows)))) + condStrip;
   return `<style>.lbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:5px 9px;font:600 12px inherit;cursor:pointer;text-decoration:none}.lbtn:hover{border-color:var(--pri);color:var(--pri)}.lbtn.danger{color:var(--red)}.lbtn.danger:hover{border-color:var(--red)}.lbtn .material-symbols-rounded{font-size:15px}.loteKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:14px}@media(max-width:640px){.loteKpis{grid-template-columns:1fr 1fr}}.lbres:hover{background:var(--pri-bg,#f0ecfb)}</style>
   <div style="background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden">
     <div style="display:flex;align-items:center;gap:9px;padding:11px 14px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8;flex-wrap:wrap">
@@ -2993,7 +3010,7 @@ function setColCustoProposta(v){ S.colCustoProposta=!!v; save(); if(OPP&&CLOUD){
 function setLoteView(v){ LOTE_VIEW=(v==='pad')?'pad':'lev'; try{ injectLoteBasePanel(); }catch(_){} }   // 2.2
 function loteServSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.servicos)||[]).forEach(function(r){var k=r.desc||'—'; if(!m[k])m[k]={desc:k,und:r.und||'',qtd:0}; m[k].qtd+=num(r.qtd);});}); return Object.keys(m).map(function(k){return m[k];}).filter(function(r){return r.qtd>0;}).sort(function(a,b){return a.desc.localeCompare(b.desc,'pt');}); }
 function loteMatSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.materiais)||[]).forEach(function(r){var k=r.desc||'—'; if(!m[k])m[k]={desc:k,und:r.und||'',qtd:0,custo:0}; m[k].qtd+=num(r.qtd); m[k].custo+=num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt));});}); return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.custo-a.custo;}); }
-function setMatModo(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ injectLoteBasePanel(); }catch(_){} }   // 7: modo de exibir material no documento
+function setMatModo(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} }   // 7: modo de exibir material (bloco Materiais empregados do master + documento do cliente)
 var DEFAULT_COND='Pagamento: 50% do total do lote na entrada; saldo pago a cada loja concluída, mediante emissão da nota fiscal — unidade a unidade.';   // 2.4
 function condComerciais(){ return (S.condComerciais!==undefined && S.condComerciais!==null)?S.condComerciais:DEFAULT_COND; }
 function setCond(k,v){ S[k]=v; save(); if(OPP&&CLOUD){ try{ saveOrc(); }catch(_){}} }
@@ -3005,23 +3022,13 @@ function resumoEscopoHtml(){
   const map={};
   (LOTE_UNITS||[]).forEach(function(u){ const sv=(u.dados&&u.dados.servicos)||[]; sv.forEach(function(r){ const k=r.desc||'—'; if(!map[k])map[k]={desc:k,und:r.und||'',qtd:0}; map[k].qtd+=num(r.qtd); }); });
   const rows=Object.keys(map).map(function(k){return map[k];}).filter(function(r){return r.qtd>0;});
-  var mmode=S.matModo||'qtd'; var mrows=loteMatSoma(); var mtot=mrows.reduce(function(a,r){return a+r.custo;},0);
-  var _mth='padding:6px 14px;font-size:10px;text-transform:uppercase;color:var(--tx3);border-bottom:1px solid var(--line2)'; var _mtd='padding:8px 14px;border-bottom:1px solid var(--line)';
-  var matSec='<div style="padding:14px 14px 4px;color:var(--pri);font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em">Materiais do lote (somados)</div>';
-  if(!mrows.length){ matSec+='<div style="padding:6px 14px 12px;color:var(--tx3);font-size:12px">Sem material ainda.</div>'; }
-  else if(mmode==='tot'){ matSec+='<div style="display:flex;justify-content:space-between;align-items:center;padding:8px 14px 12px"><span style="color:var(--tx3);font-size:12px">material aplicado no lote</span><b style="color:var(--pri);font-size:16px;font-variant-numeric:tabular-nums">'+fmt(mtot)+'</b></div>'; }
-  else if(mmode==='lista'){ matSec+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="text-align:left;'+_mth+'">Material aplicado</th><th style="text-align:left;'+_mth+'">und</th></tr></thead><tbody>'+mrows.map(function(r){return '<tr><td style="'+_mtd+'">'+esc(r.desc)+'</td><td style="'+_mtd+';color:var(--tx3)">'+esc(r.und)+'</td></tr>';}).join('')+'</tbody><tfoot><tr><td style="padding:10px 14px;font-weight:800;color:var(--pri);border-top:2px solid var(--line2)">Total de material</td><td style="padding:10px 14px;text-align:right;font-weight:800;color:var(--pri);border-top:2px solid var(--line2);font-variant-numeric:tabular-nums">'+fmt(mtot)+'</td></tr></tfoot></table>'; }
-  else if(mmode==='val'){ matSec+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="text-align:left;'+_mth+'">Material</th><th style="text-align:right;'+_mth+'">qtd</th><th style="text-align:left;'+_mth+'">und</th><th style="text-align:right;'+_mth+'">valor</th></tr></thead><tbody>'+mrows.map(function(r){return '<tr><td style="'+_mtd+'">'+esc(r.desc)+'</td><td style="'+_mtd+';text-align:right;font-variant-numeric:tabular-nums">'+_d1(r.qtd)+'</td><td style="'+_mtd+';color:var(--tx3)">'+esc(r.und)+'</td><td style="'+_mtd+';text-align:right;font-variant-numeric:tabular-nums">'+(r.custo>0?fmt(r.custo):'—')+'</td></tr>';}).join('')+'</tbody><tfoot><tr><td style="padding:10px 14px;font-weight:800;color:var(--pri);border-top:2px solid var(--line2)">Total</td><td></td><td></td><td style="padding:10px 14px;text-align:right;font-weight:800;color:var(--pri);border-top:2px solid var(--line2);font-variant-numeric:tabular-nums">'+fmt(mtot)+'</td></tr></tfoot></table>'; }
-  else { matSec+='<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="text-align:left;'+_mth+'">Material</th><th style="text-align:right;'+_mth+'">Σ qtd</th><th style="text-align:left;'+_mth+'">und</th></tr></thead><tbody>'+mrows.map(function(r){return '<tr><td style="'+_mtd+'">'+esc(r.desc)+'</td><td style="'+_mtd+';text-align:right;font-variant-numeric:tabular-nums;font-weight:700">'+_d1(r.qtd)+'</td><td style="'+_mtd+';color:var(--tx3)">'+esc(r.und)+'</td></tr>';}).join('')+'</tbody></table>'; }
   const body=rows.length?rows.map(function(r){ return '<tr><td style="padding:9px 14px;border-bottom:1px solid var(--line)">'+esc(r.desc)+'</td><td style="padding:9px 14px;border-bottom:1px solid var(--line);text-align:right;font-variant-numeric:tabular-nums;font-weight:700">'+_d1(r.qtd)+'</td><td style="padding:9px 14px;border-bottom:1px solid var(--line);color:var(--tx3)">'+esc(r.und)+'</td></tr>'; }).join(''):'<tr><td colspan="3" style="padding:16px 14px;color:var(--tx3)">Sem serviços no escopo ainda.</td></tr>';
   return '<div style="padding:4px 0">'
     +'<div style="padding:10px 14px;color:var(--tx3);font-size:12px">Somatória do escopo em '+((LOTE_UNITS||[]).length)+' loja(s) — tudo que será feito no lote.</div>'
     +'<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr>'
     +'<th style="text-align:left;padding:0 14px 7px;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);border-bottom:1px solid var(--line2)">Serviço (escopo)</th>'
     +'<th style="text-align:right;padding:0 14px 7px;font-size:10px;text-transform:uppercase;color:var(--tx3);border-bottom:1px solid var(--line2)">Σ do lote</th>'
-    +'<th style="text-align:left;padding:0 14px 7px;font-size:10px;text-transform:uppercase;color:var(--tx3);border-bottom:1px solid var(--line2)">und</th></tr></thead><tbody>'+body+'</tbody></table>'
-    +'<div style="height:1px;background:var(--line2);margin:14px 0"></div>'
-    +matSec+'</div>';
+    +'<th style="text-align:left;padding:0 14px 7px;font-size:10px;text-transform:uppercase;color:var(--tx3);border-bottom:1px solid var(--line2)">und</th></tr></thead><tbody>'+body+'</tbody></table></div>';
 }
 function setMacroRateio(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rateio=!!v; S.macro._total=macroTotal(); S.macro._nun=(LOTE_UNITS||[]).length; save(); try{ pushOrc(); }catch(_){}; injectLoteBasePanel(); }
 function setLoteModo(m){ m=(m==='estimativa'?'estimativa':'detalhado');
