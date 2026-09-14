@@ -615,7 +615,10 @@ async function sincronizarOportunidade(){
     if(!OPP_VINC){ const {data}=await SB.from('oportunidades').select('contratante_id,contemplado_id').eq('id',OPP).maybeSingle(); if(!data) return; OPP_VINC={c:data.contratante_id||null,l:data.contemplado_id||null}; }
     const upd={};
     if(S.contratanteId && S.contratanteId!==OPP_VINC.c) upd.contratante_id=S.contratanteId;
-    if(S.lojaId && S.lojaId!==OPP_VINC.l && !S._base) upd.contemplado_id=S.lojaId;   // mestra de lote não tem loja própria
+    // loja: só em proposta avulsa. Mestra não tem loja; unidade de lote tem a loja definida pelo próprio lote
+    // (14/09: há unidades Copeland com loja divergente entre oportunidade e proposta — não propagar até conferir)
+    const emLote=(typeof S_LOTE_ID!=='undefined'&&S_LOTE_ID);
+    if(S.lojaId && S.lojaId!==OPP_VINC.l && !S._base && !emLote) upd.contemplado_id=S.lojaId;
     if(!Object.keys(upd).length) return;
     const {error}=await SB.from('oportunidades').update(upd).eq('id',OPP);
     if(error) throw error;
