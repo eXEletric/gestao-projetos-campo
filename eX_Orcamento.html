@@ -1613,8 +1613,28 @@ function matBodyHtml(rows, tot, mm, totLabel){   // corpo de uma tabela de mater
   else if(mm==='val'){ head='<th>#</th><th>Material</th><th class="r">Qtd</th><th>Und</th><th class="r">Valor</th>'; csp=4; brs=rows.map(function(r,i){return '<tr><td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td><td class="r">'+_d1(r.qtd)+'</td><td>'+esc(r.und)+'</td><td class="r money">'+(r.custo>0?fmt(r.custo):'—')+'</td></tr>';}).join(''); }
   else { head='<th>#</th><th>Material</th><th class="r">Qtd</th><th>Und</th>'; csp=3; brs=rows.map(function(r,i){return '<tr><td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td><td class="r">'+_d1(r.qtd)+'</td><td>'+esc(r.und)+'</td></tr>';}).join(''); }
   return '<div class="scroll"><table class="tbl"><thead><tr>'+head+'</tr></thead><tbody>'+brs+'</tbody><tfoot><tr class="ftot"><td class="ftl" colspan="'+csp+'">'+totLabel+'</td><td class="r"><b>'+fmt(tot)+'</b></td></tr></tfoot></table></div>'; }
-function setMatView(which,v){ if(which==='soma')S.matSomaOn=!!v; else if(which==='media')S.matMediaOn=!!v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} }
+function setMatView(which,v){ if(which==='soma')S.matSomaOn=!!v; else if(which==='base')S.matBaseOn=!!v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} }
 function matViewSw(which,on){ return '<button class="blktog '+(on?'on':'off')+'" onclick="setMatView(\''+which+'\','+(on?'false':'true')+')" title="'+(on?'aparece na proposta do cliente — clique para tirar':'fora da proposta — clique para incluir')+'"><span class="blktog-sw"><i></i></span><span class="blktog-lb">'+(on?'na proposta':'fora')+'</span></button>'; }
+function baseMatTableHtml(cfg){   // Base do lote = modelo EDITÁVEL de material (igual ao serviço) sobre S.materiais
+  var rows=S.materiais||[]; rows.forEach(function(r){r._blk='materiais';});
+  var cols='<th>#</th><th>Material</th><th>Marca</th><th class="pint">Valor</th><th class="r pint">Custo un.</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem</th><th class="r pint">Custo total</th><th class="r">Total</th><th class="pint"></th>';
+  var body=rows.map(function(r,i){ var preco=linePreco(r), custo=lineCusto(r); var propria=!(r.margem===''||r.margem==null);
+    var cc = r.usarBase? '<span class="lockval"><span class="material-symbols-rounded">lock</span>'+fmt(r.custoBase)+'</span>' : '<span class="rsw"><span class="rsl">R$</span><input class="cin num" value="'+moneyVal(r.custoAlt)+'" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,\'materiais\',\''+r.id+'\',\'custoAlt\')" oninput="upd(\'materiais\',\''+r.id+'\',\'custoAlt\',this.value)"></span>';
+    return '<tr data-id="'+r.id+'">'
+      +'<td class="idx">'+(i+1)+'</td>'
+      +'<td class="svc">'+(r.catId?'<div class="svcnm">'+esc(r.desc)+'</div>':'<input class="cin" value="'+esc(r.desc)+'" oninput="upd(\'materiais\',\''+r.id+'\',\'desc\',this.value)">')+'<div class="bs"><span class="material-symbols-rounded">database</span>base: <b>'+fmt(r.custoBase)+'</b>'+(r.catId?'':' · avulso')+'</div></td>'
+      +'<td><input class="cin mc" value="'+esc(r.marca||'')+'" oninput="upd(\'materiais\',\''+r.id+'\',\'marca\',this.value)"></td>'
+      +'<td class="pint"><div class="swcell"><div class="ex-switch '+(r.usarBase?'on':'')+'" onclick="togBase(\'materiais\',\''+r.id+'\')" title="usar base ⇄ alterar"><span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span></div><span class="swlbl '+(r.usarBase?'on':'off')+'">'+(r.usarBase?'usar base':'alterar')+'</span></div></td>'
+      +'<td class="r money pint">'+cc+'</td>'
+      +'<td class="r">'+qtdCellHtml(cfg,r)+'</td>'
+      +'<td>'+undSelect('materiais',r.id,r.und,r)+'</td>'
+      +'<td class="r pint"><div class="mkwrap '+(propria?'own':'base')+'"><input class="cin num mk" value="'+esc(r.margem)+'" placeholder="'+num(baseMg('materiais'))+'" inputmode="decimal" onblur="mgBlur(this,\'materiais\',\''+r.id+'\')" oninput="upd(\'materiais\',\''+r.id+'\',\'margem\',this.value)"><span class="mkpc">%</span></div></td>'
+      +'<td class="r money pint">'+fmt(custo)+'</td>'
+      +'<td class="r money"><b>'+fmt(preco)+'</b></td>'
+      +'<td class="pint rowact"><button class="swp" onclick="dupRow(\'materiais\',\''+r.id+'\')" title="Duplicar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick(\'materiais\',\''+r.id+'\')" title="Trocar por outro do cadastro"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow(\'materiais\',\''+r.id+'\')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>'
+      +'</tr>'; }).join('');
+  if(!rows.length) body='<tr><td colspan="11" style="color:var(--tx3);padding:10px 6px;font-size:12px">Modelo vazio — adicione material abaixo (é o modelo do lote, igual ao serviço).</td></tr>';
+  return '<div class="scroll"><table class="tbl"><thead><tr>'+cols+'</tr></thead><tbody>'+body+'</tbody></table></div>'; }
 function renderLoteMatBlock(cfg){   // master: "Materiais empregados" = Soma das lojas + Base do lote (média), cada uma com chave "na proposta"
   const rows=loteMatSoma(); const tot=rows.reduce(function(a,r){return a+r.custo;},0);
   const N=(LOTE_UNITS||[]).length||1; const bOn=blocoAtivo('materiais');
@@ -1643,21 +1663,21 @@ function renderLoteMatBlock(cfg){   // master: "Materiais empregados" = Soma das
     return;
   }
   // ---- LEITURA: duas seções (Soma + Base/média), cada uma com chave "na proposta" ----
-  var somaOn=S.matSomaOn!==false, mediaOn=!!S.matMediaOn;
+  var somaOn=S.matSomaOn!==false, baseOn=!!S.matBaseOn;
   var _shd='display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--surf2);border-bottom:1px solid var(--line);flex-wrap:wrap';
   var secSoma='<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:10px">'
-    +'<div style="'+_shd+'">'+matViewSw('soma',somaOn)+'<b style="font-size:12.5px">Soma das lojas</b><span style="font-size:11px;color:var(--tx3)">total das '+N+' lojas</span></div>'
+    +'<div style="'+_shd+'">'+matViewSw('soma',somaOn)+'<b style="font-size:12.5px">Soma das lojas</b><span style="font-size:11px;color:var(--tx3)">total das '+N+' lojas · agregado (leitura)</span></div>'
     + matBodyHtml(rows, tot, mm, 'Material do lote (somado)')
     +'<div class="addrow" style="padding:8px 12px"><button onclick="loteMatEditOn()" style="border-style:solid;border-color:var(--amber);color:var(--amber)"><span class="material-symbols-rounded">edit</span>Editar a custo</button><button onclick="loteAddPick(\'materiais\')" style="margin-left:8px;border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">hub</span>Adicionar ao lote</button></div>'
     +'</div>';
-  var medRows=rows.map(function(r){return {desc:r.desc,und:r.und,qtd:r.qtd/N,custo:r.custo/N};}); var medTot=tot/N;
-  var secMedia='<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden">'
-    +'<div style="'+_shd+'">'+matViewSw('media',mediaOn)+'<b style="font-size:12.5px">Base do lote</b><span style="font-size:11px;color:var(--tx3)">média por loja (total ÷ '+N+')</span></div>'
-    + matBodyHtml(medRows, medTot, mm, 'Material médio por loja')
+  var secBase='<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden">'
+    +'<div style="'+_shd+'">'+matViewSw('base',baseOn)+'<b style="font-size:12.5px">Base do lote</b><span style="font-size:11px;color:var(--tx3)">modelo editável — igual ao serviço</span></div>'
+    + baseMatTableHtml(cfg)
+    +'<div class="addrow" style="padding:8px 12px"><button onclick="openPick(\'materiais\')" style="border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">add</span>Adicionar material</button></div>'
     +'</div>';
   el.innerHTML=head
-    +'<div class="sotot-hint noprint" style="margin:0 0 10px"><span class="material-symbols-rounded">info</span><span>Duas visões, cada uma com sua chave <b>na proposta</b>: <b>Soma</b> (total das lojas) e <b>Base</b> (média por loja). Mostre as duas, só uma, ou nenhuma. Editar preço/qtd é na Soma ("Editar a custo").</span></div>'
-    + secSoma + secMedia;
+    +'<div class="sotot-hint noprint" style="margin:0 0 10px"><span class="material-symbols-rounded">info</span><span>Duas visões, cada uma com sua chave <b>na proposta</b>: <b>Soma das lojas</b> (agregado das 16, leitura) e <b>Base do lote</b> (modelo <b>editável</b>, igual ao serviço). Mostre as duas, só uma, ou nenhuma.</span></div>'
+    + secSoma + secBase;
 }
 function loteMatEditOn(){ LME_ON=true; renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }
 function countLmeChanges(){ var n=0;   // alterações não aplicadas no editor de material a custo
@@ -3062,7 +3082,7 @@ function verComoClienteLote(){
     return s; };
   var matSec='';
   if(S.matSomaOn!==false) matSec+=_matSecDoc(loteMatSoma(),'Materiais aplicados (total do lote)');
-  if(!!S.matMediaOn) matSec+=_matSecDoc(loteMatSoma().map(function(r){return {desc:r.desc,und:r.und,qtd:r.qtd/_mN,custo:r.custo/_mN};}),'Material médio por loja');
+  if(!!S.matBaseOn){ var _brows=(S.materiais||[]).map(function(r){return {desc:r.desc,und:r.und,qtd:num(r.qtd),custo:num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt))};}); matSec+=_matSecDoc(_brows,'Material (modelo do lote)'); }
   const prz=lotePrazoResumo(); const nUn = modo==='estimativa'?qtd:LOTE_UNITS.length; const vMed=nUn?subUn/nUn:0;
   const rota=loteRota();
   const linhas = modo==='estimativa'
