@@ -1579,6 +1579,8 @@ function save(){ try{localStorage.setItem(STORE,JSON.stringify(S));}catch(e){}  
   else { saveOrc(); }                            // proposta nova (ou modo local): salva sozinha
 }
 function salvarManual(){
+  var _lmp=(typeof lmePendente==='function')?lmePendente():0;
+  if(_lmp>0 && !confirm('⚠️ FALTA APLICAR NO EDITOR DE MATERIAL\n\nVocê tem '+_lmp+' alteração(ões) de material que NÃO foram aplicadas nas lojas.\nO "Salvar" NÃO guarda edição de material — só o botão "Aplicar nas lojas" (dentro do editor) guarda.\n\nContinuar o Salvar assim mesmo? (essas alterações de material NÃO serão salvas)')) return;
   if(!(OPP&&CLOUD)){ DIRTY=false; renderSaveState(); return; }
   clearTimeout(_saveT); try{recalc();}catch(e){} pushOrc();
   DIRTY=false; _lastSaved=_hhmm(); renderSaveState();
@@ -1649,12 +1651,15 @@ function renderLoteMatBlock(cfg){   // master: "Materiais empregados" = somado d
     +inner;
 }
 function loteMatEditOn(){ LME_ON=true; renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }
-function loteMatEditCancel(){
-  var n=0;
+function countLmeChanges(){ var n=0;   // alterações não aplicadas no editor de material a custo
   (document.querySelectorAll('#blk_materiais tr[data-lme]')||[]).forEach(function(tr){ var i=tr.getAttribute('data-lme');
     var qi=document.getElementById('lme_q_'+i), ci=document.getElementById('lme_c_'+i); if(!qi||!ci)return;
     if(Math.abs(num(qi.value)-num(qi.getAttribute('data-bq')))>0.05)n++;
     if(Math.abs(num(ci.value)-num(ci.getAttribute('data-bu')))>0.005)n++; });
+  return n; }
+function lmePendente(){ return (typeof LME_ON!=='undefined' && LME_ON) ? countLmeChanges() : 0; }
+function loteMatEditCancel(){
+  var n=countLmeChanges();
   if(n && !confirm('Descartar '+n+' alteração(ões) NÃO aplicada(s)?\n\nElas não ficam salvas — só ficam guardadas ao clicar "Aplicar nas lojas".')) return;
   LME_ON=false; renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }
 function lmeRefresh(){ var n=0, tot=0;
