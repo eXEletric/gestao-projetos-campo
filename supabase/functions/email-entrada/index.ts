@@ -17,7 +17,12 @@ async function assinaturaValida(raw: string, h: Headers, segredo: string): Promi
   const id = h.get("svix-id"), ts = h.get("svix-timestamp"), sig = h.get("svix-signature");
   if (!id || !ts || !sig) return false;
   if (Math.abs(Date.now() / 1000 - Number(ts)) > 300) return false;          // 5 min de tolerância
-  const chave = decodeBase64(segredo.replace(/^whsec_/, ""));
+  // o segredo vem como "whsec_<base64>"; aceita também base64url e espaços colados por engano (14/09: base64 estrito quebrava com "_")
+  let b64 = segredo.trim().replace(/^whsec_/, "").replace(/\s+/g, "").replace(/-/g, "+").replace(/_/g, "/");
+  while (b64.length % 4) b64 += "=";
+  let chave: Uint8Array;
+  try { chave = decodeBase64(b64); }
+  catch (_) { console.error("RESEND_WEBHOOK_SECRET em formato inesperado", { tamanho: segredo.length, prefixo_whsec: segredo.trim().startsWith("whsec_") }); return false; }
   const k = await crypto.subtle.importKey("raw", chave, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
   const mac = encodeBase64(new Uint8Array(await crypto.subtle.sign("HMAC", k, new TextEncoder().encode(`${id}.${ts}.${raw}`))));
   return sig.split(" ").some((p) => {
@@ -43,7 +48,11 @@ function parteNova(t: string): string {
   const linhas = String(t || "").split(/\r?\n/), out: string[] = [];
   for (const l of linhas) {
     const s = l.trim();
-    if (/(escreveu|wrote):$/i.test(s) || /^(em .+ escreveu:|on .+ wrote:|-{2,}\s*(mensagem original|original message|forwarded message|mensagem encaminhada)|de:\s|from:\s|enviado:\s|sent:\s|_{5,})/i.test(s)) break;
+    if (/(escreveu|wrote):$/i.test(s) || /^(em .+ escreveu:|on .+ wrote:|-{2,}\s*(mensagem original|original message|forwarded message|mensagem encaminhada)|de:\s|from:\s|enviado:\s|sent:\s|_{5,})/i.test(s)) {
+      // o Gmail quebra "Em seg., 14 de set. … <email>" / "escreveu:" em 2 linhas: tira também a linha "Em …" que ficou
+      if (/^(escreveu|wrote):?$|^[^\s]*>\s*(escreveu|wrote):$/i.test(s)) { while (out.length && !out[out.length - 1].trim()) out.pop(); if (out.length && /^\s*(em|on)\s.+/i.test(out[out.length - 1])) out.pop(); }
+      break;
+    }
     if (s.startsWith(">")) continue;
     out.push(l);
   }
@@ -75,7 +84,11 @@ Deno.serve(async (req) => {
   const segredo = Deno.env.get("RESEND_WEBHOOK_SECRET"), key = Deno.env.get("RESEND_API_KEY");
   if (!segredo || !key) return fail("webhook ainda não configurado", 503);
   const raw = await req.text();
-  if (!(await assinaturaValida(raw, req.headers, segredo))) return fail("assinatura inválida", 401);
+  if (!(await assinaturaValida(raw, req.headers, segredo))) {
+    // diagnóstico sem expor o segredo: ajuda a saber se o valor salvo no Supabase está errado
+    console.warn("webhook: assinatura não confere", { tem_svix: !!req.headers.get("svix-signature"), segredo_tamanho: segredo.trim().length, segredo_prefixo_whsec: segredo.trim().startsWith("whsec_") });
+    return fail("assinatura inválida", 401);
+  }
   const ev = JSON.parse(raw); const d = ev?.data || {};
   const db = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!);
 
@@ -98,9 +111,14 @@ Deno.serve(async (req) => {
   const { data: ja } = await db.from("email_mensagens").select("id").eq("provedor_id", d.email_id).eq("direcao", "entrada").maybeSingle();
   if (ja) return ok({ repetido: true });                                   // webhook reenviado: não duplica
 
-  const H = { Authorization: `Bearer ${key}` };
+  // ler e-mail recebido exige chave com permissão de leitura (a de envio é "Sending access"): usa RESEND_READ_KEY se existir
+  const H = { Authorization: `Bearer ${Deno.env.get("RESEND_READ_KEY") || key}` };
   const fr = await fetch(`https://api.resend.com/emails/receiving/${d.email_id}`, { headers: H });
-  if (!fr.ok) return fail("não consegui ler o e-mail recebido", 502);      // Resend tenta de novo
+  if (!fr.ok) {
+    const corpo = (await fr.text().catch(() => "")).slice(0, 300);
+    console.error("webhook: não consegui ler o e-mail recebido no Resend", { status: fr.status, usa_chave_leitura: !!Deno.env.get("RESEND_READ_KEY"), resposta: corpo });
+    return fail("não consegui ler o e-mail recebido", 502);                // Resend tenta de novo
+  }
   const e = await fr.json();
   const hs = (e.headers || null) as Record<string, unknown> | null;
   const inReplyTo = cabecalho(hs, "in-reply-to"), refs = cabecalho(hs, "references");
