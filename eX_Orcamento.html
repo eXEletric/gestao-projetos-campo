@@ -1457,7 +1457,7 @@ function orcVazio(){
   };
 }
 // linha do modelo base+margem (custo). margem '' = herda a margem base
-function rowSvc(desc,qtd,und,custo,margem,catId,marca){return{id:uid(),desc,qtd,und,custoBase:custo,usarBase:true,custoAlt:custo,margem:(margem===undefined||margem===null?'':margem),catId:catId||null,marca:marca||""};}
+function rowSvc(desc,qtd,und,custo,margem,catId,marca){return{id:uid(),lid:uid(),desc,qtd,und,custoBase:custo,usarBase:true,custoAlt:custo,margem:(margem===undefined||margem===null?'':margem),catId:catId||null,marca:marca||""};}   // lid = id de linhagem estável (base ↔ lojas)
 
 // cadastro-semente de serviços (custo predeterminado por serviço)
 const CAD={ servicos:[
@@ -1732,7 +1732,7 @@ function renderBlk(cfg){
     ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: a edição é igual (você vê e ajusta cada item), mas na <b>impressão / envio da proposta</b> os itens saem como <b>“incluso”</b> e o valor aparece só no <b>total agrupado</b> do bloco — não item por item.</span></div>`:''}
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="blkfoot">${blkMargemCtrl(cfg)}${soT?'':`<span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(blkSubDisp(cfg.key))}</b></span>`}</div>
-    <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button></div>
+    <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button>${(isLoteBase()&&(cfg.key==='servicos'||cfg.key==='materiais'))?`<button onclick="loteAddPick('${cfg.key}')" title="Adiciona este item na base e em TODAS as lojas do lote (com confirmação)" style="margin-left:8px;border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">hub</span>Adicionar ao lote</button>`:''}</div>
     ${cfg.key==='servicos'?('<div id="svcTopPanels"><div id="fatoresPanel">'+fatoresObraHtml()+'</div><div id="maoObraPanel">'+efetivoHtml()+'</div></div><div class="clientonly" id="equipePrint">'+equipePrintHtml()+'</div>'):''}
     ${obsHtml}`;
 }
@@ -2085,6 +2085,27 @@ function qtdCellHtml(cfg,r){
 const UND_DFLT={servicos:'SERV',equip:'DIA',despesas:'UND',materiais:'PÇ'};
 let PICK_TARGET=null;   // id da linha sendo TROCADA (null = adicionar nova)
 let _PICK_BLK=null;
+var PICK_LOTE=false;   // ② governança por item: modo "adicionar ao lote" (fan-out pras lojas)
+function loteAddPick(blk){ PICK_LOTE=true; openPick(blk); }
+async function loteAddLinha(blk,line){
+  const units=LOTE_UNITS||[]; const n=units.length;
+  if(!n){ cloudMsg('sem lojas no lote — ficou só na base'); return; }
+  if(!confirm('Adicionar "'+(line.desc||'novo item')+'" às '+n+' loja(s) do lote?\n\nEntra em todas (qtd '+num(line.qtd)+') — você ajusta por loja depois.\nLojas que já tiverem esse item não recebem duplicata.')) return;   // recusou: fica só na base
+  try{
+    await SB.from('orcamentos').update({dados:S}).eq('id',ORC_ID);   // persiste a base com a linha nova
+    let add=0;
+    for(const u of units){
+      const d=(u.dados&&typeof u.dados==='object')?JSON.parse(JSON.stringify(u.dados)):{};
+      d[blk]=Array.isArray(d[blk])?d[blk]:[];
+      if(line.lid && d[blk].some(x=>x&&x.lid===line.lid)) continue;   // aditivo: não duplica a mesma linhagem
+      const cp=JSON.parse(JSON.stringify(line)); cp.id=uid();   // id próprio na loja; lid compartilhado
+      d[blk].push(cp); add++;
+      await SB.from('orcamentos').update({dados:d}).eq('id',u.id);
+    }
+    await loteReload();
+    cloudMsg('item aplicado em '+add+' loja(s)');
+  }catch(e){ console.error(e); alert('Erro ao aplicar no lote: '+(e.message||e)); }
+}
 function openPick(blk,target){
   PICK_TARGET = target || null; _PICK_BLK=blk;
   const cfg=BLKS.find(b=>b.key===blk), cad=catFor(blk);
@@ -2148,7 +2169,7 @@ function pickDelete(blk,catId){
   } else done();
 }
 function pickFilter(q){ const el=document.getElementById('pkList'); if(el&&_PICK_BLK) el.innerHTML=pickListHTML(_PICK_BLK,q); }
-function closePick(){ document.getElementById('pickModal').classList.remove('open'); PICK_TARGET=null; _PICK_BLK=null; }
+function closePick(){ document.getElementById('pickModal').classList.remove('open'); PICK_TARGET=null; _PICK_BLK=null; PICK_LOTE=false; }
 function pickCad(blk,cid){
   const c=catFor(blk).find(x=>x.id===cid); if(!c)return;
   if(PICK_TARGET){                                   // TROCA: substitui o item na mesma posição, mantendo a qtd
@@ -2161,7 +2182,9 @@ function pickCad(blk,cid){
   const nr=rowSvc(c.nome,1,c.und||UND_DFLT[blk],c.custo,(c.margem===undefined?'':c.margem),c.id,c.marca||'');
   if(c.composicao)nr.composicao=JSON.parse(JSON.stringify(c.composicao));   // HERDA a receita do cadastro
   S[blk].push(nr);
+  const _fan=PICK_LOTE&&isLoteBase();
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
+  if(_fan) loteAddLinha(blk,nr);
 }
 function addAvulso(blk){
   PICK_TARGET=null;
