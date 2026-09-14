@@ -1620,14 +1620,14 @@ function renderLoteMatBlock(cfg){   // master: bloco "Materiais empregados" = ma
     '<div class="blkhead">'
     +'<button class="blktog '+(bOn?'on':'off')+'" onclick="toggleBloco(\'materiais\')" title="'+(bOn?'Bloco incluído na proposta — clique para remover':'Bloco removido — clique para incluir')+'"><span class="blktog-sw"><i></i></span><span class="blktog-lb">'+(bOn?'na proposta':'removido')+'</span></button>'
     +'<span class="ic"><span class="material-symbols-rounded">'+cfg.icon+'</span></span>'
-    +'<h2>'+cfg.titulo+'</h2>'+sel+'</div>'
-    +'<div class="sotot-hint noprint" style="margin:0"><span class="material-symbols-rounded">info</span><span>Somatório das 16 lojas (só leitura). O material é editado loja a loja.</span></div>'
+    +'<h2>'+cfg.titulo+'</h2>'+matOrigToggle()+sel+'</div>'
+    +'<div class="sotot-hint noprint" style="margin:0"><span class="material-symbols-rounded">info</span><span><b>Somado das 16 lojas</b> (só leitura) — é o levantamento. Pra editar item a item, mude pra <b>Base do lote</b>. Pra incluir um item em todas, use <b>Adicionar ao lote</b>.</span></div>'
+    +'<div class="addrow"><button onclick="loteAddPick(\'materiais\')" style="border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">hub</span>Adicionar ao lote</button></div>'
     +inner;
 }
 function renderBlk(cfg){
-  // INTERINO 14/09: destravar edição de material no master — usa o bloco editável normal (como o serviço).
-  // O somatório read-only (renderLoteMatBlock) volta no build da governança de listas com a junta.
-  // if(isLoteBase() && cfg.key==='materiais'){ renderLoteMatBlock(cfg); return; }
+  // Governança de listas: material no master tem 2 ORIGENS — "Somado das lojas" (herdar, só leitura, o levantamento) × "Base do lote" (editável). Padrão: herdar.
+  if(isLoteBase() && cfg.key==='materiais' && (S.matOrigem||'herdar')==='herdar'){ renderLoteMatBlock(cfg); return; }
   const modo=S.modos[cfg.key]||'unit';
   const soT = !!(S.soTotal && S.soTotal[cfg.key]);   // "só o total" = apresentação (agrupar na proposta), independente do modo
   (S[cfg.key]||[]).forEach(r=>r._blk=cfg.key);   // marca o bloco (p/ margem base certa)
@@ -1726,6 +1726,7 @@ function renderBlk(cfg){
       <span class="ic"><span class="material-symbols-rounded">${cfg.icon}</span></span>
       <h2>${cfg.titulo}</h2>
       <div class="modosw">
+        ${(isLoteBase()&&cfg.key==='materiais')?matOrigToggle():''}
         <button class="chip ${soT?'on':''}" onclick="toggleSoTotal('${cfg.key}')" title="Na proposta do cliente: agrupar os itens num total só (esconde item a item). Não muda o cálculo."><span class="material-symbols-rounded">${soT?'visibility_off':'format_list_bulleted'}</span>${soT?'Só o total':'Detalhado'}</button>
       </div>
     </div>
@@ -3041,6 +3042,12 @@ function setLoteView(v){ LOTE_VIEW=(v==='pad')?'pad':'lev'; try{ injectLoteBaseP
 function loteServSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.servicos)||[]).forEach(function(r){var k=r.desc||'—'; if(!m[k])m[k]={desc:k,und:r.und||'',qtd:0}; m[k].qtd+=num(r.qtd);});}); return Object.keys(m).map(function(k){return m[k];}).filter(function(r){return r.qtd>0;}).sort(function(a,b){return a.desc.localeCompare(b.desc,'pt');}); }
 function loteMatSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.materiais)||[]).forEach(function(r){var k=r.desc||'—'; if(!m[k])m[k]={desc:k,und:r.und||'',qtd:0,custo:0}; m[k].qtd+=num(r.qtd); m[k].custo+=num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt));});}); return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.custo-a.custo;}); }
 function setMatModo(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} }   // 7: modo de exibir material (bloco Materiais empregados do master + documento do cliente)
+function setMatOrigem(v){ S.matOrigem=(v==='base')?'base':'herdar'; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} }   // origem do bloco de material no master: somado das lojas (herdar) × base editável
+function matOrigToggle(){ var o=S.matOrigem||'herdar';
+  return '<div class="modosw" style="gap:6px;flex-wrap:wrap">'
+    +'<button class="lbtn" style="'+(o==='herdar'?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'" onclick="setMatOrigem(\'herdar\')" title="material somado das 16 lojas (o levantamento) — só leitura"><span class="material-symbols-rounded" style="'+(o==='herdar'?'color:#fff':'')+'">hub</span>Somado das lojas</button>'
+    +'<button class="lbtn" style="'+(o==='base'?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'" onclick="setMatOrigem(\'base\')" title="base editável do lote (modelo) — adiciona/edita item"><span class="material-symbols-rounded" style="'+(o==='base'?'color:#fff':'')+'">edit</span>Base do lote</button>'
+    +'</div>'; }
 var DEFAULT_COND='Pagamento: 50% do total do lote na entrada; saldo pago a cada loja concluída, mediante emissão da nota fiscal — unidade a unidade.';   // 2.4
 function condComerciais(){ return (S.condComerciais!==undefined && S.condComerciais!==null)?S.condComerciais:DEFAULT_COND; }
 function setCond(k,v){ S[k]=v; save(); if(OPP&&CLOUD){ try{ saveOrc(); }catch(_){}} }
