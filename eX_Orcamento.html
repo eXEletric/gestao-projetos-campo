@@ -2878,11 +2878,17 @@ function renderLoteBaseHtml(){
       <span style="font-size:11.5px;color:var(--tx3);margin-left:auto">salve o escopo atual como modelo, ou traga um modelo pra base</span>
     </div>`;
   const ccp=!!S.colCustoProposta;
-  const custoChaveStrip=`<div style="display:flex;align-items:center;gap:9px;padding:8px 14px;border-bottom:1px solid var(--line2);flex-wrap:wrap;font-size:12px;color:var(--tx3)">
+  const custoChaveStrip= ccp
+    ? `<div style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-bottom:1px solid var(--line2);flex-wrap:wrap;font-size:12px;background:#fdeceb;border-left:4px solid var(--red)">
+      <span class="material-symbols-rounded" style="font-size:19px;color:var(--red)">warning</span>
+      <b style="font-size:11.5px;color:var(--red)">ATENÇÃO: seu CUSTO e LUCRO vão APARECER na proposta do cliente</b>
+      <button class="lbtn" style="margin-left:auto;background:var(--red);color:#fff;border-color:var(--red)" onclick="setColCustoProposta(false)"><span class="material-symbols-rounded" style="color:#fff">visibility_off</span>Esconder do cliente</button>
+    </div>`
+    : `<div style="display:flex;align-items:center;gap:9px;padding:8px 14px;border-bottom:1px solid var(--line2);flex-wrap:wrap;font-size:12px;color:var(--tx3)">
       <span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">payments</span>
       <b style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)">Custo / lucro por loja</b>
-      <span>sempre na lista abaixo (interno)</span>
-      <button class="lbtn" style="margin-left:auto;${ccp?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setColCustoProposta(${ccp?'false':'true'})"><span class="material-symbols-rounded" style="${ccp?'color:#fff':''}">${ccp?'visibility':'visibility_off'}</span>${ccp?'aparece na proposta do cliente':'só interno (não vai pro cliente)'}</button>
+      <span>sempre na lista abaixo (interno) · não vai pro cliente</span>
+      <button class="lbtn" style="margin-left:auto" onclick="setColCustoProposta(true)"><span class="material-symbols-rounded">visibility</span>Mostrar na proposta do cliente</button>
     </div>`;
   const viewTog=`<div style="display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line2);align-items:center;flex-wrap:wrap">
       <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.04em;margin-right:4px">Ver</span>
@@ -3042,7 +3048,7 @@ function verComoClienteLote(){
     <div style="height:6px;background:linear-gradient(90deg,#533ab7,#3f2c8f)"></div>
     <div style="padding:30px 34px">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:20px;border-bottom:1px solid #eee;padding-bottom:18px">
-        <div style="display:flex;align-items:center;gap:11px"><div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(155deg,#533ab7,#3f2c8f);color:#fff;display:grid;place-items:center;font-family:Sora;font-weight:800">eX</div><div><div style="font-weight:800;font-size:17px">eX Eletric</div><div style="font-size:11.5px;color:#7d7799">Automação &amp; Elétrica</div>${empresaCnpj()?`<div style="font-size:11px;color:#7d7799">CNPJ ${esc(empresaCnpj())}</div>`:''}</div></div>
+        <div style="display:flex;align-items:center;gap:11px">${(typeof EMP!=='undefined'&&EMP&&EMP.logo)?`<img src="${esc(EMP.logo)}" alt="logo" style="width:44px;height:44px;border-radius:10px;object-fit:contain;background:#fff">`:`<div style="width:40px;height:40px;border-radius:10px;background:linear-gradient(155deg,#533ab7,#3f2c8f);color:#fff;display:grid;place-items:center;font-weight:800">eX</div>`}<div><div style="font-weight:800;font-size:17px">${esc((typeof EMP!=='undefined'&&EMP&&EMP.nome)||'eX Eletric')}</div><div style="font-size:11.5px;color:#7d7799">Automação &amp; Elétrica</div>${empresaCnpj()?`<div style="font-size:11px;color:#7d7799">CNPJ ${esc(empresaCnpj())}</div>`:''}</div></div>
         <div style="text-align:right;font-size:12px;color:#7d7799"><div style="font-weight:700;color:#3f2c8f;font-size:14px">${esc(S.numero||'ORÇ')}</div>Proposta em lote · ${nUn} unidades</div>
       </div>
       <div style="padding:18px 0;border-bottom:1px solid #eee">
@@ -3068,10 +3074,15 @@ function verComoClienteLote(){
       </div>
       ${(prazoExib||S.dataInicio||S.dataFim)?`<div style="margin-top:14px;border-top:1px solid #eee;padding-top:12px;font-size:13px;color:#333"><b style="color:#3f2c8f">Prazo de execução:</b> ${prazoExib}${(S.dataInicio||S.dataFim)?` · ${S.dataInicio?esc(S.dataInicio.split('-').reverse().join('/')):'—'} a ${S.dataFim?esc(S.dataFim.split('-').reverse().join('/')):'—'}`:''}</div>`:''}
       ${condComerciais()?`<div style="margin-top:16px;border-top:1px solid #eee;padding-top:12px"><div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7d7799;margin-bottom:5px">Condições comerciais</div><div style="font-size:12.5px;color:#555;white-space:pre-wrap">${esc(condComerciais())}</div></div>`:''}
-      <div style="margin-top:16px;font-size:11.5px;color:#7d7799;border-top:1px solid #eee;padding-top:12px">Proposta com validade de 15 dias. eX Eletric — Automação &amp; Elétrica.</div>
+      ${(S.respNome||S.respFone||S.respEmail||(typeof CANAL!=='undefined'&&CANAL&&CANAL.mostrar&&(CANAL.email||CANAL.fone)))?`<div style="margin-top:16px;border-top:1px solid #eee;padding-top:12px;display:flex;gap:28px;flex-wrap:wrap;font-size:12.5px;color:#555">
+        ${(S.respNome||S.respFone||S.respEmail)?`<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#7d7799;margin-bottom:3px">Responsável</div><div style="font-weight:600;color:#221c39">${esc(S.respNome||'')}</div>${S.respFone?`<div style="color:#7d7799">${esc(S.respFone)}</div>`:''}${S.respEmail?`<div style="color:#7d7799">${esc(S.respEmail)}</div>`:''}</div>`:''}
+        ${(typeof CANAL!=='undefined'&&CANAL&&CANAL.mostrar&&(CANAL.email||CANAL.fone))?`<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#7d7799;margin-bottom:3px">Canal comercial</div>${CANAL.fone?`<div>${esc(CANAL.fone)}</div>`:''}${CANAL.email?`<div>${esc(CANAL.email)}</div>`:''}</div>`:''}
+      </div>`:''}
+      <div style="margin-top:16px;font-size:11.5px;color:#7d7799;border-top:1px solid #eee;padding-top:12px">Proposta com validade de 15 dias. ${esc((typeof EMP!=='undefined'&&EMP&&EMP.nome)||'eX Eletric')} — Automação &amp; Elétrica.</div>
     </div></div>`;
   let ov=_lg('vcOverlay'); if(!ov){ ov=document.createElement('div'); ov.id='vcOverlay'; document.body.appendChild(ov); }
-  ov.innerHTML=`<style>@media print{body>*:not(#vcOverlay){display:none!important}#vcOverlay{position:static!important;background:#fff!important;padding:0!important}#vcBar{display:none!important}#vcSheet{box-shadow:none!important}}</style>
+  ov.innerHTML=`<style>@media print{body>*:not(#vcOverlay){display:none!important}#vcOverlay{position:static!important;background:#fff!important;padding:0!important}#vcBar,#vcWarn{display:none!important}#vcSheet{box-shadow:none!important}}</style>
+    ${cc?`<div id="vcWarn" style="position:sticky;top:0;z-index:2;background:#a32d2d;color:#fff;padding:9px 16px;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:8px"><span class="material-symbols-rounded">warning</span>Este documento está MOSTRANDO seu custo e lucro ao cliente. Se não for intencional, feche e desligue "Custo / lucro por loja".</div>`:''}
     <div id="vcBar" style="position:sticky;top:0;display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;background:rgba(20,14,40,.06)">
       <button onclick="window.print()" style="border:none;background:#533ab7;color:#fff;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
       <button onclick="closeVerCliente()" style="border:1px solid #ccc;background:#fff;color:#333;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer">Fechar</button></div>
