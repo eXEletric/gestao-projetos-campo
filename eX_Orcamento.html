@@ -1620,7 +1620,9 @@ function renderLoteMatBlock(cfg){   // master: bloco "Materiais empregados" = ma
     +inner;
 }
 function renderBlk(cfg){
-  if(isLoteBase() && cfg.key==='materiais'){ renderLoteMatBlock(cfg); return; }
+  // INTERINO 14/09: destravar edição de material no master — usa o bloco editável normal (como o serviço).
+  // O somatório read-only (renderLoteMatBlock) volta no build da governança de listas com a junta.
+  // if(isLoteBase() && cfg.key==='materiais'){ renderLoteMatBlock(cfg); return; }
   const modo=S.modos[cfg.key]||'unit';
   const soT = !!(S.soTotal && S.soTotal[cfg.key]);   // "só o total" = apresentação (agrupar na proposta), independente do modo
   (S[cfg.key]||[]).forEach(r=>r._blk=cfg.key);   // marca o bloco (p/ margem base certa)
