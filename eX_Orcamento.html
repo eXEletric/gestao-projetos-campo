@@ -1602,28 +1602,97 @@ const BLKS=[
   {key:"materiais",titulo:"Materiais empregados",icon:"inventory_2",obs:true,mat:true,custo:true,soCad:false,sing:"material"}
 ];
 
-function renderLoteMatBlock(cfg){   // master: bloco "Materiais empregados" = material somado das 16 lojas (só leitura) + seletor de modo
-  const mm=S.matModo||'qtd';
+var LME_ON=false;   // editor de material do lote A CUSTO (qtd + preço editáveis, aplica nas lojas com ratificação)
+function renderLoteMatBlock(cfg){   // master: "Materiais empregados" = somado das 16 lojas (ver) + editor a custo
   const rows=loteMatSoma(); const tot=rows.reduce(function(a,r){return a+r.custo;},0);
-  const mmb=function(v,l){return '<button class="lbtn" style="'+(mm===v?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'" onclick="setMatModo(\''+v+'\')">'+l+'</button>';};
-  const sel='<div class="modosw" style="gap:6px;flex-wrap:wrap">'+mmb('qtd','Quantidade')+mmb('val','Valor')+mmb('lista','Lista + total')+mmb('tot','Só total')+'</div>';
-  const bOn=blocoAtivo('materiais'); var inner='';
-  if(!rows.length){ inner='<div style="color:var(--tx3);padding:14px;font-size:13px">Sem material nas lojas ainda — o material é carregado loja a loja.</div>'; }
-  else if(mm==='tot'){ inner='<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 14px"><span style="font-weight:700;color:var(--pri)">Material do lote (somado)</span><b style="font-size:18px;color:var(--pri);font-variant-numeric:tabular-nums">'+fmt(tot)+'</b></div>'; }
-  else { var head,brs,csp;
-    if(mm==='lista'){ head='<th>#</th><th>Material aplicado</th><th>Und</th>'; csp=2; brs=rows.map(function(r,i){return '<tr><td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td><td>'+esc(r.und)+'</td></tr>';}).join(''); }
-    else if(mm==='val'){ head='<th>#</th><th>Material</th><th class="r">Qtd</th><th>Und</th><th class="r">Valor</th>'; csp=4; brs=rows.map(function(r,i){return '<tr><td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td><td class="r">'+_d1(r.qtd)+'</td><td>'+esc(r.und)+'</td><td class="r money">'+(r.custo>0?fmt(r.custo):'—')+'</td></tr>';}).join(''); }
-    else { head='<th>#</th><th>Material</th><th class="r">Σ qtd</th><th>Und</th>'; csp=3; brs=rows.map(function(r,i){return '<tr><td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td><td class="r">'+_d1(r.qtd)+'</td><td>'+esc(r.und)+'</td></tr>';}).join(''); }
-    inner='<div class="scroll"><table class="tbl"><thead><tr>'+head+'</tr></thead><tbody>'+brs+'</tbody><tfoot><tr class="ftot"><td class="ftl" colspan="'+csp+'">Material do lote (somado)</td><td class="r"><b>'+fmt(tot)+'</b></td></tr></tfoot></table></div>';
-  }
-  document.getElementById('blk_materiais').innerHTML=
-    '<div class="blkhead">'
+  const bOn=blocoAtivo('materiais');
+  const headWrap=function(mid){ return '<div class="blkhead">'
     +'<button class="blktog '+(bOn?'on':'off')+'" onclick="toggleBloco(\'materiais\')" title="'+(bOn?'Bloco incluído na proposta — clique para remover':'Bloco removido — clique para incluir')+'"><span class="blktog-sw"><i></i></span><span class="blktog-lb">'+(bOn?'na proposta':'removido')+'</span></button>'
     +'<span class="ic"><span class="material-symbols-rounded">'+cfg.icon+'</span></span>'
-    +'<h2>'+cfg.titulo+'</h2>'+matOrigToggle()+sel+'</div>'
-    +'<div class="sotot-hint noprint" style="margin:0"><span class="material-symbols-rounded">info</span><span><b>Somado das 16 lojas</b> (só leitura) — é o levantamento. Pra editar item a item, mude pra <b>Base do lote</b>. Pra incluir um item em todas, use <b>Adicionar ao lote</b>.</span></div>'
-    +'<div class="addrow"><button onclick="loteAddPick(\'materiais\')" style="border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">hub</span>Adicionar ao lote</button></div>'
+    +'<h2>'+cfg.titulo+'</h2>'+matOrigToggle()+mid+'</div>'; };
+  const el=document.getElementById('blk_materiais'); if(!el)return;
+  // ---- MODO EDITOR (a custo) ----
+  if(LME_ON && rows.length){
+    var editTog='<div class="modosw" style="gap:6px"><button class="lbtn on" style="background:var(--amber);color:#fff;border-color:var(--amber)"><span class="material-symbols-rounded" style="color:#fff">edit</span>Editar a custo</button></div>';
+    var eraS='font-size:10px;font-weight:700;color:var(--amber);text-align:right;margin-top:2px';
+    var brs=rows.map(function(r,i){ var u=r.qtd>0?r.custo/r.qtd:0; return '<tr data-lme="'+i+'" data-desc="'+esc(r.desc)+'">'
+      +'<td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td>'
+      +'<td class="r"><input id="lme_q_'+i+'" class="cin num" style="width:82px" value="'+_d1(r.qtd)+'" data-bq="'+r.qtd+'" oninput="lmeRefresh()"><div id="lme_qc_'+i+'" hidden style="'+eraS+'"></div></td>'
+      +'<td>'+esc(r.und)+'</td>'
+      +'<td class="r" style="white-space:nowrap"><span class="rsl">R$</span> <input id="lme_c_'+i+'" class="cin num" style="width:82px" value="'+fmtN(u)+'" data-bu="'+u+'" oninput="lmeRefresh()"><div id="lme_cc_'+i+'" hidden style="'+eraS+'"></div></td>'
+      +'<td class="r money" id="lme_t_'+i+'">'+fmt(r.custo)+'</td></tr>'; }).join('');
+    el.innerHTML=headWrap(editTog)
+      +'<div class="sotot-hint noprint" style="margin:0;background:#f8efdf;border-color:#e6cfa0"><span class="material-symbols-rounded" style="color:var(--amber)">payments</span><span><b>Editando a custo</b> — o preço vale no lote todo; a qtd distribui proporcional entre as lojas. <b>Nada muda até Aplicar.</b> O preço do cliente (soberano) não é tocado.</span></div>'
+      +'<div class="scroll"><table class="tbl"><thead><tr><th>#</th><th>Material</th><th class="r">Σ qtd</th><th>Und</th><th class="r">Custo un.</th><th class="r">Custo total</th></tr></thead><tbody>'+brs+'</tbody><tfoot><tr class="ftot"><td class="ftl" colspan="5">Custo do material no lote</td><td class="r"><b id="lme_ftot">'+fmt(tot)+'</b></td></tr></tfoot></table></div>'
+      +'<div class="addrow" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+      +'<button onclick="loteMatEditApply()" style="border-style:solid;border-color:var(--amber);background:var(--amber);color:#fff"><span class="material-symbols-rounded">hub</span>Aplicar nas lojas (<span id="lme_n">0</span>)</button>'
+      +'<button onclick="loteMatEditCancel()" style="border-style:solid"><span class="material-symbols-rounded">close</span>Cancelar</button>'
+      +'<span id="lme_warn" style="display:none;color:var(--amber);font-size:12px;font-weight:700;margin-left:auto"><span class="material-symbols-rounded" style="font-size:15px;vertical-align:middle">edit</span> alterações ainda não foram pras lojas</span></div>';
+    return;
+  }
+  // ---- MODO LEITURA ----
+  const mm=S.matModo||'qtd';
+  const mmb=function(v,l){return '<button class="lbtn" style="'+(mm===v?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'" onclick="setMatModo(\''+v+'\')">'+l+'</button>';};
+  const sel='<div class="modosw" style="gap:6px;flex-wrap:wrap">'+mmb('qtd','Quantidade')+mmb('val','Valor')+mmb('lista','Lista + total')+mmb('tot','Só total')+'</div>';
+  var inner='';
+  if(!rows.length){ inner='<div style="color:var(--tx3);padding:14px;font-size:13px">Sem material nas lojas ainda — o material é carregado loja a loja.</div>'; }
+  else if(mm==='tot'){ inner='<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 14px"><span style="font-weight:700;color:var(--pri)">Material do lote (somado)</span><b style="font-size:18px;color:var(--pri);font-variant-numeric:tabular-nums">'+fmt(tot)+'</b></div>'; }
+  else { var head,brs2,csp;
+    if(mm==='lista'){ head='<th>#</th><th>Material aplicado</th><th>Und</th>'; csp=2; brs2=rows.map(function(r,i){return '<tr><td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td><td>'+esc(r.und)+'</td></tr>';}).join(''); }
+    else if(mm==='val'){ head='<th>#</th><th>Material</th><th class="r">Qtd</th><th>Und</th><th class="r">Valor</th>'; csp=4; brs2=rows.map(function(r,i){return '<tr><td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td><td class="r">'+_d1(r.qtd)+'</td><td>'+esc(r.und)+'</td><td class="r money">'+(r.custo>0?fmt(r.custo):'—')+'</td></tr>';}).join(''); }
+    else { head='<th>#</th><th>Material</th><th class="r">Σ qtd</th><th>Und</th>'; csp=3; brs2=rows.map(function(r,i){return '<tr><td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td><td class="r">'+_d1(r.qtd)+'</td><td>'+esc(r.und)+'</td></tr>';}).join(''); }
+    inner='<div class="scroll"><table class="tbl"><thead><tr>'+head+'</tr></thead><tbody>'+brs2+'</tbody><tfoot><tr class="ftot"><td class="ftl" colspan="'+csp+'">Material do lote (somado)</td><td class="r"><b>'+fmt(tot)+'</b></td></tr></tfoot></table></div>';
+  }
+  el.innerHTML=headWrap(sel)
+    +'<div class="sotot-hint noprint" style="margin:0"><span class="material-symbols-rounded">info</span><span><b>Somado das 16 lojas</b> — é o levantamento. Pra <b>ajustar preço/qtd no lote todo</b>, use <b>Editar a custo</b>. Pra incluir um item novo em todas, <b>Adicionar ao lote</b>.</span></div>'
+    +'<div class="addrow"><button onclick="loteMatEditOn()" style="border-style:solid;border-color:var(--amber);color:var(--amber)"><span class="material-symbols-rounded">edit</span>Editar a custo</button><button onclick="loteAddPick(\'materiais\')" style="margin-left:8px;border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">hub</span>Adicionar ao lote</button></div>'
     +inner;
+}
+function loteMatEditOn(){ LME_ON=true; renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }
+function loteMatEditCancel(){ LME_ON=false; renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }
+function lmeRefresh(){ var n=0, tot=0;
+  (document.querySelectorAll('#blk_materiais tr[data-lme]')||[]).forEach(function(tr){
+    var i=tr.getAttribute('data-lme');
+    var qi=document.getElementById('lme_q_'+i), ci=document.getElementById('lme_c_'+i); if(!qi||!ci)return;
+    var q=num(qi.value), u=num(ci.value), bq=num(qi.getAttribute('data-bq')), bu=num(ci.getAttribute('data-bu'));
+    var cq=Math.abs(q-bq)>0.05, cc=Math.abs(u-bu)>0.005;
+    var te=document.getElementById('lme_t_'+i); if(te)te.textContent=fmt(q*u);
+    var qc=document.getElementById('lme_qc_'+i); if(qc){ qc.hidden=!cq; if(cq)qc.textContent='era '+_d1(bq); }
+    var ce=document.getElementById('lme_cc_'+i); if(ce){ ce.hidden=!cc; if(cc)ce.textContent='era '+fmtN(bu); }
+    if(qi.style)qi.style.borderColor=cq?'var(--amber)':''; if(ci.style)ci.style.borderColor=cc?'var(--amber)':'';
+    if(cq)n++; if(cc)n++; tot+=q*u;
+  });
+  var f=document.getElementById('lme_ftot'); if(f)f.textContent=fmt(tot);
+  var ne=document.getElementById('lme_n'); if(ne)ne.textContent=n;
+  var w=document.getElementById('lme_warn'); if(w)w.style.display=n?'':'none';
+}
+function loteMatEditApply(){
+  var changes=[];
+  (document.querySelectorAll('#blk_materiais tr[data-lme]')||[]).forEach(function(tr){
+    var i=tr.getAttribute('data-lme'), desc=tr.getAttribute('data-desc');
+    var qi=document.getElementById('lme_q_'+i), ci=document.getElementById('lme_c_'+i); if(!qi||!ci)return;
+    var q=num(qi.value), u=num(ci.value), bq=num(qi.getAttribute('data-bq')), bu=num(ci.getAttribute('data-bu'));
+    var cq=Math.abs(q-bq)>0.05, cc=Math.abs(u-bu)>0.005;
+    if(cq||cc) changes.push({desc:desc,q:q,u:u,bq:bq,cq:cq,cc:cc});
+  });
+  if(!changes.length){ alert('Nada alterado.'); return; }
+  var n=(LOTE_UNITS||[]).length;
+  if(!confirm('Aplicar '+changes.length+' alteração(ões) de custo nas '+n+' loja(s)?\n\n• Preço: vale igual em todas.\n• Quantidade: distribui proporcional entre as lojas que têm o item.\n• NÃO muda o preço do cliente (soberano/42.000).')) return;
+  loteMatEditCommit(changes);
+}
+async function loteMatEditCommit(changes){
+  try{ var by={}; changes.forEach(function(c){ by[c.desc]=c; });
+    for(const u of (LOTE_UNITS||[])){
+      var d=(u.dados&&typeof u.dados==='object')?JSON.parse(JSON.stringify(u.dados)):{};
+      var arr=Array.isArray(d.materiais)?d.materiais:[]; var touched=false;
+      arr.forEach(function(m){ var c=by[m.desc]; if(!c)return;
+        if(c.cc){ m.custoBase=c.u; if(m.usarBase!==false)m.custoAlt=c.u; touched=true; }   // preço uniforme no lote
+        if(c.cq && c.bq>0){ m.qtd=+(num(m.qtd)*(c.q/c.bq)).toFixed(1); touched=true; }   // qtd proporcional (A)
+      });
+      if(touched) await SB.from('orcamentos').update({dados:d}).eq('id',u.id);
+    }
+    LME_ON=false; await loteReload(); cloudMsg('alterações aplicadas nas lojas');
+  }catch(e){ console.error(e); alert('Erro ao aplicar: '+(e.message||e)); }
 }
 function renderBlk(cfg){
   // Governança de listas: material no master tem 2 ORIGENS — "Somado das lojas" (herdar, só leitura, o levantamento) × "Base do lote" (editável). Padrão: herdar.
