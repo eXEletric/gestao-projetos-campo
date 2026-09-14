@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>eX · Respostas por e-mail e aprovação (modelo)</title>
+<meta name="theme-color" content="#533ab7">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,0,0&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--pri:#533ab7;--pri-bg:#eeedfe;--blue:#185fa5;--blue-bg:#e7f0fa;--green:#3b6d11;--green-bg:#e9f2dd;--amber:#ba7517;--amber-bg:#faeeda;--red:#a32d2d;--red-bg:#fcebeb}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
+.material-symbols-rounded{font-family:'Material Symbols Rounded';line-height:1;vertical-align:middle;font-size:20px}
+.app{max-width:1280px;margin:0 auto;padding:16px 18px 60px}
+.logo{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--pri)}.logo b{color:var(--tx)}
+h1{font-size:19px;font-weight:800;margin:6px 0 2px}
+.lead{font-size:13px;color:var(--tx2);max-width:900px;margin-bottom:14px}
+.tabs{display:inline-flex;background:var(--surf2);border-radius:10px;padding:3px;margin-bottom:14px;flex-wrap:wrap}
+.tabs button{font-size:13.5px;font-weight:700;border:none;background:none;color:var(--tx2);cursor:pointer;padding:9px 16px;border-radius:8px;display:inline-flex;align-items:center;gap:7px}
+.tabs button.on{background:var(--surf);color:var(--pri);box-shadow:0 1px 3px rgba(0,0,0,.1)}
+.tabs .n{width:22px;height:22px;border-radius:50%;background:var(--pri);color:#fff;font-size:12px;display:inline-flex;align-items:center;justify-content:center}
+.sec{display:none}.sec.on{display:block}
+.btn{font-size:12.5px;padding:7px 12px;border-radius:8px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:6px;font-weight:600}
+.btn:hover{background:var(--surf2)}.btn .material-symbols-rounded{font-size:17px}
+.btn-p{background:var(--pri);border-color:var(--pri);color:#fff}.btn-p:hover{background:#472f9e}
+.btn-g{background:var(--green);border-color:var(--green);color:#fff}
+/* seção 1 */
+.steps{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.step{display:flex;align-items:center;gap:8px;border:1.5px solid var(--line2);background:var(--surf);border-radius:11px;padding:9px 12px;cursor:pointer;font-size:12.5px;font-weight:600;color:var(--tx2);text-align:left}
+.step .k{width:24px;height:24px;border-radius:50%;background:var(--surf2);color:var(--tx2);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.step.on{border-color:var(--pri);background:var(--pri-bg);color:var(--pri)}.step.on .k{background:var(--pri);color:#fff}
+.step.bad.on{border-color:var(--amber);background:var(--amber-bg);color:var(--amber)}.step.bad.on .k{background:var(--amber)}
+.grid3{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media(max-width:980px){.grid3{grid-template-columns:1fr}}
+.panel{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:14px;min-height:320px}
+.ph{font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);display:flex;align-items:center;gap:7px;margin-bottom:10px}
+.ph .material-symbols-rounded{font-size:18px}
+.mail{border:1px solid var(--line2);border-radius:11px;overflow:hidden}
+.mail .top{background:var(--surf2);padding:8px 12px;font-size:12px;font-weight:700;color:var(--tx2);display:flex;align-items:center;gap:6px}
+.hrow{display:grid;grid-template-columns:110px 1fr;gap:8px;padding:6px 12px;border-top:1px solid var(--line);font-size:12.5px}
+.hrow .l{color:var(--tx3);font-weight:600}
+.hrow.hl{background:#fff8d6}
+.addr{display:inline-flex;align-items:center;gap:4px;background:var(--surf2);border-radius:6px;padding:1px 7px;margin:1px 4px 1px 0;font-size:12px}
+.addr.cap{background:var(--pri-bg);color:var(--pri);font-weight:700}
+.addr.ex{background:var(--blue-bg);color:var(--blue);font-weight:700}
+.addr.off{text-decoration:line-through;opacity:.55}
+.body{padding:10px 12px;border-top:1px solid var(--line);font-size:12.5px;color:var(--tx2);white-space:pre-wrap;min-height:60px}
+.note{margin-top:10px;font-size:12px;border-radius:9px;padding:9px 11px;display:flex;gap:8px;align-items:flex-start}
+.note .material-symbols-rounded{font-size:18px;flex-shrink:0}
+.note.ok{background:var(--green-bg);color:var(--green)}.note.warn{background:var(--amber-bg);color:#8a560f}.note.info{background:var(--pri-bg);color:var(--pri)}
+.dest.outlook .ph{color:var(--blue)}.dest.sys .ph{color:var(--pri)}
+.inbox-item{display:flex;gap:9px;padding:9px 10px;border-radius:9px;border:1px solid var(--line);margin-bottom:7px;background:var(--surf);animation:pop .35s ease}
+.inbox-item .av{width:30px;height:30px;border-radius:50%;background:var(--blue-bg);color:var(--blue);font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.inbox-item .t{font-size:12.5px;font-weight:700}.inbox-item .s{font-size:11.5px;color:var(--tx3)}
+.ev{display:flex;gap:9px;padding:8px 0;border-bottom:1px dashed var(--line);animation:pop .35s ease}
+.ev:last-child{border-bottom:none}
+.evic{width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.evic .material-symbols-rounded{font-size:16px}
+.evic.blue{background:var(--blue-bg);color:var(--blue)}.evic.pri{background:var(--pri-bg);color:var(--pri)}.evic.green{background:var(--green-bg);color:var(--green)}.evic.amber{background:var(--amber-bg);color:var(--amber)}.evic.gray{background:var(--surf2);color:var(--tx3)}
+.ev .t{font-size:12.5px;font-weight:700}.ev .s{font-size:11.5px;color:var(--tx3)}
+.empty{font-size:12px;color:var(--tx3);font-style:italic;padding:8px 0}
+.missing{border:1.5px dashed var(--amber);background:var(--amber-bg);color:#8a560f;border-radius:9px;padding:8px 10px;font-size:12px;font-weight:600;display:flex;gap:7px;align-items:center;animation:pop .35s ease}
+@keyframes pop{0%{opacity:0;transform:translateY(-4px)}100%{opacity:1;transform:none}}
+/* seção 2 */
+.exsw{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px}
+@media(max-width:900px){.grid2{grid-template-columns:1fr}}
+.oppbar{display:flex;align-items:center;gap:10px;background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:10px 14px;margin-bottom:12px;flex-wrap:wrap}
+.oppbar .tt{font-weight:800;font-size:14px}.oppbar .ss{font-size:12px;color:var(--tx3)}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;border-radius:8px;padding:3px 8px}
+.chip .material-symbols-rounded{font-size:14px}
+.chip.env{background:var(--blue-bg);color:var(--blue)}.chip.ok{background:var(--green-bg);color:var(--green)}.chip.aj{background:var(--pri-bg);color:var(--pri)}
+.newreply{border:2px solid var(--pri);border-radius:13px;background:#fbfaff;padding:12px;animation:pop .35s ease}
+.newreply .hd{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:800;color:var(--pri);text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px}
+.quote{background:var(--surf);border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:0 9px 9px 0;padding:9px 11px;font-size:13px;white-space:pre-wrap}
+.meta{font-size:11.5px;color:var(--tx3);margin:6px 0 10px}
+.sug{border-radius:10px;padding:10px 12px;margin-bottom:10px}
+.sug.good{background:var(--green-bg)}.sug.care{background:var(--amber-bg)}
+.sug .st{font-size:13px;font-weight:800;display:flex;align-items:center;gap:6px}
+.sug.good .st{color:var(--green)}.sug.care .st{color:#8a560f}
+.sug p{font-size:12px;color:var(--tx2);margin-top:3px}
+.acts{display:flex;gap:6px;flex-wrap:wrap}
+.selo{display:flex;align-items:center;gap:10px;background:#eef6e6;border:1.5px solid #b9d69b;border-radius:12px;padding:11px 14px;animation:pop .35s ease}
+.selo>.material-symbols-rounded{font-size:30px;color:var(--green)}
+.selo .t{font-weight:800;color:var(--green)}.selo .s{font-size:12px;color:var(--tx2)}
+.modal{position:fixed;inset:0;background:rgba(20,14,40,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal.on{display:flex}
+.mcard{background:var(--surf);border-radius:14px;max-width:460px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+.mcard h3{font-size:15px;display:flex;gap:8px;align-items:center;color:#8a560f;margin-bottom:8px}
+.mcard p{font-size:13px;color:var(--tx2);margin-bottom:12px}
+.rule{display:flex;gap:9px;font-size:12.5px;color:var(--tx2);padding:8px 0;border-top:1px dashed var(--line)}
+.rule:first-child{border-top:none}.rule .material-symbols-rounded{color:var(--pri);font-size:18px;flex-shrink:0}
+.rule b{color:var(--tx)}
+</style>
+</head>
+<body>
+<div class="app">
+  <span class="logo"><b>e</b>X</span>
+  <h1>Respostas por e-mail e aprovação: como fica</h1>
+  <p class="lead">Dois pontos para decidir. Clique nos passos e nos exemplos. Proposta de exemplo: <b>ORÇ-2026-0051 · R2</b>, cliente fictício.</p>
+
+  <div class="tabs">
+    <button class="on" data-t="s1" onclick="tab('s1')"><span class="n">1</span>Onde a resposta chega</button>
+    <button data-t="s2" onclick="tab('s2')"><span class="n">2</span>Aprovação com 1 clique</button>
+  </div>
+
+  <!-- ================= SEÇÃO 1 ================= -->
+  <div class="sec on" id="s1">
+    <div class="steps" id="steps"></div>
+    <div class="grid3">
+      <div class="panel"><div class="ph"><span class="material-symbols-rounded">mail</span><span id="mailTitle">O e-mail</span></div><div id="mailBox"></div><div id="mailNote"></div></div>
+      <div class="panel dest outlook"><div class="ph"><span class="material-symbols-rounded">inbox</span>Outlook · caixa ex@exeletric.com.br</div><div id="outBox"></div></div>
+      <div class="panel dest sys"><div class="ph"><span class="material-symbols-rounded">timeline</span>Sistema · linha do tempo da ORÇ-2026-0051</div><div id="sysBox"></div></div>
+    </div>
+  </div>
+
+  <!-- ================= SEÇÃO 2 ================= -->
+  <div class="sec" id="s2">
+    <div class="exsw">
+      <button class="step on" id="exA" onclick="setEx('A')"><span class="k">A</span>Cliente aprova de forma clara</button>
+      <button class="step bad" id="exB" onclick="setEx('B')"><span class="k">B</span>"Aprovado, mas…" (a pegadinha)</button>
+      <button class="btn" onclick="setEx(CASO)" style="margin-left:auto"><span class="material-symbols-rounded">restart_alt</span>Recomeçar</button>
+    </div>
+    <div class="oppbar">
+      <span class="material-symbols-rounded" style="color:var(--pri)">request_quote</span>
+      <div><div class="tt">Copeland · Atacadão Rio Verde · Automação das câmaras frias</div><div class="ss">Proposta ORÇ-2026-0051 · R$ 43.665,55</div></div>
+      <span id="oppChip" style="margin-left:auto"></span>
+    </div>
+    <div class="grid2">
+      <div class="panel" id="replyPanel"></div>
+      <div class="panel">
+        <div class="ph"><span class="material-symbols-rounded">timeline</span>Linha do tempo da proposta</div>
+        <div id="tl2"></div>
+        <div style="margin-top:14px;border-top:1px solid var(--line);padding-top:10px">
+          <div class="rule"><span class="material-symbols-rounded">auto_awesome</span><span>O sistema <b>lê e sugere</b> o tipo da resposta, mas <b>nunca aprova sozinho</b>.</span></div>
+          <div class="rule"><span class="material-symbols-rounded">touch_app</span><span>A pessoa <b>confirma com 1 clique</b>. O e-mail já vira o comprovante, sem baixar nem anexar nada.</span></div>
+          <div class="rule"><span class="material-symbols-rounded">verified</span><span>A aprovação fica ligada à <b>revisão exata</b> (R2) e congela esses preços para a execução.</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal" id="modal"><div class="mcard">
+  <h3><span class="material-symbols-rounded">warning</span>Espera: esse e-mail pede alteração</h3>
+  <p>O cliente escreveu <b>"retire o item 4"</b>. Se aprovar a R2 assim, a execução herda os preços <b>com</b> o item 4. O certo é registrar como <b>Ajuste</b> e enviar uma R3.</p>
+  <div class="acts" style="justify-content:flex-end">
+    <button class="btn" onclick="closeModal()">Voltar</button>
+    <button class="btn btn-p" onclick="closeModal();classificar('ajuste')"><span class="material-symbols-rounded">reply</span>Registrar como Ajuste</button>
+  </div>
+</div></div>
+
+<script>
+const ms=(i,st)=>`<span class="material-symbols-rounded"${st?` style="${st}"`:''}>${i}</span>`;
+function tab(id){ document.querySelectorAll('.sec').forEach(s=>s.classList.toggle('on',s.id===id)); document.querySelectorAll('.tabs button').forEach(b=>b.classList.toggle('on',b.dataset.t===id)); }
+
+/* ---------- SEÇÃO 1 ---------- */
+const CAP='respostas@r.exeletric.com.br', EX='ex@exeletric.com.br', CLI='denis@cliente-exemplo.com.br';
+const A=(e,cls)=>`<span class="addr ${cls||''}">${e}</span>`;
+const OUT_ENVIO={av:'eX',t:'eX Eletric (cópia oculta)',s:'[ORÇ-2026-0051 R2] Proposta · Atacadão Rio Verde'};
+const OUT_RESP={av:'DF',t:'Denis (cliente)',s:'RE: [ORÇ-2026-0051 R2] "Recebido, vou analisar…"'};
+const SYS_ENVIO={ic:'send',c:'blue',t:'R2 enviada para Denis',s:'automático · PDF anexado'};
+const SYS_RESP={ic:'mark_email_unread',c:'pri',t:'Resposta do cliente chegou',s:'automático · "Recebido, vou analisar…"'};
+const SYS_EXRESP={ic:'forward_to_inbox',c:'gray',t:'eX respondeu ao cliente',s:'automático · "Perfeito, fico no aguardo."'};
+const STEPS=[
+ {k:1,n:'Sistema envia a proposta',
+  title:'E-mail que o sistema envia',
+  mail:{from:A('eX Eletric &lt;'+EX+'&gt;'),to:A(CLI),cco:A(EX,'ex'),rt:A(EX,'ex')+A(CAP,'cap'),subj:'[ORÇ-2026-0051 R2] Proposta · Atacadão Rio Verde',body:'Olá Denis, segue a proposta revisada em anexo (ORÇ-2026-0051_R2.pdf).',hl:['rt','cco']},
+  note:['info','A linha "Responder para" leva os dois endereços. O cliente não precisa fazer nada diferente.'],
+  out:[OUT_ENVIO], sys:[SYS_ENVIO]},
+ {k:2,n:'Cliente clica em "Responder"',
+  title:'Resposta do cliente',
+  mail:{from:A('Denis &lt;'+CLI+'&gt;'),to:A(EX,'ex')+A(CAP,'cap'),subj:'RE: [ORÇ-2026-0051 R2] Proposta · Atacadão Rio Verde',body:'Recebido, vou analisar com a diretoria e retorno até sexta.',hl:['to']},
+  note:['ok','O "Para" veio preenchido sozinho com os dois endereços: chega no Outlook E no sistema.'],
+  out:[OUT_ENVIO,OUT_RESP], sys:[SYS_ENVIO,SYS_RESP]},
+ {k:3,n:'eX responde com "Responder a todos"',
+  title:'Resposta da eX (pelo Outlook)',
+  mail:{from:A('eX Eletric &lt;'+EX+'&gt;'),to:A(CLI)+A(CAP,'cap'),subj:'RE: RE: [ORÇ-2026-0051 R2] Proposta · Atacadão Rio Verde',body:'Perfeito, Denis. Fico no aguardo do retorno.',hl:['to']},
+  note:['ok','"Responder a todos" mantém o endereço de registro: a resposta da eX também entra no histórico.'],
+  out:[OUT_ENVIO,OUT_RESP,{av:'eX',t:'Você respondeu (Itens enviados)',s:'RE: RE: [ORÇ-2026-0051 R2] "Perfeito, fico no aguardo."'}], sys:[SYS_ENVIO,SYS_RESP,SYS_EXRESP]},
+ {k:4,n:'eX usa só "Responder"',bad:true,
+  title:'Resposta da eX sem "todos"',
+  mail:{from:A('eX Eletric &lt;'+EX+'&gt;'),to:A(CLI)+A(CAP,'cap off'),subj:'RE: RE: [ORÇ-2026-0051 R2] Proposta · Atacadão Rio Verde',body:'Perfeito, Denis. Fico no aguardo do retorno.',hl:['to']},
+  note:['warn','Com só "Responder", o endereço de registro sai da lista. O cliente recebe, mas o sistema não fica sabendo. Por isso a regra da equipe é sempre "Responder a todos".'],
+  out:[OUT_ENVIO,OUT_RESP,{av:'eX',t:'Você respondeu (Itens enviados)',s:'RE: RE: [ORÇ-2026-0051 R2] "Perfeito, fico no aguardo."'}], sys:[SYS_ENVIO,SYS_RESP], miss:'Resposta da eX NÃO registrada. Corrige encaminhando o e-mail para '+CAP},
+ {k:5,n:'Cliente escreve um e-mail novo',bad:true,
+  title:'E-mail novo, fora da conversa',
+  mail:{from:A('Denis &lt;'+CLI+'&gt;'),to:A(EX,'ex'),subj:'Aprovação câmaras frias Rio Verde',body:'André, pode seguir com a proposta das câmaras frias. Aprovado.',hl:['to','subj']},
+  note:['warn','O cliente escreveu do zero: só o Outlook recebe. Solução em 5 segundos: no Outlook, clique em "Encaminhar" para '+CAP+' e o sistema reconhece a proposta (pelo cliente e pela conversa) e registra.'],
+  out:[OUT_ENVIO,OUT_RESP,{av:'DF',t:'Denis (cliente)',s:'Aprovação câmaras frias Rio Verde "pode seguir…"'}], sys:[SYS_ENVIO,SYS_RESP], miss:'Não registrado sozinho. Encaminhe para '+CAP+' ou registre manualmente.'}
+];
+let STEP=0;
+function renderSteps(){ document.getElementById('steps').innerHTML=STEPS.map((s,i)=>`<button class="step ${s.bad?'bad':''} ${STEP===i?'on':''}" onclick="STEP=${i};render1()"><span class="k">${s.k}</span>${s.n}</button>`).join(''); }
+function render1(){ renderSteps(); const s=STEPS[STEP], m=s.mail;
+  document.getElementById('mailTitle').textContent=s.title;
+  const row=(key,l,v)=>v?`<div class="hrow ${m.hl.includes(key)?'hl':''}"><span class="l">${l}</span><span>${v}</span></div>`:'';
+  document.getElementById('mailBox').innerHTML=`<div class="mail"><div class="top">${ms('drafts','font-size:16px')}Mensagem</div>
+    ${row('from','De',m.from)}${row('to','Para',m.to)}${row('cco','Cco (oculta)',m.cco)}${row('rt','Responder para',m.rt)}${row('subj','Assunto',m.subj)}
+    <div class="body">${m.body}</div></div>`;
+  const [nc,nt]=s.note; document.getElementById('mailNote').innerHTML=`<div class="note ${nc}">${ms(nc==='ok'?'check_circle':nc==='warn'?'warning':'info')}<span>${nt}</span></div>`;
+  document.getElementById('outBox').innerHTML=s.out.slice().reverse().map(o=>`<div class="inbox-item"><div class="av">${o.av}</div><div><div class="t">${o.t}</div><div class="s">${o.s}</div></div></div>`).join('');
+  document.getElementById('sysBox').innerHTML=(s.miss?`<div class="missing">${ms('link_off','font-size:17px')}${s.miss}</div>`:'')+s.sys.slice().reverse().map(e=>`<div class="ev"><div class="evic ${e.c}">${ms(e.ic)}</div><div><div class="t">${e.t}</div><div class="s">${e.s}</div></div></div>`).join('');
+}
+
+/* ---------- SEÇÃO 2 ---------- */
+let CASO='A', DONE=null;
+const EXS={
+ A:{quote:'Bom dia, André.\nPode seguir com a proposta revisada (R2). Aprovado.\nAguardo a data de início.',
+    sug:{cls:'good',ic:'verified',t:'Sugestão do sistema: parece APROVAÇÃO da R2',p:'Palavras "aprovado" e "pode seguir", respondendo ao envio da R2.'}},
+ B:{quote:'Bom dia, André.\nAprovado, mas retire o item 4 (cabo 95 mm), nós vamos fornecer.\nPode mandar a nova versão?',
+    sug:{cls:'care',ic:'help',t:'Sugestão do sistema: aprovação COM ressalva, confira',p:'Tem "aprovado", mas também pede para retirar um item e mandar nova versão. Parece mais um Ajuste.'}}
+};
+function setEx(x){ CASO=x; DONE=null; document.getElementById('exA').classList.toggle('on',x==='A'); document.getElementById('exB').classList.toggle('on',x==='B'); render2(); }
+function render2(){ const e=EXS[CASO];
+  document.getElementById('oppChip').innerHTML= DONE==='aprov'?`<span class="chip ok">${ms('verified')}APROVADA · R2</span>`: DONE==='ajuste'?`<span class="chip aj">${ms('reply')}Vez da eX · criar R3</span>`:`<span class="chip env">${ms('mark_email_read')}Enviada · R2 · aguardando cliente</span>`;
+  const rp=document.getElementById('replyPanel');
+  if(DONE==='aprov'){ rp.innerHTML=`<div class="ph">${ms('check_circle')}Resultado</div>
+      <div class="selo">${ms('verified')}<div><div class="t">APROVADA · R2 · hoje</div><div class="s">Comprovante criado com o e-mail do cliente já anexado. Preços da R2 congelados. Card do CRM ganha o selo verde e libera "Mover para Execução".</div></div></div>
+      <div class="note info" style="margin-top:12px">${ms('touch_app')}<span>Tempo gasto pela pessoa: <b>1 clique</b>. Sem baixar e-mail, sem anexar, sem digitar.</span></div>`; }
+  else if(DONE==='ajuste'){ rp.innerHTML=`<div class="ph">${ms('check_circle')}Resultado</div>
+      <div class="note info">${ms('reply')}<span>Registrado como <b>Ajuste</b>. A vez passa a ser da eX e aparece o botão <b>"Criar R3 a partir deste pedido"</b>, com o e-mail anexado como motivo. A R2 fica intacta.</span></div>`; }
+  else if(DONE==='outro'){ rp.innerHTML=`<div class="ph">${ms('check_circle')}Resultado</div><div class="note info">${ms('help')}<span>Registrado como <b>Dúvida</b>. A vez passa a ser da eX: responder no mesmo fio.</span></div>`; }
+  else { rp.innerHTML=`<div class="newreply">
+      <div class="hd">${ms('mark_email_unread','font-size:18px')}Nova resposta do cliente · chegou sozinha</div>
+      <div class="quote">${e.quote}</div>
+      <div class="meta">De: Denis (cliente) · hoje 09:12 · em resposta à <b>R2</b> · ${ms('attach_file','font-size:13px')} e-mail original guardado</div>
+      <div class="sug ${e.sug.cls}"><div class="st">${ms(e.sug.ic,'font-size:18px')}${e.sug.t}</div><p>${e.sug.p}</p></div>
+      <div class="acts">
+        <button class="btn ${CASO==='A'?'btn-g':''}" onclick="classificar('aprov')">${ms('verified')}Confirmar: aprovou a R2</button>
+        <button class="btn ${CASO==='B'?'btn-p':''}" onclick="classificar('ajuste')">${ms('reply')}É ajuste</button>
+        <button class="btn" onclick="classificar('outro')">${ms('help')}Dúvida / outro</button>
+      </div></div>`; }
+  const base=[
+    {ic:'send',c:'blue',t:'R2 enviada para Denis',s:'ontem · PDF · automático'},
+    {ic:'mark_email_unread',c:'pri',t:'Resposta do cliente chegou',s:'hoje 09:12 · automático'+(DONE?'':' · aguardando classificação')}
+  ];
+  if(DONE==='aprov') base.push({ic:'verified',c:'green',t:'Aprovou a R2 · comprovante criado',s:'hoje · confirmado por André (1 clique)'});
+  if(DONE==='ajuste') base.push({ic:'reply',c:'pri',t:'Pedido de ajuste registrado',s:'hoje · confirmado por André'});
+  if(DONE==='outro') base.push({ic:'help',c:'blue',t:'Dúvida registrada',s:'hoje · confirmado por André'});
+  document.getElementById('tl2').innerHTML=base.slice().reverse().map(x=>`<div class="ev"><div class="evic ${x.c}">${ms(x.ic)}</div><div><div class="t">${x.t}</div><div class="s">${x.s}</div></div></div>`).join('');
+}
+function classificar(t){ if(t==='aprov'&&CASO==='B'&&DONE!=='force'){ document.getElementById('modal').classList.add('on'); return; } DONE=t; render2(); }
+function closeModal(){ document.getElementById('modal').classList.remove('on'); }
+render1(); render2();
+</script>
+</body>
+</html>
