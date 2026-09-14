@@ -13,8 +13,10 @@
 'use strict';
 if(typeof renderBanner!=='function' || typeof setMode!=='function') return;   // folha não é a do orçamento
 
-const ENV={ versoes:[], carregado:false, carregando:false, prep:null, checks:[] };
+const ENV={ versoes:[], carregado:false, carregando:false, prep:null, checks:[], sistema:null, eventos:[], evCarregado:false, manual:false };
 window.EXENV=ENV;
+// envio direto pelo sistema (Resend, via Edge Function proposta-enviar) — decisão do dono 14/09/2026
+const REMETENTE='ex@exeletric.com.br', CAPTURA='respostas@r.exeletric.com.br';
 const H2P_SRC='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js';
 const CANAIS={
   gmail:{nome:'Gmail',ic:'mail'},
@@ -34,6 +36,21 @@ function codigoFull(){ let c=S.numero||''; if(S.ofertaSigla){ c+='-'+S.ofertaSig
 function ehLote(){ try{ return (typeof isLoteUnit==='function'&&isLoteUnit())||(typeof isLoteBase==='function'&&isLoteBase()); }catch(e){ return false; } }
 function aprovada(){ return !!(S&&(S.comprovantes||[]).length); }
 function toast(t){ let el=$('envToast'); if(!el){ el=document.createElement('div'); el.id='envToast'; document.body.appendChild(el); } el.innerHTML=t; el.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('on'),5200); }
+
+/* ---------- linha do tempo: gravar evento (só adiciona) ---------- */
+async function evento(o){
+  if(!(CLOUD&&ORC_ID&&SB)) return null;
+  try{ const {data,error}=await SB.from('orcamento_eventos').insert(Object.assign({ empresa_id:EMPRESA_ID, orcamento_id:ORC_ID, oportunidade_id:OPP||null, criado_por_nome:USER_NOME||S.respNome||'' },o)).select('id').single();
+    if(error) throw error; return data.id;
+  }catch(e){ console.error('evento',e); return null; }
+}
+// o envio pelo sistema está configurado? (a função responde sem precisar da chave; nunca expõe a chave)
+async function checarSistema(){
+  if(ENV.sistema!==null || !(CLOUD&&SB&&SB.functions)) return ENV.sistema;
+  try{ const {data,error}=await SB.functions.invoke('proposta-enviar',{body:{ping:true}}); ENV.sistema=!error && !!(data&&data.ready); }
+  catch(e){ ENV.sistema=false; }
+  return ENV.sistema;
+}
 
 /* ---------- revisões ---------- */
 async function carregarVersoes(){
@@ -73,7 +90,8 @@ function decorar(){
   const n=revTrab(), v=vAtual(), ult=ultimaEnviada(), hist=ENV.versoes.length;
   let h='';
   if(aprovada()){
-    h+=`<span class="obst-aprov">${ms('verified')}Aprovada${ult?' · R'+ult.revisao:''}</span>`;
+    const apr=vivas().find(x=>x.status==='aprovada')||ult;   // a revisão que o cliente aprovou (pode não ser a última enviada)
+    h+=`<span class="obst-aprov">${ms('verified')}Aprovada${apr?' · R'+apr.revisao:''}</span>`;
   } else if(v && v.status==='preparada'){
     h+=`<span class="envchip warn">${ms('pending')}R${n} preparada · falta confirmar o envio</span>`;
     h+=`<button class="envbtn pri" onclick="EXENV.retomar()">${ms('forward_to_inbox')}Concluir envio</button>`;
@@ -87,7 +105,16 @@ function decorar(){
     else h+=`<button class="envbtn pri" ${CLOUD?'':'disabled title="Entre no app (login) para enviar"'} onclick="EXENV.abrirEnvio()">${ms('send')}Enviar ${n>1?'R'+n:'proposta'}</button>`;
   }
   if(hist) h+=`<button class="envbtn ghost" onclick="EXENV.historico()" title="Revisões enviadas">${ms('history')}${hist}</button>`;
+  const pend=pendentes().length;
+  if(pend) h=`<button class="envchip newr" onclick="EXENV.irTrat()" title="Classificar nas tratativas">${ms('mark_email_unread')}${pend} resposta${pend>1?'s':''} do cliente</button>`+h;
   box.innerHTML=h;
+  // proposta travada abre em visualização: mostra os painéis internos na TELA (nunca no PDF/impressão)
+  const trv=travada(); document.body.classList.toggle('env-travada',trv);
+  const lbl=document.querySelector('#previewBar .pv-lbl');
+  if(lbl){ if(!lbl.dataset.orig) lbl.dataset.orig=lbl.innerHTML;
+    lbl.innerHTML=trv?`${ms('lock')}${aprovada()?'Proposta aprovada':'Proposta enviada'} · travada · é assim que o cliente recebeu`:lbl.dataset.orig; }
+  if(CLOUD && ORC_ID && !ENV.evCarregado && !ENV.evCarregando){ ENV.evCarregando=true; carregarEventos().finally(()=>{ ENV.evCarregando=false; ENV.evCarregado=true; renderTrat(); const b=document.querySelector('#oppBanner .ob-st'); if(b&&pendentes().length) decorar(); }); }
+  renderTrat();
 }
 
 /* ---------- modal ---------- */
@@ -143,7 +170,7 @@ async function abrirEnvio(){
   if(travada()){ avisoTravada(); return; }
   if(ehLote()){ toast('Proposta de <b>lote</b>: o envio em conjunto é o próximo passo.'); return; }
   modal(`<div class="envh">${ms('hourglass_top')}Conferindo a proposta…</div>`);
-  const L=await checar(); const n=revTrab();
+  const [L]=await Promise.all([checar(),checarSistema()]); const n=revTrab();
   const form=ENV._form||{ para:S.cliEmail||'', cc:emailOk(S.respEmail)?S.respEmail:'', assunto:assuntoPadrao(n), corpo:corpoPadrao(n), canal:canalSalvo() };
   ENV._form=form; renderEnvio(L,n);
 }
@@ -169,6 +196,7 @@ function renderEnvio(L,n){
         <label class="envlb">Assunto <span class="envhint">o código entre colchetes amarra as respostas a esta proposta</span></label><input class="envin" value="${esc(f.assunto)}" oninput="EXENV.setF('assunto',this.value)">
         <label class="envlb">Mensagem</label><textarea class="envin ta" oninput="EXENV.setF('corpo',this.value)">${esc(f.corpo)}</textarea>
         <div class="envatt">${ms('picture_as_pdf')}Anexo: <b>${esc(codigoFull())}_R${n}.pdf</b> <span class="envhint">gerado da versão congelada</span></div>
+        ${ENV.sistema?`<div class="envinfo">${ms('verified_user')}Sai de <b>${REMETENTE}</b> · cópia oculta para ${REMETENTE} · respostas chegam no Outlook e ficam registradas aqui.</div>`:''}
       </div>
     </div>
     <div class="envact"><span class="envhint" id="envPrepHint" style="margin-right:auto">${tudo?'Ao preparar: congela a R'+n+', gera e guarda o PDF. O envio só conta depois que você confirmar.':'Resolva os itens em vermelho para liberar o envio.'}</span>
@@ -261,7 +289,8 @@ async function preparar(){
     // a proposta salva = a revisão congelada
     clearTimeout(typeof _saveT!=='undefined'?_saveT:0); pushOrc(); try{ DIRTY=false; _lastSaved=_hhmm(); renderSaveState(); }catch(e){}
     ENV.prep={id:vid,n,cod,f:{...f},pdfNome,blob,abrNova};
-    baixarPDF();
+    ENV.manual=!ENV.sistema;
+    if(!ENV.sistema) baixarPDF();   // pelo sistema o PDF vai anexado sozinho
     await carregarVersoes(); window.renderBanner(); _setMode('view');
     renderPasso2();
   }catch(e){
@@ -277,7 +306,8 @@ async function preparar(){
 function baixarPDF(){ const p=ENV.prep; if(!p)return;
   if(p.blob){ const a=document.createElement('a'); a.href=URL.createObjectURL(p.blob); a.download=p.pdfNome; document.body.appendChild(a); a.click(); setTimeout(()=>{ URL.revokeObjectURL(a.href); a.remove(); },3000); }
   else if(p.url){ window.open(p.url,'_blank'); } }
-function urlEmail(canal){ const f=ENV.prep.f, e=encodeURIComponent;
+function urlEmail(canal){ const f0=ENV.prep.f, e=encodeURIComponent;
+  const f=Object.assign({},f0,{cc:ENV.sistema?[...listaEmails(f0.cc),CAPTURA].join(', '):f0.cc});   // registro em cópia quando a captura está ativa
   if(canal==='gmail') return `https://mail.google.com/mail/?view=cm&fs=1&to=${e(f.para)}&cc=${e(f.cc||'')}&su=${e(f.assunto)}&body=${e(f.corpo)}`;
   if(canal==='outlook') return `https://outlook.live.com/mail/0/deeplink/compose?to=${e(f.para)}&cc=${e(f.cc||'')}&subject=${e(f.assunto)}&body=${e(f.corpo)}`;
   return `mailto:${f.para}?${f.cc?'cc='+e(f.cc)+'&':''}subject=${e(f.assunto)}&body=${e(f.corpo)}`; }
@@ -288,8 +318,27 @@ function copiarTexto(){ const f=ENV.prep.f; const t='Para: '+f.para+(f.cc?'\nCC:
   (navigator.clipboard?navigator.clipboard.writeText(t):Promise.reject()).then(()=>toast('Texto do e-mail copiado.')).catch(()=>{ prompt('Copie o texto:',t); }); }
 function renderPasso2(){ const p=ENV.prep; if(!p)return; const c=canalSalvo();
   const ok1=!!p.ck1, ok2=!!p.ck2;
+  if(ENV.sistema && !ENV.manual){
+    modal(`<div class="envh">${ms('forward_to_inbox')}R${p.n} congelada · pronta para enviar <span class="envcod">${esc(p.cod)} R${p.n}</span><button class="envx" onclick="EXENV.fechar()" title="Fechar (dá pra concluir depois pelo banner)">${ms('close')}</button></div>
+      <div class="envdone">${ms('check_circle')}R${p.n} gravada como está · ${ms('check_circle')}PDF gerado e guardado</div>
+      <div class="envsis">
+        <div class="envsis-r"><span>De</span><b>eX Eletric &lt;${REMETENTE}&gt;</b></div>
+        <div class="envsis-r"><span>Para</span><b>${esc(p.f.para)}</b></div>
+        ${p.f.cc?`<div class="envsis-r"><span>Cópia</span><b>${esc(p.f.cc)}</b></div>`:''}
+        <div class="envsis-r"><span>Cópia oculta</span><b>${REMETENTE}</b></div>
+        <div class="envsis-r"><span>Respostas para</span><b>${REMETENTE} · ${CAPTURA}</b><em>chegam no Outlook e ficam registradas nas tratativas</em></div>
+        <div class="envsis-r"><span>Assunto</span><b>${esc(p.f.assunto)}</b></div>
+        <div class="envsis-r"><span>Anexo</span><b>${ms('picture_as_pdf','font-size:15px')} ${esc(p.pdfNome)}</b></div>
+      </div>
+      ${p.erro?`<div class="enverr">${ms('error')}<span>${esc(p.erro)}<br><b>Nada foi enviado.</b> Pode tentar de novo ou enviar pelo seu e-mail.</span></div>`:''}
+      <div class="envact"><button class="envbtn danger" onclick="EXENV.descartar()">${ms('undo')}Desistir: descartar R${p.n}</button>
+        <button class="envbtn ghost" onclick="EXENV.modoManual(true)">${ms('alternate_email')}Enviar pelo meu e-mail</button><span style="flex:1"></span>
+        <button class="envbtn pri" id="envSisBtn" onclick="EXENV.enviarSistema()">${ms('send')}Enviar agora</button></div>`,true);
+    return;
+  }
   modal(`<div class="envh">${ms('forward_to_inbox')}R${p.n} congelada · agora envie <span class="envcod">${esc(p.cod)} R${p.n}</span><button class="envx" onclick="EXENV.fechar()" title="Fechar (dá pra concluir depois pelo banner)">${ms('close')}</button></div>
     <div class="envdone">${ms('check_circle')}R${p.n} gravada como está · ${ms('check_circle')}PDF gerado e guardado</div>
+    ${ENV.sistema?`<div class="envinfo">${ms('info')}<span>Pelo seu e-mail, o endereço de registro <b>${CAPTURA}</b> já vai em cópia: se o cliente usar "Responder a todos", a resposta entra nas tratativas.</span> <button class="envbtn sm" style="margin:0 0 0 auto" onclick="EXENV.modoManual(false)">Voltar: enviar pelo sistema</button></div>`:''}
     <div class="envstep"><span class="envn">1</span><div><b>PDF baixado</b> · ${esc(p.pdfNome)}<div><button class="envbtn sm" onclick="EXENV.baixarPDF()">${ms('download')}Baixar de novo</button></div></div></div>
     <div class="envstep"><span class="envn">2</span><div><b>Abra o e-mail já preenchido</b>${p.abriu?` <span class="envok">aberto no ${esc(CANAIS[p.abriu].nome)}</span>`:''}
       <div class="envcanais">${Object.keys(CANAIS).map(k=>`<button class="envbtn ${k===c?'pri':''}" onclick="EXENV.abrirEmail('${k}')">${ms(CANAIS[k].ic)}${CANAIS[k].nome}</button>`).join('')}<button class="envbtn ghost" onclick="EXENV.copiarTexto()">${ms('content_copy')}Copiar texto</button></div>
@@ -302,8 +351,38 @@ function renderPasso2(){ const p=ENV.prep; if(!p)return; const c=canalSalvo();
       <button class="envbtn pri" ${ok1&&ok2?'':'disabled'} onclick="EXENV.confirmar()">${ms('mark_email_read')}Confirmar envio da R${p.n}</button></div>`,true);
 }
 function ck(i,v){ ENV.prep['ck'+i]=v; renderPasso2(); }
+function modoManual(on){ ENV.manual=!!on; if(on && ENV.prep && ENV.prep.blob && !ENV.prep.baixou){ ENV.prep.baixou=true; baixarPDF(); } renderPasso2(); }
+// depois que o e-mail saiu (pelo sistema ou confirmado à mão): estado da folha + banner
+async function posEnvio(n,enviadoEm,para){
+  S.status='enviado'; S.envioRev=n; S.envioUlt={rev:n,em:enviadoEm,para};
+  try{ recalc(); }catch(e){} pushOrc(); try{ writeback(S._total||0); DIRTY=false; renderSaveState(); }catch(e){}
+  ENV.prep=null; ENV._form=null; ENV.manual=false;
+  await carregarVersoes(); fechar(); window.renderBanner(); _setMode('view');
+  carregarEventos();
+}
+async function enviarSistema(){ const p=ENV.prep; if(!p) return;
+  const b=$('envSisBtn'); if(b){ b.disabled=true; b.innerHTML=ms('hourglass_top')+'Enviando…'; }
+  p.erro=null;
+  try{
+    const {data,error}=await SB.functions.invoke('proposta-enviar',{body:{versao_id:p.id,usuario_nome:USER_NOME||S.respNome||''}});
+    let msg=null;
+    if(error){ msg=error.message||String(error); try{ const j=await error.context.json(); if(j&&j.error) msg=j.error; }catch(_){} }
+    else if(!data||!data.ok) msg=(data&&data.error)||'resposta inesperada do servidor';
+    if(msg) throw new Error(msg);
+    if(data.avisos&&data.avisos.length) console.warn('envio: registrado com avisos',data.avisos);
+    await posEnvio(p.n,data.enviado_em,p.f.para);
+    toast(`${ms('mark_email_read','font-size:16px')} <b>R${p.n} enviada pelo sistema</b> para ${esc(listaEmails(p.f.para)[0]||'')}. As respostas vão aparecer nas tratativas.`);
+  }catch(e){
+    console.error('enviar pelo sistema',e);
+    // a resposta pode ter se perdido depois do envio: se a revisão já consta como enviada, não houve falha
+    try{ await carregarVersoes(); const v=ENV.versoes.find(x=>x.id===p.id);
+      if(v&&v.status==='enviada'){ await posEnvio(p.n,v.enviado_em,p.f.para); toast(`<b>R${p.n} enviada.</b> (a confirmação demorou, mas o e-mail saiu)`); return; } }catch(_){}
+    p.erro=e.message||String(e); renderPasso2();
+  }
+}
 async function retomar(){   // voltou depois (recarregou a página): reconstrói o passo 2 a partir da revisão preparada
-  if(!ENV.prep){ const v=vAtual(); if(!v||v.status!=='preparada') return;
+  await checarSistema();
+  if(!ENV.prep){ ENV.manual=!ENV.sistema; const v=vAtual(); if(!v||v.status!=='preparada') return;
     let url=null; if(v.pdf_path&&v.pdf_path.indexOf('anexos:')===0){ try{ const {data}=await SB.storage.from('anexos').createSignedUrl(v.pdf_path.slice(7),3600); url=data&&data.signedUrl; }catch(e){} }
     ENV.prep={id:v.id,n:v.revisao,cod:v.codigo||codigoFull(),f:{para:v.para||'',cc:v.cc||'',assunto:v.assunto||'',corpo:v.corpo||''},pdfNome:`${v.codigo||codigoFull()}_R${v.revisao}.pdf`,blob:null,url,abrNova:false}; }
   renderPasso2();
@@ -313,16 +392,18 @@ async function confirmar(){ const p=ENV.prep; if(!p||!(p.ck1&&p.ck2)) return;
     const u=await SB.from('orcamento_versoes').update({status:'enviada'}).eq('id',p.id).eq('status','preparada').select('id,enviado_em').single();
     if(u.error) throw u.error;
     await SB.from('orcamento_versoes').update({status:'substituida'}).eq('orcamento_id',ORC_ID).eq('status','enviada').lt('revisao',p.n);
-    S.status='enviado'; S.envioRev=p.n; S.envioUlt={rev:p.n,em:u.data.enviado_em,para:p.f.para};
-    try{ recalc(); }catch(e){} pushOrc(); try{ writeback(S._total||0); DIRTY=false; renderSaveState(); }catch(e){}
-    ENV.prep=null; ENV._form=null;
-    await carregarVersoes(); fechar(); window.renderBanner(); _setMode('view');
+    await evento({ versao_id:p.id, revisao:p.n, tipo:'envio', canal:'e-mail próprio'+(p.abriu?' ('+CANAIS[p.abriu].nome+')':''),
+      titulo:`R${p.n} enviada pelo e-mail do usuário para ${listaEmails(p.f.para).join(', ')}`, texto:p.f.assunto,
+      anexos:[{nome:p.pdfNome,path:'anexos:propostas/'+ORC_ID+'/'+safeKey(p.cod)+'_R'+p.n+'.pdf',tipo:'application/pdf'}] });
+    await posEnvio(p.n,u.data.enviado_em,p.f.para);
     toast(`${ms('mark_email_read','font-size:16px')} <b>R${p.n} enviada e congelada.</b> Para alterar a proposta daqui pra frente, crie a R${p.n+1}.`);
   }catch(e){ console.error('confirmar envio',e); toast('Não consegui confirmar: '+esc(e.message||String(e))); }
 }
 async function descartar(){ const p=ENV.prep; if(!p)return;
   if(!confirm(`Descartar a R${p.n} preparada? Use isto se o e-mail NÃO foi enviado. A proposta volta a ficar editável.`)) return;
   try{ await SB.from('orcamento_versoes').update({status:'descartada'}).eq('id',p.id).eq('status','preparada');
+    evento({ versao_id:p.id, revisao:p.n, tipo:'descarte', canal:'sistema', titulo:`R${p.n} preparada e descartada (não foi enviada)` });
+    ENV.manual=false;
     if(p.abrNova && typeof descongelarAbr==='function'){ try{ descongelarAbr(); pushOrc(); }catch(_){} }
     ENV.prep=null; await carregarVersoes(); fechar(); window.renderBanner(); _setMode('edit');
     toast(`R${p.n} descartada. Nada foi registrado como enviado.`);
@@ -340,6 +421,8 @@ function criarRevisao(direto){
     return;
   }
   S.envioRev=n; pushOrc(); try{ DIRTY=false; renderSaveState(); }catch(e){}
+  evento({ revisao:n, tipo:'revisao', canal:'sistema', titulo:`R${n} criada a partir da R${n-1}`+(ENV._motivoRev?' · motivo: '+ENV._motivoRev:'') }).then(()=>carregarEventos());
+  ENV._motivoRev=null;
   ENV._form=null; fechar(); window.renderBanner(); _setMode('edit');
   toast(`<b>R${n} criada.</b> Edite à vontade; a R${n-1} continua guardada como foi enviada.`);
 }
@@ -359,9 +442,169 @@ async function historico(){
     <div class="envact"><button class="envbtn pri" onclick="EXENV.fechar()">Fechar</button></div>`,true);
 }
 
+/* ============================================================================
+   TRATATIVAS (passo 2) — linha do tempo da proposta
+   Respostas chegam sozinhas pelo endereço de registro (Edge Function email-entrada).
+   O sistema SUGERE; uma pessoa CONFIRMA com 1 clique (decisão do dono 14/09/2026).
+   ============================================================================ */
+const CLS={aprovacao:['verified','Aprovou','green'],ajuste:['reply','Pediu ajuste','pri'],recusa:['do_not_disturb_on','Recusou','red'],duvida:['help','Dúvida','blue'],outro:['chat','Outro','gray']};
+const CANAL_IC={'telefone':'call','WhatsApp':'chat','reunião':'groups','e-mail':'mail','outro':'more_horiz'};
+const MOTIVOS=['preço','prazo','escopo','concorrente','cliente sem verba','outro'];
+function ehMestra(){ try{ return typeof isLoteBase==='function'&&isLoteBase(); }catch(e){ return false; } }
+const pendentes=()=>ENV.eventos.filter(e=>e.tipo==='email_cliente'&&!e.classificacao&&!e.anulado_em);
+async function carregarEventos(){
+  if(!(CLOUD&&ORC_ID&&SB)) return;
+  try{ const {data,error}=await SB.from('orcamento_eventos').select('*').eq('orcamento_id',ORC_ID).is('deleted_at',null).order('ocorrido_em',{ascending:false});
+    if(error) throw error;
+    const antes=JSON.stringify(ENV.eventos.map(e=>[e.id,e.classificacao,e.anulado_em]));
+    ENV.eventos=data||[]; ENV.evCarregado=true;
+    if(antes!==JSON.stringify(ENV.eventos.map(e=>[e.id,e.classificacao,e.anulado_em]))){ try{ decorar(); }catch(_){ renderTrat(); } }
+  }catch(e){ console.error('tratativas',e); }
+}
+function trEl(){ let el=$('envTrat');
+  if(!el){ const ref=$('comprovantesPanel'); const anchor=ref||$('levUnidadePanel')||$('oppBanner'); if(!anchor||!anchor.parentElement) return null;
+    el=document.createElement('div'); el.id='envTrat'; el.className='noprint';
+    if(ref) ref.parentElement.insertBefore(el,ref); else anchor.parentElement.insertBefore(el,anchor.nextSibling); }
+  return el; }
+function evIcone(e){
+  if(e.anulado_em) return ['block','gray'];
+  if(e.classificacao&&CLS[e.classificacao]) return [CLS[e.classificacao][0],CLS[e.classificacao][2]];
+  return ({envio:['send','blue'],descarte:['block','gray'],revisao:['edit_document','pri'],email_cliente:['mark_email_unread','pri'],email_ex:['forward_to_inbox','gray'],
+    entrega:['report','red'],contato:[CANAL_IC[e.canal]||'call','gray'],cobranca:['notifications_active','amber'],nota:['sticky_note_2','gray'],legado:['history','gray']})[e.tipo]||['circle','gray']; }
+const anexosHtml=e=>(e.anexos||[]).map(a=>`<button class="tratt" onclick="EXENV.abrirAnexo('${esc(a.path)}')">${ms(/pdf/i.test(a.tipo||a.nome)?'picture_as_pdf':'attach_file')}${esc(a.nome)}</button>`).join('');
+function revChip(e){ if(!e.revisao) return ''; const ult=ultimaEnviada(); const velha=ult&&e.revisao<ult.revisao; return `<span class="trrv ${velha?'old':''}" title="${velha?'revisão já substituída':''}">R${e.revisao}</span>`; }
+function renderTrat(){
+  const el=trEl(); if(!el) return;
+  const enviada=!!ultimaEnviada();
+  if(!(CLOUD&&ORC_ID) || ehMestra() || (!ENV.eventos.length && !enviada && S.status!=='enviado')){ el.innerHTML=''; return; }
+  const pend=pendentes(), outros=ENV.eventos.filter(e=>!pend.includes(e));
+  const v=vAtual();
+  // próxima ação depois de um pedido de ajuste: criar a revisão seguinte
+  const ultAj=ENV.eventos.find(e=>e.classificacao==='ajuste'&&!e.anulado_em);
+  const mostraR=ultAj && !aprovada() && v && ['enviada','substituida'].includes(v.status) && ultAj.revisao===v.revisao;
+  const card=e=>{ const sg=e.sugestao&&CLS[e.sugestao]; const txt=String(e.texto||''); const longo=txt.length>700;
+    const ressalva=e.sugestao==='ajuste'&&/aprovado/.test(e.sugestao_motivo||'');
+    return `<div class="trnew">
+      <div class="trnew-h">${ms('mark_email_unread','font-size:17px')}Nova resposta do cliente <span class="trm">${brDH(e.ocorrido_em)} · ${esc(e.canal||'e-mail')}</span> ${revChip(e)}</div>
+      <div class="trnew-t">${esc(e.titulo||'')}</div>
+      ${txt?`<div class="trq">${esc(longo?txt.slice(0,700)+'…':txt)}</div>`:''}
+      <div class="trlinks">${e.mensagem_id?`<button class="tratt" onclick="EXENV.verEmail('${e.id}')">${ms('mail')}ver e-mail completo</button>`:''}${anexosHtml(e)}</div>
+      ${sg?`<div class="trsug ${e.sugestao==='aprovacao'?'good':(ressalva||e.sugestao==='recusa')?'care':'info'}">${ms(ressalva?'help':sg[0],'font-size:17px')}<div><b>Sugestão do sistema: ${ressalva?'aprovação COM ressalva: confira':esc(sg[1].toLowerCase())}</b><span>${esc(e.sugestao_motivo||'')}</span></div></div>`:''}
+      <div class="tracts">
+        <button class="envbtn ${e.sugestao==='aprovacao'?'okb':''}" onclick="EXENV.classificar('${e.id}','aprovacao')">${ms('verified')}Aprovou${e.revisao?' a R'+e.revisao:''}</button>
+        <button class="envbtn ${e.sugestao==='ajuste'?'pri':''}" onclick="EXENV.classificar('${e.id}','ajuste')">${ms('reply')}Pediu ajuste</button>
+        <button class="envbtn ${e.sugestao==='recusa'?'danger':''}" onclick="EXENV.classificar('${e.id}','recusa')">${ms('do_not_disturb_on')}Recusou</button>
+        <button class="envbtn" onclick="EXENV.classificar('${e.id}','duvida')">${ms('help')}Dúvida / outro</button>
+        <button class="envbtn ghost sm2" onclick="EXENV.anular('${e.id}')" title="Não é desta proposta / registrado por engano">${ms('link_off')}Não é desta proposta</button>
+      </div></div>`; };
+  const linha=e=>{ const [ic,c]=evIcone(e); const cl=e.classificacao&&CLS[e.classificacao];
+    const manual=['contato','nota','cobranca'].includes(e.tipo)||(e.tipo==='email_cliente'&&e.classificacao);
+    return `<div class="trev ${e.anulado_em?'off':''}"><span class="tric ${c}">${ms(ic)}</span><div class="trevb">
+      <div class="trevt">${esc(e.titulo||'')} ${revChip(e)} ${cl?`<span class="trcl ${cl[2]}">${cl[1]}${e.classificacao_motivo?' · '+esc(e.classificacao_motivo):''}</span>`:''}</div>
+      <div class="trm">${brDH(e.ocorrido_em)}${e.canal?' · '+esc(e.canal):''}${e.criado_por_nome?' · '+esc(e.criado_por_nome):''}${e.classificado_por_nome?' · classificado por '+esc(e.classificado_por_nome):''}</div>
+      ${e.texto&&e.tipo!=='envio'?`<div class="trtx">${esc(String(e.texto).slice(0,300))}${String(e.texto).length>300?'…':''}</div>`:''}
+      ${e.anulado_em?`<div class="trtx red">Anulado ${brDH(e.anulado_em)}${e.anulado_por_nome?' por '+esc(e.anulado_por_nome):''}: ${esc(e.anulado_motivo||'')}</div>`:''}
+      <div class="trlinks">${e.mensagem_id&&e.tipo!=='envio'?`<button class="tratt" onclick="EXENV.verEmail('${e.id}')">${ms('mail')}ver e-mail</button>`:''}${anexosHtml(e)}
+        ${manual&&!e.anulado_em?`<button class="tratt ghost" onclick="EXENV.anular('${e.id}')">${ms('undo')}anular</button>`:''}</div>
+    </div></div>`; };
+  const legado=(!ENV.eventos.length && !enviada && S.status==='enviado')?`<div class="trev"><span class="tric gray">${ms('history')}</span><div class="trevb"><div class="trevt">Marcada como enviada antes do sistema</div><div class="trm">sem cópia guardada do que foi enviado</div></div></div>`:'';
+  const LIM=6, todos=ENV._trTodos;
+  el.innerHTML=`<div class="trw">
+    <div class="trh">${ms('forum')}<b>Tratativas</b>${pend.length?`<span class="trbadge">${pend.length} nova${pend.length>1?'s':''}</span>`:''}
+      <span style="flex:1"></span>
+      <button class="envbtn sm2" onclick="EXENV.contatoUI()">${ms('add_call')}Registrar contato</button>
+      <button class="envbtn ghost sm2" onclick="EXENV.carregarEventos()" title="Atualizar">${ms('refresh')}</button></div>
+    ${mostraR?`<div class="trnext">${ms('edit_document')}<span>Pedido de ajuste registrado. Próximo passo: <b>criar a R${v.revisao+1}</b> com as alterações.</span><button class="envbtn pri" onclick="EXENV.revDoAjuste('${ultAj.id}')">${ms('edit_document')}Criar R${v.revisao+1}</button></div>`:''}
+    ${pend.map(card).join('')}
+    <div class="trlist">${(todos?outros:outros.slice(0,LIM)).map(linha).join('')}${legado}
+      ${!outros.length&&!legado&&!pend.length?`<div class="trm" style="padding:8px 2px">Nenhuma tratativa ainda. As respostas do cliente aparecem aqui sozinhas.</div>`:''}</div>
+    ${outros.length>LIM?`<button class="tratt" style="margin-top:6px" onclick="EXENV._trTodos=!EXENV._trTodos;EXENV.renderTrat()">${todos?'mostrar menos':'ver todas ('+outros.length+')'}</button>`:''}
+  </div>`;
+}
+function irTrat(){ const el=$('envTrat'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
+
+async function classificar(id,cls,motivo){
+  const e=ENV.eventos.find(x=>x.id===id); if(!e) return;
+  if(cls==='recusa' && !motivo){ motivoRecusaUI(id); return; }
+  const ult=ultimaEnviada();
+  if(cls==='aprovacao'){
+    if(aprovada()){ if(!confirm('A proposta já está aprovada. Registrar esta resposta também como aprovação (sem novo comprovante)?')) return; }
+    else {
+      if(e.revisao && ult && e.revisao<ult.revisao && !confirm(`Atenção: esta resposta é sobre a R${e.revisao}, mas a R${ult.revisao} foi enviada depois.\n\nAprovar a R${e.revisao} faz a execução herdar os preços DELA.\n\nConfirmar a aprovação da R${e.revisao}?`)) return;
+      const vt=vAtual(); if(vt && !['enviada','substituida','aprovada'].includes(vt.status) && revTrab()>(ult?ult.revisao:0) && !confirm(`Existe uma R${revTrab()} em edição que ainda não foi enviada. A aprovação vale para a R${e.revisao||(ult&&ult.revisao)} enviada, não para a edição. Continuar?`)) return;
+    }
+  }
+  try{
+    const u=await SB.from('orcamento_eventos').update({classificacao:cls,classificacao_motivo:motivo||null,classificado_por_nome:USER_NOME||S.respNome||''}).eq('id',id).is('classificacao',null).select('id').maybeSingle();
+    if(u.error) throw u.error; if(!u.data){ toast('Esta resposta já tinha sido classificada por outra pessoa.'); await carregarEventos(); return; }
+    if(cls==='aprovacao' && !aprovada()){
+      const a0=(e.anexos||[])[0]||{}; const quem=String(e.titulo||'').replace(/^Resposta de\s*/,'')||'cliente';
+      if(!Array.isArray(S.comprovantes)) S.comprovantes=[];
+      S.comprovantes.push({ id:uid(), tipo:(e.tipo==='contato'?'outro':'email'), origem:quem, data:String(e.ocorrido_em||'').slice(0,10),
+        obs:`Aprovação da R${e.revisao||(ult&&ult.revisao)||''} registrada pelas tratativas${e.tipo==='contato'?' ('+(e.canal||'contato')+')':''}`,
+        url:a0.path||'', nome:a0.nome||'', evento_id:id, versao_id:e.versao_id||(ult&&ult.id)||null, revisao:e.revisao||(ult&&ult.revisao)||null });
+      const vid=e.versao_id||(ult&&ult.id);
+      if(vid) await SB.from('orcamento_versoes').update({status:'aprovada'}).eq('id',vid).in('status',['enviada','substituida']);
+      onComprovantesChange();   // status "aprovado" + grava na nuvem + banner (mesmo caminho do painel de comprovantes)
+      await carregarVersoes(); window.renderBanner(); _setMode('view');
+      toast(`${ms('verified','font-size:16px')} <b>Aprovada a R${e.revisao||(ult&&ult.revisao)}.</b> O comprovante foi criado com esta resposta.`);
+    }
+    if(cls==='recusa'){ S.status='recusado'; try{ recalc(); }catch(_){} pushOrc(); try{ writeback(S._total||0); }catch(_){} window.renderBanner(); toast('Registrado como <b>recusa</b> ('+esc(motivo)+').'); }
+    if(cls==='ajuste') toast('Registrado como <b>pedido de ajuste</b>. Crie a próxima revisão quando for alterar.');
+    fechar(); await carregarEventos(); try{ decorar(); }catch(_){ renderTrat(); }
+  }catch(err){ console.error('classificar',err); toast('Não consegui registrar: '+esc(err.message||String(err))); }
+}
+function motivoRecusaUI(id){
+  modal(`<div class="envh">${ms('do_not_disturb_on')}Motivo da recusa<button class="envx" onclick="EXENV.fechar()">${ms('close')}</button></div>
+    <p class="envp">Obrigatório: é o que mostra, com o tempo, por que perdemos propostas.</p>
+    <div class="trchips">${MOTIVOS.map(m=>`<button class="envbtn" onclick="EXENV.classificar('${id}','recusa','${m}')">${esc(m)}</button>`).join('')}</div>`); }
+function revDoAjuste(id){ const e=ENV.eventos.find(x=>x.id===id); ENV._motivoRev=e?String(e.texto||'').replace(/\s+/g,' ').slice(0,90):null; criarRevisao(true); }
+
+function contatoUI(){ const f=ENV._ct||(ENV._ct={canal:'telefone',cls:'',texto:'',rev:(ultimaEnviada()||{}).revisao||revTrab()});
+  const revs=[...new Set(vivas().filter(v=>v.status!=='preparada').map(v=>v.revisao))];
+  modal(`<div class="envh">${ms('add_call')}Registrar contato com o cliente<button class="envx" onclick="EXENV.fechar()">${ms('close')}</button></div>
+    <label class="envlb">Por onde</label><div class="trchips">${Object.keys(CANAL_IC).map(c=>`<button class="envbtn ${f.canal===c?'pri':''}" onclick="EXENV._ct.canal='${c}';EXENV.contatoUI()">${ms(CANAL_IC[c])}${c}</button>`).join('')}</div>
+    <label class="envlb">O que o cliente disse</label><div class="trchips"><button class="envbtn ${!f.cls?'pri':''}" onclick="EXENV._ct.cls='';EXENV.contatoUI()">Só registrar</button>${Object.keys(CLS).filter(k=>k!=='outro').map(k=>`<button class="envbtn ${f.cls===k?'pri':''}" onclick="EXENV._ct.cls='${k}';EXENV.contatoUI()">${ms(CLS[k][0])}${CLS[k][1]}</button>`).join('')}</div>
+    ${revs.length?`<label class="envlb">Sobre qual revisão</label><select class="envin" style="width:auto" onchange="EXENV._ct.rev=+this.value">${revs.map(r=>`<option value="${r}" ${r===f.rev?'selected':''}>R${r}</option>`).join('')}</select>`:''}
+    <label class="envlb">Resumo</label><textarea class="envin ta" style="height:110px" oninput="EXENV._ct.texto=this.value" placeholder="Ex.: ligou o Denis, pediu para retirar o item 4">${esc(f.texto)}</textarea>
+    <div class="envact"><button class="envbtn" onclick="EXENV.fechar()">Cancelar</button><button class="envbtn pri" onclick="EXENV.salvarContato()">${ms('check')}Registrar</button></div>`); }
+async function salvarContato(){ const f=ENV._ct; if(!f) return;
+  if(!String(f.texto||'').trim()){ toast('Escreva um resumo do contato.'); return; }
+  const v=vivas().find(x=>x.revisao===f.rev&&x.status!=='preparada');
+  const id=await evento({ tipo:'contato', canal:f.canal, revisao:f.rev||null, versao_id:v?v.id:null, titulo:`Contato por ${f.canal}`, texto:f.texto.trim() });
+  if(!id){ toast('Não consegui registrar o contato.'); return; }
+  const cls=f.cls; ENV._ct=null; await carregarEventos();
+  if(cls) await classificar(id,cls); else { fechar(); try{ decorar(); }catch(_){ renderTrat(); } toast('Contato registrado.'); }
+}
+async function anular(id){ const e=ENV.eventos.find(x=>x.id===id); if(!e) return;
+  const motivo=prompt(e.tipo==='email_cliente'&&!e.classificacao?'Por que esta resposta não é desta proposta? (fica registrado)':'Motivo para anular este registro (fica registrado, nada é apagado):');
+  if(motivo===null) return; if(!motivo.trim()){ toast('Anular exige um motivo.'); return; }
+  const u=await SB.from('orcamento_eventos').update({anulado_em:new Date().toISOString(),anulado_por_nome:USER_NOME||'',anulado_motivo:motivo.trim()}).eq('id',id).is('anulado_em',null);
+  if(u.error){ toast('Não consegui anular: '+esc(u.error.message)); return; }
+  await carregarEventos(); try{ decorar(); }catch(_){ renderTrat(); } toast('Registro anulado (continua visível no histórico).'); }
+async function abrirAnexo(path){ if(!path) return;
+  if(String(path).indexOf('anexos:')!==0){ window.open(path,'_blank'); return; }
+  try{ const {data,error}=await SB.storage.from('anexos').createSignedUrl(path.slice(7),3600); if(error) throw error; window.open(data.signedUrl,'_blank'); }
+  catch(e){ toast('Não consegui abrir o anexo: '+esc(e.message||String(e))); } }
+async function verEmail(id){ const e=ENV.eventos.find(x=>x.id===id); if(!e||!e.mensagem_id) return;
+  modal(`<div class="envh">${ms('hourglass_top')}Abrindo e-mail…</div>`);
+  const {data:m,error}=await SB.from('email_mensagens').select('direcao,de,para,cc,assunto,texto,anexos,ocorrido_em,entrega').eq('id',e.mensagem_id).maybeSingle();
+  if(error||!m){ modal(`<div class="envh">${ms('error')}E-mail não encontrado</div><div class="envact"><button class="envbtn" onclick="EXENV.fechar()">Fechar</button></div>`); return; }
+  const L=a=>(a||[]).join(', ');
+  modal(`<div class="envh">${ms('mail')}${esc(m.assunto||'(sem assunto)')}<button class="envx" onclick="EXENV.fechar()">${ms('close')}</button></div>
+    <div class="envsis"><div class="envsis-r"><span>De</span><b>${esc(m.de||'')}</b></div><div class="envsis-r"><span>Para</span><b>${esc(L(m.para))}</b></div>${(m.cc||[]).length?`<div class="envsis-r"><span>Cópia</span><b>${esc(L(m.cc))}</b></div>`:''}
+      <div class="envsis-r"><span>Data</span><b>${brDH(m.ocorrido_em)}</b>${m.entrega?`<em>entrega: ${esc(m.entrega)}</em>`:''}</div></div>
+    <div class="trfull">${esc(m.texto||'')}</div>
+    <div class="trlinks">${anexosHtml(m)}</div>
+    <div class="envact"><button class="envbtn pri" onclick="EXENV.fechar()">Fechar</button></div>`,true); }
+// atualiza sozinho: a cada 60 s com a aba visível e ao voltar para a aba
+setInterval(()=>{ if(document.visibilityState==='visible' && CLOUD && ORC_ID && ENV.evCarregado) carregarEventos(); },60000);
+window.addEventListener('focus',()=>{ if(CLOUD && ORC_ID && ENV.evCarregado) carregarEventos(); });
+
 /* ---------- API p/ os onclick ---------- */
 Object.assign(ENV,{abrirEnvio,preparar,confirmar,descartar,retomar,criarRevisao,
-  historico,fechar,setF,fix,fixValidade,abrirEmail,baixarPDF,copiarTexto,ck,travada,revTrab,carregarVersoes});
+  historico,fechar,setF,fix,fixValidade,abrirEmail,baixarPDF,copiarTexto,ck,travada,revTrab,carregarVersoes,
+  modoManual,enviarSistema,checarSistema,carregarEventos,renderTrat,irTrat,classificar,revDoAjuste,contatoUI,salvarContato,anular,abrirAnexo,verEmail});
 
 /* ---------- estilos ---------- */
 const css=document.createElement('style'); css.textContent=`
@@ -424,6 +667,59 @@ const css=document.createElement('style'); css.textContent=`
 #envToast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%) translateY(20px);background:#241c40;color:#f0edfb;font-size:12.5px;line-height:1.45;padding:11px 16px;border-radius:10px;box-shadow:0 10px 30px rgba(0,0,0,.25);max-width:560px;opacity:0;pointer-events:none;transition:.25s;z-index:1000}
 #envToast.on{opacity:1;transform:translateX(-50%) translateY(0)}
 body.env-pdf .app{box-shadow:none!important;border-radius:0!important;margin:0 auto!important}
+/* envio pelo sistema */
+.envsis{border:1px solid var(--line,#ddd);border-radius:10px;overflow:hidden;margin:8px 0}
+.envsis-r{display:grid;grid-template-columns:120px 1fr;gap:4px 10px;padding:7px 12px;border-top:1px solid var(--line,#ddd);font-size:12.5px;align-items:baseline}
+.envsis-r:first-child{border-top:none}
+.envsis-r span{color:var(--tx3,#888);font-weight:600}.envsis-r b{font-weight:600;color:var(--tx,#1a1a18);word-break:break-word;display:inline-flex;align-items:center;gap:4px;flex-wrap:wrap}
+.envsis-r em{grid-column:2;font-style:normal;font-size:11px;color:var(--pri,#533ab7)}
+.enverr{display:flex;gap:8px;align-items:flex-start;font-size:12.5px;color:var(--red,#a32d2d);background:#fcebeb;border-radius:9px;padding:9px 11px;margin-top:8px}
+.envinfo span{flex:1}
+.envbtn.okb{background:var(--green,#3b6d11);border-color:var(--green,#3b6d11);color:#fff}
+.envbtn.sm2{padding:5px 9px;font-size:11.5px}
+.envchip.newr{background:var(--pri,#533ab7);color:#fff;border:none;cursor:pointer;animation:envpulse 2s ease-in-out 3}
+@keyframes envpulse{50%{box-shadow:0 0 0 5px rgba(83,58,183,.25)}}
+/* tratativas */
+.trw{background:var(--surf,#fff);border:1px solid var(--line,#ddd);border-radius:12px;padding:12px 14px;margin:0 0 14px}
+.trh{display:flex;align-items:center;gap:8px;font-size:13px;margin-bottom:8px;flex-wrap:wrap}
+.trh>.material-symbols-rounded{color:var(--pri,#533ab7);font-size:20px}
+.trbadge{font-size:11px;font-weight:800;background:var(--pri,#533ab7);color:#fff;border-radius:10px;padding:2px 8px}
+.trnext{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:var(--pri-bg,#eeedfe);color:var(--pri,#533ab7);border-radius:10px;padding:9px 12px;font-size:12.5px;margin-bottom:10px}
+.trnext span{flex:1;min-width:200px;color:var(--tx2,#555)}
+.trnew{border:2px solid var(--pri,#533ab7);background:#fbfaff;border-radius:12px;padding:11px 12px;margin-bottom:10px}
+.trnew-h{display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:11.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--pri,#533ab7)}
+.trnew-t{font-size:13.5px;font-weight:700;margin:4px 0 6px;color:var(--tx,#1a1a18)}
+.trq{background:var(--surf,#fff);border:1px solid var(--line,#ddd);border-left:3px solid var(--blue,#185fa5);border-radius:0 9px 9px 0;padding:8px 11px;font-size:13px;white-space:pre-wrap;color:var(--tx,#1a1a18)}
+.trm{font-size:11.5px;color:var(--tx3,#888);font-weight:500;text-transform:none;letter-spacing:0}
+.trrv{font-size:10px;font-weight:800;background:var(--tx,#1a1a18);color:#fff;border-radius:5px;padding:1px 6px;text-transform:none}
+.trrv.old{background:var(--tx3,#888)}
+.trsug{display:flex;gap:8px;align-items:flex-start;border-radius:9px;padding:8px 11px;margin:8px 0;font-size:12.5px}
+.trsug div{display:flex;flex-direction:column}.trsug span{font-size:11.5px;color:var(--tx2,#555)}
+.trsug.good{background:#e9f2dd;color:var(--green,#3b6d11)}.trsug.care{background:#faeeda;color:#8a560f}.trsug.info{background:var(--pri-bg,#eeedfe);color:var(--pri,#533ab7)}
+.tracts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.trlinks{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.tratt{display:inline-flex;align-items:center;gap:4px;font:600 11px inherit;color:var(--pri,#533ab7);background:var(--pri-bg,#eeedfe);border:none;border-radius:7px;padding:3px 8px;cursor:pointer}
+.tratt .material-symbols-rounded{font-size:14px}
+.tratt.ghost{background:none;color:var(--tx3,#888)}
+.trlist{border-top:1px solid var(--line,#ddd);margin-top:4px}
+.trev{display:flex;gap:9px;padding:8px 0;border-bottom:1px dashed var(--line,#ddd)}
+.trev:last-child{border-bottom:none}
+.trev.off{opacity:.55}.trev.off .trevt{text-decoration:line-through}
+.tric{flex:0 0 28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:var(--surf2,#f1efe8);color:var(--tx3,#888)}
+.tric .material-symbols-rounded{font-size:15px}
+.tric.blue{background:#e7f0fa;color:var(--blue,#185fa5)}.tric.pri{background:var(--pri-bg,#eeedfe);color:var(--pri,#533ab7)}.tric.green{background:#e9f2dd;color:var(--green,#3b6d11)}.tric.red{background:#fcebeb;color:var(--red,#a32d2d)}.tric.amber{background:#faeeda;color:var(--amber,#ba7517)}
+.trevb{flex:1;min-width:0}
+.trevt{font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
+.trcl{font-size:10.5px;font-weight:800;border-radius:6px;padding:1px 7px}
+.trcl.green{background:#e9f2dd;color:var(--green,#3b6d11)}.trcl.pri{background:var(--pri-bg,#eeedfe);color:var(--pri,#533ab7)}.trcl.red{background:#fcebeb;color:var(--red,#a32d2d)}.trcl.blue{background:#e7f0fa;color:var(--blue,#185fa5)}.trcl.gray{background:var(--surf2,#f1efe8);color:var(--tx2,#555)}
+.trtx{font-size:12px;color:var(--tx2,#555);white-space:pre-wrap;margin-top:3px}.trtx.red{color:var(--red,#a32d2d)}
+.trchips{display:flex;gap:6px;flex-wrap:wrap}
+.trfull{white-space:pre-wrap;font-size:13px;line-height:1.5;background:var(--surf2,#f1efe8);border-radius:9px;padding:12px;max-height:50vh;overflow:auto;margin:8px 0}
+@media print{#envTrat{display:none!important}}
+@media screen{
+  body.viewing.env-travada:not(.env-pdf) .oppbar{display:flex!important}
+  body.viewing.env-travada:not(.env-pdf) #envTrat,body.viewing.env-travada:not(.env-pdf) #comprovantesPanel .cmp-wrap{display:block!important}
+}
 @media print{#envOv,#envToast{display:none!important}}
 `; document.head.appendChild(css);
 
