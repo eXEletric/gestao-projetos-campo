@@ -343,6 +343,8 @@ select.fi{appearance:auto;cursor:pointer}
     <div class="mb">
       <div class="fg"><label class="fl">Cliente contratante</label><button type="button" class="fi selbtn placeholder" id="o_contratante_btn" onclick="openOppPick('contratante')">— escolher contratante —</button></div>
       <div class="fg"><label class="fl">Cliente contemplado / loja</label><button type="button" class="fi selbtn placeholder" id="o_contemplado_btn" onclick="openOppPick('contemplado')">escolha o contratante primeiro</button></div>
+      <div class="fg"><label class="fl">Contato desta oportunidade <span style="font-weight:500;text-transform:none;letter-spacing:0;color:var(--tx3)">· vazio = contato do cadastro do cliente · a proposta usa este</span></label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1.4fr;gap:8px"><input class="fi" id="o_ct_nome" placeholder="Nome"><input class="fi" id="o_ct_fone" placeholder="Telefone"><input class="fi" id="o_ct_email" type="email" placeholder="E-mail"></div></div>
       <div class="fg"><label class="fl">Objeto da demanda</label><input class="fi" id="o_objeto" placeholder="Ex.: Automação de iluminação — 4 QDs"></div>
       <div class="fg"><label class="fl">Tipo de serviço</label><div class="chips" id="o_tipo"></div></div>
       <div class="frow">
@@ -474,7 +476,10 @@ let CLOUD=false, EMPRESA_ID=null, ORC_CLOUD={};
 function cloudMsg(t){ const e=document.getElementById('cloudb'); if(e)e.textContent=t; }
 const mCli=c=>({id:c.id,empresa_id:EMPRESA_ID,tipo:c.tipo,pai_id:c.paiId||null,nome:c.nome,cnpj:c.cnpj||null,contato:c.contato||null,fone:c.fone||null,email:c.email||null,endereco:c.endereco||null,obs:c.obs||null});
 const mFase=(f,ord)=>({id:f.id,empresa_id:EMPRESA_ID,nome:f.nome,ordem:ord,tipo:f.fim?'final':'ativa',papel:f.papel||null,gate:f.gate||'nenhuma',campos:f.campos||[],destinos:(f.destinos!==undefined?f.destinos:null)});
-const mOpp=o=>({id:o.id,empresa_id:EMPRESA_ID,contratante_id:o.contratanteId||null,contemplado_id:o.contempladoId||null,fase_id:o.colId||null,objeto:o.objeto||null,temperatura:o.temperatura||'Morno',data_limite:o.dataLimite||null,obs:o.obs||null,fase_dados:o.faseDados||{}});
+const mOpp=o=>({id:o.id,empresa_id:EMPRESA_ID,contratante_id:o.contratanteId||null,contemplado_id:o.contempladoId||null,fase_id:o.colId||null,objeto:o.objeto||null,temperatura:o.temperatura||'Morno',data_limite:o.dataLimite||null,obs:o.obs||null,fase_dados:o.faseDados||{},
+  contato_nome:o.contatoNome||null,contato_fone:o.contatoFone||null,contato_email:o.contatoEmail||null});
+// contato efetivo da oportunidade: o próprio (se preenchido) ou o do cadastro do cliente
+function contatoOpp(o){ const ct=o?cli(o.contratanteId):null; return { nome:(o&&o.contatoNome)||(ct&&ct.contato)||'', fone:(o&&o.contatoFone)||(ct&&ct.fone)||'', email:(o&&o.contatoEmail)||(ct&&ct.email)||'' }; }
 const mLoja=l=>({id:l.id,empresa_id:EMPRESA_ID,nome:l.nome,grupo:l.grupo||null,numero:l.numero||null,endereco:l.endereco||null,cnpj:l.cnpj||null,coordenada:l.coordenada||null,codigo_externo:l.codigo||null,contato:l.contato||null,fone:l.fone||null,email:l.email||null,obs:l.obs||null});
 const mVinc=v=>({id:v.id,empresa_id:EMPRESA_ID,loja_id:v.lojaId,contratante_id:v.contratanteId,papel:v.papel||null,obs:v.obs||null});
 /* ===== PAPÉIS de fase (base Pipefy) — o papel define as AÇÕES liberadas no card + o REQUISITO da fase ===== */
@@ -532,7 +537,8 @@ function faltaParaSair(o,faseId){ const miss=[]; const papel=colPapel(faseId);
 function cUp(table,row){ if(!CLOUD)return; SB.from(table).upsert(row).then(({error})=>{ if(error){console.error('cloud up',table,error);cloudMsg('erro ao salvar na nuvem');} }); }
 function cDel(table,id){ if(!CLOUD)return; SB.from(table).update({deleted_at:new Date().toISOString()}).eq('id',id).then(({error})=>{ if(error)console.error('cloud del',table,error); }); }
 function cFases(){ if(!CLOUD)return; SB.from('crm_fases').upsert(S.colunas.map((f,i)=>mFase(f,i))).then(({error})=>{ if(error)console.error('cloud fases',error); }); }
-const mapOppRow=o=>({id:o.id,contratanteId:o.contratante_id,contempladoId:o.contemplado_id,objeto:o.objeto,temperatura:o.temperatura,dataLimite:o.data_limite||'',colId:o.fase_id,obs:o.obs,loteId:o.lote_id||null,faseDados:(o.fase_dados&&typeof o.fase_dados==='object'?o.fase_dados:{})});
+const mapOppRow=o=>({id:o.id,contratanteId:o.contratante_id,contempladoId:o.contemplado_id,objeto:o.objeto,temperatura:o.temperatura,dataLimite:o.data_limite||'',colId:o.fase_id,obs:o.obs,loteId:o.lote_id||null,faseDados:(o.fase_dados&&typeof o.fase_dados==='object'?o.fase_dados:{}),
+  contatoNome:o.contato_nome||'',contatoFone:o.contato_fone||'',contatoEmail:o.contato_email||''});
 async function carregarNuvem(){
   const [cl,fa,op,lj,vc,oc,lt]=await Promise.all([
     SB.from('clientes').select('*').is('deleted_at',null),
@@ -577,6 +583,7 @@ async function initCRM(){
   if(!COLABS.length) COLABS=['André Camilo','João Silva','Equipe A','Equipe B','Carlos Souza'];  // fallback/local
   if(!CLOUD){ load(); }
   applyMode(); setTab(TAB);
+  try{ abrirEdicaoPedida(); }catch(e){}
 }
 const TEMPS=["Frio","Morno","Quente"];
 const MODE=(new URLSearchParams(location.search)).get('m'); // 'clientes' | 'funil' | null(ambos)
@@ -624,7 +631,16 @@ function renderAvisoNaoSalvo(){ const board=document.getElementById('board'); if
   el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#faeeda;border:1.5px solid #e6c98f;color:#8a560f;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px">
     <span class="material-symbols-rounded">warning</span><span style="flex:1;min-width:220px"><b>Alterações NÃO salvas</b> na proposta <b>${esc(nome)}</b>. O funil só mostra o que foi salvo.</span>
     <button class="btn btn-s btn-p" onclick="abrirOrcNoShell('?opp=${esc(d.opp)}')"><span class="material-symbols-rounded">edit_document</span>Abrir e salvar</button></div>`; }
+// a proposta pediu "Editar oportunidade": abre a janela de editar desta oportunidade (só no quadro do funil)
+function abrirEdicaoPedida(){ if(MODE==='clientes'||!S) return;
+  let d=null; try{ d=JSON.parse(localStorage.getItem('ex_abrir_opp')||'null'); }catch(_){}
+  const q=(new URLSearchParams(location.search)).get('editar'); if(q) d={opp:q,t:Date.now()};
+  if(!d||!d.opp||Date.now()-(d.t||0)>60000) return;
+  try{ localStorage.removeItem('ex_abrir_opp'); }catch(_){}
+  if(S.oportunidades.find(x=>x.id===d.opp)){ if(TAB!=='funil'){ try{ setTab('funil'); }catch(_){} } openOpp(d.opp); }
+}
 window.addEventListener('storage',function(e){
+  if(e.key==='ex_abrir_opp' && e.newValue) abrirEdicaoPedida();
   if(e.key==='ex_orc_sync'){ _refFun=0; refreshFunilCloud(); setTimeout(()=>{ _refFun=0; refreshFunilCloud(); },2500); }   // 2ª leitura: a gravação da proposta pode terminar logo depois do sinal
   if(e.key==='ex_orc_dirty') renderAvisoNaoSalvo();
 });
@@ -993,8 +1009,8 @@ function renderOppDetail(){
           ${di('Cliente contratante',ct?ct.nome:'')}
           ${di('Cliente contemplado',cp?cp.nome:'')}
           ${di('Objeto da demanda',o.objeto)}
-          ${di('Contato',ct?ct.contato:'')}
-          ${di('Fone · e-mail',[ct&&ct.fone,ct&&ct.email].filter(Boolean).join(' · '))}
+          ${di('Contato',contatoOpp(o).nome)}
+          ${di('Fone · e-mail',[contatoOpp(o).fone,contatoOpp(o).email].filter(Boolean).join(' · '))}
           ${di('Data limite p/ orçamento',o.dataLimite?o.dataLimite.split('-').reverse().join('/'):'')}
           ${oc?di('Orçamento',fmtBRL(oc.total)+' · '+(oc.status||'rascunho')):''}
         </div>
@@ -1260,6 +1276,9 @@ function openOpp(id,colId){
   document.getElementById('o_objeto').value=o?(o.objeto||''):'';
   document.getElementById('o_obs').value=o?(o.obs||''):'';
   document.getElementById('o_data').value=o?(o.dataLimite||''):'';
+  document.getElementById('o_ct_nome').value=o?(o.contatoNome||''):'';
+  document.getElementById('o_ct_fone').value=o?(o.contatoFone||''):'';
+  document.getElementById('o_ct_email').value=o?(o.contatoEmail||''):'';
   document.getElementById('oDel').style.display=id?'inline-flex':'none';
   renderOppSelects();
   document.getElementById('modalOpp').classList.add('show');
@@ -1277,6 +1296,9 @@ function updateOppBtns(){
   const cb=document.getElementById('o_contratante_btn'), pb=document.getElementById('o_contemplado_btn');
   if(cb){ cb.textContent=ct?ct.nome:'— escolher contratante —'; cb.classList.toggle('placeholder',!ct); }
   if(pb){ pb.textContent=lo?lo.nome:(_oc?'— (opcional) escolher loja —':'escolha o contratante primeiro'); pb.classList.toggle('placeholder',!lo); }
+  // o que vem do cadastro aparece como dica: campo vazio = usa o cadastro do cliente escolhido
+  const ph=(id,v,pad)=>{ const el=document.getElementById(id); if(el) el.placeholder=v?(v+' (do cadastro)'):pad; };
+  ph('o_ct_nome',ct&&ct.contato,'Nome'); ph('o_ct_fone',ct&&ct.fone,'Telefone'); ph('o_ct_email',ct&&ct.email,'E-mail');
 }
 /* picker COM BUSCA (contratante / loja) */
 let OPICK=null;
@@ -1318,11 +1340,17 @@ function openCliFromPipe(tipo){ _fromPipe=tipo; openCli(tipo,null); }
 function closeOpp(){ document.getElementById('modalOpp').classList.remove('show'); EDITO=null; }
 function saveOpp(){
   if(!_oc){ alert('Escolha o cliente contratante.'); return; }
-  const data={contratanteId:_oc, contempladoId:_op, objeto:document.getElementById('o_objeto').value.trim(), temperatura:_ot, tipoServ:_ts, dataLimite:document.getElementById('o_data').value, obs:document.getElementById('o_obs').value.trim()};
+  const em=document.getElementById('o_ct_email').value.trim();
+  if(em && !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(em)){ alert('E-mail do contato inválido.'); return; }
+  const data={contratanteId:_oc, contempladoId:_op, objeto:document.getElementById('o_objeto').value.trim(), temperatura:_ot, tipoServ:_ts, dataLimite:document.getElementById('o_data').value, obs:document.getElementById('o_obs').value.trim(),
+    contatoNome:document.getElementById('o_ct_nome').value.trim(), contatoFone:document.getElementById('o_ct_fone').value.trim(), contatoEmail:em};
   let alvo;
   if(EDITO.id){ alvo=S.oportunidades.find(x=>x.id===EDITO.id); Object.assign(alvo, data); }
   else{ alvo={id:uid(),colId:EDITO.colId,...data}; S.oportunidades.push(alvo); SELO=alvo.id; }
-  save(); cUp('oportunidades',mOpp(alvo)); closeOpp(); render();
+  save(); closeOpp(); render();
+  // a oportunidade manda: grava e avisa a proposta aberta (outro quadro do app) para acompanhar na hora
+  if(CLOUD){ SB.from('oportunidades').upsert(mOpp(alvo)).then(({error})=>{ if(error){ console.error('cloud up oportunidades',error); cloudMsg('erro ao salvar na nuvem'); return; }
+    try{ localStorage.setItem('ex_opp_sync',JSON.stringify({opp:alvo.id,t:Date.now()})); }catch(_){} }); }
 }
 function delOpp(){ if(EDITO&&EDITO.id&&confirm('Excluir esta oportunidade?')){ const id=EDITO.id; S.oportunidades=S.oportunidades.filter(x=>x.id!==id); if(SELO===id)SELO=null; save(); cDel('oportunidades',id); closeOpp(); render(); } }
 function duplicarOpp(id){
@@ -1340,7 +1368,8 @@ function gerarOrcamento(id){
   const o=S.oportunidades.find(x=>x.id===id); if(!o)return;
   if(!orcIndex()[id]){   // 1ª vez: manda o pré-preenchimento
     const ct=cli(o.contratanteId), cp=contempl(o.contempladoId);
-    const prefill={ oppId:o.id, cliNome:ct?ct.nome:'', cliContato:ct?(ct.contato||''):'', cliFone:ct?(ct.fone||''):'', cliEmail:ct?(ct.email||''):'',
+    const _co=contatoOpp(o);
+    const prefill={ oppId:o.id, cliNome:ct?ct.nome:'', cliContato:_co.nome, cliFone:_co.fone, cliEmail:_co.email,
       finNome:cp?cp.nome:'', finEnd:cp?(cp.endereco||''):'', solTitulo:o.objeto||'', solDesc:o.obs||'' };
     try{ localStorage.setItem('ex_orc_prefill', JSON.stringify(prefill)); }catch(e){}
   }

@@ -626,8 +626,76 @@ async function sincronizarOportunidade(){
     sinalFunil();
   }catch(e){ console.error('sincronizar oportunidade',e); }
 }
+// (14/09, regra do dono "a OPORTUNIDADE manda"): a proposta NÃO escreve mais cliente/loja na oportunidade — só avisa o funil que gravou.
+// sincronizarOportunidade() fica sem uso (caminho único: oportunidade → proposta, abaixo).
 if(typeof window.pushOrc==='function'){ const _pushOrc=window.pushOrc;
-  window.pushOrc=function(){ const r=_pushOrc.apply(this,arguments); try{ if(OPP&&CLOUD){ sinalFunil(); sincronizarOportunidade(); } }catch(e){} return r; }; }
+  window.pushOrc=function(){ const r=_pushOrc.apply(this,arguments); try{ if(OPP&&CLOUD) sinalFunil(); }catch(e){} return r; }; }
+
+/* ---------- A OPORTUNIDADE MANDA: cliente, loja e contato da proposta vêm dela ----------
+   Avulsa: contratante + loja + contato. Lote (mestra/unidade): só contratante + contato — a loja de cada unidade
+   é CONTEMPLADA e vem do próprio lote (regra do dono 14/09). Trocar = janela "Editar oportunidade" do CRM. */
+let OPP_ROW=null;
+const emLoteAtual=()=>!!(typeof S_LOTE_ID!=='undefined'&&S_LOTE_ID);
+async function lerOportunidade(){
+  if(!(OPP&&SB)) return null;
+  try{ const {data,error}=await SB.from('oportunidades').select('contratante_id,contemplado_id,contato_nome,contato_fone,contato_email,objeto').eq('id',OPP).maybeSingle();
+    if(error) throw error; return data||null; }catch(e){ console.error('ler oportunidade',e); return null; }
+}
+function aplicarOportunidade(row){
+  if(!row||!S) return false; let mudou=false;
+  if(row.contratante_id && S.contratanteId!==row.contratante_id){ S.contratanteId=row.contratante_id; mudou=true; }
+  if(!emLoteAtual() && row.contemplado_id && S.lojaId!==row.contemplado_id){ S.lojaId=row.contemplado_id; mudou=true; }
+  return mudou;
+}
+function aplicarContatoOportunidade(){
+  if(!OPP_ROW||!S) return;
+  if(OPP_ROW.contato_nome) S.cliContato=OPP_ROW.contato_nome;
+  if(OPP_ROW.contato_fone) S.cliFone=OPP_ROW.contato_fone;
+  if(OPP_ROW.contato_email) S.cliEmail=OPP_ROW.contato_email;
+}
+if(typeof window.carregarOrc==='function'){ const _carregarOrc=window.carregarOrc;
+  window.carregarOrc=async function(){ const r=await _carregarOrc.apply(this,arguments);
+    try{ if(OPP&&SB){ const {data:{session}}=await SB.auth.getSession(); if(session){ OPP_ROW=await lerOportunidade(); aplicarOportunidade(OPP_ROW); } } }catch(e){ console.error('oportunidade manda',e); }
+    return r; }; }
+if(typeof window.refreshClienteLive==='function'){ const _rcl=window.refreshClienteLive;
+  window.refreshClienteLive=function(){ const r=_rcl.apply(this,arguments); try{ aplicarContatoOportunidade(); }catch(e){} return r; }; }
+// cabeçalho: dados que vêm da oportunidade ficam travados; o botão "CRM" vira "Editar oportunidade"
+function travarCabecalho(){
+  if(!OPP||!S) return;
+  const lote=emLoteAtual();
+  const campos=['cliNome','cliContato','cliFone','cliEmail'].concat(lote?[]:['finNome','finRede','finNum','finEnd']);
+  campos.forEach(k=>{ const el=document.querySelector('[data-m="'+k+'"]'); if(!el) return;
+    el.readOnly=true; el.classList.add('env-opp-lock'); el.title='Vem da oportunidade. Para trocar, use "Editar oportunidade".'; });
+  document.querySelectorAll('.fpick').forEach(b=>{ const oc=b.getAttribute('onclick')||'';
+    const alvo=/openHP\('contratante'\)/.test(oc)||(!lote&&/openHP\('final'\)/.test(oc));
+    if(!alvo||b.dataset.envOpp) return;
+    b.dataset.envOpp='1'; b.setAttribute('onclick','EXENV.editarOportunidade()'); b.title='Cliente, loja e contato vêm da oportunidade';
+    b.innerHTML='<span class="material-symbols-rounded">edit_note</span>Editar oportunidade'; });
+}
+if(typeof window.bindFields==='function'){ const _bind=window.bindFields;
+  window.bindFields=function(){ const r=_bind.apply(this,arguments); try{ travarCabecalho(); }catch(e){ console.error('travar cabeçalho',e); } return r; }; }
+ENV.editarOportunidade=function(){
+  if(!OPP) return;
+  try{ localStorage.setItem('ex_abrir_opp',JSON.stringify({opp:OPP,t:Date.now()})); }catch(_){}
+  try{ if(window.top!==window.self){ parent.postMessage({type:'exNav',view:'funil'},'*'); return; } }catch(_){}
+  location.href='eX_CRM.html?m=funil&editar='+encodeURIComponent(OPP);
+};
+// a oportunidade foi editada (em outro quadro do app) com esta proposta aberta → acompanha na hora
+window.addEventListener('storage',async function(e){
+  if(e.key!=='ex_opp_sync'||!e.newValue||!OPP||!S) return;
+  let d=null; try{ d=JSON.parse(e.newValue); }catch(_){} if(!d||d.opp!==OPP) return;
+  const lojaAntes=S.lojaId, foto=()=>[S.contratanteId,S.lojaId,S.cliNome,S.cliContato,S.cliFone,S.cliEmail,S.finNome,S.finEnd].join('|'), antes=foto();
+  OPP_ROW=await lerOportunidade(); if(!OPP_ROW) return;
+  aplicarOportunidade(OPP_ROW);
+  try{ refreshClienteLive(); }catch(_){}
+  if(foto()===antes) return;   // a edição não mexeu em nada que a proposta usa (ex.: só temperatura)
+  try{ bindFields(); }catch(_){}
+  if(S.lojaId!==lojaAntes && typeof carregarRaio==='function'){ try{ await carregarRaio(); }catch(_){} }
+  try{ recalc(); }catch(_){} try{ window.renderBanner(); }catch(_){}
+  toast(travada()
+    ? `Os dados do cliente mudaram na oportunidade. A <b>R${revTrab()}</b> já enviada continua como foi; para enviar com os dados novos, crie a <b>R${revTrab()+1}</b>.`
+    : 'Cliente/contato atualizados a partir da <b>oportunidade</b>.');
+});
 function tituloProposta(){ return [S&&S.cliNome,S&&S.finNome].filter(x=>String(x||'').trim()).join(' — ')||(S&&S.numero)||''; }
 if(typeof window.renderSaveState==='function'){ const _rss=window.renderSaveState;
   window.renderSaveState=function(){ const r=_rss.apply(this,arguments);
@@ -771,6 +839,7 @@ body.env-pdf .app{box-shadow:none!important;border-radius:0!important;margin:0 a
 .trchips{display:flex;gap:6px;flex-wrap:wrap}
 .trfull{white-space:pre-wrap;font-size:13px;line-height:1.5;background:var(--surf2,#f1efe8);border-radius:9px;padding:12px;max-height:50vh;overflow:auto;margin:8px 0}
 @media print{#envTrat{display:none!important}}
+@media screen{ .env-opp-lock{cursor:default;color:var(--tx,#1a1a18)} .env-opp-lock:focus{outline:none;box-shadow:none} }
 @media screen{
   body.viewing.env-travada:not(.env-pdf) .oppbar{display:flex!important}
   body.viewing.env-travada:not(.env-pdf) #envTrat,body.viewing.env-travada:not(.env-pdf) #comprovantesPanel .cmp-wrap{display:block!important}
