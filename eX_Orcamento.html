@@ -1622,7 +1622,7 @@ function renderLoteMatBlock(cfg){   // master: "Materiais empregados" = somado d
       +'<td class="r" style="white-space:nowrap"><span class="rsl">R$</span> <input id="lme_c_'+i+'" class="cin num" style="width:82px" value="'+fmtN(u)+'" data-bu="'+u+'" oninput="lmeRefresh()"><div id="lme_cc_'+i+'" hidden style="'+eraS+'"></div></td>'
       +'<td class="r money" id="lme_t_'+i+'">'+fmt(r.custo)+'</td></tr>'; }).join('');
     el.innerHTML=headWrap(editTog)
-      +'<div class="sotot-hint noprint" style="margin:0;background:#f8efdf;border-color:#e6cfa0"><span class="material-symbols-rounded" style="color:var(--amber)">payments</span><span><b>Editando a custo</b> — o preço vale no lote todo; a qtd distribui proporcional entre as lojas. <b>Nada muda até Aplicar.</b> O preço do cliente (soberano) não é tocado.</span></div>'
+      +'<div class="sotot-hint noprint" style="margin:0;background:#f8efdf;border-color:#e6cfa0"><span class="material-symbols-rounded" style="color:var(--amber)">payments</span><span><b>Editando a custo</b> — preço vale no lote todo; qtd distribui proporcional entre as lojas. <b>As alterações só ficam SALVAS ao clicar "Aplicar nas lojas"</b> (o "Salvar" do topo não guarda edição de material). O preço do cliente (soberano) não é tocado.</span></div>'
       +'<div class="scroll"><table class="tbl"><thead><tr><th>#</th><th>Material</th><th class="r">Σ qtd</th><th>Und</th><th class="r">Custo un.</th><th class="r">Custo total</th></tr></thead><tbody>'+brs+'</tbody><tfoot><tr class="ftot"><td class="ftl" colspan="5">Custo do material no lote</td><td class="r"><b id="lme_ftot">'+fmt(tot)+'</b></td></tr></tfoot></table></div>'
       +'<div class="addrow" style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
       +'<button onclick="loteMatEditApply()" style="border-style:solid;border-color:var(--amber);background:var(--amber);color:#fff"><span class="material-symbols-rounded">hub</span>Aplicar nas lojas (<span id="lme_n">0</span>)</button>'
@@ -1649,7 +1649,14 @@ function renderLoteMatBlock(cfg){   // master: "Materiais empregados" = somado d
     +inner;
 }
 function loteMatEditOn(){ LME_ON=true; renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }
-function loteMatEditCancel(){ LME_ON=false; renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }
+function loteMatEditCancel(){
+  var n=0;
+  (document.querySelectorAll('#blk_materiais tr[data-lme]')||[]).forEach(function(tr){ var i=tr.getAttribute('data-lme');
+    var qi=document.getElementById('lme_q_'+i), ci=document.getElementById('lme_c_'+i); if(!qi||!ci)return;
+    if(Math.abs(num(qi.value)-num(qi.getAttribute('data-bq')))>0.05)n++;
+    if(Math.abs(num(ci.value)-num(ci.getAttribute('data-bu')))>0.005)n++; });
+  if(n && !confirm('Descartar '+n+' alteração(ões) NÃO aplicada(s)?\n\nElas não ficam salvas — só ficam guardadas ao clicar "Aplicar nas lojas".')) return;
+  LME_ON=false; renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }
 function lmeRefresh(){ var n=0, tot=0;
   (document.querySelectorAll('#blk_materiais tr[data-lme]')||[]).forEach(function(tr){
     var i=tr.getAttribute('data-lme');
@@ -3083,9 +3090,11 @@ function verComoClienteLote(){
   let ov=_lg('vcOverlay'); if(!ov){ ov=document.createElement('div'); ov.id='vcOverlay'; document.body.appendChild(ov); }
   ov.innerHTML=`<style>@media print{body>*:not(#vcOverlay){display:none!important}#vcOverlay{position:static!important;background:#fff!important;padding:0!important}#vcBar,#vcWarn{display:none!important}#vcSheet{box-shadow:none!important}}</style>
     ${cc?`<div id="vcWarn" style="position:sticky;top:0;z-index:2;background:#a32d2d;color:#fff;padding:9px 16px;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:8px"><span class="material-symbols-rounded">warning</span>Este documento está MOSTRANDO seu custo e lucro ao cliente. Se não for intencional, feche e desligue "Custo / lucro por loja".</div>`:''}
-    <div id="vcBar" style="position:sticky;top:0;display:flex;gap:8px;justify-content:flex-end;padding:12px 16px;background:rgba(20,14,40,.06)">
+    <div id="vcBar" style="position:sticky;top:0;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:12px 16px;background:rgba(20,14,40,.06)">
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:11.5px;color:#3a3550;font-weight:700">Material na proposta:</span>${['qtd','val','lista','tot'].map(function(m){var lbl={qtd:'Quantidade',val:'Valor',lista:'Lista',tot:'Só total'}[m];var on=matModo===m;return '<button onclick="setMatModoDoc(\''+m+'\')" style="border:1px solid '+(on?'#533ab7':'#c9c4dd')+';background:'+(on?'#533ab7':'#fff')+';color:'+(on?'#fff':'#57536b')+';border-radius:8px;padding:6px 11px;font:600 12px inherit;cursor:pointer">'+lbl+'</button>';}).join('')}</div>
+      <div style="display:flex;gap:8px;align-items:center">
       <button onclick="window.print()" style="border:none;background:#533ab7;color:#fff;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
-      <button onclick="closeVerCliente()" style="border:1px solid #ccc;background:#fff;color:#333;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer">Fechar</button></div>
+      <button onclick="closeVerCliente()" style="border:1px solid #ccc;background:#fff;color:#333;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer">Fechar</button></div></div>
     <div style="padding:22px 16px 60px">${doc}</div>`;
   ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(20,14,40,.55);overflow:auto';
 }
@@ -3122,6 +3131,7 @@ function setLoteView(v){ LOTE_VIEW=(v==='pad')?'pad':'lev'; try{ injectLoteBaseP
 function loteServSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.servicos)||[]).forEach(function(r){var k=r.desc||'—'; if(!m[k])m[k]={desc:k,und:r.und||'',qtd:0}; m[k].qtd+=num(r.qtd);});}); return Object.keys(m).map(function(k){return m[k];}).filter(function(r){return r.qtd>0;}).sort(function(a,b){return a.desc.localeCompare(b.desc,'pt');}); }
 function loteMatSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.materiais)||[]).forEach(function(r){var k=r.desc||'—'; if(!m[k])m[k]={desc:k,und:r.und||'',qtd:0,custo:0}; m[k].qtd+=num(r.qtd); m[k].custo+=num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt));});}); return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.custo-a.custo;}); }
 function setMatModo(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} }   // 7: modo de exibir material (bloco Materiais empregados do master + documento do cliente)
+function setMatModoDoc(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ verComoClienteLote(); }catch(_){} }   // troca o modo do material NA impressão (barra do "Ver como o cliente") e recarrega o preview
 function setMatOrigem(v){ S.matOrigem=(v==='base')?'base':'herdar'; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} }   // origem do bloco de material no master: somado das lojas (herdar) × base editável
 function loteMatSomadoSig(){ return loteMatSoma().map(function(r){return (r.desc||'')+'#'+(+num(r.qtd).toFixed(3))+'#'+(+num(r.custo).toFixed(2));}).sort().join('|'); }
 function baseMatSig(){ return (S.materiais||[]).map(function(r){var q=num(r.qtd),u=(r.usarBase!==false)?num(r.custoBase):num(r.custoAlt);return (r.desc||'')+'#'+(+q.toFixed(3))+'#'+(+(q*u).toFixed(2));}).sort().join('|'); }
