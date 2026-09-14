@@ -1261,15 +1261,16 @@ const MG_DEF={servicos:30,materiais:30,despesas:0,equip:0};
 function baseMg(blk){ if(S.margem && S.margem[blk]!==undefined && S.margem[blk]!=='') return num(S.margem[blk]); return (MG_DEF[blk]!==undefined?MG_DEF[blk]:0); }
 // VALOR FINAL COMBINADO: fixa o preço; a margem dos blocos de lucro (serviços+materiais) deriva pra bater
 function comboActive(){ return S.valorCombinado!=null && num(S.valorCombinado)>0; }
-function comboMg(){   // margem uniforme (fração) nos blocos de lucro
-  const cL=(blocoAtivo('servicos')?blkCusto('servicos'):0)+(blocoAtivo('materiais')?blkCusto('materiais'):0);
+function adicCusto(blk){ return (S[blk]||[]).reduce(function(a,r){ return a+(r&&r.adic?lineCusto(r):0); },0); }   // custo das linhas ADICIONAIS (escopo além do modelo) — ficam FORA do combo, cobradas por cima
+function comboMg(){   // margem uniforme (fração) nos blocos de lucro — só sobre o escopo-base (adicionais fora)
+  const cL=(blocoAtivo('servicos')?blkCusto('servicos')-adicCusto('servicos'):0)+(blocoAtivo('materiais')?blkCusto('materiais')-adicCusto('materiais'):0);
   if(cL<=0) return 0;
-  const cP=(blocoAtivo('despesas')?blkCusto('despesas'):0)+(blocoAtivo('equip')?blkCusto('equip'):0)+diariasCusto();
+  const cP=(blocoAtivo('despesas')?blkCusto('despesas')-adicCusto('despesas'):0)+(blocoAtivo('equip')?blkCusto('equip')-adicCusto('equip'):0)+diariasCusto();
   const desc=num(S.descontoPct)/100, imp=num(S.impostoPct)/100;
   const bruto=num(S.valorCombinado)/(((1-desc)||1)*(1+imp));   // tira imposto e desconto
   return (bruto-cP)/cL - 1;
 }
-const mgOf=r=>{ if(comboActive() && (r._blk==='servicos'||r._blk==='materiais')) return comboMg()*100;
+const mgOf=r=>{ if(comboActive() && (r._blk==='servicos'||r._blk==='materiais') && !r.adic) return comboMg()*100;   // adicional NÃO entra no combo — margem própria, cobra por cima
   return (r.margem===''||r.margem==null)?baseMg(r._blk):num(r.margem); };
 function setValorCombinado(v){ const n=num(v); S.valorCombinado=(n>0?n:null); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); }
 function clearCombo(){ S.valorCombinado=null; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); }
@@ -1821,7 +1822,7 @@ function renderBlk(cfg){
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
-        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}</td>
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}${adicChipHtml(cfg,r)}</td>
         ${cfg.key==='servicos'?`<td class="cat" style="font-size:12px;color:var(--tx2)">${esc(svcCatOf(r))}</td>`:''}
         ${marcaCell}
         ${cfg.key==='servicos'
@@ -1858,7 +1859,7 @@ function renderBlk(cfg){
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
-        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}</td>
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}${adicChipHtml(cfg,r)}</td>
         ${cfg.key==='servicos'?`<td class="cat" style="font-size:12px;color:var(--tx2)">${esc(svcCatOf(r))}</td>`:''}
         ${marcaCell}
         ${cfg.key==='servicos'
@@ -2836,6 +2837,21 @@ function ownChipHtml(cfg,r){
 function soltarOwn(id){ var r=(S.materiais||[]).find(function(x){return x.id===id;}); if(!r||!r.own)return;
   if(!confirm('Soltar o campo próprio deste material nesta loja?\n\nA linha volta a SEGUIR O LOTE: o próximo "Aplicar nas lojas" (preço/qtd) passa a alcançar ela de novo.\nO valor de agora não muda.')) return;
   delete r.own; save(); if(OPP&&CLOUD){try{pushOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} cloudMsg('material voltou a seguir o lote ✓'); }
+// ---- ADICIONAIS (decisão 4): item marcado como escopo ALÉM do modelo, com motivo; cobra POR CIMA do combo ----
+function setAdic(blk,id){ var r=(S[blk]||[]).find(function(x){return x.id===id;}); if(!r)return;
+  if(r.adic){ if(!confirm('Tirar a marca de ADICIONAL desta linha?\nEla volta a fazer parte do escopo-base (combo).')) return; delete r.adic; delete r.adicMotivo; cloudMsg('adicional removido'); }
+  else { var m=prompt('Marcar como ADICIONAL — escopo ALÉM do modelo desta loja.\nEle é cobrado POR CIMA do combo (não diminui a margem do resto).\n\nMotivo (vira seu argumento na proposta):', r.adicMotivo||''); if(m===null) return; r.adic=true; r.adicMotivo=(m||'').trim(); cloudMsg('marcado como adicional ✓'); }
+  save(); if(OPP&&CLOUD){try{pushOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key===blk;})); }catch(_){} recalc(); }
+function adicChipHtml(cfg,r){   // controle por linha, só em unidade de lote
+  if(!(cfg.custo && isLoteUnit() && r)) return '';
+  if(r.adic){ return '<div style="margin-top:3px;display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">'
+      +'<span title="'+esc(r.adicMotivo||'escopo além do modelo')+'" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;border-radius:20px;padding:2px 8px;color:#b0243a;background:#fbe6ea"><span class="material-symbols-rounded" style="font-size:11px">add_circle</span>ADICIONAL</span>'
+      +(r.adicMotivo?'<span style="font-size:10px;color:var(--tx3)">'+esc(r.adicMotivo)+'</span>':'')
+      +'<button onclick="setAdic(\''+cfg.key+'\',\''+r.id+'\')" title="editar/tirar" style="border:0;background:transparent;color:var(--tx3);cursor:pointer;font-size:10px;font-weight:700;text-decoration:underline">editar</button></div>'; }
+  return '<button onclick="setAdic(\''+cfg.key+'\',\''+r.id+'\')" title="Marcar como adicional (escopo além do modelo) — cobra por cima do combo" style="margin-top:3px;border:1px solid #d68; color:#b0243a;background:transparent;border-radius:7px;padding:2px 7px;font:inherit;font-size:10px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:3px"><span class="material-symbols-rounded" style="font-size:12px">add_circle</span>marcar adicional</button>';
+}
+function unitAdicN(u){ var n=0, ms=[]; var d=(u&&u.dados)||{}; ['servicos','materiais','equip','despesas'].forEach(function(k){ (d[k]||[]).forEach(function(r){ if(r&&r.adic){ n++; ms.push((r.desc||'item')+(r.adicMotivo?': '+r.adicMotivo:'')); } }); }); return {n:n,ms:ms}; }
+function adicBadgeHtml(o){ var a=unitAdicN(o); if(!a.n) return ''; return '<div style="margin-top:3px"><span title="'+esc(a.ms.join(' · '))+'" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;border-radius:20px;padding:2px 7px;color:#b0243a;background:#fbe6ea"><span class="material-symbols-rounded" style="font-size:11px">add_circle</span>+'+a.n+' adicional'+(a.n>1?'is':'')+'</span></div>'; }
 /* ===== Escopo padrão reutilizável — modelos (1.2) ===== */
 var MODELOS_LIST=[];
 async function carregarModelos(){ try{ const {data,error}=await SB.from('orc_modelos').select('id,nome,descricao,dados').eq('ativo',true).is('deleted_at',null).order('nome'); if(!error) MODELOS_LIST=data||[]; }catch(e){ console.error('modelos',e); } }
@@ -2955,7 +2971,7 @@ function renderLoteBaseHtml(){
   const contrNome=S.cliNome||'';
   const rows=LOTE_UNITS.length?LOTE_UNITS.map(o=>{ const st=unitStatus(o); return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line2)">
       <div style="display:flex;align-items:center;gap:9px;min-width:0"><span style="width:28px;height:28px;border-radius:7px;background:var(--pri-bg);color:var(--pri);display:grid;place-items:center;flex:none"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">store</span></span>
-        <div style="min-width:0"><div style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(lojaLabel(o))}</div><div style="font-size:11px;color:var(--tx3)">${esc(o.numero||'')}</div>${ovBadgeHtml(o)}</div></div>
+        <div style="min-width:0"><div style="font-weight:600;font-size:13.5px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(lojaLabel(o))}</div><div style="font-size:11px;color:var(--tx3)">${esc(o.numero||'')}</div>${ovBadgeHtml(o)}${adicBadgeHtml(o)}</div></div>
       <span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;border-radius:20px;padding:3px 8px;color:${st.c};background:${st.bg};white-space:nowrap"><span class="material-symbols-rounded" style="font-size:12px">${st.i}</span>${st.t}</span>
       <div style="display:flex;align-items:center;gap:7px;justify-self:end">
         ${(()=>{ const p=num(o._prazo); const many=(lotePrazoResumo().n>1); const isMax=many&&p&&Math.abs(p-lotePrazoResumo().max.p)<1e-9; const isMin=many&&p&&Math.abs(p-lotePrazoResumo().min.p)<1e-9&&!isMax; const col=isMax?'var(--pers,#b0701a)':(isMin?'var(--herd,#159a6a)':'var(--tx3)'); return `<span style="font-size:12px;color:${col};font-weight:${(isMax||isMin)?'700':'400'};min-width:78px;text-align:right;font-variant-numeric:tabular-nums" title="prazo desta unidade"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">schedule</span> ${p?fmtPrazo(p):'—'}${isMax?' ↑':''}${isMin?' ↓':''}</span>`; })()}
