@@ -1641,7 +1641,7 @@ function loteSeedBaseMedia(){   // monta o modelo da Base com a MÉDIA por loja 
   var N=(LOTE_UNITS||[]).length||1; var soma=loteMatSoma();
   if(!soma.length){ alert('Não há material somado nas lojas ainda.'); return; }
   if((S.materiais||[]).length && !confirm('Montar o modelo da Base com a MÉDIA por loja ('+soma.length+' itens)?\n\nSubstitui o que houver hoje na Base. É o modelo do lote (não altera as lojas).')) return;
-  S.materiais=soma.map(function(r){ var q=num(r.qtd)/N; var unit=(num(r.qtd)>0)?num(r.custo)/num(r.qtd):0; return rowSvc(r.desc, +q.toFixed(2), r.und||'un', unit, '', null, ''); });
+  S.materiais=soma.map(function(r){ var q=num(r.qtd)/N; var unit=(num(r.qtd)>0)?num(r.custo)/num(r.qtd):0; var o=rowSvc(r.desc, +q.toFixed(2), r.und||'un', unit, '', null, ''); o.usarBase=false; o.custoAlt=unit; return o; });   // valores MANUAIS (específicos desta proposta), não padrão do catálogo
   S.matBaseOn=true; save(); if(OPP&&CLOUD){try{pushOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} recalc(); cloudMsg('modelo base montado com a média por loja'); }
 function renderLoteMatBlock(cfg){   // master: "Materiais empregados" = Soma das lojas + Base do lote (média), cada uma com chave "na proposta"
   const rows=loteMatSoma(); const tot=rows.reduce(function(a,r){return a+r.custo;},0);
