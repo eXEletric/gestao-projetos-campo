@@ -1848,7 +1848,6 @@ function renderBlk(cfg){
       <span class="ic"><span class="material-symbols-rounded">${cfg.icon}</span></span>
       <h2>${cfg.titulo}</h2>
       <div class="modosw">
-        ${(isLoteBase()&&cfg.key==='materiais')?matOrigToggle():''}
         <button class="chip ${soT?'on':''}" onclick="toggleSoTotal('${cfg.key}')" title="Na proposta do cliente: agrupar os itens num total só (esconde item a item). Não muda o cálculo."><span class="material-symbols-rounded">${soT?'visibility_off':'format_list_bulleted'}</span>${soT?'Só o total':'Detalhado'}</button>
       </div>
     </div>
@@ -3183,33 +3182,9 @@ function loteServSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dado
 function loteMatSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.materiais)||[]).forEach(function(r){var k=r.desc||'—'; if(!m[k])m[k]={desc:k,und:r.und||'',qtd:0,custo:0}; m[k].qtd+=num(r.qtd); m[k].custo+=num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt));});}); return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.custo-a.custo;}); }
 function setMatModo(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} }   // 7: modo de exibir material (bloco Materiais empregados do master + documento do cliente)
 function setMatModoDoc(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ verComoClienteLote(); }catch(_){} }   // troca o modo do material NA impressão (barra do "Ver como o cliente") e recarrega o preview
-// MÉDIA POR LOJA: liga/desliga (mostra a média JUNTO do total, não substitui)
-function setShowMedia(v){ S.showMedia=!!v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){}; try{ if(_lg('loteBasePanel')) injectLoteBasePanel(); }catch(_){} }
-function _medN(){ return (LOTE_UNITS||[]).length||1; }
-function _medOn(){ return !!S.showMedia && (LOTE_UNITS||[]).length>1; }
-function medSubQ(v){ return _medOn()?'<div style="font-size:10px;color:var(--tx3);font-weight:400;margin-top:1px">méd '+_d1(num(v)/_medN())+'</div>':''; }
-function medSubM(v){ return _medOn()?'<div style="font-size:10px;color:var(--tx3);font-weight:400;margin-top:1px">méd '+fmt(num(v)/_medN())+'</div>':''; }
-function mediaTogHtml(){ var on=_medOn(); return '<button class="lbtn" style="'+(on?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'" onclick="setShowMedia('+(S.showMedia?'false':'true')+')" title="mostra a média por loja (total ÷ nº de lojas) JUNTO do total"><span class="material-symbols-rounded" style="'+(on?'color:#fff':'')+'">bar_chart</span>Média/loja</button>'; }
-function setMatOrigem(v){ S.matOrigem=(v==='base')?'base':'herdar'; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} }   // origem do bloco de material no master: somado das lojas (herdar) × base editável
-function loteMatSomadoSig(){ return loteMatSoma().map(function(r){return (r.desc||'')+'#'+(+num(r.qtd).toFixed(3))+'#'+(+num(r.custo).toFixed(2));}).sort().join('|'); }
-function baseMatSig(){ return (S.materiais||[]).map(function(r){var q=num(r.qtd),u=(r.usarBase!==false)?num(r.custoBase):num(r.custoAlt);return (r.desc||'')+'#'+(+q.toFixed(3))+'#'+(+(q*u).toFixed(2));}).sort().join('|'); }
-function baseDifereDoSomado(){ return baseMatSig()!==loteMatSomadoSig(); }
-function matBaseHint(){ var n=(S.materiais||[]).length;
-  if(!n) return '<div class="sotot-hint noprint" style="margin:0"><span class="material-symbols-rounded">layers</span><span>Base do lote <b>vazia</b>. Clique em <b>“Trazer somado → base”</b> pra começar do levantamento — você edita aqui sem afetar as lojas.</span></div>';
-  if(baseDifereDoSomado()) return '<div class="sotot-hint noprint" style="margin:0;background:#f8efdf;border-color:#e6cfa0"><span class="material-symbols-rounded" style="color:var(--amber)">edit</span><span><b style="color:var(--amber)">Alterado</b> — a Base do lote está diferente da soma das lojas. É um rascunho: <b>não afeta as unidades</b> até você usar “Adicionar ao lote”.</span></div>';
-  return '<div class="sotot-hint noprint" style="margin:0;background:#e4f4ee;border-color:#bfe3d2"><span class="material-symbols-rounded" style="color:var(--teal)">check_circle</span><span>Base do lote <b>igual</b> à soma das lojas.</span></div>'; }
-function loteSeedBaseFromSomado(){
-  var rows=loteMatSoma();
-  if(!rows.length){ alert('Não há material somado nas lojas ainda.'); return; }
-  if((S.materiais||[]).length && !confirm('Trazer o material somado das lojas ('+rows.length+' itens) pra Base do lote?\n\nSUBSTITUI o material atual da base. É o rascunho do lote — NÃO altera as lojas.')) return;
-  S.materiais=rows.map(function(r){ var q=num(r.qtd); var unit=q>0?num(r.custo)/q:0; return rowSvc(r.desc, q, r.und||'un', unit, '', null, ''); });
-  S.matOrigem='base'; save(); if(OPP&&CLOUD){ try{ pushOrc(); }catch(_){}} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} recalc(); cloudMsg('somado trazido pra base — edite à vontade (não afeta as lojas)');
-}
-function matOrigToggle(){ var o=S.matOrigem||'herdar';
-  return '<div class="modosw" style="gap:6px;flex-wrap:wrap">'
-    +'<button class="lbtn" style="'+(o==='herdar'?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'" onclick="setMatOrigem(\'herdar\')" title="material somado das 16 lojas (o levantamento) — só leitura"><span class="material-symbols-rounded" style="'+(o==='herdar'?'color:#fff':'')+'">hub</span>Somado das lojas</button>'
-    +'<button class="lbtn" style="'+(o==='base'?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'" onclick="setMatOrigem(\'base\')" title="base editável do lote (modelo) — adiciona/edita item"><span class="material-symbols-rounded" style="'+(o==='base'?'color:#fff':'')+'">edit</span>Base do lote</button>'
-    +'</div>'; }
+// [faxina 14/09] removidos como código morto: setShowMedia/_medN/_medOn/medSubQ/medSubM/mediaTogHtml (toggle "Média/loja" revertido);
+// setMatOrigem/matOrigToggle/matBaseHint/baseDifereDoSomado/loteMatSomadoSig/baseMatSig (toggle "Somado × Base" aposentado);
+// loteSeedBaseFromSomado (o "Trazer somado → base" que quebrava o combo — escala-lote na base 42.000). Nada disso tinha chamador vivo.
 var DEFAULT_COND='Pagamento: 50% do total do lote na entrada; saldo pago a cada loja concluída, mediante emissão da nota fiscal — unidade a unidade.';   // 2.4
 function condComerciais(){ return (S.condComerciais!==undefined && S.condComerciais!==null)?S.condComerciais:DEFAULT_COND; }
 function setCond(k,v){ S[k]=v; save(); if(OPP&&CLOUD){ try{ saveOrc(); }catch(_){}} }
