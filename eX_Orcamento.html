@@ -1622,7 +1622,7 @@ function renderLoteMatBlock(cfg){   // master: bloco "Materiais empregados" = ma
     +'<span class="ic"><span class="material-symbols-rounded">'+cfg.icon+'</span></span>'
     +'<h2>'+cfg.titulo+'</h2>'+matOrigToggle()+sel+'</div>'
     +'<div class="sotot-hint noprint" style="margin:0"><span class="material-symbols-rounded">info</span><span><b>Somado das 16 lojas</b> (só leitura) — é o levantamento. Pra editar item a item, mude pra <b>Base do lote</b>. Pra incluir um item em todas, use <b>Adicionar ao lote</b>.</span></div>'
-    +'<div class="addrow"><button onclick="loteAddPick(\'materiais\')" style="border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">hub</span>Adicionar ao lote</button></div>'
+    +'<div class="addrow"><button onclick="loteSeedBaseFromSomado()" style="border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">download</span>Trazer somado → base</button><button onclick="loteAddPick(\'materiais\')" style="margin-left:8px;border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">hub</span>Adicionar ao lote</button></div>'
     +inner;
 }
 function renderBlk(cfg){
@@ -1730,10 +1730,11 @@ function renderBlk(cfg){
         <button class="chip ${soT?'on':''}" onclick="toggleSoTotal('${cfg.key}')" title="Na proposta do cliente: agrupar os itens num total só (esconde item a item). Não muda o cálculo."><span class="material-symbols-rounded">${soT?'visibility_off':'format_list_bulleted'}</span>${soT?'Só o total':'Detalhado'}</button>
       </div>
     </div>
+    ${(isLoteBase()&&cfg.key==='materiais')?matBaseHint():''}
     ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: a edição é igual (você vê e ajusta cada item), mas na <b>impressão / envio da proposta</b> os itens saem como <b>“incluso”</b> e o valor aparece só no <b>total agrupado</b> do bloco — não item por item.</span></div>`:''}
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="blkfoot">${blkMargemCtrl(cfg)}${soT?'':`<span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(blkSubDisp(cfg.key))}</b></span>`}</div>
-    <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button>${(isLoteBase()&&(cfg.key==='servicos'||cfg.key==='materiais'))?`<button onclick="loteAddPick('${cfg.key}')" title="Adiciona este item na base e em TODAS as lojas do lote (com confirmação)" style="margin-left:8px;border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">hub</span>Adicionar ao lote</button>`:''}</div>
+    <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button>${(isLoteBase()&&(cfg.key==='servicos'||cfg.key==='materiais'))?`<button onclick="loteAddPick('${cfg.key}')" title="Adiciona este item na base e em TODAS as lojas do lote (com confirmação)" style="margin-left:8px;border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">hub</span>Adicionar ao lote</button>`:''}${(isLoteBase()&&cfg.key==='materiais')?`<button onclick="loteSeedBaseFromSomado()" title="Copia o material somado das lojas pra Base do lote (editável; não afeta as lojas)" style="margin-left:8px;border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">download</span>Trazer somado → base</button>`:''}</div>
     ${cfg.key==='servicos'?('<div id="svcTopPanels"><div id="fatoresPanel">'+fatoresObraHtml()+'</div><div id="maoObraPanel">'+efetivoHtml()+'</div></div><div class="clientonly" id="equipePrint">'+equipePrintHtml()+'</div>'):''}
     ${obsHtml}`;
 }
@@ -3043,6 +3044,20 @@ function loteServSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dado
 function loteMatSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.materiais)||[]).forEach(function(r){var k=r.desc||'—'; if(!m[k])m[k]={desc:k,und:r.und||'',qtd:0,custo:0}; m[k].qtd+=num(r.qtd); m[k].custo+=num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt));});}); return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.custo-a.custo;}); }
 function setMatModo(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} }   // 7: modo de exibir material (bloco Materiais empregados do master + documento do cliente)
 function setMatOrigem(v){ S.matOrigem=(v==='base')?'base':'herdar'; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} }   // origem do bloco de material no master: somado das lojas (herdar) × base editável
+function loteMatSomadoSig(){ return loteMatSoma().map(function(r){return (r.desc||'')+'#'+(+num(r.qtd).toFixed(3))+'#'+(+num(r.custo).toFixed(2));}).sort().join('|'); }
+function baseMatSig(){ return (S.materiais||[]).map(function(r){var q=num(r.qtd),u=(r.usarBase!==false)?num(r.custoBase):num(r.custoAlt);return (r.desc||'')+'#'+(+q.toFixed(3))+'#'+(+(q*u).toFixed(2));}).sort().join('|'); }
+function baseDifereDoSomado(){ return baseMatSig()!==loteMatSomadoSig(); }
+function matBaseHint(){ var n=(S.materiais||[]).length;
+  if(!n) return '<div class="sotot-hint noprint" style="margin:0"><span class="material-symbols-rounded">layers</span><span>Base do lote <b>vazia</b>. Clique em <b>“Trazer somado → base”</b> pra começar do levantamento — você edita aqui sem afetar as lojas.</span></div>';
+  if(baseDifereDoSomado()) return '<div class="sotot-hint noprint" style="margin:0;background:#f8efdf;border-color:#e6cfa0"><span class="material-symbols-rounded" style="color:var(--amber)">edit</span><span><b style="color:var(--amber)">Alterado</b> — a Base do lote está diferente da soma das lojas. É um rascunho: <b>não afeta as unidades</b> até você usar “Adicionar ao lote”.</span></div>';
+  return '<div class="sotot-hint noprint" style="margin:0;background:#e4f4ee;border-color:#bfe3d2"><span class="material-symbols-rounded" style="color:var(--teal)">check_circle</span><span>Base do lote <b>igual</b> à soma das lojas.</span></div>'; }
+function loteSeedBaseFromSomado(){
+  var rows=loteMatSoma();
+  if(!rows.length){ alert('Não há material somado nas lojas ainda.'); return; }
+  if((S.materiais||[]).length && !confirm('Trazer o material somado das lojas ('+rows.length+' itens) pra Base do lote?\n\nSUBSTITUI o material atual da base. É o rascunho do lote — NÃO altera as lojas.')) return;
+  S.materiais=rows.map(function(r){ var q=num(r.qtd); var unit=q>0?num(r.custo)/q:0; return rowSvc(r.desc, q, r.und||'un', unit, '', null, ''); });
+  S.matOrigem='base'; save(); if(OPP&&CLOUD){ try{ pushOrc(); }catch(_){}} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} recalc(); cloudMsg('somado trazido pra base — edite à vontade (não afeta as lojas)');
+}
 function matOrigToggle(){ var o=S.matOrigem||'herdar';
   return '<div class="modosw" style="gap:6px;flex-wrap:wrap">'
     +'<button class="lbtn" style="'+(o==='herdar'?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'" onclick="setMatOrigem(\'herdar\')" title="material somado das 16 lojas (o levantamento) — só leitura"><span class="material-symbols-rounded" style="'+(o==='herdar'?'color:#fff':'')+'">hub</span>Somado das lojas</button>'
