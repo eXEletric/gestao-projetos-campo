@@ -1638,12 +1638,51 @@ function baseMatTableHtml(cfg){   // Base do lote = modelo EDITÁVEL de material
   var _sc=rows.reduce(function(a,r){return a+lineCusto(r);},0), _sp=rows.reduce(function(a,r){return a+linePreco(r);},0);
   var foot=rows.length?'<tfoot><tr class="ftot"><td colspan="8" class="ftl">Total do modelo (base · por loja)</td><td class="r money"><b>'+fmt(_sc)+'</b></td><td class="r money"><b style="color:var(--pri)">'+fmt(_sp)+'</b></td><td></td></tr></tfoot>':'';
   return '<div class="scroll"><table class="tbl"><thead><tr>'+cols+'</tr></thead><tbody>'+body+'</tbody>'+foot+'</table></div>'; }
-function loteSeedBaseMedia(){   // monta o modelo da Base com a MÉDIA por loja (total ÷ N) de tudo que está empregado
-  var N=(LOTE_UNITS||[]).length||1; var soma=loteMatSoma();
+function loteSeedBaseMedia(){   // atualiza a Base com a MÉDIA por loja (total ÷ nº de lojas que TÊM o item) — MERGE, não substitui
+  var soma=loteMatSoma();
   if(!soma.length){ alert('Não há material somado nas lojas ainda.'); return; }
-  if((S.materiais||[]).length && !confirm('Montar o modelo da Base com a MÉDIA por loja ('+soma.length+' itens)?\n\nSubstitui o que houver hoje na Base. É o modelo do lote (não altera as lojas).')) return;
-  S.materiais=soma.map(function(r){ var q=num(r.qtd)/N; var unit=(num(r.qtd)>0)?num(r.custo)/num(r.qtd):0; var o=rowSvc(r.desc, +q.toFixed(2), r.und||'un', unit, '', null, ''); if(r.lid)o.lid=r.lid; o.usarBase=false; o.custoAlt=unit; return o; });   // valores MANUAIS (específicos desta proposta); herda a linhagem (lid) da soma
-  S.matBaseOn=true; save(); if(OPP&&CLOUD){try{pushOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} recalc(); cloudMsg('modelo base montado com a média por loja'); }
+  var hasBase=(S.materiais||[]).length>0;
+  var msg = hasBase
+    ? 'Atualizar a Base com a MÉDIA por loja ('+soma.length+' item(ns))?\n\n• Item que já está na Base: atualiza qtd/valor pela média.\n• Item novo das lojas: entra.\n• Item que você criou na Base e não está nas lojas: fica como está.\n• Média = total ÷ nº de lojas que TÊM o item (não divide por 16 à toa).\nNão altera as lojas.'
+    : 'Montar a Base com a MÉDIA por loja ('+soma.length+' item(ns))?\n\nMédia = total ÷ nº de lojas que têm o item. Valores manuais desta proposta. Não altera as lojas.';
+  if(!confirm(msg)) return;
+  if(!Array.isArray(S.materiais)) S.materiais=[];
+  var add=0, upd=0;
+  soma.forEach(function(r){
+    var nP=r.nLojas||1; var q=+(num(r.qtd)/nP).toFixed(2); var unit=+(((num(r.qtd)>0)?num(r.custo)/num(r.qtd):0)).toFixed(4);   // custo un. já é por presença (Σcusto/Σqtd)
+    var ex=S.materiais.find(function(x){return _lidKey(x)===r.key;});   // casa por linhagem (lid) ou desc no legado sem lid
+    if(ex){ ex.qtd=q; ex.usarBase=false; ex.custoAlt=unit; if(!(num(ex.custoBase)>0))ex.custoBase=unit; if(!ex.und)ex.und=r.und||'un'; upd++; }
+    else { var o=rowSvc(r.desc, q, r.und||'un', unit, '', null, ''); if(r.lid)o.lid=r.lid; else delete o.lid; o.usarBase=false; o.custoAlt=unit; S.materiais.push(o); add++; }   // legado sem lid: Base fica sem lid p/ casar por desc (round-trip idempotente)
+  });
+  S.matBaseOn=true; save(); if(OPP&&CLOUD){try{pushOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} recalc(); cloudMsg('Base atualizada pela média — '+add+' novo(s) · '+upd+' atualizado(s)'); }
+async function loteReplicarMat(){   // IDA: replica o modelo da Base nas lojas por LINHAGEM (lid), respeitando campo próprio (own)
+  if(!isLoteBase()) return;
+  var base=(S.materiais||[]).filter(function(r){return r&&(r.desc||num(r.custoBase)>0||num(r.custoAlt)>0);});
+  if(!base.length){ alert('A Base do lote está vazia. Monte o modelo ("Trazer média" ou "Adicionar material") antes de replicar.'); return; }
+  var units=LOTE_UNITS||[]; if(!units.length){ alert('Sem lojas no lote.'); return; }
+  if(!confirm('Replicar o modelo da Base ('+base.length+' item(ns)) nas '+units.length+' loja(s)?\n\n• Item que já existe na loja: atualiza qtd/valor pelo modelo.\n• Item novo: entra na loja.\n• Linha que VOCÊ ajustou à mão na loja (campo próprio) é PRESERVADA.\n• Não muda o preço do cliente (soberano/42.000).')) return;
+  try{
+    await SB.from('orcamentos').update({dados:S}).eq('id',ORC_ID);   // garante a Base gravada antes do fan-out
+    var add=0, upd=0, keepP=0, keepQ=0;
+    for(const u of units){
+      var d=(u.dados&&typeof u.dados==='object')?JSON.parse(JSON.stringify(u.dados)):{};
+      d.materiais=Array.isArray(d.materiais)?d.materiais:[]; var touched=false;
+      base.forEach(function(b){
+        var m=d.materiais.find(function(x){return _lidKey(x)===_lidKey(b);});   // casa por linhagem (lid) ou desc no legado sem lid
+        if(!m){ var cp=JSON.parse(JSON.stringify(b)); cp.id=uid(); delete cp.own; d.materiais.push(cp); add++; touched=true; return; }   // item novo: entra com a linhagem
+        var own=m.own||{}; var did=false;
+        if(own.preco){ keepP++; } else { m.custoBase=b.custoBase; m.usarBase=b.usarBase; m.custoAlt=b.custoAlt; m.margem=b.margem; did=true; }   // bloco de preço
+        if(own.qtd){ keepQ++; } else { m.qtd=b.qtd; did=true; }   // quantidade
+        if(did){ upd++; touched=true; }   // desc/und/marca da loja ficam (respeita rename por loja — a linhagem casa pelo lid)
+      });
+      if(touched) await SB.from('orcamentos').update({dados:d}).eq('id',u.id);
+    }
+    await loteReload();
+    var rep='✅ Modelo replicado: '+add+' novo(s) · '+upd+' atualizado(s) (linha·loja).';
+    if(keepP||keepQ){ var pr=[]; if(keepP)pr.push(keepP+' preço'); if(keepQ)pr.push(keepQ+' qtd'); rep+='\n\n🔒 Preservado (campo próprio): '+pr.join(' · ')+'.\nNada que você ajustou à mão foi sobrescrito.'; alert(rep); }
+    else cloudMsg(rep);
+  }catch(e){ console.error(e); alert('Erro ao replicar: '+(e.message||e)); }
+}
 function renderLoteMatBlock(cfg){   // master: "Materiais empregados" = Soma das lojas + Base do lote (média), cada uma com chave "na proposta"
   const rows=loteMatSoma(); const tot=rows.reduce(function(a,r){return a+r.custo;},0);
   const N=(LOTE_UNITS||[]).length||1; const bOn=blocoAtivo('materiais');
@@ -1684,7 +1723,11 @@ function renderLoteMatBlock(cfg){   // master: "Materiais empregados" = Soma das
   var secBase='<div style="border:1px solid var(--line);border-radius:10px;overflow:hidden">'
     +'<div style="'+_shd+'">'+matViewSw('base',baseOn)+'<b style="font-size:12.5px">Base do lote</b><span style="font-size:11px;color:var(--tx3)">modelo editável — igual ao serviço</span></div>'
     + baseMatTableHtml(cfg)
-    +'<div class="addrow" style="padding:8px 12px;display:flex;gap:8px;flex-wrap:wrap"><button onclick="loteSeedBaseMedia()" style="border-style:solid;border-color:var(--pri);background:var(--pri);color:#fff"><span class="material-symbols-rounded" style="color:#fff">bar_chart</span>Trazer média (montar modelo)</button><button onclick="openPick(\'materiais\')" style="border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">add</span>Adicionar material</button></div>'
+    +'<div class="sotot-hint noprint" style="margin:8px 12px 0"><span class="material-symbols-rounded">swap_vert</span><span><b>Via de duas mãos:</b> <b>puxe</b> a média das lojas pra montar/atualizar o modelo, edite, e <b>replique</b> o modelo de volta nas lojas (a loja que você ajustou à mão é preservada).</span></div>'
+    +'<div class="addrow" style="padding:8px 12px;display:flex;gap:8px;flex-wrap:wrap">'
+      +'<button onclick="loteSeedBaseMedia()" title="VOLTA: puxa a média por loja (total ÷ nº de lojas que têm o item) e faz merge na Base — não altera as lojas" style="border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">download</span>Trazer média das lojas</button>'
+      +'<button onclick="loteReplicarMat()" title="IDA: replica o modelo da Base nas 16 lojas por linhagem, respeitando campo próprio" style="border-style:solid;border-color:var(--pri);background:var(--pri);color:#fff"><span class="material-symbols-rounded" style="color:#fff">sync</span>Replicar → lojas</button>'
+      +'<button onclick="openPick(\'materiais\')" style="border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">add</span>Adicionar material</button></div>'
     +'</div>';
   var bothWarn = (somaOn && baseOn) ? '<div class="sotot-hint noprint" style="margin:0 0 10px;background:#f8efdf;border-color:#e6cfa0"><span class="material-symbols-rounded" style="color:var(--amber)">visibility</span><span><b>As duas estão ligadas.</b> Pra não repetir material, o cliente vê só a <b>Soma das lojas</b> (total do lote). Desligue a Soma pra mostrar a Base no lugar.</span></div>' : '';
   el.innerHTML=head
@@ -3203,7 +3246,7 @@ function setColCustoProposta(v){ S.colCustoProposta=!!v; save(); if(OPP&&CLOUD){
 function setLoteView(v){ LOTE_VIEW=(v==='pad')?'pad':'lev'; try{ injectLoteBasePanel(); }catch(_){} }   // 2.2
 function loteServSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.servicos)||[]).forEach(function(r){var k=r.desc||'—'; if(!m[k])m[k]={desc:k,und:r.und||'',qtd:0}; m[k].qtd+=num(r.qtd);});}); return Object.keys(m).map(function(k){return m[k];}).filter(function(r){return r.qtd>0;}).sort(function(a,b){return a.desc.localeCompare(b.desc,'pt');}); }
 function _lidKey(r){ return r.lid||('d:'+(r.desc||'—')); }   // chave de linhagem: lid estável, ou desc (legado sem lid)
-function loteMatSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.materiais)||[]).forEach(function(r){var k=_lidKey(r); if(!m[k])m[k]={key:k,lid:r.lid||null,desc:r.desc||'—',und:r.und||'',qtd:0,custo:0}; m[k].qtd+=num(r.qtd); m[k].custo+=num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt));});}); return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.custo-a.custo;}); }
+function loteMatSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){ var seen={}; ((u.dados&&u.dados.materiais)||[]).forEach(function(r){var k=_lidKey(r); if(!m[k])m[k]={key:k,lid:r.lid||null,desc:r.desc||'—',und:r.und||'',qtd:0,custo:0,nLojas:0}; m[k].qtd+=num(r.qtd); m[k].custo+=num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt)); if(!seen[k]){seen[k]=1;m[k].nLojas++;}});}); return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.custo-a.custo;}); }
 function setMatModo(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} }   // 7: modo de exibir material (bloco Materiais empregados do master + documento do cliente)
 function setMatModoDoc(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ verComoClienteLote(); }catch(_){} }   // troca o modo do material NA impressão (barra do "Ver como o cliente") e recarrega o preview
 // [faxina 14/09] removidos como código morto: setShowMedia/_medN/_medOn/medSubQ/medSubM/mediaTogHtml (toggle "Média/loja" revertido);
