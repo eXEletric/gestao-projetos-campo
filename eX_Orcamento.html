@@ -1686,9 +1686,10 @@ function renderLoteMatBlock(cfg){   // master: "Materiais empregados" = Soma das
     + baseMatTableHtml(cfg)
     +'<div class="addrow" style="padding:8px 12px;display:flex;gap:8px;flex-wrap:wrap"><button onclick="loteSeedBaseMedia()" style="border-style:solid;border-color:var(--pri);background:var(--pri);color:#fff"><span class="material-symbols-rounded" style="color:#fff">bar_chart</span>Trazer média (montar modelo)</button><button onclick="openPick(\'materiais\')" style="border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">add</span>Adicionar material</button></div>'
     +'</div>';
+  var bothWarn = (somaOn && baseOn) ? '<div class="sotot-hint noprint" style="margin:0 0 10px;background:#f8efdf;border-color:#e6cfa0"><span class="material-symbols-rounded" style="color:var(--amber)">visibility</span><span><b>As duas estão ligadas.</b> Pra não repetir material, o cliente vê só a <b>Soma das lojas</b> (total do lote). Desligue a Soma pra mostrar a Base no lugar.</span></div>' : '';
   el.innerHTML=head
-    +'<div class="sotot-hint noprint" style="margin:0 0 10px"><span class="material-symbols-rounded">info</span><span>Duas visões, cada uma com sua chave <b>na proposta</b>: <b>Soma das lojas</b> (agregado das 16, leitura) e <b>Base do lote</b> (modelo <b>editável</b>, igual ao serviço). Mostre as duas, só uma, ou nenhuma.</span></div>'
-    + secSoma + secBase;
+    +'<div class="sotot-hint noprint" style="margin:0 0 10px"><span class="material-symbols-rounded">info</span><span>Duas visões, cada uma com sua chave <b>na proposta</b>: <b>Soma das lojas</b> (agregado das 16, leitura) e <b>Base do lote</b> (modelo <b>editável</b>, igual ao serviço). Mostre as duas, só uma, ou nenhuma — no cliente aparece <b>uma só</b> (a Soma manda).</span></div>'
+    + bothWarn + secSoma + secBase;
 }
 function loteMatEditOn(){ LME_ON=true; LME_STAGE={}; renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }
 function countLmeChanges(){ var n=0;   // alterações não aplicadas no editor de material a custo
@@ -1777,7 +1778,7 @@ function renderBlk(cfg){
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
-        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${despGatCtrl(cfg,r)}</td>
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}</td>
         ${cfg.key==='servicos'?`<td class="cat" style="font-size:12px;color:var(--tx2)">${esc(svcCatOf(r))}</td>`:''}
         ${marcaCell}
         ${cfg.key==='servicos'
@@ -1814,7 +1815,7 @@ function renderBlk(cfg){
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
-        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${despGatCtrl(cfg,r)}</td>
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}</td>
         ${cfg.key==='servicos'?`<td class="cat" style="font-size:12px;color:var(--tx2)">${esc(svcCatOf(r))}</td>`:''}
         ${marcaCell}
         ${cfg.key==='servicos'
@@ -2752,6 +2753,8 @@ async function loteResetUnit(id){ if(!confirm('Resetar esta unidade ao escopo ba
    A MESTRA governa certos campos; a unidade SEGUE, a menos que tenha S._ov[campo]=true (editou aquele campo).
    Puxa na abertura · edição marca "campo próprio" · reset limpa e volta a seguir. */
 var GOV_CAMPOS=['soTotal','pessoasFn','efetivo'];   // mestra governa: detalhe do material + equipe (2.1)
+var CAMPO_LABEL={soTotal:'apresentação (só total)',pessoasFn:'pessoas por função',efetivo:'equipe'};   // rótulos humanos (o interno não vaza pro usuário)
+function campoLabel(k){ return CAMPO_LABEL[k]||k; }
 function herdarCamposDaMestra(baseDados){
   if(!S._ov||typeof S._ov!=='object') S._ov={};
   GOV_CAMPOS.forEach(function(k){
@@ -2767,9 +2770,9 @@ function marcarCampoProprio(campo){               // unidade editou um campo gov
 }
 function ovCampos(o){ var v=o&&o.dados&&o.dados._ov; return v?Object.keys(v).filter(function(k){return v[k];}):[]; }
 function ovBadgeHtml(o){ var ov=ovCampos(o); if(!ov.length) return '';
-  return '<div style="margin-top:3px"><span title="campos próprios: '+ov.join(', ')+' — a mestra não sobrescreve" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;border-radius:20px;padding:2px 7px;color:#b0701a;background:#fbf1e0"><span class="material-symbols-rounded" style="font-size:11px">tune</span>campo próprio</span></div>'; }
+  return '<div style="margin-top:3px"><span title="campos próprios: '+ov.map(campoLabel).join(', ')+' — a mestra não sobrescreve" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;border-radius:20px;padding:2px 7px;color:#b0701a;background:#fbf1e0"><span class="material-symbols-rounded" style="font-size:11px">tune</span>campo próprio</span></div>'; }
 async function loteResetCampo(unitId,campo){
-  if(!confirm('Resetar o campo “'+campo+'” desta loja e voltar a seguir a mestra?\nA edição desse campo nesta loja será perdida.')) return;
+  if(!confirm('Resetar “'+campoLabel(campo)+'” desta loja e voltar a seguir a mestra?\nA edição desse campo nesta loja será perdida.')) return;
   try{
     const u=(LOTE_UNITS||[]).find(o=>o.id===unitId); if(!u)return;
     const d=(u.dados&&typeof u.dados==='object')?JSON.parse(JSON.stringify(u.dados)):{};
@@ -2779,6 +2782,17 @@ async function loteResetCampo(unitId,campo){
     await loteReload();
   }catch(e){ console.error('resetCampo',e); alert('Erro: '+(e.message||e)); }
 }
+// ---- campo próprio POR LINHA de material (passo 4/6): chip + soltar (volta a seguir o lote) ----
+function ownChipHtml(cfg,r){
+  if(!(cfg.mat && isLoteUnit() && r && r.own && (r.own.qtd||r.own.preco))) return '';
+  var q=[]; if(r.own.qtd)q.push('qtd'); if(r.own.preco)q.push('preço'); var ql=q.join('/');
+  return '<div style="margin-top:3px;display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">'
+    +'<span title="você ajustou '+ql+' à mão nesta loja — o &quot;Aplicar nas lojas&quot; do lote não sobrescreve" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;border-radius:20px;padding:2px 7px;color:#b0701a;background:#fbf1e0"><span class="material-symbols-rounded" style="font-size:11px">push_pin</span>campo próprio ('+ql+')</span>'
+    +'<button onclick="soltarOwn(\''+r.id+'\')" title="Soltar: esta linha volta a seguir o lote (o próximo Aplicar alcança ela)" style="border:1px solid var(--pri);background:transparent;color:var(--pri);border-radius:7px;padding:2px 7px;font:inherit;font-size:10px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:3px"><span class="material-symbols-rounded" style="font-size:12px">link</span>seguir o lote</button></div>';
+}
+function soltarOwn(id){ var r=(S.materiais||[]).find(function(x){return x.id===id;}); if(!r||!r.own)return;
+  if(!confirm('Soltar o campo próprio deste material nesta loja?\n\nA linha volta a SEGUIR O LOTE: o próximo "Aplicar nas lojas" (preço/qtd) passa a alcançar ela de novo.\nO valor de agora não muda.')) return;
+  delete r.own; save(); if(OPP&&CLOUD){try{pushOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} cloudMsg('material voltou a seguir o lote ✓'); }
 /* ===== Escopo padrão reutilizável — modelos (1.2) ===== */
 var MODELOS_LIST=[];
 async function carregarModelos(){ try{ const {data,error}=await SB.from('orc_modelos').select('id,nome,descricao,dados').eq('ativo',true).is('deleted_at',null).order('nome'); if(!error) MODELOS_LIST=data||[]; }catch(e){ console.error('modelos',e); } }
@@ -3101,9 +3115,9 @@ function verComoClienteLote(){
     else if(matModo==='val'){ s+='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Material</th><th style="text-align:right;'+_th+'">Qtd</th><th style="'+_th+'">Und</th><th style="text-align:right;'+_th+'">Valor</th></tr></thead><tbody>'+mrows.map(function(r){return '<tr><td style="'+_td+'">'+esc(r.desc)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+_d1(r.qtd)+'</td><td style="'+_td+';color:#7d7799">'+esc(r.und)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+(r.custo>0?fmt(r.custo):'—')+'</td></tr>';}).join('')+'</tbody><tfoot><tr><td style="'+_tf+'">Total de material</td><td></td><td></td><td style="'+_tf+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(tt)+'</td></tr></tfoot></table>'; }
     else { s+='<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Material</th><th style="text-align:right;'+_th+'">Qtd</th><th style="'+_th+'">Und</th></tr></thead><tbody>'+mrows.map(function(r){return '<tr><td style="'+_td+'">'+esc(r.desc)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+_d1(r.qtd)+'</td><td style="'+_td+';color:#7d7799">'+esc(r.und)+'</td></tr>';}).join('')+'</tbody></table>'; }
     return s; };
-  var matSec='';
+  var matSec='';   // DEDUP: o cliente NUNCA vê material 2× — Soma (total do lote) manda; a Base (modelo) só aparece se a Soma estiver desligada
   if(S.matSomaOn!==false) matSec+=_matSecDoc(loteMatSoma(),'Materiais aplicados (total do lote)');
-  if(!!S.matBaseOn){ var _brows=(S.materiais||[]).map(function(r){return {desc:r.desc,und:r.und,qtd:num(r.qtd),custo:num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt))};}); matSec+=_matSecDoc(_brows,'Material (modelo do lote)'); }
+  else if(!!S.matBaseOn){ var _brows=(S.materiais||[]).map(function(r){return {desc:r.desc,und:r.und,qtd:num(r.qtd),custo:num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt))};}); matSec+=_matSecDoc(_brows,'Material (modelo do lote)'); }
   const prz=lotePrazoResumo(); const nUn = modo==='estimativa'?qtd:LOTE_UNITS.length; const vMed=nUn?subUn/nUn:0;
   const rota=loteRota();
   const linhas = modo==='estimativa'
