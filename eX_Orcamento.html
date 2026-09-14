@@ -1642,7 +1642,7 @@ function loteSeedBaseMedia(){   // monta o modelo da Base com a MÉDIA por loja 
   var N=(LOTE_UNITS||[]).length||1; var soma=loteMatSoma();
   if(!soma.length){ alert('Não há material somado nas lojas ainda.'); return; }
   if((S.materiais||[]).length && !confirm('Montar o modelo da Base com a MÉDIA por loja ('+soma.length+' itens)?\n\nSubstitui o que houver hoje na Base. É o modelo do lote (não altera as lojas).')) return;
-  S.materiais=soma.map(function(r){ var q=num(r.qtd)/N; var unit=(num(r.qtd)>0)?num(r.custo)/num(r.qtd):0; var o=rowSvc(r.desc, +q.toFixed(2), r.und||'un', unit, '', null, ''); o.usarBase=false; o.custoAlt=unit; return o; });   // valores MANUAIS (específicos desta proposta), não padrão do catálogo
+  S.materiais=soma.map(function(r){ var q=num(r.qtd)/N; var unit=(num(r.qtd)>0)?num(r.custo)/num(r.qtd):0; var o=rowSvc(r.desc, +q.toFixed(2), r.und||'un', unit, '', null, ''); if(r.lid)o.lid=r.lid; o.usarBase=false; o.custoAlt=unit; return o; });   // valores MANUAIS (específicos desta proposta); herda a linhagem (lid) da soma
   S.matBaseOn=true; save(); if(OPP&&CLOUD){try{pushOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} recalc(); cloudMsg('modelo base montado com a média por loja'); }
 function renderLoteMatBlock(cfg){   // master: "Materiais empregados" = Soma das lojas + Base do lote (média), cada uma com chave "na proposta"
   const rows=loteMatSoma(); const tot=rows.reduce(function(a,r){return a+r.custo;},0);
@@ -1657,7 +1657,7 @@ function renderLoteMatBlock(cfg){   // master: "Materiais empregados" = Soma das
   if(LME_ON && rows.length){
     var eraS='font-size:10px;font-weight:700;color:var(--amber);text-align:right;margin-top:2px';
     var editHead='<div class="blkhead"><span class="ic"><span class="material-symbols-rounded">'+cfg.icon+'</span></span><h2>'+cfg.titulo+'</h2><span class="lbtn" style="margin-left:auto;background:var(--amber);color:#fff;border-color:var(--amber);cursor:default"><span class="material-symbols-rounded" style="color:#fff">edit</span>Editando a custo</span></div>';
-    var brs=rows.map(function(r,i){ var u=r.qtd>0?r.custo/r.qtd:0; var st=(LME_STAGE&&LME_STAGE[r.desc])||null; var qv=st?esc(st.q):_d1(r.qtd); var cv=st?esc(st.u):fmtN(u); return '<tr data-lme="'+i+'" data-desc="'+esc(r.desc)+'">'
+    var brs=rows.map(function(r,i){ var u=r.qtd>0?r.custo/r.qtd:0; var st=(LME_STAGE&&LME_STAGE[r.key])||null; var qv=st?esc(st.q):_d1(r.qtd); var cv=st?esc(st.u):fmtN(u); return '<tr data-lme="'+i+'" data-key="'+esc(r.key)+'" data-desc="'+esc(r.desc)+'">'
       +'<td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td>'
       +'<td class="r"><input id="lme_q_'+i+'" class="cin num" style="width:82px" value="'+qv+'" data-bq="'+r.qtd+'" oninput="lmeRefresh()"><div id="lme_qc_'+i+'" hidden style="'+eraS+'"></div></td>'
       +'<td>'+esc(r.und)+'</td>'
@@ -1706,7 +1706,7 @@ function lmeRefresh(){ var n=0, tot=0;
   (document.querySelectorAll('#blk_materiais tr[data-lme]')||[]).forEach(function(tr){
     var i=tr.getAttribute('data-lme');
     var qi=document.getElementById('lme_q_'+i), ci=document.getElementById('lme_c_'+i); if(!qi||!ci)return;
-    var _d=tr.getAttribute('data-desc'); if(LME_STAGE&&_d!=null) LME_STAGE[_d]={q:qi.value,u:ci.value};   // guarda o rascunho (blindagem)
+    var _k=tr.getAttribute('data-key'); if(LME_STAGE&&_k!=null) LME_STAGE[_k]={q:qi.value,u:ci.value};   // guarda o rascunho por linhagem (blindagem)
     var q=num(qi.value), u=num(ci.value), bq=num(qi.getAttribute('data-bq')), bu=num(ci.getAttribute('data-bu'));
     var cq=Math.abs(q-bq)>0.05, cc=Math.abs(u-bu)>0.005;
     var te=document.getElementById('lme_t_'+i); if(te)te.textContent=fmt(q*u);
@@ -1722,29 +1722,33 @@ function lmeRefresh(){ var n=0, tot=0;
 function loteMatEditApply(){
   var changes=[];
   (document.querySelectorAll('#blk_materiais tr[data-lme]')||[]).forEach(function(tr){
-    var i=tr.getAttribute('data-lme'), desc=tr.getAttribute('data-desc');
+    var i=tr.getAttribute('data-lme'), key=tr.getAttribute('data-key'), desc=tr.getAttribute('data-desc');
     var qi=document.getElementById('lme_q_'+i), ci=document.getElementById('lme_c_'+i); if(!qi||!ci)return;
     var q=num(qi.value), u=num(ci.value), bq=num(qi.getAttribute('data-bq')), bu=num(ci.getAttribute('data-bu'));
     var cq=Math.abs(q-bq)>0.05, cc=Math.abs(u-bu)>0.005;
-    if(cq||cc) changes.push({desc:desc,q:q,u:u,bq:bq,cq:cq,cc:cc});
+    if(cq||cc) changes.push({key:key,desc:desc,q:q,u:u,bq:bq,cq:cq,cc:cc});
   });
   if(!changes.length){ alert('Nada alterado.'); return; }
   var n=(LOTE_UNITS||[]).length;
-  if(!confirm('Aplicar '+changes.length+' alteração(ões) de custo nas '+n+' loja(s)?\n\n• Preço: vale igual em todas.\n• Quantidade: distribui proporcional entre as lojas que têm o item.\n• NÃO muda o preço do cliente (soberano/42.000).')) return;
+  if(!confirm('Aplicar '+changes.length+' alteração(ões) de custo nas '+n+' loja(s)?\n\n• Preço: vale igual em todas.\n• Quantidade: distribui proporcional entre as lojas que têm o item.\n• A loja que VOCÊ já ajustou à mão é PRESERVADA (campo próprio, não sobrescreve).\n• NÃO muda o preço do cliente (soberano/42.000).')) return;
   loteMatEditCommit(changes);
 }
 async function loteMatEditCommit(changes){
-  try{ var by={}; changes.forEach(function(c){ by[c.desc]=c; });
+  try{ var by={}; changes.forEach(function(c){ by[c.key||('d:'+c.desc)]=c; });   // casa por LINHAGEM (lid), não por nome
+    var okPreco=0, keepPreco=0, okQtd=0, keepQtd=0, nLoja=0;
     for(const u of (LOTE_UNITS||[])){
       var d=(u.dados&&typeof u.dados==='object')?JSON.parse(JSON.stringify(u.dados)):{};
       var arr=Array.isArray(d.materiais)?d.materiais:[]; var touched=false;
-      arr.forEach(function(m){ var c=by[m.desc]; if(!c)return;
-        if(c.cc){ m.custoBase=c.u; if(m.usarBase!==false)m.custoAlt=c.u; touched=true; }   // preço uniforme no lote
-        if(c.cq && c.bq>0){ m.qtd=+(num(m.qtd)*(c.q/c.bq)).toFixed(1); touched=true; }   // qtd proporcional (A)
+      arr.forEach(function(m){ var c=by[_lidKey(m)]; if(!c)return; var own=m.own||{};
+        if(c.cc){ if(own.preco){ keepPreco++; } else { m.custoBase=c.u; if(m.usarBase!==false)m.custoAlt=c.u; touched=true; okPreco++; } }   // preço uniforme no lote — salvo campo próprio da loja
+        if(c.cq && c.bq>0){ if(own.qtd){ keepQtd++; } else { m.qtd=+(num(m.qtd)*(c.q/c.bq)).toFixed(1); touched=true; okQtd++; } }   // qtd proporcional (A) — salvo campo próprio da loja
       });
-      if(touched) await SB.from('orcamentos').update({dados:d}).eq('id',u.id);
+      if(touched){ nLoja++; await SB.from('orcamentos').update({dados:d}).eq('id',u.id); }
     }
-    LME_ON=false; LME_STAGE=null; await loteReload(); cloudMsg('alterações aplicadas nas lojas');
+    LME_ON=false; LME_STAGE=null; await loteReload();
+    var rep='✅ Aplicado em '+nLoja+' loja(s).';
+    if(keepPreco||keepQtd){ var pres=[]; if(keepPreco)pres.push(keepPreco+' preço'); if(keepQtd)pres.push(keepQtd+' qtd'); rep+='\n\n🔒 Preservado (você já tinha ajustado à mão): '+pres.join(' · ')+'.\nO ajuste próprio da loja NÃO foi sobrescrito.'; alert(rep); }
+    else cloudMsg(rep);
   }catch(e){ console.error(e); alert('Erro ao aplicar: '+(e.message||e)); }
 }
 function renderBlk(cfg){
@@ -2159,6 +2163,11 @@ function upd(blk,id,field,val){
   r[field]=val;
   // marca que o "valor geral" foi ajustado à mão (vazio = volta a acompanhar o preço calculado)
   if(field==='geral') r.geralEdited = (val!==''&&val!=null);
+  // CAMPO PRÓPRIO: material editado à mão NUMA LOJA (unidade do lote) fica marcado → o "Aplicar nas lojas" do master respeita (não sobrescreve)
+  if(blk==='materiais' && isLoteUnit()){
+    if(field==='qtd'){ r.own=r.own||{}; r.own.qtd=true; }
+    else if(field==='custoAlt'||field==='custoBase'||field==='margem'){ r.own=r.own||{}; r.own.preco=true; }
+  }
   if(['qtd','vunit','markup','geral','custoAlt','margem'].includes(field)){
     refreshRow(blk,r);
     const st=document.getElementById('st_'+blk);
@@ -3179,7 +3188,8 @@ function clearMacroKm(){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=0
 function setColCustoProposta(v){ S.colCustoProposta=!!v; save(); if(OPP&&CLOUD){ try{ pushOrc(); }catch(_){}} try{ injectLoteBasePanel(); }catch(_){} }
 function setLoteView(v){ LOTE_VIEW=(v==='pad')?'pad':'lev'; try{ injectLoteBasePanel(); }catch(_){} }   // 2.2
 function loteServSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.servicos)||[]).forEach(function(r){var k=r.desc||'—'; if(!m[k])m[k]={desc:k,und:r.und||'',qtd:0}; m[k].qtd+=num(r.qtd);});}); return Object.keys(m).map(function(k){return m[k];}).filter(function(r){return r.qtd>0;}).sort(function(a,b){return a.desc.localeCompare(b.desc,'pt');}); }
-function loteMatSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.materiais)||[]).forEach(function(r){var k=r.desc||'—'; if(!m[k])m[k]={desc:k,und:r.und||'',qtd:0,custo:0}; m[k].qtd+=num(r.qtd); m[k].custo+=num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt));});}); return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.custo-a.custo;}); }
+function _lidKey(r){ return r.lid||('d:'+(r.desc||'—')); }   // chave de linhagem: lid estável, ou desc (legado sem lid)
+function loteMatSoma(){ var m={}; (LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.materiais)||[]).forEach(function(r){var k=_lidKey(r); if(!m[k])m[k]={key:k,lid:r.lid||null,desc:r.desc||'—',und:r.und||'',qtd:0,custo:0}; m[k].qtd+=num(r.qtd); m[k].custo+=num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt));});}); return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.custo-a.custo;}); }
 function setMatModo(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} }   // 7: modo de exibir material (bloco Materiais empregados do master + documento do cliente)
 function setMatModoDoc(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ verComoClienteLote(); }catch(_){} }   // troca o modo do material NA impressão (barra do "Ver como o cliente") e recarrega o preview
 // [faxina 14/09] removidos como código morto: setShowMedia/_medN/_medOn/medSubQ/medSubM/mediaTogHtml (toggle "Média/loja" revertido);
