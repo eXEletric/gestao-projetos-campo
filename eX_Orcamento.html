@@ -1240,13 +1240,18 @@ function zerarMargens(blk){ const own=(S[blk]||[]).filter(r=>!(r.margem===''||r.
 // modelo base+margem (custo): custo usado, margem herdada/própria
 const isCusto=r=>r.custoBase!==undefined;
 function horasReceita(c){ if(!c)return 0; if(c.un==='dias')return num(c.tv)*8; if(c.un==='minutos')return num(c.tv)/60; return num(c.tv); }
+function moResolve(x){ if(!x)return null;   // mão de obra por identidade ESTÁVEL: id → função+nível → índice legado (fn)
+  if(x.moId){ const m=MAOOBRA.find(k=>k.id===x.moId); if(m)return m; }
+  if(x.funcao){ const m=MAOOBRA.find(k=>k.funcao===x.funcao && (x.nivel==null||x.nivel===''||k.nivel===x.nivel)); if(m)return m; }
+  if(typeof x.fn==='number') return MAOOBRA[x.fn]||null;
+  return null; }
 function custoComposto(r){ const c=r&&r.composicao; if(!c)return null;
   if(c.modo==='manual') return num(c.valorManual);   // valor predeterminado (chave Calculado×Manual)
   const dif=(DIFIC[c.dif||0]||DIFIC[0]||{mult:1}).mult;
   // MOTOR: custo = Σ trabalho(homem-dia) × dificuldade × R$/h × jornada — estável (não depende de pessoas)
   const oldH=(c.un==='dias')?num(c.tv)*JORNADA:(c.un==='minutos')?num(c.tv)/60:num(c.tv);   // compat composição antiga (pes+tv/un)
   let mo=0;
-  (c.mo||[]).forEach(x=>{ const m=MAOOBRA[x.fn]; if(!m)return; const trab=(x.trab!=null)?num(x.trab):(num(x.pes||0)*oldH/JORNADA); mo+=trab*dif*num(m.vh)*JORNADA; });
+  (c.mo||[]).forEach(x=>{ const m=moResolve(x); if(!m)return; const trab=(x.trab!=null)?num(x.trab):(num(x.pes||0)*oldH/JORNADA); mo+=trab*dif*num(m.vh)*JORNADA; });
   return mo+(c.desp||[]).reduce((a,d)=>a+num(d.valor),0);
 }
 // custo unitário: serviço montado recalcula ao vivo (efetivo dirige quando o modo é global-efetivo); senão base/alterado
@@ -1744,7 +1749,7 @@ const FUNCS=[
   {f:'Motorista',ic:'local_shipping'}
 ];
 const efTotal=()=>(S.efetivo||[]).reduce((a,c)=>a+(+c.pes||0),0);
-function efMao(c){ const m=MAOOBRA[c.fn]; if(m)return m; return {funcao:c.funcao||'(profissional)',nivel:c.nivel||'',vh:num(c.vh)}; }   // resolve pela MAOOBRA; fallback nos dados guardados
+function efMao(c){ const m=moResolve(c); if(m)return m; return {funcao:c.funcao||'(profissional)',nivel:c.nivel||'',vh:num(c.vh)}; }   // resolve pela MAOOBRA (id→função+nível→índice); fallback nos dados guardados
 function efFrase(){ return (S.efetivo||[]).filter(c=>+c.pes>0).map(c=>{const m=efMao(c);return c.pes+' '+m.funcao+(m.nivel?' '+m.nivel:'');}).join(' · '); }
 const _d1=n=>Number(n||0).toLocaleString('pt-BR',{maximumFractionDigits:1});
 // agrega a mão de obra POR FUNÇÃO (soma o trabalho de todos os serviços montados). Pessoas mexe só no prazo.
@@ -1754,7 +1759,7 @@ function aggMaoObra(){
     const dif=(DIFIC[c.dif||0]||DIFIC[0]||{mult:1}).mult;
     const oldH=(c.un==='dias')?num(c.tv)*JORNADA:(c.un==='minutos')?num(c.tv)/60:num(c.tv);
     const q=qtyOf(r);   // ⚠️ o trabalho da receita é POR UNIDADE → multiplica pela quantidade da linha (ex.: 600 m)
-    (c.mo||[]).forEach(x=>{ const m=MAOOBRA[x.fn]; if(!m)return;
+    (c.mo||[]).forEach(x=>{ const m=moResolve(x); if(!m)return;
       const trab=((x.trab!=null)?num(x.trab):num(x.pes||0)*oldH/JORNADA)*dif*q;   // homem-dia total (dificuldade × quantidade)
       const k=m.funcao+'|'+m.nivel;
       if(!map[k])map[k]={k,funcao:m.funcao,nivel:m.nivel,vh:num(m.vh),trab:0};
@@ -1997,7 +2002,7 @@ function efAddOpen(){
   document.getElementById('pickBody').innerHTML=itens.length?itens.map(x=>`<button class="pkitem" onclick="efAdd(${x.j})"><span class="pknm"><span class="material-symbols-rounded" style="font-size:18px;vertical-align:middle;color:var(--pri);margin-right:7px">engineering</span>${esc(x.m.funcao)}${x.m.nivel?' · '+esc(x.m.nivel):''} <span style="color:var(--tx3)">(${fmt(x.m.vh)}/h)</span></span></button>`).join(''):'<div style="color:var(--tx3);padding:12px;font-size:12px">Todos os profissionais já estão no efetivo.</div>';
   document.getElementById('pickModal').classList.add('open');
 }
-function efAdd(fn){ const m=MAOOBRA[fn]||{}; if(!Array.isArray(S.efetivo))S.efetivo=[]; S.efetivo.push({fn,funcao:m.funcao,nivel:m.nivel,vh:num(m.vh),pes:1}); closePick(); efApply(); }
+function efAdd(fn){ const m=MAOOBRA[fn]||{}; if(!Array.isArray(S.efetivo))S.efetivo=[]; S.efetivo.push({fn,moId:m.id,funcao:m.funcao,nivel:m.nivel,vh:num(m.vh),pes:1}); closePick(); efApply(); }
 
 function toggleModo(blk){
   const next = (S.modos[blk]||'unit')==='unit' ? 'geral' : 'unit';
@@ -2219,7 +2224,7 @@ function openCompCadastro(){
   const c=_ncComposicao;
   if(c){ COMP.mo=moTrab(c); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; }
   if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';   // sem mão de obra → cai no Manual
-  if(!COMP.mo.length) COMP.mo=[{fn:0,trab:1,un:'di'}];
+  if(!COMP.mo.length){ const m0=MAOOBRA[0]||{}; COMP.mo=[{fn:0,moId:m0.id,funcao:m0.funcao,nivel:m0.nivel,trab:1,un:'di'}]; }
   document.getElementById('compTitle').textContent='Serviço';
   const nmi=document.getElementById('comp_nome'); if(nmi){ nmi.value=(document.getElementById('nc_nome').value||''); agrow(nmi); }
   fillUnd(document.getElementById('comp_und'), (document.getElementById('nc_und').value||'UND'));
@@ -3102,8 +3107,8 @@ function refreshClienteLive(){
 // mão de obra de referência (função×nível→R$/h) e abrangência — pro compositor de serviço
 let MAOOBRA=[], ABRANGENCIA=[];
 async function carregarMaoObra(){
-  try{ const {data,error}=await SB.from('mao_obra_ref').select('valor_hora, funcao:funcoes(nome), nivel:niveis(nome)');
-    if(!error) MAOOBRA=(data||[]).filter(x=>x.funcao&&x.nivel&&x.valor_hora!=null).map(x=>({funcao:x.funcao.nome,nivel:x.nivel.nome,vh:num(x.valor_hora)}));
+  try{ const {data,error}=await SB.from('mao_obra_ref').select('id, valor_hora, funcao:funcoes(nome), nivel:niveis(nome)');
+    if(!error) MAOOBRA=(data||[]).filter(x=>x.funcao&&x.nivel&&x.valor_hora!=null).map(x=>({id:x.id,funcao:x.funcao.nome,nivel:x.nivel.nome,vh:num(x.valor_hora)}));
   }catch(e){ console.error('maoobra',e); }
 }
 async function carregarAbrangencia(){
@@ -3151,7 +3156,7 @@ let COMP={blk:null,rowId:null,mo:[],desp:[],dif:0,modo:'calc',base:'unidade',val
 // normaliza a mão de obra da composição p/ {fn, trab(homem-dia)} — converte composição antiga (pes + tv/un) em diárias
 function moTrab(c){
   const oldH=c?((c.un==='dias')?num(c.tv)*JORNADA:(c.un==='minutos')?num(c.tv)/60:num(c.tv)):0;
-  return ((c&&c.mo)||[]).map(x=>({fn:x.fn, trab:(x.trab!=null)?num(x.trab):(num(x.pes||0)*oldH/JORNADA), un:x.un||'di'}));
+  return ((c&&c.mo)||[]).map(x=>({fn:x.fn, moId:x.moId, funcao:x.funcao, nivel:x.nivel, pes:x.pes, trab:(x.trab!=null)?num(x.trab):(num(x.pes||0)*oldH/JORNADA), un:x.un||'di'}));
 }
 function openComp(blk,rowId){
   const r=(S[blk]||[]).find(x=>x.id===rowId); if(!r)return;
@@ -3159,7 +3164,7 @@ function openComp(blk,rowId){
   const c=r.composicao;
   if(c){ COMP.mo=moTrab(c); COMP.desp=(c.desp||[]).map(x=>({...x})); COMP.dif=c.dif||0; if(c.modo)COMP.modo=c.modo; if(c.base)COMP.base=c.base; if(c.valorManual!=null)COMP.valorManual=c.valorManual; }
   if(!MAOOBRA.length && COMP.modo==='calc' && !(c&&(c.mo||[]).length)) COMP.modo='manual';   // sem mão de obra → cai no Manual
-  if(!COMP.mo.length) COMP.mo=[{fn:0,trab:1,un:'di'}];
+  if(!COMP.mo.length){ const m0=MAOOBRA[0]||{}; COMP.mo=[{fn:0,moId:m0.id,funcao:m0.funcao,nivel:m0.nivel,trab:1,un:'di'}]; }
   document.getElementById('compTitle').textContent='Serviço';
   const nmi=document.getElementById('comp_nome'); if(nmi){ nmi.value=r.desc||''; nmi.readOnly=false; agrow(nmi); }
   fillUnd(document.getElementById('comp_und'), r.und||UND_DFLT[blk]||'UND');
@@ -3174,7 +3179,8 @@ function compHoras(){ if(COMP.un==='dias') return num(COMP.tv)*JORNADA; if(COMP.
 function setCompModo(m,noCalc){ COMP.modo=m; const c=document.getElementById('comp_md_c'),mn=document.getElementById('comp_md_m'); if(c)c.classList.toggle('on',m==='calc'); if(mn)mn.classList.toggle('on',m==='manual'); const cb=document.getElementById('comp_calcBox'),mb=document.getElementById('comp_manualBox'); if(cb)cb.style.display=(m==='manual')?'none':''; if(mb)mb.style.display=(m==='manual')?'block':'none'; if(!noCalc)compCalc(); }
 function setCompBase(b,noCalc){ COMP.base=b; const u=document.getElementById('comp_bs_u'),t=document.getElementById('comp_bs_t'); if(u)u.classList.toggle('on',b==='unidade'); if(t)t.classList.toggle('on',b==='total'); const h=document.getElementById('comp_basehint'); if(h)h.textContent=(b==='total')?'É o TOTAL do serviço — na linha a quantidade trava em 1.':'Custo de 1 unidade — na linha você multiplica pela quantidade.'; if(!noCalc)compCalc(); }
 function compDifMult(){ return (DIFIC[+(document.getElementById('comp_dif')||{}).value||0]||DIFIC[0]).mult; }
-function compRowValN(r){ const m=MAOOBRA[r.fn]||{vh:0}; return num(r.trab)*compDifMult()*num(m.vh)*JORNADA; }
+function compRowValN(r){ const m=moResolve(r)||{vh:0}; return num(r.trab)*compDifMult()*num(m.vh)*JORNADA; }
+function compSetMo(i,j){ const r=COMP.mo[i], m=MAOOBRA[j]; if(!r||!m)return; r.fn=j; r.moId=m.id; r.funcao=m.funcao; r.nivel=m.nivel; compRenderMO(); compCalc(); }   // grava identidade estável ao escolher a função
 function compRowVal(i){ const r=COMP.mo[i]; if(!r)return; const e=document.getElementById('cmpval_'+i); if(e)e.textContent=fmt(compRowValN(r)); }
 // trabalho canônico = homem-DIA (r.trab); r.un é só a unidade de exibição/edição (di/h/min)
 function trabToUn(trab,un){ return un==='h'?num(trab)*JORNADA : un==='min'?num(trab)*JORNADA*60 : num(trab); }
@@ -3182,12 +3188,13 @@ function unToTrab(v,un){ v=num(v); return un==='h'?v/JORNADA : un==='min'?v/(JOR
 function compSetTrab(i,v){ const r=COMP.mo[i]; if(!r)return; r.trab=unToTrab(v,r.un||'di'); compRowVal(i); compCalc(); }
 function compSetUn(i,u){ const r=COMP.mo[i]; if(!r)return; r.un=u; compRenderMO(); compCalc(); }
 function compMORow(r,i){
-  const opts=MAOOBRA.map((m,j)=>`<option value="${j}" ${j===r.fn?'selected':''}>${esc(m.funcao)} · ${esc(m.nivel)} (${fmt(m.vh)}/h)</option>`).join('');
-  const m=MAOOBRA[r.fn]||{vh:0}; const un=r.un||'di';
+  const sel=MAOOBRA.indexOf(moResolve(r));
+  const opts=MAOOBRA.map((m,j)=>`<option value="${j}" ${j===sel?'selected':''}>${esc(m.funcao)} · ${esc(m.nivel)} (${fmt(m.vh)}/h)</option>`).join('');
+  const m=moResolve(r)||{vh:0}; const un=r.un||'di';
   const uns=[['di','dia'],['h','hora'],['min','minuto']].map(([v,l])=>`<option value="${v}" ${v===un?'selected':''}>${l}</option>`).join('');
   const val=trabToUn(r.trab,un);
   return `<div class="cmprow">
-    <select onchange="COMP.mo[${i}].fn=+this.value;compRenderMO();compCalc()">${opts}</select>
+    <select onchange="compSetMo(${i},+this.value)">${opts}</select>
     <span class="cmptrab"><input type="number" step="${un==='min'?'5':'0.5'}" min="0" value="${+val.toFixed(un==='di'?2:0)}" oninput="compSetTrab(${i},this.value)"><select class="cmpu" onchange="compSetUn(${i},this.value)">${uns}</select></span>
     <span class="cmpvh">${fmt(m.vh)}/h</span>
     <span class="cmpval" id="cmpval_${i}">${fmt(compRowValN(r))}</span>
@@ -3208,7 +3215,7 @@ function compRenderMO(){
   const el=document.getElementById('compMO'); if(!el)return;
   el.innerHTML=hd+COMP.mo.map(compMORow).join('');
 }
-function compAddMO(){ COMP.mo.push({fn:0,trab:1,un:'di'}); compRenderMO(); compCalc(); }
+function compAddMO(){ const m=MAOOBRA[0]||{}; COMP.mo.push({fn:0,moId:m.id,funcao:m.funcao,nivel:m.nivel,trab:1,un:'di'}); compRenderMO(); compCalc(); }
 // modo da mão de obra é GLOBAL do orçamento (S.maoObraModo), NÃO por serviço.
 // O compositor só reflete o modo vigente: efetivo=read-only · manual=editável.
 function maoGlobalEfetivo(){ return S.maoObraModo!=='manual'; }
@@ -3231,7 +3238,7 @@ function compCalc(){
   const dif=DIFIC[+document.getElementById('comp_dif').value||0]||DIFIC[0];   // dificuldade DO SERVIÇO (multiplica o trabalho)
   // MOTOR: custo = Σ trabalho(homem-dia) × dificuldade × R$/h × jornada — ESTÁVEL (não depende de nº de pessoas)
   let mo=0, trabTot=0;
-  COMP.mo.forEach(r=>{ const m=MAOOBRA[r.fn]; if(!m)return; const t=num(r.trab)*dif.mult; trabTot+=t; mo+=t*num(m.vh)*JORNADA; });
+  COMP.mo.forEach(r=>{ const m=moResolve(r); if(!m)return; const t=num(r.trab)*dif.mult; trabTot+=t; mo+=t*num(m.vh)*JORNADA; });
   const dsp=(COMP.desp||[]).reduce((a,d)=>a+num(d.valor),0);
   const custo=mo+dsp;
   COMP._mo=mo; COMP._dsp=dsp; COMP._custo=custo; COMP._trab=trabTot;
@@ -3247,7 +3254,7 @@ function compAplicar(){
   const _nome=((document.getElementById('comp_nome')||{}).value||'').trim();
   const _und=((document.getElementById('comp_und')||{}).value||'').trim()||'UND';
   // receita = trabalho por função (homem-dia); custo = trabalho × R$/h (estável); pessoas/prazo é decisão da proposta
-  const receita={mo:COMP.mo.map(x=>({fn:x.fn,trab:num(x.trab),un:x.un||'di'})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,modo:COMP.modo||'calc',base:COMP.base||'unidade',valorManual:num(COMP.valorManual)};
+  const receita={mo:COMP.mo.map(x=>({fn:x.fn,moId:x.moId,funcao:x.funcao,nivel:x.nivel,trab:num(x.trab),un:x.un||'di'})),desp:(COMP.desp||[]).map(x=>({...x})),dif:COMP.dif,modo:COMP.modo||'calc',base:COMP.base||'unidade',valorManual:num(COMP.valorManual)};
   if(COMP.cadastro){   // veio do cadastro (criar novo): joga nome/unidade/custo de volta no formulário do cadastro
     _ncComposicao=receita;
     const nn=document.getElementById('nc_nome'); if(nn && _nome)nn.value=_nome;
