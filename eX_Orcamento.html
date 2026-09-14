@@ -3027,10 +3027,10 @@ function verComoClienteLote(){
   const cnpjC=contratanteCnpj();   // 2.4
   const prazoSoma=(LOTE_UNITS||[]).reduce((a,o)=>a+num(o._prazo),0);   // prazo total = soma das unidades (o todo)
   const prazoExib=num(S.prazoLoteDias)>0?(_d1(num(S.prazoLoteDias))+' dias corridos'):(prazoSoma>0?_d1(prazoSoma)+' dias corridos (soma das unidades)':'');
-  var _secTit='font-size:12px;font-weight:800;color:#3f2c8f;text-transform:uppercase;letter-spacing:.04em;margin:16px 0 6px';
-  var _th='padding:7px 12px;font-size:10px;text-transform:uppercase;color:#7d7799';
-  var _td='padding:6px 12px;border-bottom:1px solid #f0f0f4';
-  var _tf='padding:9px 12px;font-weight:800;color:#3f2c8f;border-top:2px solid #ddd';
+  var _secTit='font-size:11px;font-weight:800;color:#3f2c8f;text-transform:uppercase;letter-spacing:.07em;margin:22px 0 9px;padding-left:9px;border-left:3px solid #533ab7';
+  var _th='padding:8px 13px;font-size:9.5px;text-transform:uppercase;letter-spacing:.05em;color:#8b86a1;font-weight:700';
+  var _td='padding:8px 13px;border-bottom:1px solid #efecf7;font-size:12.5px';
+  var _tf='padding:10px 13px;font-weight:800;color:#3f2c8f;border-top:2px solid #e2ddf1';
   const escopoSec=`<div><div style="${_secTit}">Escopo consolidado — serviços</div><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;${_th}">Serviço</th><th style="text-align:right;${_th}">Σ do lote</th><th style="${_th}">Und</th></tr></thead><tbody>${loteServSoma().map(function(r){return '<tr><td style="'+_td+'">'+esc(r.desc)+'</td><td style="'+_td+';text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+_d1(r.qtd)+'</td><td style="'+_td+';color:#7d7799">'+esc(r.und)+'</td></tr>';}).join('')}</tbody></table></div>`;
   const matModo=S.matModo||'qtd'; const matRows=loteMatSoma(); const matTotalDoc=matRows.reduce(function(a,r){return a+r.custo;},0);
   var matSec='<div style="'+_secTit+'">Materiais aplicados</div>';
@@ -3055,16 +3055,16 @@ function verComoClienteLote(){
         <div style="font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#7d7799">Contratante</div>
         <div style="font-weight:700;font-size:16px;margin-top:3px">${esc(contrNome)}</div>
         ${cnpjC?`<div style="font-size:12px;color:#7d7799;margin-top:2px">CNPJ: ${esc(cnpjC)}</div>`:''}
-        <div style="font-size:13px;color:#555;margin-top:10px">${esc0}</div>
+        <div style="font-size:13px;color:#5f5b72;margin-top:10px;line-height:1.55">${esc0}</div>
       </div>
-      ${modo==='estimativa'?'':`<div style="padding:18px 0 6px"><div style="font-size:12px;font-weight:800;color:#3f2c8f;text-transform:uppercase;letter-spacing:.04em;margin-bottom:8px">Unidades no mapa</div>${buildLoteMapaSVG()}
-        <div style="font-size:11.5px;color:#0f7b8a;margin-top:6px">Rota do circuito · ${rota.path.length?esc(rota.path.map(p=>p.split('/')[0]).join(' → ')):'—'} · ~ ${rota.km.toLocaleString('pt-BR')} km</div></div>`}
+      ${modo==='estimativa'?'':`<div style="padding:6px 0 6px"><div style="${_secTit}">Unidades no mapa</div>${buildLoteMapaSVG()}
+        <div style="font-size:11.5px;color:#6b6684;margin-top:6px">Rota do circuito · ${rota.path.length?esc(rota.path.map(p=>p.split('/')[0]).join(' → ')):'—'} · ~ ${rota.km.toLocaleString('pt-BR')} km</div></div>`}
       <div style="padding:14px 0"><table style="width:100%;border-collapse:collapse;font-size:13.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;padding:10px 14px;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#7d7799">Unidade</th><th style="padding:10px 14px;font-size:10.5px;text-transform:uppercase;color:#7d7799">Prazo</th>${cc?'<th style="text-align:right;padding:10px 14px;font-size:10.5px;text-transform:uppercase;color:#7d7799">Custo</th><th style="text-align:right;padding:10px 14px;font-size:10.5px;text-transform:uppercase;color:#7d7799">Lucro</th>':''}<th style="text-align:right;padding:10px 14px;font-size:10.5px;text-transform:uppercase;color:#7d7799">Valor</th></tr></thead>
         <tbody>${linhas}</tbody>
         <tfoot>
           <tr><td style="padding:10px 14px;color:#7d7799">Subtotal · ${nUn} unidades</td><td></td>${cc?'<td style="padding:10px 14px;text-align:right;color:#7d7799;font-variant-numeric:tabular-nums">'+fmt(sumCusto)+'</td><td style="padding:10px 14px;text-align:right;font-weight:700;color:#127a54;font-variant-numeric:tabular-nums">'+fmt(sumLucro)+'</td>':''}<td style="padding:10px 14px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(subUn)}</td></tr>
           ${comboOn?'':`<tr><td style="padding:10px 14px;color:#7d7799">Mobilização &amp; logística (lote)</td><td></td>${cc?'<td></td><td></td>':''}<td style="padding:10px 14px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(macroT)}</td></tr>`}
-          <tr style="border-top:2px solid #ddd"><td style="padding:12px 14px;font-weight:800;color:#3f2c8f">Total da proposta</td><td></td>${cc?'<td></td><td></td>':''}<td style="padding:12px 14px;text-align:right;font-weight:800;font-size:17px;color:#3f2c8f;font-variant-numeric:tabular-nums">${fmt(total)}</td></tr>
+          <tr style="border-top:2px solid #e2ddf1;background:#f6f4fc"><td style="padding:14px;font-weight:800;color:#3f2c8f;font-size:14px">Total da proposta</td><td></td>${cc?'<td></td><td></td>':''}<td style="padding:12px 14px;text-align:right;font-weight:800;font-size:17px;color:#3f2c8f;font-variant-numeric:tabular-nums">${fmt(total)}</td></tr>
         </tfoot></table></div>
       ${escopoSec}
       ${matSec}
@@ -3073,7 +3073,7 @@ function verComoClienteLote(){
         <div style="flex:1;min-width:150px;background:#f6f3fd;border:1px solid #eee;border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;text-transform:uppercase;color:#7d7799;font-weight:700">Prazo por unidade</div><div style="font-weight:800;font-size:16px">${prz.n?(Math.abs(prz.min.p-prz.max.p)<1e-9?fmtPrazo(prz.min.p):fmtPrazo(prz.min.p)+' a '+fmtPrazo(prz.max.p)):'—'}</div></div>
       </div>
       ${(prazoExib||S.dataInicio||S.dataFim)?`<div style="margin-top:14px;border-top:1px solid #eee;padding-top:12px;font-size:13px;color:#333"><b style="color:#3f2c8f">Prazo de execução:</b> ${prazoExib}${(S.dataInicio||S.dataFim)?` · ${S.dataInicio?esc(S.dataInicio.split('-').reverse().join('/')):'—'} a ${S.dataFim?esc(S.dataFim.split('-').reverse().join('/')):'—'}`:''}</div>`:''}
-      ${condComerciais()?`<div style="margin-top:16px;border-top:1px solid #eee;padding-top:12px"><div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7d7799;margin-bottom:5px">Condições comerciais</div><div style="font-size:12.5px;color:#555;white-space:pre-wrap">${esc(condComerciais())}</div></div>`:''}
+      ${condComerciais()?`<div style="margin-top:16px;border-top:1px solid #eee;padding-top:12px"><div style="font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7d7799;margin-bottom:5px">Condições comerciais</div><div style="font-size:12.5px;color:#5f5b72;white-space:pre-wrap;line-height:1.6">${esc(condComerciais())}</div></div>`:''}
       ${(S.respNome||S.respFone||S.respEmail||(typeof CANAL!=='undefined'&&CANAL&&CANAL.mostrar&&(CANAL.email||CANAL.fone)))?`<div style="margin-top:16px;border-top:1px solid #eee;padding-top:12px;display:flex;gap:28px;flex-wrap:wrap;font-size:12.5px;color:#555">
         ${(S.respNome||S.respFone||S.respEmail)?`<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#7d7799;margin-bottom:3px">Responsável</div><div style="font-weight:600;color:#221c39">${esc(S.respNome||'')}</div>${S.respFone?`<div style="color:#7d7799">${esc(S.respFone)}</div>`:''}${S.respEmail?`<div style="color:#7d7799">${esc(S.respEmail)}</div>`:''}</div>`:''}
         ${(typeof CANAL!=='undefined'&&CANAL&&CANAL.mostrar&&(CANAL.email||CANAL.fone))?`<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#7d7799;margin-bottom:3px">Canal comercial</div>${CANAL.fone?`<div>${esc(CANAL.fone)}</div>`:''}${CANAL.email?`<div>${esc(CANAL.email)}</div>`:''}</div>`:''}
