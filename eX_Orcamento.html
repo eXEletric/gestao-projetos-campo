@@ -1634,7 +1634,9 @@ function baseMatTableHtml(cfg){   // Base do lote = modelo EDITÁVEL de material
       +'<td class="pint rowact"><button class="swp" onclick="dupRow(\'materiais\',\''+r.id+'\')" title="Duplicar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick(\'materiais\',\''+r.id+'\')" title="Trocar por outro do cadastro"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow(\'materiais\',\''+r.id+'\')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>'
       +'</tr>'; }).join('');
   if(!rows.length) body='<tr><td colspan="11" style="color:var(--tx3);padding:12px 6px;font-size:12.5px">Modelo vazio. Use <b>"Trazer média"</b> pra montar a partir da média por loja, ou <b>"Adicionar material"</b>.</td></tr>';
-  return '<div class="scroll"><table class="tbl"><thead><tr>'+cols+'</tr></thead><tbody>'+body+'</tbody></table></div>'; }
+  var _sc=rows.reduce(function(a,r){return a+lineCusto(r);},0), _sp=rows.reduce(function(a,r){return a+linePreco(r);},0);
+  var foot=rows.length?'<tfoot><tr class="ftot"><td colspan="8" class="ftl">Total do modelo (base · por loja)</td><td class="r money"><b>'+fmt(_sc)+'</b></td><td class="r money"><b style="color:var(--pri)">'+fmt(_sp)+'</b></td><td></td></tr></tfoot>':'';
+  return '<div class="scroll"><table class="tbl"><thead><tr>'+cols+'</tr></thead><tbody>'+body+'</tbody>'+foot+'</table></div>'; }
 function loteSeedBaseMedia(){   // monta o modelo da Base com a MÉDIA por loja (total ÷ N) de tudo que está empregado
   var N=(LOTE_UNITS||[]).length||1; var soma=loteMatSoma();
   if(!soma.length){ alert('Não há material somado nas lojas ainda.'); return; }
