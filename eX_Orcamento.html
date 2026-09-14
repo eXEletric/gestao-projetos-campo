@@ -2304,6 +2304,7 @@ function pickCad(blk,cid){
   }
   const nr=rowSvc(c.nome,1,c.und||UND_DFLT[blk],c.custo,(c.margem===undefined?'':c.margem),c.id,c.marca||'');
   if(c.composicao)nr.composicao=JSON.parse(JSON.stringify(c.composicao));   // HERDA a receita do cadastro
+  if(blk==='materiais'){ nr.usarBase=false; nr.custoAlt=nr.custoBase; }   // material entra MANUAL — o catálogo só sugere o preço, não trava
   S[blk].push(nr);
   const _fan=PICK_LOTE&&isLoteBase();
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
