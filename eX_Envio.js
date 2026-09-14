@@ -601,6 +601,58 @@ async function verEmail(id){ const e=ENV.eventos.find(x=>x.id===id); if(!e||!e.m
 setInterval(()=>{ if(document.visibilityState==='visible' && CLOUD && ORC_ID && ENV.evCarregado) carregarEventos(); },60000);
 window.addEventListener('focus',()=>{ if(CLOUD && ORC_ID && ENV.evCarregado) carregarEventos(); });
 
+/* ============================================================================
+   SINCRONIA PROPOSTA ↔ FUNIL (dono aprovou 14/09/2026)
+   (a) fonte única do cliente: trocar cliente/loja na proposta atualiza a OPORTUNIDADE (o card do funil segue)
+   (b) sinaliza o funil ('ex_orc_sync') a cada gravação → o funil recarrega sozinho (eX_CRM.html escuta)
+   (c) alteração NÃO salva: aviso ao voltar ao funil + sinal 'ex_orc_dirty' que o funil mostra em destaque
+   ============================================================================ */
+let OPP_VINC=null;   // {c: contratante_id, l: contemplado_id} como está gravado na oportunidade
+function sinalFunil(){ try{ localStorage.setItem('ex_orc_sync',JSON.stringify({opp:OPP,t:Date.now()})); }catch(e){} }
+async function sincronizarOportunidade(){
+  if(!(OPP&&CLOUD&&SB) || (typeof MODELO_V2!=='undefined'&&MODELO_V2)) return;
+  try{
+    if(!OPP_VINC){ const {data}=await SB.from('oportunidades').select('contratante_id,contemplado_id').eq('id',OPP).maybeSingle(); if(!data) return; OPP_VINC={c:data.contratante_id||null,l:data.contemplado_id||null}; }
+    const upd={};
+    if(S.contratanteId && S.contratanteId!==OPP_VINC.c) upd.contratante_id=S.contratanteId;
+    if(S.lojaId && S.lojaId!==OPP_VINC.l && !S._base) upd.contemplado_id=S.lojaId;   // mestra de lote não tem loja própria
+    if(!Object.keys(upd).length) return;
+    const {error}=await SB.from('oportunidades').update(upd).eq('id',OPP);
+    if(error) throw error;
+    if(upd.contratante_id) OPP_VINC.c=upd.contratante_id; if(upd.contemplado_id) OPP_VINC.l=upd.contemplado_id;
+    sinalFunil();
+  }catch(e){ console.error('sincronizar oportunidade',e); }
+}
+if(typeof window.pushOrc==='function'){ const _pushOrc=window.pushOrc;
+  window.pushOrc=function(){ const r=_pushOrc.apply(this,arguments); try{ if(OPP&&CLOUD){ sinalFunil(); sincronizarOportunidade(); } }catch(e){} return r; }; }
+function tituloProposta(){ return [S&&S.cliNome,S&&S.finNome].filter(x=>String(x||'').trim()).join(' — ')||(S&&S.numero)||''; }
+if(typeof window.renderSaveState==='function'){ const _rss=window.renderSaveState;
+  window.renderSaveState=function(){ const r=_rss.apply(this,arguments);
+    try{ if(!OPP) return r; let cur=null; try{ cur=JSON.parse(localStorage.getItem('ex_orc_dirty')||'null'); }catch(_){}
+      const sujo=(typeof MANUAL!=='undefined'&&MANUAL)&&(typeof DIRTY!=='undefined'&&DIRTY);
+      if(sujo){ if(!cur||cur.opp!==OPP) localStorage.setItem('ex_orc_dirty',JSON.stringify({opp:OPP,titulo:tituloProposta(),t:Date.now()})); }
+      else if(cur&&cur.opp===OPP){ localStorage.removeItem('ex_orc_dirty'); }
+    }catch(e){}
+    return r; }; }
+if(typeof window.voltarFunil==='function'){ const _voltar=window.voltarFunil;
+  window.voltarFunil=function(){
+    const sujo=(typeof MANUAL!=='undefined'&&MANUAL)&&(typeof DIRTY!=='undefined'&&DIRTY);
+    if(!sujo) return _voltar.apply(this,arguments);
+    modal(`<div class="envh">${ms('warning','color:var(--amber,#ba7517)')}Alterações não salvas</div>
+      <p class="envp">Você mudou esta proposta e <b>não salvou</b>. Sem salvar, o funil e as outras telas continuam com os dados antigos.</p>
+      <div class="envact"><button class="envbtn" onclick="EXENV.fechar()">Continuar editando</button>
+        <button class="envbtn danger" onclick="EXENV.sairSemSalvar()">${ms('undo')}Descartar alterações</button>
+        <button class="envbtn pri" onclick="EXENV.salvarEVoltar()">${ms('save')}Salvar e voltar</button></div>`);
+  };
+  ENV.salvarEVoltar=function(){ fechar(); try{ salvarManual(); }catch(e){ console.error(e); }
+    if(typeof DIRTY!=='undefined'&&DIRTY) return;   // o próprio Salvar pode ter sido cancelado (ex.: material pendente)
+    _voltar(); };
+  ENV.sairSemSalvar=async function(){ fechar();
+    try{ await carregarOrc(); boot(); DIRTY=false; renderSaveState(); }catch(e){ console.error('descartar',e); }
+    try{ const cur=JSON.parse(localStorage.getItem('ex_orc_dirty')||'null'); if(cur&&cur.opp===OPP) localStorage.removeItem('ex_orc_dirty'); }catch(_){}
+    _voltar(); };
+}
+
 /* ---------- API p/ os onclick ---------- */
 Object.assign(ENV,{abrirEnvio,preparar,confirmar,descartar,retomar,criarRevisao,
   historico,fechar,setF,fix,fixValidade,abrirEmail,baixarPDF,copiarTexto,ck,travada,revTrab,carregarVersoes,

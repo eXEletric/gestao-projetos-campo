@@ -532,6 +532,7 @@ function faltaParaSair(o,faseId){ const miss=[]; const papel=colPapel(faseId);
 function cUp(table,row){ if(!CLOUD)return; SB.from(table).upsert(row).then(({error})=>{ if(error){console.error('cloud up',table,error);cloudMsg('erro ao salvar na nuvem');} }); }
 function cDel(table,id){ if(!CLOUD)return; SB.from(table).update({deleted_at:new Date().toISOString()}).eq('id',id).then(({error})=>{ if(error)console.error('cloud del',table,error); }); }
 function cFases(){ if(!CLOUD)return; SB.from('crm_fases').upsert(S.colunas.map((f,i)=>mFase(f,i))).then(({error})=>{ if(error)console.error('cloud fases',error); }); }
+const mapOppRow=o=>({id:o.id,contratanteId:o.contratante_id,contempladoId:o.contemplado_id,objeto:o.objeto,temperatura:o.temperatura,dataLimite:o.data_limite||'',colId:o.fase_id,obs:o.obs,loteId:o.lote_id||null,faseDados:(o.fase_dados&&typeof o.fase_dados==='object'?o.fase_dados:{})});
 async function carregarNuvem(){
   const [cl,fa,op,lj,vc,oc,lt]=await Promise.all([
     SB.from('clientes').select('*').is('deleted_at',null),
@@ -550,7 +551,7 @@ async function carregarNuvem(){
     clientes:(cl.data||[]).map(c=>({id:c.id,nome:c.nome,tipo:c.tipo,paiId:c.pai_id,cnpj:c.cnpj,contato:c.contato,fone:c.fone,email:c.email,endereco:c.endereco,obs:c.obs})),
     lojas:((lj&&lj.data)||[]).map(l=>({id:l.id,nome:l.nome,grupo:l.grupo,numero:l.numero,endereco:l.endereco,cnpj:l.cnpj,coordenada:l.coordenada,codigo:l.codigo_externo,contato:l.contato,fone:l.fone,email:l.email,obs:l.obs})),
     vinculos:((vc&&vc.data)||[]).map(v=>({id:v.id,lojaId:v.loja_id,contratanteId:v.contratante_id,papel:v.papel,obs:v.obs})),
-    oportunidades:(op.data||[]).map(o=>({id:o.id,contratanteId:o.contratante_id,contempladoId:o.contemplado_id,objeto:o.objeto,temperatura:o.temperatura,dataLimite:o.data_limite||'',colId:o.fase_id,obs:o.obs,loteId:o.lote_id||null,faseDados:(o.fase_dados&&typeof o.fase_dados==='object'?o.fase_dados:{})})),
+    oportunidades:(op.data||[]).map(mapOppRow),
     lotes:((lt&&lt.data)||[]).map(l=>({id:l.id,nome:l.nome,contratanteId:l.contratante_id,baseOppId:l.base_oportunidade_id}))
   };
   if(!S.colunas.length) await seedFases();
@@ -599,8 +600,34 @@ const fmtBRL=n=>'R$ '+(Math.round((+n||0)*100)/100).toLocaleString('pt-BR',{mini
 function orcIndex(){ let loc={}; try{loc=JSON.parse(localStorage.getItem('ex_orc_index')||'{}');}catch(e){} return Object.assign({},loc,ORC_CLOUD); }
 // re-lê os orçamentos da nuvem (status/total) — chamado quando o funil volta ao foco, p/ pegar mudança feita na aba da proposta
 async function refreshOrcCloud(){ if(!CLOUD||!SB)return; try{ const {data}=await SB.from('orcamentos').select('oportunidade_id,status,total,numero').is('deleted_at',null).order('created_at',{ascending:true}); if(data){ const m={}; data.forEach(r=>{ if(r.oportunidade_id) m[r.oportunidade_id]={status:(r.status||'rascunho'),total:(r.total||0),numero:(r.numero||'')}; }); ORC_CLOUD=m; render(); } }catch(e){} }
-document.addEventListener('visibilitychange',function(){ if(!document.hidden) refreshOrcCloud(); });
-window.addEventListener('focus',refreshOrcCloud);
+document.addEventListener('visibilitychange',function(){ if(!document.hidden) refreshFunilCloud(); });
+window.addEventListener('focus',()=>refreshFunilCloud());
+/* ===== sincronia com a PROPOSTA (aberta em outro quadro do app; trocar de tela não recarrega o funil) =====
+   A proposta sinaliza por localStorage: 'ex_orc_sync' = gravou na nuvem · 'ex_orc_dirty' = tem alteração NÃO salva.
+   O evento 'storage' chega nos outros quadros do mesmo app → o funil recarrega cliente/valor/status sozinho. */
+let _refFun=0;
+async function refreshFunilCloud(){ if(!CLOUD||!SB||!S) return; const agora=Date.now(); if(agora-_refFun<1500) return; _refFun=agora;
+  try{
+    const [op,oc]=await Promise.all([ SB.from('oportunidades').select('*').is('deleted_at',null),
+      SB.from('orcamentos').select('oportunidade_id,status,total,numero').is('deleted_at',null).order('created_at',{ascending:true}) ]);
+    if(op.data){ const alvo=((S.colunas.find(k=>k.papel==='proposta'))||S.colunas[0]||{}).id||null;
+      S.oportunidades=op.data.map(mapOppRow); if(alvo) S.oportunidades.forEach(o=>{ if(!S.colunas.find(k=>k.id===o.colId)) o.colId=alvo; }); }
+    if(oc.data){ const m={}; oc.data.forEach(r=>{ if(r.oportunidade_id) m[r.oportunidade_id]={status:(r.status||'rascunho'),total:(r.total||0),numero:(r.numero||'')}; }); ORC_CLOUD=m; }
+    render(); renderAvisoNaoSalvo();
+  }catch(e){ console.error('refresh funil',e); } }
+function avisoNaoSalvo(){ try{ const d=JSON.parse(localStorage.getItem('ex_orc_dirty')||'null'); if(!d||!d.opp) return null; if(Date.now()-(d.t||0)>12*3600e3) return null; return d; }catch(e){ return null; } }
+function renderAvisoNaoSalvo(){ const board=document.getElementById('board'); if(!board) return;
+  let el=document.getElementById('avisoNaoSalvo'); const d=avisoNaoSalvo();
+  if(!d){ if(el) el.remove(); return; }
+  if(!el){ el=document.createElement('div'); el.id='avisoNaoSalvo'; board.parentElement.insertBefore(el,board); }
+  const o=(S&&S.oportunidades||[]).find(x=>x.id===d.opp); const nome=d.titulo||(o&&o.objeto)||'uma proposta';
+  el.innerHTML=`<div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#faeeda;border:1.5px solid #e6c98f;color:#8a560f;border-radius:10px;padding:10px 14px;margin-bottom:12px;font-size:13px">
+    <span class="material-symbols-rounded">warning</span><span style="flex:1;min-width:220px"><b>Alterações NÃO salvas</b> na proposta <b>${esc(nome)}</b>. O funil só mostra o que foi salvo.</span>
+    <button class="btn btn-s btn-p" onclick="abrirOrcNoShell('?opp=${esc(d.opp)}')"><span class="material-symbols-rounded">edit_document</span>Abrir e salvar</button></div>`; }
+window.addEventListener('storage',function(e){
+  if(e.key==='ex_orc_sync'){ _refFun=0; refreshFunilCloud(); setTimeout(()=>{ _refFun=0; refreshFunilCloud(); },2500); }   // 2ª leitura: a gravação da proposta pode terminar logo depois do sinal
+  if(e.key==='ex_orc_dirty') renderAvisoNaoSalvo();
+});
 
 function demo(){ return { v:3,
   colunas:[
@@ -670,7 +697,7 @@ function setTab(t){ TAB=t; document.getElementById('tab-funil').classList.toggle
   document.getElementById('v-funil').classList.toggle('on',t==='funil'); document.getElementById('v-clientes').classList.toggle('on',t==='clientes');
   const qi=document.getElementById('q'); if(qi)qi.placeholder=(t==='clientes'?'Buscar contratante ou loja…':'Buscar oportunidade…');
   render(); }
-function render(){ if(TAB==='funil'){ renderBoard(); renderOppDetail(); syncDetailModal(); } else if(CSUB==='lojas'){ renderLojaList(); renderLojaDetail(); } else { renderClist(); renderCdetail(); } }
+function render(){ if(TAB==='funil'){ renderBoard(); renderOppDetail(); syncDetailModal(); renderAvisoNaoSalvo(); } else if(CSUB==='lojas'){ renderLojaList(); renderLojaDetail(); } else { renderClist(); renderCdetail(); } }
 function syncDetailModal(){ const m=document.getElementById('detailModal'); if(m)m.classList.toggle('show',!!(SELO||SEL_LOTE)); }
 function closeDetail(){ SELO=null; SEL_LOTE=null; const d=document.getElementById('oppDetail'); if(d)d.innerHTML=''; syncDetailModal(); }
 document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&(SELO||SEL_LOTE))closeDetail(); });
