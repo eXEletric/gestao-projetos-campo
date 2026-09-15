@@ -104,8 +104,8 @@ const CASOS={
   avulsa:{nome:'Obra única',titulo:'AOC · AOC TESTE · orçamento teste',cli:'AOC',lojas:[{id:'l1',nome:'AOC TESTE'}]},
   lote:{nome:'Lote',titulo:'Copeland · Onda 2 GO/DF (lote)',cli:'COPELAND',lojas:[{id:'a',nome:'Assaí Goiânia #112'},{id:'b',nome:'Atacadão Brasília #208'},{id:'c',nome:'Assaí Anápolis #131'},{id:'d',nome:'Atacadão Aparecida #220'}]}
 };
-const PERFIS={comercial:'Comercial',financeiro:'Financeiro',master:'Adm master'};
-const NOME={comercial:'Marina (Comercial)',financeiro:'Paula (Financeiro)',master:'André (Adm master)'};
+const PERFIS={comercial:'Comercial',financeiro:'Financeiro',operacional:'Operacional',master:'Adm master'};
+const NOME={comercial:'Marina (Comercial)',financeiro:'Paula (Financeiro)',operacional:'Rafael (Operacional)',master:'André (Adm master)'};
 let caso='avulsa', perfil='comercial', E;
 function reset(){ E={form:null,fin:null,dev:null,chk:{fat:false,pag:false,cred:false},os:{},avisado:false}; render(); }
 const osN=()=>Object.keys(E.os).length, lojas=()=>CASOS[caso].lojas;
@@ -118,7 +118,7 @@ function segs(){
 function cardHTML(){
   const p=passoAtual(), C=CASOS[caso];
   const prox={2:[ms('description'),'Formalizar: contrato ou OS do cliente',''],3:[ms('account_balance'),'Aguardando liberação do Financeiro','fin'],
-    4:[ms('assignment'),caso==='lote'?`Gerar OS por loja (${osN()}/${lojas().length})`:'Gerar OS da eX',''],6:[ms('check_circle'),caso==='lote'?`${lojas().length} atendimentos criados`:'Atendimento criado no Operacional','done']}[p];
+    4:[ms('engineering'),caso==='lote'?`Operacional: gerar OS por loja (${osN()}/${lojas().length})`:'Operacional: gerar a OS',''],6:[ms('check_circle'),caso==='lote'?`${lojas().length} atendimentos criados`:'Atendimento criado no Operacional','done']}[p];
   const mini=[1,2,3,4,5].map(i=>`<i class="${i<p||(i===5&&p===6)||(i===4&&osN()>0&&p===6)?'ok':(i===p||(i===5&&p===4&&osN()>0)?'cur':'')}"></i>`).join('');
   return `<div class="kcard"><div class="kcard-nm">${C.titulo}</div><div class="kcard-cli">${C.cli}${caso==='lote'?' · '+lojas().length+' lojas':''}</div>
     <div class="vez ok">${ms('verified')}Aprovada · R1</div><div class="kprox ${prox[2]}">${prox[0]}${prox[1]}</div><div class="mini">${mini}</div></div>`;
@@ -153,11 +153,13 @@ function renderDetail(){
   }
   // 4 OS
   let f4='';
-  if(p>=4){ const podeGerar=perfil!=='financeiro';
+  if(p>=4){ const podeGerar=perfil==='operacional'||perfil==='master';
+    const quem=!podeGerar&&osN()<lojas().length?`<div class="note warn">${ms('engineering')}<span>Quem gera a OS é o <b>Operacional</b>. Ele recebe esta proposta na fila <b>"OS a gerar"</b> assim que o Financeiro libera.</span></div><div class="acts"><button class="btn btn-s" ${E.avisOp?'disabled':''} onclick="E.avisOp=true;toast('Operacional avisado (vira tarefa pra ele).');render()">${ms('notifications')}${E.avisOp?'Operacional avisado':'Avisar o Operacional'}</button></div>`:'';
+    const mst=perfil==='master'&&osN()<lojas().length?`<div class="note dark">${ms('admin_panel_settings')}<span>Você é <b>Adm master</b>: está gerando <b>como Operacional</b>. Fica registrado assim.</span></div>`:'';
     if(!lote){ const os=E.os.l1;
-      f4= os?`<div class="doc">${ms('assignment')}${os.num} · executor ${os.exec} · início ${os.ini}</div><div class="sd">Aguardando a <b>assinatura do executor</b> na OS (desenho na tela).</div>`
-            :`<div class="sd">A OS da eX é sempre emitida. Leva o escopo congelado da R1${E.form&&E.form.tipo==='os'?' e o nº da OS do cliente ('+E.form.num+')':''}.</div><div class="acts"><button class="btn btn-s btn-p" ${podeGerar?'':'disabled title="Quem gera é o comercial/operacional"'} onclick="osUI('l1')">${ms('assignment_add')}Gerar OS da eX</button></div>`; }
-    else { f4=`<div class="sd">Uma OS <b>por loja</b>. Cada OS gerada cria o atendimento daquela loja.</div>
+      f4= os?`<div class="doc">${ms('assignment')}${os.num} · executor ${os.exec} · início ${os.ini}</div><div class="sd">Gerada por ${os.por} · aguardando a <b>assinatura do executor</b> na OS (desenho na tela).</div>`
+            :`<div class="sd">A OS da eX é sempre emitida. Leva o escopo congelado da R1${E.form&&E.form.tipo==='os'?' e o nº da OS do cliente ('+E.form.num+')':''}.</div>${quem}${mst}${podeGerar?`<div class="acts"><button class="btn btn-s btn-p" onclick="osUI('l1')">${ms('assignment_add')}Gerar OS da eX</button></div>`:''}`; }
+    else { f4=`<div class="sd">Uma OS <b>por loja</b>. Cada OS gerada cria o atendimento daquela loja.</div>${quem}${mst}
       <table><tr><th>Loja</th><th>OS da eX</th><th></th></tr>${lojas().map(l=>{ const os=E.os[l.id]; return `<tr><td>${l.nome}</td><td>${os?`<span class="pill ok">${os.num}</span> <span style="font-size:11px;color:var(--tx3)">${os.exec}</span>`:'<span class="pill no">a gerar</span>'}</td><td style="text-align:right">${os?'':`<button class="btn btn-s" ${podeGerar?'':'disabled'} onclick="osUI('${l.id}')">${ms('assignment_add')}Gerar</button>`}</td></tr>`; }).join('')}</table>
       ${osN()<lojas().length&&podeGerar?`<div class="acts"><button class="btn btn-s btn-p" onclick="osUI('todas')">${ms('playlist_add')}Gerar para as ${lojas().length-osN()} restantes</button></div>`:''}`; }
   }
@@ -200,7 +202,7 @@ function osUI(alvo){ window._os=alvo;
     <div class="foot"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn btn-p" onclick="gerarOS()">${ms('assignment_add')}Gerar</button></div>`); }
 function gerarOS(){ const alvo=window._os, exec=document.getElementById('oExec').value, ini=document.getElementById('oIni').value.split('-').reverse().join('/');
   const primeira=osN()===0; const ids=alvo==='todas'?lojas().filter(l=>!E.os[l.id]).map(l=>l.id):[alvo];
-  ids.forEach(id=>{ E.os[id]={num:'OS-2026-'+String(++_seq).padStart(4,'0'),exec,ini}; });
+  ids.forEach(id=>{ E.os[id]={num:'OS-2026-'+String(++_seq).padStart(4,'0'),exec,ini,por:NOME[perfil]}; });
   fechar(); toast((primeira?'Card movido para <b>Obra / execução</b>. ':'')+`${ids.length>1?ids.length+' OS geradas e '+ids.length+' atendimentos criados':'OS gerada e atendimento criado'} no Operacional.`); render(); }
 reset();
 </script>
