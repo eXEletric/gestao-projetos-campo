@@ -407,6 +407,11 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .mkwrap.base{opacity:.5}
 .mkwrap.base .mk{border-style:dashed;background:transparent}
 .mkwrap.own .mk{background:#faeeda;border-color:#e6c360;color:#854f0b;font-weight:700}
+.mkcombo{display:inline-flex;align-items:center;gap:3px;justify-content:flex-end;font-weight:700;color:var(--pri);border:1px dashed #b9a8e0;border-radius:6px;padding:2px 6px;background:#f6f2fd;cursor:help;white-space:nowrap}
+.mkcombo.neg{color:#b3261e;border-color:#e3a19b;background:#fdeceb}
+.mkcombo .material-symbols-rounded{font-size:13px}
+.varchip-un{display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;border-radius:20px;padding:3px 9px;background:var(--pri);color:#fff}
+.varchip-un .material-symbols-rounded{font-size:13px;color:#fff}
 .mkwrap.own .mkpc{color:#854f0b}
 .mkne{font-size:14px;font-weight:800;color:#854f0b}
 .mkwarn{font-size:15px;color:#d4a017}
@@ -1197,6 +1202,8 @@ async function initOrc(){
   boot();
   try{ if(window.parent && window.parent!==window) window.parent.postMessage({type:'exOrcOpen', qs: location.search||''}, '*'); }catch(_){}   // avisa o shell qual orçamento está aberto (p/ persistir no reload)
   if(isLoteBase()){ try{ await initLoteBasePanel(); }catch(e){ console.error('lote base panel',e); } }   // base do lote = mestra: injeta o painel de lojas
+  else if(isLoteUnit()){ (async function(){ try{ const l=await SB.from('orcamento_lotes').select('base_oportunidade_id').eq('id',S_LOTE_ID).limit(1); const bo=l.data&&l.data[0]&&l.data[0].base_oportunidade_id; if(!bo)return;
+      const b=await SB.from('orcamentos').select('dados,total').eq('oportunidade_id',bo).is('deleted_at',null).order('created_at',{ascending:false}).limit(1); if(!(b.data&&b.data[0]))return; UNIT_BASE_VARS=((b.data[0].dados||{}).variacoes)||[]; BLKS.forEach(b=>{ try{ renderBlk(b); }catch(_){} }); recalc(); }catch(e){ console.error('modelo da loja',e); } })(); }   // loja do lote: carrega a base só p/ mostrar o MODELO (variação) que a loja segue
 }
 
 /* ---------- LISTA de orçamentos (Comercial › Orçamentos) ---------- */
@@ -2029,7 +2036,7 @@ function renderBlk(cfg){
           : `<td class="r money pint">${custoCell}</td>`}
         <td class="r">${qtdCellHtml(cfg,r)}</td>
         <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
-        <td class="r pint"><div class="mkwrap ${propria?'own':'base'}">${propria?'<span class="mkne" title="diferente da margem base">&ne;</span>':''}<input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(baseMg(cfg.key))}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span class="mkpc">%</span>${propria?`<span class="mkwarn material-symbols-rounded" title="margem própria — fora da base ${num(baseMg(cfg.key))}%">warning</span><button class="mkreset" title="voltar à margem base" onclick="resetMargem('${cfg.key}','${r.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</div></td>
+        <td class="r pint">${(comboActive()&&(cfg.key==='servicos'||cfg.key==='materiais')&&!r.adic)?`<span class="mkcombo" data-blk="${cfg.key}" title="VALOR COMBINADO ativo — esta linha usa a margem do bloco definida no painel de preço (Margem ${cfg.key==='servicos'?'serviços':'materiais'}).${propria?' A margem própria desta linha ('+esc(r.margem)+'%) fica guardada e volta se o combinado for removido.':''}"><span class="material-symbols-rounded">handshake</span><span class="mkcv">${_d1(comboMgBlk(cfg.key)*100)}</span>%</span>`:`<div class="mkwrap ${propria?'own':'base'}">${propria?'<span class="mkne" title="diferente da margem base">&ne;</span>':''}<input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(baseMg(cfg.key))}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span class="mkpc">%</span>${propria?`<span class="mkwarn material-symbols-rounded" title="margem própria — fora da base ${num(baseMg(cfg.key))}%">warning</span><button class="mkreset" title="voltar à margem base" onclick="resetMargem('${cfg.key}','${r.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</div>`}</td>
         <td class="r money custot pint" id="tc_${r.id}">${fmt(custo)}</td>
         <td class="r money unit" id="tu_${r.id}">${fmt(unit)}</td>
         <td class="r money preco" id="tp_${r.id}"><b>${fmt(preco)}</b></td>
@@ -2054,7 +2061,7 @@ function renderBlk(cfg){
     <div class="blkhead">
       <button class="blktog ${bOn?'on':'off'}" onclick="toggleBloco('${cfg.key}')" title="${bOn?'Este bloco SOMA no total (muda o valor) — clique para tirar do cálculo':'Bloco FORA DO TOTAL — clique para voltar a somar'}"><span class="blktog-sw"><i></i></span><span class="material-symbols-rounded blktog-ic">calculate</span><span class="blktog-lb">${bOn?'soma no total':'FORA DO TOTAL'}</span></button>
       <span class="ic"><span class="material-symbols-rounded">${cfg.icon}</span></span>
-      <h2>${cfg.titulo}</h2>${(isLoteBase()&&varLista().length>1)?`<span title="conteúdo desta variação da base" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;border-radius:20px;padding:3px 9px;background:var(--pri);color:#fff"><span class="material-symbols-rounded" style="font-size:13px;color:#fff">layers</span>${esc(varNome(S.varAtiva))}</span>`:''}
+      <h2>${cfg.titulo}</h2>${(isLoteBase()&&varLista().length>1)?`<span title="conteúdo desta variação da base" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;border-radius:20px;padding:3px 9px;background:var(--pri);color:#fff"><span class="material-symbols-rounded" style="font-size:13px;color:#fff">layers</span>${esc(varNome(S.varAtiva))}</span>`:unitVarChip()}
       <div class="modosw">
         <button class="chip ${soT?'on':''}" onclick="toggleSoTotal('${cfg.key}')" title="Na proposta do cliente: agrupar os itens num total só (esconde item a item). Não muda o cálculo."><span class="material-symbols-rounded">${soT?'visibility_off':'format_list_bulleted'}</span>${soT?'Só o total':'Detalhado'}</button>
       </div>
@@ -3619,6 +3626,7 @@ function fxIr(id){ var el=fxEl(id); if(el)el.scrollIntoView({behavior:'smooth',b
 /* ===== VARIAÇÕES da base do lote (ex.: V1 Chiller full · V2 Splitão · …) =====
    Cada variação é um grupo completo: Serviços + Material + Despesas + Locações. A ATIVA vive em S.servicos/materiais/despesas/equip
    (o editor inteiro continua igual); as demais guardam o conteúdo em S.variacoes[i].conteudo. Cada loja segue uma: dados.variacaoId (sem = v1). */
+var UNIT_BASE_VARS=[];
 var VAR_KEYS=['servicos','materiais','despesas','equip'];
 function _deep(x){ return JSON.parse(JSON.stringify(x==null?null:x)); }
 function varLista(){ if(!S||!S._base)return [];
@@ -3626,6 +3634,10 @@ function varLista(){ if(!S||!S._base)return [];
   if(!S.varAtiva||!S.variacoes.some(function(v){return v.id===S.varAtiva;}))S.varAtiva=S.variacoes[0].id; return S.variacoes; }
 function varNome(id){ var v=varLista().find(function(x){return x.id===id;}); return v?v.nome:'Variação 1'; }
 function unitVar(u){ return (u&&u.dados&&u.dados.variacaoId)||'v1'; }
+function unitVarNome(){   // na proposta de UMA loja do lote: nome do modelo (variação da base) que ela segue
+  if(!isLoteUnit()||!S)return ''; var vs=Array.isArray(UNIT_BASE_VARS)?UNIT_BASE_VARS:[]; if(!vs.length)return '';
+  var id=S.variacaoId||'v1', v=vs.find(function(x){return x.id===id;}); return v?v.nome:('variação inexistente ('+id+')'); }
+function unitVarChip(){ var n=unitVarNome(); return n?'<span class="varchip-un" title="Modelo base (variação da base do lote) que esta loja segue"><span class="material-symbols-rounded">layers</span>Modelo: '+esc(n)+'</span>':''; }
 function unitsDaVar(id){ return (LOTE_UNITS||[]).filter(function(u){return unitVar(u)===id;}); }
 function varUnitsAlvo(){ return (isLoteBase()&&varLista().length>1)?unitsDaVar(S.varAtiva):(LOTE_UNITS||[]); }   // ações base→lojas alcançam só as lojas da variação aberta
 function varConteudo(base,id){ var c={}; var vs=(base&&base.variacoes)||[]; var at=(base&&base.varAtiva)||'v1'; var v=vs.find(function(x){return x.id===id;});
@@ -4384,6 +4396,7 @@ function recalc(){
   { const t=travas(); const lk=(id,on)=>{ const b=document.getElementById(id); if(b){ b.classList.toggle('on',!!on); b.innerHTML='<span class="material-symbols-rounded">'+(on?'lock':'lock_open')+'</span>'; b.title=on?'TRAVADO — clique para destravar':'livre — clique para travar'; } };
     if(ms){ if(document.activeElement!==ms) ms.value=_d1(_combo?comboMgBlk('servicos')*100:baseMg('servicos')); ms.disabled=_combo?false:!!t.serv; ms.classList.toggle('calc',_combo&&!t.serv); ms.title=_combo?(t.serv?'travada neste valor (material absorve)':'calculada — digite para travar'):(t.serv?'travada':''); }
     if(mm){ if(document.activeElement!==mm) mm.value=_d1(_combo?comboMgBlk('materiais')*100:baseMg('materiais')); mm.disabled=_combo?false:!!t.mat; mm.classList.toggle('calc',_combo&&!t.mat); mm.title=_combo?(t.mat?'travada neste valor (serviços absorvem)':'calculada — digite para travar'):(t.mat?'travada':''); }
+    document.querySelectorAll('.mkcombo[data-blk]').forEach(el=>{ const v=_combo?comboMgBlk(el.dataset.blk)*100:0; const s=el.querySelector('.mkcv'); if(s)s.textContent=_d1(v); el.classList.toggle('neg',v<0); });   // margem aplicada nas linhas com valor combinado
     const im=document.querySelector('[data-f="impostoPct"]'); if(im) im.disabled=!!t.imp;
     lk('lk_serv',t.serv); lk('lk_mat',t.mat); lk('lk_imp',t.imp);
     [['servicos','mg_serv_in'],['materiais','mg_mat_in']].forEach(p=>{ const inp=document.getElementById(p[1]); if(!inp)return; let a=document.getElementById('ap_'+p[0]); const n=_combo?0:linhasMargemPropria(p[0]).length;
