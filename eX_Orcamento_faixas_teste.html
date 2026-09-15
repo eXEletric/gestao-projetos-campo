@@ -1167,7 +1167,8 @@ function saveOrc(){ if(!(OPP&&CLOUD))return; clearTimeout(_saveT); _saveT=setTim
 async function carregarOrc(){
   const {data,error}=await SB.from('orcamentos').select('*').eq('oportunidade_id',OPP).is('deleted_at',null).order('created_at',{ascending:false}).limit(1);
   if(error) throw error;
-  if(data&&data.length){ ORC_ID=data[0].id; S_LOTE_ID=data[0].lote_id||null; if(data[0].dados) S=data[0].dados; else S=orcVazio(); }
+  if(data&&data.length){ ORC_ID=data[0].id; S_LOTE_ID=data[0].lote_id||null; if(data[0].dados) S=data[0].dados; else S=orcVazio();
+    if(S_LOTE_ID && !S._base && data[0].numero) S.numero=data[0].numero; }   // loja do lote: o nº OFICIAL é o da coluna (nunca o herdado da base)
   else { ORC_ID=null; S=orcVazio(); S.numero=await proximoNumero(); stampNovo(); }   // orçamento novo nasce EM BRANCO + número automático único
   sanitize();
 }
@@ -3647,7 +3648,7 @@ function varConteudo(base,id){ var c={}; var vs=(base&&base.variacoes)||[]; var 
   var src=(!id||id===at||!v||!v.conteudo)?base:v.conteudo; VAR_KEYS.forEach(function(k){ c[k]=_deep((src&&src[k])||[]); }); return c; }
 function dadosLojaDaBase(base,id){   // dados de uma loja a partir da base, com o conteúdo da variação escolhida
   var d=_deep(base||{}); var vid=id||(base&&base.varAtiva)||'v1'; var c=varConteudo(base,vid);
-  VAR_KEYS.forEach(function(k){ d[k]=c[k]; }); delete d.variacoes; delete d.varAtiva; delete d._base; delete d.macro; delete d.fxLayout; d.variacaoId=vid; return d; }
+  VAR_KEYS.forEach(function(k){ d[k]=c[k]; }); delete d.variacoes; delete d.varAtiva; delete d._base; delete d.macro; delete d.fxLayout; delete d.numero; d.variacaoId=vid; return d; }   // nº da proposta NUNCA vem da base
 function varRerender(){ save(); try{ sanitize(); }catch(_){} BLKS.forEach(function(b){ try{ renderBlk(b); }catch(_){} }); try{ applyBlocoVis(); }catch(_){} try{ recalc(); }catch(_){} try{ injectLoteBasePanel(); }catch(_){} }
 function varTrocar(id){ var vs=varLista(); if(id===S.varAtiva)return; var atual=vs.find(function(x){return x.id===S.varAtiva;}), nova=vs.find(function(x){return x.id===id;}); if(!nova)return;
   if(typeof lmePendente==='function'&&lmePendente()>0&&!confirm('Há edição de material a custo NÃO aplicada — trocar de variação descarta. Continuar?'))return;
