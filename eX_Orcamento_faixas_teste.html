@@ -659,6 +659,8 @@ body.viewing .ln.lnoff{display:none!important}
 .lockbtn.on .material-symbols-rounded{font-variation-settings:'FILL' 1,'wght' 600;filter:drop-shadow(0 1px 0 rgba(120,80,0,.35))}
 .lockbtn.on:hover{color:#c78c00}
 .pin.calc{background:transparent;border-style:dashed;color:#7d7799}
+.iln.mgrow{flex-wrap:wrap;border:1px solid #ddd6ee;border-left:4px solid var(--pri);border-radius:9px;background:#fff;padding:7px 9px;margin:8px 0}
+.iln.mgrow .mgap{flex-basis:100%;margin-top:6px;padding-top:6px;border-top:1px dashed #e6e0f3;text-align:right;font-size:10.5px}
 .combo-apl{margin-left:6px;border:1px solid var(--pri);background:var(--surf);color:var(--pri);border-radius:7px;padding:3px 8px;font:inherit;font-size:11px;font-weight:800;cursor:pointer}.combo-apl.pend{background:var(--pri);color:#fff;box-shadow:0 0 0 3px rgba(83,58,183,.18)}
 @media print{.combo-apl,.lockbtn{display:none!important}}
 .blk-off > :not(.blkhead){display:none!important}
@@ -4385,8 +4387,9 @@ function recalc(){
     const im=document.querySelector('[data-f="impostoPct"]'); if(im) im.disabled=!!t.imp;
     lk('lk_serv',t.serv); lk('lk_mat',t.mat); lk('lk_imp',t.imp);
     [['servicos','mg_serv_in'],['materiais','mg_mat_in']].forEach(p=>{ const inp=document.getElementById(p[1]); if(!inp)return; let a=document.getElementById('ap_'+p[0]); const n=_combo?0:linhasMargemPropria(p[0]).length;
+      const row=inp.closest('.iln'); if(row) row.classList.add('mgrow');   // cada margem numa caixa própria (o botão fica DENTRO da caixa dela)
       if(!n){ if(a)a.remove(); return; }
-      if(!a){ a=document.createElement('div'); a.id='ap_'+p[0]; a.className='noprint'; a.style.cssText='font-size:10.5px;margin:2px 0 4px;text-align:right'; const row=inp.closest('.iln'); if(row) row.insertAdjacentElement('afterend',a); }
+      if(!a){ a=document.createElement('div'); a.id='ap_'+p[0]; a.className='noprint mgap'; if(row) row.appendChild(a); }
       a.innerHTML='<button onclick="aplicarMargemLinhas(\''+p[0]+'\')" style="border:1px solid #c77b12;background:#fff4e0;color:#8a5a12;border-radius:6px;padding:1px 7px;font:inherit;font-weight:800;cursor:pointer" title="Estas linhas têm margem própria e ignoram a margem do bloco">aplicar '+_d1(baseMg(p[0]))+'% nas '+n+' linha(s) com margem própria</button>'; }); }
   // prazo espelho (direita) — reflete o prazo da mão de obra; avisa quando manual
   const sp=document.getElementById('s_prazo'); if(sp)sp.textContent=fmtPrazo(obraPrazo());
