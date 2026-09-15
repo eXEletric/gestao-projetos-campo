@@ -970,6 +970,9 @@ body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{backgrou
             <div class="iln mgrow"><span class="lbl">Impostos</span><span class="val"><input class="pin" style="width:48px;text-align:right" data-f="impostoPct" inputmode="decimal">%<button class="lockbtn noprint" id="lk_imp" onclick="toggleTrava('imp')"></button></span></div>
             <div class="iln"><span class="lbl">Margem serviços</span><span class="val"><input class="pin" style="width:48px;text-align:right" id="mg_serv_in" inputmode="decimal" onchange="setBlkMargem('servicos',this.value)">%<button class="lockbtn noprint" id="lk_serv" onclick="toggleTrava('serv')"></button></span></div>
             <div class="iln"><span class="lbl">Margem materiais</span><span class="val"><input class="pin" style="width:48px;text-align:right" id="mg_mat_in" inputmode="decimal" onchange="setBlkMargem('materiais',this.value)">%<button class="lockbtn noprint" id="lk_mat" onclick="toggleTrava('mat')"></button></span></div>
+            <div class="iln mgrow mgpass"><span class="lbl">Deslocamento <span class="pcref">km, veículo, pedágio, rateio</span></span><span class="val"><input class="pin" style="width:48px;text-align:right" id="mg_desl_in" inputmode="decimal" onchange="setMgGeral('deslocamento',this.value)">%<span class="lockph"></span></span></div>
+            <div class="iln mgrow mgpass"><span class="lbl">Outras despesas <span class="pcref">diárias, frete, taxas</span></span><span class="val"><input class="pin" style="width:48px;text-align:right" id="mg_desp_in" inputmode="decimal" onchange="setMgGeral('despesas',this.value)">%<span class="lockph"></span></span></div>
+            <div class="iln mgrow mgpass"><span class="lbl">Locações</span><span class="val"><input class="pin" style="width:48px;text-align:right" id="mg_equip_in" inputmode="decimal" onchange="setMgGeral('equip',this.value)">%<span class="lockph"></span></span></div>
             <div class="iln"><span class="lbl">Custo real <span style="color:var(--tx3);font-weight:400">(auto)</span></span><span class="val" id="s_custo">—</span></div>
             <div class="iln"><span class="lbl">Lucro líquido</span><span class="val luc" id="s_lucro">—</span></div>
             <div class="iln"><span class="lbl">Margem de lucro</span><span class="val luc" id="s_marg">—</span></div>
@@ -1387,7 +1390,7 @@ function custoComposto(r){ const c=r&&r.composicao; if(!c)return null;
 // custo unitário: serviço montado recalcula ao vivo (efetivo dirige quando o modo é global-efetivo); senão base/alterado
 const custoUn=r=>{ if(r.usarBase!==false && r.composicao){ const cc=custoComposto(r); if(cc!=null)return cc; } return num(r.usarBase?r.custoBase:r.custoAlt); };
 // MARGEM POR BLOCO: Serviços e Materiais têm lucro (margem própria); Despesas e Locações entram a custo (0)
-const MG_DEF={servicos:30,materiais:30,despesas:0,equip:0};
+const MG_DEF={servicos:30,materiais:30,despesas:0,equip:0,deslocamento:0};
 function baseMg(blk){ if(S.margem && S.margem[blk]!==undefined && S.margem[blk]!=='') return num(S.margem[blk]); return (MG_DEF[blk]!==undefined?MG_DEF[blk]:0); }
 // VALOR FINAL COMBINADO: fixa o preço; a margem dos blocos de lucro (serviços+materiais) deriva pra bater
 function comboActive(){ return S.valorCombinado!=null && num(S.valorCombinado)>0; }
@@ -1399,7 +1402,7 @@ function adicCusto(blk){ return (S[blk]||[]).reduce(function(a,r){ return a+(r&&
 function comboMg(){   // margem uniforme (fração) nos blocos de lucro — só sobre o escopo-base (adicionais fora)
   const cL=(blocoAtivo('servicos')?blkCusto('servicos')-adicCusto('servicos'):0)+(blocoAtivo('materiais')?blkCusto('materiais')-adicCusto('materiais'):0);
   if(cL<=0) return 0;
-  const cP=(blocoAtivo('despesas')?blkCusto('despesas')-adicCusto('despesas'):0)+(blocoAtivo('equip')?blkCusto('equip')-adicCusto('equip'):0)+diariasCusto();
+  const cP=passPreco('despesas')+passPreco('equip')+diariasPreco();   // despesas/locações/diárias entram FIXAS pelo preço (custo + % geral)
   const desc=num(S.descontoPct)/100, imp=num(S.impostoPct)/100;
   const bruto=num(S.valorCombinado)/(((1-desc)||1)*(1+imp));   // tira imposto e desconto
   return (bruto-cP)/cL - 1;
@@ -1416,7 +1419,7 @@ function comboMgBlk(blk){
   if(fx!==null && !(fxo!==null && cB(outro)<=0)) return fx;                 // este bloco travado
   if(fxo===null || cB(outro)<=0) return comboMg();                           // ninguém travado (ou o outro vazio) → uniforme
   const cMe=cB(blk); if(cMe<=0) return 0;                                     // o outro travado → este ABSORVE
-  const cP=(blocoAtivo('despesas')?blkCusto('despesas')-adicCusto('despesas'):0)+(blocoAtivo('equip')?blkCusto('equip')-adicCusto('equip'):0)+diariasCusto();
+  const cP=passPreco('despesas')+passPreco('equip')+diariasPreco();   // despesas/locações/diárias entram FIXAS pelo preço (custo + % geral)
   const bruto=num(S.valorCombinado)/(((1-num(S.descontoPct)/100)||1)*(1+num(S.impostoPct)/100));
   return (bruto-cP-cB(outro)*(1+fxo))/cMe - 1; }
 function mkComboCell(blk,r){   // célula de margem da linha com VALOR COMBINADO: mostra a margem realmente aplicada (vem do painel de preço)
@@ -1428,8 +1431,19 @@ function toggleTrava(k){ const t=travas(); t[k]=!t[k];
   if(comboActive() && (k==='serv'||k==='mat')){ const blk=(k==='serv')?'servicos':'materiais', campo=(k==='serv')?'margemServCombo':'margemMatCombo';
     if(t[k]){ if(S[campo]==null||S[campo]==='') S[campo]=+(comboMgBlk(blk)*100).toFixed(1); const o=(k==='serv')?'mat':'serv'; if(t[o]){ t[o]=false; cloudMsg('só uma margem fica travada com valor combinado — a outra passa a absorver'); } } }
   save(); try{ renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} recalc(); }
+/* PERCENTUAIS GERAIS de despesas: Deslocamento (S.margem.deslocamento) · Outras despesas (S.margem.despesas, inclui diárias) · Locações (S.margem.equip) */
+function despGrupo(r){ if(!r)return 'outras'; const c=(r.catId&&CATALOGO&&CATALOGO.despesas)?CATALOGO.despesas.find(x=>x.id===r.catId):null;
+  if(c&&c.categoria) return (/desloc/i.test(c.categoria))?'desl':'outras';
+  return /desloc|ped[aá]gio|estacionamento|loca[cç][aã]o de ve[ií]culo|combust[ií]vel|rateio do lote/i.test(r.desc||'')?'desl':'outras'; }
+function mgBaseLinha(r){ return (r&&r._blk==='despesas'&&despGrupo(r)==='desl')?baseMg('deslocamento'):baseMg(r._blk); }
+function diariasPreco(){ return diariasCusto()*(1+baseMg('despesas')/100); }
+function passPreco(blk){ if(!blocoAtivo(blk))return 0; return (S[blk]||[]).reduce((a,r)=>{ if(!r||r.adic)return a; r._blk=blk; return a+linePreco(r); },0); }   // preço (com % geral) de despesas/locações fora os adicionais — entra fixo no valor combinado
 const mgOf=r=>{ if(comboActive() && (r._blk==='servicos'||r._blk==='materiais') && !r.adic) return comboMgBlk(r._blk)*100;   // adicional NÃO entra no combo — margem própria, cobra por cima
-  return (r.margem===''||r.margem==null)?baseMg(r._blk):num(r.margem); };
+  return (r.margem===''||r.margem==null)?mgBaseLinha(r):num(r.margem); };
+function setMgGeral(key,v){ if(!S.margem)S.margem={}; S.margem[key]=num(v); const blk=(key==='equip')?'equip':'despesas';
+  const pr=(S[blk]||[]).filter(r=>r&&!r.adic&&!(r.margem===''||r.margem==null)&&(blk==='equip'||(despGrupo(r)==='desl')===(key==='deslocamento')));
+  if(pr.length && confirm(pr.length+' linha(s) têm MARGEM PRÓPRIA e não seguem este percentual geral — ex.: '+pr.slice(0,3).map(r=>(r.desc||'item')+' '+r.margem+'%').join('; ')+'.\n\nAplicar '+num(v)+'% também nessas linhas?')) pr.forEach(r=>{ r.margem=''; });
+  save(); try{ renderBlk(BLKS.find(b=>b.key===blk)); }catch(_){} recalc(); }
 function aplicarCombo(){ const i=document.getElementById('in_combo'); if(!i)return; const n=num(i.value); const b=document.getElementById('combo_apl'); if(b)b.classList.remove('pend');
   if(n>0){ const t=travas(); const regra=t.mat?'material travado, serviços absorvem':(t.serv?'serviços travados, material absorve':'serviços e material ajustam juntos');
     if(!confirm('Aplicar valor combinado de '+fmt(n)+'?\n\nO total passa a fechar neste valor ('+regra+').')){ recalc(); return; } }
@@ -1461,7 +1475,10 @@ function blkMargemCtrl(cfg){ if(!cfg.custo) return '';
     const on=comboActive(); const m=on?comboMgBlk(cfg.key)*100:baseMg(cfg.key);
     return `<span class="blkmg ${on?'locked':''}" title="Margem deste bloco — configura no painel da direita${on?' · travada pelo valor combinado':''}"><span class="material-symbols-rounded">${on?'lock':'trending_up'}</span>Margem ${_d1(m)}%</span>`;
   }
-  return `<span class="blkmg pass" title="Este bloco entra a CUSTO — sem lucro. O imposto incide sobre tudo (repasse)."><span class="material-symbols-rounded">receipt_long</span>custo + imposto</span>`;
+  const mA=(cfg.key==='equip')?baseMg('equip'):baseMg('despesas'), mB=(cfg.key==='despesas')?baseMg('deslocamento'):null;
+  if(mA>0||(mB!=null&&mB>0)){ const t=(cfg.key==='equip')?('Locações '+_d1(mA)+'%'):('Deslocamento '+_d1(mB)+'% · Outras '+_d1(mA)+'%');
+    return `<span class="blkmg" title="Percentual geral sobre o custo — configura na Visão interna do painel de preço"><span class="material-symbols-rounded">percent</span>${t}</span>`; }
+  return `<span class="blkmg pass" title="Este bloco entra a CUSTO — sem lucro. O imposto incide sobre tudo (repasse). Percentual geral na Visão interna do painel de preço."><span class="material-symbols-rounded">receipt_long</span>custo + imposto</span>`;
 }
 // ===== FATORES DA OBRA (gerais do orçamento) — só afetam serviços MONTADOS (com composição) =====
 function abrCongelada(){ return !!(S.abrSnap && typeof S.abrSnap==='object'); }   // proposta congelada = não recalcula
@@ -1524,8 +1541,8 @@ function diariasRowsHtml(){   // <tr> derivadas dentro da tabela de Despesas (11
     <td class="pint"></td><td class="r money pint"></td>
     <td class="r">${d.pes}</td><td><span class="und-fix">UND</span></td>
     <td class="r pint"></td><td class="r money pint"></td>
-    <td class="r money unit">${fmt(d.unit)}</td>
-    <td class="r money preco"><b>${fmt(d.total)}</b></td>
+    <td class="r money unit">${fmt(d.unit*(1+baseMg('despesas')/100))}</td>
+    <td class="r money preco"><b>${fmt(d.total*(1+baseMg('despesas')/100))}</b></td>
     <td class="pint"></td>
   </tr>`).join('');
 }
@@ -1540,7 +1557,7 @@ function equipePrintHtml(){   // bloco "Equipe em campo" (só cliente/impressão
   </div>`;
 }
 // subtotal exibido do bloco (o chip): Despesas inclui as diárias de campo + rateio do macro (unidade de lote)
-function blkSubDisp(blk){ return blkSub(blk) + (blk==='despesas'?(diariasCusto()+(comboActive()?0:ratioUnit())):0); }
+function blkSubDisp(blk){ return blkSub(blk) + (blk==='despesas'?(diariasPreco()+(comboActive()?0:ratioUnit())):0); }
 /* RATEIO DO MACRO DO LOTE — só apresentação (não altera o total GRAVADO da unidade; o total do lote = Σ unidades + macro, uma vez) */
 let _RATEIO_UNIT=0;   // fatia do macro rateada nesta unidade (setada no boot da unidade de lote, modo "rateado")
 function ratioUnit(){ return isLoteUnit()? num(_RATEIO_UNIT) : 0; }
@@ -2075,7 +2092,7 @@ function renderBlk(cfg){
           : `<td class="r money pint">${custoCell}</td>`}
         <td class="r">${qtdCellHtml(cfg,r)}</td>
         <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
-        <td class="r pint">${(comboActive()&&(cfg.key==='servicos'||cfg.key==='materiais')&&!r.adic)?mkComboCell(cfg.key,r):`<div class="mkwrap ${propria?'own':'base'}">${propria?'<span class="mkne" title="diferente da margem base">&ne;</span>':''}<input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(baseMg(cfg.key))}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span class="mkpc">%</span>${propria?`<span class="mkwarn material-symbols-rounded" title="margem própria — fora da base ${num(baseMg(cfg.key))}%">warning</span><button class="mkreset" title="voltar à margem base" onclick="resetMargem('${cfg.key}','${r.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</div>`}</td>
+        <td class="r pint">${(comboActive()&&(cfg.key==='servicos'||cfg.key==='materiais')&&!r.adic)?mkComboCell(cfg.key,r):`<div class="mkwrap ${propria?'own':'base'}">${propria?'<span class="mkne" title="diferente da margem base">&ne;</span>':''}<input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(mgBaseLinha(Object.assign(r,{_blk:cfg.key})))}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span class="mkpc">%</span>${propria?`<span class="mkwarn material-symbols-rounded" title="margem própria — fora da base ${num(mgBaseLinha(Object.assign(r,{_blk:cfg.key})))}%">warning</span><button class="mkreset" title="voltar à margem base" onclick="resetMargem('${cfg.key}','${r.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</div>`}</td>
         <td class="r money custot pint" id="tc_${r.id}">${fmt(custo)}</td>
         <td class="r money unit" id="tu_${r.id}">${fmt(unit)}</td>
         <td class="r money preco" id="tp_${r.id}"><b>${fmt(preco)}</b></td>
@@ -3769,8 +3786,8 @@ function precoDe(dados){ var keep=S, out=null;
   try{ S=_deep(dados||{}); sanitize();
     var f=(1-num(S.descontoPct)/100)*(1+num(S.impostoPct)/100), on=function(k){return blocoAtivo(k);};
     var sum=function(k,flt){ return on(k)?(S[k]||[]).filter(flt||function(){return true;}).reduce(function(a,r){r._blk=k;return a+linePreco(r);},0):0; };
-    var isDesl=function(r){return /deslocamento/i.test(r.desc||'');};
-    var serv=sum('servicos'), mat=sum('materiais'), equip=sum('equip'), desl=sum('despesas',isDesl), desp=sum('despesas',function(r){return !isDesl(r);})+diariasCusto();
+    var isDesl=function(r){return despGrupo(r)==='desl';};
+    var serv=sum('servicos'), mat=sum('materiais'), equip=sum('equip'), desl=sum('despesas',isDesl), desp=sum('despesas',function(r){return !isDesl(r);})+diariasPreco();
     var adicItens=[]; ['servicos','materiais','despesas','equip'].forEach(function(k){ if(!on(k))return; (S[k]||[]).forEach(function(r){ if(r&&r.adic){ r._blk=k; adicItens.push({desc:r.desc,qtd:qtyOf(r),und:r.und,total:linePreco(r)*f,motivo:r.adicMotivo||'',cobrado:!!r.adicCobrar}); } }); });
     var itens=(on('servicos')?S.servicos:[]).filter(function(r){return num(qtyOf(r))>0;}).map(function(r){ r._blk='servicos'; return {desc:r.desc,und:r.und,qtd:qtyOf(r),unit:lineUnit(r)*f,total:linePreco(r)*f,adic:!!r.adic}; });
     var impF=1+num(S.impostoPct)/100, descAd=S.descontoAdic?adicAbatidoTotal()*impF:0;
@@ -4422,7 +4439,7 @@ function recalc(){
   const preco={}, cst={};
   BLKS.forEach(b=>{ const on=blocoAtivo(b.key); preco[b.key]=on?blkSub(b.key):0; cst[b.key]=on?blkCusto(b.key):0; });
   // DIÁRIAS da equipe (alimentação+hospedagem): entram a CUSTO (sem lucro); o imposto incide sobre tudo depois
-  const diaC=diariasCusto(), diaP=diaC;
+  const diaC=diariasCusto(), diaP=diariasPreco();   // diárias: custo + % geral de Outras despesas
   const rat=ratioUnit(); const ratPreco=comboActive()?0:rat; const ratCusto=comboActive()?rat:0;   // VALOR COMBINADO É SOBERANO: com ele, o rateio do macro vira CUSTO (reduz a margem, não soma ao preço); sem ele, soma ao preço
   const bruto=preco.servicos+preco.equip+preco.despesas+preco.materiais+diaP;
   const desc=bruto*num(S.descontoPct)/100;
@@ -4468,6 +4485,7 @@ function recalc(){
     if(ms){ if(document.activeElement!==ms) ms.value=_d1(_combo?comboMgBlk('servicos')*100:baseMg('servicos')); ms.disabled=_combo?false:!!t.serv; ms.classList.toggle('calc',_combo&&!t.serv); ms.title=_combo?(t.serv?'travada neste valor (material absorve)':'calculada — digite para travar'):(t.serv?'travada':''); }
     if(mm){ if(document.activeElement!==mm) mm.value=_d1(_combo?comboMgBlk('materiais')*100:baseMg('materiais')); mm.disabled=_combo?false:!!t.mat; mm.classList.toggle('calc',_combo&&!t.mat); mm.title=_combo?(t.mat?'travada neste valor (serviços absorvem)':'calculada — digite para travar'):(t.mat?'travada':''); }
     document.querySelectorAll('.mkcombo[data-blk]').forEach(el=>{ const v=_combo?comboMgBlk(el.dataset.blk)*100:0; const s=el.querySelector('.mkcv'); if(s)s.textContent=_d1(v); el.classList.toggle('neg',v<0); });   // margem aplicada nas linhas com valor combinado
+    [['mg_desl_in','deslocamento'],['mg_desp_in','despesas'],['mg_equip_in','equip']].forEach(p=>{ const e=document.getElementById(p[0]); if(e&&document.activeElement!==e) e.value=_d1(baseMg(p[1])); });
     const im=document.querySelector('[data-f="impostoPct"]'); if(im) im.disabled=!!t.imp;
     lk('lk_serv',t.serv); lk('lk_mat',t.mat); lk('lk_imp',t.imp);
     [['servicos','mg_serv_in'],['materiais','mg_mat_in']].forEach(p=>{ const inp=document.getElementById(p[1]); if(!inp)return; let a=document.getElementById('ap_'+p[0]); const n=linhasMargemPropria(p[0]).length;
