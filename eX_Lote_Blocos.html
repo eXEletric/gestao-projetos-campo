@@ -172,25 +172,25 @@
   // Cores: amarelo=BASE (modelo) · verde=POR UNIDADE (real) · roxo=GLOBAL (agregado) · cinza=estrutura.
   var seedN=[
     // cabeçalhos das 3 leituras
-    {id:'hBase',l:'◆ BASE — modelo por loja',x:40,y:20,c:'fut'},
-    {id:'hUnid',l:'◆ POR UNIDADE — cada loja',x:380,y:20,c:'dia'},
-    {id:'hGlob',l:'◆ GLOBAL — o lote completo',x:740,y:20,c:'ges'},
+    {id:'hBase',l:'◆ BASE — modelo por loja',x:40,y:20,c:'fut',note:'A leitura BASE. O modelo/padrão que toda loja segue — editável. É daqui que a proposta de cada loja nasce (e pra onde a média volta).'},
+    {id:'hUnid',l:'◆ POR UNIDADE — cada loja',x:380,y:20,c:'dia',note:'A leitura POR UNIDADE. Cada loja de verdade, separada, com seus próprios valores (pode diferir da base). É a lista detalhada que já existe.'},
+    {id:'hGlob',l:'◆ GLOBAL — o lote completo',x:740,y:20,c:'ges',note:'A leitura GLOBAL. O lote inteiro: a soma das 16 + o que é só do lote (custos globais, total, prazo do lote).'},
     // BASE (modelo, editável)
-    {id:'bServ',l:'Serviços base (média × contratante)',x:40,y:110,c:'fut'},
-    {id:'bMat',l:'Material base (modelo por loja)',x:40,y:190,c:'fut'},
-    {id:'bDesp',l:'Despesas / Locações base',x:40,y:270,c:'fut'},
+    {id:'bServ',l:'Serviços base (média × contratante)',x:40,y:110,c:'fut',note:'Serviços do modelo por loja. A fonte pode ser a MÉDIA das lojas ou uma BASE definida pelo contratante. Editável.'},
+    {id:'bMat',l:'Material base (modelo por loja)',x:40,y:190,c:'fut',note:'Lista de material do modelo por loja. Valores manuais (do levantamento). Botões: Trazer média das lojas / Replicar → lojas.'},
+    {id:'bDesp',l:'Despesas / Locações base',x:40,y:270,c:'fut',note:'Despesas (com gatilho: fixo/por pessoa-dia/por dia/por pessoa), diárias e locações do modelo. A despesa com gatilho entra pela média; cada loja recalcula o real.'},
     // POR UNIDADE (a lista detalhada + o de cada loja)
-    {id:'uLista',l:'Lista de lojas (detalhada)',x:380,y:110,c:'dia'},
-    {id:'uAdic',l:'Adicionais por loja (+ motivo)',x:380,y:190,c:'dia'},
-    {id:'uCL',l:'Custo · lucro por loja',x:380,y:270,c:'dia'},
-    {id:'uPrazo',l:'Prazo médio por unidade',x:380,y:350,c:'dia'},
-    {id:'uAbrir',l:'Abrir a proposta da loja',x:380,y:430,c:'dia'},
+    {id:'uLista',l:'Lista de lojas (detalhada)',x:380,y:110,c:'dia',note:'A lista das 16 lojas com toda a riqueza: status (igual à base / editada), prazo, custo, lucro, valor fechado, abrir/reset/excluir. É a que você quer manter como está.'},
+    {id:'uAdic',l:'Adicionais por loja (+ motivo)',x:380,y:190,c:'dia',note:'Escopo ALÉM do modelo numa loja, marcado com motivo (seu argumento). Cobra POR CIMA do combo (não dilui a margem do resto). Selo "+N adicionais" na loja.'},
+    {id:'uCL',l:'Custo · lucro por loja',x:380,y:270,c:'dia',note:'Custo e lucro real de cada loja. Interno (não vai pro cliente por padrão; há uma chave pra mostrar).'},
+    {id:'uPrazo',l:'Prazo médio por unidade',x:380,y:350,c:'dia',note:'Na ótica UNIDADE, o prazo mostrado é a MÉDIA das lojas (com a faixa menor→maior de apoio).'},
+    {id:'uAbrir',l:'Abrir a proposta da loja',x:380,y:430,c:'dia',note:'Cada loja é uma proposta própria — abrir pra editar item a item aquela unidade.'},
     // GLOBAL (agregado das 16 + o que é só do lote)
-    {id:'gServ',l:'Serviços global (Σ das 16)',x:740,y:110,c:'ges'},
-    {id:'gMat',l:'Material global (Σ das 16)',x:740,y:190,c:'ges'},
-    {id:'gCusto',l:'Custos globais (mobilização/logística)',x:740,y:270,c:'ges'},
-    {id:'gPrazo',l:'Prazo do lote (soma das lojas)',x:740,y:350,c:'ges'},
-    {id:'gTot',l:'Total do contrato',x:740,y:430,c:'ges'}
+    {id:'gServ',l:'Serviços global (Σ das 16)',x:740,y:110,c:'ges',note:'Soma dos serviços das 16 lojas (o escopo consolidado do lote).'},
+    {id:'gMat',l:'Material global (Σ das 16)',x:740,y:190,c:'ges',note:'Soma do material das 16 lojas = total de material do lote. Lista itemizada (Cabo, Sensor, Braçadeira…).'},
+    {id:'gCusto',l:'Custos globais (mobilização/logística)',x:740,y:270,c:'ges',note:'Mobilização e logística do lote (frota, rota/km) — serve as 16, não é de nenhuma sozinha. GERADO no lote e RATEADO nas unidades (fatia embutida). Chave "mostrar a origem" no cliente (transparência, não soma).'},
+    {id:'gPrazo',l:'Prazo do lote (soma das lojas)',x:740,y:350,c:'ges',note:'Na ótica GLOBAL, o prazo do lote é a SOMA de todas as lojas (o total do contrato). Pode sobrescrever manual.'},
+    {id:'gTot',l:'Total do contrato',x:740,y:430,c:'ges',note:'O total do lote = soma das 16. No combo soberano, 42.000/loja fechado (o global já está dentro).'}
   ];
   var seedE=[
     {f:'hBase',t:'hUnid',label:'replica → lojas'},
