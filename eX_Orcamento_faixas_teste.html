@@ -649,6 +649,9 @@ body.viewing .in::placeholder,body.viewing .cin::placeholder,body.viewing .pin::
 .ln.lnoff,.ln.lnoff .val{color:#b3261e!important}.ln.lnoff .lbl::after{content:" · FORA DO TOTAL";font-size:10px;font-weight:800}
 @media print{.ln.lnoff{display:none!important}}
 body.viewing .ln.lnoff{display:none!important}
+/* PADRÃO ÚNICO DE CADEADO (toda a proposta): fechado = amarelo preenchido · aberto = cinza contornado */
+.material-symbols-rounded.cad{color:#e0a100!important;font-variation-settings:'FILL' 1,'wght' 600!important;filter:drop-shadow(0 1px 0 rgba(120,80,0,.35))}
+.material-symbols-rounded.cad-aberto{color:#9a96a8!important;font-variation-settings:'FILL' 0,'wght' 500!important;filter:none}
 .lockbtn{border:0;background:transparent;cursor:pointer;padding:0 0 0 4px;vertical-align:middle;color:#9a96a8;line-height:1}
 .lockbtn .material-symbols-rounded{font-size:18px;font-variation-settings:'FILL' 0,'wght' 500}
 .lockbtn:hover{color:#6f6a85}
@@ -4548,6 +4551,9 @@ function toggleBloco(k){ if(isLoteBase()){ alert('Na proposta-base do lote os 4 
 /* ---------- boot ---------- */
 function boot(){ BLKS.forEach(renderBlk); applyBlocoVis(); renderDescGeral(); bindFields(); applyPrefill(); recalc(); try{syncStatusFromComprovantes();}catch(e){} renderBanner(); renderCanal(); renderBrand(); if(MANUAL&&_lastSaved==='')_lastSaved=_hhmm(); renderSaveState(); }
 initOrc();
+// PADRÃO ÚNICO DE CADEADO: todo ícone "lock"/"lock_open" (inclusive os desenhados depois) recebe a mesma cor e formato
+(function(){ var marca=function(root){ (root.querySelectorAll?root.querySelectorAll('.material-symbols-rounded'):[]).forEach(function(el){ var t=(el.textContent||'').trim(); el.classList.toggle('cad',t==='lock'); el.classList.toggle('cad-aberto',t==='lock_open'); }); };
+  try{ marca(document); new MutationObserver(function(ms){ ms.forEach(function(m){ if(m.type==='characterData'){ var p=m.target.parentElement; if(p) marca(p.parentElement||p); } else m.addedNodes.forEach(function(n){ if(n.nodeType===1){ marca(n); if(n.classList&&n.classList.contains('material-symbols-rounded')) marca(n.parentElement||n); } else if(n.nodeType===3&&n.parentElement){ marca(n.parentElement.parentElement||n.parentElement); } }); }); }).observe(document.body,{childList:true,subtree:true,characterData:true}); }catch(e){} })();
 </script>
 <script src="eX_Envio.js"></script><!-- envio da proposta por e-mail + revisões congeladas (módulo à parte; ver eX_Envio.js) -->
 </body>
