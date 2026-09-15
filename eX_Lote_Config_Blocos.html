@@ -23,6 +23,13 @@
   .card.base{border-top:3px solid var(--base)} .card.unid{border-top:3px solid var(--unid)} .card.glob{border-top:3px solid var(--glob)} .card.neu{border-top:3px solid var(--neu)}
   .ch{display:flex;align-items:center;gap:7px;padding:9px 10px;background:var(--surf2);cursor:grab;user-select:none}
   .ch.grab{cursor:grabbing}
+  .ch .cr{color:var(--tx3);cursor:pointer;flex:none;display:grid;place-items:center}
+  .ch .cr .material-symbols-rounded{font-size:18px}
+  .guide{position:fixed;top:54px;left:0;right:0;z-index:14;background:var(--glob-bg);border-bottom:1px solid var(--line);padding:7px 16px;font-size:11.5px;color:var(--tx2);display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .guide b{color:var(--glob)}
+  .guide .st{display:inline-flex;align-items:center;gap:5px}
+  .guide .n{width:17px;height:17px;border-radius:50%;background:var(--glob);color:#fff;font-size:10px;font-weight:800;display:grid;place-items:center}
+  .board{top:86px!important}
   .ch .dot{width:14px;height:14px;border-radius:4px;flex:none;cursor:pointer}
   .card.base .dot{background:var(--base)} .card.unid .dot{background:var(--unid)} .card.glob .dot{background:var(--glob)} .card.neu .dot{background:var(--neu)}
   .ch .nm{font-weight:700;font-size:13px;flex:1;min-width:0;outline:none}
@@ -40,7 +47,9 @@
   .sw{width:36px;height:21px;border-radius:11px;background:var(--line2);position:relative;cursor:pointer;flex:none;transition:.15s}
   .sw i{position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:.15s}
   .sw.on{background:var(--green)} .sw.on i{left:17px}
-  .addfn{display:flex;align-items:center;gap:6px;padding:7px 10px;border-top:1px dashed var(--line2);color:var(--pri);font-size:11.5px;font-weight:600;cursor:pointer;background:none;width:100%;border-left:0;border-right:0;border-bottom:0}
+  .det{width:calc(100% - 16px);margin:6px 8px 0;border:1px solid var(--line2);border-radius:8px;padding:7px 9px;font:12px inherit;background:var(--bg);color:var(--tx);resize:vertical;min-height:44px}
+  .det::placeholder{color:var(--tx3)}
+  .addfn{display:flex;align-items:center;gap:6px;padding:7px 10px;border-top:1px dashed var(--line2);color:var(--pri);font-size:11.5px;font-weight:600;cursor:pointer;background:none;width:100%;border-left:0;border-right:0;border-bottom:0;margin-top:6px}
   .addfn:hover{background:var(--surf2)}
   .cpop{position:absolute;z-index:30;background:var(--surf);border:1px solid var(--line2);border-radius:9px;box-shadow:0 8px 24px rgba(20,10,50,.2);padding:5px;display:none;gap:4px}
   .cpop.on{display:flex}
@@ -58,9 +67,16 @@
   <span class="sub">mova os quadros · ligue/desligue funções · adicione quadro/função</span>
   <div class="sp">
     <button class="btn pri" id="addcard"><span class="material-symbols-rounded">add_box</span>Adicionar quadro</button>
+    <button class="btn" id="allc"><span class="material-symbols-rounded">unfold_more</span>Expandir tudo</button>
     <button class="btn" id="reset"><span class="material-symbols-rounded">restart_alt</span>Restaurar</button>
     <button class="btn" id="export"><span class="material-symbols-rounded">ios_share</span>Exportar</button>
   </div>
+</div>
+<div class="guide">
+  <span class="st"><span class="n">1</span>Veja as <b>3 leituras</b> (cores): Base · Por unidade · Global</span>
+  <span class="st"><span class="n">2</span>Arraste os quadros pra <b>onde fizer sentido</b></span>
+  <span class="st"><span class="n">3</span>Abra um quadro (▸) pra <b>ligar/desligar e detalhar</b> as funções</span>
+  <span class="st"><span class="n">4</span><b>Exportar</b> e me manda — eu ordeno/implemento</span>
 </div>
 <div class="board" id="board"><div class="canvas" id="canvas"></div></div>
 <div class="cpop" id="cpop"></div>
@@ -68,7 +84,7 @@
 <div id="exp"><div class="box"><textarea id="exptx" readonly></textarea><div class="r"><button class="btn" id="expcopy"><span class="material-symbols-rounded">content_copy</span>Copiar</button><button class="btn" id="expclose">Fechar</button></div></div></div>
 <script>
 (function(){
-  var KEY='ex_lote_canvas_v1';
+  var KEY='ex_lote_canvas_v2';
   var CNAME={base:'Base (modelo)',unid:'Por unidade',glob:'Global',neu:'Neutro'};
   var PARTS=[
     {col:'base',id:'hBase',nm:'◆ BASE — modelo por loja',fns:[['toggle_on','chave “na proposta”'],['swap_horiz','média × base do contratante'],['bookmark_add','Salvar como modelo'],['download','Aplicar na base']]},
@@ -90,8 +106,8 @@
   function seed(){
     var colX={base:40,unid:340,glob:640},colY={base:20,unid:20,glob:20},out=[];
     PARTS.forEach(function(p){
-      var c={id:p.id,col:p.col,nm:p.nm,x:colX[p.col],y:colY[p.col],fns:p.fns.map(function(f){return{ic:f[0],l:f[1],on:true};})};
-      out.push(c); colY[p.col]+= 66 + c.fns.length*34 + 20;
+      var c={id:p.id,col:p.col,nm:p.nm,x:colX[p.col],y:colY[p.col],collapsed:true,fns:p.fns.map(function(f){return{ic:f[0],l:f[1],on:true};})};
+      out.push(c); colY[p.col]+= 52;
     });
     return out;
   }
@@ -118,9 +134,13 @@
     var xc=document.createElement('button');xc.className='xc';xc.innerHTML='&times;';xc.title='apagar quadro';
     xc.addEventListener('pointerdown',function(e){e.stopPropagation();});
     xc.onclick=function(e){e.stopPropagation();if(confirm('Apagar o quadro “'+p.nm+'”?')){data=data.filter(function(x){return x!==p;});save();render();}};
-    ch.appendChild(dot);ch.appendChild(nm);ch.appendChild(ct);ch.appendChild(xc);
+    var cr=document.createElement('span');cr.className='cr';cr.innerHTML='<span class="material-symbols-rounded">'+(p.collapsed?'chevron_right':'expand_more')+'</span>';cr.title=p.collapsed?'abrir (ver funções)':'recolher';
+    cr.addEventListener('pointerdown',function(e){e.stopPropagation();});
+    cr.onclick=function(e){e.stopPropagation();p.collapsed=!p.collapsed;save();render();};
+    ch.appendChild(cr);ch.appendChild(dot);ch.appendChild(nm);ch.appendChild(ct);ch.appendChild(xc);
     dragHead(ch,card,p);
     card.appendChild(ch);
+    if(p.collapsed){return card;}
     var fns=document.createElement('div');fns.className='fns';
     p.fns.forEach(function(f,i){
       var row=document.createElement('div');row.className='fn'+(f.on?'':' off');
@@ -135,6 +155,10 @@
       row.appendChild(ic);row.appendChild(lb);row.appendChild(sw);row.appendChild(rm);fns.appendChild(row);
     });
     card.appendChild(fns);
+    var det=document.createElement('textarea');det.className='det';det.placeholder='detalhe livre — o que falta / o que eu não estou vendo aqui…';det.value=p.det||'';
+    det.addEventListener('pointerdown',function(e){e.stopPropagation();});
+    det.addEventListener('input',function(){p.det=det.value;save();});
+    if((p.det&&p.det.trim())||true)card.appendChild(det);
     var addb=document.createElement('button');addb.className='addfn';addb.innerHTML='<span class="material-symbols-rounded">add</span>adicionar função';
     addb.onclick=function(){var v=prompt('Nome da função:','');if(v&&v.trim()){p.fns.push({ic:'star',l:v.trim(),on:true});save();render();}};
     card.appendChild(addb);
@@ -165,11 +189,12 @@
     var c={id:'c'+Date.now(),col:'neu',nm:'Novo quadro',x:sx,y:sy,fns:[{ic:'star',l:'nova função',on:true}]};
     data.push(c);save();render();
   };
+  document.getElementById('allc').onclick=function(){var anyOpen=data.some(function(p){return !p.collapsed;});data.forEach(function(p){p.collapsed=anyOpen;});save();render();this.innerHTML='<span class="material-symbols-rounded">'+(anyOpen?'unfold_more':'unfold_less')+'</span>'+(anyOpen?'Expandir tudo':'Recolher tudo');};
   document.getElementById('reset').onclick=function(){if(confirm('Restaurar todos os quadros ao padrão? (perde suas mudanças)')){data=seed();save();render();}};
   var expEl=document.getElementById('exp'),exptx=document.getElementById('exptx');
   document.getElementById('export').onclick=function(){
     var s='BLOCOS DO LOTE — quadros e funções (configurado por André)\n\n';
-    data.forEach(function(p){s+='['+p.nm+']  ('+CNAME[p.col||'neu']+')\n';p.fns.forEach(function(f){s+='  '+(f.on?'[x] ':'[ ] ')+f.l+'\n';});s+='\n';});
+    data.forEach(function(p){s+='['+p.nm+']  ('+CNAME[p.col||'neu']+')\n';if(p.det&&p.det.trim())s+='  » detalhe: '+p.det.replace(/\n/g,' ').trim()+'\n';p.fns.forEach(function(f){s+='  '+(f.on?'[x] ':'[ ] ')+f.l+'\n';});s+='\n';});
     s+='--- JSON ---\n'+JSON.stringify(data);
     exptx.value=s;expEl.classList.add('on');exptx.focus();exptx.select();
   };
