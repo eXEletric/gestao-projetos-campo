@@ -310,13 +310,15 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .summ .cap .v{font-size:27px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
 .summ .body{padding:14px 16px}
 /* painel de preço em 2 colunas (lote): Esta loja | Global do lote */
+@media(min-width:941px){.grid:has(.summ.cmp){grid-template-columns:1fr 430px}}
 .summ.cmp .cap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;padding:0}
 .summ.cmp .cap .capU,.summ.cmp .cap .capG{padding:12px 16px 11px}
-.summ.cmp .cap .capU .v{font-size:23px}
+.summ.cmp .cap .capU .v{font-size:22px;white-space:nowrap}
+.summ.cmp .cap .l{white-space:nowrap}
 .summ.cmp .cap .capG{background:#3f2c8f;cursor:pointer;text-align:right;user-select:none}
 .summ.cmp .cap .capG .l{display:flex;justify-content:flex-end;align-items:center;gap:2px}
 .summ.cmp .cap .capG .l .material-symbols-rounded{font-size:15px;color:#fff;opacity:.8}
-.summ.cmp .cap .capG .v{font-size:19px;line-height:1.5}
+.summ.cmp .cap .capG .v{font-size:18px;line-height:1.6;white-space:nowrap}
 .summ.cmp .cap .capG .s{font-size:10.5px;opacity:.75;font-variant-numeric:tabular-nums}
 .summ.cmp.cmpfechado .cap{grid-template-columns:minmax(0,1fr) auto}
 .summ.cmp.cmpfechado .cap .capG .v,.summ.cmp.cmpfechado .cap .capG .s{display:none}
