@@ -498,6 +498,9 @@ async function carregarEventos(){
     if(antes!==JSON.stringify(ENV.eventos.map(e=>[e.id,e.classificacao,e.anulado_em]))){ try{ decorar(); }catch(_){ renderTrat(); } }
     // veio do funil pelo botão "Abrir tratativas" (?trat=1): rola até o painel uma vez
     if(!ENV._trIr && /[?&]trat=1\b/.test(location.search)){ ENV._trIr=true; setTimeout(irTrat,400); }
+    // veio da esteira do funil ("Anexar contrato ou OS do cliente", ?comp=1): abre o formulário de comprovante já no tipo contrato
+    if(!ENV._compIr && /[?&]comp=1\b/.test(location.search)){ ENV._compIr=true; setTimeout(()=>{ const p=$('comprovantesPanel'); if(p) p.scrollIntoView({behavior:'smooth',block:'start'});
+      try{ if(typeof window.addComprovanteUI==='function'){ window.addComprovanteUI(); const t=$('cmpTipo'); if(t) t.value='contrato'; } }catch(_){} },500); }
   }catch(e){ console.error('tratativas',e); }
 }
 function trEl(){ let el=$('envTrat');

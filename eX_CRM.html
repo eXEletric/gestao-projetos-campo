@@ -111,6 +111,23 @@ select.fi{appearance:auto;cursor:pointer}
 .kprox{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--pri);margin-top:5px}
 .kprox .material-symbols-rounded{font-size:14px}.kprox.cob{color:var(--amber)}.kprox.val{color:var(--red)}
 .kcard.aprov{border-left:3px solid #d4af37}
+.kprox.red{color:var(--red)}
+.kbar{display:flex;gap:3px;margin-top:6px}.kbar i{flex:1;height:4px;border-radius:3px;background:var(--surf2)}.kbar i.ok{background:var(--green)}.kbar i.cur{background:var(--pri)}
+.es{display:flex;gap:11px;position:relative;padding-bottom:12px}
+.es:not(:last-child)::before{content:'';position:absolute;left:14px;top:30px;bottom:0;width:2px;background:var(--line)}.es.ok:not(:last-child)::before{background:var(--green)}
+.es-ic{flex:0 0 30px;height:30px;border-radius:50%;display:grid;place-items:center;background:var(--surf2);color:var(--tx3);z-index:1}.es-ic .material-symbols-rounded{font-size:16px}
+.es.ok .es-ic{background:#e9f2dd;color:var(--green)}.es.cur .es-ic{background:var(--pri);color:#fff}.dsec .es:first-of-type .es-ic{background:#d4af37!important;color:#2b2000!important}
+.es.lock{opacity:.55}
+.es-b{flex:1;min-width:0;border:1px solid var(--line);border-radius:11px;padding:9px 11px}.es.cur .es-b{border:2px solid var(--pri)}
+.es-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.es-h b{font-size:13px}
+.es-t{font-size:9.5px;font-weight:800;border-radius:6px;padding:1px 7px;text-transform:uppercase;letter-spacing:.03em}
+.es-t.ok{background:#e9f2dd;color:var(--green)}.es-t.cur{background:var(--pri-bg);color:var(--pri)}.es-t.lock{background:var(--surf2);color:var(--tx3)}.es-t.gold{background:#d4af37;color:#2b2000}.es-t.dark{background:#111110;color:#f3f1ea}
+.es-sd{font-size:12px;color:var(--tx2);margin-top:3px}
+.es-acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.es-doc{display:inline-flex;align-items:center;gap:6px;font-size:12px;background:var(--surf2);border-radius:8px;padding:5px 9px;margin:6px 6px 0 0}.es-doc .material-symbols-rounded{font-size:16px;color:var(--pri)}
+.es-note{font-size:12px;border-radius:9px;padding:7px 10px;margin-top:7px;display:flex;gap:7px;align-items:flex-start}.es-note .material-symbols-rounded{font-size:16px}
+.es-note.red{background:#fcebeb;color:var(--red)}.es-note.warn{background:#faeeda;color:#8a560f}.es-note.dark{background:#111110;color:#f3f1ea}
+.es-chk{display:flex;gap:8px;align-items:center;font-size:13px;padding:5px 0;cursor:pointer}.es-chk input{width:17px;height:17px;accent-color:var(--pri)}
 .kprox.ok{color:var(--green)}.kprox.obra{color:var(--tx2)}
 .ponta{font-size:9.5px;font-weight:800;letter-spacing:.04em;background:#faeeda;color:var(--amber);border-radius:5px;padding:0 5px;margin-left:2px}
 .trf.obra:not(.on) .material-symbols-rounded{color:var(--amber)}
@@ -522,7 +539,7 @@ const PAPEL_DEF={
   visita:    {nome:'Visita técnica',   ic:'engineering',       orc:false,  obra:false, req:null},
   proposta:  {nome:'Proposta',         ic:'request_quote',     orc:true,   obra:false, req:'orcamento'},
   negociacao:{nome:'Negociação',       ic:'handshake',         orc:'open', obra:false, req:'enviado'},
-  execucao:  {nome:'Execução / Obra',  ic:'construction',      orc:'open', obra:true,  req:null, reqEntrada:'aprovado'},   // passo ④: só entra proposta APROVADA
+  execucao:  {nome:'Execução / Obra',  ic:'construction',      orc:'open', obra:true,  req:null, reqEntrada:'liberado'},   // esteira: só entra depois do Financeiro liberar
   ganho:     {nome:'Ganho',            ic:'verified',          orc:'open', obra:false, req:null},
   pausa:     {nome:'Geladeira / Pausa',ic:'ac_unit',           orc:false,  obra:false, req:null, reqEntrada:'orcamento'},
   perdido:   {nome:'Perdido',          ic:'do_not_disturb_on', orc:false,  obra:false, req:null}
@@ -544,8 +561,8 @@ function reqLabel(papel){ const req=(PAPEL_DEF[papel]||{}).req;
 function reqEntradaOK(o,destColId){ const req=(PAPEL_DEF[colPapel(destColId)]||{}).reqEntrada; if(!req)return true;
   if(req==='orcamento') return !!orcIndex()[o.id];
   if(req==='enviado'){ const oc=orcIndex()[o.id]; return !!oc && ['enviado','aprovado'].includes((oc.status||'').toLowerCase()); }
-  if(req==='aprovado'){ if(o.loteId || (S.lotes||[]).some(l=>l.baseOppId===o.id)) return true;   // lote: aprovação por loja é outro passo — não trava aqui
-    return aprovadaOpp(o); }
+  if(req==='liberado'){ if(o.loteId || (S.lotes||[]).some(l=>l.baseOppId===o.id)) return true;   // lote: esteira do lote é outro passo — não trava aqui
+    return liberadoOpp(o); }
   return true; }
 // proposta aprovada = versão aprovada nas tratativas OU orçamento com status "aprovado" (comprovante registrado antes do envio pelo sistema)
 function aprovadaOpp(o){ const E=o&&ENVIO_CLOUD[o.id]; if(E&&E.status==='aprovada') return true; const oc=o&&orcIndex()[o.id]; return !!oc && (oc.status||'').toLowerCase()==='aprovado'; }
@@ -553,8 +570,8 @@ function checaEntrada(o,destColId){ if(reqEntradaOK(o,destColId))return '';
   const req=(PAPEL_DEF[colPapel(destColId)]||{}).reqEntrada, alvo=colNome(destColId);
   return req==='orcamento'
     ? 'Sem proposta feita não dá pra mandar para "'+alvo+'" — não existe orçamento para congelar. Gere o orçamento primeiro.'
-    : req==='aprovado'
-    ? 'Só proposta APROVADA entra em "'+alvo+'".\n\nRegistre a aprovação na proposta: nas Tratativas, clique em "Aprovou" na resposta do cliente (ou registre o contato em que ele aprovou).'
+    : req==='liberado'
+    ? 'Só entra em "'+alvo+'" depois de: proposta APROVADA → formalização (contrato ou OS do cliente) → liberação do FINANCEIRO.\n\nVeja o que falta em "Da aprovação até o atendimento", no detalhe do card.'
     : 'Falta cumprir o requisito para entrar em "'+alvo+'".'; }
 /* ===== destinos permitidos + campos de fase (Pipefy) ===== */
 const colCampos=id=>{const k=S.colunas.find(x=>x.id===id);return (k&&Array.isArray(k.campos))?k.campos:[];};
@@ -571,8 +588,23 @@ function setCampoMulti(oid,faseId,campoId,op){ const o=S.oportunidades.find(x=>x
   setCampo(oid,faseId,campoId,cur); }
 function camposFaltando(o,faseId){ return colCampos(faseId).filter(c=>{ const a=valorAuto(o,c); return c.obr && !campoCheio(a!==undefined?a:campoVal(o,faseId,c.id)); }); }
 /* ===== envio da proposta registrado pelo sistema (eX_Envio.js) → preenche sozinho "forma de envio" e "confirmação de recebimento" ===== */
-let ENVIO_CLOUD={}, EVT_CLOUD={}, SEMVINC=[], TRFILT=null, USER_NOME='', OBRA_CLOUD={};
+let ENVIO_CLOUD={}, EVT_CLOUD={}, SEMVINC=[], TRFILT=null, USER_NOME='', OBRA_CLOUD={}, USER_PAPEL='', USER_ID='', DEPTOS=[], MEUS_DEPTOS=new Set(), FECH_CLOUD={}, COMP_CLOUD={};
+async function carregarFechamento(){ if(!CLOUD||!SB) return;
+  try{
+    const [dp,mb,fe,oc]=await Promise.all([
+      SB.from('departamentos').select('id,chave,nome,email').is('deleted_at',null).eq('ativo',true),
+      SB.from('departamento_membros').select('departamento_id,user_id'),
+      SB.from('fechamento_eventos').select('*').order('ocorrido_em',{ascending:true}),
+      SB.from('orcamentos').select('id,oportunidade_id,comprovantes:dados->comprovantes').is('deleted_at',null).order('created_at',{ascending:true}) ]);
+    DEPTOS=(dp&&dp.data)||[];
+    MEUS_DEPTOS=new Set(((mb&&mb.data)||[]).filter(m=>m.user_id===USER_ID).map(m=>(DEPTOS.find(d=>d.id===m.departamento_id)||{}).chave).filter(Boolean));
+    const f={}; ((fe&&fe.data)||[]).forEach(e=>{ (f[e.oportunidade_id]=f[e.oportunidade_id]||[]).push(e); });
+    const c={}; ((oc&&oc.data)||[]).forEach(r=>{ if(r.oportunidade_id) c[r.oportunidade_id]={orcId:r.id,comps:Array.isArray(r.comprovantes)?r.comprovantes:[]}; });
+    const antes=JSON.stringify([FECH_CLOUD,COMP_CLOUD]); FECH_CLOUD=f; COMP_CLOUD=c;
+    if(antes!==JSON.stringify([f,c])) render();
+  }catch(e){ console.error('fechamento',e); } }
 async function carregarEnvios(){ if(!CLOUD||!SB) return;
+  carregarFechamento();
   try{
     SB.from('projetos').select('id,nome,oportunidade_id').not('oportunidade_id','is',null).is('deleted_at',null).then(({data,error})=>{ if(error) return;
       const m={}; (data||[]).forEach(p=>{ m[p.oportunidade_id]=p; }); const mudou=JSON.stringify(m)!==JSON.stringify(OBRA_CLOUD); OBRA_CLOUD=m; if(mudou) render(); });
@@ -614,7 +646,7 @@ function tratEstado(o){
   if(r.validade&&r.validade.dias<0) return Object.assign(r,{k:'ex',vez:'Vez da eX',ic:'event_busy',acao:{t:`Validade vencida: criar R${E.rev+1}`,ic:'edit_document',fn:'trat'}});
   return Object.assign(r,{k:'cli',vez:`Aguardando cliente · ${du}d`,ic:'hourglass_top',du,cobrar:du>=COBRAR_DU,acao:du>=COBRAR_DU?{t:'Cobrar hoje',ic:'notifications_active',fn:'cobrar'}:null});
 }
-function matchTrat(o){ if(!TRFILT) return true; if(TRFILT==='obra') return obraACriar(o); const t=tratEstado(o); if(!t) return false;
+function matchTrat(o){ if(!TRFILT) return true; if(TRFILT==='fin'){ const s=esteira(o); return !!s&&s.passo===3&&s.fin.k!=='dev'; } if(TRFILT==='os'){ const s=esteira(o); return !!s&&s.passo===4; } const t=tratEstado(o); if(!t) return false;
   if(TRFILT==='ex') return t.k==='ex'; if(TRFILT==='cli') return t.k==='cli'; if(TRFILT==='cobrar') return !!t.cobrar;
   if(TRFILT==='validade') return !!t.validade && t.k!=='ok' && t.k!=='no'; return true; }
 const obraACriar=o=>colPapel(o.colId)==='execucao' && aprovadaOpp(o) && !OBRA_CLOUD[o.id];
@@ -623,19 +655,17 @@ function trFiltrosHTML(){ const el=document.getElementById('trFiltros'); if(!el)
   if(!CLOUD){ el.innerHTML=''; return; }
   const ops=S.oportunidades.filter(o=>!o.loteId&&ENVIO_CLOUD[o.id]).map(o=>tratEstado(o)).filter(Boolean);
   const n={ex:ops.filter(t=>t.k==='ex').length, cli:ops.filter(t=>t.k==='cli').length, cobrar:ops.filter(t=>t.cobrar).length, validade:ops.filter(t=>t.validade&&t.k!=='ok'&&t.k!=='no').length,
-    obra:S.oportunidades.filter(o=>!o.loteId&&obraACriar(o)).length};
+    fin:S.oportunidades.filter(o=>{ const s=!o.loteId&&esteira(o); return s&&s.passo===3&&s.fin.k!=='dev'; }).length,
+    os:S.oportunidades.filter(o=>{ const s=!o.loteId&&esteira(o); return s&&s.passo===4; }).length};
   const chip=(k,ic,t)=>`<button class="trf ${TRFILT===k?'on':''} ${k}" onclick="setTrFilt('${k}')"><span class="material-symbols-rounded">${ic}</span>${t}<b>${n[k]}</b></button>`;
-  el.innerHTML=chip('ex','front_hand','Vez da eX')+chip('cli','hourglass_top','Aguardando cliente')+chip('cobrar','notifications_active','Cobrar hoje')+chip('validade','event_busy','Validade vencendo')+(n.obra||TRFILT==='obra'?chip('obra','construction','Obra a criar'):'')
+  el.innerHTML=chip('ex','front_hand','Vez da eX')+chip('cli','hourglass_top','Aguardando cliente')+chip('cobrar','notifications_active','Cobrar hoje')+chip('validade','event_busy','Validade vencendo')+(n.fin||TRFILT==='fin'?chip('fin','account_balance','Financeiro a liberar'):'')+(n.os||TRFILT==='os'?chip('os','engineering','OS a gerar'):'')
     +(SEMVINC.length?`<button class="trf semv" onclick="abrirSemVinculo()"><span class="material-symbols-rounded">mail</span>E-mails sem vínculo<b>${SEMVINC.length}</b></button>`:'')
     +(TRFILT?`<button class="trf limpa" onclick="setTrFilt(null)"><span class="material-symbols-rounded">close</span>limpar filtro</button>`:''); }
-function obraCardHTML(o){ if(colPapel(o.colId)!=='execucao'||!aprovadaOpp(o)) return '';
-  const p=OBRA_CLOUD[o.id];
-  return p?`<div class="kprox ok"><span class="material-symbols-rounded">check_circle</span>Obra criada no Operacional</div>`
-          :`<div class="kprox obra"><span class="material-symbols-rounded">construction</span>Obra: a criar no Operacional <span class="ponta">PONTA</span></div>`; }
+const obraCardHTML=o=>esteiraCardHTML(o);   // aprovada → próximo passo da esteira
 function tratCardHTML(o){ const t=tratEstado(o);
   if(!t) return aprovadaOpp(o)?`<div class="vez ok"><span class="material-symbols-rounded">verified</span>Aprovada</div>${obraCardHTML(o)}`:'';
   return `<div class="vez ${t.k}"><span class="material-symbols-rounded">${t.ic}</span>${esc(t.vez)}</div>${obraCardHTML(o)}
-    ${t.acao?`<div class="kprox ${t.cobrar?'cob':''}"><span class="material-symbols-rounded">${t.acao.ic}</span>${esc(t.acao.t)}</div>`:''}
+    ${t.acao&&t.k!=='ok'?`<div class="kprox ${t.cobrar?'cob':''}"><span class="material-symbols-rounded">${t.acao.ic}</span>${esc(t.acao.t)}</div>`:''}
     ${t.validade&&t.k!=='ok'&&t.k!=='no'?`<div class="kprox val"><span class="material-symbols-rounded">event_busy</span>${t.validade.dias<0?'validade vencida':t.validade.dias===0?'validade vence hoje':'validade vence em '+t.validade.dias+'d'}</div>`:''}`; }
 const EV_IC={envio:'send',descarte:'block',revisao:'edit_document',email_cliente:'mark_email_unread',email_ex:'forward_to_inbox',entrega:'report',contato:'call',cobranca:'notifications_active',nota:'sticky_note_2',legado:'history'};
 const CLS_NM={aprovacao:'Aprovou',ajuste:'Pediu ajuste',recusa:'Recusou',duvida:'Dúvida',outro:'Outro'};
@@ -653,18 +683,94 @@ function tratDetalheHTML(o){ const t=tratEstado(o); if(!t) return '';
       ${E.validade?`<span class="trfx-i ${t.validade?'warn':''}">validade ${E.validade.split('-').reverse().join('/')}</span>`:''}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">${acts}</div>
     <div class="tlw">${ev.slice(0,5).map(linha).join('')||'<div class="tl-m">Nenhum evento ainda.</div>'}${ev.length>5?`<div class="tl-m" style="padding-top:4px">+ ${ev.length-5} evento(s) na proposta</div>`:''}</div></div>`; }
-// passo ④: faixa da aprovação + caminho até a obra
-function aprovDetalheHTML(o){ if(!aprovadaOpp(o)) return '';
+/* ===== ESTEIRA PÓS-APROVAÇÃO (entrega 1): Aprovada → Formalização → Financeiro → OS (Operacional) → Atendimento ===== */
+const FORM_TIPOS={contrato:'Contrato assinado',os:'OS / pedido do cliente'};
+const formalizacaoDe=o=>(((COMP_CLOUD[o.id]||{}).comps)||[]).filter(x=>x&&FORM_TIPOS[x.tipo]);
+function finEstado(o){ const ev=(FECH_CLOUD[o.id]||[]).filter(e=>e.tipo!=='nota'), u=ev[ev.length-1];
+  if(!u) return {k:'pend'}; if(u.tipo==='financeiro_liberado') return {k:'ok',ev:u}; if(u.tipo==='financeiro_devolvido') return {k:'dev',ev:u}; return {k:'pend',reenv:u}; }
+const liberadoOpp=o=>finEstado(o).k==='ok';
+function esteira(o){ if(!o||!aprovadaOpp(o)) return null;
+  const docs=formalizacaoDe(o), fin=finEstado(o), obra=OBRA_CLOUD[o.id];
+  const passo=fin.k==='ok'?(obra?6:4):(docs.length?3:2);
+  return {docs,fin,obra,passo}; }
+const podeDepto=ch=>MEUS_DEPTOS.has(ch)||USER_PAPEL==='fundador';
+const comoMaster=ch=>!MEUS_DEPTOS.has(ch)&&USER_PAPEL==='fundador';
+const deptoEmail=ch=>(DEPTOS.find(d=>d.chave===ch)||{}).email||'';
+function esteiraCardHTML(o){ const s=esteira(o); if(!s) return '';
+  const L={2:['description','Formalizar: contrato ou OS do cliente',''],3:s.fin.k==='dev'?['undo','Devolvido pelo Financeiro: corrigir','red']:['account_balance','Aguardando o Financeiro liberar','cob'],4:['engineering','Operacional: gerar a OS',''],6:['check_circle','Obra criada no Operacional','ok']}[s.passo];
+  const bar=[1,2,3,4,5].map(i=>`<i class="${i<s.passo||s.passo===6?'ok':i===s.passo?'cur':''}"></i>`).join('');
+  return `<div class="kprox ${L[2]}"><span class="material-symbols-rounded">${L[0]}</span>${L[1]}</div><div class="kbar">${bar}</div>`; }
+function aprovDetalheHTML(o){ const s=esteira(o); if(!s) return '';
   const E=ENVIO_CLOUD[o.id], ap=(EVT_CLOUD[o.id]||[]).find(e=>e.classificacao==='aprovacao'&&!e.anulado_em);
-  const papel=colPapel(o.colId), exec=S.colunas.find(c=>c.papel==='execucao'), emExec=papel==='execucao'||papel==='ganho', obra=OBRA_CLOUD[o.id];
-  const rev=(E&&(E.revAprov||E.rev))||(ap&&ap.revisao)||null;
-  const passo=(ok,t,sub)=>`<div class="apst ${ok?'ok':''}"><span class="material-symbols-rounded">${ok?'check_circle':'radio_button_unchecked'}</span><div><b>${t}</b>${sub?`<span>${sub}</span>`:''}</div></div>`;
-  return `<div class="aprovbox">
-    <div class="aprovh"><span class="material-symbols-rounded">verified</span><b>Proposta aprovada${rev?' · R'+rev:''}</b>${ap?`<span>${_dh(ap.ocorrido_em)} · ${esc(ap.canal||'e-mail')}</span>`:''}</div>
-    <div class="aprovtx">Preços congelados na revisão aprovada; ela não aceita mais alteração. O comprovante fica na proposta.</div>
-    ${!emExec&&exec?`<button class="btn btn-s btn-p" style="margin-top:8px" onclick="moverOppPara('${o.id}','${exec.id}')"><span class="material-symbols-rounded">construction</span>Mover para ${esc(exec.nome)}</button>`:''}
-    <div class="apsteps">${passo(true,'Aprovada',rev?'R'+rev:'')}${passo(emExec,'Em execução',emExec?colNome(o.colId):'')}${passo(false,'OS interna','em breve')}${passo(!!obra,'Obra no Operacional',obra?esc(obra.nome||'criada'):(emExec?'a criar · ponta':''))}</div>
-  </div>`; }
+  const rev=(E&&(E.revAprov||E.rev))||(ap&&ap.revisao)||null, lote=!!(o.loteId||(S.lotes||[]).some(l=>l.baseOppId===o.id));
+  const st=n=>s.passo===6||n<s.passo?'ok':n===s.passo?'cur':'lock';
+  const step=(n,ic,t,corpo)=>{ const c=st(n); return `<div class="es ${c}"><div class="es-ic"><span class="material-symbols-rounded">${c==='ok'&&n>1?'check':ic}</span></div><div class="es-b"><div class="es-h"><b>${n}. ${t}</b>${n===1?'<span class="es-t gold">aprovada</span>':`<span class="es-t ${c}">${{ok:'feito',cur:'agora',lock:'aguarda o anterior'}[c]}</span>`}</div>${corpo||''}</div></div>`; };
+  const docHTML=d=>`<div class="es-doc"><span class="material-symbols-rounded">${d.tipo==='contrato'?'history_edu':'receipt_long'}</span>${FORM_TIPOS[d.tipo]}${d.origem?' · '+esc(d.origem):''}${d.data?' · '+esc(String(d.data).split('-').reverse().join('/')):''}${d.obs?' · '+esc(d.obs):''}</div>`;
+  // 2 · formalização
+  let f2='';
+  if(s.docs.length) f2=s.docs.map(docHTML).join('')+(lote?'<div class="es-sd">Vale para o lote inteiro.</div>':'');
+  else f2=`<div class="es-sd">Obrigatório: <b>contrato assinado</b> ou <b>OS/pedido do cliente</b>, anexado nos comprovantes da proposta.${lote?' Um documento vale para o lote inteiro.':''}</div>
+    <div class="es-acts"><button class="btn btn-s btn-p" onclick="anexarFormalizacao('${o.id}')"><span class="material-symbols-rounded">attach_file</span>Anexar contrato ou OS do cliente</button></div>`;
+  // 3 · financeiro
+  let f3='';
+  if(s.fin.k==='ok'){ const e=s.fin.ev; f3=`<div class="es-sd">Liberado por <b>${esc(e.por_nome||'—')}</b> em ${_dh(e.ocorrido_em)}${e.como==='master'?' <span class="es-t dark">como financeiro</span>':''}${e.obs?' · “'+esc(e.obs)+'”':''}</div>`; }
+  else if(s.passo===3){
+    const dev=s.fin.k==='dev'?`<div class="es-note red"><span class="material-symbols-rounded">undo</span><span><b>Devolvido pelo Financeiro</b> (${esc(s.fin.ev.por_nome||'')}, ${_dh(s.fin.ev.ocorrido_em)}): ${esc(s.fin.ev.motivo||'')}</span></div>`:'';
+    const reenv=s.fin.reenv?`<div class="es-sd">Corrigido e reenviado por ${esc(s.fin.reenv.por_nome||'')} em ${_dh(s.fin.reenv.ocorrido_em)}${s.fin.reenv.obs?': '+esc(s.fin.reenv.obs):''}</div>`:'';
+    const em=deptoEmail('financeiro');
+    const avisar=`<button class="btn btn-s" ${em?`onclick="avisarDepto('financeiro','${o.id}')"`:'disabled title="Cadastre o e-mail do departamento Financeiro"'}><span class="material-symbols-rounded">notifications</span>Avisar o Financeiro</button>`;
+    if(s.fin.k==='dev') f3=dev+`<div class="es-sd">O documento continua anexado. Corrija o que foi apontado e reenvie.</div><div class="es-acts"><button class="btn btn-s" onclick="anexarFormalizacao('${o.id}')"><span class="material-symbols-rounded">swap_horiz</span>Trocar documento</button><button class="btn btn-s btn-p" onclick="reenviarFinUI('${o.id}')"><span class="material-symbols-rounded">send</span>Corrigido: reenviar ao Financeiro</button></div>`;
+    else if(podeDepto('financeiro')) f3=reenv+`${comoMaster('financeiro')?`<div class="es-note dark"><span class="material-symbols-rounded">admin_panel_settings</span><span>Você não é do Financeiro: vai liberar <b>como master</b>, e fica registrado assim.</span></div>`:''}
+      <div class="es-acts"><button class="btn btn-s btn-p" onclick="liberarFinUI('${o.id}')"><span class="material-symbols-rounded">verified_user</span>Conferir e liberar</button><button class="btn btn-s" style="color:var(--red)" onclick="devolverFinUI('${o.id}')"><span class="material-symbols-rounded">undo</span>Devolver com motivo</button></div>`;
+    else f3=reenv+`<div class="es-sd">Quem libera é o <b>Financeiro</b>. Ele confere faturamento, condição de pagamento e situação do cliente.</div><div class="es-acts">${avisar}</div>`;
+  }
+  // 4 · OS
+  let f4='';
+  if(s.passo===4) f4=`<div class="es-sd">Quem gera a OS da eX é o <b>Operacional</b>${lote?' (uma por loja)':''}.</div>
+    <div class="es-note warn"><span class="material-symbols-rounded">construction</span><span>A geração da OS chega na próxima entrega. Até lá, o Operacional move o card para Execução pelo menu "Mover card para fase".</span></div>
+    ${!podeDepto('operacional')&&deptoEmail('operacional')?`<div class="es-acts"><button class="btn btn-s" onclick="avisarDepto('operacional','${o.id}')"><span class="material-symbols-rounded">notifications</span>Avisar o Operacional</button></div>`:''}`;
+  // 5 · atendimento
+  const f5=s.obra?`<div class="es-sd">${esc(s.obra.nome||'Obra criada')}</div>`:(s.passo>=4?'<div class="es-sd">Nasce de cada OS gerada.</div>':'');
+  return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">conveyor_belt</span>Da aprovação até o atendimento</div>
+    ${step(1,'verified','Aprovada',`<div class="es-sd">${rev?'R'+rev+' · ':''}${ap?_dh(ap.ocorrido_em)+' · '+esc(ap.canal||'e-mail'):'comprovante na proposta'} · preços congelados</div>`)}
+    ${step(2,'description','Formalização do cliente',f2)}
+    ${step(3,'account_balance','Liberação do Financeiro',f3)}
+    ${step(4,'engineering','OS interna da eX'+(lote?' (por loja)':''),f4)}
+    ${step(5,'storefront','Atendimento no Operacional',f5)}</div>`; }
+function anexarFormalizacao(oid){ abrirOrcNoShell('?opp='+oid+'&comp=1'); }
+function avisarDepto(ch,oid){ const o=S.oportunidades.find(x=>x.id===oid), em=deptoEmail(ch); if(!o||!em) return;
+  const link='https://exeletric.github.io/gestao-projetos-campo/eX_CRM.html?m=funil&ver='+oid;
+  const txt=ch==='financeiro'?'precisa da liberação do Financeiro':'está liberada: gerar a OS';
+  window.open('mailto:'+em+'?subject='+encodeURIComponent('[eX] '+titulo(o)+' · '+txt)+'&body='+encodeURIComponent('A proposta "'+titulo(o)+'" '+txt+'.\n\nAbrir no funil: '+link),'_blank'); }
+function fechModal(html){ let ov=document.getElementById('fechModal'); if(!ov){ ov=document.createElement('div'); ov.id='fechModal'; ov.className='modal-bg'; ov.style.zIndex='600'; ov.onclick=e=>{ if(e.target===ov) ov.classList.remove('show'); }; document.body.appendChild(ov); }
+  ov.innerHTML=`<div class="modal cfgm" style="max-width:520px">${html}</div>`; ov.classList.add('show'); }
+const fechFechar=()=>{ const ov=document.getElementById('fechModal'); if(ov) ov.classList.remove('show'); };
+function fechHead(t,sub){ return `<div class="cfgm-head"><h3>${t}</h3><button class="cfgm-x" onclick="fechFechar()"><span class="material-symbols-rounded">close</span></button></div>${sub?`<div class="cfgm-sub">${sub}</div>`:''}`; }
+function liberarFinUI(oid){ const o=S.oportunidades.find(x=>x.id===oid), s=esteira(o); if(!s) return;
+  const it=(k,t)=>`<label class="es-chk"><input type="checkbox" id="fc_${k}" onchange="document.getElementById('finOk').disabled=!['faturamento','pagamento','cliente'].every(x=>document.getElementById('fc_'+x).checked)">${t}</label>`;
+  fechModal(fechHead('Liberar · Financeiro',`${esc(titulo(o))}${comoMaster('financeiro')?' · <b>você está liberando como master</b>':''}`)+`<div style="padding:0 18px">
+    ${s.docs.map(d=>`<div class="es-doc"><span class="material-symbols-rounded">${d.tipo==='contrato'?'history_edu':'receipt_long'}</span>${FORM_TIPOS[d.tipo]}${d.origem?' · '+esc(d.origem):''}</div>`).join('')}
+    <div class="es-sd" style="margin:10px 0 4px">Conferi:</div>
+    ${it('faturamento','Dados de faturamento do cliente (CNPJ, endereço, e-mail da NF)')}${it('pagamento','Condição de pagamento combinada')}${it('cliente','Situação do cliente (crédito / pendências)')}
+    <textarea id="finObs" class="fi" style="margin-top:10px;height:70px" placeholder="Observação (opcional)"></textarea></div>
+    <div class="cfgm-foot"><button class="btn" onclick="fechFechar()">Cancelar</button><button class="btn btn-p" id="finOk" disabled onclick="gravarFin('${oid}','financeiro_liberado')"><span class="material-symbols-rounded">verified_user</span>Liberar</button></div>`); }
+function devolverFinUI(oid){ const o=S.oportunidades.find(x=>x.id===oid);
+  fechModal(fechHead('Devolver ao comercial',esc(titulo(o))+' · o documento continua anexado')+`<div style="padding:0 18px"><textarea id="finMot" class="fi" style="height:100px" placeholder="Motivo (obrigatório). Ex.: CNPJ de faturamento diferente do contrato"></textarea></div>
+    <div class="cfgm-foot"><button class="btn" onclick="fechFechar()">Cancelar</button><button class="btn btn-p" onclick="gravarFin('${oid}','financeiro_devolvido')"><span class="material-symbols-rounded">undo</span>Devolver</button></div>`); }
+function reenviarFinUI(oid){ const o=S.oportunidades.find(x=>x.id===oid);
+  fechModal(fechHead('Reenviar ao Financeiro',esc(titulo(o)))+`<div style="padding:0 18px"><textarea id="finObs" class="fi" style="height:90px" placeholder="O que foi corrigido?"></textarea></div>
+    <div class="cfgm-foot"><button class="btn" onclick="fechFechar()">Cancelar</button><button class="btn btn-p" onclick="gravarFin('${oid}','reenviado_financeiro')"><span class="material-symbols-rounded">send</span>Reenviar</button></div>`); }
+async function gravarFin(oid,tipo){ const o=S.oportunidades.find(x=>x.id===oid), s=esteira(o); if(!o||!s) return;
+  const g=id=>document.getElementById(id), obs=((g('finObs')||{}).value||'').trim(), mot=((g('finMot')||{}).value||'').trim();
+  if(tipo==='financeiro_devolvido'&&!mot){ alert('Escreva o motivo.'); return; }
+  if(tipo==='reenviado_financeiro'&&!obs){ alert('Diga o que foi corrigido.'); return; }
+  const d=s.docs[s.docs.length-1]||null;
+  const row={empresa_id:EMPRESA_ID,oportunidade_id:oid,lote_id:o.loteId||((S.lotes||[]).find(l=>l.baseOppId===oid)||{}).id||null,orcamento_id:(COMP_CLOUD[oid]||{}).orcId||null,tipo,por_nome:USER_NOME||'',obs:obs||null,motivo:mot||null,
+    documento:d?{tipo:d.tipo,id:d.id||null,origem:d.origem||'',data:d.data||'',nome:d.nome||'',url:d.url||''}:null,
+    checklist:tipo==='financeiro_liberado'?{faturamento:!!(g('fc_faturamento')||{}).checked,pagamento:!!(g('fc_pagamento')||{}).checked,cliente:!!(g('fc_cliente')||{}).checked}:null};
+  const {error}=await SB.from('fechamento_eventos').insert(row);
+  if(error){ alert('Não consegui gravar: '+error.message); return; }
+  fechFechar(); await carregarFechamento(); render(); }
 function abrirTratativas(oid){ abrirOrcNoShell('?opp='+oid+'&trat=1'); }
 async function declinarPorRecusa(oid){ const k=S.colunas.find(c=>c.papel==='perdido'); if(!k){ alert('Não achei a fase de papel "perdido" (Declinado).'); return; } moverOppPara(oid,k.id); }
 function registrarCobranca(oid){ const t=tratEstado(S.oportunidades.find(x=>x.id===oid)); if(!t) return;
@@ -773,7 +879,7 @@ async function initCRM(){
     const {data:{session}}=await SB.auth.getSession();
     if(session){
       try{ const emp=await SB.rpc('empresa_atual'); EMPRESA_ID=(emp&&emp.data)||null; }catch(e){}
-      try{ const p=await SB.from('perfis').select('nome').eq('user_id',session.user.id).limit(1); USER_NOME=(p.data&&p.data[0]&&p.data[0].nome)||session.user.email||''; }catch(e){}
+      try{ const p=await SB.from('perfis').select('nome,papel').eq('user_id',session.user.id).limit(1); USER_NOME=(p.data&&p.data[0]&&p.data[0].nome)||session.user.email||''; USER_PAPEL=(p.data&&p.data[0]&&p.data[0].papel)||''; USER_ID=session.user.id; }catch(e){}
       await carregarNuvem(); CLOUD=true; cloudMsg('nuvem ✓'); carregarEnvios();
       try{ const cb=await SB.from('colaboradores').select('nome').eq('ativo',true).order('nome'); if(!cb.error)COLABS=(cb.data||[]).map(c=>c.nome).filter(Boolean); }catch(e){}
     } else { cloudMsg('modo local (sem login)'); }
@@ -1424,7 +1530,7 @@ function oppMoverHTML(o){
   if(!lista.length) return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv-empty">${MASTER?'Nenhum destino liberado — configure abaixo.':'Sem destino liberado a partir desta fase.'}</div>${cfgLink}</div>`;
   const rows=lista.map(x=>{ const fwd=colIdx(x.id)>ci; let tag='',dis='';
     if(falta.length && fwd){ if(gate==='rigida'){ tag=`<span class="dmv-blk"><span class="material-symbols-rounded">lock</span>trava rígida</span>`; dis='disabled'; } else if(gate==='suave'){ tag=`<span class="dmv-warn"><span class="material-symbols-rounded">warning</span>avisa</span>`; } }
-    if(!tag && (PAPEL_DEF[colPapel(x.id)]||{}).reqEntrada==='aprovado' && !reqEntradaOK(o,x.id)) tag=`<span class="dmv-blk" title="Só proposta aprovada entra aqui"><span class="material-symbols-rounded">lock</span>só aprovada</span>`;
+    if(!tag && (PAPEL_DEF[colPapel(x.id)]||{}).reqEntrada==='liberado' && !reqEntradaOK(o,x.id)) tag=`<span class="dmv-blk" title="Só entra depois da liberação do Financeiro"><span class="material-symbols-rounded">lock</span>após Financeiro</span>`;
     return `<div class="dmvrow"><button class="dmvbtn ${fwd?'':'back'}" ${dis} onclick="moverOppPara('${o.id}','${x.id}')"><span class="material-symbols-rounded ar">${fwd?'east':'west'}</span>${esc(x.nome)}${tag}</button></div>`;
   }).join('');
   const hint=(falta.length&&gate!=='nenhuma')?`<div class="dmv-hint"><span class="material-symbols-rounded">info</span>Falta: <b>${esc(falta.join(', '))}</b>. ${gate==='rigida'?'A trava rígida bloqueia o avanço.':'A trava suave avisa mas deixa avançar.'}</div>`:'';
@@ -1592,7 +1698,7 @@ function gerarObra(id){
   const o=S.oportunidades.find(x=>x.id===id); if(!o)return;
   let orc=null; try{ orc=JSON.parse(localStorage.getItem('ex_orc_v6__'+id)||'null'); }catch(e){}
   if(!orc){ alert('Gere o orçamento desta oportunidade primeiro.'); return; }
-  if(!aprovadaOpp(o) && !(o.loteId||(S.lotes||[]).some(l=>l.baseOppId===o.id))){ alert('A obra só nasce de proposta APROVADA. Registre a aprovação nas tratativas da proposta.'); return; }   // passo ④
+  if(!liberadoOpp(o) && !(o.loteId||(S.lotes||[]).some(l=>l.baseOppId===o.id))){ alert('A obra só nasce depois da esteira: aprovada → formalização → liberação do Financeiro.'); return; }   // esteira
   const ct=cli(o.contratanteId), cp=contempl(o.contempladoId);
   // congela o ORÇADO por serviço (baseline Decisão 2): custo, preço (c/ margem) e horas da composição
   const _n=v=>{ if(v==null||v==='')return 0; if(typeof v==='number')return v; let s=(''+v).replace(/[R$\s]/g,''); if(s.indexOf(',')>-1)s=s.replace(/\./g,'').replace(',','.'); return parseFloat(s)||0; };
