@@ -3641,7 +3641,9 @@ function precoDe(dados){ var keep=S, out=null;
   }catch(e){ console.error('precoDe',e); } finally{ S=keep; } return out; }
 function dadosLojaCalc(u){ var d=_deep((u&&u.dados)||{}); var ov=d._ov||{};   // igual ao prazo das unidades: segue equipe da mestra quando não tem campo próprio
   if(!ov.pessoasFn&&S.pessoasFn)d.pessoasFn=_deep(S.pessoasFn); if(!ov.efetivo&&S.efetivo)d.efetivo=_deep(S.efetivo); return d; }
-function dadosModeloCalc(id){ var d=_deep(S); var c=varConteudo(S,id); VAR_KEYS.forEach(function(k){ d[k]=c[k]; }); return d; }
+function dadosModeloCalc(id){ var d=_deep(S); var c=varConteudo(S,id); VAR_KEYS.forEach(function(k){ d[k]=c[k]; });
+  d.blocoOn={servicos:true,materiais:true,despesas:true,equip:true};   // MODELO = referência do tipo de sistema: sempre com os 4 blocos (não herda a chave "soma no total" da base). Valor combinado é EXCEÇÃO: sem ele, vale margem normal
+  return d; }
 function docLogisticaHtml(_secTit,_th,_td){ var a=LOTE_UNIT_ABR||[]; if(!a.length)return ''; var bm=baseMun(); var r=loteAbrResumo(); var rota=loteRota();
   var linhas=(LOTE_UNITS||[]).map(function(u,i){ var x=a[i]||{}; return '<tr><td style="'+_td+'">'+esc(lojaLabel(u))+'</td><td style="'+_td+'">'+esc(x.cidade||'—')+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+(x.km!=null?_d1(x.km)+' km':'—')+'</td><td style="'+_td+';text-align:right">'+(num(x.tempo_pct)>0?('+'+_d1(x.tempo_pct)+'% prazo'):'dentro do raio')+'</td></tr>'; }).join('');
   return '<div style="'+_secTit+'">Logística · raio de atendimento</div><div style="font-size:12.5px;color:#5f5b72;margin:0 0 8px">Base de atendimento: <b>'+esc((S.baseNome)||(bm?bm.nome+'/'+bm.uf:'—'))+'</b> · '+r.comCid+' unidades com cidade · faixa '+r.min+'% a +'+r.max+'% · rota do circuito ~ '+(rota.km||0).toLocaleString('pt-BR')+' km</div>'
@@ -3679,7 +3681,7 @@ function preEnvioChecks(){
   var add=function(arr,cond,txt,acao){ if(cond){ arr.push({txt:txt,acao:acao||''}); } else ok++; };
   add(B, typeof MANUAL!=='undefined'&&MANUAL&&DIRTY, 'Há alterações NÃO salvas nesta proposta.', '<button class="pebtn" onclick="salvarManual();setTimeout(preEnvioAbrir,1800)">Salvar agora</button>');
   var blOff=['servicos','materiais','despesas','equip'].filter(function(k){ return !blocoAtivo(k); });
-  add(B, blOff.length, 'Bloco(s) FORA DO TOTAL na base: '+blOff.map(function(k){ return ((BLKS.find(function(b){return b.key===k;})||{}).titulo)||k; }).join(', ')+' — os modelos do documento saem sem esse valor.', blOff.map(function(k){ return '<button class="pebtn" onclick="closePreEnvio();toggleBloco(\''+k+'\');setTimeout(function(){verComoClienteLote();preEnvioAbrir();},300)">Religar '+(((BLKS.find(function(b){return b.key===k;})||{}).titulo)||k)+'</button>'; }).join(' '));
+  add(A, blOff.length, 'Bloco(s) FORA DO TOTAL na proposta-base: '+blOff.map(function(k){ return ((BLKS.find(function(b){return b.key===k;})||{}).titulo)||k; }).join(', ')+' — não afeta os modelos do documento nem as lojas; confira se é intencional.', blOff.map(function(k){ return '<button class="pebtn" onclick="closePreEnvio();toggleBloco(\''+k+'\');setTimeout(function(){verComoClienteLote();preEnvioAbrir();},300)">Religar '+(((BLKS.find(function(b){return b.key===k;})||{}).titulo)||k)+'</button>'; }).join(' '));
   var lojBl=us.filter(function(u){ var bo=(u.dados&&u.dados.blocoOn)||{}; return ['servicos','materiais','despesas','equip'].some(function(k){ return bo[k]===false; }); });
   add(B, lojBl.length, 'Loja(s) com bloco fora do total: '+lojBl.map(lojaNome).join(' · '));
   var conc=us.map(function(u){ var p=precoDe(dadosLojaCalc(u)); return {u:u, d:p?Math.abs(p.total-num(u.total)):0, calc:p?p.total:0}; }).filter(function(x){ return x.d>1; });
