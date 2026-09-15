@@ -105,6 +105,7 @@ function decorar(){
     else h+=`<button class="envbtn pri" ${CLOUD?'':'disabled title="Entre no app (login) para enviar"'} onclick="EXENV.abrirEnvio()">${ms('send')}Enviar ${n>1?'R'+n:'proposta'}</button>`;
   }
   if(hist) h+=`<button class="envbtn ghost" onclick="EXENV.historico()" title="Revisões enviadas">${ms('history')}${hist}</button>`;
+  if(OPP && CLOUD) h+=`<button class="envbtn" onclick="EXENV.irFunil()" title="Abrir esta oportunidade no funil">${ms('view_kanban')}Ir para o funil</button>`;
   const pend=pendentes().length;
   if(pend) h=`<button class="envchip newr" onclick="EXENV.irTrat()" title="Classificar nas tratativas">${ms('mark_email_unread')}${pend} resposta${pend>1?'s':''} do cliente</button>`+h;
   box.innerHTML=h;
@@ -475,7 +476,7 @@ async function historico(){
    Respostas chegam sozinhas pelo endereço de registro (Edge Function email-entrada).
    O sistema SUGERE; uma pessoa CONFIRMA com 1 clique (decisão do dono 14/09/2026).
    ============================================================================ */
-const CLS={aprovacao:['verified','Aprovou','green'],ajuste:['reply','Pediu ajuste','pri'],recusa:['do_not_disturb_on','Recusou','red'],duvida:['help','Dúvida','blue'],outro:['chat','Outro','gray']};
+const CLS={aprovacao:['verified','Aprovou','gold'],ajuste:['reply','Pediu ajuste','pri'],recusa:['do_not_disturb_on','Recusou','red'],duvida:['help','Dúvida','blue'],outro:['chat','Outro','gray']};
 const CANAL_IC={'telefone':'call','WhatsApp':'chat','reunião':'groups','e-mail':'mail','outro':'more_horiz'};
 const MOTIVOS=['preço','prazo','escopo','concorrente','cliente sem verba','outro'];
 function ehMestra(){ try{ return typeof isLoteBase==='function'&&isLoteBase(); }catch(e){ return false; } }
@@ -764,6 +765,7 @@ if(typeof window.renderSaveState==='function'){ const _rss=window.renderSaveStat
 if(typeof window.voltarFunil==='function'){ const _voltar=window.voltarFunil;
   window.voltarFunil=function(){
     const sujo=(typeof MANUAL!=='undefined'&&MANUAL)&&(typeof DIRTY!=='undefined'&&DIRTY);
+    ENV._destino=ENV._destinoPend||null; ENV._destinoPend=null;   // só o "Ir para o funil" troca o destino
     if(!sujo) return _voltar.apply(this,arguments);
     modal(`<div class="envh">${ms('warning','color:var(--amber,#ba7517)')}Alterações não salvas</div>
       <p class="envp">Você mudou esta proposta e <b>não salvou</b>. Sem salvar, o funil e as outras telas continuam com os dados antigos.</p>
@@ -771,14 +773,27 @@ if(typeof window.voltarFunil==='function'){ const _voltar=window.voltarFunil;
         <button class="envbtn danger" onclick="EXENV.sairSemSalvar()">${ms('undo')}Descartar alterações</button>
         <button class="envbtn pri" onclick="EXENV.salvarEVoltar()">${ms('save')}Salvar e voltar</button></div>`);
   };
+  const destino=()=>{ const f=ENV._destino||_voltar; ENV._destino=null; f(); };
   ENV.salvarEVoltar=function(){ fechar(); try{ salvarManual(); }catch(e){ console.error(e); }
     if(typeof DIRTY!=='undefined'&&DIRTY) return;   // o próprio Salvar pode ter sido cancelado (ex.: material pendente)
-    _voltar(); };
+    destino(); };
   ENV.sairSemSalvar=async function(){ fechar();
     try{ await carregarOrc(); boot(); DIRTY=false; renderSaveState(); }catch(e){ console.error('descartar',e); }
     try{ const cur=JSON.parse(localStorage.getItem('ex_orc_dirty')||'null'); if(cur&&cur.opp===OPP) localStorage.removeItem('ex_orc_dirty'); }catch(_){}
-    _voltar(); };
+    destino(); };
 }
+// "Ir para o funil": abre o CARD desta oportunidade no funil (de qualquer origem: menu Orçamentos ou funil)
+function abrirCardFunil(){
+  try{ localStorage.setItem('ex_abrir_opp',JSON.stringify({opp:OPP,t:Date.now(),modo:'ver'})); }catch(_){}
+  try{ if(window.top!==window.self){ parent.postMessage({type:'exNav',view:'funil'},'*'); return; } }catch(_){}
+  location.href='eX_CRM.html?m=funil&ver='+encodeURIComponent(OPP);
+}
+ENV.irFunil=function(){
+  if(!OPP) return;
+  const sujo=(typeof MANUAL!=='undefined'&&MANUAL)&&(typeof DIRTY!=='undefined'&&DIRTY);
+  if(!sujo || typeof window.voltarFunil!=='function') return abrirCardFunil();
+  ENV._destinoPend=abrirCardFunil; window.voltarFunil();   // mesmo aviso de "alterações não salvas", indo pro card
+};
 
 /* ---------- API p/ os onclick ---------- */
 Object.assign(ENV,{abrirEnvio,preparar,confirmar,descartar,retomar,criarRevisao,
@@ -894,6 +909,21 @@ body.env-pdf .app{box-shadow:none!important;border-radius:0!important;margin:0 a
 .trtx{font-size:12px;color:var(--tx2,#555);white-space:pre-wrap;margin-top:3px}.trtx.red{color:var(--red,#a32d2d)}
 .trchips{display:flex;gap:6px;flex-wrap:wrap}
 .trfull{white-space:pre-wrap;font-size:13px;line-height:1.5;background:var(--surf2,#f1efe8);border-radius:9px;padding:12px;max-height:50vh;overflow:auto;margin:8px 0}
+/* tratativas em fundo preto (pedido do dono 14/09) + aprovação em dourado */
+.trw{--surf:#1f1f1d;--surf2:#2a2a27;--line:#34342f;--line2:#4a4a44;--tx:#f3f1ea;--tx2:#c9c6bc;--tx3:#8f8c83;--pri:#a996f2;--pri-bg:#2b2544;--blue:#8cb8ea;--green:#9fd16b;--red:#f08a8a;--amber:#e8b25e;
+  background:#111110;border-color:#111110;color:#f3f1ea}
+.trw .envbtn.pri{color:#111110}.trw .envbtn.pri:hover{background:#bcaef5}
+.trw .envbtn.okb{color:#111110}.trw .envbtn.danger{border-color:#6b3a3a}
+.trnew{background:#181720}
+.trsug.good{background:#1f2c14}.trsug.care{background:#33260f}.trsug.info{background:#2b2544}
+.tric.blue{background:#16283c}.tric.pri{background:#2b2544}.tric.green{background:#1f2c14}.tric.red{background:#3a1b1b}.tric.amber{background:#33260f}
+.trcl.green{background:#1f2c14}.trcl.pri{background:#2b2544}.trcl.red{background:#3a1b1b}.trcl.blue{background:#16283c}.trcl.gray{background:#2a2a27}
+.trrv{background:#f3f1ea;color:#111110}.trrv.old{background:#5b5a55;color:#e6e3da}
+.trbadge{color:#111110}
+.tric.gold{background:linear-gradient(135deg,#f3dc8b,#c9a227 55%,#9c7a14);color:#2b2000;box-shadow:0 0 0 1px #e2c25a55}
+.trcl.gold{background:linear-gradient(135deg,#f3dc8b,#c9a227 55%,#a9851b);color:#2b2000}
+.obst-aprov{background:linear-gradient(135deg,#f6e39a 0%,#d4af37 45%,#a8841c 100%);color:#2b2000;box-shadow:0 1px 0 #fff8 inset,0 1px 3px rgba(120,90,10,.35);border:1px solid #b8921f}
+.obst-aprov .material-symbols-rounded{color:#2b2000}
 @media print{#envTrat{display:none!important}}
 @media screen{ .env-opp-lock{cursor:default;color:var(--tx,#1a1a18)} .env-opp-lock:focus{outline:none;box-shadow:none} }
 @media screen{
