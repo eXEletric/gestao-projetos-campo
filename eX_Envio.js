@@ -108,6 +108,9 @@ function decorar(){
   const pend=pendentes().length;
   if(pend) h=`<button class="envchip newr" onclick="EXENV.irTrat()" title="Classificar nas tratativas">${ms('mark_email_unread')}${pend} resposta${pend>1?'s':''} do cliente</button>`+h;
   box.innerHTML=h;
+  // proposta já enviada pelo sistema mas oportunidade parada antes de "negociação" (ex.: enviada antes desta regra): avança uma vez
+  if(CLOUD && ORC_ID && ENV.carregado && !ENV._faseOk && !ehLote()){ const u=ultimaEnviada();
+    if(u){ ENV._faseOk=true; moverParaNegociacao(u.revisao).then(mv=>{ if(mv){ toast(`Esta proposta já foi enviada (R${u.revisao}): a oportunidade foi movida para <b>${esc(mv.para)}</b>.`); try{ window.renderBanner(); }catch(_){} } }); } }
   // proposta travada abre em visualização: mostra os painéis internos na TELA (nunca no PDF/impressão)
   const trv=travada(); document.body.classList.toggle('env-travada',trv);
   const lbl=document.querySelector('#previewBar .pv-lbl');
@@ -353,12 +356,37 @@ function renderPasso2(){ const p=ENV.prep; if(!p)return; const c=canalSalvo();
 function ck(i,v){ ENV.prep['ck'+i]=v; renderPasso2(); }
 function modoManual(on){ ENV.manual=!!on; if(on && ENV.prep && ENV.prep.blob && !ENV.prep.baixou){ ENV.prep.baixou=true; baixarPDF(); } renderPasso2(); }
 // depois que o e-mail saiu (pelo sistema ou confirmado à mão): estado da folha + banner
+// enviou → a oportunidade vai para a fase de papel "negociação" (dono 14/09). Só avança: se já está em negociação ou
+// além (execução/ganho/perdido), não mexe. Lote fica de fora (envio em conjunto é outro passo).
+const FASES_ANTES_NEG=['captacao','visita','proposta','pausa'];
+async function moverParaNegociacao(n){
+  if(!(OPP&&CLOUD&&SB) || ehLote()) return null;
+  try{
+    const [{data:op},{data:fases}]=await Promise.all([
+      SB.from('oportunidades').select('fase_id').eq('id',OPP).maybeSingle(),
+      SB.from('crm_fases').select('id,nome,papel,ordem').is('deleted_at',null).order('ordem') ]);
+    if(!op) return null;
+    const neg=(fases||[]).find(f=>f.papel==='negociacao'); if(!neg) return null;
+    const atual=(fases||[]).find(f=>f.id===op.fase_id);
+    if(atual && !FASES_ANTES_NEG.includes(atual.papel)) return null;
+    const {error}=await SB.from('oportunidades').update({fase_id:neg.id}).eq('id',OPP); if(error) throw error;
+    evento({ revisao:n||null, tipo:'nota', canal:'sistema', titulo:`Oportunidade movida de "${atual?atual.nome:'sem fase'}" para "${neg.nome}" (R${n} enviada)` });
+    // funil (outro quadro) recarrega; banner desta proposta lê a fase da ponte local do CRM
+    try{ localStorage.setItem('ex_opp_sync',JSON.stringify({opp:OPP,t:Date.now()})); localStorage.setItem('ex_orc_sync',JSON.stringify({opp:OPP,t:Date.now()})); }catch(_){}
+    try{ const crm=JSON.parse(localStorage.getItem('ex_crm_v1')||'null'); const o=crm&&(crm.oportunidades||[]).find(x=>x.id===OPP); if(o){ o.colId=neg.id; localStorage.setItem('ex_crm_v1',JSON.stringify(crm)); } }catch(_){}
+    return {de:atual?atual.nome:null, para:neg.nome};
+  }catch(e){ console.error('mover para negociação',e); return null; }
+}
+const avisoFase=mv=>mv?` A oportunidade foi movida para <b>${esc(mv.para)}</b>.`:'';
 async function posEnvio(n,enviadoEm,para){
   S.status='enviado'; S.envioRev=n; S.envioUlt={rev:n,em:enviadoEm,para};
   try{ recalc(); }catch(e){} pushOrc(); try{ writeback(S._total||0); DIRTY=false; renderSaveState(); }catch(e){}
   ENV.prep=null; ENV._form=null; ENV.manual=false;
+  ENV._faseOk=true;
+  const mv=await moverParaNegociacao(n);
   await carregarVersoes(); fechar(); window.renderBanner(); _setMode('view');
   carregarEventos();
+  return mv;
 }
 async function enviarSistema(){ const p=ENV.prep; if(!p) return;
   const b=$('envSisBtn'); if(b){ b.disabled=true; b.innerHTML=ms('hourglass_top')+'Enviando…'; }
@@ -370,13 +398,13 @@ async function enviarSistema(){ const p=ENV.prep; if(!p) return;
     else if(!data||!data.ok) msg=(data&&data.error)||'resposta inesperada do servidor';
     if(msg) throw new Error(msg);
     if(data.avisos&&data.avisos.length) console.warn('envio: registrado com avisos',data.avisos);
-    await posEnvio(p.n,data.enviado_em,p.f.para);
-    toast(`${ms('mark_email_read','font-size:16px')} <b>R${p.n} enviada pelo sistema</b> para ${esc(listaEmails(p.f.para)[0]||'')}. As respostas vão aparecer nas tratativas.`);
+    const mv=await posEnvio(p.n,data.enviado_em,p.f.para);
+    toast(`${ms('mark_email_read','font-size:16px')} <b>R${p.n} enviada pelo sistema</b> para ${esc(listaEmails(p.f.para)[0]||'')}. As respostas vão aparecer nas tratativas.`+avisoFase(mv));
   }catch(e){
     console.error('enviar pelo sistema',e);
     // a resposta pode ter se perdido depois do envio: se a revisão já consta como enviada, não houve falha
     try{ await carregarVersoes(); const v=ENV.versoes.find(x=>x.id===p.id);
-      if(v&&v.status==='enviada'){ await posEnvio(p.n,v.enviado_em,p.f.para); toast(`<b>R${p.n} enviada.</b> (a confirmação demorou, mas o e-mail saiu)`); return; } }catch(_){}
+      if(v&&v.status==='enviada'){ const mv=await posEnvio(p.n,v.enviado_em,p.f.para); toast(`<b>R${p.n} enviada.</b> (a confirmação demorou, mas o e-mail saiu)`+avisoFase(mv)); return; } }catch(_){}
     p.erro=e.message||String(e); renderPasso2();
   }
 }
@@ -395,8 +423,8 @@ async function confirmar(){ const p=ENV.prep; if(!p||!(p.ck1&&p.ck2)) return;
     await evento({ versao_id:p.id, revisao:p.n, tipo:'envio', canal:'e-mail próprio'+(p.abriu?' ('+CANAIS[p.abriu].nome+')':''),
       titulo:`R${p.n} enviada pelo e-mail do usuário para ${listaEmails(p.f.para).join(', ')}`, texto:p.f.assunto,
       anexos:[{nome:p.pdfNome,path:'anexos:propostas/'+ORC_ID+'/'+safeKey(p.cod)+'_R'+p.n+'.pdf',tipo:'application/pdf'}] });
-    await posEnvio(p.n,u.data.enviado_em,p.f.para);
-    toast(`${ms('mark_email_read','font-size:16px')} <b>R${p.n} enviada e congelada.</b> Para alterar a proposta daqui pra frente, crie a R${p.n+1}.`);
+    const mv=await posEnvio(p.n,u.data.enviado_em,p.f.para);
+    toast(`${ms('mark_email_read','font-size:16px')} <b>R${p.n} enviada e congelada.</b> Para alterar a proposta daqui pra frente, crie a R${p.n+1}.`+avisoFase(mv));
   }catch(e){ console.error('confirmar envio',e); toast('Não consegui confirmar: '+esc(e.message||String(e))); }
 }
 async function descartar(){ const p=ENV.prep; if(!p)return;
@@ -482,6 +510,7 @@ function renderTrat(){
   // próxima ação depois de um pedido de ajuste: criar a revisão seguinte
   const ultAj=ENV.eventos.find(e=>e.classificacao==='ajuste'&&!e.anulado_em);
   const mostraR=ultAj && !aprovada() && v && ['enviada','substituida'].includes(v.status) && ultAj.revisao===v.revisao;
+  const jaAprov=aprovada();
   const card=e=>{ const sg=e.sugestao&&CLS[e.sugestao]; const txt=String(e.texto||''); const longo=txt.length>700;
     const ressalva=e.sugestao==='ajuste'&&/aprovado/.test(e.sugestao_motivo||'');
     return `<div class="trnew">
@@ -489,18 +518,24 @@ function renderTrat(){
       <div class="trnew-t">${esc(e.titulo||'')}</div>
       ${txt?`<div class="trq">${esc(longo?txt.slice(0,700)+'…':txt)}</div>`:''}
       <div class="trlinks">${e.mensagem_id?`<button class="tratt" onclick="EXENV.verEmail('${e.id}')">${ms('mail')}ver e-mail completo</button>`:''}${anexosHtml(e)}</div>
-      ${sg?`<div class="trsug ${e.sugestao==='aprovacao'?'good':(ressalva||e.sugestao==='recusa')?'care':'info'}">${ms(ressalva?'help':sg[0],'font-size:17px')}<div><b>Sugestão do sistema: ${ressalva?'aprovação COM ressalva: confira':esc(sg[1].toLowerCase())}</b><span>${esc(e.sugestao_motivo||'')}</span></div></div>`:''}
+      ${jaAprov
+        ? (e.sugestao==='aprovacao'||!e.sugestao
+            ? `<div class="trsug good">${ms('task_alt','font-size:17px')}<div><b>A R${revAprovada()} já está aprovada</b><span>Esta resposta parece só uma confirmação. Registre com um clique.</span></div></div>`
+            : `<div class="trsug care">${ms('warning','font-size:17px')}<div><b>Atenção: a proposta já está aprovada, mas esta resposta parece ${({ajuste:'um pedido de ajuste',recusa:'uma recusa',duvida:'uma dúvida'})[e.sugestao]||'outra coisa'}</b><span>Confira com o cliente antes de seguir.</span></div></div>`)
+        : (sg?`<div class="trsug ${e.sugestao==='aprovacao'?'good':(ressalva||e.sugestao==='recusa')?'care':'info'}">${ms(ressalva?'help':sg[0],'font-size:17px')}<div><b>Sugestão do sistema: ${ressalva?'aprovação COM ressalva: confira':esc(sg[1].toLowerCase())}</b><span>${esc(e.sugestao_motivo||'')}</span></div></div>`:'')}
       <div class="tracts">
-        <button class="envbtn ${e.sugestao==='aprovacao'?'okb':''}" onclick="EXENV.classificar('${e.id}','aprovacao')">${ms('verified')}Aprovou${e.revisao?' a R'+e.revisao:''}</button>
+        ${jaAprov
+          ? `<button class="envbtn ${e.sugestao==='aprovacao'||!e.sugestao?'okb':''}" onclick="EXENV.classificar('${e.id}','confirmacao')">${ms('task_alt')}Registrar como confirmação</button>`
+          : `<button class="envbtn ${e.sugestao==='aprovacao'?'okb':''}" onclick="EXENV.classificar('${e.id}','aprovacao')">${ms('verified')}Aprovou${e.revisao?' a R'+e.revisao:''}</button>`}
         <button class="envbtn ${e.sugestao==='ajuste'?'pri':''}" onclick="EXENV.classificar('${e.id}','ajuste')">${ms('reply')}Pediu ajuste</button>
         <button class="envbtn ${e.sugestao==='recusa'?'danger':''}" onclick="EXENV.classificar('${e.id}','recusa')">${ms('do_not_disturb_on')}Recusou</button>
         <button class="envbtn" onclick="EXENV.classificar('${e.id}','duvida')">${ms('help')}Dúvida / outro</button>
         <button class="envbtn ghost sm2" onclick="EXENV.anular('${e.id}')" title="Não é desta proposta / registrado por engano">${ms('link_off')}Não é desta proposta</button>
       </div></div>`; };
-  const linha=e=>{ const [ic,c]=evIcone(e); const cl=e.classificacao&&CLS[e.classificacao];
+  const linha=e=>{ const [ic,c]=ehConfirmacao(e)&&!e.anulado_em?['task_alt','green']:evIcone(e); const cl=ehConfirmacao(e)?['task_alt','Confirmação','green']:(e.classificacao&&CLS[e.classificacao]);
     const manual=['contato','nota','cobranca'].includes(e.tipo)||(e.tipo==='email_cliente'&&e.classificacao);
     return `<div class="trev ${e.anulado_em?'off':''}"><span class="tric ${c}">${ms(ic)}</span><div class="trevb">
-      <div class="trevt">${esc(e.titulo||'')} ${revChip(e)} ${cl?`<span class="trcl ${cl[2]}">${cl[1]}${e.classificacao_motivo?' · '+esc(e.classificacao_motivo):''}</span>`:''}</div>
+      <div class="trevt">${esc(e.titulo||'')} ${revChip(e)} ${cl?`<span class="trcl ${cl[2]}">${cl[1]}${ehConfirmacao(e)?(' da R'+(String(e.classificacao_motivo).match(/R(\d+)/)||['',''])[1]):(e.classificacao_motivo?' · '+esc(e.classificacao_motivo):'')}</span>`:''}</div>
       <div class="trm">${brDH(e.ocorrido_em)}${e.canal?' · '+esc(e.canal):''}${e.criado_por_nome?' · '+esc(e.criado_por_nome):''}${e.classificado_por_nome?' · classificado por '+esc(e.classificado_por_nome):''}</div>
       ${e.texto&&e.tipo!=='envio'?`<div class="trtx">${esc(String(e.texto).slice(0,300))}${String(e.texto).length>300?'…':''}</div>`:''}
       ${e.anulado_em?`<div class="trtx red">Anulado ${brDH(e.anulado_em)}${e.anulado_por_nome?' por '+esc(e.anulado_por_nome):''}: ${esc(e.anulado_motivo||'')}</div>`:''}
@@ -523,13 +558,17 @@ function renderTrat(){
 }
 function irTrat(){ const el=$('envTrat'); if(el) el.scrollIntoView({behavior:'smooth',block:'start'}); }
 
+const ehConfirmacao=e=>e&&e.classificacao==='outro'&&/^confirma/i.test(e.classificacao_motivo||'');
+function revAprovada(){ const a=vivas().find(x=>x.status==='aprovada'); return a?a.revisao:((ultimaEnviada()||{}).revisao||null); }
 async function classificar(id,cls,motivo){
   const e=ENV.eventos.find(x=>x.id===id); if(!e) return;
   if(cls==='recusa' && !motivo){ motivoRecusaUI(id); return; }
   const ult=ultimaEnviada();
+  // proposta já aprovada: outra resposta dizendo "aprovado" = CONFIRMAÇÃO (sem 2º comprovante, sem pergunta)
+  if(cls==='confirmacao' || (cls==='aprovacao' && aprovada())){ cls='outro'; motivo=`confirmação da aprovação da R${revAprovada()||e.revisao||''}`; }
+  const aprovouAgora=(cls==='aprovacao' && !aprovada());
   if(cls==='aprovacao'){
-    if(aprovada()){ if(!confirm('A proposta já está aprovada. Registrar esta resposta também como aprovação (sem novo comprovante)?')) return; }
-    else {
+    {
       if(e.revisao && ult && e.revisao<ult.revisao && !confirm(`Atenção: esta resposta é sobre a R${e.revisao}, mas a R${ult.revisao} foi enviada depois.\n\nAprovar a R${e.revisao} faz a execução herdar os preços DELA.\n\nConfirmar a aprovação da R${e.revisao}?`)) return;
       const vt=vAtual(); if(vt && !['enviada','substituida','aprovada'].includes(vt.status) && revTrab()>(ult?ult.revisao:0) && !confirm(`Existe uma R${revTrab()} em edição que ainda não foi enviada. A aprovação vale para a R${e.revisao||(ult&&ult.revisao)} enviada, não para a edição. Continuar?`)) return;
     }
@@ -547,8 +586,17 @@ async function classificar(id,cls,motivo){
       if(vid) await SB.from('orcamento_versoes').update({status:'aprovada'}).eq('id',vid).in('status',['enviada','substituida']);
       onComprovantesChange();   // status "aprovado" + grava na nuvem + banner (mesmo caminho do painel de comprovantes)
       await carregarVersoes(); window.renderBanner(); _setMode('view');
-      toast(`${ms('verified','font-size:16px')} <b>Aprovada a R${e.revisao||(ult&&ult.revisao)}.</b> O comprovante foi criado com esta resposta.`);
+      // outras respostas ainda abertas da mesma revisão: as que também dizem "aprovado" viram CONFIRMAÇÃO sozinhas;
+      // as que parecem ajuste/recusa/dúvida ficam abertas e destacadas (podem contradizer a aprovação)
+      const rev=e.revisao||(ult&&ult.revisao);
+      const outras=pendentes().filter(x=>x.id!==id && (!x.revisao||x.revisao===rev));
+      const confirma=outras.filter(x=>x.sugestao==='aprovacao'), conflito=outras.filter(x=>x.sugestao!=='aprovacao');
+      for(const x of confirma){ try{ await SB.from('orcamento_eventos').update({classificacao:'outro',classificacao_motivo:`confirmação da aprovação da R${rev}`,classificado_por_nome:`automático (aprovação da R${rev})`}).eq('id',x.id).is('classificacao',null); }catch(_){} }
+      toast(`${ms('verified','font-size:16px')} <b>Aprovada a R${rev}.</b> O comprovante foi criado com esta resposta.`
+        +(confirma.length?` ${confirma.length===1?'A outra resposta que também dizia "aprovado" foi registrada':confirma.length+' outras respostas que também diziam "aprovado" foram registradas'} como <b>confirmação</b>.`:'')
+        +(conflito.length?` <b>Atenção:</b> ${conflito.length} resposta${conflito.length>1?'s':''} ainda aberta${conflito.length>1?'s':''} pode${conflito.length>1?'m':''} contradizer a aprovação: confira.`:''));
     }
+    if(cls==='outro' && /^confirma/i.test(motivo||'')) toast('Registrada como <b>confirmação</b> da aprovação.');
     if(cls==='recusa'){ S.status='recusado'; try{ recalc(); }catch(_){} pushOrc(); try{ writeback(S._total||0); }catch(_){} window.renderBanner(); toast('Registrado como <b>recusa</b> ('+esc(motivo)+').'); }
     if(cls==='ajuste') toast('Registrado como <b>pedido de ajuste</b>. Crie a próxima revisão quando for alterar.');
     fechar(); await carregarEventos(); try{ decorar(); }catch(_){ renderTrat(); }
