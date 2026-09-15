@@ -1,147 +1,175 @@
 <!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>eX · Blocos do Lote — funções por quadro</title>
+<title>eX · Blocos do Lote — canvas de quadros</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap" rel="stylesheet">
 <style>
   :root{--bg:#faf9f5;--surf:#fff;--surf2:#f3f1ea;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.2);--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#8a8880;--pri:#533ab7;--green:#3b6d11;
-    --base:#b06a13;--base-bg:#f8efdf;--unid:#0f6d6b;--unid-bg:#e0f2f0;--glob:#533ab7;--glob-bg:#eeeafe;}
-  @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#151221;--surf:#1d1930;--surf2:#241f36;--line:rgba(255,255,255,.14);--line2:rgba(255,255,255,.26);--tx:#ece9f7;--tx2:#bdb6d8;--tx3:#8f88b0;--pri:#a48bff;--green:#7cc34a;--base:#e0a45a;--base-bg:#3a2c14;--unid:#54c9b3;--unid-bg:#0f2f2c;--glob:#a48bff;--glob-bg:#241d3d}}
+    --base:#b06a13;--base-bg:#f8efdf;--unid:#0f6d6b;--unid-bg:#e0f2f0;--glob:#533ab7;--glob-bg:#eeeafe;--neu:#6b6a66;--neu-bg:#eeece6;}
+  @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#151221;--surf:#1d1930;--surf2:#241f36;--line:rgba(255,255,255,.14);--line2:rgba(255,255,255,.26);--tx:#ece9f7;--tx2:#bdb6d8;--tx3:#8f88b0;--pri:#a48bff;--green:#7cc34a;--base:#e0a45a;--base-bg:#3a2c14;--unid:#54c9b3;--unid-bg:#0f2f2c;--glob:#a48bff;--glob-bg:#241d3d;--neu:#a8a6b8;--neu-bg:#2a2740}}
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--tx);font-family:Inter,system-ui,sans-serif;line-height:1.5}
+  html,body{margin:0;height:100%}
+  body{background:var(--bg);color:var(--tx);font-family:Inter,system-ui,sans-serif;line-height:1.45;overflow:hidden}
   .material-symbols-rounded{font-family:'Material Symbols Rounded';line-height:1;vertical-align:middle;font-size:18px}
-  .top{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
-  .top h1{font-size:17px;margin:0;font-weight:800}
-  .top .sub{font-size:12px;color:var(--tx3)}
+  .top{position:fixed;top:0;left:0;right:0;z-index:20;background:var(--bg);border-bottom:1px solid var(--line);padding:11px 16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+  .top h1{font-size:16px;margin:0;font-weight:800}
+  .top .sub{font-size:11.5px;color:var(--tx3)}
   .top .sp{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
   .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:9px;padding:7px 12px;font:600 12.5px inherit;cursor:pointer}
   .btn:hover{border-color:var(--pri);color:var(--pri)}
   .btn.pri{background:var(--pri);color:#fff;border-color:var(--pri)}
-  .wrap{max-width:1180px;margin:0 auto;padding:18px}
-  .cols{display:grid;gap:14px}@media(min-width:820px){.cols{grid-template-columns:1fr 1fr 1fr;align-items:start}}
-  .colh{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-radius:9px;display:flex;align-items:center;gap:7px;margin-bottom:2px}
-  .colh.base{background:var(--base-bg);color:var(--base)} .colh.unid{background:var(--unid-bg);color:var(--unid)} .colh.glob{background:var(--glob-bg);color:var(--glob)}
-  .card{background:var(--surf);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
-  .card.base{border-top:3px solid var(--base)} .card.unid{border-top:3px solid var(--unid)} .card.glob{border-top:3px solid var(--glob)}
-  .ch{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:grab;background:var(--surf2)}
-  .ch .grip{color:var(--tx3);cursor:grab}
-  .ch .nm{font-weight:700;font-size:13px;flex:1;min-width:0}
-  .ch .ct{font-size:10.5px;color:var(--tx3);white-space:nowrap}
-  .fns{padding:4px 0}
-  .fn{display:flex;align-items:center;gap:9px;padding:7px 12px;border-top:1px solid var(--line)}
+  .board{position:absolute;top:54px;left:0;right:0;bottom:0;overflow:auto}
+  .canvas{position:relative;width:2400px;height:1800px}
+  .card{position:absolute;width:270px;background:var(--surf);border:1px solid var(--line);border-radius:12px;box-shadow:0 4px 16px -8px rgba(20,10,50,.25);overflow:hidden}
+  .card.base{border-top:3px solid var(--base)} .card.unid{border-top:3px solid var(--unid)} .card.glob{border-top:3px solid var(--glob)} .card.neu{border-top:3px solid var(--neu)}
+  .ch{display:flex;align-items:center;gap:7px;padding:9px 10px;background:var(--surf2);cursor:grab;user-select:none}
+  .ch.grab{cursor:grabbing}
+  .ch .dot{width:14px;height:14px;border-radius:4px;flex:none;cursor:pointer}
+  .card.base .dot{background:var(--base)} .card.unid .dot{background:var(--unid)} .card.glob .dot{background:var(--glob)} .card.neu .dot{background:var(--neu)}
+  .ch .nm{font-weight:700;font-size:13px;flex:1;min-width:0;outline:none}
+  .ch .ct{font-size:10px;color:var(--tx3);white-space:nowrap}
+  .ch .xc{border:0;background:none;color:var(--tx3);cursor:pointer;font-size:17px;line-height:1;padding:0 2px}
+  .ch .xc:hover{color:#a32d2d}
+  .fns{padding:2px 0}
+  .fn{display:flex;align-items:center;gap:8px;padding:6px 10px;border-top:1px solid var(--line)}
   .fn:first-child{border-top:0}
-  .fn .ic{width:26px;height:26px;border-radius:7px;background:var(--surf2);display:grid;place-items:center;color:var(--tx2);flex:none}
-  .fn .lb{flex:1;font-size:12.5px;min-width:0}
-  .fn.off .lb{color:var(--tx3);text-decoration:line-through}
-  .fn.off .ic{opacity:.4}
-  .fn .rm{border:0;background:none;color:var(--tx3);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;border-radius:6px}
-  .fn .rm:hover{color:#a32d2d;background:color-mix(in srgb,#a32d2d 12%,transparent)}
-  /* switch */
-  .sw{width:38px;height:22px;border-radius:12px;background:var(--line2);position:relative;cursor:pointer;flex:none;transition:.15s}
-  .sw i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:.15s}
-  .sw.on{background:var(--green)} .sw.on i{left:18px}
-  .add{display:flex;align-items:center;gap:7px;padding:8px 12px;border-top:1px dashed var(--line2);color:var(--pri);font-size:12px;font-weight:600;cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;width:100%}
-  .add:hover{background:var(--surf2)}
-  .hint{background:var(--surf2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;font-size:12.5px;color:var(--tx2);margin-bottom:16px;display:flex;gap:9px;align-items:flex-start}
-  .hint .material-symbols-rounded{color:var(--pri);flex:none}
-  .drop{outline:2px dashed var(--pri);outline-offset:-4px}
-  #exp{position:fixed;inset:0;background:rgba(20,10,40,.5);display:none;align-items:center;justify-content:center;z-index:30;padding:20px}
+  .fn .ic{width:24px;height:24px;border-radius:6px;background:var(--surf2);display:grid;place-items:center;color:var(--tx2);flex:none;cursor:pointer}
+  .fn .lb{flex:1;font-size:12px;min-width:0;outline:none}
+  .fn.off .lb{color:var(--tx3);text-decoration:line-through} .fn.off .ic{opacity:.4}
+  .fn .rm{border:0;background:none;color:var(--tx3);cursor:pointer;font-size:15px;line-height:1;padding:2px}
+  .fn .rm:hover{color:#a32d2d}
+  .sw{width:36px;height:21px;border-radius:11px;background:var(--line2);position:relative;cursor:pointer;flex:none;transition:.15s}
+  .sw i{position:absolute;top:2px;left:2px;width:17px;height:17px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:.15s}
+  .sw.on{background:var(--green)} .sw.on i{left:17px}
+  .addfn{display:flex;align-items:center;gap:6px;padding:7px 10px;border-top:1px dashed var(--line2);color:var(--pri);font-size:11.5px;font-weight:600;cursor:pointer;background:none;width:100%;border-left:0;border-right:0;border-bottom:0}
+  .addfn:hover{background:var(--surf2)}
+  .cpop{position:absolute;z-index:30;background:var(--surf);border:1px solid var(--line2);border-radius:9px;box-shadow:0 8px 24px rgba(20,10,50,.2);padding:5px;display:none;gap:4px}
+  .cpop.on{display:flex}
+  .cpop b{width:26px;height:26px;border-radius:6px;cursor:pointer;border:2px solid transparent}
+  .hint{position:fixed;bottom:12px;left:16px;right:16px;z-index:15;background:var(--surf2);border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-size:11.5px;color:var(--tx2);display:flex;gap:8px;align-items:center;max-width:760px;pointer-events:none;opacity:.96}
+  .hint .material-symbols-rounded{color:var(--pri);flex:none;font-size:16px}
+  #exp{position:fixed;inset:0;background:rgba(20,10,40,.5);display:none;align-items:center;justify-content:center;z-index:40;padding:20px}
   #exp.on{display:flex}
   #exp .box{background:var(--surf);border-radius:14px;max-width:640px;width:100%;padding:16px;max-height:82vh;display:flex;flex-direction:column}
   #exp textarea{width:100%;flex:1;min-height:320px;border:1px solid var(--line2);border-radius:9px;padding:11px;font:12px ui-monospace,monospace;background:var(--bg);color:var(--tx);resize:none}
   #exp .r{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
 </style></head><body>
 <div class="top">
-  <h1>Blocos do Lote — funções por quadro</h1>
-  <span class="sub">ligue/desligue cada função · arraste os quadros pra ordenar</span>
+  <h1>Blocos do Lote</h1>
+  <span class="sub">mova os quadros · ligue/desligue funções · adicione quadro/função</span>
   <div class="sp">
+    <button class="btn pri" id="addcard"><span class="material-symbols-rounded">add_box</span>Adicionar quadro</button>
     <button class="btn" id="reset"><span class="material-symbols-rounded">restart_alt</span>Restaurar</button>
-    <button class="btn pri" id="export"><span class="material-symbols-rounded">ios_share</span>Exportar</button>
+    <button class="btn" id="export"><span class="material-symbols-rounded">ios_share</span>Exportar</button>
   </div>
 </div>
-<div class="wrap">
-  <div class="hint"><span class="material-symbols-rounded">tune</span><span>Cada <b>quadro</b> é uma parte do lote. As <b>funções</b> ficam dentro dele com ícone e legenda — use o <b>switch</b> pra <b>tirar/pôr</b>, o <b>×</b> pra remover, e <b>“＋ adicionar função”</b> pra criar uma. Arraste um quadro pelo topo pra <b>reordenar</b>. Quando estiver do seu jeito, <b>Exportar</b> e me manda.</span></div>
-  <div class="cols" id="cols"></div>
-</div>
+<div class="board" id="board"><div class="canvas" id="canvas"></div></div>
+<div class="cpop" id="cpop"></div>
+<div class="hint"><span class="material-symbols-rounded">tune</span><span>Arraste o <b>topo</b> do quadro pra mover · <b>switch</b> tira/põe a função · <b>×</b> remove · <b>＋ adicionar função</b> · clique no <b>quadradinho de cor</b> pra trocar a leitura · nomes são editáveis (clique).</span></div>
 <div id="exp"><div class="box"><textarea id="exptx" readonly></textarea><div class="r"><button class="btn" id="expcopy"><span class="material-symbols-rounded">content_copy</span>Copiar</button><button class="btn" id="expclose">Fechar</button></div></div></div>
 <script>
 (function(){
-  var KEY='ex_lote_config_v1';
-  var COLS=[{k:'base',nm:'◆ Base — modelo por loja'},{k:'unid',nm:'◆ Por unidade — cada loja'},{k:'glob',nm:'◆ Global — o lote completo'}];
-  var SEED=[
-    {col:'base',id:'hBase',nm:'Base (seção)',fns:[{ic:'toggle_on',l:'chave “na proposta”'},{ic:'swap_horiz',l:'média × base do contratante'},{ic:'bookmark_add',l:'Salvar como modelo'},{ic:'download',l:'Aplicar na base'}]},
-    {col:'base',id:'bServ',nm:'Serviços base',fns:[{ic:'precision_manufacturing',l:'⚙ composição (equipe × tempo)'},{ic:'published_with_changes',l:'usar base / alterar (custo)'},{ic:'percent',l:'margem (reset à base)'},{ic:'notes',l:'detalhe do serviço'},{ic:'add',l:'Adicionar serviço'}]},
-    {col:'base',id:'bMat',nm:'Material base',fns:[{ic:'published_with_changes',l:'usar base / alterar (valor)'},{ic:'tag',l:'custo un · qtd · und'},{ic:'percent',l:'margem'},{ic:'content_copy',l:'duplicar · trocar · excluir'},{ic:'download',l:'Trazer média das lojas'},{ic:'sync',l:'Replicar → lojas'},{ic:'add',l:'Adicionar material'}]},
-    {col:'base',id:'bDesp',nm:'Despesas / Locações base',fns:[{ic:'bolt',l:'gatilho (fixo/pessoa-dia/dia/pessoa)'},{ic:'restaurant',l:'diárias (alimentação + hospedagem)'},{ic:'percent',l:'margem'},{ic:'add',l:'Adicionar despesa / locação'}]},
-    {col:'unid',id:'hUnid',nm:'Por unidade (seção)',fns:[{ic:'visibility',l:'Ver: Escopo somado | Por loja'},{ic:'splitscreen',l:'Modo: Estimativa | Detalhado'},{ic:'add_business',l:'buscar + adicionar loja'},{ic:'sync',l:'Propagar base nas “iguais”'}]},
-    {col:'unid',id:'uLista',nm:'Lista de lojas (detalhada)',fns:[{ic:'open_in_full',l:'Abrir (proposta da loja)'},{ic:'restart_alt',l:'Resetar (voltar à base)'},{ic:'delete',l:'Excluir'},{ic:'label',l:'status: igual à base | editada'},{ic:'payments',l:'prazo · custo · lucro · valor'}]},
-    {col:'unid',id:'uAdic',nm:'Adicionais por loja',fns:[{ic:'add_circle',l:'marcar adicional (+ motivo)'},{ic:'edit',l:'editar / tirar'},{ic:'sell',l:'selo “+N adicionais”'}]},
-    {col:'unid',id:'uCL',nm:'Custo · lucro por loja',fns:[{ic:'visibility',l:'chave “Mostrar na proposta”'}]},
-    {col:'unid',id:'uAbrir',nm:'Abrir a proposta da loja',fns:[{ic:'open_in_full',l:'abrir → proposta da loja'}]},
-    {col:'glob',id:'hGlob',nm:'Global (seção)',fns:[{ic:'toggle_on',l:'chave “na proposta”'},{ic:'visibility',l:'Ver como o cliente'},{ic:'call_split',l:'Desmembrar lote'}]},
-    {col:'glob',id:'gServ',nm:'Serviços global (Σ 16)',fns:[{ic:'toggle_on',l:'chave “na proposta”'}]},
-    {col:'glob',id:'gMat',nm:'Material global (Σ 16)',fns:[{ic:'edit',l:'Editar a custo'},{ic:'hub',l:'Adicionar ao lote'},{ic:'toggle_on',l:'chave “na proposta”'},{ic:'view_list',l:'modo: Qtd | Valor | Lista | Só total'}]},
-    {col:'glob',id:'gCusto',nm:'Custos globais',fns:[{ic:'add',l:'adicionar estrutura / frota'},{ic:'route',l:'rota (km × R$/km)'},{ic:'visibility',l:'Mostrar a origem no cliente'}]},
-    {col:'glob',id:'gPrazo',nm:'Prazo do lote (soma)',fns:[{ic:'schedule',l:'campo Prazo do lote (dias) — vazio = soma'}]},
-    {col:'glob',id:'gTot',nm:'Total do contrato',fns:[{ic:'visibility',l:'Ver como o cliente'},{ic:'payments',l:'chave custo/lucro na proposta'},{ic:'call_split',l:'Desmembrar lote'}]}
+  var KEY='ex_lote_canvas_v1';
+  var CNAME={base:'Base (modelo)',unid:'Por unidade',glob:'Global',neu:'Neutro'};
+  var PARTS=[
+    {col:'base',id:'hBase',nm:'◆ BASE — modelo por loja',fns:[['toggle_on','chave “na proposta”'],['swap_horiz','média × base do contratante'],['bookmark_add','Salvar como modelo'],['download','Aplicar na base']]},
+    {col:'base',id:'bServ',nm:'Serviços base',fns:[['precision_manufacturing','⚙ composição (equipe × tempo)'],['published_with_changes','usar base / alterar (custo)'],['percent','margem (reset à base)'],['notes','detalhe do serviço'],['add','Adicionar serviço']]},
+    {col:'base',id:'bMat',nm:'Material base',fns:[['published_with_changes','usar base / alterar (valor)'],['tag','custo un · qtd · und'],['percent','margem'],['content_copy','duplicar · trocar · excluir'],['download','Trazer média das lojas'],['sync','Replicar → lojas'],['add','Adicionar material']]},
+    {col:'base',id:'bDesp',nm:'Despesas / Locações base',fns:[['bolt','gatilho (fixo/pessoa-dia/dia/pessoa)'],['restaurant','diárias (alimentação + hospedagem)'],['percent','margem'],['add','Adicionar despesa / locação']]},
+    {col:'unid',id:'hUnid',nm:'◆ POR UNIDADE — cada loja',fns:[['visibility','Ver: Escopo somado | Por loja'],['splitscreen','Modo: Estimativa | Detalhado'],['add_business','buscar + adicionar loja'],['sync','Propagar base nas “iguais”']]},
+    {col:'unid',id:'uLista',nm:'Lista de lojas (detalhada)',fns:[['open_in_full','Abrir (proposta da loja)'],['restart_alt','Resetar (voltar à base)'],['delete','Excluir'],['label','status: igual à base | editada'],['payments','prazo · custo · lucro · valor']]},
+    {col:'unid',id:'uAdic',nm:'Adicionais por loja',fns:[['add_circle','marcar adicional (+ motivo)'],['edit','editar / tirar'],['sell','selo “+N adicionais”']]},
+    {col:'unid',id:'uCL',nm:'Custo · lucro por loja',fns:[['visibility','chave “Mostrar na proposta”']]},
+    {col:'unid',id:'uAbrir',nm:'Abrir a proposta da loja',fns:[['open_in_full','abrir → proposta da loja']]},
+    {col:'glob',id:'hGlob',nm:'◆ GLOBAL — o lote completo',fns:[['toggle_on','chave “na proposta”'],['visibility','Ver como o cliente'],['call_split','Desmembrar lote']]},
+    {col:'glob',id:'gServ',nm:'Serviços global (Σ 16)',fns:[['toggle_on','chave “na proposta”']]},
+    {col:'glob',id:'gMat',nm:'Material global (Σ 16)',fns:[['edit','Editar a custo'],['hub','Adicionar ao lote'],['toggle_on','chave “na proposta”'],['view_list','modo: Qtd | Valor | Lista | Só total']]},
+    {col:'glob',id:'gCusto',nm:'Custos globais',fns:[['add','adicionar estrutura / frota'],['route','rota (km × R$/km)'],['visibility','Mostrar a origem no cliente']]},
+    {col:'glob',id:'gPrazo',nm:'Prazo do lote (soma)',fns:[['schedule','campo Prazo do lote (dias) — vazio = soma']]},
+    {col:'glob',id:'gTot',nm:'Total do contrato',fns:[['visibility','Ver como o cliente'],['payments','chave custo/lucro na proposta'],['call_split','Desmembrar lote']]}
   ];
-  function seed(){return JSON.parse(JSON.stringify(SEED)).map(function(p){p.fns.forEach(function(f){f.on=true;});return p;});}
+  function seed(){
+    var colX={base:40,unid:340,glob:640},colY={base:20,unid:20,glob:20},out=[];
+    PARTS.forEach(function(p){
+      var c={id:p.id,col:p.col,nm:p.nm,x:colX[p.col],y:colY[p.col],fns:p.fns.map(function(f){return{ic:f[0],l:f[1],on:true};})};
+      out.push(c); colY[p.col]+= 66 + c.fns.length*34 + 20;
+    });
+    return out;
+  }
   var data;
   function load(){try{var r=localStorage.getItem(KEY);if(r){data=JSON.parse(r);return;}}catch(e){}data=seed();}
   function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
-  var colsEl=document.getElementById('cols');
+  var canvas=document.getElementById('canvas'),board=document.getElementById('board'),cpop=document.getElementById('cpop');
+  function esc(s){return String(s==null?'':s);}
   function render(){
-    colsEl.innerHTML='';
-    COLS.forEach(function(c){
-      var col=document.createElement('div');col.dataset.col=c.k;
-      var h=document.createElement('div');h.className='colh '+c.k;h.innerHTML='<span class="material-symbols-rounded">'+(c.k==='base'?'tune':c.k==='unid'?'storefront':'public')+'</span>'+c.nm;col.appendChild(h);
-      data.filter(function(p){return p.col===c.k;}).forEach(function(p){col.appendChild(cardEl(p));});
-      colsEl.appendChild(col);
-    });
+    canvas.innerHTML='';
+    data.forEach(function(p){canvas.appendChild(cardEl(p));});
   }
   function cardEl(p){
-    var card=document.createElement('div');card.className='card '+p.col;card.draggable=true;card.dataset.id=p.id;
+    var card=document.createElement('div');card.className='card '+(p.col||'neu');card.style.left=(p.x||20)+'px';card.style.top=(p.y||20)+'px';
     var on=p.fns.filter(function(f){return f.on;}).length;
     var ch=document.createElement('div');ch.className='ch';
-    ch.innerHTML='<span class="material-symbols-rounded grip">drag_indicator</span><span class="nm">'+esc(p.nm)+'</span><span class="ct">'+on+'/'+p.fns.length+' ligadas</span>';
+    var dot=document.createElement('span');dot.className='dot';dot.title='trocar leitura/cor';
+    dot.addEventListener('pointerdown',function(e){e.stopPropagation();});
+    dot.onclick=function(e){e.stopPropagation();openColor(p,card,dot);};
+    var nm=document.createElement('div');nm.className='nm';nm.contentEditable=true;nm.spellcheck=false;nm.textContent=p.nm;
+    nm.addEventListener('pointerdown',function(e){e.stopPropagation();});
+    nm.addEventListener('input',function(){p.nm=nm.textContent;save();});
+    var ct=document.createElement('span');ct.className='ct';ct.textContent=on+'/'+p.fns.length;
+    var xc=document.createElement('button');xc.className='xc';xc.innerHTML='&times;';xc.title='apagar quadro';
+    xc.addEventListener('pointerdown',function(e){e.stopPropagation();});
+    xc.onclick=function(e){e.stopPropagation();if(confirm('Apagar o quadro “'+p.nm+'”?')){data=data.filter(function(x){return x!==p;});save();render();}};
+    ch.appendChild(dot);ch.appendChild(nm);ch.appendChild(ct);ch.appendChild(xc);
+    dragHead(ch,card,p);
     card.appendChild(ch);
     var fns=document.createElement('div');fns.className='fns';
     p.fns.forEach(function(f,i){
       var row=document.createElement('div');row.className='fn'+(f.on?'':' off');
-      var ic=document.createElement('span');ic.className='ic';ic.innerHTML='<span class="material-symbols-rounded">'+esc(f.ic||'circle')+'</span>';
-      var lb=document.createElement('span');lb.className='lb';lb.textContent=f.l;
+      var ic=document.createElement('span');ic.className='ic';ic.title='trocar ícone';ic.innerHTML='<span class="material-symbols-rounded">'+esc(f.ic||'circle')+'</span>';
+      ic.onclick=function(){var v=prompt('Nome do ícone (Material Symbols, ex.: bolt, payments, sync):',f.ic||'');if(v!==null){f.ic=v.trim()||'circle';save();render();}};
+      var lb=document.createElement('span');lb.className='lb';lb.contentEditable=true;lb.spellcheck=false;lb.textContent=f.l;
+      lb.addEventListener('input',function(){f.l=lb.textContent;save();});
       var sw=document.createElement('span');sw.className='sw'+(f.on?' on':'');sw.title='tirar/pôr';sw.innerHTML='<i></i>';
       sw.onclick=function(){f.on=!f.on;save();render();};
       var rm=document.createElement('button');rm.className='rm';rm.innerHTML='&times;';rm.title='remover';
-      rm.onclick=function(){if(confirm('Remover “'+f.l+'”?')){p.fns.splice(i,1);save();render();}};
+      rm.onclick=function(){p.fns.splice(i,1);save();render();};
       row.appendChild(ic);row.appendChild(lb);row.appendChild(sw);row.appendChild(rm);fns.appendChild(row);
     });
     card.appendChild(fns);
-    var add=document.createElement('button');add.className='add';add.innerHTML='<span class="material-symbols-rounded">add</span>adicionar função';
-    add.onclick=function(){var v=prompt('Nome da função (o que ela faz):','');if(v&&v.trim()){p.fns.push({ic:'star',l:v.trim(),on:true});save();render();}};
-    card.appendChild(add);
-    dragCard(card,p);
+    var addb=document.createElement('button');addb.className='addfn';addb.innerHTML='<span class="material-symbols-rounded">add</span>adicionar função';
+    addb.onclick=function(){var v=prompt('Nome da função:','');if(v&&v.trim()){p.fns.push({ic:'star',l:v.trim(),on:true});save();render();}};
+    card.appendChild(addb);
     return card;
   }
-  var dragId=null;
-  function dragCard(card,p){
-    card.addEventListener('dragstart',function(e){dragId=p.id;e.dataTransfer.effectAllowed='move';});
-    card.addEventListener('dragover',function(e){e.preventDefault();card.classList.add('drop');});
-    card.addEventListener('dragleave',function(){card.classList.remove('drop');});
-    card.addEventListener('drop',function(e){e.preventDefault();card.classList.remove('drop');
-      if(!dragId||dragId===p.id)return;
-      var from=data.findIndex(function(x){return x.id===dragId;});var to=data.findIndex(function(x){return x.id===p.id;});
-      if(from<0||to<0)return;var moved=data.splice(from,1)[0];moved.col=p.col;var to2=data.findIndex(function(x){return x.id===p.id;});data.splice(to2,0,moved);save();render();
+  function openColor(p,card,dot){
+    cpop.innerHTML='';['base','unid','glob','neu'].forEach(function(k){
+      var b=document.createElement('b');b.title=CNAME[k];b.style.background='var(--'+k+')';
+      b.onclick=function(){p.col=k;save();render();cpop.classList.remove('on');};
+      cpop.appendChild(b);
+    });
+    var r=dot.getBoundingClientRect();cpop.style.left=(r.left)+'px';cpop.style.top=(r.bottom+5)+'px';cpop.classList.add('on');
+  }
+  document.addEventListener('pointerdown',function(e){if(!cpop.contains(e.target))cpop.classList.remove('on');},true);
+  function dragHead(ch,card,p){
+    ch.addEventListener('pointerdown',function(e){
+      if(e.target.classList&&(e.target.classList.contains('nm')||e.target.classList.contains('dot')||e.target.classList.contains('xc')))return;
+      e.preventDefault();ch.classList.add('grab');
+      var r=board.getBoundingClientRect();var ox=e.clientX-r.left-(p.x||20)+board.scrollLeft;var oy=e.clientY-r.top-(p.y||20)+board.scrollTop;
+      ch.setPointerCapture(e.pointerId);
+      function mv(ev){var nx=ev.clientX-r.left-ox+board.scrollLeft;var ny=ev.clientY-r.top-oy+board.scrollTop;nx=Math.max(0,Math.min(nx,2400-100));ny=Math.max(0,Math.min(ny,1800-40));p.x=nx;p.y=ny;card.style.left=nx+'px';card.style.top=ny+'px';}
+      function up(){ch.classList.remove('grab');ch.removeEventListener('pointermove',mv);ch.removeEventListener('pointerup',up);save();}
+      ch.addEventListener('pointermove',mv);ch.addEventListener('pointerup',up);
     });
   }
-  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
-  document.getElementById('reset').onclick=function(){if(confirm('Restaurar todos os quadros e funções ao padrão?')){data=seed();save();render();}};
+  document.getElementById('addcard').onclick=function(){
+    var sx=board.scrollLeft+60,sy=board.scrollTop+40;
+    var c={id:'c'+Date.now(),col:'neu',nm:'Novo quadro',x:sx,y:sy,fns:[{ic:'star',l:'nova função',on:true}]};
+    data.push(c);save();render();
+  };
+  document.getElementById('reset').onclick=function(){if(confirm('Restaurar todos os quadros ao padrão? (perde suas mudanças)')){data=seed();save();render();}};
   var expEl=document.getElementById('exp'),exptx=document.getElementById('exptx');
   document.getElementById('export').onclick=function(){
-    var s='BLOCOS DO LOTE — funções por quadro (configurado por André)\n\n';
-    COLS.forEach(function(c){s+='== '+c.nm+' ==\n';
-      data.filter(function(p){return p.col===c.k;}).forEach(function(p){s+='\n['+p.nm+']\n';
-        p.fns.forEach(function(f){s+='  '+(f.on?'[x] ':'[ ] ')+f.l+'\n';});});
-      s+='\n';});
+    var s='BLOCOS DO LOTE — quadros e funções (configurado por André)\n\n';
+    data.forEach(function(p){s+='['+p.nm+']  ('+CNAME[p.col||'neu']+')\n';p.fns.forEach(function(f){s+='  '+(f.on?'[x] ':'[ ] ')+f.l+'\n';});s+='\n';});
     s+='--- JSON ---\n'+JSON.stringify(data);
     exptx.value=s;expEl.classList.add('on');exptx.focus();exptx.select();
   };
