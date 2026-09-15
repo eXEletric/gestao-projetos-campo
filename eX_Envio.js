@@ -218,7 +218,7 @@ function renderEnvio(L,n){
         <label class="envlb">Cópia (CC)</label><input id="envCc" class="envin ${ccOk?'':'bad'}" value="${esc(f.cc)}" oninput="EXENV.setF('cc',this.value)" placeholder="responsável e outros, separados por vírgula">
         <label class="envlb">Assunto <span class="envhint">o código entre colchetes amarra as respostas a esta proposta</span></label><input class="envin" value="${esc(f.assunto)}" oninput="EXENV.setF('assunto',this.value)">
         <label class="envlb">Mensagem</label><textarea class="envin ta" oninput="EXENV.setF('corpo',this.value)">${esc(f.corpo)}</textarea>
-        <div class="envatt">${ms('picture_as_pdf')}Anexo: <b>${esc(codigoFull())}_R${n}.pdf</b> <span class="envhint">gerado da versão congelada</span></div>
+        <div class="envatt">${ms('picture_as_pdf')}Anexo: <b>${esc(codigoFull())}_R${n}.pdf</b> <span class="envhint">gerado da versão congelada</span><button class="envbtn sm" id="envVerPdf" style="margin:0 0 0 auto" onclick="EXENV.verPDF()">${ms('picture_as_pdf')}Ver o PDF antes</button></div>
         ${ENV.sistema?`<div class="envinfo">${ms('verified_user')}Sai de <b>${REMETENTE}</b> · cópia oculta para ${REMETENTE} · respostas chegam no Outlook e ficam registradas aqui.</div>`:''}
       </div>
     </div>
@@ -252,27 +252,79 @@ function cssDeImpressao(){ let out='';
   for(const ss of document.styleSheets){ let rs; try{ rs=ss.cssRules; }catch(e){ continue; }
     for(const r of rs){ if(r.type===CSSRule.MEDIA_RULE && /\bprint\b/.test(r.media.mediaText) && !/\bscreen\b/.test(r.media.mediaText)) for(const x of r.cssRules) out+=x.cssText+'\n'; } }
   return out; }
-// PDF do LOTE = o "Documento do lote" (verComoClienteLote), com as chaves de seção (S.docOpt) e as regras de impressão dele
-async function gerarPDFLote(nome){
+/* ===== gerador de PDF "papel" (15/09, corrige PDF desconfigurado) =====
+   1) aplica as regras de impressão como tela; 2) CLONA o documento num palco fora da tela com a largura da folha;
+   3) "estatiza" o clone: campos viram texto (sem caixas, sem textos de exemplo, datas dd/mm/aaaa, quebra de linha),
+      SVG vira imagem, somem mensagens de editor; 4) marca blocos pequenos para não quebrar entre páginas;
+   5) gera o PDF do clone e tira a última página se ficou em branco. */
+const fmtDataBR=v=>/^\d{4}-\d{2}-\d{2}$/.test(v||'')?v.split('-').reverse().join('/'):(v||'');
+function estatizar(src,dst){
+  const S1=[...src.querySelectorAll('input,textarea,select')], D1=[...dst.querySelectorAll('input,textarea,select')];
+  S1.forEach((s,i)=>{ const d=D1[i]; if(!d||!d.parentNode) return; const cs=getComputedStyle(s);
+    if(cs.display==='none'||cs.visibility==='hidden'||s.type==='hidden'||s.type==='file'){ d.remove(); return; }
+    if(s.type==='checkbox'||s.type==='radio'){ const sp=document.createElement('span'); sp.textContent=s.checked?'☑':'☐'; d.replaceWith(sp); return; }
+    let t=s.tagName==='SELECT'?((s.options[s.selectedIndex]||{}).text||''):(s.value||'');
+    if(s.type==='date') t=fmtDataBR(t);
+    const el=document.createElement(s.tagName==='TEXTAREA'?'div':'span');
+    el.className=s.className; el.textContent=t;
+    el.style.cssText=`display:${s.tagName==='TEXTAREA'?'block':'inline-block'};white-space:pre-wrap;word-break:break-word;border:0;background:transparent;box-shadow:none;padding:0;min-height:0;height:auto;max-width:100%;vertical-align:baseline;`+
+      `font:${cs.font};color:${cs.color==='rgba(0, 0, 0, 0)'?'inherit':cs.color};text-align:${cs.textAlign};letter-spacing:${cs.letterSpacing};text-transform:${cs.textTransform}`;
+    if(s.tagName!=='TEXTAREA' && t.length<40 && s.style.width) el.style.minWidth='0';
+    d.replaceWith(el); });
+  // SVG (mapa etc.) → imagem do tamanho que aparece na tela
+  const S2=[...src.querySelectorAll('svg')], D2=[...dst.querySelectorAll('svg')];
+  S2.forEach((s,i)=>{ const d=D2[i]; if(!d||!d.parentNode) return; const r=s.getBoundingClientRect(); if(r.width<40||r.height<40) return;
+    try{ const c=s.cloneNode(true); c.setAttribute('xmlns','http://www.w3.org/2000/svg'); c.setAttribute('width',Math.round(r.width)); c.setAttribute('height',Math.round(r.height));
+      const img=document.createElement('img'); img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(c.outerHTML);
+      img.style.cssText=`display:block;width:${Math.round(r.width)}px;max-width:100%;height:auto`; d.replaceWith(img); }catch(_){} });
+  // mensagens de editor que não são do cliente
+  dst.querySelectorAll('td[colspan],.empty,.cmp-empty').forEach(e=>{ if(/Nenhum item|Clique em|Adicionar /i.test(e.textContent||'')){ const tr=e.closest('tr'); (tr||e).remove(); } });
+  dst.querySelectorAll('[contenteditable]').forEach(e=>e.removeAttribute('contenteditable'));
+}
+async function gerarPDFDe(src,nome,prep){
   await loadH2P();
+  const stage=document.createElement('div'); stage.id='envPdfStage';
+  stage.style.cssText=`position:absolute;left:-12000px;top:0;width:${PDF_W}px;background:#fff`;
+  document.body.appendChild(stage);
+  try{
+    const clone=src.cloneNode(true); estatizar(src,clone);
+    clone.style.width=PDF_W+'px'; clone.style.maxWidth='none'; clone.style.margin='0'; clone.style.boxShadow='none'; clone.style.borderRadius='0';
+    if(prep) prep(clone);
+    stage.appendChild(clone);
+    await new Promise(r=>setTimeout(r,350));
+    // largura real (nada pode passar da folha): mede o que transborda e alarga a folha no mesmo tanto
+    const L=clone.getBoundingClientRect().left; let w=Math.max(PDF_W,clone.scrollWidth);
+    clone.querySelectorAll('*').forEach(e=>{ const r=e.getBoundingClientRect(); if(r.width>0 && r.right-L>w) w=Math.ceil(r.right-L); });
+    w=Math.min(w+8,980); stage.style.width=w+'px'; clone.style.width=w+'px';
+    await new Promise(r=>setTimeout(r,120));
+    // não quebrar no meio: linhas de tabela e blocos pequenos (até 1/3 da folha)
+    const m=24, pageW=w+2*m, pageH=Math.round(pageW*297/210), limite=(pageH-2*m)/3;
+    clone.querySelectorAll('tr,thead,p,h1,h2,h3,h4,li,img,div,section').forEach(e=>{ const h=e.getBoundingClientRect().height; if(h>0 && h<=limite) e.classList.add('env-nobreak'); });
+    const wk=window.html2pdf().set({
+      margin:m, filename:nome, image:{type:'jpeg',quality:0.92},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0,windowWidth:w+40},
+      jsPDF:{unit:'px',format:[pageW,pageH],orientation:'portrait',hotfixes:['px_scaling']},
+      pagebreak:{mode:['css'],avoid:['.env-nobreak']}
+    }).from(clone);
+    const pdf=await wk.toPdf().get('pdf');
+    // última página em branco (sobra do espaçamento): tira
+    try{ const cv=wk.prop&&wk.prop.canvas, n=pdf.internal.getNumberOfPages(); if(cv&&n>1){ const precisa=Math.ceil(cv.height/((pageH-2*m)*2)-0.02); if(n>precisa) for(let i=n;i>Math.max(precisa,1);i--) pdf.deletePage(i); } }catch(_){}
+    return pdf.output('blob');
+  } finally { stage.remove(); }
+}
+// PDF do LOTE = o "Documento do lote" (verComoClienteLote), respeitando as chaves de seção (S.docOpt)
+async function gerarPDFLote(nome){
   if(typeof verComoClienteLote!=='function') throw new Error('documento do lote indisponível nesta página');
   const jaAberto=!!document.getElementById('vcOverlay');
   verComoClienteLote();
   const emu=document.createElement('style'); emu.id='envPrintEmuLote';
-  emu.textContent=`#vcBar,#vcWarn,#vcMenu,.vctog,.docoff,.noprint{display:none!important}
-    #vcSheet{box-shadow:none!important;border-radius:0!important;max-width:none!important;width:${PDF_W}px!important;margin:0!important}
-    #vcSheet.off-lojas-modelo .col-modelo,#vcSheet.off-lojas-dias .col-dias,#vcSheet.off-lojas-adic .col-adic{display:none!important}`;
+  emu.textContent=cssDeImpressao().replace(/body\s*>\s*\*:not\(#vcOverlay\)\s*\{[^}]*\}/g,'')+`\n#envPdfStage #vcBar,#envPdfStage #vcWarn,#envPdfStage #vcMenu,#envPdfStage .vctog,#envPdfStage .docoff,#envPdfStage .noprint{display:none!important}
+    #envPdfStage #vcSheet.off-lojas-modelo .col-modelo,#envPdfStage #vcSheet.off-lojas-dias .col-dias,#envPdfStage #vcSheet.off-lojas-adic .col-adic{display:none!important}`;
   document.head.appendChild(emu);
-  await new Promise(r=>setTimeout(r,500));   // mapa/SVG e fontes
+  await new Promise(r=>setTimeout(r,500));   // mapa e fontes
   try{
     const el=document.getElementById('vcSheet'); if(!el) throw new Error('não achei o documento do lote');
-    const m=22, pageW=PDF_W+2*m, pageH=Math.round(pageW*297/210);
-    return await window.html2pdf().set({
-      margin:m, filename:nome, image:{type:'jpeg',quality:0.92},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0},
-      jsPDF:{unit:'px',format:[pageW,pageH],orientation:'portrait',hotfixes:['px_scaling']},
-      pagebreak:{mode:['css','legacy'],avoid:['tr','svg','table thead']}
-    }).from(el).outputPdf('blob');
+    return await gerarPDFDe(el,nome,c=>{ c.querySelectorAll('.vctog,.docoff,#vcBar,#vcWarn,#vcMenu').forEach(x=>x.remove()); });
   } finally {
     emu.remove();
     if(!jaAberto && typeof closeVerCliente==='function'){ try{ closeVerCliente(); }catch(_){} }
@@ -280,36 +332,26 @@ async function gerarPDFLote(nome){
 }
 async function gerarPDF(nome){
   if(ehBaseLote()) return gerarPDFLote(nome);
-  await loadH2P();
   const wasView=document.body.classList.contains('viewing'), sy=window.scrollY;
   _setMode('view'); document.body.classList.add('env-pdf');
   const emu=document.createElement('style'); emu.id='envPrintEmu';
-  const base=cssDeImpressao()+`\nbody.env-pdf{background:#fff!important}\nbody.env-pdf .grid{grid-template-columns:1fr!important}\nbody.env-pdf .app{padding:0!important;margin:0!important;box-shadow:none!important;border-radius:0!important;background:#fff!important;`;
-  emu.textContent=base+`width:${PDF_W}px!important;max-width:${PDF_W}px!important}`;
-  document.head.appendChild(emu); window.scrollTo(0,0);
+  emu.textContent=cssDeImpressao()+`\nbody.env-pdf{background:#fff!important}\nbody.env-pdf .grid{grid-template-columns:1fr!important}\n#envPdfStage .app{padding:0!important;margin:0!important;box-shadow:none!important;border-radius:0!important;background:#fff!important;max-width:none!important}
+    #envPdfStage .noprint,#envPdfStage .intbox,#envPdfStage #envTrat,#envPdfStage #comprovantesPanel,#envPdfStage #oppBanner,#envPdfStage .oppbar,#envPdfStage #previewBar{display:none!important}`;
+  document.head.appendChild(emu);
   await new Promise(r=>setTimeout(r,250));
-  try{
-    const el=document.querySelector('.app');
-    // igual ao "Imprimir": se o conteúdo tem largura mínima maior que a folha, a página inteira encolhe pra caber (nada é cortado)
-    const L=el.getBoundingClientRect().left; let w=PDF_W;
-    el.querySelectorAll('*').forEach(e=>{ const r=e.getBoundingClientRect(); if(r.width>0 && r.right-L>w) w=Math.ceil(r.right-L); });
-    w=Math.min(w+2,930);   // < 940px: mantém o layout de coluna única da impressão
-    emu.textContent=base+`width:${w}px!important;max-width:${w}px!important}`;
-    await new Promise(r=>setTimeout(r,150));
-    // folha na proporção A4 com a largura do conteúdo (o gerador corta o que passa da folha; assim nada passa)
-    const m=22, pageW=w+2*m, pageH=Math.round(pageW*297/210);
-    return await window.html2pdf().set({
-      margin:m, filename:nome, image:{type:'jpeg',quality:0.92},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0},   // layout de papel vem do CSS (grade em coluna única + regras de impressão), não da janela
-      jsPDF:{unit:'px',format:[pageW,pageH],orientation:'portrait',hotfixes:['px_scaling']},
-      pagebreak:{mode:['css','legacy'],avoid:['tr','.prophead','.eqprint','.grouped-print','.summ']}
-    }).from(el).outputPdf('blob');
-  } finally {
+  try{ return await gerarPDFDe(document.querySelector('.app'),nome); }
+  finally {
     emu.remove(); document.body.classList.remove('env-pdf');
     if(!wasView) _setMode('edit');
     window.scrollTo(0,sy);
   }
 }
+// pré-visualizar o PDF sem congelar nada (botão na tela de envio)
+async function verPDF(){ const b=$('envVerPdf'); if(b){ b.disabled=true; b.innerHTML=ms('hourglass_top')+'Gerando…'; }
+  try{ try{ recalc(); }catch(_){} const blob=await gerarPDF(codigoFull()+'_previa.pdf'); const u=URL.createObjectURL(blob); window.open(u,'_blank'); setTimeout(()=>URL.revokeObjectURL(u),120000); }
+  catch(e){ console.error('prévia PDF',e); toast('Não consegui gerar a prévia: '+esc(e.message||e)); }
+  finally{ const b2=$('envVerPdf'); if(b2){ b2.disabled=false; b2.innerHTML=ms('picture_as_pdf')+'Ver o PDF antes'; } } }
+function abrirPDFPrep(){ const p=ENV.prep; if(!p) return; if(p.blob){ const u=URL.createObjectURL(p.blob); window.open(u,'_blank'); setTimeout(()=>URL.revokeObjectURL(u),120000); } else if(p.url) window.open(p.url,'_blank'); }
 function progresso(t){ const b=$('envPrepBtn'); if(b){ b.disabled=true; b.innerHTML=ms('hourglass_top')+esc(t); } }
 async function preparar(){
   const f=ENV._form, n=revTrab(), cod=codigoFull();
@@ -378,7 +420,7 @@ function renderPasso2(){ const p=ENV.prep; if(!p)return; const c=canalSalvo();
         <div class="envsis-r"><span>Cópia oculta</span><b>${REMETENTE}</b></div>
         <div class="envsis-r"><span>Respostas para</span><b>${REMETENTE} · ${CAPTURA}</b><em>chegam no Outlook e ficam registradas nas tratativas</em></div>
         <div class="envsis-r"><span>Assunto</span><b>${esc(p.f.assunto)}</b></div>
-        <div class="envsis-r"><span>Anexo</span><b>${ms('picture_as_pdf','font-size:15px')} ${esc(p.pdfNome)}</b></div>
+        <div class="envsis-r"><span>Anexo</span><b>${ms('picture_as_pdf','font-size:15px')} ${esc(p.pdfNome)} <button class="envbtn sm" style="margin:0 0 0 6px" onclick="EXENV.abrirPDFPrep()">${ms('open_in_new')}Abrir e conferir</button></b></div>
       </div>
       ${p.erro?`<div class="enverr">${ms('error')}<span>${esc(p.erro)}<br><b>Nada foi enviado.</b> Pode tentar de novo ou enviar pelo seu e-mail.</span></div>`:''}
       <div class="envact"><button class="envbtn danger" onclick="EXENV.descartar()">${ms('undo')}Desistir: descartar R${p.n}</button>
@@ -849,7 +891,7 @@ ENV.irFunil=function(){
 /* ---------- API p/ os onclick ---------- */
 Object.assign(ENV,{abrirEnvio,preparar,confirmar,descartar,retomar,criarRevisao,
   historico,fechar,setF,fix,fixValidade,abrirEmail,baixarPDF,copiarTexto,ck,travada,revTrab,carregarVersoes,
-  modoManual,enviarSistema,checarSistema,carregarEventos,renderTrat,irTrat,classificar,revDoAjuste,contatoUI,salvarContato,anular,abrirAnexo,verEmail});
+  modoManual,enviarSistema,checarSistema,carregarEventos,renderTrat,irTrat,classificar,revDoAjuste,contatoUI,salvarContato,anular,abrirAnexo,verEmail,verPDF,abrirPDFPrep,gerarPDF});
 
 /* ---------- estilos ---------- */
 const css=document.createElement('style'); css.textContent=`
