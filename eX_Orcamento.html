@@ -3318,17 +3318,17 @@ function verComoClienteLote(){
       </div>`:'');
   // 15/09 (pedido do dono, provisório — chaves depois): logística com raio · modelos com serviços e valores finais · unidades c/ adicionais destacados · macro rateado · resumo de valores
   _ds['lote.fatores']='<div data-pt="mapa">'+(_ds['lote.fatores']||'')+'</div><div data-pt="logistica">'+docLogisticaHtml(_secTit,_th,_td)+'</div>';
-  _ds['lote.var']=docModelosHtml(_secTit,_th,_td);
+  _ds['lote.var']=docOpt('anexo')?docModelosHtml(_secTit,_th,_td,'resumo'):docModelosHtml(_secTit,_th,_td);   // com anexo: corpo só com o resumo de valores de cada modelo
   _ds['lote.lista']=docLojasHtml(_secTit,_th,_td);
   _ds['lote.macro']=docMacroHtml(_secTit,_td);
   _ds['lote.global']=docTotaisHtml(_secTit)+'<div data-pt="indicadores">'+(_ds['lote.global']||'').replace(_dsTotal,'')+'</div>';
   // MENU da visão do cliente: TUDO é renderizado; o que está desligado fica cinza na tela (docoff) e SOME no PDF (@media print)
   window._DOC_SECS=Object.keys(_ds).filter(function(k){ return !!_ds[k]; });
   let _ordDoc=fxOrdem().filter(function(id){ return id.indexOf('g:')!==0 && _ds[id]; });
-  const _anexo=docOpt('anexo') && _ordDoc.indexOf('lote.var')>-1; if(_anexo) _ordDoc=_ordDoc.filter(function(x){ return x!=='lote.var'; });
+  const _anexo=docOpt('anexo') && !!_ds['lote.var'];
   _ds['cab']=docCabHtml();   // cabeçalho COMPLETO, igual ao da proposta
   const _fxDoc=_ordDoc.map(function(id){ return '<div class="docsec'+(fxVis(id)===false?' docoff':'')+'" data-sec="'+id+'">'+_ds[id]+'</div>'; }).join('')
-    + (_anexo?('<div class="docsec'+(fxVis('lote.var')===false?' docoff':'')+'" data-sec="lote.var"><div style="break-before:page;page-break-before:always;margin-top:28px;padding-top:10px;border-top:2px solid #e2ddf1;font-size:13px;font-weight:800;color:#3f2c8f;text-transform:uppercase;letter-spacing:.06em">Anexo — Serviços base por modelo</div>'+_ds['lote.var']+'</div>'):'');
+    + (_anexo?('<div class="docanexo" data-anexo="1"><div style="break-before:page;page-break-before:always;margin-top:28px;padding-top:10px;border-top:2px solid #e2ddf1;font-size:13px;font-weight:800;color:#3f2c8f;text-transform:uppercase;letter-spacing:.06em">Anexo — Serviços base por tipo de sistema</div>'+docModelosHtml(_secTit,_th,_td,'anexo')+'</div>'):'');
   const doc=`<div id="vcSheet" class="${docColCls()}" style="max-width:820px;margin:0 auto;background:#fff;color:#221c39;border-radius:12px;box-shadow:0 20px 60px rgba(20,10,50,.3);overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif">
     <div style="height:6px;background:linear-gradient(90deg,#533ab7,#3f2c8f)"></div>
     <div style="padding:30px 34px">
@@ -3337,7 +3337,7 @@ function verComoClienteLote(){
         <div style="text-align:right;font-size:12px;color:#7d7799"><div style="font-weight:700;color:#3f2c8f;font-size:14px">${esc(S.numero||'ORÇ')}</div>Proposta em lote · ${nUn} unidades</div>
       </div>
       ${_fxDoc}
-      <div style="margin-top:16px;font-size:11.5px;color:#7d7799;border-top:1px solid #eee;padding-top:12px">Proposta com validade de 15 dias. ${esc((typeof EMP!=='undefined'&&EMP&&EMP.nome)||'eX Eletric')} — Automação &amp; Elétrica.</div>
+      <div id="vcFoot" style="margin-top:16px;font-size:11.5px;color:#7d7799;border-top:1px solid #eee;padding-top:12px">Proposta com validade de 15 dias. ${esc((typeof EMP!=='undefined'&&EMP&&EMP.nome)||'eX Eletric')} — Automação &amp; Elétrica.</div>
     </div></div>`;
   let ov=_lg('vcOverlay'); const _sc=ov?ov.scrollTop:0; if(!ov){ ov=document.createElement('div'); ov.id='vcOverlay'; document.body.appendChild(ov); }
   ov.innerHTML=`<style>@media print{body>*:not(#vcOverlay){display:none!important}#vcOverlay{position:static!important;background:#fff!important;padding:0!important}#vcBar,#vcWarn,#vcMenu{display:none!important}#vcSheet{box-shadow:none!important;max-width:none!important}#vcWrap{display:block!important;padding:0!important}.docoff,#vcSheet.off-lojas-modelo .col-modelo,#vcSheet.off-lojas-dias .col-dias,#vcSheet.off-lojas-adic .col-adic{display:none!important}}
@@ -3356,16 +3356,26 @@ function verComoClienteLote(){
     #vcMenu .vmr.on .sw{background:#1f9d55}#vcMenu .vmr.on .sw i{left:15px}
     #vcMenu .pbtn{border:1px solid #d9d4ea;background:#fff;border-radius:8px;padding:6px 9px;font:700 11.5px inherit;color:#3f2c8f;cursor:pointer}
     #vcMenu .pbtn:hover{border-color:#533ab7}
+    .vctog{display:flex;align-items:center;gap:8px;margin:16px 0 6px;padding:6px 10px;border:1px dashed #cfc8e8;border-radius:9px;background:#faf9ff;font:600 12px 'Segoe UI',system-ui,sans-serif;color:#3f2c8f;cursor:pointer;user-select:none;opacity:1!important;filter:none!important}
+    .vctog.n2{margin:10px 0 4px;padding:4px 9px;font-size:11.5px;background:#fff;color:#57536b}
+    .vctog.off{color:#a32d2d;border-color:#e8b4b4;background:#fdf3f3}
+    .vctog .lb{flex:1}.vctog .st{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
+    .vctog .sw{width:30px;height:17px;border-radius:10px;background:#cfcadf;position:relative;flex:none}.vctog .sw i{position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+    .vctog.on .sw{background:#1f9d55}.vctog.on .sw i{left:15px}.vctog.on .st{color:#17693f}
+    .vccols{display:flex;gap:6px;flex-wrap:wrap}.vccols .vctog{margin:6px 0 4px}
+    .vctog.anexo{margin-top:26px;border-style:solid;border-width:2px}
+    @media print{.vctog,.vccols{display:none!important}}
     @media(max-width:1100px){#vcWrap{flex-direction:column}#vcMenu{position:static;width:auto;max-height:none}}</style>
     ${cc?`<div id="vcWarn" style="position:sticky;top:0;z-index:2;background:#a32d2d;color:#fff;padding:9px 16px;font-size:12.5px;font-weight:700;display:flex;align-items:center;gap:8px"><span class="material-symbols-rounded">warning</span>Este documento está MOSTRANDO seu custo e lucro ao cliente. Se não for intencional, feche e desligue "Custo / lucro por loja".</div>`:''}
     <div id="vcBar" style="position:sticky;top:0;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:12px 16px;background:rgba(20,14,40,.06)">
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:11.5px;color:#3a3550;font-weight:700">Material na proposta:</span>${['qtd','val','lista','tot'].map(function(m){var lbl={qtd:'Quantidade',val:'Valor',lista:'Lista',tot:'Só total'}[m];var on=matModo===m;return '<button onclick="setMatModoDoc(\''+m+'\')" style="border:1px solid '+(on?'#533ab7':'#c9c4dd')+';background:'+(on?'#533ab7':'#fff')+';color:'+(on?'#fff':'#57536b')+';border-radius:8px;padding:6px 11px;font:600 12px inherit;cursor:pointer">'+lbl+'</button>';}).join('')}</div>
+      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button onclick="docPreset('tudo')" title="Liga todas as partes" style="border:1px solid #c9c4dd;background:#fff;color:#3f2c8f;border-radius:8px;padding:6px 11px;font:700 12px inherit;cursor:pointer">Mostrar tudo</button><button onclick="docPreset('global')" title="Só totais, unidades e resumo" style="border:1px solid #c9c4dd;background:#fff;color:#3f2c8f;border-radius:8px;padding:6px 11px;font:700 12px inherit;cursor:pointer;margin-right:10px">Só valores globais</button><span style="font-size:11.5px;color:#3a3550;font-weight:700">Material na proposta:</span>${['qtd','val','lista','tot'].map(function(m){var lbl={qtd:'Quantidade',val:'Valor',lista:'Lista',tot:'Só total'}[m];var on=matModo===m;return '<button onclick="setMatModoDoc(\''+m+'\')" style="border:1px solid '+(on?'#533ab7':'#c9c4dd')+';background:'+(on?'#533ab7':'#fff')+';color:'+(on?'#fff':'#57536b')+';border-radius:8px;padding:6px 11px;font:600 12px inherit;cursor:pointer">'+lbl+'</button>';}).join('')}</div>
       <div style="display:flex;gap:8px;align-items:center">
       <button onclick="salvarManual();setTimeout(verComoClienteLote,1500)" title="Grava as escolhas do menu (e o que mais estiver pendente na proposta)" style="border:1px solid #533ab7;background:#fff;color:#533ab7;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span class="material-symbols-rounded">save</span>${DIRTY?'Salvar alterações':'Salvo'}</button><button onclick="window.print()" style="border:none;background:#533ab7;color:#fff;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
       <button onclick="closeVerCliente()" style="border:1px solid #ccc;background:#fff;color:#333;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer">Fechar</button></div></div>
-    <div id="vcWrap"><div id="vcMenu">${docMenuHtml()}</div><div style="flex:1;min-width:0">${doc}</div></div>`;
+    <div id="vcWrap"><div style="flex:1;min-width:0">${doc}</div></div>`;
   ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(20,14,40,.55);overflow:auto';
   ov.querySelectorAll('[data-pt]').forEach(function(el){ var k=el.getAttribute('data-pt'); var off=(k.indexOf('var:')===0)?!varMostra(varLista().find(function(v){return v.id===k.slice(4);})):!docOpt(k); el.classList.toggle('docoff',off); });
+  docInlineToggles(ov);
   ov.scrollTop=_sc;
 }
 function closeVerCliente(){ const ov=_lg('vcOverlay'); if(ov)ov.remove(); }
@@ -3628,15 +3638,18 @@ function docLogisticaHtml(_secTit,_th,_td){ var a=LOTE_UNIT_ABR||[]; if(!a.lengt
   var linhas=(LOTE_UNITS||[]).map(function(u,i){ var x=a[i]||{}; return '<tr><td style="'+_td+'">'+esc(lojaLabel(u))+'</td><td style="'+_td+'">'+esc(x.cidade||'—')+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+(x.km!=null?_d1(x.km)+' km':'—')+'</td><td style="'+_td+';text-align:right">'+(num(x.tempo_pct)>0?('+'+_d1(x.tempo_pct)+'% prazo'):'dentro do raio')+'</td></tr>'; }).join('');
   return '<div style="'+_secTit+'">Logística · raio de atendimento</div><div style="font-size:12.5px;color:#5f5b72;margin:0 0 8px">Base de atendimento: <b>'+esc((S.baseNome)||(bm?bm.nome+'/'+bm.uf:'—'))+'</b> · '+r.comCid+' unidades com cidade · faixa '+r.min+'% a +'+r.max+'% · rota do circuito ~ '+(rota.km||0).toLocaleString('pt-BR')+' km</div>'
     +'<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Unidade</th><th style="text-align:left;'+_th+'">Cidade</th><th style="text-align:right;'+_th+'">Distância da base</th><th style="text-align:right;'+_th+'">Raio</th></tr></thead><tbody>'+linhas+'</tbody></table>'; }
-function docModelosHtml(_secTit,_th,_td){ var vs=varLista(); if(!vs.length)return '';
+function docModelosHtml(_secTit,_th,_td,modo){ var vs=varLista(); if(!vs.length)return '';   // modo: (normal) itens com valores + resumo · 'resumo' só o resumo de valores · 'anexo' só serviços e quantidades (referência de instalação)
   var tr=function(l,v,b){ return '<tr><td style="'+_td+(b?';font-weight:800;color:#3f2c8f':'')+'">'+l+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums'+(b?';font-weight:800;color:#3f2c8f':';font-weight:700')+'">'+fmt(v)+'</td></tr>'; };
   var blocos=vs.filter(function(v){ return (vs.length<2||unitsDaVar(v.id).length); }).map(function(v){ var p=precoDe(dadosModeloCalc(v.id)); if(!p)return ''; var n=unitsDaVar(v.id).length;
+    if(modo==='anexo'){ var dm=dadosModeloCalc(v.id);   // referência de instalação: lê os serviços do modelo direto (independe da chave do bloco)
+      var lin=(dm.servicos||[]).filter(function(r){ return r && num(r.qtd)>0; }).map(function(r){ return {desc:r.desc,qtd:(r.composicao&&r.composicao.base==='total')?1:num(r.qtd),und:r.und}; }).map(function(x){ return '<tr><td style="'+_td+'">'+esc(x.desc)+'</td><td style="'+_td+';text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+_d1(x.qtd)+'</td><td style="'+_td+';color:#7d7799">'+esc(x.und||'')+'</td></tr>'; }).join('');
+      return '<div data-pt="var:'+v.id+'" style="margin:6px 0 18px;border:1px solid #e3ddf6;border-radius:12px;padding:12px 14px;break-inside:avoid-page"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px"><b style="font-size:15px;color:#3f2c8f">'+esc(v.nome)+'</b><span style="font-size:12px;color:#7d7799">quantidades por unidade · '+n+' unidade'+(n===1?'':'s')+'</span></div><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Serviço</th><th style="text-align:right;'+_th+'">Qtd</th><th style="'+_th+'">Und</th></tr></thead><tbody>'+lin+'</tbody></table></div>'; }
     var itens=p.itens.map(function(x){ return '<tr><td style="'+_td+'">'+esc(x.desc)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+_d1(x.qtd)+'</td><td style="'+_td+';color:#7d7799">'+esc(x.und||'')+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(x.unit)+'</td><td style="'+_td+';text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+fmt(x.total)+'</td></tr>'; }).join('');
     return '<div data-pt="var:'+v.id+'" style="margin:6px 0 20px;border:1px solid #e3ddf6;border-radius:12px;padding:12px 14px;break-inside:avoid-page">'
       +'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px"><b style="font-size:15px;color:#3f2c8f">'+esc(v.nome)+'</b><span style="font-size:12px;color:#7d7799">'+n+' unidade'+(n===1?'':'s')+' · valores por unidade</span></div>'
-      +'<table data-pt="modelo:itens" style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Serviço</th><th style="text-align:right;'+_th+'">Qtd</th><th style="'+_th+'">Und</th><th style="text-align:right;'+_th+'">Valor unit.</th><th style="text-align:right;'+_th+'">Valor total</th></tr></thead><tbody>'+itens+'</tbody></table>'
+      +(modo==='resumo'?'':'<table data-pt="modelo:itens" style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Serviço</th><th style="text-align:right;'+_th+'">Qtd</th><th style="'+_th+'">Und</th><th style="text-align:right;'+_th+'">Valor unit.</th><th style="text-align:right;'+_th+'">Valor total</th></tr></thead><tbody>'+itens+'</tbody></table>')
       +'<table data-pt="modelo:resumo" style="width:100%;max-width:440px;margin:10px 0 0 auto;border-collapse:collapse;font-size:12.5px"><tbody>'+tr('Serviços',p.serv)+tr('Material (valor total)',p.mat)+tr('Despesas (rateadas)',p.desp)+tr('Deslocamento',p.desl)+tr('Locação',p.equip)+tr('Total do modelo por unidade',p.total,true)+'</tbody></table></div>'; }).join('');
-  return blocos?('<div><div style="'+_secTit+'">Modelos de sistema</div>'+blocos+'</div>'):''; }
+  return blocos?(modo==='anexo'?('<div style="font-size:12px;color:#7d7799;margin:4px 0 10px">Referência da instalação: serviços e quantidades previstos por unidade, para cada tipo de sistema.</div>'+blocos):('<div><div style="'+_secTit+'">Modelos de sistema</div>'+blocos+'</div>')):''; }
 function docLojasHtml(_secTit,_th,_td){ var us=LOTE_UNITS||[]; if(!us.length)return ''; var vs=varLista();
   var rows=us.map(function(u){ var p=precoDe(dadosLojaCalc(u))||{adicItens:[],adic:0}; var tem=p.adicItens.length>0; var bg=tem?'background:#fff4e0;':'';
     var det=tem?('<tr data-pt="lojas:adicdet" style="background:#fff4e0"><td colspan="5" style="padding:2px 13px 9px 26px;font-size:11.5px;color:#8a5a12;border-bottom:1px solid #efecf7">'+p.adicItens.map(function(x){ return '<b>+ '+esc(x.desc)+'</b> ('+_d1(x.qtd)+' '+esc(x.und||'')+') '+fmt(x.total)+(x.motivo?' — '+esc(x.motivo):''); }).join('<br>')+(p.descAd>0?'<br><b style="color:#17693f">− Desconto comercial (abatimento dos adicionais) '+fmt(p.descAd)+'</b>':'')+'</td></tr>'):'';
@@ -3695,6 +3708,22 @@ function docMenuHtml(){
     +'<div style="display:flex;gap:6px;flex-wrap:wrap"><button class="pbtn" onclick="docPreset(\'tudo\')">Mostrar tudo</button><button class="pbtn" onclick="docPreset(\'global\')">Só valores globais</button></div>'
     +'<div class="vmh">Opções</div><div class="vms">'+row('sec',docOpt('anexo'),"docPtTog('anexo')",'Serviços base como anexo (fim do documento)')+'</div>'
     +'<div class="vmh">Partes do documento</div>'+secs; }
+function docInlineToggles(ov){   // CHAVES EM CIMA DE CADA PARTE do documento (só na tela; somem na impressão)
+  var nm={}; DOC_MENU.forEach(function(m){ nm[m.sec]=m.nm; if(Array.isArray(m.pts)) m.pts.forEach(function(p){ nm[p[0]]=p[1]; }); });
+  nm['modelo:itens']='Lista de serviços com valores'; nm['modelo:resumo']='Resumo de valores do modelo';
+  var mk=function(on,label,onclick,nivel){ return '<div class="vctog '+nivel+(on?' on':' off')+'" onclick="'+onclick+'"><span class="sw"><i></i></span><span class="lb">'+label+'</span><span class="st">'+(on?'na proposta':'fora do PDF')+'</span></div>'; };
+  var sheet=ov.querySelector('#vcSheet'); if(!sheet)return;
+  sheet.querySelectorAll('.docsec').forEach(function(sec){ var id=sec.getAttribute('data-sec'); sec.insertAdjacentHTML('beforebegin', mk(fxVis(id)!==false, esc(nm[id]||id), "docSecTog('"+id+"')", 'n1')); });
+  var feitos={};
+  sheet.querySelectorAll('[data-pt]').forEach(function(el){ var k=el.getAttribute('data-pt'); if(!k)return; var alvo=el;
+    if(el.tagName==='TR'){ alvo=el.closest('table'); if(!alvo)return; }
+    if((el.tagName==='TR'||k.indexOf('modelo:')===0)){ if(feitos[k])return; feitos[k]=1; }   // uma chave só p/ partes repetidas (vale para todos os modelos)
+    var isVar=k.indexOf('var:')===0; var on=isVar?varMostra(varLista().find(function(v){return v.id===k.slice(4);})):docOpt(k);
+    var label=isVar?('Modelo · '+esc(varNome(k.slice(4)))):esc(nm[k]||k);
+    alvo.insertAdjacentHTML('beforebegin', mk(on,label,"docPtTog('"+k+"')",'n2')); });
+  var tl=sheet.querySelector('[data-sec="lote.lista"] table'); if(tl) tl.insertAdjacentHTML('beforebegin','<div class="vccols">'+[['lojas:modelo','Coluna Modelo'],['lojas:dias','Coluna Dias'],['lojas:adic','Coluna Adicionais']].map(function(c){ return mk(docOpt(c[0]),c[1],"docPtTog('"+c[0]+"')",'n2'); }).join('')+'</div>');
+  var ft=sheet.querySelector('#vcFoot'); if(ft) ft.insertAdjacentHTML('beforebegin', mk(docOpt('anexo'),'Serviços base como anexo (serviços e quantidades por tipo de sistema)',"docPtTog('anexo')",'n1 anexo'));
+}
 function docSecTog(id){ fxSetVis(id); verComoClienteLote(); }
 function docPtTog(k){
   if(k.indexOf('var:')===0){ var v=varLista().find(function(x){return x.id===k.slice(4);}); if(v){ v.mostrar=!varMostra(v); } }
