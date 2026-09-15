@@ -3715,6 +3715,10 @@ function preEnvioChecks(){
   add(A, ocultas.length||ptsOff, 'Fora do PDF (confira): '+(ocultas.length?ocultas.join(' · '):'')+(ptsOff?((ocultas.length?' · ':'')+ptsOff+' parte(s) interna(s) oculta(s)'):''));
   return {B:B,A:A,ok:ok};
 }
+function preEnvioLista(){   // mesmo formato do checar() do eX_Envio.js: [{ok,t,d,nivel}] — p/ o envio do lote consumir sem reescrever
+  var r=preEnvioChecks(), strip=function(h){ return String(h||'').replace(/<[^>]+>/g,' ').replace(/\s+/g,' ').trim(); };
+  return r.B.map(function(x){ return {ok:false,t:'Bloqueio',d:strip(x.txt),nivel:'bloqueio'}; })
+    .concat(r.A.map(function(x){ return {ok:true,t:'Aviso',d:strip(x.txt),nivel:'aviso'}; })); }
 function preEnvioAbrir(){ var el=document.getElementById('preEnvio'); if(!el){ el=document.createElement('div'); el.id='preEnvio'; document.body.appendChild(el); } preEnvioRender(); }
 function closePreEnvio(){ var el=document.getElementById('preEnvio'); if(el) el.remove(); }
 function preEnvioRender(){ var el=document.getElementById('preEnvio'); if(!el)return;
