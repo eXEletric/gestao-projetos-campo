@@ -496,6 +496,8 @@ async function carregarEventos(){
         if(!r2.error) ENV.eventos=r2.data||[];
         toast(`${alvo.length===1?'1 resposta que dizia "aprovado" foi registrada':alvo.length+' respostas que diziam "aprovado" foram registradas'} como <b>confirmação</b> da R${ra} (já aprovada).`); } }
     if(antes!==JSON.stringify(ENV.eventos.map(e=>[e.id,e.classificacao,e.anulado_em]))){ try{ decorar(); }catch(_){ renderTrat(); } }
+    // veio do funil pelo botão "Abrir tratativas" (?trat=1): rola até o painel uma vez
+    if(!ENV._trIr && /[?&]trat=1\b/.test(location.search)){ ENV._trIr=true; setTimeout(irTrat,400); }
   }catch(e){ console.error('tratativas',e); }
 }
 function trEl(){ let el=$('envTrat');

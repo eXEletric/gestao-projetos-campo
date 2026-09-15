@@ -98,6 +98,29 @@ select.fi{appearance:auto;cursor:pointer}
 .orcb.rascunho{color:var(--tx2);background:var(--surf2)}
 .orcb.enviado{color:var(--blue);background:#e7f0fa}
 .orcb.aprovado{color:var(--green);background:#e9f2dd}
+/* passo ③ tratativas no funil */
+.trfilt{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.trf{display:inline-flex;align-items:center;gap:5px;font:600 12px inherit;padding:6px 10px;border-radius:20px;border:1px solid var(--line);background:var(--surf);color:var(--tx2);cursor:pointer}
+.trf .material-symbols-rounded{font-size:15px}.trf b{font-size:11px;background:var(--surf2);border-radius:10px;padding:0 6px;min-width:16px;text-align:center}
+.trf.on{background:#111110;border-color:#111110;color:#fff}.trf.on b{background:#fff;color:#111110}
+.trf.cobrar:not(.on) .material-symbols-rounded{color:var(--amber)}.trf.ex:not(.on) .material-symbols-rounded{color:var(--pri)}.trf.validade:not(.on) .material-symbols-rounded{color:var(--red)}
+.trf.semv{border-style:dashed;color:var(--pri)}.trf.limpa{border:none;background:none;color:var(--tx3)}
+.vez{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:8px;margin-top:6px;margin-right:4px}
+.vez .material-symbols-rounded{font-size:13px}
+.vez.ex{background:var(--pri-bg,#efeafc);color:var(--pri)}.vez.cli{background:var(--surf2);color:var(--tx2)}.vez.ok{background:#d4af37;color:#2b2000}.vez.no{background:#fcebeb;color:var(--red)}
+.kprox{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--pri);margin-top:5px}
+.kprox .material-symbols-rounded{font-size:14px}.kprox.cob{color:var(--amber)}.kprox.val{color:var(--red)}
+.trfx{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.trfx .vez{margin-top:0}
+.trfx-i{font-size:12px;color:var(--tx2)}.trfx-i.warn{color:var(--red);font-weight:700}
+.tlw{background:#111110;color:#f3f1ea;border-radius:12px;padding:6px 12px}
+.tl{display:flex;gap:9px;padding:7px 0;border-bottom:1px dashed #34342f}.tl:last-child{border-bottom:none}.tl.off{opacity:.5}.tl.off .tl-t{text-decoration:line-through}
+.tl-ic{font-size:16px;width:26px;height:26px;border-radius:50%;display:grid;place-items:center;background:#2a2a27;color:#c9c6bc;flex:none}.tl-ic.gold{background:#d4af37;color:#2b2000}
+.tl-b{min-width:0}.tl-t{font-size:12.5px;font-weight:700;display:flex;gap:6px;align-items:center;flex-wrap:wrap}.tl-m{font-size:11px;color:#8f8c83}
+.tl-rv{font-size:10px;font-weight:800;background:#f3f1ea;color:#111110;border-radius:5px;padding:0 5px}
+.tl-cl{font-size:10px;font-weight:800;border-radius:6px;padding:1px 6px;background:#2a2a27;color:#c9c6bc}.tl-cl.aprovacao{background:#d4af37;color:#2b2000}.tl-cl.ajuste{background:#2b2544;color:#a996f2}.tl-cl.recusa{background:#3a1b1b;color:#f08a8a}.tl-cl.outro{background:#1f2c14;color:#9fd16b}.tl-cl.nova{background:#a996f2;color:#111110}
+.svrow{border-bottom:1px solid var(--line);padding:12px 0}.svh{display:flex;flex-direction:column;gap:2px}.svh span{font-size:11.5px;color:var(--tx3)}
+.svtx{font-size:12.5px;white-space:pre-wrap;color:var(--tx2);background:var(--surf2);border-radius:8px;padding:8px 10px;margin:6px 0;max-height:140px;overflow:auto}
+.svact{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
 .kmove{margin-left:auto;display:flex;gap:1px}
 .kmove button{width:22px;height:22px;border:1px solid var(--line);border-radius:6px;background:var(--surf);color:var(--tx3);cursor:pointer;font-size:14px;display:inline-flex;align-items:center;justify-content:center}
 .kmove button:hover:not(:disabled){background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}
@@ -309,7 +332,7 @@ select.fi{appearance:auto;cursor:pointer}
 
   <!-- FUNIL -->
   <div class="view on" id="v-funil">
-    <div style="margin-bottom:12px"><button class="btn btn-p" onclick="location.href='eX_Orcamento.html?nova'" title="começa uma oportunidade — escolha Obra única ou Orçamento em lote na própria tela"><span class="material-symbols-rounded">add</span>Nova oportunidade</button></div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn btn-p" onclick="location.href='eX_Orcamento.html?nova'" title="começa uma oportunidade — escolha Obra única ou Orçamento em lote na própria tela"><span class="material-symbols-rounded">add</span>Nova oportunidade</button><div id="trFiltros" class="trfilt"></div></div>
     <div class="board" id="board"></div>
     <div class="detailmodal" id="detailModal" onclick="if(event.target===this)closeDetail()">
       <div class="detailmodal-card">
@@ -531,19 +554,127 @@ function setCampoMulti(oid,faseId,campoId,op){ const o=S.oportunidades.find(x=>x
   setCampo(oid,faseId,campoId,cur); }
 function camposFaltando(o,faseId){ return colCampos(faseId).filter(c=>{ const a=valorAuto(o,c); return c.obr && !campoCheio(a!==undefined?a:campoVal(o,faseId,c.id)); }); }
 /* ===== envio da proposta registrado pelo sistema (eX_Envio.js) → preenche sozinho "forma de envio" e "confirmação de recebimento" ===== */
-let ENVIO_CLOUD={};
+let ENVIO_CLOUD={}, EVT_CLOUD={}, SEMVINC=[], TRFILT=null, USER_NOME='';
 async function carregarEnvios(){ if(!CLOUD||!SB) return;
   try{
-    const [vs,ms,ev]=await Promise.all([
-      SB.from('orcamento_versoes').select('id,oportunidade_id,revisao,status,enviado_em,para').not('enviado_em','is',null).is('deleted_at',null).order('enviado_em',{ascending:true}),
+    const [vs,ms,ev,sv]=await Promise.all([
+      SB.from('orcamento_versoes').select('id,orcamento_id,oportunidade_id,revisao,status,enviado_em,para,validade:dados->>validadeISO').not('enviado_em','is',null).is('deleted_at',null).order('enviado_em',{ascending:true}),
       SB.from('email_mensagens').select('versao_id,entrega,entrega_em').eq('direcao','saida').is('deleted_at',null),
-      SB.from('orcamento_eventos').select('oportunidade_id').eq('tipo','email_cliente').is('anulado_em',null).is('deleted_at',null) ]);
+      SB.from('orcamento_eventos').select('id,orcamento_id,oportunidade_id,versao_id,revisao,tipo,canal,titulo,texto,classificacao,classificacao_motivo,criado_por_nome,ocorrido_em,anulado_em').is('deleted_at',null).order('ocorrido_em',{ascending:false}),
+      SB.from('email_mensagens').select('id,de,para,assunto,texto,anexos,ocorrido_em').eq('direcao','entrada').eq('vinculo','nenhum').is('orcamento_id',null).is('deleted_at',null).order('ocorrido_em',{ascending:false}).limit(50) ]);
     const ent={}; ((ms&&ms.data)||[]).forEach(m=>{ if(m.versao_id) ent[m.versao_id]=m; });
-    const resp={}; ((ev&&ev.data)||[]).forEach(e=>{ if(e.oportunidade_id) resp[e.oportunidade_id]=(resp[e.oportunidade_id]||0)+1; });
+    const evs={}; ((ev&&ev.data)||[]).forEach(e=>{ if(e.oportunidade_id) (evs[e.oportunidade_id]=evs[e.oportunidade_id]||[]).push(e); });
     const m={}; ((vs&&vs.data)||[]).forEach(v=>{ if(!v.oportunidade_id) return; const x=ent[v.id]||{}, ant=m[v.oportunidade_id];
-      m[v.oportunidade_id]={rev:v.revisao,status:(ant&&ant.status==='aprovada')?'aprovada':v.status,enviadoEm:v.enviado_em,para:v.para||'',sistema:!!ent[v.id],entrega:x.entrega||null,entregaEm:x.entrega_em||null,respostas:resp[v.oportunidade_id]||0}; });
-    const antes=JSON.stringify(ENVIO_CLOUD); ENVIO_CLOUD=m; if(antes!==JSON.stringify(m)) render();
+      const resp=(evs[v.oportunidade_id]||[]).filter(e=>e.tipo==='email_cliente'&&!e.anulado_em).length;
+      m[v.oportunidade_id]={rev:v.revisao,versaoId:v.id,orcId:v.orcamento_id,status:(ant&&ant.status==='aprovada')?'aprovada':v.status,revAprov:(v.status==='aprovada'?v.revisao:(ant&&ant.revAprov)||null),enviadoEm:v.enviado_em,para:v.para||'',validade:v.validade||'',sistema:!!ent[v.id],entrega:x.entrega||null,entregaEm:x.entrega_em||null,respostas:resp}; });
+    const novo=JSON.stringify([m,evs,(sv&&sv.data)||[]]), antes=JSON.stringify([ENVIO_CLOUD,EVT_CLOUD,SEMVINC]);
+    ENVIO_CLOUD=m; EVT_CLOUD=evs; SEMVINC=(sv&&sv.data)||[];
+    if(antes!==novo) render();
   }catch(e){ console.error('envios',e); } }
+/* ===== passo ③: de quem é a vez + próxima ação (lê a MESMA linha do tempo da proposta; classificar continua na proposta) ===== */
+const DIA=864e5, COBRAR_DU=3;
+function diasUteis(desde){ if(!desde) return 0; let d=new Date(desde); d.setHours(0,0,0,0); const hj=new Date(); hj.setHours(0,0,0,0); let n=0;
+  while(d<hj){ d=new Date(d.getTime()+DIA); const w=d.getDay(); if(w!==0&&w!==6) n++; } return n; }
+function tratEstado(o){
+  const E=ENVIO_CLOUD[o&&o.id]; if(!E) return null;
+  const ev=(EVT_CLOUD[o.id]||[]).filter(e=>!e.anulado_em);   // mais novo primeiro
+  const r={E, rev:E.rev, ult:ev[0]||null, validade:null};
+  if(E.validade && E.status!=='aprovada'){ const dd=Math.round((new Date(E.validade+'T00:00:00')-new Date(new Date().toISOString().slice(0,10)+'T00:00:00'))/DIA); if(dd<=3) r.validade={dias:dd,data:E.validade}; }
+  if(E.status==='aprovada') return Object.assign(r,{k:'ok',vez:`Aprovada · R${E.revAprov||E.rev}`,ic:'verified',acao:null});
+  const rec=ev.find(e=>e.classificacao==='recusa'&&(!e.revisao||e.revisao>=E.rev));
+  if(rec) return Object.assign(r,{k:'no',vez:'Recusada',ic:'do_not_disturb_on',acao:colPapel(o.colId)==='perdido'?null:{t:'Mover para Declinado',ic:'east',fn:'declinar'}});
+  const pend=ev.filter(e=>e.tipo==='email_cliente'&&!e.classificacao);
+  if(pend.length) return Object.assign(r,{k:'ex',vez:'Vez da eX',ic:'mark_email_unread',acao:{t:`Classificar ${pend.length} resposta${pend.length>1?'s':''} do cliente`,ic:'fact_check',fn:'trat'}});
+  const aj=ev.find(e=>e.classificacao==='ajuste'&&e.revisao===E.rev);
+  if(aj) return Object.assign(r,{k:'ex',vez:'Vez da eX',ic:'edit_document',acao:{t:`Criar R${E.rev+1} com o ajuste`,ic:'edit_document',fn:'trat'}});
+  const saidas=ev.filter(e=>['cobranca','email_ex','contato','envio'].includes(e.tipo)).map(e=>e.ocorrido_em);
+  const ultSaida=[E.enviadoEm,...saidas].filter(Boolean).sort().pop();
+  const duv=ev.find(e=>e.classificacao==='duvida'&&(!e.revisao||e.revisao===E.rev)&&e.ocorrido_em>ultSaida);
+  if(duv) return Object.assign(r,{k:'ex',vez:'Vez da eX',ic:'help',acao:{t:'Responder a dúvida do cliente',ic:'reply',fn:'trat'}});
+  const du=diasUteis(ultSaida);
+  if(r.validade&&r.validade.dias<0) return Object.assign(r,{k:'ex',vez:'Vez da eX',ic:'event_busy',acao:{t:`Validade vencida: criar R${E.rev+1}`,ic:'edit_document',fn:'trat'}});
+  return Object.assign(r,{k:'cli',vez:`Aguardando cliente · ${du}d`,ic:'hourglass_top',du,cobrar:du>=COBRAR_DU,acao:du>=COBRAR_DU?{t:'Cobrar hoje',ic:'notifications_active',fn:'cobrar'}:null});
+}
+function matchTrat(o){ if(!TRFILT) return true; const t=tratEstado(o); if(!t) return false;
+  if(TRFILT==='ex') return t.k==='ex'; if(TRFILT==='cli') return t.k==='cli'; if(TRFILT==='cobrar') return !!t.cobrar;
+  if(TRFILT==='validade') return !!t.validade && t.k!=='ok' && t.k!=='no'; return true; }
+function setTrFilt(k){ TRFILT=(TRFILT===k?null:k); render(); }
+function trFiltrosHTML(){ const el=document.getElementById('trFiltros'); if(!el) return;
+  if(!CLOUD){ el.innerHTML=''; return; }
+  const ops=S.oportunidades.filter(o=>!o.loteId&&ENVIO_CLOUD[o.id]).map(o=>tratEstado(o)).filter(Boolean);
+  const n={ex:ops.filter(t=>t.k==='ex').length, cli:ops.filter(t=>t.k==='cli').length, cobrar:ops.filter(t=>t.cobrar).length, validade:ops.filter(t=>t.validade&&t.k!=='ok'&&t.k!=='no').length};
+  const chip=(k,ic,t)=>`<button class="trf ${TRFILT===k?'on':''} ${k}" onclick="setTrFilt('${k}')"><span class="material-symbols-rounded">${ic}</span>${t}<b>${n[k]}</b></button>`;
+  el.innerHTML=chip('ex','front_hand','Vez da eX')+chip('cli','hourglass_top','Aguardando cliente')+chip('cobrar','notifications_active','Cobrar hoje')+chip('validade','event_busy','Validade vencendo')
+    +(SEMVINC.length?`<button class="trf semv" onclick="abrirSemVinculo()"><span class="material-symbols-rounded">mail</span>E-mails sem vínculo<b>${SEMVINC.length}</b></button>`:'')
+    +(TRFILT?`<button class="trf limpa" onclick="setTrFilt(null)"><span class="material-symbols-rounded">close</span>limpar filtro</button>`:''); }
+function tratCardHTML(o){ const t=tratEstado(o); if(!t) return '';
+  return `<div class="vez ${t.k}"><span class="material-symbols-rounded">${t.ic}</span>${esc(t.vez)}</div>
+    ${t.acao?`<div class="kprox ${t.cobrar?'cob':''}"><span class="material-symbols-rounded">${t.acao.ic}</span>${esc(t.acao.t)}</div>`:''}
+    ${t.validade&&t.k!=='ok'&&t.k!=='no'?`<div class="kprox val"><span class="material-symbols-rounded">event_busy</span>${t.validade.dias<0?'validade vencida':t.validade.dias===0?'validade vence hoje':'validade vence em '+t.validade.dias+'d'}</div>`:''}`; }
+const EV_IC={envio:'send',descarte:'block',revisao:'edit_document',email_cliente:'mark_email_unread',email_ex:'forward_to_inbox',entrega:'report',contato:'call',cobranca:'notifications_active',nota:'sticky_note_2',legado:'history'};
+const CLS_NM={aprovacao:'Aprovou',ajuste:'Pediu ajuste',recusa:'Recusou',duvida:'Dúvida',outro:'Outro'};
+function tratDetalheHTML(o){ const t=tratEstado(o); if(!t) return '';
+  const E=t.E, ev=(EVT_CLOUD[o.id]||[]);
+  const linha=e=>{ const conf=e.classificacao==='outro'&&/^confirma/i.test(e.classificacao_motivo||''); const cl=conf?'Confirmação':(e.classificacao?CLS_NM[e.classificacao]:(e.tipo==='email_cliente'&&!e.anulado_em?'a classificar':''));
+    return `<div class="tl ${e.anulado_em?'off':''}"><span class="material-symbols-rounded tl-ic ${e.classificacao==='aprovacao'?'gold':''}">${conf?'task_alt':(EV_IC[e.tipo]||'circle')}</span><div class="tl-b"><div class="tl-t">${esc(e.titulo||'')}${e.revisao?` <span class="tl-rv">R${e.revisao}</span>`:''}${cl?` <span class="tl-cl ${e.classificacao||'nova'}">${esc(cl)}</span>`:''}</div><div class="tl-m">${_dh(e.ocorrido_em)}${e.canal?' · '+esc(e.canal):''}${e.criado_por_nome?' · '+esc(e.criado_por_nome):''}</div></div></div>`; };
+  const acts=[
+    t.acao&&t.acao.fn==='declinar'?`<button class="btn btn-s btn-p" onclick="declinarPorRecusa('${o.id}')"><span class="material-symbols-rounded">east</span>Mover para Declinado</button>`:'',
+    `<button class="btn btn-s ${t.acao&&t.acao.fn==='trat'?'btn-p':''}" onclick="abrirTratativas('${o.id}')"><span class="material-symbols-rounded">forum</span>${t.acao&&t.acao.fn==='trat'?esc(t.acao.t):'Abrir tratativas'}</button>`,
+    t.k!=='ok'&&t.k!=='no'?`<button class="btn btn-s ${t.cobrar?'btn-p':''}" onclick="registrarCobranca('${o.id}')"><span class="material-symbols-rounded">notifications_active</span>Registrar cobrança</button>`:'' ].join('');
+  return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">forum</span>Tratativas</div>
+    <div class="trfx"><span class="vez ${t.k}"><span class="material-symbols-rounded">${t.ic}</span>${esc(t.vez)}</span>
+      <span class="trfx-i">R${E.rev} enviada ${_dh(E.enviadoEm)}${E.para?' p/ '+esc(String(E.para).split(/[;,]/)[0]):''}</span>
+      ${E.validade?`<span class="trfx-i ${t.validade?'warn':''}">validade ${E.validade.split('-').reverse().join('/')}</span>`:''}</div>
+    <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">${acts}</div>
+    <div class="tlw">${ev.slice(0,5).map(linha).join('')||'<div class="tl-m">Nenhum evento ainda.</div>'}${ev.length>5?`<div class="tl-m" style="padding-top:4px">+ ${ev.length-5} evento(s) na proposta</div>`:''}</div></div>`; }
+function abrirTratativas(oid){ abrirOrcNoShell('?opp='+oid+'&trat=1'); }
+async function declinarPorRecusa(oid){ const k=S.colunas.find(c=>c.papel==='perdido'); if(!k){ alert('Não achei a fase de papel "perdido" (Declinado).'); return; } moverOppPara(oid,k.id); }
+function registrarCobranca(oid){ const t=tratEstado(S.oportunidades.find(x=>x.id===oid)); if(!t) return;
+  let ov=document.getElementById('cobModal'); if(!ov){ ov=document.createElement('div'); ov.id='cobModal'; ov.className='modal-bg'; ov.style.zIndex='600'; ov.onclick=e=>{ if(e.target===ov) ov.classList.remove('show'); }; document.body.appendChild(ov); }
+  const C=['e-mail','telefone','WhatsApp','reunião']; window._cob={oid,canal:'telefone'};
+  const pint=()=>{ ov.innerHTML=`<div class="modal cfgm" style="max-width:480px">
+    <div class="cfgm-head"><h3>Registrar cobrança · R${t.rev}</h3><button class="cfgm-x" onclick="document.getElementById('cobModal').classList.remove('show')"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="cfgm-sub">Fica na linha do tempo da proposta e zera a contagem de dias. Se o cliente já respondeu algo, registre e classifique na proposta.</div>
+    <div style="padding:0 18px"><div class="opts">${C.map(c=>`<button class="opt ${_cob.canal===c?'on':''}" onclick="_cob.canal='${c}';_cobPint()">${c}</button>`).join('')}</div>
+    <textarea id="cobTx" class="fi" style="margin-top:10px;height:90px" placeholder="Ex.: liguei para o Denis, ficou de responder até sexta">${esc(_cob.texto||'')}</textarea></div>
+    <div class="cfgm-foot"><button class="btn" onclick="document.getElementById('cobModal').classList.remove('show')">Cancelar</button><button class="btn btn-p" onclick="salvarCobranca()"><span class="material-symbols-rounded">check</span>Registrar</button></div></div>`; };
+  window._cobPint=()=>{ const tx=document.getElementById('cobTx'); if(tx) _cob.texto=tx.value; pint(); };
+  pint(); ov.classList.add('show'); }
+async function salvarCobranca(){ const c=window._cob; if(!c) return; const tx=(document.getElementById('cobTx')||{}).value||'';
+  const o=S.oportunidades.find(x=>x.id===c.oid), t=tratEstado(o); if(!t) return;
+  if(!tx.trim()){ alert('Escreva um resumo da cobrança.'); return; }
+  const {error}=await SB.from('orcamento_eventos').insert({empresa_id:EMPRESA_ID,orcamento_id:t.E.orcId,oportunidade_id:o.id,versao_id:t.E.versaoId,revisao:t.rev,tipo:'cobranca',canal:c.canal,titulo:`Cobrança por ${c.canal}`,texto:tx.trim(),criado_por_nome:USER_NOME||''});
+  if(error){ console.error(error); alert('Não consegui registrar: '+error.message); return; }
+  document.getElementById('cobModal').classList.remove('show'); window._cob=null; await carregarEnvios(); }
+/* ===== e-mails que chegaram sem vínculo (sem TAG/cabeçalho/remetente conhecido) ===== */
+function abrirSemVinculo(sel){
+  let ov=document.getElementById('svModal'); if(!ov){ ov=document.createElement('div'); ov.id='svModal'; ov.className='modal-bg'; ov.style.zIndex='600'; ov.onclick=e=>{ if(e.target===ov) ov.classList.remove('show'); }; document.body.appendChild(ov); }
+  const opps=S.oportunidades.filter(o=>ENVIO_CLOUD[o.id]).sort((a,b)=>titulo(a).localeCompare(titulo(b)));
+  const rows=SEMVINC.map(m=>`<div class="svrow">
+      <div class="svh"><b>${esc(m.assunto||'(sem assunto)')}</b><span>${esc(m.de||'')} · ${_dh(m.ocorrido_em)}</span></div>
+      <div class="svtx">${esc(String(m.texto||'').slice(0,400))}${String(m.texto||'').length>400?'…':''}</div>
+      <div class="svact"><select class="fi" id="sv_${m.id}" style="flex:1;min-width:200px"><option value="">Vincular a qual proposta enviada?</option>${opps.map(o=>`<option value="${o.id}">${esc(titulo(o))} · R${ENVIO_CLOUD[o.id].rev}</option>`).join('')}</select>
+        <button class="btn btn-s btn-p" onclick="vincularEmail('${m.id}')"><span class="material-symbols-rounded">link</span>Vincular</button>
+        <button class="btn btn-s" onclick="ignorarEmail('${m.id}')" title="Não é de proposta (some da lista)"><span class="material-symbols-rounded">visibility_off</span>Não é de proposta</button></div></div>`).join('');
+  ov.innerHTML=`<div class="modal cfgm" style="max-width:720px">
+    <div class="cfgm-head"><h3>E-mails sem vínculo</h3><button class="cfgm-x" onclick="document.getElementById('svModal').classList.remove('show')"><span class="material-symbols-rounded">close</span></button></div>
+    <div class="cfgm-sub">Chegaram no endereço de respostas, mas o sistema não soube de qual proposta são (ex.: o cliente escreveu um e-mail novo, sem a TAG no assunto). Vincule e classifique depois na proposta.</div>
+    <div class="cfgm-list">${rows||'<div style="padding:14px;color:var(--tx3)">Nenhum e-mail sem vínculo.</div>'}</div>
+    <div class="cfgm-foot"><button class="btn" onclick="document.getElementById('svModal').classList.remove('show')">Fechar</button></div></div>`;
+  ov.classList.add('show'); }
+const parteNovaTx=tx=>{ const L=String(tx||'').split(/\r?\n/); const i=L.findIndex(l=>/^\s*(Em .+escreveu:|On .+wrote:|De:\s|From:\s|-{3,}\s*Original|_{5,})/i.test(l)); return (i>0?L.slice(0,i):L).join('\n').trim(); };
+async function vincularEmail(mid){ const m=SEMVINC.find(x=>x.id===mid); const oid=(document.getElementById('sv_'+mid)||{}).value; if(!m) return;
+  if(!oid){ alert('Escolha a proposta.'); return; } const E=ENVIO_CLOUD[oid];
+  try{
+    const u=await SB.from('email_mensagens').update({empresa_id:EMPRESA_ID,orcamento_id:E.orcId,oportunidade_id:oid,versao_id:E.versaoId,revisao:E.rev,vinculo:'manual'}).eq('id',mid).select('id');
+    if(u.error) throw u.error; if(!u.data||!u.data.length) throw new Error('sem permissão para vincular este e-mail');
+    const i=await SB.from('orcamento_eventos').insert({empresa_id:EMPRESA_ID,orcamento_id:E.orcId,oportunidade_id:oid,versao_id:E.versaoId,revisao:E.rev,tipo:'email_cliente',canal:'e-mail',titulo:m.assunto||'(sem assunto)',texto:parteNovaTx(m.texto),mensagem_id:mid,anexos:m.anexos||[],ocorrido_em:m.ocorrido_em,criado_por_nome:'vinculado por '+(USER_NOME||'usuário')});
+    if(i.error) throw i.error;
+    await carregarEnvios(); abrirSemVinculo(); if(!SEMVINC.length) document.getElementById('svModal').classList.remove('show');
+  }catch(e){ console.error(e); alert('Não consegui vincular: '+(e.message||e)); } }
+async function ignorarEmail(mid){ if(!confirm('Tirar este e-mail da lista? (ele continua guardado no banco)')) return;
+  const {error}=await SB.from('email_mensagens').update({deleted_at:new Date().toISOString()}).eq('id',mid);
+  if(error){ alert('Não consegui: '+error.message); return; } await carregarEnvios(); abrirSemVinculo(); }
 const campoAuto=c=>/forma\s+de\s+envio/i.test(c.nome||'')?'envio':(/confirma\S*\s+de\s+recebimento/i.test(c.nome||'')?'receb':null);
 function valorAuto(o,c){ const k=campoAuto(c), E=ENVIO_CLOUD[o&&o.id]; if(!k||!E) return undefined;
   if(k==='envio') return (c.ops||[]).find(op=>/e-?mail/i.test(op))||'Email';
@@ -604,6 +735,7 @@ async function initCRM(){
     const {data:{session}}=await SB.auth.getSession();
     if(session){
       try{ const emp=await SB.rpc('empresa_atual'); EMPRESA_ID=(emp&&emp.data)||null; }catch(e){}
+      try{ const p=await SB.from('perfis').select('nome').eq('user_id',session.user.id).limit(1); USER_NOME=(p.data&&p.data[0]&&p.data[0].nome)||session.user.email||''; }catch(e){}
       await carregarNuvem(); CLOUD=true; cloudMsg('nuvem ✓'); carregarEnvios();
       try{ const cb=await SB.from('colaboradores').select('nome').eq('ativo',true).order('nome'); if(!cb.error)COLABS=(cb.data||[]).map(c=>c.nome).filter(Boolean); }catch(e){}
     } else { cloudMsg('modo local (sem login)'); }
@@ -787,8 +919,8 @@ function renderLojaDetail(){
 /* ===== FUNIL ===== */
 function renderBoard(){
   document.getElementById('board').innerHTML = S.colunas.map((col,ci)=>{
-    const cards=oppsIn(col.id).filter(matchQ).filter(o=>!o.loteId);
-    const lotesCol=lotesInCol(col.id).filter(l=>matchQ({objeto:l.nome,contratanteId:l.contratanteId}));
+    const cards=oppsIn(col.id).filter(matchQ).filter(o=>!o.loteId).filter(matchTrat);
+    const lotesCol=TRFILT?[]:lotesInCol(col.id).filter(l=>matchQ({objeto:l.nome,contratanteId:l.contratanteId}));   // lote: envio em conjunto ainda não entra nos filtros de tratativa
     return `<div class="kcol ${col.fim?'fim':''}" ondragover="allow(event,this)" ondragleave="this.classList.remove('dragover')" ondrop="drop(event,'${col.id}',this)">
       <div class="kcol-h">
         ${col.fim?'<span class="material-symbols-rounded" style="font-size:15px;color:var(--green)">check_circle</span>':''}
@@ -809,6 +941,7 @@ function renderBoard(){
       </div>
     </div>`;
   }).join('') + `<button class="newcol" onclick="addColuna()"><span class="material-symbols-rounded">add</span>Nova fase</button>`;
+  trFiltrosHTML();
 }
 function oppCardHTML(o,ci){
   const ct=cli(o.contratanteId), tc=(o.temperatura||'Morno').toLowerCase(), oc=orcIndex()[o.id];
@@ -821,7 +954,8 @@ function oppCardHTML(o,ci){
     </div>
     <div class="kcard-nm" style="padding-right:26px">${esc(o.objeto||'(sem objeto)')}</div>
     <div class="kcard-cli"><span class="material-symbols-rounded">business</span>${esc(ct?ct.nome:'—')}${o.contempladoId&&contempl(o.contempladoId)?' · '+esc(contempl(o.contempladoId).nome):''}</div>
-    ${oc?`<div class="orcb ${esc(oc.status||'rascunho')}"><span class="material-symbols-rounded">request_quote</span>${fmtBRL(oc.total)} · ${esc(oc.status||'rascunho')}</div>`:''}
+    ${oc?`<div class="orcb ${esc(oc.status||'rascunho')}"><span class="material-symbols-rounded">request_quote</span>${fmtBRL(oc.total)} · ${ENVIO_CLOUD[o.id]?'R'+ENVIO_CLOUD[o.id].rev+' · ':''}${esc(oc.status||'rascunho')}</div>`:''}
+    ${tratCardHTML(o)}
     <div class="kcard-foot">
       <span class="temp ${tc}">${esc(o.temperatura||'Morno')}</span>
       <span class="kmove">
@@ -1043,6 +1177,7 @@ function renderOppDetail(){
           ${oc?di('Orçamento',fmtBRL(oc.total)+' · '+(oc.status||'rascunho')):''}
         </div>
         ${o.obs?`<div class="dobs">${esc(o.obs)}</div>`:''}
+        ${tratDetalheHTML(o)}
         ${oppFormHTML(o)}
       </div>
       <div class="detail-side">
