@@ -1340,15 +1340,23 @@ function comboMg(){   // margem uniforme (fração) nos blocos de lucro — só 
   const bruto=num(S.valorCombinado)/(((1-desc)||1)*(1+imp));   // tira imposto e desconto
   return (bruto-cP)/cL - 1;
 }
-const mgOf=r=>{ if(comboActive() && (r._blk==='servicos'||r._blk==='materiais') && !r.adic) return comboMg()*100;   // adicional NÃO entra no combo — margem própria, cobra por cima
+function comboMgMat(){ return (comboActive() && S.margemMatCombo!=null && S.margemMatCombo!=='') ? num(S.margemMatCombo)/100 : null; }   // margem FIXA do material com valor combinado (ex.: 20%) — null = margem uniforme
+function comboMgServ(){ const mm=comboMgMat(); if(mm===null) return comboMg();   // serviços ABSORVEM o restante pra bater o valor combinado
+  const cS=blocoAtivo('servicos')?blkCusto('servicos')-adicCusto('servicos'):0, cM=blocoAtivo('materiais')?blkCusto('materiais')-adicCusto('materiais'):0; if(cS<=0) return 0;
+  const cP=(blocoAtivo('despesas')?blkCusto('despesas')-adicCusto('despesas'):0)+(blocoAtivo('equip')?blkCusto('equip')-adicCusto('equip'):0)+diariasCusto();
+  const bruto=num(S.valorCombinado)/(((1-num(S.descontoPct)/100)||1)*(1+num(S.impostoPct)/100));
+  return (bruto-cP-cM*(1+mm))/cS - 1; }
+function comboMgBlk(blk){ const mm=comboMgMat(); if(blk==='materiais'&&mm!==null) return mm; if(blk==='servicos') return comboMgServ(); return comboMg(); }
+const mgOf=r=>{ if(comboActive() && (r._blk==='servicos'||r._blk==='materiais') && !r.adic) return comboMgBlk(r._blk)*100;   // adicional NÃO entra no combo — margem própria, cobra por cima
   return (r.margem===''||r.margem==null)?baseMg(r._blk):num(r.margem); };
 function setValorCombinado(v){ const n=num(v); S.valorCombinado=(n>0?n:null); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); }
 function clearCombo(){ S.valorCombinado=null; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); }
-function setBlkMargem(blk,v){ if(!S.margem)S.margem={}; S.margem[blk]=num(v); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
+function setBlkMargem(blk,v){ if(blk==='materiais' && comboActive()){ S.margemMatCombo=(String(v).trim()===''?null:num(v)); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); return; }
+  if(!S.margem)S.margem={}; S.margem[blk]=num(v); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
 // controle de margem no cabeçalho do bloco: só Serviços/Materiais (lucro); Despesas/Locações = etiqueta "custo + imposto"
 function blkMargemCtrl(cfg){ if(!cfg.custo) return '';
   if(cfg.key==='servicos'||cfg.key==='materiais'){
-    const on=comboActive(); const m=on?comboMg()*100:baseMg(cfg.key);
+    const on=comboActive(); const m=on?comboMgBlk(cfg.key)*100:baseMg(cfg.key);
     return `<span class="blkmg ${on?'locked':''}" title="Margem deste bloco — configura no painel da direita${on?' · travada pelo valor combinado':''}"><span class="material-symbols-rounded">${on?'lock':'trending_up'}</span>Margem ${_d1(m)}%</span>`;
   }
   return `<span class="blkmg pass" title="Este bloco entra a CUSTO — sem lucro. O imposto incide sobre tudo (repasse)."><span class="material-symbols-rounded">receipt_long</span>custo + imposto</span>`;
@@ -4178,14 +4186,14 @@ function recalc(){
   if(comboActive()){
     if(ci && document.activeElement!==ci) ci.value=num(S.valorCombinado).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
     if(cx)cx.style.display='';
-    const m=comboMg()*100;
-    if(cn){ cn.style.display=''; cn.className='combo-note'+(m<0?' neg':(m<5?' low':'')); cn.innerHTML=(m<0)?'<span class="material-symbols-rounded">warning</span>Abaixo do custo — margem '+_d1(m)+'% (prejuízo)':(m<5?'<span class="material-symbols-rounded">warning</span>Margem baixa: '+_d1(m)+'%':'Margem ajustada em Serviços/Materiais: <b>'+_d1(m)+'%</b>'); }
+    const m=comboMgServ()*100; const _mmx=comboMgMat();
+    if(cn){ cn.style.display=''; cn.className='combo-note'+(m<0?' neg':(m<5?' low':'')); cn.innerHTML=(m<0)?'<span class="material-symbols-rounded">warning</span>Abaixo do custo — margem '+_d1(m)+'% (prejuízo)':(m<5?'<span class="material-symbols-rounded">warning</span>Margem baixa: '+_d1(m)+'%':(_mmx!==null?('Material fixo em <b>'+_d1(_mmx*100)+'%</b> · Serviços ajustados em <b>'+_d1(m)+'%</b>'):('Margem ajustada em Serviços/Materiais: <b>'+_d1(m)+'%</b>'))); }
   } else { if(cx)cx.style.display='none'; if(cn)cn.style.display='none'; if(ci && document.activeElement!==ci) ci.value=''; }
   // margens no painel da direita (travam quando o valor combinado está ativo)
   const _combo=comboActive();
   const ms=document.getElementById('mg_serv_in'), mm=document.getElementById('mg_mat_in');
-  if(ms){ if(document.activeElement!==ms) ms.value=_d1(_combo?comboMg()*100:baseMg('servicos')); ms.disabled=_combo; ms.title=_combo?'travada pelo valor combinado':''; }
-  if(mm){ if(document.activeElement!==mm) mm.value=_d1(_combo?comboMg()*100:baseMg('materiais')); mm.disabled=_combo; mm.title=_combo?'travada pelo valor combinado':''; }
+  if(ms){ if(document.activeElement!==ms) ms.value=_d1(_combo?comboMgServ()*100:baseMg('servicos')); ms.disabled=_combo; ms.title=_combo?'calculada: serviços absorvem o valor combinado':''; }
+  if(mm){ if(document.activeElement!==mm) mm.value=_d1(_combo?comboMgBlk('materiais')*100:baseMg('materiais')); mm.disabled=false; mm.title=_combo?'com valor combinado: margem fixa do material (serviços absorvem o restante). Vazio = margem uniforme':''; }
   // prazo espelho (direita) — reflete o prazo da mão de obra; avisa quando manual
   const sp=document.getElementById('s_prazo'); if(sp)sp.textContent=fmtPrazo(obraPrazo());
   const spm=document.getElementById('s_prazo_man'); if(spm)spm.style.display=prazoManualOn()?'':'none';
