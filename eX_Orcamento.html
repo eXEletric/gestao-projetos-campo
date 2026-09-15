@@ -1115,7 +1115,7 @@ function pushOrc(){
     margem_base:num(S.margemBase), imposto_pct:num(S.impostoPct), desconto_pct:num(S.descontoPct),
     prazo_dias:parseInt(S.prazoDias)||null, validade:S.validadeISO||null, data_cotacao:S.dataISO||null, id_externo:S.idpipe||null,
     cliente_contratante:S.cliNome||null, cliente_contato:S.cliContato||null, cliente_fone:S.cliFone||null, cliente_email:S.cliEmail||null,
-    cliente_final:S.finNome||null, cliente_endereco:S.finEnd||null,
+    cliente_final:(S_LOTE_ID&&!(S&&S._base))?undefined:(S.finNome||null), cliente_endereco:S.finEnd||null,   // loja de lote: mantém o rótulo curto (cliente_final) — não sobrescreve ao salvar
     oferta_id:S.ofertaId||null, oferta_seq:S.ofertaSeq||null,
     total:S._total||0, custo:S._custo||0, lucro:S._lucro||0, dados:S };
   if(S&&S._base&&S_LOTE_ID){ S.macro=S.macro||{estruturas:[]}; S.macro._total=macroTotal(); S.macro._nun=(LOTE_UNITS||[]).length; p.dados=S; }   // base: grava o macro (total/nº) pras unidades ratearem
@@ -3666,7 +3666,11 @@ function refreshClienteLive(){
   if(S.contratanteId && CLIENTES){ const c=CLIENTES.find(x=>x.id===S.contratanteId);
     if(c){ S.cliNome=c.nome||''; S.cliContato=c.contato||''; S.cliFone=c.fone||''; S.cliEmail=c.email||''; } }
   if(S.lojaId && LOJAS){ const l=LOJAS.find(x=>x.id===S.lojaId);
-    if(l){ S.finNome=l.nome||''; S.finRede=l.grupo||''; S.finNum=l.numero||''; S.finEnd=l.endereco||''; } }
+    if(l){
+      // LOJA DE LOTE: identidade oficial (finNum/finNome BRPROJ) é TRAVADA — abrir+salvar não pode trocar a loja pelo vínculo.
+      // (causa raiz da divergência recorrente do Copeland: lojaId errado sobrescrevia finNum/finNome ao abrir.) Divergência vira alarme (identDivergencias).
+      if(S_LOTE_ID && !S._base && S.finNum){ if(!S.finRede)S.finRede=l.grupo||''; if(!S.finEnd)S.finEnd=l.endereco||''; }
+      else { S.finNome=l.nome||''; S.finRede=l.grupo||''; S.finNum=l.numero||''; S.finEnd=l.endereco||''; } } }
   // orçamentos antigos (sem respId): tenta casar por e-mail/nome pra vincular ao usuário real
   if(!S.respId && USUARIOS.length && (S.respEmail||S.respNome)){ const u=USUARIOS.find(x=>(S.respEmail&&x.email&&x.email.toLowerCase()===(S.respEmail||'').toLowerCase())||(S.respNome&&x.nome===S.respNome)); if(u)S.respId=u.id; }
   if(S.respId && USUARIOS.length){ const u=USUARIOS.find(x=>x.id===S.respId);
