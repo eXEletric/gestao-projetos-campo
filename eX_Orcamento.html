@@ -1686,6 +1686,24 @@ async function loteReplicarMat(){   // IDA: replica o modelo da Base nas lojas p
 }
 function unitMatTotal(u){ return (((u&&u.dados&&u.dados.materiais)||[])).reduce(function(a,r){ return a+num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt)); },0); }   // custo de material de UMA loja (etapa 4: leitura Por loja real)
 function unitMatN(u){ return (((u&&u.dados&&u.dados.materiais)||[])).length; }
+// ==== OPÇÃO A: motor config-driven — o dono liga/desliga funções AO VIVO e o editor se remonta (sem interpretação minha) ====
+var LOTE_FNS_OPEN=false;   // painel "organizar funções" aberto?
+var LOTE_MAT_FNS=[   // funções configuráveis do bloco de material do lote
+  {k:'g.editar',lb:'Global · Editar a custo'},
+  {k:'g.addlote',lb:'Global · Adicionar ao lote'},
+  {k:'g.modo',lb:'Global · modos (Qtd/Valor/Lista/Só total)'},
+  {k:'b.media',lb:'Base · Trazer média das lojas'},
+  {k:'b.replicar',lb:'Base · Replicar → lojas'},
+  {k:'b.add',lb:'Base · Adicionar material'}
+];
+function loteFnOn(k){ return !(S && S.loteFns && S.loteFns[k]===false); }   // padrão: ligada
+function toggleLoteFn(k){ if(!S.loteFns)S.loteFns={}; S.loteFns[k]=(loteFnOn(k)?false:true); save(); if(OPP&&CLOUD){try{pushOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} }
+function toggleLoteFnsPanel(){ LOTE_FNS_OPEN=!LOTE_FNS_OPEN; try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} }
+function loteFnsPanelHtml(){ if(!LOTE_FNS_OPEN) return '';
+  var rows=LOTE_MAT_FNS.map(function(f){ var on=loteFnOn(f.k);
+    return '<div style="display:flex;align-items:center;gap:9px;padding:6px 4px;border-top:1px solid var(--line)"><span onclick="toggleLoteFn(\''+f.k+'\')" style="cursor:pointer;width:34px;height:19px;border-radius:11px;background:'+(on?'var(--green,#3b6d11)':'var(--line2)')+';position:relative;flex:none"><i style="position:absolute;top:2px;left:'+(on?'17px':'2px')+';width:15px;height:15px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:.15s"></i></span><span style="font-size:12px;'+(on?'':'color:var(--tx3);text-decoration:line-through')+'">'+f.lb+'</span></div>';
+  }).join('');
+  return '<div class="noprint" style="border:1px solid var(--pri);border-radius:10px;padding:8px 12px;margin:0 0 10px;background:var(--surf2,#f1efe8)"><div style="font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--pri);display:flex;align-items:center;gap:6px;padding-bottom:2px"><span class="material-symbols-rounded" style="font-size:15px">tune</span>Organizar funções (ao vivo) — ligue/desligue o que aparece</div>'+rows+'</div>'; }
 function renderLoteMatBlock(cfg){   // master: 3 LEITURAS — Base (modelo) · Por loja (real) · Global (soma), cada uma com chave "na proposta"
   const rows=loteMatSoma(); const tot=rows.reduce(function(a,r){return a+r.custo;},0);
   const N=(LOTE_UNITS||[]).length||1; const bOn=blocoAtivo('materiais');
@@ -1694,7 +1712,7 @@ function renderLoteMatBlock(cfg){   // master: 3 LEITURAS — Base (modelo) · P
   const mmb=function(v,l){return '<button class="lbtn" style="'+(mm===v?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'" onclick="setMatModo(\''+v+'\')">'+l+'</button>';};
   const sel='<div class="modosw" style="gap:6px;flex-wrap:wrap">'+mmb('qtd','Quantidade')+mmb('val','Valor')+mmb('lista','Lista + total')+mmb('tot','Só total')+'</div>';
   const blktog='<button class="blktog '+(bOn?'on':'off')+'" onclick="toggleBloco(\'materiais\')" title="'+(bOn?'Bloco incluído — clique para remover':'Bloco removido — clique para incluir')+'"><span class="blktog-sw"><i></i></span><span class="blktog-lb">'+(bOn?'na proposta':'removido')+'</span></button>';
-  const head='<div class="blkhead">'+blktog+'<span class="ic"><span class="material-symbols-rounded">'+cfg.icon+'</span></span><h2>'+cfg.titulo+'</h2>'+sel+'</div>';
+  const head='<div class="blkhead">'+blktog+'<span class="ic"><span class="material-symbols-rounded">'+cfg.icon+'</span></span><h2>'+cfg.titulo+'</h2>'+(loteFnOn('g.modo')?sel:'')+'</div>';
   // ---- MODO EDITOR (a custo) — dentro da Soma ----
   if(LME_ON && rows.length){
     var eraS='font-size:10px;font-weight:700;color:var(--amber);text-align:right;margin-top:2px';
@@ -1725,21 +1743,22 @@ function renderLoteMatBlock(cfg){   // master: 3 LEITURAS — Base (modelo) · P
     + baseMatTableHtml(cfg)
     +'<div class="sotot-hint noprint" style="margin:8px 12px 0"><span class="material-symbols-rounded">swap_vert</span><span><b>Via de duas mãos:</b> <b>puxe</b> a média das lojas pra montar/atualizar o modelo, edite, e <b>replique</b> de volta nas lojas (a loja ajustada à mão é preservada).</span></div>'
     +'<div class="addrow" style="padding:8px 12px;display:flex;gap:8px;flex-wrap:wrap">'
-      +'<button onclick="loteSeedBaseMedia()" title="VOLTA: puxa a média por loja e faz merge na Base — não altera as lojas" style="border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">download</span>Trazer média das lojas</button>'
-      +'<button onclick="loteReplicarMat()" title="IDA: replica o modelo da Base nas 16 lojas por linhagem, respeitando campo próprio" style="border-style:solid;border-color:var(--pri);background:var(--pri);color:#fff"><span class="material-symbols-rounded" style="color:#fff">sync</span>Replicar → lojas</button>'
-      +'<button onclick="openPick(\'materiais\')" style="border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">add</span>Adicionar material</button></div>'
+      +(loteFnOn('b.media')?'<button onclick="loteSeedBaseMedia()" title="VOLTA: puxa a média por loja e faz merge na Base — não altera as lojas" style="border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">download</span>Trazer média das lojas</button>':'')
+      +(loteFnOn('b.replicar')?'<button onclick="loteReplicarMat()" title="IDA: replica o modelo da Base nas 16 lojas por linhagem, respeitando campo próprio" style="border-style:solid;border-color:var(--pri);background:var(--pri);color:#fff"><span class="material-symbols-rounded" style="color:#fff">sync</span>Replicar → lojas</button>':'')
+      +(loteFnOn('b.add')?'<button onclick="openPick(\'materiais\')" style="border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">add</span>Adicionar material</button>':'')+'</div>'
     +'</div>';
   // POR LOJA (real): a lista de unidades detalhada (injectLoteBasePanel) — mantida como era, NÃO duplicar aqui
   // GLOBAL (soma) — roxo
   var secGlobal='<div style="border:1px solid var(--line);border-left:4px solid '+C_GLOB+';border-radius:10px;overflow:hidden">'
     +'<div style="'+_shd+'">'+matViewSw('soma',somaOn)+'<b style="font-size:12.5px;color:'+C_GLOB+'">Global do lote</b><span style="font-size:11px;color:var(--tx3)">total das '+N+' lojas · agregado</span></div>'
     + matBodyHtml(rows, tot, mm, 'Material do lote (somado)')
-    +'<div class="addrow" style="padding:8px 12px"><button onclick="loteMatEditOn()" style="border-style:solid;border-color:var(--amber);color:var(--amber)"><span class="material-symbols-rounded">edit</span>Editar a custo</button><button onclick="loteAddPick(\'materiais\')" style="margin-left:8px;border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">hub</span>Adicionar ao lote</button></div>'
+    +'<div class="addrow" style="padding:8px 12px">'+(loteFnOn('g.editar')?'<button onclick="loteMatEditOn()" style="border-style:solid;border-color:var(--amber);color:var(--amber)"><span class="material-symbols-rounded">edit</span>Editar a custo</button>':'')+(loteFnOn('g.addlote')?'<button onclick="loteAddPick(\'materiais\')" style="margin-left:8px;border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">hub</span>Adicionar ao lote</button>':'')+'</div>'
     +'</div>';
   var bothWarn = (somaOn && baseOn) ? '<div class="sotot-hint noprint" style="margin:0 0 10px;background:#f8efdf;border-color:#e6cfa0"><span class="material-symbols-rounded" style="color:var(--amber)">visibility</span><span><b>Base e Global ligadas.</b> Pra não repetir material, o cliente vê só o <b>Global</b> (total do lote). Desligue o Global pra mostrar a Base no lugar.</span></div>' : '';
+  var orgBtn='<button class="noprint" onclick="toggleLoteFnsPanel()" title="Ligar/desligar funções deste bloco ao vivo" style="border:1px solid var(--pri);background:'+(LOTE_FNS_OPEN?'var(--pri);color:#fff':'transparent;color:var(--pri)')+';border-radius:8px;padding:4px 10px;font:inherit;font-size:11px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:5px;margin-left:auto"><span class="material-symbols-rounded" style="font-size:14px;'+(LOTE_FNS_OPEN?'color:#fff':'')+'">tune</span>Organizar funções</button>';
   el.innerHTML=head
-    +'<div class="sotot-hint noprint" style="margin:0 0 10px"><span class="material-symbols-rounded">layers</span><span><b>Material em 2 leituras:</b> <b style="color:'+C_BASE+'">Base</b> (modelo por loja, editável) e <b style="color:'+C_GLOB+'">Global</b> (soma das '+N+'), cada uma com sua chave <b>na proposta</b>. O detalhe <b>por loja real</b> continua na <b>lista de unidades</b> (abaixo), como era.</span></div>'
-    + bothWarn + secBase + secGlobal;
+    +'<div class="sotot-hint noprint" style="margin:0 0 10px;align-items:center"><span class="material-symbols-rounded">layers</span><span style="flex:1"><b>Material em 2 leituras:</b> <b style="color:'+C_BASE+'">Base</b> (modelo, editável) e <b style="color:'+C_GLOB+'">Global</b> (soma das '+N+'), cada uma com sua chave <b>na proposta</b>. Detalhe <b>por loja</b> na lista de unidades abaixo.</span>'+orgBtn+'</div>'
+    + loteFnsPanelHtml() + bothWarn + secBase + secGlobal;
 }
 function loteMatEditOn(){ LME_ON=true; LME_STAGE={}; renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }
 function countLmeChanges(){ var n=0;   // alterações não aplicadas no editor de material a custo
