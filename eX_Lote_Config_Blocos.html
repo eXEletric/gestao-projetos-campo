@@ -40,6 +40,8 @@
   .ch .ct{font-size:10px;color:var(--tx3);white-space:nowrap}
   .ch .xc{border:0;background:none;color:var(--tx3);cursor:pointer;font-size:17px;line-height:1;padding:0 2px}
   .ch .xc:hover{color:#a32d2d}
+  .desc{display:flex;gap:6px;align-items:flex-start;padding:8px 11px;font-size:11.5px;color:var(--tx2);background:color-mix(in srgb,var(--pri) 5%,transparent);border-bottom:1px solid var(--line);line-height:1.4}
+  .desc .material-symbols-rounded{font-size:15px;color:var(--pri);flex:none;margin-top:1px}
   .fns{padding:2px 0}
   .fn{display:flex;align-items:center;gap:8px;padding:6px 10px;border-top:1px solid var(--line)}
   .fn:first-child{border-top:0}
@@ -111,6 +113,24 @@
     {col:'glob',id:'gPrazo',nm:'Prazo do lote (soma)',fns:[['schedule','campo Prazo do lote (dias) — vazio = soma']]},
     {col:'glob',id:'gTot',nm:'Total do contrato',fns:[['visibility','Ver como o cliente'],['payments','chave custo/lucro na proposta'],['call_split','Desmembrar lote']]}
   ];
+  // legenda por bloco (o que cada quadro É) — aparece dentro do quadro quando aberto
+  var DESC={
+    hBase:'A leitura BASE — o modelo/padrão que toda loja segue (editável). Daqui a proposta de cada loja nasce.',
+    bServ:'Serviços do modelo por loja. Fonte: média das lojas ou base do contratante.',
+    bMat:'Lista de material do modelo por loja (valores manuais do levantamento).',
+    bDesp:'Despesas, diárias e locações do modelo. Gatilho entra pela média; cada loja recalcula o real.',
+    hUnid:'A leitura POR UNIDADE — cada loja de verdade, separada, com seus valores. É a lista detalhada que já existe.',
+    uLista:'As 16 lojas com toda a riqueza: status (igual à base/editada), prazo, custo, lucro, valor fechado.',
+    uAdic:'Escopo ALÉM do modelo numa loja, com motivo. Cobra por cima do combo (não dilui a margem do resto).',
+    uCL:'Custo e lucro real de cada loja (interno — não vai pro cliente por padrão).',
+    uAbrir:'Cada loja é uma proposta própria — abrir edita item a item aquela unidade.',
+    hGlob:'A leitura GLOBAL — o lote inteiro: a soma das 16 + o que é só do lote (custos globais, total, prazo).',
+    gServ:'Soma dos serviços das 16 (escopo consolidado). Leitura.',
+    gMat:'Soma do material das 16 = total do lote. Lista itemizada (Cabo, Sensor, Braçadeira…).',
+    gCusto:'Mobilização e logística do lote (frota, rota/km). Gerado no lote e rateado nas unidades (fatia embutida).',
+    gPrazo:'Ótica global: prazo do lote = soma de todas as lojas (o total do contrato).',
+    gTot:'Total do lote = soma das 16. No combo soberano, 42.000/loja fechado (o global já está dentro).'
+  };
   function seed(){
     var colX={base:40,unid:340,glob:640},colY={base:20,unid:20,glob:20},out=[];
     PARTS.forEach(function(p){
@@ -180,6 +200,8 @@
     port.onclick=function(e){e.stopPropagation();portClick(p.id);};
     card.appendChild(port);
     if(p.collapsed){return card;}
+    var dsc=DESC[p.id]||p.d;
+    if(dsc){var de=document.createElement('div');de.className='desc';de.innerHTML='<span class="material-symbols-rounded">info</span><span>'+esc(dsc)+'</span>';card.appendChild(de);}
     var fns=document.createElement('div');fns.className='fns';
     p.fns.forEach(function(f,i){
       var row=document.createElement('div');row.className='fn'+(f.on?'':' off');
@@ -236,7 +258,7 @@
   var expEl=document.getElementById('exp'),exptx=document.getElementById('exptx');
   document.getElementById('export').onclick=function(){
     var s='BLOCOS DO LOTE — quadros e funções (configurado por André)\n\n';
-    data.forEach(function(p){s+='['+p.nm+']  ('+CNAME[p.col||'neu']+')\n';if(p.det&&p.det.trim())s+='  » detalhe: '+p.det.replace(/\n/g,' ').trim()+'\n';p.fns.forEach(function(f){s+='  '+(f.on?'[x] ':'[ ] ')+f.l+'\n';});s+='\n';});
+    data.forEach(function(p){s+='['+p.nm+']  ('+CNAME[p.col||'neu']+')\n';var dsc=DESC[p.id]||p.d;if(dsc)s+='  ('+dsc+')\n';if(p.det&&p.det.trim())s+='  » detalhe: '+p.det.replace(/\n/g,' ').trim()+'\n';p.fns.forEach(function(f){s+='  '+(f.on?'[x] ':'[ ] ')+f.l+'\n';});s+='\n';});
     s+='--- JSON ---\n'+JSON.stringify(data);
     exptx.value=s;expEl.classList.add('on');exptx.focus();exptx.select();
   };
