@@ -289,7 +289,7 @@ async function gerarPDFDe(src,nome,prep){
   const sy0=window.scrollY; window.scrollTo(0,0);
   document.body.appendChild(stage);
   try{
-    const clone=src.cloneNode(true); estatizar(src,clone);
+    const clone=src.cloneNode(true); estatizar(src,clone); clone.classList.add('env-papel');   // o gerador copia o clone p/ outro lugar: regras do PDF vão pela classe, não pelo palco
     clone.style.width=PDF_W+'px'; clone.style.maxWidth='none'; clone.style.margin='0'; clone.style.boxShadow='none'; clone.style.borderRadius='0';
     if(prep) prep(clone);
     stage.appendChild(clone);
@@ -304,7 +304,7 @@ async function gerarPDFDe(src,nome,prep){
     clone.querySelectorAll('tr,thead,p,h1,h2,h3,h4,li,img,div,section').forEach(e=>{ const h=e.getBoundingClientRect().height; if(h>0 && h<=limite) e.classList.add('env-nobreak'); });
     const wk=window.html2pdf().set({
       margin:m, filename:nome, image:{type:'jpeg',quality:0.92},
-      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0,windowWidth:w+40},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0},
       jsPDF:{unit:'px',format:[pageW,pageH],orientation:'portrait',hotfixes:['px_scaling']},
       pagebreak:{mode:['css'],avoid:['.env-nobreak']}
     }).from(clone);
@@ -320,8 +320,8 @@ async function gerarPDFLote(nome){
   const jaAberto=!!document.getElementById('vcOverlay');
   verComoClienteLote();
   const emu=document.createElement('style'); emu.id='envPrintEmuLote';
-  emu.textContent=cssDeImpressao().replace(/body\s*>\s*\*:not\(#vcOverlay\)\s*\{[^}]*\}/g,'')+`\n#envPdfStage #vcBar,#envPdfStage #vcWarn,#envPdfStage #vcMenu,#envPdfStage .vctog,#envPdfStage .docoff,#envPdfStage .noprint{display:none!important}
-    #envPdfStage #vcSheet.off-lojas-modelo .col-modelo,#envPdfStage #vcSheet.off-lojas-dias .col-dias,#envPdfStage #vcSheet.off-lojas-adic .col-adic{display:none!important}`;
+  emu.textContent=cssDeImpressao().replace(/body\s*>\s*\*:not\(#vcOverlay\)\s*\{[^}]*\}/g,'')+`\n.env-papel #vcBar,.env-papel #vcWarn,.env-papel #vcMenu,.env-papel .vctog,.env-papel .docoff,.env-papel .noprint{display:none!important}
+    #vcSheet.env-papel.off-lojas-modelo .col-modelo,#vcSheet.env-papel.off-lojas-dias .col-dias,#vcSheet.env-papel.off-lojas-adic .col-adic{display:none!important}`;
   document.head.appendChild(emu);
   await new Promise(r=>setTimeout(r,500));   // mapa e fontes
   try{
@@ -337,9 +337,9 @@ async function gerarPDF(nome){
   const wasView=document.body.classList.contains('viewing'), sy=window.scrollY;
   _setMode('view'); document.body.classList.add('env-pdf');
   const emu=document.createElement('style'); emu.id='envPrintEmu';
-  emu.textContent=cssDeImpressao()+`\nbody.env-pdf{background:#fff!important}\nbody.env-pdf .grid{grid-template-columns:1fr!important}\n#envPdfStage .app{padding:0!important;margin:0!important;box-shadow:none!important;border-radius:0!important;background:#fff!important;max-width:none!important}
-    #envPdfStage .und-fix{border:0!important;background:transparent!important;padding:0!important;box-shadow:none!important}
-    #envPdfStage .noprint,#envPdfStage .intbox,#envPdfStage #envTrat,#envPdfStage #comprovantesPanel,#envPdfStage #oppBanner,#envPdfStage .oppbar,#envPdfStage #previewBar{display:none!important}`;
+  emu.textContent=cssDeImpressao()+`\nbody.env-pdf{background:#fff!important}\nbody.env-pdf .grid{grid-template-columns:1fr!important}\n.app.env-papel{padding:0!important;margin:0!important;box-shadow:none!important;border-radius:0!important;background:#fff!important;max-width:none!important}
+    .env-papel .und-fix{border:0!important;background:transparent!important;padding:0!important;box-shadow:none!important}
+    .env-papel .noprint,.env-papel .intbox,.env-papel #envTrat,.env-papel #comprovantesPanel,.env-papel #oppBanner,.env-papel .oppbar,.env-papel #previewBar{display:none!important}`;
   document.head.appendChild(emu);
   await new Promise(r=>setTimeout(r,250));
   try{ return await gerarPDFDe(document.querySelector('.app'),nome); }
