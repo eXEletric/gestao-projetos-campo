@@ -920,9 +920,9 @@ body.env-pdf .app{box-shadow:none!important;border-radius:0!important;margin:0 a
 .trcl.green{background:#1f2c14}.trcl.pri{background:#2b2544}.trcl.red{background:#3a1b1b}.trcl.blue{background:#16283c}.trcl.gray{background:#2a2a27}
 .trrv{background:#f3f1ea;color:#111110}.trrv.old{background:#5b5a55;color:#e6e3da}
 .trbadge{color:#111110}
-.tric.gold{background:linear-gradient(135deg,#f3dc8b,#c9a227 55%,#9c7a14);color:#2b2000;box-shadow:0 0 0 1px #e2c25a55}
-.trcl.gold{background:linear-gradient(135deg,#f3dc8b,#c9a227 55%,#a9851b);color:#2b2000}
-.obst-aprov{background:linear-gradient(135deg,#f6e39a 0%,#d4af37 45%,#a8841c 100%);color:#2b2000;box-shadow:0 1px 0 #fff8 inset,0 1px 3px rgba(120,90,10,.35);border:1px solid #b8921f}
+.tric.gold{background:#d4af37;color:#2b2000}
+.trcl.gold{background:#d4af37;color:#2b2000}
+.obst-aprov{background:#d4af37;color:#2b2000;border:none;box-shadow:none}
 .obst-aprov .material-symbols-rounded{color:#2b2000}
 @media print{#envTrat{display:none!important}}
 @media screen{ .env-opp-lock{cursor:default;color:var(--tx,#1a1a18)} .env-opp-lock:focus{outline:none;box-shadow:none} }
