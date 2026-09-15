@@ -170,32 +170,41 @@
   var TYPES=['sys','dia','ges','fut'],TNAME={sys:'Estrutura',dia:'Por unidade',ges:'Global',fut:'Base (modelo)'};
   // Blocos do LOTE — organize a separação do seu jeito (arraste, duplique ⧉, renomeie, ligue, colore).
   // Cores: amarelo=BASE (modelo) · verde=POR UNIDADE (real) · roxo=GLOBAL (agregado) · cinza=estrutura.
-  var seedN=[
-    // cabeçalhos das 3 leituras
-    {id:'hBase',l:'◆ BASE — modelo por loja',x:40,y:20,c:'fut',note:'A leitura BASE. O modelo/padrão que toda loja segue — editável. É daqui que a proposta de cada loja nasce (e pra onde a média volta).\n\nMENUS DA SEÇÃO: chave "na proposta" (liga/desliga no cliente) · toggle "média por loja × base do contratante" · Salvar como modelo / Aplicar na base.'},
-    {id:'hUnid',l:'◆ POR UNIDADE — cada loja',x:380,y:20,c:'dia',note:'A leitura POR UNIDADE. Cada loja de verdade, separada, com seus próprios valores (pode diferir da base). É a lista detalhada que já existe.\n\nMENUS DA SEÇÃO: Ver "Escopo somado | Por loja" · Modo "Estimativa (× N) | Detalhado" · buscar+adicionar loja · Propagar base nas "iguais".'},
-    {id:'hGlob',l:'◆ GLOBAL — o lote completo',x:740,y:20,c:'ges',note:'A leitura GLOBAL. O lote inteiro: a soma das 16 + o que é só do lote (custos globais, total, prazo).\n\nMENUS DA SEÇÃO: chave "na proposta" · Ver como o cliente (documento + mapa) · Desmembrar lote.'},
-    // BASE (modelo, editável)
-    {id:'bServ',l:'Serviços base (média × contratante)',x:40,y:110,c:'fut',note:'Serviços do modelo por loja. Fonte: MÉDIA das lojas ou BASE do contratante.\n\nMENUS: definir serviço/receita (⚙ composição: equipe × tempo) · switch "usar base / alterar" custo · margem própria (reset à base) · detalhe do serviço · Adicionar serviço (agrupado por categoria) · editar/excluir no cadastro.'},
-    {id:'bMat',l:'Material base (modelo por loja)',x:40,y:190,c:'fut',note:'Lista de material do modelo por loja (valores manuais do levantamento).\n\nMENUS: switch "usar base / alterar" (valor) · custo un · qtd · und · margem · duplicar · trocar (swap) · excluir · Trazer média das lojas (VOLTA) · Replicar → lojas (IDA) · Adicionar material.'},
-    {id:'bDesp',l:'Despesas / Locações base',x:40,y:270,c:'fut',note:'Despesas, diárias e locações do modelo.\n\nMENUS: gatilho por linha (fixo / por pessoa-dia / por dia / por pessoa) · diárias (alimentação + hospedagem) · margem · Adicionar despesa / locação. A despesa com gatilho entra pela média; cada loja recalcula o real.'},
-    // POR UNIDADE (a lista detalhada + o de cada loja)
-    {id:'uLista',l:'Lista de lojas (detalhada)',x:380,y:110,c:'dia',note:'As 16 lojas com toda a riqueza (mantida como está): status (igual à base / editada), prazo, custo, lucro, valor fechado.\n\nMENUS por loja: Abrir (a proposta da loja) · Resetar (voltar à base) · Excluir · buscar+adicionar loja · Propagar base.'},
-    {id:'uAdic',l:'Adicionais por loja (+ motivo)',x:380,y:190,c:'dia',note:'Escopo ALÉM do modelo numa loja, com motivo (seu argumento). Cobra POR CIMA do combo.\n\nMENUS: botão "marcar adicional" na linha (pede o motivo) · editar/tirar · selo "+N adicionais" na loja (motivos no tooltip).'},
-    {id:'uCL',l:'Custo · lucro por loja',x:380,y:270,c:'dia',note:'Custo e lucro real de cada loja (interno).\n\nMENUS: chave "Mostrar na proposta do cliente" (custo/lucro) — padrão escondido; alerta vermelho quando ligado.'},
-    {id:'uPrazo',l:'Prazo médio por unidade',x:380,y:350,c:'dia',note:'Ótica UNIDADE: prazo = MÉDIA das lojas (faixa menor→maior de apoio). Sem menu próprio — o prazo de cada loja vem da mão de obra dela.'},
-    {id:'uAbrir',l:'Abrir a proposta da loja',x:380,y:430,c:'dia',note:'Cada loja é uma proposta própria.\n\nMENU: botão "abrir" → edita item a item aquela unidade (com todos os blocos da proposta).'},
-    // GLOBAL (agregado das 16 + o que é só do lote)
-    {id:'gServ',l:'Serviços global (Σ das 16)',x:740,y:110,c:'ges',note:'Soma dos serviços das 16 (escopo consolidado). Leitura.\n\nMENUS: chave "na proposta" · aparece como "Escopo consolidado — serviços" no documento do cliente.'},
-    {id:'gMat',l:'Material global (Σ das 16)',x:740,y:190,c:'ges',note:'Soma do material das 16 = total de material do lote. Lista itemizada (Cabo, Sensor, Braçadeira…).\n\nMENUS: Editar a custo (Σ qtd + custo un, aplica nas lojas respeitando campo próprio) · Adicionar ao lote (fan-out) · chave "na proposta" · modo Quantidade / Valor / Lista / Só total.'},
-    {id:'gCusto',l:'Custos globais (mobilização/logística)',x:740,y:270,c:'ges',note:'Mobilização e logística do lote (frota, rota/km) — serve as 16. GERADO no lote e RATEADO nas unidades (fatia embutida).\n\nMENUS: adicionar estrutura/frota · rota (km × R$/km) · chave "Mostrar a origem no cliente" (transparência, não soma no total).'},
-    {id:'gPrazo',l:'Prazo do lote (soma das lojas)',x:740,y:350,c:'ges',note:'Ótica GLOBAL: prazo do lote = SOMA de todas as lojas (total do contrato).\n\nMENU: campo "Prazo do lote (dias corridos)" — vazio = soma automática; digite pra sobrescrever.'},
-    {id:'gTot',l:'Total do contrato',x:740,y:430,c:'ges',note:'Total do lote = soma das 16. No combo soberano, 42.000/loja fechado (o global já está dentro).\n\nMENUS: Ver como o cliente (documento + mapa) · chave custo/lucro na proposta · Desmembrar lote.'}
+  // Cada PARTE + seus MENUS (viram quadrinhos cinza logo abaixo, pra você ver e arrastar).
+  var PARTS=[
+    // col 0 = BASE (amarelo)
+    {col:0,id:'hBase',l:'◆ BASE — modelo por loja',c:'fut',note:'A leitura BASE: o modelo/padrão que toda loja segue (editável). Daqui a proposta de cada loja nasce, e pra cá a média volta.',menus:['chave "na proposta"','média × base do contratante','Salvar como modelo','Aplicar na base']},
+    {col:0,id:'bServ',l:'Serviços base',c:'fut',note:'Serviços do modelo por loja. Fonte: média das lojas ou base do contratante.',menus:['⚙ composição (equipe × tempo)','usar base / alterar (custo)','margem (reset à base)','detalhe do serviço','Adicionar serviço']},
+    {col:0,id:'bMat',l:'Material base',c:'fut',note:'Lista de material do modelo por loja (valores manuais do levantamento).',menus:['usar base / alterar (valor)','custo un · qtd · und','margem','duplicar · trocar · excluir','Trazer média das lojas','Replicar → lojas','Adicionar material']},
+    {col:0,id:'bDesp',l:'Despesas / Locações base',c:'fut',note:'Despesas, diárias e locações do modelo. A despesa com gatilho entra pela média; cada loja recalcula o real.',menus:['gatilho (fixo/pessoa-dia/dia/pessoa)','diárias (alimentação + hospedagem)','margem','Adicionar despesa / locação']},
+    // col 1 = POR UNIDADE (verde)
+    {col:1,id:'hUnid',l:'◆ POR UNIDADE — cada loja',c:'dia',note:'A leitura POR UNIDADE: cada loja de verdade, separada, com seus valores (pode diferir da base). É a lista detalhada que já existe.',menus:['Ver: Escopo somado | Por loja','Modo: Estimativa | Detalhado','buscar + adicionar loja','Propagar base nas "iguais"']},
+    {col:1,id:'uLista',l:'Lista de lojas (detalhada)',c:'dia',note:'As 16 lojas com toda a riqueza (mantida como está): status, prazo, custo, lucro, valor fechado.',menus:['Abrir (proposta da loja)','Resetar (voltar à base)','Excluir','status: igual à base | editada','prazo · custo · lucro · valor']},
+    {col:1,id:'uAdic',l:'Adicionais por loja',c:'dia',note:'Escopo além do modelo numa loja, com motivo. Cobra por cima do combo.',menus:['marcar adicional (+ motivo)','editar / tirar','selo "+N adicionais"']},
+    {col:1,id:'uCL',l:'Custo · lucro por loja',c:'dia',note:'Custo e lucro real de cada loja (interno).',menus:['chave "Mostrar na proposta"']},
+    {col:1,id:'uPrazo',l:'Prazo médio por unidade',c:'dia',note:'Ótica unidade: prazo = média das lojas (faixa menor→maior de apoio).',menus:[]},
+    {col:1,id:'uAbrir',l:'Abrir a proposta da loja',c:'dia',note:'Cada loja é uma proposta própria — abrir edita item a item aquela unidade.',menus:['abrir → proposta da loja']},
+    // col 2 = GLOBAL (roxo)
+    {col:2,id:'hGlob',l:'◆ GLOBAL — o lote completo',c:'ges',note:'A leitura GLOBAL: o lote inteiro — a soma das 16 + o que é só do lote (custos globais, total, prazo).',menus:['chave "na proposta"','Ver como o cliente','Desmembrar lote']},
+    {col:2,id:'gServ',l:'Serviços global (Σ 16)',c:'ges',note:'Soma dos serviços das 16 (escopo consolidado). Leitura.',menus:['chave "na proposta"']},
+    {col:2,id:'gMat',l:'Material global (Σ 16)',c:'ges',note:'Soma do material das 16 = total do lote. Lista itemizada (Cabo, Sensor, Braçadeira…).',menus:['Editar a custo','Adicionar ao lote','chave "na proposta"','modo: Qtd | Valor | Lista | Só total']},
+    {col:2,id:'gCusto',l:'Custos globais',c:'ges',note:'Mobilização e logística do lote (frota, rota/km). Gerado no lote e rateado nas unidades (fatia embutida).',menus:['adicionar estrutura / frota','rota (km × R$/km)','Mostrar a origem no cliente']},
+    {col:2,id:'gPrazo',l:'Prazo do lote (soma)',c:'ges',note:'Ótica global: prazo do lote = soma de todas as lojas (o total do contrato).',menus:['campo Prazo do lote (dias) — vazio = soma']},
+    {col:2,id:'gTot',l:'Total do contrato',c:'ges',note:'Total do lote = soma das 16. No combo, 42.000/loja fechado (o global já está dentro).',menus:['Ver como o cliente','chave custo/lucro na proposta','Desmembrar lote']}
   ];
+  // gerador: cada parte + seus menus (quadrinhos cinza) empilhados abaixo, indentados, por coluna
+  var COLX=[40,470,900], GX=26, PARTH=60, MENUH=40, GAPP=24;
+  var seedN=[], colY=[20,20,20];
+  PARTS.forEach(function(p){
+    var x=COLX[p.col], y=colY[p.col];
+    seedN.push({id:p.id,l:p.l,x:x,y:y,c:p.c,note:p.note||''});
+    y+=PARTH;
+    (p.menus||[]).forEach(function(m,i){ seedN.push({id:p.id+'_m'+i,l:'· '+m,x:x+GX,y:y,c:'sys'}); y+=MENUH; });
+    colY[p.col]=y+GAPP;
+  });
   var seedE=[
     {f:'hBase',t:'hUnid',label:'replica → lojas'},
-    {f:'hUnid',t:'hGlob',label:'soma → global'},
-    {f:'gCusto',t:'uCL',d:1,label:'rateado nas lojas'}
+    {f:'hUnid',t:'hGlob',label:'soma → global'}
   ];
   var SEED=(window.EX_MODEL&&window.EX_MODEL.nodes&&window.EX_MODEL.edges)?window.EX_MODEL:{nodes:seedN,edges:seedE};
   var LAYOUT={};SEED.nodes.forEach(function(n){LAYOUT[n.id]={x:n.x,y:n.y};});
