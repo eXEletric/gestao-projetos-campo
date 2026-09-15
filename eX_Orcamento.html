@@ -641,7 +641,9 @@ body.viewing .in::placeholder,body.viewing .cin::placeholder,body.viewing .pin::
 .blktog.on{border-color:var(--pri);color:var(--pri);background:var(--pri-bg)}
 .blktog.on .blktog-sw{background:var(--pri)}
 .blktog.on .blktog-sw i{left:16px}
-.blktog.off .blktog-lb{color:var(--tx3)}
+.blktog.off{background:#b3261e;border-color:#b3261e;color:#fff}.blktog.off .blktog-lb{color:#fff}.blktog.off .blktog-sw{background:rgba(255,255,255,.35)}
+.blktog .blktog-ic{font-size:15px}
+.olhotog{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);border-radius:20px;padding:3px 10px;cursor:pointer;font:inherit;font-size:11px;font-weight:700;color:#3a3550;flex:0 0 auto}.olhotog .material-symbols-rounded{font-size:15px}.olhotog.off{border-style:dashed;color:#8b86a1;background:transparent}
 /* bloco desligado: some o conteúdo na tela (cabeçalho/chave ficam p/ religar); some inteiro na impressão */
 .blk-off{opacity:.72}
 .blk-off > :not(.blkhead){display:none!important}
@@ -776,7 +778,7 @@ body.fxorg [data-fxnm].fxhl{outline:3px solid var(--pri);outline-offset:3px}
 #fxDrawer .fxvis{display:inline-flex;align-items:center;gap:3px;flex:none;border:1px solid var(--line2);background:var(--surf);color:var(--tx3);border-radius:20px;padding:2px 7px;font:700 10.5px inherit;cursor:pointer;white-space:nowrap}
 #fxDrawer .fxvis .material-symbols-rounded{font-size:14px}
 #fxDrawer .fxvis.on{background:#e6f5ec;border-color:#9fd3b3;color:#17693f}
-#fxDrawer .fxvis.off{background:#fbecec;border-color:#e8b4b4;color:#a32d2d}
+#fxDrawer .fxvis.off{background:transparent;border-style:dashed;border-color:#b9b4cc;color:#8b86a1}
 #fxDrawer .fxvis.int{cursor:default;border-style:dashed}
 #fxOrgBtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
 body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{background:var(--surf)}
@@ -1330,6 +1332,8 @@ function baseMg(blk){ if(S.margem && S.margem[blk]!==undefined && S.margem[blk]!
 // VALOR FINAL COMBINADO: fixa o preço; a margem dos blocos de lucro (serviços+materiais) deriva pra bater
 function comboActive(){ return S.valorCombinado!=null && num(S.valorCombinado)>0; }
 function adicPrecoTotal(){ return ['servicos','materiais','despesas','equip'].reduce(function(a,k){ if(!blocoAtivo(k))return a; return a+(S[k]||[]).reduce(function(b,r){ if(r&&r.adic){ r._blk=k; return b+linePreco(r); } return b; },0); },0); }   // preço (antes do imposto) das linhas adicionais
+function adicAbatidoTotal(){ return ['servicos','materiais','despesas','equip'].reduce(function(a,k){ if(!blocoAtivo(k))return a; return a+(S[k]||[]).reduce(function(b,r){ if(r&&r.adic&&!r.adicCobrar){ r._blk=k; return b+linePreco(r); } return b; },0); },0); }   // só os adicionais marcados ABATIDO entram no desconto comercial
+function setAdicCobrar(blk,id){ var r=(S[blk]||[]).find(function(x){return x.id===id;}); if(!r)return; r.adicCobrar=!r.adicCobrar; save(); try{ renderBlk(BLKS.find(function(b){return b.key===blk;})); }catch(_){} recalc(); cloudMsg(r.adicCobrar?'adicional COBRADO do cliente':'adicional ABATIDO pelo desconto comercial'); }
 function toggleDescontoAdic(){ S.descontoAdic=!S.descontoAdic; save(); recalc(); }
 function adicCusto(blk){ return (S[blk]||[]).reduce(function(a,r){ return a+(r&&r.adic?lineCusto(r):0); },0); }   // custo das linhas ADICIONAIS (escopo além do modelo) — ficam FORA do combo, cobradas por cima
 function comboMg(){   // margem uniforme (fração) nos blocos de lucro — só sobre o escopo-base (adicionais fora)
@@ -1696,8 +1700,8 @@ function matBodyHtml(rows, tot, mm, totLabel){   // corpo de uma tabela de mater
   else if(mm==='val'){ head='<th>#</th><th>Material</th><th class="r">Qtd</th><th>Und</th><th class="r">Valor</th>'; csp=4; brs=rows.map(function(r,i){return '<tr><td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td><td class="r">'+_d1(r.qtd)+'</td><td>'+esc(r.und)+'</td><td class="r money">'+(r.custo>0?fmt(r.custo):'—')+'</td></tr>';}).join(''); }
   else { head='<th>#</th><th>Material</th><th class="r">Qtd</th><th>Und</th>'; csp=3; brs=rows.map(function(r,i){return '<tr><td class="idx">'+(i+1)+'</td><td>'+esc(r.desc)+'</td><td class="r">'+_d1(r.qtd)+'</td><td>'+esc(r.und)+'</td></tr>';}).join(''); }
   return '<div class="scroll"><table class="tbl"><thead><tr>'+head+'</tr></thead><tbody>'+brs+'</tbody><tfoot><tr class="ftot"><td class="ftl" colspan="'+csp+'">'+totLabel+'</td><td class="r"><b>'+fmt(tot)+'</b></td></tr></tfoot></table></div>'; }
-function setMatView(which,v){ if(which==='soma')S.matSomaOn=!!v; else if(which==='base')S.matBaseOn=!!v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} }
-function matViewSw(which,on){ return '<button class="blktog '+(on?'on':'off')+'" onclick="setMatView(\''+which+'\','+(on?'false':'true')+')" title="'+(on?'aparece na proposta do cliente — clique para tirar':'fora da proposta — clique para incluir')+'"><span class="blktog-sw"><i></i></span><span class="blktog-lb">'+(on?'na proposta':'fora')+'</span></button>'; }
+function setMatView(which,v){ if(which==='soma')S.matSomaOn=!!v; else if(which==='base')S.matBaseOn=!!v; save(); try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} }
+function matViewSw(which,on){ return '<button class="olhotog '+(on?'on':'off')+'" onclick="setMatView(\x27'+which+'\x27,'+(on?'false':'true')+')" title="Só visibilidade no documento do cliente (não muda valor)"><span class="material-symbols-rounded">'+(on?'visibility':'visibility_off')+'</span>'+(on?'no PDF':'oculto no PDF')+'</button>'; }
 function baseMatTableHtml(cfg){   // Base do lote = modelo EDITÁVEL de material (igual ao serviço) sobre S.materiais
   var rows=S.materiais||[]; rows.forEach(function(r){r._blk='materiais';});
   var cols='<th>#</th><th>Material</th><th>Marca</th><th class="pint">Valor</th><th class="r pint">Custo un.</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem</th><th class="r pint">Custo total</th><th class="r">Total</th><th class="pint"></th>';
@@ -1736,8 +1740,8 @@ function loteSeedBaseMedia(){   // atualiza a Base com a MÉDIA por loja (total 
     if(ex){ ex.qtd=q; ex.usarBase=false; ex.custoAlt=unit; if(!(num(ex.custoBase)>0))ex.custoBase=unit; if(!ex.und)ex.und=r.und||'un'; upd++; }
     else { var o=rowSvc(r.desc, q, r.und||'un', unit, '', null, ''); if(r.lid)o.lid=r.lid; else delete o.lid; o.usarBase=false; o.custoAlt=unit; S.materiais.push(o); add++; }   // legado sem lid: Base fica sem lid p/ casar por desc (round-trip idempotente)
   });
-  S.matBaseOn=true; save(); if(OPP&&CLOUD){try{pushOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} recalc(); cloudMsg('Base atualizada pela média — '+add+' novo(s) · '+upd+' atualizado(s)'); }
-async function loteReplicarMat(){   // IDA: replica o modelo da Base nas lojas por LINHAGEM (lid), respeitando campo próprio (own)
+  S.matBaseOn=true; save(); try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} recalc(); cloudMsg('Base atualizada pela média — '+add+' novo(s) · '+upd+' atualizado(s)'); }
+async function loteReplicarMat(){ if(!loteExigeSalvo('Replicar material nas lojas'))return;   // IDA: replica o modelo da Base nas lojas por LINHAGEM (lid), respeitando campo próprio (own)
   if(!isLoteBase()) return;
   var base=(S.materiais||[]).filter(function(r){return r&&(r.desc||num(r.custoBase)>0||num(r.custoAlt)>0);});
   if(!base.length){ alert('A Base do lote está vazia. Monte o modelo ("Trazer média" ou "Adicionar material") antes de replicar.'); return; }
@@ -1778,7 +1782,7 @@ var LOTE_MAT_FNS=[   // funções configuráveis do bloco de material do lote
   {k:'b.add',lb:'Base · Adicionar material'}
 ];
 function loteFnOn(k){ return !(S && S.loteFns && S.loteFns[k]===false); }   // padrão: ligada
-function toggleLoteFn(k){ if(!S.loteFns)S.loteFns={}; S.loteFns[k]=(loteFnOn(k)?false:true); save(); if(OPP&&CLOUD){try{pushOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} }
+function toggleLoteFn(k){ if(!S.loteFns)S.loteFns={}; S.loteFns[k]=(loteFnOn(k)?false:true); save(); try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} }
 function toggleLoteFnsPanel(){ LOTE_FNS_OPEN=!LOTE_FNS_OPEN; try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} }
 function loteFnsPanelHtml(){ if(!LOTE_FNS_OPEN) return '';
   var rows=LOTE_MAT_FNS.map(function(f){ var on=loteFnOn(f.k);
@@ -1792,7 +1796,7 @@ function renderLoteMatBlock(cfg){   // master: 3 LEITURAS — Base (modelo) · P
   const mm=S.matModo||'qtd';
   const mmb=function(v,l){return '<button class="lbtn" style="'+(mm===v?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'" onclick="setMatModo(\''+v+'\')">'+l+'</button>';};
   const sel='<div class="modosw" style="gap:6px;flex-wrap:wrap">'+mmb('qtd','Quantidade')+mmb('val','Valor')+mmb('lista','Lista + total')+mmb('tot','Só total')+'</div>';
-  const blktog='<button class="blktog '+(bOn?'on':'off')+'" onclick="toggleBloco(\'materiais\')" title="'+(bOn?'Bloco incluído — clique para remover':'Bloco removido — clique para incluir')+'"><span class="blktog-sw"><i></i></span><span class="blktog-lb">'+(bOn?'na proposta':'removido')+'</span></button>';
+  const blktog='<button class="blktog '+(bOn?'on':'off')+'" onclick="toggleBloco(\'materiais\')" title="'+(bOn?'Este bloco SOMA no total (muda o valor) — clique para tirar do cálculo':'Bloco FORA DO TOTAL — clique para voltar a somar')+'"><span class="blktog-sw"><i></i></span><span class="material-symbols-rounded blktog-ic">calculate</span><span class="blktog-lb">'+(bOn?'soma no total':'FORA DO TOTAL')+'</span></button>';
   const head='<div class="blkhead">'+blktog+'<span class="ic"><span class="material-symbols-rounded">'+cfg.icon+'</span></span><h2>'+cfg.titulo+'</h2>'+(loteFnOn('g.modo')?sel:'')+'</div>';
   // ---- MODO EDITOR (a custo) — dentro da Soma ----
   if(LME_ON && rows.length){
@@ -1870,7 +1874,7 @@ function lmeRefresh(){ var n=0, tot=0;
   var ne=document.getElementById('lme_n'); if(ne)ne.textContent=n;
   var w=document.getElementById('lme_warn'); if(w)w.style.display=n?'':'none';
 }
-function loteMatEditApply(){
+function loteMatEditApply(){ if(!loteExigeSalvo('Aplicar material nas lojas'))return;
   var changes=[];
   (document.querySelectorAll('#blk_materiais tr[data-lme]')||[]).forEach(function(tr){
     var i=tr.getAttribute('data-lme'), key=tr.getAttribute('data-key'), desc=tr.getAttribute('data-desc');
@@ -1999,7 +2003,7 @@ function renderBlk(cfg){
   const bOn=blocoAtivo(cfg.key);
   document.getElementById('blk_'+cfg.key).innerHTML=`
     <div class="blkhead">
-      <button class="blktog ${bOn?'on':'off'}" onclick="toggleBloco('${cfg.key}')" title="${bOn?'Bloco incluído na proposta — clique para remover':'Bloco removido — clique para incluir'}"><span class="blktog-sw"><i></i></span><span class="blktog-lb">${bOn?'na proposta':'removido'}</span></button>
+      <button class="blktog ${bOn?'on':'off'}" onclick="toggleBloco('${cfg.key}')" title="${bOn?'Este bloco SOMA no total (muda o valor) — clique para tirar do cálculo':'Bloco FORA DO TOTAL — clique para voltar a somar'}"><span class="blktog-sw"><i></i></span><span class="material-symbols-rounded blktog-ic">calculate</span><span class="blktog-lb">${bOn?'soma no total':'FORA DO TOTAL'}</span></button>
       <span class="ic"><span class="material-symbols-rounded">${cfg.icon}</span></span>
       <h2>${cfg.titulo}</h2>${(isLoteBase()&&varLista().length>1)?`<span title="conteúdo desta variação da base" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;border-radius:20px;padding:3px 9px;background:var(--pri);color:#fff"><span class="material-symbols-rounded" style="font-size:13px;color:#fff">layers</span>${esc(varNome(S.varAtiva))}</span>`:''}
       <div class="modosw">
@@ -2295,7 +2299,7 @@ function toggleSoTotal(blk){
   S.soTotal[blk]=next; save();
   renderBlk(BLKS.find(b=>b.key===blk)); recalc();
   // lote: a mestra controla o "só o total"; grava na nuvem pras unidades acompanharem ao abrir
-  if(S&&S._base&&S_LOTE_ID&&OPP&&CLOUD){ try{ pushOrc(); cloudMsg('detalhe propagado às unidades ✓'); }catch(_){}}
+  if(S&&S._base&&S_LOTE_ID&&OPP&&CLOUD){ cloudMsg('clique Salvar para as unidades acompanharem'); }   // Fase 1: grava só no Salvar
   else if(S&&!S._base&&S_LOTE_ID){ marcarCampoProprio('soTotal'); }   // unidade editou o detalhe → vira "campo próprio" (para de seguir a mestra)
 }
 function updBloco(blk,val){
@@ -2369,7 +2373,7 @@ let PICK_TARGET=null;   // id da linha sendo TROCADA (null = adicionar nova)
 let _PICK_BLK=null;
 var PICK_LOTE=false;   // ② governança por item: modo "adicionar ao lote" (fan-out pras lojas)
 function loteAddPick(blk){ PICK_LOTE=true; openPick(blk); }
-async function loteAddLinha(blk,line){
+async function loteAddLinha(blk,line){ if(!loteExigeSalvo('Adicionar ao lote'))return;
   const units=varUnitsAlvo(); const n=units.length;   // com variações: só as lojas da variação aberta
   if(!n){ cloudMsg('sem lojas nesta variação — ficou só na base'); return; }
   if(!confirm('Adicionar "'+(line.desc||'novo item')+'" às '+n+' loja(s) do lote?\n\nEntra em todas (qtd '+num(line.qtd)+') — você ajusta por loja depois.\nLojas que já tiverem esse item não recebem duplicata.')) return;   // recusou: fica só na base
@@ -2876,7 +2880,7 @@ function renderLote(host){
 }
 function lotePend(){ const id=_lg('lLoja').value; if(!id)return; const l=(LOJAS||[]).find(x=>x.id===id); if(!l)return; if(LOTE_PEND.some(p=>p.id===id)){alert('Essa loja já está na lista.');return;} LOTE_PEND.push(l); loteRerender(); }
 function loteRmPend(i){ LOTE_PEND.splice(i,1); loteRerender(); }
-async function loteGerar(){
+async function loteGerar(){ if(!loteExigeSalvo('Gerar propostas'))return;
   if(!LOTE_PEND.length)return;
   const btn=event&&event.target; if(btn)btn.disabled=true;
   try{
@@ -2893,10 +2897,10 @@ async function loteGerar(){
     LOTE_PEND=[]; await loteReload();
   }catch(e){ console.error('gerar',e); alert('Erro ao gerar: '+(e.message||e)); if(btn)btn.disabled=false; }
 }
-async function loteResetUnit(id){ if(!confirm('Resetar esta unidade ao escopo base? As alterações feitas nela serão perdidas.'))return;
+async function loteResetUnit(id){ if(!loteExigeSalvo('Resetar loja'))return; if(!confirm('Resetar esta unidade ao escopo base? As alterações feitas nela serão perdidas.'))return;
   const u=LOTE_UNITS.find(o=>o.id===id); if(!u)return;
-  const dados=BASE_DADOS?dadosLojaDaBase(BASE_DADOS,unitVar(u)):{}; delete dados._base; delete dados.macro; dados.abrSnap=null; dados.finNome=u.cliente_final; dados.lojaId=(u.dados&&u.dados.lojaId)||null; dados.numero=u.numero;
-  const r=await SB.from('orcamentos').update({herda_base:true,dados,total:BASE_TOTAL}).eq('id',id); if(r.error){alert('Erro: '+r.error.message);return;}
+  const _bb=(isLoteBase()?S:BASE_DADOS); const dados=_bb?dadosLojaDaBase(_bb,unitVar(u)):{}; delete dados._base; delete dados.macro; dados.abrSnap=null; dados.finNome=(u.dados&&u.dados.finNome)||u.cliente_final; dados.finNum=(u.dados&&u.dados.finNum)||dados.finNum; dados.variacaoId=unitVar(u); dados.lojaId=(u.dados&&u.dados.lojaId)||null; dados.numero=u.numero;
+  var _pt=null; try{ _pt=precoDe(dadosLojaCalc({dados:dados})); }catch(_){} const r=await SB.from('orcamentos').update({herda_base:true,dados,total:(_pt?_pt.total:BASE_TOTAL)}).eq('id',id); if(r.error){alert('Erro: '+r.error.message);return;}
   await loteReload();
 }
 /* ===== Motor de governança do lote por campo (1.1) =====
@@ -2916,12 +2920,12 @@ function herdarCamposDaMestra(baseDados){
 function marcarCampoProprio(campo){               // unidade editou um campo governado → para de seguir a mestra
   if(!S||S._base||!S_LOTE_ID) return;
   if(!S._ov||typeof S._ov!=='object') S._ov={};
-  if(!S._ov[campo]){ S._ov[campo]=true; save(); if(OPP&&CLOUD){ try{ pushOrc(); }catch(_){}} try{ cloudMsg('campo próprio nesta loja ✓'); }catch(_){} }
+  if(!S._ov[campo]){ S._ov[campo]=true; save(); try{ cloudMsg('campo próprio nesta loja ✓'); }catch(_){} }
 }
 function ovCampos(o){ var v=o&&o.dados&&o.dados._ov; return v?Object.keys(v).filter(function(k){return v[k];}):[]; }
 function ovBadgeHtml(o){ var ov=ovCampos(o); if(!ov.length) return '';
   return '<div style="margin-top:3px"><span title="campos próprios: '+ov.map(campoLabel).join(', ')+' — a mestra não sobrescreve" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;border-radius:20px;padding:2px 7px;color:#b0701a;background:#fbf1e0"><span class="material-symbols-rounded" style="font-size:11px">tune</span>campo próprio</span></div>'; }
-async function loteResetCampo(unitId,campo){
+async function loteResetCampo(unitId,campo){ if(!loteExigeSalvo('Resetar campo da loja'))return;
   if(!confirm('Resetar “'+campoLabel(campo)+'” desta loja e voltar a seguir a mestra?\nA edição desse campo nesta loja será perdida.')) return;
   try{
     const u=(LOTE_UNITS||[]).find(o=>o.id===unitId); if(!u)return;
@@ -2942,22 +2946,22 @@ function ownChipHtml(cfg,r){
 }
 function soltarOwn(id){ var r=(S.materiais||[]).find(function(x){return x.id===id;}); if(!r||!r.own)return;
   if(!confirm('Soltar o campo próprio deste material nesta loja?\n\nA linha volta a SEGUIR O LOTE: o próximo "Aplicar nas lojas" (preço/qtd) passa a alcançar ela de novo.\nO valor de agora não muda.')) return;
-  delete r.own; save(); if(OPP&&CLOUD){try{pushOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} cloudMsg('material voltou a seguir o lote ✓'); }
+  delete r.own; save(); try{ renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }catch(_){} cloudMsg('material voltou a seguir o lote ✓'); }
 // ---- ADICIONAIS (decisão 4): item marcado como escopo ALÉM do modelo, com motivo; cobra POR CIMA do combo ----
 function setAdic(blk,id){ var r=(S[blk]||[]).find(function(x){return x.id===id;}); if(!r)return;
   if(r.adic){ if(!confirm('Tirar a marca de ADICIONAL desta linha?\nEla volta a fazer parte do escopo-base (combo).')) return; delete r.adic; delete r.adicMotivo; cloudMsg('adicional removido'); }
   else { var m=prompt('Marcar como ADICIONAL — escopo ALÉM do modelo desta loja.\nEle é cobrado POR CIMA do combo (não diminui a margem do resto).\n\nMotivo (vira seu argumento na proposta):', r.adicMotivo||''); if(m===null) return; r.adic=true; r.adicMotivo=(m||'').trim(); cloudMsg('marcado como adicional ✓'); }
-  save(); if(OPP&&CLOUD){try{pushOrc();}catch(_){}} try{ renderBlk(BLKS.find(function(b){return b.key===blk;})); }catch(_){} recalc(); }
+  save(); try{ renderBlk(BLKS.find(function(b){return b.key===blk;})); }catch(_){} recalc(); }
 function adicChipHtml(cfg,r){   // controle por linha, só em unidade de lote
   if(!(cfg.custo && isLoteUnit() && r)) return '';
   if(r.adic){ return '<div style="margin-top:3px;display:inline-flex;align-items:center;gap:6px;flex-wrap:wrap">'
-      +'<span title="'+esc(r.adicMotivo||'escopo além do modelo')+'" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;border-radius:20px;padding:2px 8px;color:#b0243a;background:#fbe6ea"><span class="material-symbols-rounded" style="font-size:11px">add_circle</span>ADICIONAL</span>'
-      +(r.adicMotivo?'<span style="font-size:10px;color:var(--tx3)">'+esc(r.adicMotivo)+'</span>':'')
+      +'<span title="'+esc(r.adicMotivo||'escopo além do modelo')+'" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;border-radius:20px;padding:2px 8px;color:#8a5a12;background:#fff4e0"><span class="material-symbols-rounded" style="font-size:11px">add_circle</span>ADICIONAL</span>'
+      +(r.adicMotivo?'<span style="font-size:10px;color:var(--tx3)">'+esc(r.adicMotivo)+'</span>':'<span style="font-size:10px;font-weight:800;color:#b3261e">sem motivo</span>')+'<button onclick="setAdicCobrar(\x27'+cfg.key+'\x27,\x27'+r.id+'\x27)" title="ABATIDO = entra no desconto comercial (cliente não paga) · COBRADO = cliente paga por cima do valor combinado" style="border:1px solid '+(r.adicCobrar?'#e0b060;background:#fff4e0;color:#8a5a12':'#9fd3b3;background:#e6f5ec;color:#17693f')+';border-radius:7px;padding:1px 7px;font:inherit;font-size:10px;font-weight:800;cursor:pointer">'+(r.adicCobrar?'+ cobrado':'− abatido')+'</button>'
       +'<button onclick="setAdic(\''+cfg.key+'\',\''+r.id+'\')" title="editar/tirar" style="border:0;background:transparent;color:var(--tx3);cursor:pointer;font-size:10px;font-weight:700;text-decoration:underline">editar</button></div>'; }
-  return '<button onclick="setAdic(\''+cfg.key+'\',\''+r.id+'\')" title="Marcar como adicional (escopo além do modelo) — cobra por cima do combo" style="margin-top:3px;border:1px solid #d68; color:#b0243a;background:transparent;border-radius:7px;padding:2px 7px;font:inherit;font-size:10px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:3px"><span class="material-symbols-rounded" style="font-size:12px">add_circle</span>marcar adicional</button>';
+  return '<button onclick="setAdic(\''+cfg.key+'\',\''+r.id+'\')" title="Marcar como adicional (escopo além do modelo) — cobra por cima do combo" style="margin-top:3px;border:1px solid #e0b060; color:#8a5a12;background:transparent;border-radius:7px;padding:2px 7px;font:inherit;font-size:10px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:3px"><span class="material-symbols-rounded" style="font-size:12px">add_circle</span>marcar adicional</button>';
 }
 function unitAdicN(u){ var n=0, ms=[]; var d=(u&&u.dados)||{}; ['servicos','materiais','equip','despesas'].forEach(function(k){ (d[k]||[]).forEach(function(r){ if(r&&r.adic){ n++; ms.push((r.desc||'item')+(r.adicMotivo?': '+r.adicMotivo:'')); } }); }); return {n:n,ms:ms}; }
-function adicBadgeHtml(o){ var a=unitAdicN(o); if(!a.n) return ''; return '<div style="margin-top:3px"><span title="'+esc(a.ms.join(' · '))+'" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;border-radius:20px;padding:2px 7px;color:#b0243a;background:#fbe6ea"><span class="material-symbols-rounded" style="font-size:11px">add_circle</span>+'+a.n+' adicional'+(a.n>1?'is':'')+'</span></div>'; }
+function adicBadgeHtml(o){ var a=unitAdicN(o); if(!a.n) return ''; return '<div style="margin-top:3px"><span title="'+esc(a.ms.join(' · '))+'" style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;border-radius:20px;padding:2px 7px;color:#8a5a12;background:#fff4e0"><span class="material-symbols-rounded" style="font-size:11px">add_circle</span>+'+a.n+' adicional'+(a.n>1?'is':'')+'</span></div>'; }
 /* ===== Escopo padrão reutilizável — modelos (1.2) ===== */
 var MODELOS_LIST=[];
 async function carregarModelos(){ try{ const {data,error}=await SB.from('orc_modelos').select('id,nome,descricao,dados').eq('ativo',true).is('deleted_at',null).order('nome'); if(!error) MODELOS_LIST=data||[]; }catch(e){ console.error('modelos',e); } }
@@ -2971,7 +2975,7 @@ async function salvarComoModelo(){
     await carregarModelos(); try{ injectLoteBasePanel(); }catch(_){} try{ cloudMsg('modelo salvo ✓'); }catch(_){}
   }catch(e){ console.error('salvarModelo',e); alert('Erro ao salvar modelo: '+(e.message||e)); }
 }
-async function aplicarModeloNaBase(){
+async function aplicarModeloNaBase(){ if(!loteExigeSalvo('Aplicar modelo na base'))return;
   const sel=_lg('lbModelo'); const id=sel&&sel.value; if(!id){ alert('Escolha um modelo na lista.'); return; }
   const m=(MODELOS_LIST||[]).find(x=>x.id===id); if(!m){ alert('Modelo não encontrado.'); return; }
   if(!confirm('Aplicar o modelo “'+m.nome+'” na BASE?\n\nO escopo atual da base (serviços, materiais, macro, diárias) será SUBSTITUÍDO pelo do modelo.\nAs unidades que seguem a base acompanham; as editadas ficam protegidas.')) return;
@@ -2980,21 +2984,21 @@ async function aplicarModeloNaBase(){
   try{ if(OPP&&CLOUD&&ORC_ID){ await SB.from('orcamentos').update({dados:S,total:num(S._total)||0}).eq('id',ORC_ID); } }catch(e){ console.error('aplicar modelo update',e); }
   location.reload();
 }
-async function lotePropagar(){
+async function lotePropagar(){ if(!loteExigeSalvo('Propagar base'))return;
   const alvo=(LOTE_UNITS||[]).filter(u=>u.herda_base).length;
   const editadas=(LOTE_UNITS||[]).length-alvo;
   if(!alvo){ alert('Nenhuma unidade “igual à base” para propagar — as editadas ficam como estão.'); return; }
   if(!confirm('⚠️ PROPAGAR A BASE\n\nVai SOBRESCREVER o escopo de '+alvo+' unidade(s) “igual à base” com o conteúdo da base atual.\nTudo que houver nessas unidades e não estiver na base será PERDIDO.\n\n'+editadas+' unidade(s) EDITADA(s) ficam PROTEGIDAS (não mudam).\n\nConfirmar a propagação em '+alvo+' unidade(s)?')) return;
-  try{ for(const u of LOTE_UNITS){ if(!u.herda_base) continue; const dados=BASE_DADOS?dadosLojaDaBase(BASE_DADOS,unitVar(u)):{}; delete dados._base; delete dados.macro; dados.abrSnap=(u.dados&&u.dados.abrSnap)||null; dados.finNome=u.cliente_final; dados.lojaId=(u.dados&&u.dados.lojaId)||null; dados.numero=u.numero;
-      await SB.from('orcamentos').update({dados,total:BASE_TOTAL}).eq('id',u.id); }
+  try{ for(const u of LOTE_UNITS){ if(!u.herda_base) continue; const _bb=(isLoteBase()?S:BASE_DADOS); const dados=_bb?dadosLojaDaBase(_bb,unitVar(u)):{}; delete dados._base; delete dados.macro; dados.abrSnap=(u.dados&&u.dados.abrSnap)||null; dados.finNome=(u.dados&&u.dados.finNome)||u.cliente_final; dados.finNum=(u.dados&&u.dados.finNum)||dados.finNum; dados.lojaId=(u.dados&&u.dados.lojaId)||null; dados.numero=u.numero; dados.variacaoId=unitVar(u);   // identidade oficial da loja preservada
+      var _pt=null; try{ _pt=precoDe(dadosLojaCalc({dados:dados})); }catch(_){} await SB.from('orcamentos').update({dados,total:(_pt?_pt.total:BASE_TOTAL)}).eq('id',u.id); }
     await loteReload(); alert('Base propagada nas unidades “igual à base”.');
   }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
-async function loteDelUnit(id,oppId){ if(!confirm('Excluir esta unidade do lote? A proposta individual dela é descartada.'))return;
+async function loteDelUnit(id,oppId){ if(!loteExigeSalvo('Excluir loja'))return; if(!confirm('Excluir esta unidade do lote? A proposta individual dela é descartada.'))return;
   await SB.from('orcamentos').update({deleted_at:new Date().toISOString()}).eq('id',id);
   if(oppId) await SB.from('oportunidades').update({deleted_at:new Date().toISOString()}).eq('id',oppId);
   await loteReload();
 }
-async function loteDesmembrar(){
+async function loteDesmembrar(){ if(!loteExigeSalvo('Desmembrar lote'))return;
   const _n=(LOTE_UNITS||[]).length;
   const _per=(_n && macroTotal()>0)?macroTotal()/_n:0;
   if(!confirm('⚠️ DESMEMBRAR O LOTE — AÇÃO IRREVERSÍVEL\n\nO lote será DISSOLVIDO de vez:\n\n• As '+_n+' unidades viram propostas AVULSAS e independentes.\n• Acaba a base e o vínculo "igual à base".\n'+(_per>0?('• O macro é RATEADO e EMBUTIDO em cada proposta ('+fmt(_per)+'/loja) — cada loja leva sua fatia da logística.\n'):'')+'• Cada proposta passa a andar sozinha (número, aprovação e obra separados).\n• NÃO dá pra reagrupar num lote depois.\n\nSó faça se cada loja for mesmo negociada/faturada em separado.\n\nDesmembrar as '+_n+' unidade(s) agora?'))return;
@@ -3083,7 +3087,7 @@ function renderLoteBaseHtml(){
       <span style="display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;border-radius:20px;padding:3px 8px;color:${st.c};background:${st.bg};white-space:nowrap"><span class="material-symbols-rounded" style="font-size:12px">${st.i}</span>${st.t}</span>
       <div style="display:flex;align-items:center;gap:7px;justify-self:end">
         ${(()=>{ const p=num(o._prazo); const many=(lotePrazoResumo().n>1); const isMax=many&&p&&Math.abs(p-lotePrazoResumo().max.p)<1e-9; const isMin=many&&p&&Math.abs(p-lotePrazoResumo().min.p)<1e-9&&!isMax; const col=isMax?'var(--pers,#b0701a)':(isMin?'var(--herd,#159a6a)':'var(--tx3)'); return `<span style="font-size:12px;color:${col};font-weight:${(isMax||isMin)?'700':'400'};min-width:78px;text-align:right;font-variant-numeric:tabular-nums" title="prazo desta unidade"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">schedule</span> ${p?fmtPrazo(p):'—'}${isMax?' ↑':''}${isMin?' ↓':''}</span>`; })()}
-        <span title="custo estimado (material + serviço + diárias) · lucro" style="font-size:11px;color:var(--tx3);text-align:right;min-width:120px;font-variant-numeric:tabular-nums">c ${fmt(num(o._custo))} · <b style="color:${(num(o.total)-num(o._custo))<0?'var(--red,#a32d2d)':'#127a54'}">L ${fmt(num(o.total)-num(o._custo))}</b></span>
+        <span title="custo estimado (material + serviço + diárias) · lucro" style="font-size:11px;color:var(--tx3);text-align:right;min-width:120px;font-variant-numeric:tabular-nums">c ${fmt(num(o._custo))} · <b style="color:${(num(o.total)-num(o._custo))<0?'var(--red,#a32d2d)':'#127a54'}">L ${fmt(num(o.total)-num(o._custo))}</b>${(function(){ var m=lojaMgServ(o); if(m===null) return ''; var c=m<0?'#b3261e':(m<0.05?'#c77b12':'#57536b'); return ' · <b title="margem de serviços desta loja (valor combinado)" style="color:'+c+'">serv '+_d1(m*100)+'%</b>'; })()}</span>
         <span style="font-weight:800;font-variant-numeric:tabular-nums;font-size:13.5px;min-width:92px;text-align:right" title="${(rateado&&!comboOn)?'base + rateio da logística':(comboOn?'valor combinado (macro no custo)':'')}">${fmt(num(o.total)+((rateado&&!comboOn)?rateioPer:0))}</span>
         <a href="eX_Orcamento.html?opp=${o.oportunidade_id}&lote=${LOTE_ID}" class="lbtn"><span class="material-symbols-rounded">open_in_full</span>abrir</a>
         ${o.herda_base?'':`<button class="lbtn" onclick="loteResetUnit('${o.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`}
@@ -3218,7 +3222,7 @@ function lbFiltrarLojas(q){ const box=_lg('lbLojaResults'); if(!box)return;
   box.style.display='block';
 }
 function lbEscolherLoja(id){ const box=_lg('lbLojaResults'); if(box)box.style.display='none'; const inp=_lg('lbLojaBusca'); if(inp)inp.value=''; loteAddLojaNow(id); }
-async function loteAddLojaNow(idArg){
+async function loteAddLojaNow(idArg){ if(!loteExigeSalvo('Adicionar loja'))return;
   const lojaId=idArg||(_lg('lbLoja')?_lg('lbLoja').value:''); if(!lojaId){ alert('Escolha a loja.'); return; }
   const l=(LOJAS||[]).find(x=>x.id===lojaId)||{};
   try{
@@ -3235,8 +3239,8 @@ function macroAddEstrutura(){ const sel=_lg('lbEstr'); const id=sel?sel.value:''
   const e=(ESTRUTURAS||[]).find(x=>x.id===id); if(!e)return;
   if(!S.macro||typeof S.macro!=='object')S.macro={estruturas:[]}; if(!Array.isArray(S.macro.estruturas))S.macro.estruturas=[];
   S.macro.estruturas.push({id:e.id,nome:e.nome,tipo:e.tipo,custo:num(e.custo)});
-  save(); try{saveOrc();}catch(_){}; injectLoteBasePanel(); }
-function macroRemove(i){ if(!(S.macro&&S.macro.estruturas))return; S.macro.estruturas.splice(i,1); save(); try{saveOrc();}catch(_){}; injectLoteBasePanel(); }
+  save(); injectLoteBasePanel(); }
+function macroRemove(i){ if(!(S.macro&&S.macro.estruturas))return; S.macro.estruturas.splice(i,1); save(); injectLoteBasePanel(); }
 // ---- mapa do lote (SVG por lat/lon) ----
 function buildLoteMapaSVG(){ const base=baseMun(); const us=(LOTE_UNIT_ABR||[]).map((x,i)=>({mu:x.mu,label:i+1})).filter(x=>x.mu);
   if(!base||!us.length) return '<div style="padding:24px;text-align:center;color:#8a86a0;font-size:13px">Mapa indisponível — defina a base e a cidade das unidades.</div>';
@@ -3358,7 +3362,7 @@ function verComoClienteLote(){
     #vcMenu .pbtn:hover{border-color:#533ab7}
     .vctog{display:flex;align-items:center;gap:8px;margin:16px 0 6px;padding:6px 10px;border:1px dashed #cfc8e8;border-radius:9px;background:#faf9ff;font:600 12px 'Segoe UI',system-ui,sans-serif;color:#3f2c8f;cursor:pointer;user-select:none;opacity:1!important;filter:none!important}
     .vctog.n2{margin:10px 0 4px;padding:4px 9px;font-size:11.5px;background:#fff;color:#57536b}
-    .vctog.off{color:#a32d2d;border-color:#e8b4b4;background:#fdf3f3}
+    .vctog.off{color:#8b86a1;border-color:#b9b4cc;background:transparent}.vctog.off .st{color:#8b86a1}
     .vctog .lb{flex:1}.vctog .st{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em}
     .vctog .sw{width:30px;height:17px;border-radius:10px;background:#cfcadf;position:relative;flex:none}.vctog .sw i{position:absolute;top:2px;left:2px;width:13px;height:13px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3)}
     .vctog.on .sw{background:#1f9d55}.vctog.on .sw i{left:15px}.vctog.on .st{color:#17693f}
@@ -3370,7 +3374,7 @@ function verComoClienteLote(){
     <div id="vcBar" style="position:sticky;top:0;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:12px 16px;background:rgba(20,14,40,.06)">
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><button onclick="docPreset('tudo')" title="Liga todas as partes" style="border:1px solid #c9c4dd;background:#fff;color:#3f2c8f;border-radius:8px;padding:6px 11px;font:700 12px inherit;cursor:pointer">Mostrar tudo</button><button onclick="docPreset('global')" title="Só totais, unidades e resumo" style="border:1px solid #c9c4dd;background:#fff;color:#3f2c8f;border-radius:8px;padding:6px 11px;font:700 12px inherit;cursor:pointer;margin-right:10px">Só valores globais</button><span style="font-size:11.5px;color:#3a3550;font-weight:700">Material na proposta:</span>${['qtd','val','lista','tot'].map(function(m){var lbl={qtd:'Quantidade',val:'Valor',lista:'Lista',tot:'Só total'}[m];var on=matModo===m;return '<button onclick="setMatModoDoc(\''+m+'\')" style="border:1px solid '+(on?'#533ab7':'#c9c4dd')+';background:'+(on?'#533ab7':'#fff')+';color:'+(on?'#fff':'#57536b')+';border-radius:8px;padding:6px 11px;font:600 12px inherit;cursor:pointer">'+lbl+'</button>';}).join('')}</div>
       <div style="display:flex;gap:8px;align-items:center">
-      <button onclick="salvarManual();setTimeout(verComoClienteLote,1500)" title="Grava as escolhas do menu (e o que mais estiver pendente na proposta)" style="border:1px solid #533ab7;background:#fff;color:#533ab7;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span class="material-symbols-rounded">save</span>${DIRTY?'Salvar alterações':'Salvo'}</button><button onclick="window.print()" style="border:none;background:#533ab7;color:#fff;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
+      <button onclick="salvarManual();setTimeout(verComoClienteLote,1500)" title="Grava as escolhas do menu (e o que mais estiver pendente na proposta)" style="border:1px solid #533ab7;background:#fff;color:#533ab7;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span class="material-symbols-rounded">save</span>${DIRTY?'Salvar alterações':'Salvo'}</button><button onclick="preEnvioAbrir()" style="border:none;background:#533ab7;color:#fff;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
       <button onclick="closeVerCliente()" style="border:1px solid #ccc;background:#fff;color:#333;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer">Fechar</button></div></div>
     <div id="vcWrap"><div style="flex:1;min-width:0">${doc}</div></div>`;
   ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(20,14,40,.55);overflow:auto';
@@ -3517,7 +3521,7 @@ function fxRenderDrawer(){ var d=document.getElementById('fxDrawer');
     var vis=fxVis(id);
     var visBtn = vis===null
       ? '<span class="fxvis int" title="Não existe no documento do cliente — só na tela de trabalho">interno</span>'
-      : '<button class="fxvis '+(vis?'on':'off')+'" onclick="event.stopPropagation();fxSetVis(\''+id+'\')" title="'+(vis?'Aparece no documento do cliente — clique para tirar':'Fora do documento do cliente — clique para mostrar')+(id==='mat.base'&&vis&&S.matSomaOn!==false?' (com o Material global ligado, o cliente vê só o Global)':'')+'"><span class="material-symbols-rounded">'+(vis?'visibility':'visibility_off')+'</span>'+(vis?'na proposta':'fora')+'</button>';
+      : '<button class="fxvis '+(vis?'on':'off')+'" onclick="event.stopPropagation();fxSetVis(\''+id+'\')" title="'+(vis?'Aparece no documento do cliente — clique para tirar':'Fora do documento do cliente — clique para mostrar')+(id==='mat.base'&&vis&&S.matSomaOn!==false?' (com o Material global ligado, o cliente vê só o Global)':'')+'"><span class="material-symbols-rounded">'+(vis?'visibility':'visibility_off')+'</span>'+(vis?'no PDF':'oculto no PDF')+'</button>';
     return '<div class="fxrow'+(miss?' miss':'')+'"'+drop(i)+' style="'+(inG?'margin-left:16px;':'')+(cc?'--fxc:'+cc:'')+'" onmouseenter="fxHl(\''+id+'\',true)" onmouseleave="fxHl(\''+id+'\',false)" onclick="fxIr(\''+id+'\')" title="'+(miss?'não aparece agora (depende do modo/visão) — a posição fica guardada':'clique para ir até a faixa')+'">'+handle(i)+'<span class="material-symbols-rounded" style="font-size:17px;color:var(--fxc,var(--tx3))">'+def.ic+'</span><span class="nm"'+(vis===false?' style="text-decoration:line-through;color:var(--tx3)"':'')+'>'+esc(def.nm)+'</span>'+arrows(i)+'<div class="fxrow2">'+visBtn+sw('f',id,ck)+'</div></div>'; }).join('');
   var leg='<div class="fxleg">'+FX_CORES.map(function(c){ return '<i style="background:'+c.c+'"></i><input class="fxin" value="'+esc(fxLeg(c.k))+'" onchange="fxSetLeg(\''+c.k+'\',this.value)">'; }).join('')+'</div>';
   var _w=FX_WIDE?0:FX_W; d.style.width=_w?(_w+'px'):''; d.classList.toggle('wide',FX_WIDE); d.classList.toggle('multicol',FX_WIDE||_w>=720);
@@ -3595,7 +3599,7 @@ function varCopiarDeLoja(){ var sel=_lg('varCopLoja'); var uidL=sel&&sel.value; 
   if(!confirm('Preencher a variação "'+varNome(S.varAtiva)+'" com o conteúdo da loja "'+lojaLabel(u)+'"?\n\n• Serviços, Material, Despesas e Locações desta variação são SUBSTITUÍDOS.\n• Itens marcados como adicional na loja não entram.\n• A loja não muda.'))return;
   VAR_KEYS.forEach(function(k){ S[k]=_deep(((u.dados&&u.dados[k])||[]).filter(function(r){return r&&!r.adic;})).map(function(r){ delete r.own; return r; }); });
   varRerender(); cloudMsg('variação preenchida com '+lojaLabel(u)); }
-async function varDaLoja(unitId,id){ var u=(LOTE_UNITS||[]).find(function(x){return x.id===unitId;}); if(!u)return;
+async function varDaLoja(unitId,id){ if(!loteExigeSalvo('Trocar variação da loja')){ try{ injectLoteBasePanel(); }catch(_){} return; } var u=(LOTE_UNITS||[]).find(function(x){return x.id===unitId;}); if(!u)return;
   var msg=u.herda_base?'\n\nEla está "igual à base": o conteúdo dela passa a ser o desta variação agora.':'\n\nEla está "editada": o conteúdo dela NÃO muda agora — só passa a seguir esta variação nas próximas ações do lote (propagar, replicar, adicionar).';
   if(!confirm('A loja "'+lojaLabel(u)+'" passa a seguir "'+varNome(id)+'"?'+msg)){ try{ injectLoteBasePanel(); }catch(_){} return; }
   var d=_deep(u.dados||{}); d.variacaoId=id;
@@ -3611,12 +3615,16 @@ function identDivergencias(d){ d=d||{}; var fin=String(d.finNum||'').trim(); if(
   return out; }
 function identAlarmeHtml(d){ var dv=identDivergencias(d); if(!dv.length)return '';
   return '<div style="margin-top:3px"><span title="Nº oficial '+esc(String(d.finNum))+' — '+esc(dv.join(' · '))+'. Corrigir antes de enviar." style="display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:800;border-radius:20px;padding:2px 8px;color:#fff;background:#b3261e"><span class="material-symbols-rounded" style="font-size:12px;color:#fff">error</span>loja divergente: '+esc(dv.join(' · '))+'</span></div>'; }
+// FASE 1 (junta 15/09): regra única de gravação — edição grava no Salvar; ação que ESCREVE NAS LOJAS só roda com a proposta salva
+function loteExigeSalvo(acao){
+  if(typeof MANUAL!=='undefined' && MANUAL && DIRTY){ alert('⚠️ SALVE ANTES\n\n"'+acao+'" grava direto nas lojas do lote.\nEsta proposta tem alterações NÃO salvas — clique em Salvar primeiro, para as lojas não receberem uma versão diferente da que está na tela.'); return false; }
+  return true; }
 function varSelLojaHtml(o){ var vs=varLista(); if(vs.length<2)return '';
   return '<select onchange="varDaLoja(\''+o.id+'\',this.value)" title="variação que esta loja segue" style="margin-top:3px;max-width:190px;padding:2px 6px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:11px;font-weight:700;background:var(--pri-bg,#eeedfe);color:var(--pri)">'+vs.map(function(v){ return '<option value="'+v.id+'"'+(unitVar(o)===v.id?' selected':'')+'>'+esc(v.nome)+'</option>'; }).join('')+'</select>'; }
 function varMostra(v){ return !(v && v.mostrar===false); }   // chave por variação no documento do cliente (padrão: mostra, se a seção estiver ligada)
 function varSetMostrar(id){ var v=varLista().find(function(x){return x.id===id;}); if(!v)return; v.mostrar=!varMostra(v); save(); try{ injectLoteBasePanel(); }catch(_){} }
 function varMostraBtnHtml(atv,vs){ if(vs.length<2)return ''; var on=varMostra(atv);
-  return '<button class="lbtn" onclick="varSetMostrar(&quot;'+atv.id+'&quot;)" title="Esta variação aparece na seção Variações do documento do cliente" style="'+(on?'background:#e6f5ec;border-color:#9fd3b3;color:#17693f':'background:#fbecec;border-color:#e8b4b4;color:#a32d2d')+'"><span class="material-symbols-rounded">'+(on?'visibility':'visibility_off')+'</span>'+(on?'na proposta':'fora da proposta')+'</button>'; }
+  return '<button class="lbtn" onclick="varSetMostrar(&quot;'+atv.id+'&quot;)" title="Esta variação aparece na seção Variações do documento do cliente" style="'+(on?'':'border-style:dashed;color:#8b86a1;background:transparent')+'"><span class="material-symbols-rounded">'+(on?'visibility':'visibility_off')+'</span>'+(on?'no PDF':'oculto no PDF')+'</button>'; }
 function varSecaoBtnHtml(vs){ if(vs.length<2)return ''; var on=fxVis('lote.var');
   return '<button class="lbtn" onclick="fxSetVis(&quot;lote.var&quot;);injectLoteBasePanel()" title="Liga/desliga a seção Variações inteira no documento do cliente" style="margin-left:auto;'+(on?'background:#e6f5ec;border-color:#9fd3b3;color:#17693f':'')+'"><span class="material-symbols-rounded">'+(on?'visibility':'visibility_off')+'</span>Seção no documento: '+(on?'ligada':'desligada')+'</button>'; }
 /* ===== DOCUMENTO DO LOTE — valores finais (sem %): calcula qualquer proposta (loja ou modelo) com o MESMO motor da tela ===== */
@@ -3626,9 +3634,9 @@ function precoDe(dados){ var keep=S, out=null;
     var sum=function(k,flt){ return on(k)?(S[k]||[]).filter(flt||function(){return true;}).reduce(function(a,r){r._blk=k;return a+linePreco(r);},0):0; };
     var isDesl=function(r){return /deslocamento/i.test(r.desc||'');};
     var serv=sum('servicos'), mat=sum('materiais'), equip=sum('equip'), desl=sum('despesas',isDesl), desp=sum('despesas',function(r){return !isDesl(r);})+diariasCusto();
-    var adicItens=[]; ['servicos','materiais','despesas','equip'].forEach(function(k){ if(!on(k))return; (S[k]||[]).forEach(function(r){ if(r&&r.adic){ r._blk=k; adicItens.push({desc:r.desc,qtd:qtyOf(r),und:r.und,total:linePreco(r)*f,motivo:r.adicMotivo||''}); } }); });
+    var adicItens=[]; ['servicos','materiais','despesas','equip'].forEach(function(k){ if(!on(k))return; (S[k]||[]).forEach(function(r){ if(r&&r.adic){ r._blk=k; adicItens.push({desc:r.desc,qtd:qtyOf(r),und:r.und,total:linePreco(r)*f,motivo:r.adicMotivo||'',cobrado:!!r.adicCobrar}); } }); });
     var itens=(on('servicos')?S.servicos:[]).filter(function(r){return num(qtyOf(r))>0;}).map(function(r){ r._blk='servicos'; return {desc:r.desc,und:r.und,qtd:qtyOf(r),unit:lineUnit(r)*f,total:linePreco(r)*f,adic:!!r.adic}; });
-    var impF=1+num(S.impostoPct)/100, descAd=S.descontoAdic?adicPrecoTotal()*impF:0;
+    var impF=1+num(S.impostoPct)/100, descAd=S.descontoAdic?adicAbatidoTotal()*impF:0;
     out={serv:serv*f,mat:mat*f,equip:equip*f,desl:desl*f,desp:desp*f,adic:adicItens.reduce(function(a,x){return a+x.total;},0),descAd:descAd,total:(serv+mat+equip+desl+desp)*f-descAd,itens:itens,adicItens:adicItens,prazo:obraPrazo()};
   }catch(e){ console.error('precoDe',e); } finally{ S=keep; } return out; }
 function dadosLojaCalc(u){ var d=_deep((u&&u.dados)||{}); var ov=d._ov||{};   // igual ao prazo das unidades: segue equipe da mestra quando não tem campo próprio
@@ -3652,16 +3660,79 @@ function docModelosHtml(_secTit,_th,_td,modo){ var vs=varLista(); if(!vs.length)
   return blocos?(modo==='anexo'?('<div style="font-size:12px;color:#7d7799;margin:4px 0 10px">Referência da instalação: serviços e quantidades previstos por unidade, para cada tipo de sistema.</div>'+blocos):('<div><div style="'+_secTit+'">Modelos de sistema</div>'+blocos+'</div>')):''; }
 function docLojasHtml(_secTit,_th,_td){ var us=LOTE_UNITS||[]; if(!us.length)return ''; var vs=varLista();
   var rows=us.map(function(u){ var p=precoDe(dadosLojaCalc(u))||{adicItens:[],adic:0}; var tem=p.adicItens.length>0; var bg=tem?'background:#fff4e0;':'';
-    var det=tem?('<tr data-pt="lojas:adicdet" style="background:#fff4e0"><td colspan="5" style="padding:2px 13px 9px 26px;font-size:11.5px;color:#8a5a12;border-bottom:1px solid #efecf7">'+p.adicItens.map(function(x){ return '<b>+ '+esc(x.desc)+'</b> ('+_d1(x.qtd)+' '+esc(x.und||'')+') '+fmt(x.total)+(x.motivo?' — '+esc(x.motivo):''); }).join('<br>')+(p.descAd>0?'<br><b style="color:#17693f">− Desconto comercial (abatimento dos adicionais) '+fmt(p.descAd)+'</b>':'')+'</td></tr>'):'';
+    var det=tem?('<tr data-pt="lojas:adicdet" style="background:#fff4e0"><td colspan="5" style="padding:2px 13px 9px 26px;font-size:11.5px;color:#8a5a12;border-bottom:1px solid #efecf7">'+p.adicItens.map(function(x){ return '<b>+ '+esc(x.desc)+'</b> ('+_d1(x.qtd)+' '+esc(x.und||'')+') '+fmt(x.total)+(p.descAd>0||x.cobrado?(x.cobrado?' <b style="color:#8a5a12">· cobrado</b>':' <b style="color:#17693f">· abatido</b>'):'')+(x.motivo?' — '+esc(x.motivo):''); }).join('<br>')+(p.descAd>0?'<br><b style="color:#17693f">− Desconto comercial (abatimento dos adicionais) '+fmt(p.descAd)+'</b>':'')+'</td></tr>'):'';
     return '<tr style="'+bg+'"><td style="'+_td+(tem?';border-bottom:0':'')+'"><b>'+esc(lojaLabel(u))+'</b>'+(tem?' <span style="font-size:10px;font-weight:800;color:#fff;background:#c77b12;border-radius:10px;padding:1px 7px">ADICIONAL</span>':'')+'</td><td class="col-modelo" style="'+_td+(tem?';border-bottom:0':'')+'">'+(vs.length>1?esc(varNome(unitVar(u))):'—')+'</td><td class="col-dias" style="'+_td+';text-align:right;font-variant-numeric:tabular-nums'+(tem?';border-bottom:0':'')+'">'+(num(u._prazo)?_d1(num(u._prazo))+' dias':'—')+'</td><td class="col-adic" style="'+_td+';text-align:right;font-variant-numeric:tabular-nums'+(tem?';border-bottom:0;color:#c77b12;font-weight:700':'')+'">'+(tem?fmt(p.adic):'—')+'</td><td style="'+_td+';text-align:right;font-weight:800;font-variant-numeric:tabular-nums'+(tem?';border-bottom:0':'')+'">'+fmt(num(u.total))+'</td></tr>'+det; }).join('');
   var tot=us.reduce(function(a,u){return a+num(u.total);},0), dias=us.reduce(function(a,u){return a+num(u._prazo);},0);
   return '<div style="'+_secTit+'">Unidades do lote</div><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Unidade</th><th class="col-modelo" style="text-align:left;'+_th+'">Modelo</th><th class="col-dias" style="text-align:right;'+_th+'">Dias</th><th class="col-adic" style="text-align:right;'+_th+'">Adicionais</th><th style="text-align:right;'+_th+'">Valor total</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr style="background:#f6f4fc"><td style="padding:11px 13px;font-weight:800;color:#3f2c8f">'+us.length+' unidades</td><td class="col-modelo"></td><td class="col-dias" style="padding:11px 13px;text-align:right;font-weight:700">'+_d1(dias)+' dias</td><td class="col-adic"></td><td style="padding:11px 13px;text-align:right;font-weight:800;color:#3f2c8f;font-variant-numeric:tabular-nums">'+fmt(tot)+'</td></tr></tfoot></table>'; }
 function docMacroHtml(_secTit,_td){ var mt=macroTotal(); if(!(mt>0))return ''; var n=(LOTE_UNITS||[]).length||1; var est=((S.macro&&S.macro.estruturas)||[]); var rc=macroRotaCusto();
   var linhas=est.map(function(e){return '<tr><td style="'+_td+'">'+esc(e.nome)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(num(e.custo))+'</td></tr>';}).join('')+(rc>0?'<tr><td style="'+_td+'">Deslocamento do circuito ('+_d1(macroRotaKm())+' km)</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(rc)+'</td></tr>':'');
   return '<div style="'+_secTit+'">Despesa macro do lote (rateada)</div><table style="width:100%;max-width:560px;border-collapse:collapse;font-size:12.5px"><tbody>'+linhas+'<tr style="background:#f6f4fc"><td style="padding:10px 13px;font-weight:800;color:#3f2c8f">Total macro · rateado em '+n+' unidades</td><td style="padding:10px 13px;text-align:right;font-weight:800;color:#3f2c8f;font-variant-numeric:tabular-nums">'+fmt(mt)+' <span style="font-weight:600;color:#7d7799;font-size:11.5px">('+fmt(mt/n)+'/unidade)</span></td></tr></tbody></table><div style="font-size:11.5px;color:#7d7799;margin-top:5px">Já incluída no valor de cada unidade.</div>'; }
-function imprimirProposta(){   // lote: imprime o DOCUMENTO DO LOTE com as escolhas do menu; demais propostas: impressão normal
-  if(isLoteBase() && (LOTE_UNITS||[]).length){ verComoClienteLote(); setTimeout(function(){ window.print(); },450); return; }
+function imprimirProposta(){   // lote: abre o DOCUMENTO DO LOTE e passa pelo PAINEL PRÉ-ENVIO antes de imprimir; demais propostas: impressão normal
+  if(isLoteBase() && (LOTE_UNITS||[]).length){ verComoClienteLote(); setTimeout(preEnvioAbrir,300); return; }
   window.print(); }
+/* ===== FASE 2 (junta 15/09): PAINEL DE CONTROLE PRÉ-ENVIO do lote — bloqueia o PDF com erro, avisa o que merece olhar ===== */
+var PRE_JUST={};   // justificativas desta impressão (margem negativa liberada)
+function lojaMgServ(u){ var keep=S; try{ S=_deep(dadosLojaCalc(u)); sanitize(); return comboActive()?comboMgBlk('servicos'):null; }catch(_){ return null; } finally{ S=keep; } }
+function lojaNome(u){ return ((u.dados&&u.dados.finNum)?u.dados.finNum+' · ':'')+(u.cliente_final||(u.dados&&u.dados.finNome)||'loja'); }
+function preEnvioChecks(){
+  var B=[], A=[], ok=0, us=LOTE_UNITS||[], ids=varLista().map(function(v){return v.id;});
+  var add=function(arr,cond,txt,acao){ if(cond){ arr.push({txt:txt,acao:acao||''}); } else ok++; };
+  add(B, typeof MANUAL!=='undefined'&&MANUAL&&DIRTY, 'Há alterações NÃO salvas nesta proposta.', '<button class="pebtn" onclick="salvarManual();setTimeout(preEnvioAbrir,1800)">Salvar agora</button>');
+  var blOff=['servicos','materiais','despesas','equip'].filter(function(k){ return !blocoAtivo(k); });
+  add(B, blOff.length, 'Bloco(s) FORA DO TOTAL na base: '+blOff.map(function(k){ return ((BLKS.find(function(b){return b.key===k;})||{}).titulo)||k; }).join(', ')+' — os modelos do documento saem sem esse valor.', blOff.map(function(k){ return '<button class="pebtn" onclick="closePreEnvio();toggleBloco(\''+k+'\');setTimeout(function(){verComoClienteLote();preEnvioAbrir();},300)">Religar '+(((BLKS.find(function(b){return b.key===k;})||{}).titulo)||k)+'</button>'; }).join(' '));
+  var lojBl=us.filter(function(u){ var bo=(u.dados&&u.dados.blocoOn)||{}; return ['servicos','materiais','despesas','equip'].some(function(k){ return bo[k]===false; }); });
+  add(B, lojBl.length, 'Loja(s) com bloco fora do total: '+lojBl.map(lojaNome).join(' · '));
+  var conc=us.map(function(u){ var p=precoDe(dadosLojaCalc(u)); return {u:u, d:p?Math.abs(p.total-num(u.total)):0, calc:p?p.total:0}; }).filter(function(x){ return x.d>1; });
+  add(B, conc.length, 'Resumo não fecha com o total gravado: '+conc.map(function(x){ return lojaNome(x.u)+' (doc '+fmt(x.calc)+' × gravado '+fmt(num(x.u.total))+')'; }).join(' · ')+' — abra e salve a loja.');
+  var comb=num(S.valorCombinado), cDiv=us.filter(function(u){ return comb>0 && Math.abs(num(u.dados&&u.dados.valorCombinado)-comb)>0.01; });
+  add(B, cDiv.length, 'Valor combinado diferente de '+fmt(comb)+': '+cDiv.map(function(u){ return lojaNome(u)+' ('+fmt(num(u.dados&&u.dados.valorCombinado))+')'; }).join(' · '));
+  var negs=us.map(function(u){ return {u:u,m:lojaMgServ(u)}; }).filter(function(x){ return x.m!==null && x.m<0; });
+  var negsAbertas=negs.filter(function(x){ return !(PRE_JUST[x.u.id]||'').trim(); });
+  if(negs.length){ var html='Serviços ABAIXO DO CUSTO: '+negs.map(function(x){ return '<div style="margin:5px 0 0 0"><b>'+esc(lojaNome(x.u))+'</b> '+_d1(x.m*100)+'% <input class="pejust" placeholder="justificativa para liberar (ex.: absorvido no lote)" value="'+esc(PRE_JUST[x.u.id]||'')+'" oninput="PRE_JUST[\''+x.u.id+'\']=this.value;preEnvioRender()" style="width:100%;margin-top:3px"></div>'; }).join('');
+    (negsAbertas.length?B:A).push({txt:html+(negsAbertas.length?'':'<div style="color:#17693f;font-weight:700;margin-top:4px">liberado com justificativa</div>'),acao:'',html:true}); } else ok++;
+  var dup={}; us.forEach(function(u){ var n=(u.dados&&u.dados.finNum)||''; dup[n]=(dup[n]||0)+1; });
+  var idErr=us.map(function(u){ var e=identDivergencias(u.dados||{}); if(!(u.dados&&u.dados.finNum)) e.push('sem nº oficial'); else if(dup[u.dados.finNum]>1) e.push('nº repetido no lote'); return {u:u,e:e}; }).filter(function(x){ return x.e.length; });
+  add(B, idErr.length, 'Identidade de loja: '+idErr.map(function(x){ return lojaNome(x.u)+' ('+x.e.join(', ')+')'; }).join(' · '));
+  add(B, !!S.colCustoProposta, 'Custo e lucro por loja VÃO APARECER para o cliente.', '<button class="pebtn" onclick="setColCustoProposta(false);verComoClienteLote();preEnvioAbrir()">Esconder do cliente</button>');
+  var semVar=us.filter(function(u){ return ids.length>1 && ids.indexOf(unitVar(u))<0; });
+  add(B, semVar.length, 'Loja(s) com variação inexistente: '+semVar.map(lojaNome).join(' · '));
+  // ---- avisos ----
+  var semMot=[]; us.forEach(function(u){ ['servicos','materiais','despesas','equip'].forEach(function(k){ ((u.dados&&u.dados[k])||[]).forEach(function(r){ if(r&&r.adic&&!(r.adicMotivo||'').trim()) semMot.push(lojaNome(u)+': '+r.desc); }); }); });
+  add(A, semMot.length, 'Adicional sem motivo: '+semMot.join(' · '));
+  var abr=LOTE_UNIT_ABR||[]; var semCid=us.filter(function(u,i){ return !(abr[i]&&abr[i].cidade); }), semPr=us.filter(function(u){ return !(num(u._prazo)>0); });
+  add(A, semCid.length, 'Loja(s) sem cidade (logística "—"): '+semCid.map(lojaNome).join(' · '));
+  add(A, semPr.length, 'Loja(s) sem prazo calculado: '+semPr.map(lojaNome).join(' · '));
+  var faltas=[]; us.forEach(function(u){ var mod=varConteudo(S,unitVar(u)).servicos||[]; var ls=(u.dados&&u.dados.servicos)||[];
+    var f=mod.filter(function(m){ return num(m.qtd)>0 && !ls.some(function(l){ return l.desc===m.desc && num(l.qtd)>0; }); }); if(f.length) faltas.push(lojaNome(u)+' ('+f.map(function(m){return m.desc;}).join(', ')+')'); });
+  add(A, faltas.length, 'Serviço do modelo ausente ou zerado na loja (confira se é intencional): '+faltas.join(' · '));
+  var baixas=us.map(function(u){ return {u:u,m:lojaMgServ(u)}; }).filter(function(x){ return x.m!==null && x.m>=0 && x.m<0.05; });
+  add(A, baixas.length, 'Margem de serviços abaixo de 5%: '+baixas.map(function(x){ return lojaNome(x.u)+' '+_d1(x.m*100)+'%'; }).join(' · '));
+  var hojeD=new Date(); hojeD.setHours(0,0,0,0);
+  add(A, !!(S.validadeISO && new Date(S.validadeISO+'T00:00:00')<hojeD), 'Validade da proposta VENCIDA ('+String(S.validadeISO||'').split('-').reverse().join('/')+').');
+  add(A, !S.numero || !S.respNome, 'Número da proposta ou responsável em branco.');
+  var ocultas=DOC_MENU.filter(function(m){ return (window._DOC_SECS||[]).indexOf(m.sec)>-1 && fxVis(m.sec)===false; }).map(function(m){return m.nm;});
+  var ptsOff=Object.keys((S.docOpt)||{}).filter(function(k){ return k!=='anexo' && S.docOpt[k]===false; }).length;
+  add(A, ocultas.length||ptsOff, 'Fora do PDF (confira): '+(ocultas.length?ocultas.join(' · '):'')+(ptsOff?((ocultas.length?' · ':'')+ptsOff+' parte(s) interna(s) oculta(s)'):''));
+  return {B:B,A:A,ok:ok};
+}
+function preEnvioAbrir(){ var el=document.getElementById('preEnvio'); if(!el){ el=document.createElement('div'); el.id='preEnvio'; document.body.appendChild(el); } preEnvioRender(); }
+function closePreEnvio(){ var el=document.getElementById('preEnvio'); if(el) el.remove(); }
+function preEnvioRender(){ var el=document.getElementById('preEnvio'); if(!el)return;
+  var foco=document.activeElement&&document.activeElement.classList&&document.activeElement.classList.contains('pejust')?[document.activeElement.value.length, [...el.querySelectorAll('.pejust')].indexOf(document.activeElement)]:null;
+  var r=preEnvioChecks();
+  var item=function(x,cor,ic){ return '<div style="display:flex;gap:9px;align-items:flex-start;padding:9px 11px;border:1px solid '+cor.b+';background:'+cor.bg+';border-radius:9px;margin-bottom:6px;font-size:12.5px;line-height:1.45"><span class="material-symbols-rounded" style="color:'+cor.c+';font-size:19px">'+ic+'</span><div style="flex:1;color:#221c39">'+(x.html?x.txt:esc(x.txt))+(x.acao?'<div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap">'+x.acao+'</div>':'')+'</div></div>'; };
+  var pode=!r.B.length;
+  el.innerHTML='<div style="position:fixed;inset:0;z-index:100000;background:rgba(20,14,40,.6);display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:30px 14px"><div style="background:#fff;border-radius:14px;max-width:760px;width:100%;box-shadow:0 20px 60px rgba(0,0,0,.35);font-family:\'Segoe UI\',system-ui,sans-serif">'
+    +'<style>#preEnvio .pebtn{border:1px solid #533ab7;background:#fff;color:#533ab7;border-radius:7px;padding:4px 10px;font:700 11.5px inherit;cursor:pointer}#preEnvio .pejust{box-sizing:border-box;padding:6px 8px;border:1px solid #d9d4ea;border-radius:7px;font:inherit;font-size:12px}</style>'
+    +'<div style="display:flex;align-items:center;gap:9px;padding:14px 18px;border-bottom:1px solid #eee"><span class="material-symbols-rounded" style="color:#533ab7">fact_check</span><b style="font-size:15px">Verificação antes do PDF</b><span style="margin-left:auto;font-size:12px;color:#7d7799">'+r.ok+' ok · '+r.A.length+' aviso(s) · '+r.B.length+' bloqueio(s)</span></div>'
+    +'<div style="padding:14px 18px">'
+    +(r.B.length?('<div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#b3261e;margin:0 0 6px">Bloqueia o PDF</div>'+r.B.map(function(x){ return item(x,{b:'#f0b3ad',bg:'#fdecea',c:'#b3261e'},'block'); }).join('')):'<div style="padding:10px 12px;border-radius:9px;background:#e6f5ec;color:#17693f;font-weight:700;font-size:13px;margin-bottom:10px"><span class="material-symbols-rounded" style="vertical-align:-5px">verified</span> Nenhum bloqueio — valores, identidade e visibilidade conferidos.</div>')
+    +(r.A.length?('<div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#8a5a12;margin:12px 0 6px">Avisos (pode gerar)</div>'+r.A.map(function(x){ return item(x,{b:'#ecd3a0',bg:'#fff8ec',c:'#c77b12'},'warning'); }).join('')):'')
+    +'</div><div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:1px solid #eee;flex-wrap:wrap">'
+    +'<button onclick="closePreEnvio()" style="border:1px solid #ccc;background:#fff;color:#333;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer">Voltar e corrigir</button>'
+    +'<button '+(pode?'':'disabled ')+'onclick="closePreEnvio();if(!document.getElementById(\'vcOverlay\'))verComoClienteLote();setTimeout(function(){window.print();},250)" style="border:none;background:'+(pode?'#533ab7':'#c9c4dd')+';color:#fff;border-radius:9px;padding:9px 16px;font:700 13px inherit;cursor:'+(pode?'pointer':'not-allowed')+'"><span class="material-symbols-rounded" style="vertical-align:-5px;font-size:18px">print</span> '+(pode?(r.A.length?'Gerar PDF mesmo com avisos':'Gerar PDF'):'Resolva os bloqueios')+'</button></div></div></div>';
+  if(foco){ var inp=el.querySelectorAll('.pejust')[foco[1]]; if(inp){ inp.focus(); inp.setSelectionRange(foco[0],foco[0]); } }
+}
 function docCabHtml(){   // cabeçalho completo — os mesmos dados do cabeçalho da proposta
   var br=function(d){ return d?String(d).split('-').reverse().join('/'):'—'; };
   var kv=function(l,v){ return v?('<div style="display:flex;gap:8px;font-size:12.5px;line-height:1.5"><span style="min-width:74px;color:#7d7799">'+l+'</span><span style="color:#221c39;font-weight:600">'+esc(v)+'</span></div>'):''; };
@@ -3711,7 +3782,7 @@ function docMenuHtml(){
 function docInlineToggles(ov){   // CHAVES EM CIMA DE CADA PARTE do documento (só na tela; somem na impressão)
   var nm={}; DOC_MENU.forEach(function(m){ nm[m.sec]=m.nm; if(Array.isArray(m.pts)) m.pts.forEach(function(p){ nm[p[0]]=p[1]; }); });
   nm['modelo:itens']='Lista de serviços com valores'; nm['modelo:resumo']='Resumo de valores do modelo';
-  var mk=function(on,label,onclick,nivel){ return '<div class="vctog '+nivel+(on?' on':' off')+'" onclick="'+onclick+'"><span class="sw"><i></i></span><span class="lb">'+label+'</span><span class="st">'+(on?'na proposta':'fora do PDF')+'</span></div>'; };
+  var mk=function(on,label,onclick,nivel){ return '<div class="vctog '+nivel+(on?' on':' off')+'" onclick="'+onclick+'"><span class="sw"><i></i></span><span class="lb">'+label+'</span><span class="material-symbols-rounded" style="font-size:15px">'+(on?'visibility':'visibility_off')+'</span><span class="st">'+(on?'no PDF':'oculto no PDF')+'</span></div>'; };
   var sheet=ov.querySelector('#vcSheet'); if(!sheet)return;
   sheet.querySelectorAll('.docsec').forEach(function(sec){ var id=sec.getAttribute('data-sec'); sec.insertAdjacentHTML('beforebegin', mk(fxVis(id)!==false, esc(nm[id]||id), "docSecTog('"+id+"')", 'n1')); });
   var feitos={};
@@ -3765,23 +3836,23 @@ function varFaixaHtml(){ var vs=varLista(); if(!vs.length)return ''; var at=S.va
     +'</div>'; }
 (function(){ const _ib=injectLoteBasePanel; injectLoteBasePanel=function(){ const r=_ib.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } return r; };
   const _rb2=renderBlk; renderBlk=function(){ const r=_rb2.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } return r; }; })();
-function _macroSave(){ save(); try{saveOrc();}catch(_){}; injectLoteBasePanel(); }
+function _macroSave(){ save(); injectLoteBasePanel(); }
 function setMacroRkm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rkm=Math.max(0,num(v)); _macroSave(); }
 function setMacroKm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=Math.max(0,num(v)); _macroSave(); }
 function clearMacroKm(){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=0; _macroSave(); }
-function setColCustoProposta(v){ S.colCustoProposta=!!v; save(); if(OPP&&CLOUD){ try{ pushOrc(); }catch(_){}} try{ injectLoteBasePanel(); }catch(_){} }
+function setColCustoProposta(v){ S.colCustoProposta=!!v; save(); try{ injectLoteBasePanel(); }catch(_){} }
 function setLoteView(v){ LOTE_VIEW=(v==='pad')?'pad':'lev'; try{ injectLoteBasePanel(); }catch(_){} }   // 2.2
 function loteServSoma(units){ var m={}; (units||LOTE_UNITS||[]).forEach(function(u){((u.dados&&u.dados.servicos)||[]).forEach(function(r){var k=r.desc||'—'; if(!m[k])m[k]={desc:k,und:r.und||'',qtd:0}; m[k].qtd+=num(r.qtd);});}); return Object.keys(m).map(function(k){return m[k];}).filter(function(r){return r.qtd>0;}).sort(function(a,b){return a.desc.localeCompare(b.desc,'pt');}); }
 function _lidKey(r){ return r.lid||('d:'+(r.desc||'—')); }   // chave de linhagem: lid estável, ou desc (legado sem lid)
 function loteMatSoma(units){ var m={}; (units||LOTE_UNITS||[]).forEach(function(u){ var seen={}; ((u.dados&&u.dados.materiais)||[]).forEach(function(r){var k=_lidKey(r); if(!m[k])m[k]={key:k,lid:r.lid||null,desc:r.desc||'—',und:r.und||'',qtd:0,custo:0,nLojas:0}; m[k].qtd+=num(r.qtd); m[k].custo+=num(r.qtd)*((r.usarBase!==false)?num(r.custoBase):num(r.custoAlt)); if(!seen[k]){seen[k]=1;m[k].nLojas++;}});}); return Object.keys(m).map(function(k){return m[k];}).sort(function(a,b){return b.custo-a.custo;}); }
-function setMatModo(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} }   // 7: modo de exibir material (bloco Materiais empregados do master + documento do cliente)
-function setMatModoDoc(v){ S.matModo=v; save(); if(OPP&&CLOUD){try{saveOrc();}catch(_){}} try{ verComoClienteLote(); }catch(_){} }   // troca o modo do material NA impressão (barra do "Ver como o cliente") e recarrega o preview
+function setMatModo(v){ S.matModo=v; save(); try{ renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} }   // 7: modo de exibir material (bloco Materiais empregados do master + documento do cliente)
+function setMatModoDoc(v){ S.matModo=v; save(); try{ verComoClienteLote(); }catch(_){} }   // troca o modo do material NA impressão (barra do "Ver como o cliente") e recarrega o preview
 // [faxina 14/09] removidos como código morto: setShowMedia/_medN/_medOn/medSubQ/medSubM/mediaTogHtml (toggle "Média/loja" revertido);
 // setMatOrigem/matOrigToggle/matBaseHint/baseDifereDoSomado/loteMatSomadoSig/baseMatSig (toggle "Somado × Base" aposentado);
 // loteSeedBaseFromSomado (o "Trazer somado → base" que quebrava o combo — escala-lote na base 42.000). Nada disso tinha chamador vivo.
 var DEFAULT_COND='Pagamento: 50% do total do lote na entrada; saldo pago a cada loja concluída, mediante emissão da nota fiscal — unidade a unidade.';   // 2.4
 function condComerciais(){ return (S.condComerciais!==undefined && S.condComerciais!==null)?S.condComerciais:DEFAULT_COND; }
-function setCond(k,v){ S[k]=v; save(); if(OPP&&CLOUD){ try{ saveOrc(); }catch(_){}} }
+function setCond(k,v){ S[k]=v; save(); }
 function contratanteCnpj(){ const id=S.contratanteId||(LOTE_ROW&&LOTE_ROW.contratante_id); const c=(CLIENTES||[]).find(function(x){return x.id===id;}); return (c&&c.cnpj)||''; }
 function lojaLabel(o){ const n=(o&&o.dados&&o.dados.finNum)||''; return (n?n+' · ':'')+((o&&(o.cliente_final||o.numero))||'unidade'); }   // nº da loja + nome
 function fmtCnpj(v){ v=(v||'').replace(/\D/g,''); if(v.length!==14) return v||''; return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12); }
@@ -3801,8 +3872,8 @@ function resumoEscopoHtml(){   // Serviços global do lote (Σ lojas) — o mate
     +'<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="'+_th+'">Serviço (escopo)</th><th style="'+_thr+'">Σ do lote</th><th style="'+_th+'">und</th></tr></thead><tbody>'+sBody+'</tbody></table>'
     +'</div>';
 }
-function setMacroRateio(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rateio=!!v; S.macro._total=macroTotal(); S.macro._nun=(LOTE_UNITS||[]).length; save(); try{ pushOrc(); }catch(_){}; injectLoteBasePanel(); }
-function setMacroShowOrigin(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.showOrigin=!!v; save(); try{ pushOrc(); }catch(_){}; injectLoteBasePanel(); }   // etapa 3: liga/desliga a linha de ORIGEM do custo global no doc do cliente (transparência, não soma)
+function setMacroRateio(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rateio=!!v; S.macro._total=macroTotal(); S.macro._nun=(LOTE_UNITS||[]).length; save(); injectLoteBasePanel(); }
+function setMacroShowOrigin(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.showOrigin=!!v; save(); injectLoteBasePanel(); }   // etapa 3: liga/desliga a linha de ORIGEM do custo global no doc do cliente (transparência, não soma)
 function setLoteModo(m){ m=(m==='estimativa'?'estimativa':'detalhado');
   if(m==='estimativa' && (LOTE_UNITS||[]).length>0){ if(!confirm('Já existem '+LOTE_UNITS.length+' loja(s) detalhada(s). No modo Estimativa o total passa a ser base × N e os valores reais dessas lojas são ignorados no total (não são apagados). Continuar?'))return; }
   if(!S.macro)S.macro={estruturas:[]}; S.macro.modo=m; _macroSave(); }
@@ -4212,7 +4283,7 @@ function recalc(){
   const rat=ratioUnit(); const ratPreco=comboActive()?0:rat; const ratCusto=comboActive()?rat:0;   // VALOR COMBINADO É SOBERANO: com ele, o rateio do macro vira CUSTO (reduz a margem, não soma ao preço); sem ele, soma ao preço
   const bruto=preco.servicos+preco.equip+preco.despesas+preco.materiais+diaP;
   const desc=bruto*num(S.descontoPct)/100;
-  const adicP=adicPrecoTotal(), descAd=S.descontoAdic?adicP:0;   // desconto comercial que abate os ADICIONAIS (a loja volta ao valor combinado; custo real mantido → lucro cai no valor absorvido)
+  const adicP=adicPrecoTotal(), descAd=S.descontoAdic?adicAbatidoTotal():0;   // desconto comercial que abate os ADICIONAIS (a loja volta ao valor combinado; custo real mantido → lucro cai no valor absorvido)
   const liquido=bruto-desc-descAd;                          // valor antes do imposto
   { const l=document.getElementById('ln_descad'); if(l) l.style.display=(adicP>0)?'':'none'; const sd=document.getElementById('s_descad'); if(sd) sd.textContent=S.descontoAdic?('− '+fmt(descAd)):'não aplicado'; const bt=document.getElementById('descad_tog'); if(bt){ bt.textContent=S.descontoAdic?'abatido ✓':'abater'; bt.style.background=S.descontoAdic?'#e6f5ec':'var(--surf)'; bt.style.color=S.descontoAdic?'#17693f':''; } }
   const imp=liquido*num(S.impostoPct)/100;
@@ -4405,7 +4476,18 @@ function applyBlocoVis(){
     const ln=document.getElementById('ln_'+b.key); if(ln) ln.style.display=on?'':'none';
   });
 }
-function toggleBloco(k){ S.blocoOn[k]=!blocoAtivo(k); save(); renderBlk(BLKS.find(b=>b.key===k)); applyBlocoVis(); recalc(); }
+function toggleBloco(k){   // CHAVE DE VALOR: confirma mostrando o antes/depois (junta 15/09 — foi o que zerou Serviços da base)
+  try{ const on=blocoAtivo(k), nome=((BLKS.find(b=>b.key===k)||{}).titulo)||k;
+    const val=p=>p?({servicos:p.serv,materiais:p.mat,despesas:p.desp+p.desl,equip:p.equip}[k]||0):0;
+    const d2=_deep(S); d2.blocoOn=Object.assign({},d2.blocoOn); d2.blocoOn[k]=!on;
+    const a=precoDe(S), b=precoDe(d2);
+    const mg=dd=>{ const keep=S; try{ S=_deep(dd); sanitize(); return comboActive()?('serviços '+_d1(comboMgBlk('servicos')*100)+'% · material '+_d1(comboMgBlk('materiais')*100)+'%'):''; }catch(_){ return ''; } finally{ S=keep; } };
+    const msg=(on?'⚠️ TIRAR DO CÁLCULO':'VOLTAR A SOMAR')+' o bloco "'+nome+'"?\n\nEste botão MUDA O VALOR da proposta. Para só esconder do cliente, use as chaves "no PDF" do documento (Ver como o cliente).\n\n'
+      +nome+': '+fmt(val(a))+'  →  '+fmt(val(b))+'\nTotal: '+fmt(a?a.total:0)+'  →  '+fmt(b?b.total:0)
+      +(comboActive()?('\n\nCom valor combinado o total se mantém e as margens se redistribuem:\nantes: '+mg(S)+'\ndepois: '+mg(d2)):'');
+    if(!confirm(msg)) return;
+  }catch(e){ console.error('toggleBloco confirm',e); }
+  S.blocoOn[k]=!blocoAtivo(k); save(); renderBlk(BLKS.find(b=>b.key===k)); applyBlocoVis(); recalc(); }
 
 /* ---------- boot ---------- */
 function boot(){ BLKS.forEach(renderBlk); applyBlocoVis(); renderDescGeral(); bindFields(); applyPrefill(); recalc(); try{syncStatusFromComprovantes();}catch(e){} renderBanner(); renderCanal(); renderBrand(); if(MANUAL&&_lastSaved==='')_lastSaved=_hhmm(); renderSaveState(); }
