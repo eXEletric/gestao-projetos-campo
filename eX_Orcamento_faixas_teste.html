@@ -3375,8 +3375,10 @@ function fxLay(){ if(!S.fxLayout||typeof S.fxLayout!=='object')S.fxLayout={}; va
   if(!L.cor||typeof L.cor!=='object')L.cor={}; if(!L.legenda||typeof L.legenda!=='object')L.legenda={}; return L; }
 function fxOrdem(){ var L=fxLay(); var ids=FX_DEF.map(function(d){return d.id;});
   var ord=L.ordem.filter(function(x,i,a){ return a.indexOf(x)===i && (x.indexOf('g:')===0 ? !!L.grupos[x.slice(2)] : ids.indexOf(x)>-1); });
-  ids.forEach(function(id,i){ if(ord.indexOf(id)>-1)return;   // faixa nova/ausente: entra logo depois do seu antecessor padrão
-    var pos=0; for(var j=i-1;j>=0;j--){ var p=ord.indexOf(ids[j]); if(p>-1){pos=p+1;break;} } ord.splice(pos,0,id); });
+  ids.forEach(function(id,i){ if(ord.indexOf(id)>-1)return;   // faixa nova/ausente: entra logo ANTES do seu sucessor padrão (ex.: Fatores → antes do Macro), senão depois do antecessor
+    var pos=-1; for(var k=i+1;k<ids.length;k++){ var s=ord.indexOf(ids[k]); if(s>-1){pos=s;break;} }
+    if(pos<0){ pos=0; for(var j=i-1;j>=0;j--){ var p=ord.indexOf(ids[j]); if(p>-1){pos=p+1;break;} } }
+    ord.splice(pos,0,id); });
   Object.keys(L.grupos).forEach(function(g){ if(ord.indexOf('g:'+g)<0)ord.unshift('g:'+g); });
   return ord; }
 function fxCorOf(k){ var c=FX_CORES.find(function(x){return x.k===k;}); return c?c.c:''; }
