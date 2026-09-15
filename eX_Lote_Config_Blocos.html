@@ -141,9 +141,9 @@
   var link=null,tmp=null;
   function ptr(e){var r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
   function cardAt(e){var el=document.elementFromPoint(e.clientX,e.clientY);if(!el||!el.closest)return null;var nd=el.closest('.card');if(!nd)return null;var id=null;Object.keys(elMap).forEach(function(k){if(elMap[k]===nd)id=k;});return id;}
-  function startLink(id,e){link=id;document.addEventListener('pointermove',moveLink);document.addEventListener('pointerup',endLink);}
+  function startLink(id,port,e){link=id;try{port.setPointerCapture(e.pointerId);}catch(_){}document.body.style.userSelect='none';}
   function moveLink(e){var p=ptr(e),a=cardCenter(link);if(!a)return;var s=bound(a,p.x,p.y);if(!tmp){tmp=document.createElementNS(NS,'path');tmp.setAttribute('stroke','var(--pri)');tmp.setAttribute('stroke-width','2.2');tmp.setAttribute('fill','none');tmp.setAttribute('stroke-dasharray','5 4');tmp.style.pointerEvents='none';svg.appendChild(tmp);}tmp.setAttribute('d','M'+s.x+' '+s.y+' L'+p.x+' '+p.y);}
-  function endLink(e){document.removeEventListener('pointermove',moveLink);document.removeEventListener('pointerup',endLink);var id=cardAt(e);if(id&&id!==link&&!edges.some(function(x){return x.f===link&&x.t===id;})){edges.push({f:link,t:id});save();}if(tmp){tmp.remove();tmp=null;}link=null;renderEdges();}
+  function endLink(e){document.body.style.userSelect='';var id=cardAt(e);if(id&&id!==link&&!edges.some(function(x){return x.f===link&&x.t===id;})){edges.push({f:link,t:id});save();}if(tmp){tmp.remove();tmp=null;}link=null;renderEdges();}
   function cardEl(p){
     var card=document.createElement('div');card.className='card '+(p.col||'neu');card.style.left=(p.x||20)+'px';card.style.top=(p.y||20)+'px';
     var on=p.fns.filter(function(f){return f.on;}).length;
@@ -165,7 +165,9 @@
     dragHead(ch,card,p);
     card.appendChild(ch);
     var port=document.createElement('div');port.className='port';port.title='arraste até outro quadro pra LIGAR (desenhar a relação)';
-    port.addEventListener('pointerdown',function(e){e.stopPropagation();e.preventDefault();startLink(p.id,e);});
+    port.addEventListener('pointerdown',function(e){e.stopPropagation();e.preventDefault();startLink(p.id,port,e);});
+    port.addEventListener('pointermove',function(e){if(link)moveLink(e);});
+    port.addEventListener('pointerup',function(e){if(link)endLink(e);});
     card.appendChild(port);
     if(p.collapsed){return card;}
     var fns=document.createElement('div');fns.className='fns';
