@@ -1383,6 +1383,9 @@ function comboMgBlk(blk){
   const cP=(blocoAtivo('despesas')?blkCusto('despesas')-adicCusto('despesas'):0)+(blocoAtivo('equip')?blkCusto('equip')-adicCusto('equip'):0)+diariasCusto();
   const bruto=num(S.valorCombinado)/(((1-num(S.descontoPct)/100)||1)*(1+num(S.impostoPct)/100));
   return (bruto-cP-cB(outro)*(1+fxo))/cMe - 1; }
+function mkComboCell(blk,r){   // célula de margem da linha com VALOR COMBINADO: mostra a margem realmente aplicada (vem do painel de preço)
+  const propria=!(r.margem===''||r.margem==null), v=comboMgBlk(blk)*100, t=travas(), trav=(blk==='materiais')?t.mat:t.serv;
+  return '<span class="mkcombo'+(v<0?' neg':'')+'" data-blk="'+blk+'" title="VALOR COMBINADO ativo — esta linha segue a Margem '+(blk==='servicos'?'serviços':'materiais')+' do painel de preço'+(trav?' (TRAVADA)':' (calculada)')+'.'+(propria?' A margem própria desta linha ('+esc(r.margem)+'%) está sendo IGNORADA.':'')+'"><span class="material-symbols-rounded">'+(trav?'lock':'handshake')+'</span><span class="mkcv">'+_d1(v)+'</span>%'+(propria?'<span class="material-symbols-rounded" style="color:#c77b12">warning</span>':'')+'</span>'; }
 function comboMgMat(){ return comboFixa('materiais'); }   // compatibilidade
 function comboMgServ(){ return comboMgBlk('servicos'); }
 function toggleTrava(k){ const t=travas(); t[k]=!t[k];
@@ -1771,7 +1774,7 @@ function baseMatTableHtml(cfg){   // Base do lote = modelo EDITÁVEL de material
       +'<td class="r money pint">'+cc+'</td>'
       +'<td class="r">'+qtdCellHtml(cfg,r)+'</td>'
       +'<td>'+undSelect('materiais',r.id,r.und,r)+'</td>'
-      +'<td class="r pint"><div class="mkwrap '+(propria?'own':'base')+'"><input class="cin num mk" value="'+esc(r.margem)+'" placeholder="'+num(baseMg('materiais'))+'" inputmode="decimal" onblur="mgBlur(this,\'materiais\',\''+r.id+'\')" oninput="upd(\'materiais\',\''+r.id+'\',\'margem\',this.value)"><span class="mkpc">%</span></div></td>'
+      +'<td class="r pint">'+((comboActive()&&!r.adic)?mkComboCell('materiais',r):'<div class="mkwrap '+(propria?'own':'base')+'"><input class="cin num mk" value="'+esc(r.margem)+'" placeholder="'+num(baseMg('materiais'))+'" inputmode="decimal" onblur="mgBlur(this,\'materiais\',\''+r.id+'\')" oninput="upd(\'materiais\',\''+r.id+'\',\'margem\',this.value)"><span class="mkpc">%</span></div>')+'</td>'
       +'<td class="r money pint">'+fmt(custo)+'</td>'
       +'<td class="r money"><b>'+fmt(preco)+'</b></td>'
       +'<td class="pint rowact"><button class="swp" onclick="dupRow(\'materiais\',\''+r.id+'\')" title="Duplicar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick(\'materiais\',\''+r.id+'\')" title="Trocar por outro do cadastro"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow(\'materiais\',\''+r.id+'\')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>'
@@ -2036,7 +2039,7 @@ function renderBlk(cfg){
           : `<td class="r money pint">${custoCell}</td>`}
         <td class="r">${qtdCellHtml(cfg,r)}</td>
         <td>${undSelect(cfg.key,r.id,r.und,r)}</td>
-        <td class="r pint">${(comboActive()&&(cfg.key==='servicos'||cfg.key==='materiais')&&!r.adic)?`<span class="mkcombo" data-blk="${cfg.key}" title="VALOR COMBINADO ativo — esta linha usa a margem do bloco definida no painel de preço (Margem ${cfg.key==='servicos'?'serviços':'materiais'}).${propria?' A margem própria desta linha ('+esc(r.margem)+'%) fica guardada e volta se o combinado for removido.':''}"><span class="material-symbols-rounded">handshake</span><span class="mkcv">${_d1(comboMgBlk(cfg.key)*100)}</span>%</span>`:`<div class="mkwrap ${propria?'own':'base'}">${propria?'<span class="mkne" title="diferente da margem base">&ne;</span>':''}<input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(baseMg(cfg.key))}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span class="mkpc">%</span>${propria?`<span class="mkwarn material-symbols-rounded" title="margem própria — fora da base ${num(baseMg(cfg.key))}%">warning</span><button class="mkreset" title="voltar à margem base" onclick="resetMargem('${cfg.key}','${r.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</div>`}</td>
+        <td class="r pint">${(comboActive()&&(cfg.key==='servicos'||cfg.key==='materiais')&&!r.adic)?mkComboCell(cfg.key,r):`<div class="mkwrap ${propria?'own':'base'}">${propria?'<span class="mkne" title="diferente da margem base">&ne;</span>':''}<input class="cin num mk" value="${esc(r.margem)}" placeholder="${num(baseMg(cfg.key))}" inputmode="decimal" onblur="mgBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','margem',this.value)"><span class="mkpc">%</span>${propria?`<span class="mkwarn material-symbols-rounded" title="margem própria — fora da base ${num(baseMg(cfg.key))}%">warning</span><button class="mkreset" title="voltar à margem base" onclick="resetMargem('${cfg.key}','${r.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</div>`}</td>
         <td class="r money custot pint" id="tc_${r.id}">${fmt(custo)}</td>
         <td class="r money unit" id="tu_${r.id}">${fmt(unit)}</td>
         <td class="r money preco" id="tp_${r.id}"><b>${fmt(preco)}</b></td>
@@ -4399,8 +4402,16 @@ function recalc(){
     document.querySelectorAll('.mkcombo[data-blk]').forEach(el=>{ const v=_combo?comboMgBlk(el.dataset.blk)*100:0; const s=el.querySelector('.mkcv'); if(s)s.textContent=_d1(v); el.classList.toggle('neg',v<0); });   // margem aplicada nas linhas com valor combinado
     const im=document.querySelector('[data-f="impostoPct"]'); if(im) im.disabled=!!t.imp;
     lk('lk_serv',t.serv); lk('lk_mat',t.mat); lk('lk_imp',t.imp);
-    [['servicos','mg_serv_in'],['materiais','mg_mat_in']].forEach(p=>{ const inp=document.getElementById(p[1]); if(!inp)return; let a=document.getElementById('ap_'+p[0]); const n=_combo?0:linhasMargemPropria(p[0]).length;
+    [['servicos','mg_serv_in'],['materiais','mg_mat_in']].forEach(p=>{ const inp=document.getElementById(p[1]); if(!inp)return; let a=document.getElementById('ap_'+p[0]); const n=linhasMargemPropria(p[0]).length;
       const row=inp.closest('.iln'); if(row) row.classList.add('mgrow');   // cada margem numa caixa própria (o botão fica DENTRO da caixa dela)
+      if(_combo){   // COM valor combinado: avisa quem está fora do percentual do bloco (margem própria ignorada · adicionais com margem própria)
+        const mg=_d1(comboMgBlk(p[0])*100), nAd=(S[p[0]]||[]).filter(r=>r&&r.adic).length;
+        if(!n&&!nAd){ if(a)a.remove(); return; }
+        if(!a){ a=document.createElement('div'); a.id='ap_'+p[0]; a.className='noprint mgap'; if(row) row.appendChild(a); }
+        a.innerHTML='<div style="font-size:11.5px;line-height:1.45;color:#5a3a06">'
+          +(n?'<span class="material-symbols-rounded" style="font-size:14px;vertical-align:-3px;color:#c77b12">warning</span> <b>'+n+' linha(s)</b> tinham margem própria — com o combinado elas seguem <b>'+mg+'%</b>. <button onclick="aplicarMargemLinhas(\''+p[0]+'\')" style="border:1px solid #c77b12;background:#fff4e0;color:#8a5a12;border-radius:6px;padding:0 6px;font:inherit;font-weight:800;cursor:pointer">limpar</button><br>':'')
+          +(nAd?'<span class="material-symbols-rounded" style="font-size:14px;vertical-align:-3px;color:#c77b12">add_circle</span> <b>'+nAd+' adicional(is)</b> fora dos '+mg+'% (margem própria, fora do combinado)':'')+'</div>';
+        return; }
       if(!n){ if(a)a.remove(); return; }
       if(!a){ a=document.createElement('div'); a.id='ap_'+p[0]; a.className='noprint mgap'; if(row) row.appendChild(a); }
       a.innerHTML='<button onclick="aplicarMargemLinhas(\''+p[0]+'\')" style="border:1px solid #c77b12;background:#fff4e0;color:#8a5a12;border-radius:6px;padding:1px 7px;font:inherit;font-weight:800;cursor:pointer" title="Estas linhas têm margem própria e ignoram a margem do bloco">aplicar '+_d1(baseMg(p[0]))+'% nas '+n+' linha(s) com margem própria</button>'; }); }
