@@ -21,6 +21,9 @@
   .canvas{position:relative;width:2400px;height:1800px}
   .card{position:absolute;width:270px;background:var(--surf);border:1px solid var(--line);border-radius:12px;box-shadow:0 4px 16px -8px rgba(20,10,50,.25);overflow:hidden}
   .card.base{border-top:3px solid var(--base)} .card.unid{border-top:3px solid var(--unid)} .card.glob{border-top:3px solid var(--glob)} .card.neu{border-top:3px solid var(--neu)}
+  .card .port{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);width:16px;height:16px;border-radius:50%;background:var(--pri);border:2px solid var(--surf);cursor:crosshair;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .card .port:hover{transform:translateX(-50%) scale(1.2)}
+  #edges path,#edges text{}
   .ch{display:flex;align-items:center;gap:7px;padding:9px 10px;background:var(--surf2);cursor:grab;user-select:none}
   .ch.grab{cursor:grabbing}
   .ch .cr{color:var(--tx3);cursor:pointer;flex:none;display:grid;place-items:center}
@@ -80,11 +83,11 @@
 </div>
 <div class="board" id="board"><div class="canvas" id="canvas"></div></div>
 <div class="cpop" id="cpop"></div>
-<div class="hint"><span class="material-symbols-rounded">tune</span><span>Arraste o <b>topo</b> do quadro pra mover · <b>switch</b> tira/põe a função · <b>×</b> remove · <b>＋ adicionar função</b> · clique no <b>quadradinho de cor</b> pra trocar a leitura · nomes são editáveis (clique).</span></div>
+<div class="hint"><span class="material-symbols-rounded">tune</span><span>Arraste o <b>topo</b> pra mover · arraste o <b>●&nbsp;roxo</b> (embaixo do quadro) até outro quadro pra <b>LIGAR/desenhar</b> · clique na <b>linha</b> pra dar nome ou "apagar" · <b>switch</b> tira/põe função · <b>×</b> remove · <b>cor</b> troca a leitura · nomes editáveis.</span></div>
 <div id="exp"><div class="box"><textarea id="exptx" readonly></textarea><div class="r"><button class="btn" id="expcopy"><span class="material-symbols-rounded">content_copy</span>Copiar</button><button class="btn" id="expclose">Fechar</button></div></div></div>
 <script>
 (function(){
-  var KEY='ex_lote_canvas_v2';
+  var KEY='ex_lote_canvas_v3', NS='http://www.w3.org/2000/svg';
   var CNAME={base:'Base (modelo)',unid:'Por unidade',glob:'Global',neu:'Neutro'};
   var PARTS=[
     {col:'base',id:'hBase',nm:'◆ BASE — modelo por loja',fns:[['toggle_on','chave “na proposta”'],['swap_horiz','média × base do contratante'],['bookmark_add','Salvar como modelo'],['download','Aplicar na base']]},
@@ -111,15 +114,36 @@
     });
     return out;
   }
-  var data;
-  function load(){try{var r=localStorage.getItem(KEY);if(r){data=JSON.parse(r);return;}}catch(e){}data=seed();}
-  function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
+  var data, edges=[], elMap={}, svg=null;
+  function load(){try{var r=localStorage.getItem(KEY);if(r){var o=JSON.parse(r);if(o&&o.cards){data=o.cards;edges=o.edges||[];return;}}}catch(e){}data=seed();edges=[];}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify({cards:data,edges:edges}));}catch(e){}}
   var canvas=document.getElementById('canvas'),board=document.getElementById('board'),cpop=document.getElementById('cpop');
   function esc(s){return String(s==null?'':s);}
+  function ensureSvg(){ if(!svg){ svg=document.createElementNS(NS,'svg'); svg.setAttribute('id','edges'); svg.style.cssText='position:absolute;left:0;top:0;width:100%;height:100%;overflow:visible;z-index:1'; svg.innerHTML='<defs><marker id="ar" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#7d8aa0"/></marker></defs>'; canvas.appendChild(svg); } }
   function render(){
-    canvas.innerHTML='';
-    data.forEach(function(p){canvas.appendChild(cardEl(p));});
+    Object.keys(elMap).forEach(function(k){if(elMap[k])elMap[k].remove();});elMap={};
+    ensureSvg();
+    data.forEach(function(p){var el=cardEl(p);elMap[p.id]=el;el.style.zIndex='2';canvas.appendChild(el);});
+    renderEdges();
   }
+  function cardCenter(id){var el=elMap[id];if(!el)return null;return{x:el.offsetLeft+el.offsetWidth/2,y:el.offsetTop+el.offsetHeight/2,hw:el.offsetWidth/2,hh:el.offsetHeight/2};}
+  function bound(c,tx,ty){var dx=tx-c.x,dy=ty-c.y;if(!dx&&!dy)return[c.x,c.y];var s=Math.min(dx?c.hw/Math.abs(dx):1e9,dy?c.hh/Math.abs(dy):1e9);return[c.x+dx*s,c.y+dy*s];}
+  function renderEdges(){ if(!svg)return; while(svg.childNodes.length>1)svg.removeChild(svg.lastChild);
+    edges.forEach(function(ed,i){ var a=cardCenter(ed.f),b=cardCenter(ed.t); if(!a||!b)return;
+      var p1=bound(a,b.x,b.y),p2=bound(b,a.x,a.y);
+      var hit=document.createElementNS(NS,'path');hit.setAttribute('d','M'+p1[0]+' '+p1[1]+' L'+p2[0]+' '+p2[1]);hit.setAttribute('stroke','transparent');hit.setAttribute('stroke-width','14');hit.setAttribute('fill','none');hit.style.cursor='pointer';
+      hit.onclick=function(ev){ev.stopPropagation();var v=prompt('Ligação: escreva um nome (o porquê) — ou deixe "apagar" pra remover:',ed.label||'');if(v===null)return;if(v.trim().toLowerCase()==='apagar'){edges.splice(i,1);}else{ed.label=v.trim();ed.d=ed.d?0:ed.d;}save();renderEdges();};
+      svg.appendChild(hit);
+      var pa=document.createElementNS(NS,'path');pa.setAttribute('d','M'+p1[0]+' '+p1[1]+' L'+p2[0]+' '+p2[1]);pa.setAttribute('stroke','#7d8aa0');pa.setAttribute('stroke-width','1.8');pa.setAttribute('fill','none');pa.setAttribute('marker-end','url(#ar)');pa.style.pointerEvents='none';svg.appendChild(pa);
+      if(ed.label){var mx=(p1[0]+p2[0])/2,my=(p1[1]+p2[1])/2;var tt=document.createElementNS(NS,'text');tt.setAttribute('x',mx);tt.setAttribute('y',my-5);tt.setAttribute('text-anchor','middle');tt.setAttribute('font-size','11');tt.setAttribute('fill','#5f5e5a');tt.setAttribute('stroke','var(--bg)');tt.setAttribute('stroke-width','3');tt.setAttribute('paint-order','stroke');tt.style.pointerEvents='none';tt.textContent=ed.label;svg.appendChild(tt);}
+    });
+  }
+  var link=null,tmp=null;
+  function ptr(e){var r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
+  function cardAt(e){var el=document.elementFromPoint(e.clientX,e.clientY);if(!el||!el.closest)return null;var nd=el.closest('.card');if(!nd)return null;var id=null;Object.keys(elMap).forEach(function(k){if(elMap[k]===nd)id=k;});return id;}
+  function startLink(id,e){link=id;document.addEventListener('pointermove',moveLink);document.addEventListener('pointerup',endLink);}
+  function moveLink(e){var p=ptr(e),a=cardCenter(link);if(!a)return;var s=bound(a,p.x,p.y);if(!tmp){tmp=document.createElementNS(NS,'path');tmp.setAttribute('stroke','var(--pri)');tmp.setAttribute('stroke-width','2.2');tmp.setAttribute('fill','none');tmp.setAttribute('stroke-dasharray','5 4');tmp.style.pointerEvents='none';svg.appendChild(tmp);}tmp.setAttribute('d','M'+s.x+' '+s.y+' L'+p.x+' '+p.y);}
+  function endLink(e){document.removeEventListener('pointermove',moveLink);document.removeEventListener('pointerup',endLink);var id=cardAt(e);if(id&&id!==link&&!edges.some(function(x){return x.f===link&&x.t===id;})){edges.push({f:link,t:id});save();}if(tmp){tmp.remove();tmp=null;}link=null;renderEdges();}
   function cardEl(p){
     var card=document.createElement('div');card.className='card '+(p.col||'neu');card.style.left=(p.x||20)+'px';card.style.top=(p.y||20)+'px';
     var on=p.fns.filter(function(f){return f.on;}).length;
@@ -133,13 +157,16 @@
     var ct=document.createElement('span');ct.className='ct';ct.textContent=on+'/'+p.fns.length;
     var xc=document.createElement('button');xc.className='xc';xc.innerHTML='&times;';xc.title='apagar quadro';
     xc.addEventListener('pointerdown',function(e){e.stopPropagation();});
-    xc.onclick=function(e){e.stopPropagation();if(confirm('Apagar o quadro “'+p.nm+'”?')){data=data.filter(function(x){return x!==p;});save();render();}};
+    xc.onclick=function(e){e.stopPropagation();if(confirm('Apagar o quadro “'+p.nm+'”?')){data=data.filter(function(x){return x!==p;});edges=edges.filter(function(x){return x.f!==p.id&&x.t!==p.id;});save();render();}};
     var cr=document.createElement('span');cr.className='cr';cr.innerHTML='<span class="material-symbols-rounded">'+(p.collapsed?'chevron_right':'expand_more')+'</span>';cr.title=p.collapsed?'abrir (ver funções)':'recolher';
     cr.addEventListener('pointerdown',function(e){e.stopPropagation();});
     cr.onclick=function(e){e.stopPropagation();p.collapsed=!p.collapsed;save();render();};
     ch.appendChild(cr);ch.appendChild(dot);ch.appendChild(nm);ch.appendChild(ct);ch.appendChild(xc);
     dragHead(ch,card,p);
     card.appendChild(ch);
+    var port=document.createElement('div');port.className='port';port.title='arraste até outro quadro pra LIGAR (desenhar a relação)';
+    port.addEventListener('pointerdown',function(e){e.stopPropagation();e.preventDefault();startLink(p.id,e);});
+    card.appendChild(port);
     if(p.collapsed){return card;}
     var fns=document.createElement('div');fns.className='fns';
     p.fns.forEach(function(f,i){
@@ -175,11 +202,11 @@
   document.addEventListener('pointerdown',function(e){if(!cpop.contains(e.target))cpop.classList.remove('on');},true);
   function dragHead(ch,card,p){
     ch.addEventListener('pointerdown',function(e){
-      if(e.target.classList&&(e.target.classList.contains('nm')||e.target.classList.contains('dot')||e.target.classList.contains('xc')))return;
+      if(e.target.classList&&(e.target.classList.contains('nm')||e.target.classList.contains('dot')||e.target.classList.contains('xc')||e.target.closest('.cr')||e.target.closest('.port')))return;
       e.preventDefault();ch.classList.add('grab');
       var r=board.getBoundingClientRect();var ox=e.clientX-r.left-(p.x||20)+board.scrollLeft;var oy=e.clientY-r.top-(p.y||20)+board.scrollTop;
       ch.setPointerCapture(e.pointerId);
-      function mv(ev){var nx=ev.clientX-r.left-ox+board.scrollLeft;var ny=ev.clientY-r.top-oy+board.scrollTop;nx=Math.max(0,Math.min(nx,2400-100));ny=Math.max(0,Math.min(ny,1800-40));p.x=nx;p.y=ny;card.style.left=nx+'px';card.style.top=ny+'px';}
+      function mv(ev){var nx=ev.clientX-r.left-ox+board.scrollLeft;var ny=ev.clientY-r.top-oy+board.scrollTop;nx=Math.max(0,Math.min(nx,2400-100));ny=Math.max(0,Math.min(ny,1800-40));p.x=nx;p.y=ny;card.style.left=nx+'px';card.style.top=ny+'px';renderEdges();}
       function up(){ch.classList.remove('grab');ch.removeEventListener('pointermove',mv);ch.removeEventListener('pointerup',up);save();}
       ch.addEventListener('pointermove',mv);ch.addEventListener('pointerup',up);
     });
@@ -190,7 +217,7 @@
     data.push(c);save();render();
   };
   document.getElementById('allc').onclick=function(){var anyOpen=data.some(function(p){return !p.collapsed;});data.forEach(function(p){p.collapsed=anyOpen;});save();render();this.innerHTML='<span class="material-symbols-rounded">'+(anyOpen?'unfold_more':'unfold_less')+'</span>'+(anyOpen?'Expandir tudo':'Recolher tudo');};
-  document.getElementById('reset').onclick=function(){if(confirm('Restaurar todos os quadros ao padrão? (perde suas mudanças)')){data=seed();save();render();}};
+  document.getElementById('reset').onclick=function(){if(confirm('Restaurar todos os quadros ao padrão? (perde suas mudanças)')){data=seed();edges=[];save();render();}};
   var expEl=document.getElementById('exp'),exptx=document.getElementById('exptx');
   document.getElementById('export').onclick=function(){
     var s='BLOCOS DO LOTE — quadros e funções (configurado por André)\n\n';
