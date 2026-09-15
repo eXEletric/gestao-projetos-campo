@@ -148,7 +148,7 @@
   function render(){
     Object.keys(elMap).forEach(function(k){if(elMap[k])elMap[k].remove();});elMap={};
     ensureSvg();
-    data.forEach(function(p){var el=cardEl(p);elMap[p.id]=el;el.style.zIndex='2';canvas.appendChild(el);});
+    data.forEach(function(p){var el=cardEl(p);elMap[p.id]=el;el.style.zIndex=p.collapsed?'2':'6';canvas.appendChild(el);});
     renderEdges();
   }
   function cardCenter(id){var el=elMap[id];if(!el)return null;return{x:el.offsetLeft+el.offsetWidth/2,y:el.offsetTop+el.offsetHeight/2,hw:el.offsetWidth/2,hh:el.offsetHeight/2};}
