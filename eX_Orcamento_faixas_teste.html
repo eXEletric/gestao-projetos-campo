@@ -735,7 +735,7 @@ details.lotemais>summary::-webkit-details-marker{display:none}
 body.fxorg [data-fxnm]{position:relative;outline:2px dashed var(--fxc,#b9b4cc);outline-offset:3px;margin-top:18px}
 body.fxorg [data-fxnm]::before{content:attr(data-fxnm);position:absolute;top:-11px;left:10px;z-index:5;background:var(--fxc,#6f6a85);color:#fff;font:700 10.5px/1 system-ui,sans-serif;padding:3px 8px;border-radius:6px;letter-spacing:.02em;pointer-events:none}
 body.fxorg [data-fxnm].fxhl{outline:3px solid var(--pri);outline-offset:3px}
-#fxDrawer{position:fixed;top:0;right:0;bottom:0;width:380px;max-width:100%;z-index:120;background:var(--surf);border-left:1px solid var(--line);box-shadow:-12px 0 32px rgba(20,10,50,.16);display:flex;flex-direction:column;font-size:13px}
+#fxDrawer{position:fixed;top:0;right:0;bottom:0;width:440px;max-width:100%;z-index:120;background:var(--surf);border-left:1px solid var(--line);box-shadow:-12px 0 32px rgba(20,10,50,.16);display:flex;flex-direction:column;font-size:13px}
 #fxDrawer .fxhd{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
 #fxDrawer .fxhd b{font-size:14px}
 #fxDrawer .fxbody{flex:1;overflow:auto;padding:10px 12px 16px}
@@ -761,6 +761,11 @@ body.fxorg [data-fxnm].fxhl{outline:3px solid var(--pri);outline-offset:3px}
 #fxDrawer .fxbtn:hover{border-color:var(--pri);color:var(--pri)}
 #fxDrawer .fxbtn.pri{background:var(--pri);border-color:var(--pri);color:#fff}
 #fxDrawer .fxbtn .material-symbols-rounded{font-size:16px}
+#fxDrawer .fxvis{display:inline-flex;align-items:center;gap:3px;flex:none;border:1px solid var(--line2);background:var(--surf);color:var(--tx3);border-radius:20px;padding:2px 7px;font:700 10.5px inherit;cursor:pointer;white-space:nowrap}
+#fxDrawer .fxvis .material-symbols-rounded{font-size:14px}
+#fxDrawer .fxvis.on{background:#e6f5ec;border-color:#9fd3b3;color:#17693f}
+#fxDrawer .fxvis.off{background:#fbecec;border-color:#e8b4b4;color:#a32d2d}
+#fxDrawer .fxvis.int{cursor:default;border-style:dashed}
 #fxOrgBtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
 body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{background:var(--surf)}
 #fxDrawer .fxft{display:flex;gap:8px;flex-wrap:wrap;padding:10px 12px;border-top:1px solid var(--line)}
@@ -3269,7 +3274,8 @@ function verComoClienteLote(){
           ${(showOrig&&macroT>0)?`<tr><td style="padding:7px 14px;color:#8b86a1;font-size:11.5px"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">subdirectory_arrow_right</span> inclui Mobilização &amp; logística do lote: ${fmt(macroT)} · rateado ${fmt(rateioPer)}/loja (já no valor acima)</td><td></td>${cc?'<td></td><td></td>':''}<td style="padding:7px 14px;text-align:right;color:#8b86a1;font-size:11.5px">incluído</td></tr>`:''}
         </tfoot></table></div>`;
   const _dsTotal=`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0;padding:14px;border-top:2px solid #e2ddf1;background:#f6f4fc;border-radius:0 0 10px 10px"><span style="font-weight:800;color:#3f2c8f;font-size:14px">Total da proposta${cc?' <span style="font-weight:600;font-size:11.5px;color:#7d7799">· custo '+fmt(sumCusto)+' · lucro '+fmt(sumLucro)+'</span>':''}</span><span style="font-weight:800;font-size:17px;color:#3f2c8f;font-variant-numeric:tabular-nums">${fmt(total)}</span></div>`;
-  _ds['blk.servicos']=escopoSec;
+  _ds['lote.escopo']=escopoSec;   // Σ serviços das lojas = faixa Serviços global
+  _ds['desc']=(S.descGeral&&String(S.descGeral).trim())?('<div style="padding:14px 0 4px;font-size:13px;color:#3a3550;line-height:1.6;white-space:pre-wrap">'+esc(S.descGeral)+'</div>'):'';
   if(S.matSomaOn!==false) _ds['mat.global']=matSec; else _ds['mat.base']=matSec;
   _ds['lote.global']=_dsTotal+`<div style="display:flex;gap:12px;flex-wrap:wrap;padding-top:6px">
         <div style="flex:1;min-width:150px;background:#f6f3fd;border:1px solid #eee;border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;text-transform:uppercase;color:#7d7799;font-weight:700">Valor médio / unidade</div><div style="font-weight:800;font-size:16px;font-variant-numeric:tabular-nums">${fmt(vMed)}</div></div>
@@ -3281,7 +3287,7 @@ function verComoClienteLote(){
         ${(S.respNome||S.respFone||S.respEmail)?`<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#7d7799;margin-bottom:3px">Responsável</div><div style="font-weight:600;color:#221c39">${esc(S.respNome||'')}</div>${S.respFone?`<div style="color:#7d7799">${esc(S.respFone)}</div>`:''}${S.respEmail?`<div style="color:#7d7799">${esc(S.respEmail)}</div>`:''}</div>`:''}
         ${(typeof CANAL!=='undefined'&&CANAL&&CANAL.mostrar&&(CANAL.email||CANAL.fone))?`<div><div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#7d7799;margin-bottom:3px">Canal comercial</div>${CANAL.fone?`<div>${esc(CANAL.fone)}</div>`:''}${CANAL.email?`<div>${esc(CANAL.email)}</div>`:''}</div>`:''}
       </div>`:'');
-  const _fxDoc=fxOrdem().map(function(id){ return _ds[id]||''; }).join('');
+  const _fxDoc=fxOrdem().map(function(id){ return fxVis(id)===false?'':(_ds[id]||''); }).join('');   // chave "Mostrar na proposta" de cada faixa
   const doc=`<div id="vcSheet" style="max-width:820px;margin:0 auto;background:#fff;color:#221c39;border-radius:12px;box-shadow:0 20px 60px rgba(20,10,50,.3);overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif">
     <div style="height:6px;background:linear-gradient(90deg,#533ab7,#3f2c8f)"></div>
     <div style="padding:30px 34px">
@@ -3359,9 +3365,21 @@ var FX_CORES=[
   {k:'roxo',c:'#8e44ad',lb:'(defina o significado)'}
 ];
 var FX_ORG=false, FX_DRAG=null;
+// "Mostrar na proposta": só faixas que EXISTEM no documento do cliente (Documento do lote) têm chave; as demais são internas.
+// Fonte única: material e descrição usam as chaves que já existiam (matSomaOn/matBaseOn/descGeralOn); o resto usa S.fxLayout.vis
+var FX_DOC={'cab':1,'desc':1,'lote.fatores':1,'lote.lista':1,'lote.global':1,'lote.escopo':1,'mat.global':1,'mat.base':1,'lote.prazo':1,'lote.cond':1};
+function fxVis(id){ if(!FX_DOC[id])return null;
+  if(id==='mat.global')return S.matSomaOn!==false; if(id==='mat.base')return !!S.matBaseOn; if(id==='desc')return S.descGeralOn!==false;
+  var L=fxLay(); return L.vis[id]!==false; }
+function fxSetVis(id){ var on=fxVis(id); if(on===null)return;
+  if(id==='mat.global')setMatView('soma',!on);
+  else if(id==='mat.base')setMatView('base',!on);
+  else if(id==='desc')toggleDescGeral();
+  else { var L=fxLay(); if(on)L.vis[id]=false; else delete L.vis[id]; save(); }
+  fxApply(); }
 function fxLay(){ if(!S.fxLayout||typeof S.fxLayout!=='object')S.fxLayout={}; var L=S.fxLayout;
   if(!Array.isArray(L.ordem))L.ordem=[]; if(!L.grupos||typeof L.grupos!=='object')L.grupos={};
-  if(!L.cor||typeof L.cor!=='object')L.cor={}; if(!L.legenda||typeof L.legenda!=='object')L.legenda={}; return L; }
+  if(!L.cor||typeof L.cor!=='object')L.cor={}; if(!L.legenda||typeof L.legenda!=='object')L.legenda={}; if(!L.vis||typeof L.vis!=='object')L.vis={}; return L; }
 function fxOrdem(){ var L=fxLay(); var ids=FX_DEF.map(function(d){return d.id;});
   var ord=L.ordem.filter(function(x,i,a){ return a.indexOf(x)===i && (x.indexOf('g:')===0 ? !!L.grupos[x.slice(2)] : ids.indexOf(x)>-1); });
   ids.forEach(function(id,i){ if(ord.indexOf(id)>-1)return;   // faixa nova/ausente: entra logo ANTES do seu sucessor padrão (ex.: Fatores → antes do Macro), senão depois do antecessor
@@ -3398,7 +3416,7 @@ function fxApply(){ var col=document.getElementById('fxCol'); if(!col)return;
     el.style.order=String(i+1);
     var isG=id.indexOf('g:')===0; var ck=isG?(L.grupos[id.slice(2)].cor||''):(L.cor[id]||''); var cc=fxCorOf(ck);
     if(cc)el.style.setProperty('--fxc',cc); else el.style.removeProperty('--fxc');
-    if(!isG){ var d=FX_DEF.find(function(x){return x.id===id;}); el.setAttribute('data-fxnm',(d?d.nm:id)+(ck?' · '+fxLeg(ck):'')); } });
+    if(!isG){ var d=FX_DEF.find(function(x){return x.id===id;}); el.setAttribute('data-fxnm',(d?d.nm:id)+(ck?' · '+fxLeg(ck):'')+(fxVis(id)===false?' · FORA da proposta':'')); } });
   if(bm){ bm.style.order = bm.classList.contains('fxsplit') ? '' : String(ord.indexOf('mat.cab')+1); }   // editor a custo (sem faixas): o bloco inteiro fica na posição do cabeçalho
   if(FX_ORG)fxRenderDrawer();
 }
@@ -3417,7 +3435,11 @@ function fxRenderDrawer(){ var d=document.getElementById('fxDrawer');
     if(id.indexOf('g:')===0){ var gk=id.slice(2), g=L.grupos[gk], gc=fxCorOf(g.cor); inG=true;
       return '<div class="fxrow grp"'+drop(i)+' style="'+(gc?'--fxc:'+gc:'')+'">'+handle(i)+'<span class="material-symbols-rounded" style="font-size:17px;color:var(--fxc,#9a96ad)">folder</span><input class="fxin" style="flex:1;font-weight:700;min-width:0" value="'+esc(g.nome||'')+'" placeholder="nome do grupo" onchange="fxRenomearGrupo(\''+gk+'\',this.value)">'+sw('g',gk,g.cor||'')+arrows(i)+'<button class="fxib" title="apagar o grupo (as faixas ficam)" onclick="fxApagarGrupo(\''+gk+'\')"><span class="material-symbols-rounded">delete</span></button></div>'; }
     var def=FX_DEF.find(function(x){return x.id===id;})||{nm:id,ic:'crop_16_9'}; var ck=L.cor[id]||'', cc=fxCorOf(ck), miss=!fxEl(id);
-    return '<div class="fxrow'+(miss?' miss':'')+'"'+drop(i)+' style="'+(inG?'margin-left:16px;':'')+(cc?'--fxc:'+cc:'')+'" onmouseenter="fxHl(\''+id+'\',true)" onmouseleave="fxHl(\''+id+'\',false)" onclick="fxIr(\''+id+'\')" title="'+(miss?'não aparece agora (depende do modo/visão) — a posição fica guardada':'clique para ir até a faixa')+'">'+handle(i)+'<span class="material-symbols-rounded" style="font-size:17px;color:var(--fxc,var(--tx3))">'+def.ic+'</span><span class="nm">'+esc(def.nm)+'</span>'+sw('f',id,ck)+arrows(i)+'</div>'; }).join('');
+    var vis=fxVis(id);
+    var visBtn = vis===null
+      ? '<span class="fxvis int" title="Não existe no documento do cliente — só na tela de trabalho">interno</span>'
+      : '<button class="fxvis '+(vis?'on':'off')+'" onclick="event.stopPropagation();fxSetVis(\''+id+'\')" title="'+(vis?'Aparece no documento do cliente — clique para tirar':'Fora do documento do cliente — clique para mostrar')+(id==='mat.base'&&vis&&S.matSomaOn!==false?' (com o Material global ligado, o cliente vê só o Global)':'')+'"><span class="material-symbols-rounded">'+(vis?'visibility':'visibility_off')+'</span>'+(vis?'na proposta':'fora')+'</button>';
+    return '<div class="fxrow'+(miss?' miss':'')+'"'+drop(i)+' style="'+(inG?'margin-left:16px;':'')+(cc?'--fxc:'+cc:'')+'" onmouseenter="fxHl(\''+id+'\',true)" onmouseleave="fxHl(\''+id+'\',false)" onclick="fxIr(\''+id+'\')" title="'+(miss?'não aparece agora (depende do modo/visão) — a posição fica guardada':'clique para ir até a faixa')+'">'+handle(i)+'<span class="material-symbols-rounded" style="font-size:17px;color:var(--fxc,var(--tx3))">'+def.ic+'</span><span class="nm"'+(vis===false?' style="text-decoration:line-through;color:var(--tx3)"':'')+'>'+esc(def.nm)+'</span>'+visBtn+sw('f',id,ck)+arrows(i)+'</div>'; }).join('');
   var leg='<div class="fxleg">'+FX_CORES.map(function(c){ return '<i style="background:'+c.c+'"></i><input class="fxin" value="'+esc(fxLeg(c.k))+'" onchange="fxSetLeg(\''+c.k+'\',this.value)">'; }).join('')+'</div>';
   d.innerHTML='<div class="fxhd"><span class="material-symbols-rounded" style="color:var(--pri)">view_agenda</span><b>Organizar a proposta</b><span style="flex:1"></span><button class="fxib" onclick="fxToggleOrg()" title="fechar"><span class="material-symbols-rounded">close</span></button></div>'
     +'<div class="fxbody"><div style="font-size:12px;color:var(--tx3);line-height:1.5">Arraste pela alça <span class="material-symbols-rounded" style="font-size:14px;vertical-align:-3px">drag_indicator</span> ou use as setas. A proposta muda na hora, na tela e no documento. <b>Nenhum valor é alterado.</b> Faixa apagada = não aparece no modo/visão atual (a posição fica guardada).</div>'
