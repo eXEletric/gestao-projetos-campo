@@ -110,6 +110,17 @@ select.fi{appearance:auto;cursor:pointer}
 .vez.ex{background:var(--pri-bg,#efeafc);color:var(--pri)}.vez.cli{background:var(--surf2);color:var(--tx2)}.vez.ok{background:#d4af37;color:#2b2000}.vez.no{background:#fcebeb;color:var(--red)}
 .kprox{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--pri);margin-top:5px}
 .kprox .material-symbols-rounded{font-size:14px}.kprox.cob{color:var(--amber)}.kprox.val{color:var(--red)}
+.kcard.aprov{border-left:3px solid #d4af37}
+.kprox.ok{color:var(--green)}.kprox.obra{color:var(--tx2)}
+.ponta{font-size:9.5px;font-weight:800;letter-spacing:.04em;background:#faeeda;color:var(--amber);border-radius:5px;padding:0 5px;margin-left:2px}
+.trf.obra:not(.on) .material-symbols-rounded{color:var(--amber)}
+.aprovbox{margin-top:15px;border:1px solid var(--line);border-left:4px solid #d4af37;border-radius:12px;padding:12px 14px}
+.aprovh{display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:13.5px}.aprovh .material-symbols-rounded{color:#b08d1e;font-size:20px}.aprovh span:last-child{font-size:11.5px;color:var(--tx3)}
+.aprovtx{font-size:12px;color:var(--tx2);margin-top:4px}
+.apsteps{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px;margin-top:10px}
+.apst{display:flex;gap:6px;align-items:flex-start;font-size:12px;color:var(--tx3)}.apst .material-symbols-rounded{font-size:17px}
+.apst div{display:flex;flex-direction:column}.apst span:not(.material-symbols-rounded){font-size:11px}
+.apst.ok{color:var(--tx)}.apst.ok .material-symbols-rounded{color:var(--green)}
 .trfx{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.trfx .vez{margin-top:0}
 .trfx-i{font-size:12px;color:var(--tx2)}.trfx-i.warn{color:var(--red);font-weight:700}
 .tlw{background:#111110;color:#f3f1ea;border-radius:12px;padding:6px 12px}
@@ -511,7 +522,7 @@ const PAPEL_DEF={
   visita:    {nome:'Visita técnica',   ic:'engineering',       orc:false,  obra:false, req:null},
   proposta:  {nome:'Proposta',         ic:'request_quote',     orc:true,   obra:false, req:'orcamento'},
   negociacao:{nome:'Negociação',       ic:'handshake',         orc:'open', obra:false, req:'enviado'},
-  execucao:  {nome:'Execução / Obra',  ic:'construction',      orc:'open', obra:true,  req:null},
+  execucao:  {nome:'Execução / Obra',  ic:'construction',      orc:'open', obra:true,  req:null, reqEntrada:'aprovado'},   // passo ④: só entra proposta APROVADA
   ganho:     {nome:'Ganho',            ic:'verified',          orc:'open', obra:false, req:null},
   pausa:     {nome:'Geladeira / Pausa',ic:'ac_unit',           orc:false,  obra:false, req:null, reqEntrada:'orcamento'},
   perdido:   {nome:'Perdido',          ic:'do_not_disturb_on', orc:false,  obra:false, req:null}
@@ -533,11 +544,17 @@ function reqLabel(papel){ const req=(PAPEL_DEF[papel]||{}).req;
 function reqEntradaOK(o,destColId){ const req=(PAPEL_DEF[colPapel(destColId)]||{}).reqEntrada; if(!req)return true;
   if(req==='orcamento') return !!orcIndex()[o.id];
   if(req==='enviado'){ const oc=orcIndex()[o.id]; return !!oc && ['enviado','aprovado'].includes((oc.status||'').toLowerCase()); }
+  if(req==='aprovado'){ if(o.loteId || (S.lotes||[]).some(l=>l.baseOppId===o.id)) return true;   // lote: aprovação por loja é outro passo — não trava aqui
+    return aprovadaOpp(o); }
   return true; }
+// proposta aprovada = versão aprovada nas tratativas OU orçamento com status "aprovado" (comprovante registrado antes do envio pelo sistema)
+function aprovadaOpp(o){ const E=o&&ENVIO_CLOUD[o.id]; if(E&&E.status==='aprovada') return true; const oc=o&&orcIndex()[o.id]; return !!oc && (oc.status||'').toLowerCase()==='aprovado'; }
 function checaEntrada(o,destColId){ if(reqEntradaOK(o,destColId))return '';
   const req=(PAPEL_DEF[colPapel(destColId)]||{}).reqEntrada, alvo=colNome(destColId);
   return req==='orcamento'
     ? 'Sem proposta feita não dá pra mandar para "'+alvo+'" — não existe orçamento para congelar. Gere o orçamento primeiro.'
+    : req==='aprovado'
+    ? 'Só proposta APROVADA entra em "'+alvo+'".\n\nRegistre a aprovação na proposta: nas Tratativas, clique em "Aprovou" na resposta do cliente (ou registre o contato em que ele aprovou).'
     : 'Falta cumprir o requisito para entrar em "'+alvo+'".'; }
 /* ===== destinos permitidos + campos de fase (Pipefy) ===== */
 const colCampos=id=>{const k=S.colunas.find(x=>x.id===id);return (k&&Array.isArray(k.campos))?k.campos:[];};
@@ -554,9 +571,11 @@ function setCampoMulti(oid,faseId,campoId,op){ const o=S.oportunidades.find(x=>x
   setCampo(oid,faseId,campoId,cur); }
 function camposFaltando(o,faseId){ return colCampos(faseId).filter(c=>{ const a=valorAuto(o,c); return c.obr && !campoCheio(a!==undefined?a:campoVal(o,faseId,c.id)); }); }
 /* ===== envio da proposta registrado pelo sistema (eX_Envio.js) → preenche sozinho "forma de envio" e "confirmação de recebimento" ===== */
-let ENVIO_CLOUD={}, EVT_CLOUD={}, SEMVINC=[], TRFILT=null, USER_NOME='';
+let ENVIO_CLOUD={}, EVT_CLOUD={}, SEMVINC=[], TRFILT=null, USER_NOME='', OBRA_CLOUD={};
 async function carregarEnvios(){ if(!CLOUD||!SB) return;
   try{
+    SB.from('projetos').select('id,nome,oportunidade_id').not('oportunidade_id','is',null).is('deleted_at',null).then(({data,error})=>{ if(error) return;
+      const m={}; (data||[]).forEach(p=>{ m[p.oportunidade_id]=p; }); const mudou=JSON.stringify(m)!==JSON.stringify(OBRA_CLOUD); OBRA_CLOUD=m; if(mudou) render(); });
     const [vs,ms,ev,sv]=await Promise.all([
       SB.from('orcamento_versoes').select('id,orcamento_id,oportunidade_id,revisao,status,enviado_em,para,validade:dados->>validadeISO').not('enviado_em','is',null).is('deleted_at',null).order('enviado_em',{ascending:true}),
       SB.from('email_mensagens').select('versao_id,entrega,entrega_em').eq('direcao','saida').is('deleted_at',null),
@@ -595,20 +614,27 @@ function tratEstado(o){
   if(r.validade&&r.validade.dias<0) return Object.assign(r,{k:'ex',vez:'Vez da eX',ic:'event_busy',acao:{t:`Validade vencida: criar R${E.rev+1}`,ic:'edit_document',fn:'trat'}});
   return Object.assign(r,{k:'cli',vez:`Aguardando cliente · ${du}d`,ic:'hourglass_top',du,cobrar:du>=COBRAR_DU,acao:du>=COBRAR_DU?{t:'Cobrar hoje',ic:'notifications_active',fn:'cobrar'}:null});
 }
-function matchTrat(o){ if(!TRFILT) return true; const t=tratEstado(o); if(!t) return false;
+function matchTrat(o){ if(!TRFILT) return true; if(TRFILT==='obra') return obraACriar(o); const t=tratEstado(o); if(!t) return false;
   if(TRFILT==='ex') return t.k==='ex'; if(TRFILT==='cli') return t.k==='cli'; if(TRFILT==='cobrar') return !!t.cobrar;
   if(TRFILT==='validade') return !!t.validade && t.k!=='ok' && t.k!=='no'; return true; }
+const obraACriar=o=>colPapel(o.colId)==='execucao' && aprovadaOpp(o) && !OBRA_CLOUD[o.id];
 function setTrFilt(k){ TRFILT=(TRFILT===k?null:k); render(); }
 function trFiltrosHTML(){ const el=document.getElementById('trFiltros'); if(!el) return;
   if(!CLOUD){ el.innerHTML=''; return; }
   const ops=S.oportunidades.filter(o=>!o.loteId&&ENVIO_CLOUD[o.id]).map(o=>tratEstado(o)).filter(Boolean);
-  const n={ex:ops.filter(t=>t.k==='ex').length, cli:ops.filter(t=>t.k==='cli').length, cobrar:ops.filter(t=>t.cobrar).length, validade:ops.filter(t=>t.validade&&t.k!=='ok'&&t.k!=='no').length};
+  const n={ex:ops.filter(t=>t.k==='ex').length, cli:ops.filter(t=>t.k==='cli').length, cobrar:ops.filter(t=>t.cobrar).length, validade:ops.filter(t=>t.validade&&t.k!=='ok'&&t.k!=='no').length,
+    obra:S.oportunidades.filter(o=>!o.loteId&&obraACriar(o)).length};
   const chip=(k,ic,t)=>`<button class="trf ${TRFILT===k?'on':''} ${k}" onclick="setTrFilt('${k}')"><span class="material-symbols-rounded">${ic}</span>${t}<b>${n[k]}</b></button>`;
-  el.innerHTML=chip('ex','front_hand','Vez da eX')+chip('cli','hourglass_top','Aguardando cliente')+chip('cobrar','notifications_active','Cobrar hoje')+chip('validade','event_busy','Validade vencendo')
+  el.innerHTML=chip('ex','front_hand','Vez da eX')+chip('cli','hourglass_top','Aguardando cliente')+chip('cobrar','notifications_active','Cobrar hoje')+chip('validade','event_busy','Validade vencendo')+(n.obra||TRFILT==='obra'?chip('obra','construction','Obra a criar'):'')
     +(SEMVINC.length?`<button class="trf semv" onclick="abrirSemVinculo()"><span class="material-symbols-rounded">mail</span>E-mails sem vínculo<b>${SEMVINC.length}</b></button>`:'')
     +(TRFILT?`<button class="trf limpa" onclick="setTrFilt(null)"><span class="material-symbols-rounded">close</span>limpar filtro</button>`:''); }
-function tratCardHTML(o){ const t=tratEstado(o); if(!t) return '';
-  return `<div class="vez ${t.k}"><span class="material-symbols-rounded">${t.ic}</span>${esc(t.vez)}</div>
+function obraCardHTML(o){ if(colPapel(o.colId)!=='execucao'||!aprovadaOpp(o)) return '';
+  const p=OBRA_CLOUD[o.id];
+  return p?`<div class="kprox ok"><span class="material-symbols-rounded">check_circle</span>Obra criada no Operacional</div>`
+          :`<div class="kprox obra"><span class="material-symbols-rounded">construction</span>Obra: a criar no Operacional <span class="ponta">PONTA</span></div>`; }
+function tratCardHTML(o){ const t=tratEstado(o);
+  if(!t) return aprovadaOpp(o)?`<div class="vez ok"><span class="material-symbols-rounded">verified</span>Aprovada</div>${obraCardHTML(o)}`:'';
+  return `<div class="vez ${t.k}"><span class="material-symbols-rounded">${t.ic}</span>${esc(t.vez)}</div>${obraCardHTML(o)}
     ${t.acao?`<div class="kprox ${t.cobrar?'cob':''}"><span class="material-symbols-rounded">${t.acao.ic}</span>${esc(t.acao.t)}</div>`:''}
     ${t.validade&&t.k!=='ok'&&t.k!=='no'?`<div class="kprox val"><span class="material-symbols-rounded">event_busy</span>${t.validade.dias<0?'validade vencida':t.validade.dias===0?'validade vence hoje':'validade vence em '+t.validade.dias+'d'}</div>`:''}`; }
 const EV_IC={envio:'send',descarte:'block',revisao:'edit_document',email_cliente:'mark_email_unread',email_ex:'forward_to_inbox',entrega:'report',contato:'call',cobranca:'notifications_active',nota:'sticky_note_2',legado:'history'};
@@ -627,6 +653,18 @@ function tratDetalheHTML(o){ const t=tratEstado(o); if(!t) return '';
       ${E.validade?`<span class="trfx-i ${t.validade?'warn':''}">validade ${E.validade.split('-').reverse().join('/')}</span>`:''}</div>
     <div style="display:flex;gap:6px;flex-wrap:wrap;margin:8px 0">${acts}</div>
     <div class="tlw">${ev.slice(0,5).map(linha).join('')||'<div class="tl-m">Nenhum evento ainda.</div>'}${ev.length>5?`<div class="tl-m" style="padding-top:4px">+ ${ev.length-5} evento(s) na proposta</div>`:''}</div></div>`; }
+// passo ④: faixa da aprovação + caminho até a obra
+function aprovDetalheHTML(o){ if(!aprovadaOpp(o)) return '';
+  const E=ENVIO_CLOUD[o.id], ap=(EVT_CLOUD[o.id]||[]).find(e=>e.classificacao==='aprovacao'&&!e.anulado_em);
+  const papel=colPapel(o.colId), exec=S.colunas.find(c=>c.papel==='execucao'), emExec=papel==='execucao'||papel==='ganho', obra=OBRA_CLOUD[o.id];
+  const rev=(E&&(E.revAprov||E.rev))||(ap&&ap.revisao)||null;
+  const passo=(ok,t,sub)=>`<div class="apst ${ok?'ok':''}"><span class="material-symbols-rounded">${ok?'check_circle':'radio_button_unchecked'}</span><div><b>${t}</b>${sub?`<span>${sub}</span>`:''}</div></div>`;
+  return `<div class="aprovbox">
+    <div class="aprovh"><span class="material-symbols-rounded">verified</span><b>Proposta aprovada${rev?' · R'+rev:''}</b>${ap?`<span>${_dh(ap.ocorrido_em)} · ${esc(ap.canal||'e-mail')}</span>`:''}</div>
+    <div class="aprovtx">Preços congelados na revisão aprovada; ela não aceita mais alteração. O comprovante fica na proposta.</div>
+    ${!emExec&&exec?`<button class="btn btn-s btn-p" style="margin-top:8px" onclick="moverOppPara('${o.id}','${exec.id}')"><span class="material-symbols-rounded">construction</span>Mover para ${esc(exec.nome)}</button>`:''}
+    <div class="apsteps">${passo(true,'Aprovada',rev?'R'+rev:'')}${passo(emExec,'Em execução',emExec?colNome(o.colId):'')}${passo(false,'OS interna','em breve')}${passo(!!obra,'Obra no Operacional',obra?esc(obra.nome||'criada'):(emExec?'a criar · ponta':''))}</div>
+  </div>`; }
 function abrirTratativas(oid){ abrirOrcNoShell('?opp='+oid+'&trat=1'); }
 async function declinarPorRecusa(oid){ const k=S.colunas.find(c=>c.papel==='perdido'); if(!k){ alert('Não achei a fase de papel "perdido" (Declinado).'); return; } moverOppPara(oid,k.id); }
 function registrarCobranca(oid){ const t=tratEstado(S.oportunidades.find(x=>x.id===oid)); if(!t) return;
@@ -945,7 +983,7 @@ function renderBoard(){
 }
 function oppCardHTML(o,ci){
   const ct=cli(o.contratanteId), tc=(o.temperatura||'Morno').toLowerCase(), oc=orcIndex()[o.id];
-  return `<div class="kcard ${SELO===o.id?'sel':''}" draggable="true" ondragstart="dragStart(event,'${o.id}')" ondragend="_drag=null" onclick="selOpp('${o.id}')">
+  return `<div class="kcard ${SELO===o.id?'sel':''} ${aprovadaOpp(o)?'aprov':''}" draggable="true" ondragstart="dragStart(event,'${o.id}')" ondragend="_drag=null" onclick="selOpp('${o.id}')">
     <button class="cardmenu-btn" title="Ações" onclick="event.stopPropagation();cardMenuToggle(this)"><span class="material-symbols-rounded">more_vert</span></button>
     <div class="cardmenu">
       <button onclick="event.stopPropagation();cardMenuClose();location.href='eX_Orcamento.html?opp=${o.id}'"><span class="material-symbols-rounded">request_quote</span>${oc?'Abrir orçamento':'Criar orçamento'}</button>
@@ -1177,6 +1215,7 @@ function renderOppDetail(){
           ${oc?di('Orçamento',fmtBRL(oc.total)+' · '+(oc.status||'rascunho')):''}
         </div>
         ${o.obs?`<div class="dobs">${esc(o.obs)}</div>`:''}
+        ${aprovDetalheHTML(o)}
         ${tratDetalheHTML(o)}
         ${oppFormHTML(o)}
       </div>
@@ -1385,6 +1424,7 @@ function oppMoverHTML(o){
   if(!lista.length) return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">alt_route</span>Mover card para fase</div><div class="dmv-empty">${MASTER?'Nenhum destino liberado — configure abaixo.':'Sem destino liberado a partir desta fase.'}</div>${cfgLink}</div>`;
   const rows=lista.map(x=>{ const fwd=colIdx(x.id)>ci; let tag='',dis='';
     if(falta.length && fwd){ if(gate==='rigida'){ tag=`<span class="dmv-blk"><span class="material-symbols-rounded">lock</span>trava rígida</span>`; dis='disabled'; } else if(gate==='suave'){ tag=`<span class="dmv-warn"><span class="material-symbols-rounded">warning</span>avisa</span>`; } }
+    if(!tag && (PAPEL_DEF[colPapel(x.id)]||{}).reqEntrada==='aprovado' && !reqEntradaOK(o,x.id)) tag=`<span class="dmv-blk" title="Só proposta aprovada entra aqui"><span class="material-symbols-rounded">lock</span>só aprovada</span>`;
     return `<div class="dmvrow"><button class="dmvbtn ${fwd?'':'back'}" ${dis} onclick="moverOppPara('${o.id}','${x.id}')"><span class="material-symbols-rounded ar">${fwd?'east':'west'}</span>${esc(x.nome)}${tag}</button></div>`;
   }).join('');
   const hint=(falta.length&&gate!=='nenhuma')?`<div class="dmv-hint"><span class="material-symbols-rounded">info</span>Falta: <b>${esc(falta.join(', '))}</b>. ${gate==='rigida'?'A trava rígida bloqueia o avanço.':'A trava suave avisa mas deixa avançar.'}</div>`:'';
@@ -1552,6 +1592,7 @@ function gerarObra(id){
   const o=S.oportunidades.find(x=>x.id===id); if(!o)return;
   let orc=null; try{ orc=JSON.parse(localStorage.getItem('ex_orc_v6__'+id)||'null'); }catch(e){}
   if(!orc){ alert('Gere o orçamento desta oportunidade primeiro.'); return; }
+  if(!aprovadaOpp(o) && !(o.loteId||(S.lotes||[]).some(l=>l.baseOppId===o.id))){ alert('A obra só nasce de proposta APROVADA. Registre a aprovação nas tratativas da proposta.'); return; }   // passo ④
   const ct=cli(o.contratanteId), cp=contempl(o.contempladoId);
   // congela o ORÇADO por serviço (baseline Decisão 2): custo, preço (c/ margem) e horas da composição
   const _n=v=>{ if(v==null||v==='')return 0; if(typeof v==='number')return v; let s=(''+v).replace(/[R$\s]/g,''); if(s.indexOf(',')>-1)s=s.replace(/\./g,'').replace(',','.'); return parseFloat(s)||0; };
