@@ -813,12 +813,14 @@ function gerarOSUI(oid,alvos){ const o=S.oportunidades.find(x=>x.id===oid), s=es
     <div class="cfgm-foot"><button class="btn" onclick="fechFechar()">Cancelar</button><button class="btn btn-p" id="osGo" onclick="gerarOS('${oid}',${JSON.stringify(alvos).replace(/"/g,"'")})"><span class="material-symbols-rounded">assignment_add</span>Gerar ${us.length>1?us.length+' OS':'OS'}</button></div>`); }
 async function escopoCongelado(u){
   const v=await SB.from('orcamento_versoes').select('id,revisao,numero,dados').eq('oportunidade_id',u.id).eq('status','aprovada').is('deleted_at',null).order('revisao',{ascending:false}).limit(1);
-  let dados=null, versao=null, rev=null, orcId=(COMP_CLOUD[u.id]||{}).orcId||null;
-  if(v.data&&v.data[0]){ dados=v.data[0].dados; versao=v.data[0].id; rev=v.data[0].revisao; }
-  else { const q=await SB.from('orcamentos').select('id,dados').eq('oportunidade_id',u.id).is('deleted_at',null).order('created_at',{ascending:false}).limit(1); if(q.data&&q.data[0]){ dados=q.data[0].dados; orcId=q.data[0].id; } }
-  dados=dados||{};
+  let dados=null, versao=null, rev=null, orcId=(COMP_CLOUD[u.id]||{}).orcId||null, numero='';
+  if(v.data&&v.data[0]){ dados=v.data[0].dados; versao=v.data[0].id; rev=v.data[0].revisao; numero=v.data[0].numero||''; }
+  // nº oficial = coluna orcamentos.numero (em loja de lote, dados.numero pode ter herdado o da base)
+  const q=await SB.from('orcamentos').select('id,numero,dados').eq('oportunidade_id',u.id).is('deleted_at',null).order('created_at',{ascending:false}).limit(1);
+  if(q.data&&q.data[0]){ if(!dados) dados=q.data[0].dados; orcId=orcId||q.data[0].id; numero=numero||q.data[0].numero||''; }
+  dados=dados||{}; if(!numero) numero=dados.numero||'';
   const it=a=>(Array.isArray(a)?a:[]).filter(x=>x&&x.desc).map(x=>({desc:x.desc,qtd:x.qtd||'',und:x.und||''}));
-  return {versao,rev,orcId,numero:dados.numero||'',lojaId:dados.lojaId||u.contempladoId||null,
+  return {versao,rev,orcId,numero,lojaId:dados.lojaId||u.contempladoId||null,
     escopo:{servicos:it(dados.servicos),materiais:it(dados.materiais),solTitulo:dados.solTitulo||'',solDesc:dados.solDesc||'',prazoDias:dados.prazoDias||'',equipeOrcada:typeof dados.equipe==='string'?dados.equipe:''}}; }
 async function gerarOS(oid,alvos){ const o=S.oportunidades.find(x=>x.id===oid); if(!o) return;
   const g=id=>document.getElementById(id), ex=(g('osExec')||{}).value||'';
