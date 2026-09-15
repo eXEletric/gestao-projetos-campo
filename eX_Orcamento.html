@@ -2950,7 +2950,7 @@ function updateRedeUnidades(){ if(!isLoteBase())return; const num=document.query
 function renderLoteBaseHtml(){
   const lojaOpts=(LOJAS||[]).filter(l=>!LOTE_UNITS.some(u=>(u.dados&&u.dados.lojaId)===l.id)).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
   const macroT=macroTotal();
-  const rateado=!!(S.macro&&S.macro.rateio); const rateioPer=(LOTE_UNITS.length&&macroT>0)?macroT/LOTE_UNITS.length:0;
+  const rateado=true; const rateioPer=(LOTE_UNITS.length&&macroT>0)?macroT/LOTE_UNITS.length:0;   // etapa 3: macro é SEMPRE rateado (gerado no lote, distribuído nas unidades)
   const comboOn=comboActive();   // valor combinado é soberano → macro não soma ao preço (vira custo interno)
   const rota=loteRota(); const rotaKm=macroRotaKm(); const rotaCusto=macroRotaCusto(); const rkm=num(S.macro&&S.macro.rkm);
   const modo=(S.macro&&S.macro.modo)||'detalhado'; const qtd=num(S.macro&&S.macro.qtd); const baseT=num(S._total)||0;
@@ -3065,11 +3065,9 @@ function renderLoteBaseHtml(){
         <span style="font-size:11.5px;color:var(--tx3)">estrutura/frota do lote — entra uma vez na mestra</span>
         <button class="lbtn" style="margin-left:auto" onclick="openEstruturasModal()"><span class="material-symbols-rounded">settings</span>gerenciar cadastro</button>
       </div>
-      <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:2px 0 8px">
-        <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.04em;margin-right:2px">Apresentação</span>
-        <button class="lbtn" style="${!rateado?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setMacroRateio(false)"><span class="material-symbols-rounded" style="${!rateado?'color:#fff':''}">functions</span>Global (no lote)</button>
-        <button class="lbtn" style="${rateado?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setMacroRateio(true)"><span class="material-symbols-rounded" style="${rateado?'color:#fff':''}">call_split</span>Rateado por unidade</button>
-        ${rateado&&rateioPer>0?`<span style="margin-left:auto;font-size:12px;color:var(--pri);font-weight:700">${fmt(rateioPer)}/loja · em cada proposta</span>`:'<span style="margin-left:auto;font-size:11.5px;color:var(--tx3)">soma à parte no total do lote</span>'}
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:2px 0 8px">
+        <span style="font-size:11.5px;color:var(--tx2)"><span class="material-symbols-rounded" style="font-size:15px;color:#0f7b8a;vertical-align:-3px">call_split</span> Custo global <b>gerado no lote</b>, <b>rateado</b> nas ${LOTE_UNITS.length||0} lojas${rateioPer>0?' <b style="color:var(--pri)">('+fmt(rateioPer)+'/loja)</b>':''}</span>
+        <button class="lbtn" style="margin-left:auto;${(S.macro&&S.macro.showOrigin)?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setMacroShowOrigin(${(S.macro&&S.macro.showOrigin)?'false':'true'})" title="Liga/desliga a linha 'de onde vem' no documento do cliente — transparência, não muda o total"><span class="material-symbols-rounded" style="${(S.macro&&S.macro.showOrigin)?'color:#fff':''}">${(S.macro&&S.macro.showOrigin)?'visibility':'visibility_off'}</span>Mostrar a origem no cliente</button>
       </div>
       ${((S.macro&&S.macro.estruturas)||[]).map((e,i)=>`<div style="display:flex;align-items:center;gap:9px;padding:7px 0;border-top:1px dashed var(--line2)">
         <span class="material-symbols-rounded" style="font-size:17px;color:#0f7b8a">${ESTR_IC[e.tipo]||'category'}</span>
@@ -3159,6 +3157,8 @@ function verComoClienteLote(){
   const contrNome=S.cliNome||(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):'')||'—';
   const modo=(S.macro&&S.macro.modo)||'detalhado'; const qtd=num(S.macro&&S.macro.qtd); const baseT=num(S._total)||0;
   const subUn = modo==='estimativa' ? baseT*qtd : LOTE_UNITS.reduce((a,o)=>a+num(o.total),0); const macroT=macroTotal(); const comboOn=comboActive(); const total=subUn+(comboOn?0:macroT);   // combinado soberano: macro é custo interno, não soma no preço do cliente
+  const _nunG=(LOTE_UNITS.length||1); const rateioPer=(macroT>0)?macroT/_nunG:0;   // etapa 3: macro GERADO no global, RATEADO nas unidades (fatia/loja)
+  const showOrig=!!(S.macro&&S.macro.showOrigin);   // mostrar a ORIGEM do custo global no doc (transparência — não soma, já está rateado nas lojas)
   const cc=!!S.colCustoProposta; const sumCusto=(modo==='estimativa')?0:LOTE_UNITS.reduce((a,o)=>a+num(o._custo),0); const sumLucro=subUn-sumCusto;   // 2.3: custo/lucro por loja na proposta (chave)
   const cnpjC=contratanteCnpj();   // 2.4
   const prazoSoma=(LOTE_UNITS||[]).reduce((a,o)=>a+num(o._prazo),0);   // prazo do lote (ótica Global) = SOMA de todas as lojas (o total do contrato); manual sobrescreve
@@ -3182,7 +3182,7 @@ function verComoClienteLote(){
   const rota=loteRota();
   const linhas = modo==='estimativa'
     ? `<tr><td style="padding:11px 14px;border-bottom:1px solid #eee"><b>${qtd} unidade(s) · estimativa (× base)</b></td><td style="padding:11px 14px;border-bottom:1px solid #eee;text-align:center;font-variant-numeric:tabular-nums">${fmtPrazo(obraPrazo())}</td>${cc?'<td style="padding:11px 14px;border-bottom:1px solid #eee"></td><td style="padding:11px 14px;border-bottom:1px solid #eee"></td>':''}<td style="padding:11px 14px;border-bottom:1px solid #eee;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(subUn)}</td></tr>`
-    : LOTE_UNITS.map(o=>`<tr><td style="padding:11px 14px;border-bottom:1px solid #eee"><b>${esc(lojaLabel(o))}</b></td><td style="padding:11px 14px;border-bottom:1px solid #eee;text-align:center;font-variant-numeric:tabular-nums">${num(o._prazo)?fmtPrazo(num(o._prazo)):'—'}</td>${cc?'<td style="padding:11px 14px;border-bottom:1px solid #eee;text-align:right;color:#7d7799;font-variant-numeric:tabular-nums">'+fmt(num(o._custo))+'</td><td style="padding:11px 14px;border-bottom:1px solid #eee;text-align:right;font-weight:700;color:#127a54;font-variant-numeric:tabular-nums">'+fmt(num(o.total)-num(o._custo))+'</td>':''}<td style="padding:11px 14px;border-bottom:1px solid #eee;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(num(o.total))}</td></tr>`).join('');
+    : LOTE_UNITS.map(o=>`<tr><td style="padding:11px 14px;border-bottom:1px solid #eee"><b>${esc(lojaLabel(o))}</b></td><td style="padding:11px 14px;border-bottom:1px solid #eee;text-align:center;font-variant-numeric:tabular-nums">${num(o._prazo)?fmtPrazo(num(o._prazo)):'—'}</td>${cc?'<td style="padding:11px 14px;border-bottom:1px solid #eee;text-align:right;color:#7d7799;font-variant-numeric:tabular-nums">'+fmt(num(o._custo))+'</td><td style="padding:11px 14px;border-bottom:1px solid #eee;text-align:right;font-weight:700;color:#127a54;font-variant-numeric:tabular-nums">'+fmt(num(o.total)-num(o._custo))+'</td>':''}<td style="padding:11px 14px;border-bottom:1px solid #eee;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(num(o.total)+(comboOn?0:rateioPer))}</td></tr>`).join('');
   const esc0=S.solTitulo?esc(S.solTitulo):'Serviço conforme escopo técnico padrão, aplicado em cada unidade da rede.';
   const doc=`<div id="vcSheet" style="max-width:820px;margin:0 auto;background:#fff;color:#221c39;border-radius:12px;box-shadow:0 20px 60px rgba(20,10,50,.3);overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif">
     <div style="height:6px;background:linear-gradient(90deg,#533ab7,#3f2c8f)"></div>
@@ -3202,8 +3202,8 @@ function verComoClienteLote(){
       <div style="padding:14px 0"><table style="width:100%;border-collapse:collapse;font-size:13.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;padding:10px 14px;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#7d7799">Unidade</th><th style="padding:10px 14px;font-size:10.5px;text-transform:uppercase;color:#7d7799">Prazo</th>${cc?'<th style="text-align:right;padding:10px 14px;font-size:10.5px;text-transform:uppercase;color:#7d7799">Custo</th><th style="text-align:right;padding:10px 14px;font-size:10.5px;text-transform:uppercase;color:#7d7799">Lucro</th>':''}<th style="text-align:right;padding:10px 14px;font-size:10.5px;text-transform:uppercase;color:#7d7799">Valor</th></tr></thead>
         <tbody>${linhas}</tbody>
         <tfoot>
-          <tr><td style="padding:10px 14px;color:#7d7799">Subtotal · ${nUn} unidades</td><td></td>${cc?'<td style="padding:10px 14px;text-align:right;color:#7d7799;font-variant-numeric:tabular-nums">'+fmt(sumCusto)+'</td><td style="padding:10px 14px;text-align:right;font-weight:700;color:#127a54;font-variant-numeric:tabular-nums">'+fmt(sumLucro)+'</td>':''}<td style="padding:10px 14px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(subUn)}</td></tr>
-          ${comboOn?'':`<tr><td style="padding:10px 14px;color:#7d7799">Mobilização &amp; logística (lote)</td><td></td>${cc?'<td></td><td></td>':''}<td style="padding:10px 14px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(macroT)}</td></tr>`}
+          <tr><td style="padding:10px 14px;color:#7d7799">Subtotal · ${nUn} unidades${(!comboOn&&macroT>0)?' <span style="font-size:10.5px;color:#a49fbb">(logística embutida)</span>':''}</td><td></td>${cc?'<td style="padding:10px 14px;text-align:right;color:#7d7799;font-variant-numeric:tabular-nums">'+fmt(sumCusto)+'</td><td style="padding:10px 14px;text-align:right;font-weight:700;color:#127a54;font-variant-numeric:tabular-nums">'+fmt(sumLucro)+'</td>':''}<td style="padding:10px 14px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(subUn+(comboOn?0:macroT))}</td></tr>
+          ${(showOrig&&macroT>0)?`<tr><td style="padding:7px 14px;color:#8b86a1;font-size:11.5px"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">subdirectory_arrow_right</span> inclui Mobilização &amp; logística do lote: ${fmt(macroT)} · rateado ${fmt(rateioPer)}/loja (já no valor acima)</td><td></td>${cc?'<td></td><td></td>':''}<td style="padding:7px 14px;text-align:right;color:#8b86a1;font-size:11.5px">incluído</td></tr>`:''}
           <tr style="border-top:2px solid #e2ddf1;background:#f6f4fc"><td style="padding:14px;font-weight:800;color:#3f2c8f;font-size:14px">Total da proposta</td><td></td>${cc?'<td></td><td></td>':''}<td style="padding:12px 14px;text-align:right;font-weight:800;font-size:17px;color:#3f2c8f;font-variant-numeric:tabular-nums">${fmt(total)}</td></tr>
         </tfoot></table></div>
       ${escopoSec}
@@ -3296,6 +3296,7 @@ function resumoEscopoHtml(){   // Escopo somado do lote: SERVIÇOS + MATERIAIS (
     +'</div>';
 }
 function setMacroRateio(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rateio=!!v; S.macro._total=macroTotal(); S.macro._nun=(LOTE_UNITS||[]).length; save(); try{ pushOrc(); }catch(_){}; injectLoteBasePanel(); }
+function setMacroShowOrigin(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.showOrigin=!!v; save(); try{ pushOrc(); }catch(_){}; injectLoteBasePanel(); }   // etapa 3: liga/desliga a linha de ORIGEM do custo global no doc do cliente (transparência, não soma)
 function setLoteModo(m){ m=(m==='estimativa'?'estimativa':'detalhado');
   if(m==='estimativa' && (LOTE_UNITS||[]).length>0){ if(!confirm('Já existem '+LOTE_UNITS.length+' loja(s) detalhada(s). No modo Estimativa o total passa a ser base × N e os valores reais dessas lojas são ignorados no total (não são apagados). Continuar?'))return; }
   if(!S.macro)S.macro={estruturas:[]}; S.macro.modo=m; _macroSave(); }
