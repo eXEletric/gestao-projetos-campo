@@ -1,0 +1,154 @@
+<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>eX · Blocos do Lote — funções por quadro</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@20..48,400,0,0&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#faf9f5;--surf:#fff;--surf2:#f3f1ea;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.2);--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#8a8880;--pri:#533ab7;--green:#3b6d11;
+    --base:#b06a13;--base-bg:#f8efdf;--unid:#0f6d6b;--unid-bg:#e0f2f0;--glob:#533ab7;--glob-bg:#eeeafe;}
+  @media(prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#151221;--surf:#1d1930;--surf2:#241f36;--line:rgba(255,255,255,.14);--line2:rgba(255,255,255,.26);--tx:#ece9f7;--tx2:#bdb6d8;--tx3:#8f88b0;--pri:#a48bff;--green:#7cc34a;--base:#e0a45a;--base-bg:#3a2c14;--unid:#54c9b3;--unid-bg:#0f2f2c;--glob:#a48bff;--glob-bg:#241d3d}}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--tx);font-family:Inter,system-ui,sans-serif;line-height:1.5}
+  .material-symbols-rounded{font-family:'Material Symbols Rounded';line-height:1;vertical-align:middle;font-size:18px}
+  .top{position:sticky;top:0;z-index:10;background:var(--bg);border-bottom:1px solid var(--line);padding:14px 18px;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+  .top h1{font-size:17px;margin:0;font-weight:800}
+  .top .sub{font-size:12px;color:var(--tx3)}
+  .top .sp{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:9px;padding:7px 12px;font:600 12.5px inherit;cursor:pointer}
+  .btn:hover{border-color:var(--pri);color:var(--pri)}
+  .btn.pri{background:var(--pri);color:#fff;border-color:var(--pri)}
+  .wrap{max-width:1180px;margin:0 auto;padding:18px}
+  .cols{display:grid;gap:14px}@media(min-width:820px){.cols{grid-template-columns:1fr 1fr 1fr;align-items:start}}
+  .colh{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;padding:8px 10px;border-radius:9px;display:flex;align-items:center;gap:7px;margin-bottom:2px}
+  .colh.base{background:var(--base-bg);color:var(--base)} .colh.unid{background:var(--unid-bg);color:var(--unid)} .colh.glob{background:var(--glob-bg);color:var(--glob)}
+  .card{background:var(--surf);border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+  .card.base{border-top:3px solid var(--base)} .card.unid{border-top:3px solid var(--unid)} .card.glob{border-top:3px solid var(--glob)}
+  .ch{display:flex;align-items:center;gap:8px;padding:10px 12px;cursor:grab;background:var(--surf2)}
+  .ch .grip{color:var(--tx3);cursor:grab}
+  .ch .nm{font-weight:700;font-size:13px;flex:1;min-width:0}
+  .ch .ct{font-size:10.5px;color:var(--tx3);white-space:nowrap}
+  .fns{padding:4px 0}
+  .fn{display:flex;align-items:center;gap:9px;padding:7px 12px;border-top:1px solid var(--line)}
+  .fn:first-child{border-top:0}
+  .fn .ic{width:26px;height:26px;border-radius:7px;background:var(--surf2);display:grid;place-items:center;color:var(--tx2);flex:none}
+  .fn .lb{flex:1;font-size:12.5px;min-width:0}
+  .fn.off .lb{color:var(--tx3);text-decoration:line-through}
+  .fn.off .ic{opacity:.4}
+  .fn .rm{border:0;background:none;color:var(--tx3);cursor:pointer;font-size:16px;line-height:1;padding:2px 4px;border-radius:6px}
+  .fn .rm:hover{color:#a32d2d;background:color-mix(in srgb,#a32d2d 12%,transparent)}
+  /* switch */
+  .sw{width:38px;height:22px;border-radius:12px;background:var(--line2);position:relative;cursor:pointer;flex:none;transition:.15s}
+  .sw i{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;background:#fff;box-shadow:0 1px 2px rgba(0,0,0,.3);transition:.15s}
+  .sw.on{background:var(--green)} .sw.on i{left:18px}
+  .add{display:flex;align-items:center;gap:7px;padding:8px 12px;border-top:1px dashed var(--line2);color:var(--pri);font-size:12px;font-weight:600;cursor:pointer;background:none;border-left:0;border-right:0;border-bottom:0;width:100%}
+  .add:hover{background:var(--surf2)}
+  .hint{background:var(--surf2);border:1px solid var(--line);border-radius:10px;padding:11px 14px;font-size:12.5px;color:var(--tx2);margin-bottom:16px;display:flex;gap:9px;align-items:flex-start}
+  .hint .material-symbols-rounded{color:var(--pri);flex:none}
+  .drop{outline:2px dashed var(--pri);outline-offset:-4px}
+  #exp{position:fixed;inset:0;background:rgba(20,10,40,.5);display:none;align-items:center;justify-content:center;z-index:30;padding:20px}
+  #exp.on{display:flex}
+  #exp .box{background:var(--surf);border-radius:14px;max-width:640px;width:100%;padding:16px;max-height:82vh;display:flex;flex-direction:column}
+  #exp textarea{width:100%;flex:1;min-height:320px;border:1px solid var(--line2);border-radius:9px;padding:11px;font:12px ui-monospace,monospace;background:var(--bg);color:var(--tx);resize:none}
+  #exp .r{display:flex;gap:8px;margin-top:10px;justify-content:flex-end}
+</style></head><body>
+<div class="top">
+  <h1>Blocos do Lote — funções por quadro</h1>
+  <span class="sub">ligue/desligue cada função · arraste os quadros pra ordenar</span>
+  <div class="sp">
+    <button class="btn" id="reset"><span class="material-symbols-rounded">restart_alt</span>Restaurar</button>
+    <button class="btn pri" id="export"><span class="material-symbols-rounded">ios_share</span>Exportar</button>
+  </div>
+</div>
+<div class="wrap">
+  <div class="hint"><span class="material-symbols-rounded">tune</span><span>Cada <b>quadro</b> é uma parte do lote. As <b>funções</b> ficam dentro dele com ícone e legenda — use o <b>switch</b> pra <b>tirar/pôr</b>, o <b>×</b> pra remover, e <b>“＋ adicionar função”</b> pra criar uma. Arraste um quadro pelo topo pra <b>reordenar</b>. Quando estiver do seu jeito, <b>Exportar</b> e me manda.</span></div>
+  <div class="cols" id="cols"></div>
+</div>
+<div id="exp"><div class="box"><textarea id="exptx" readonly></textarea><div class="r"><button class="btn" id="expcopy"><span class="material-symbols-rounded">content_copy</span>Copiar</button><button class="btn" id="expclose">Fechar</button></div></div></div>
+<script>
+(function(){
+  var KEY='ex_lote_config_v1';
+  var COLS=[{k:'base',nm:'◆ Base — modelo por loja'},{k:'unid',nm:'◆ Por unidade — cada loja'},{k:'glob',nm:'◆ Global — o lote completo'}];
+  var SEED=[
+    {col:'base',id:'hBase',nm:'Base (seção)',fns:[{ic:'toggle_on',l:'chave “na proposta”'},{ic:'swap_horiz',l:'média × base do contratante'},{ic:'bookmark_add',l:'Salvar como modelo'},{ic:'download',l:'Aplicar na base'}]},
+    {col:'base',id:'bServ',nm:'Serviços base',fns:[{ic:'precision_manufacturing',l:'⚙ composição (equipe × tempo)'},{ic:'published_with_changes',l:'usar base / alterar (custo)'},{ic:'percent',l:'margem (reset à base)'},{ic:'notes',l:'detalhe do serviço'},{ic:'add',l:'Adicionar serviço'}]},
+    {col:'base',id:'bMat',nm:'Material base',fns:[{ic:'published_with_changes',l:'usar base / alterar (valor)'},{ic:'tag',l:'custo un · qtd · und'},{ic:'percent',l:'margem'},{ic:'content_copy',l:'duplicar · trocar · excluir'},{ic:'download',l:'Trazer média das lojas'},{ic:'sync',l:'Replicar → lojas'},{ic:'add',l:'Adicionar material'}]},
+    {col:'base',id:'bDesp',nm:'Despesas / Locações base',fns:[{ic:'bolt',l:'gatilho (fixo/pessoa-dia/dia/pessoa)'},{ic:'restaurant',l:'diárias (alimentação + hospedagem)'},{ic:'percent',l:'margem'},{ic:'add',l:'Adicionar despesa / locação'}]},
+    {col:'unid',id:'hUnid',nm:'Por unidade (seção)',fns:[{ic:'visibility',l:'Ver: Escopo somado | Por loja'},{ic:'splitscreen',l:'Modo: Estimativa | Detalhado'},{ic:'add_business',l:'buscar + adicionar loja'},{ic:'sync',l:'Propagar base nas “iguais”'}]},
+    {col:'unid',id:'uLista',nm:'Lista de lojas (detalhada)',fns:[{ic:'open_in_full',l:'Abrir (proposta da loja)'},{ic:'restart_alt',l:'Resetar (voltar à base)'},{ic:'delete',l:'Excluir'},{ic:'label',l:'status: igual à base | editada'},{ic:'payments',l:'prazo · custo · lucro · valor'}]},
+    {col:'unid',id:'uAdic',nm:'Adicionais por loja',fns:[{ic:'add_circle',l:'marcar adicional (+ motivo)'},{ic:'edit',l:'editar / tirar'},{ic:'sell',l:'selo “+N adicionais”'}]},
+    {col:'unid',id:'uCL',nm:'Custo · lucro por loja',fns:[{ic:'visibility',l:'chave “Mostrar na proposta”'}]},
+    {col:'unid',id:'uAbrir',nm:'Abrir a proposta da loja',fns:[{ic:'open_in_full',l:'abrir → proposta da loja'}]},
+    {col:'glob',id:'hGlob',nm:'Global (seção)',fns:[{ic:'toggle_on',l:'chave “na proposta”'},{ic:'visibility',l:'Ver como o cliente'},{ic:'call_split',l:'Desmembrar lote'}]},
+    {col:'glob',id:'gServ',nm:'Serviços global (Σ 16)',fns:[{ic:'toggle_on',l:'chave “na proposta”'}]},
+    {col:'glob',id:'gMat',nm:'Material global (Σ 16)',fns:[{ic:'edit',l:'Editar a custo'},{ic:'hub',l:'Adicionar ao lote'},{ic:'toggle_on',l:'chave “na proposta”'},{ic:'view_list',l:'modo: Qtd | Valor | Lista | Só total'}]},
+    {col:'glob',id:'gCusto',nm:'Custos globais',fns:[{ic:'add',l:'adicionar estrutura / frota'},{ic:'route',l:'rota (km × R$/km)'},{ic:'visibility',l:'Mostrar a origem no cliente'}]},
+    {col:'glob',id:'gPrazo',nm:'Prazo do lote (soma)',fns:[{ic:'schedule',l:'campo Prazo do lote (dias) — vazio = soma'}]},
+    {col:'glob',id:'gTot',nm:'Total do contrato',fns:[{ic:'visibility',l:'Ver como o cliente'},{ic:'payments',l:'chave custo/lucro na proposta'},{ic:'call_split',l:'Desmembrar lote'}]}
+  ];
+  function seed(){return JSON.parse(JSON.stringify(SEED)).map(function(p){p.fns.forEach(function(f){f.on=true;});return p;});}
+  var data;
+  function load(){try{var r=localStorage.getItem(KEY);if(r){data=JSON.parse(r);return;}}catch(e){}data=seed();}
+  function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
+  var colsEl=document.getElementById('cols');
+  function render(){
+    colsEl.innerHTML='';
+    COLS.forEach(function(c){
+      var col=document.createElement('div');col.dataset.col=c.k;
+      var h=document.createElement('div');h.className='colh '+c.k;h.innerHTML='<span class="material-symbols-rounded">'+(c.k==='base'?'tune':c.k==='unid'?'storefront':'public')+'</span>'+c.nm;col.appendChild(h);
+      data.filter(function(p){return p.col===c.k;}).forEach(function(p){col.appendChild(cardEl(p));});
+      colsEl.appendChild(col);
+    });
+  }
+  function cardEl(p){
+    var card=document.createElement('div');card.className='card '+p.col;card.draggable=true;card.dataset.id=p.id;
+    var on=p.fns.filter(function(f){return f.on;}).length;
+    var ch=document.createElement('div');ch.className='ch';
+    ch.innerHTML='<span class="material-symbols-rounded grip">drag_indicator</span><span class="nm">'+esc(p.nm)+'</span><span class="ct">'+on+'/'+p.fns.length+' ligadas</span>';
+    card.appendChild(ch);
+    var fns=document.createElement('div');fns.className='fns';
+    p.fns.forEach(function(f,i){
+      var row=document.createElement('div');row.className='fn'+(f.on?'':' off');
+      var ic=document.createElement('span');ic.className='ic';ic.innerHTML='<span class="material-symbols-rounded">'+esc(f.ic||'circle')+'</span>';
+      var lb=document.createElement('span');lb.className='lb';lb.textContent=f.l;
+      var sw=document.createElement('span');sw.className='sw'+(f.on?' on':'');sw.title='tirar/pôr';sw.innerHTML='<i></i>';
+      sw.onclick=function(){f.on=!f.on;save();render();};
+      var rm=document.createElement('button');rm.className='rm';rm.innerHTML='&times;';rm.title='remover';
+      rm.onclick=function(){if(confirm('Remover “'+f.l+'”?')){p.fns.splice(i,1);save();render();}};
+      row.appendChild(ic);row.appendChild(lb);row.appendChild(sw);row.appendChild(rm);fns.appendChild(row);
+    });
+    card.appendChild(fns);
+    var add=document.createElement('button');add.className='add';add.innerHTML='<span class="material-symbols-rounded">add</span>adicionar função';
+    add.onclick=function(){var v=prompt('Nome da função (o que ela faz):','');if(v&&v.trim()){p.fns.push({ic:'star',l:v.trim(),on:true});save();render();}};
+    card.appendChild(add);
+    dragCard(card,p);
+    return card;
+  }
+  var dragId=null;
+  function dragCard(card,p){
+    card.addEventListener('dragstart',function(e){dragId=p.id;e.dataTransfer.effectAllowed='move';});
+    card.addEventListener('dragover',function(e){e.preventDefault();card.classList.add('drop');});
+    card.addEventListener('dragleave',function(){card.classList.remove('drop');});
+    card.addEventListener('drop',function(e){e.preventDefault();card.classList.remove('drop');
+      if(!dragId||dragId===p.id)return;
+      var from=data.findIndex(function(x){return x.id===dragId;});var to=data.findIndex(function(x){return x.id===p.id;});
+      if(from<0||to<0)return;var moved=data.splice(from,1)[0];moved.col=p.col;var to2=data.findIndex(function(x){return x.id===p.id;});data.splice(to2,0,moved);save();render();
+    });
+  }
+  function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  document.getElementById('reset').onclick=function(){if(confirm('Restaurar todos os quadros e funções ao padrão?')){data=seed();save();render();}};
+  var expEl=document.getElementById('exp'),exptx=document.getElementById('exptx');
+  document.getElementById('export').onclick=function(){
+    var s='BLOCOS DO LOTE — funções por quadro (configurado por André)\n\n';
+    COLS.forEach(function(c){s+='== '+c.nm+' ==\n';
+      data.filter(function(p){return p.col===c.k;}).forEach(function(p){s+='\n['+p.nm+']\n';
+        p.fns.forEach(function(f){s+='  '+(f.on?'[x] ':'[ ] ')+f.l+'\n';});});
+      s+='\n';});
+    s+='--- JSON ---\n'+JSON.stringify(data);
+    exptx.value=s;expEl.classList.add('on');exptx.focus();exptx.select();
+  };
+  document.getElementById('expcopy').onclick=function(){exptx.select();try{document.execCommand('copy');}catch(e){}if(navigator.clipboard)navigator.clipboard.writeText(exptx.value).catch(function(){});this.innerHTML='<span class="material-symbols-rounded">check</span>Copiado';var b=this;setTimeout(function(){b.innerHTML='<span class="material-symbols-rounded">content_copy</span>Copiar';},1400);};
+  document.getElementById('expclose').onclick=function(){expEl.classList.remove('on');};
+  expEl.onclick=function(e){if(e.target===expEl)expEl.classList.remove('on');};
+  load();render();
+})();
+</script>
+</body></html>
