@@ -284,7 +284,9 @@ function estatizar(src,dst){
 async function gerarPDFDe(src,nome,prep){
   await loadH2P();
   const stage=document.createElement('div'); stage.id='envPdfStage';
-  stage.style.cssText=`position:absolute;left:-12000px;top:0;width:${PDF_W}px;background:#fff`;
+  // palco no canto (0,0) ATRÁS da página: fora da tela o gerador corta a lateral
+  stage.style.cssText=`position:absolute;left:0;top:0;width:${PDF_W}px;background:#fff;z-index:-99999;pointer-events:none`;
+  const sy0=window.scrollY; window.scrollTo(0,0);
   document.body.appendChild(stage);
   try{
     const clone=src.cloneNode(true); estatizar(src,clone);
@@ -310,7 +312,7 @@ async function gerarPDFDe(src,nome,prep){
     // última página em branco (sobra do espaçamento): tira
     try{ const cv=wk.prop&&wk.prop.canvas, n=pdf.internal.getNumberOfPages(); if(cv&&n>1){ const precisa=Math.ceil(cv.height/((pageH-2*m)*2)-0.02); if(n>precisa) for(let i=n;i>Math.max(precisa,1);i--) pdf.deletePage(i); } }catch(_){}
     return pdf.output('blob');
-  } finally { stage.remove(); }
+  } finally { stage.remove(); window.scrollTo(0,sy0); }
 }
 // PDF do LOTE = o "Documento do lote" (verComoClienteLote), respeitando as chaves de seção (S.docOpt)
 async function gerarPDFLote(nome){
@@ -336,6 +338,7 @@ async function gerarPDF(nome){
   _setMode('view'); document.body.classList.add('env-pdf');
   const emu=document.createElement('style'); emu.id='envPrintEmu';
   emu.textContent=cssDeImpressao()+`\nbody.env-pdf{background:#fff!important}\nbody.env-pdf .grid{grid-template-columns:1fr!important}\n#envPdfStage .app{padding:0!important;margin:0!important;box-shadow:none!important;border-radius:0!important;background:#fff!important;max-width:none!important}
+    #envPdfStage .und-fix{border:0!important;background:transparent!important;padding:0!important;box-shadow:none!important}
     #envPdfStage .noprint,#envPdfStage .intbox,#envPdfStage #envTrat,#envPdfStage #comprovantesPanel,#envPdfStage #oppBanner,#envPdfStage .oppbar,#envPdfStage #previewBar{display:none!important}`;
   document.head.appendChild(emu);
   await new Promise(r=>setTimeout(r,250));
