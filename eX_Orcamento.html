@@ -1729,13 +1729,7 @@ function renderLoteMatBlock(cfg){   // master: 3 LEITURAS — Base (modelo) · P
       +'<button onclick="loteReplicarMat()" title="IDA: replica o modelo da Base nas 16 lojas por linhagem, respeitando campo próprio" style="border-style:solid;border-color:var(--pri);background:var(--pri);color:#fff"><span class="material-symbols-rounded" style="color:#fff">sync</span>Replicar → lojas</button>'
       +'<button onclick="openPick(\'materiais\')" style="border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">add</span>Adicionar material</button></div>'
     +'</div>';
-  // POR LOJA (real) — teal — leitura de análise: material real de cada loja
-  var _realRows=(LOTE_UNITS||[]).map(function(u){ return '<tr><td class="idx"></td><td>'+esc(lojaLabel(u))+'</td><td class="r">'+unitMatN(u)+'</td><td class="r money">'+fmt(unitMatTotal(u))+'</td></tr>'; }).join('');
-  var _realTot=(LOTE_UNITS||[]).reduce(function(a,u){return a+unitMatTotal(u);},0);
-  var secReal='<div style="border:1px solid var(--line);border-left:4px solid '+C_REAL+';border-radius:10px;overflow:hidden;margin-bottom:10px">'
-    +'<div style="'+_shd+'"><b style="font-size:12.5px;color:'+C_REAL+'">Por loja (real)</b><span style="font-size:11px;color:var(--tx3)">material de cada loja · '+N+' lojas (o valor por loja já sai na tabela de unidades da proposta)</span></div>'
-    +(LOTE_UNITS&&LOTE_UNITS.length?('<div class="scroll"><table class="tbl"><thead><tr><th>#</th><th>Loja</th><th class="r">Itens</th><th class="r">Material</th></tr></thead><tbody>'+_realRows+'</tbody><tfoot><tr class="ftot"><td class="ftl" colspan="3">Soma do material real das lojas</td><td class="r"><b style="color:'+C_REAL+'">'+fmt(_realTot)+'</b></td></tr></tfoot></table></div>'):'<div style="color:var(--tx3);padding:14px;font-size:13px">Sem lojas no lote ainda.</div>')
-    +'</div>';
+  // POR LOJA (real): a lista de unidades detalhada (injectLoteBasePanel) — mantida como era, NÃO duplicar aqui
   // GLOBAL (soma) — roxo
   var secGlobal='<div style="border:1px solid var(--line);border-left:4px solid '+C_GLOB+';border-radius:10px;overflow:hidden">'
     +'<div style="'+_shd+'">'+matViewSw('soma',somaOn)+'<b style="font-size:12.5px;color:'+C_GLOB+'">Global do lote</b><span style="font-size:11px;color:var(--tx3)">total das '+N+' lojas · agregado</span></div>'
@@ -1744,8 +1738,8 @@ function renderLoteMatBlock(cfg){   // master: 3 LEITURAS — Base (modelo) · P
     +'</div>';
   var bothWarn = (somaOn && baseOn) ? '<div class="sotot-hint noprint" style="margin:0 0 10px;background:#f8efdf;border-color:#e6cfa0"><span class="material-symbols-rounded" style="color:var(--amber)">visibility</span><span><b>Base e Global ligadas.</b> Pra não repetir material, o cliente vê só o <b>Global</b> (total do lote). Desligue o Global pra mostrar a Base no lugar.</span></div>' : '';
   el.innerHTML=head
-    +'<div class="sotot-hint noprint" style="margin:0 0 10px"><span class="material-symbols-rounded">layers</span><span><b>3 leituras do material:</b> <b style="color:'+C_BASE+'">Base</b> (modelo por loja, editável) · <b style="color:'+C_REAL+'">Por loja real</b> (o de cada loja, análise) · <b style="color:'+C_GLOB+'">Global</b> (soma das '+N+'). A chave <b>na proposta</b> (verde) de cada uma decide o que o cliente vê.</span></div>'
-    + bothWarn + secBase + secReal + secGlobal;
+    +'<div class="sotot-hint noprint" style="margin:0 0 10px"><span class="material-symbols-rounded">layers</span><span><b>Material em 2 leituras:</b> <b style="color:'+C_BASE+'">Base</b> (modelo por loja, editável) e <b style="color:'+C_GLOB+'">Global</b> (soma das '+N+'), cada uma com sua chave <b>na proposta</b>. O detalhe <b>por loja real</b> continua na <b>lista de unidades</b> (abaixo), como era.</span></div>'
+    + bothWarn + secBase + secGlobal;
 }
 function loteMatEditOn(){ LME_ON=true; LME_STAGE={}; renderBlk(BLKS.find(function(b){return b.key==='materiais';})); }
 function countLmeChanges(){ var n=0;   // alterações não aplicadas no editor de material a custo
