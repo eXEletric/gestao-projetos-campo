@@ -3738,13 +3738,19 @@ function loteCfgDe(d){ var o={}; d=d||{}; LOTE_CFG.forEach(function(k){ var v=d[
 function _canon(v){ if(Array.isArray(v)) return "["+v.map(_canon).join(",")+"]"; if(v&&typeof v==="object") return "{"+Object.keys(v).sort().filter(function(k){ return !(v[k]===false||v[k]===null||v[k]===undefined||v[k]===""); }).map(function(k){ return JSON.stringify(k)+":"+_canon(v[k]); }).join(",")+"}"; if(typeof v==="string"&&v.trim()!==""&&!isNaN(+v)) return String(+v); return JSON.stringify(v); }   // comparação estável: ordem de chaves e "20"×20 não contam
 function loteCfgIgual(a,b){ return _canon(loteCfgDe(a))===_canon(loteCfgDe(b)); }
 function loteCfgAplicar(dst,src){ var c=loteCfgDe(src); LOTE_CFG.forEach(function(k){ if(c[k]===null) delete dst[k]; else dst[k]=c[k]; }); return dst; }
-function loteCfgEnforce(baseDados){ if(!isLoteUnit()||!baseDados)return; UNIT_BASE_CFG=loteCfgDe(baseDados);
+function lojaFechadaLocal(d,status){ d=d||{}; return /^(enviad|aprovad)/i.test(String(status||d.status||''))||!!(d.abrSnap&&typeof d.abrSnap==='object')||(Array.isArray(d.comprovantes)&&d.comprovantes.length>0); }   // preço já fechado com o cliente: nada muda (mudança = nova revisão)
+function loteCfgEnforce(baseDados){ if(!isLoteUnit()||!baseDados)return; UNIT_BASE_CFG=loteCfgDe(baseDados); if(lojaFechadaLocal(S)){ cloudMsg('loja fechada — percentuais congelados'); return; }
   if(!loteCfgIgual(S,baseDados)){ loteCfgAplicar(S,baseDados); try{ save(); }catch(_){} BLKS.forEach(function(b){ try{ renderBlk(b); }catch(_){} }); recalc(); cloudMsg('percentuais atualizados pela base do lote — salve para gravar'); } }
 function loteCfgBloqueia(){ if(!isLoteUnit())return false; alert('Esta loja faz parte do lote: margens, percentuais, cadeados, imposto e desconto seguem a BASE DO LOTE.\n\nAltere na proposta-base — ao salvar a base, todas as lojas recebem.'); try{ recalc(); }catch(_){} return true; }
 async function loteCfgPropagar(){   // base salva → todas as lojas recebem a config (conteúdo, identidade e adicionais intocados)
   if(!(isLoteBase()&&CLOUD))return; var base=_deep(S);
-  var r=await SB.from('orcamentos').select('id,total,dados').eq('lote_id',S_LOTE_ID).is('deleted_at',null); if(r.error){ console.error('cfg lote',r.error); return; }
-  var alvo=(r.data||[]).filter(function(u){ return u.dados&&!u.dados._base&&!loteCfgIgual(u.dados,base); }); var n=0;
+  var r=await SB.from('orcamentos').select('id,total,dados,status,oportunidade_id').eq('lote_id',S_LOTE_ID).is('deleted_at',null); if(r.error){ console.error('cfg lote',r.error); return; }
+  var ids=(r.data||[]).map(function(u){return u.id;}), opps=(r.data||[]).map(function(u){return u.oportunidade_id;}).filter(Boolean), fech={};
+  try{ var vv=await SB.from('orcamento_versoes').select('orcamento_id,status').in('orcamento_id',ids).in('status',['enviada','aprovada']).is('deleted_at',null); (vv.data||[]).forEach(function(x){ fech[x.orcamento_id]=1; }); }catch(_){}
+  try{ var os=await SB.from('ordens_servico').select('oportunidade_id,status').in('oportunidade_id',opps).neq('status','cancelada'); (os.data||[]).forEach(function(x){ (r.data||[]).forEach(function(u){ if(u.oportunidade_id===x.oportunidade_id) fech[u.id]=1; }); }); }catch(_){}
+  var pul=(r.data||[]).filter(function(u){ return u.dados&&!u.dados._base&&(fech[u.id]||lojaFechadaLocal(u.dados,u.status))&&!loteCfgIgual(u.dados,S); });
+  if(pul.length) cloudMsg(pul.length+' loja(s) já fechada(s) não receberam os percentuais: '+pul.map(function(u){return (u.dados.finNum||'')+' '+(u.dados.finNome||'');}).join(', '));
+  var alvo=(r.data||[]).filter(function(u){ return u.dados&&!u.dados._base&&!fech[u.id]&&!lojaFechadaLocal(u.dados,u.status)&&!loteCfgIgual(u.dados,base); }); var n=0;
   for(var i=0;i<alvo.length;i++){ var u=alvo[i], d=loteCfgAplicar(_deep(u.dados),base), p=null;
     try{ p=precoDe(dadosLojaCalc({dados:d})); }catch(_){}
     if(p){ d._total=p.total; }
