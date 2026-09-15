@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OS · eX Eletric</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0" rel="stylesheet">
+<style>
+:root{--bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.14);--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--pri:#533ab7;--green:#3b6d11;--amber:#ba7517;--red:#a32d2d}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{background:var(--bg);color:var(--tx);font-size:13.5px;line-height:1.45;padding:16px}
+.material-symbols-rounded{font-family:'Material Symbols Rounded';line-height:1;vertical-align:middle;font-size:18px}
+.bar{max-width:820px;margin:0 auto 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn{font-size:13px;padding:8px 13px;border-radius:8px;border:1px solid rgba(0,0,0,.22);background:var(--surf);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:6px;text-decoration:none}
+.btn-p{background:var(--pri);color:#fff;border-color:var(--pri)}.btn:disabled{opacity:.5;cursor:not-allowed}
+.doc{max-width:820px;margin:0 auto;background:var(--surf);border:1px solid var(--line);border-radius:10px;padding:28px 32px}
+.hd{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;border-bottom:2px solid var(--tx);padding-bottom:12px;margin-bottom:14px}
+.logo{font-size:24px;font-weight:800;color:var(--pri)}.logo b{color:var(--tx)}
+.hd h1{font-size:18px;text-align:right}.hd .n{font-size:22px;font-weight:800;text-align:right}
+.st{display:inline-block;font-size:11px;font-weight:800;border-radius:6px;padding:2px 8px;text-transform:uppercase;letter-spacing:.04em}
+.st.emitida{background:#faeeda;color:var(--amber)}.st.assinada{background:#e9f2dd;color:var(--green)}.st.cancelada{background:#fcebeb;color:var(--red)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px 18px;margin-bottom:12px}
+.f span{display:block;font-size:10px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);font-weight:700}.f b{font-weight:600}
+.sec{font-size:11px;text-transform:uppercase;letter-spacing:.05em;font-weight:800;color:var(--tx2);margin:16px 0 6px;border-bottom:1px solid var(--line);padding-bottom:3px}
+table{width:100%;border-collapse:collapse;font-size:12.5px}th,td{text-align:left;padding:5px 6px;border-bottom:1px solid var(--line)}th{font-size:10px;text-transform:uppercase;color:var(--tx3)}
+td.q{text-align:right;white-space:nowrap;width:90px}
+.txt{white-space:pre-wrap;font-size:12.5px}
+.sig{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:22px}
+.sigbox{border-top:1px solid var(--tx);padding-top:4px;font-size:11.5px;color:var(--tx2);text-align:center}
+.sigimg{height:90px;display:flex;align-items:flex-end;justify-content:center}.sigimg img{max-height:90px;max-width:100%}
+.pad{border:2px dashed rgba(0,0,0,.25);border-radius:10px;background:#fff;touch-action:none;width:100%;height:170px;display:block;cursor:crosshair}
+.signer{margin-top:16px;border:2px solid var(--pri);border-radius:12px;padding:12px 14px}
+.signer h3{font-size:14px;display:flex;gap:6px;align-items:center;margin-bottom:6px}
+.fi{width:100%;border:1px solid rgba(0,0,0,.22);border-radius:8px;padding:8px 10px;font-size:13px;margin:6px 0}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+.note{font-size:12px;border-radius:9px;padding:8px 10px;margin:10px 0;display:flex;gap:7px}
+.note.red{background:#fcebeb;color:var(--red)}.note.info{background:#eeedfe;color:var(--pri)}
+.msg{max-width:820px;margin:40px auto;text-align:center;color:var(--tx2)}
+@media(max-width:600px){.grid,.sig{grid-template-columns:1fr}.doc{padding:18px}}
+@media print{body{background:#fff;padding:0}.bar,.signer,.noprint{display:none!important}.doc{border:none;border-radius:0;padding:0;max-width:none}@page{size:A4;margin:14mm}}
+</style>
+</head>
+<body>
+<div class="bar noprint">
+  <a class="btn" href="eX_CRM.html?m=funil"><span class="material-symbols-rounded">arrow_back</span>Funil</a>
+  <span style="flex:1"></span>
+  <button class="btn" onclick="window.print()"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
+</div>
+<div id="app"><div class="msg">Carregando a OS…</div></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+const SB=window.supabase.createClient('https://djguxdgaobtminatxkdr.supabase.co','sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf');
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const dt=d=>d?String(d).slice(0,10).split('-').reverse().join('/'):'—';
+const dh=d=>d?new Date(d).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'}):'—';
+const ID=new URLSearchParams(location.search).get('id');
+let OS=null, NOME_USER='';
+async function carregar(){
+  const app=document.getElementById('app');
+  if(!ID){ app.innerHTML='<div class="msg">OS não informada.</div>'; return; }
+  const {data:{session}}=await SB.auth.getSession();
+  if(!session){ app.innerHTML='<div class="msg">Entre no app eX (login) e abra a OS de novo.</div>'; return; }
+  try{ const p=await SB.from('perfis').select('nome').eq('user_id',session.user.id).limit(1); NOME_USER=(p.data&&p.data[0]&&p.data[0].nome)||''; }catch(_){}
+  const {data,error}=await SB.from('ordens_servico').select('*').eq('id',ID).maybeSingle();
+  if(error||!data){ app.innerHTML='<div class="msg">OS não encontrada ou sem permissão.</div>'; return; }
+  OS=data; render();
+}
+function render(){ const o=OS, e=o.escopo||{};
+  const itens=(a,t)=>a&&a.length?`<div class="sec">${t}</div><table><tr><th>Descrição</th><th style="text-align:right">Qtd</th></tr>${a.map(x=>`<tr><td>${esc(x.desc)}</td><td class="q">${esc(x.qtd)} ${esc(x.und)}</td></tr>`).join('')}</table>`:'';
+  document.title=o.numero+' · eX Eletric';
+  document.getElementById('app').innerHTML=`<div class="doc">
+    <div class="hd"><div><div class="logo">e<b>X</b> Eletric</div><div style="font-size:11.5px;color:var(--tx3)">Ordem de serviço interna</div></div>
+      <div><h1>ORDEM DE SERVIÇO</h1><div class="n">${esc(o.numero)}</div><div style="text-align:right;margin-top:3px"><span class="st ${o.status}">${o.status==='emitida'?'aguardando assinatura':o.status}</span></div></div></div>
+    ${o.status==='cancelada'?`<div class="note red"><span class="material-symbols-rounded">block</span><span><b>OS cancelada</b> em ${dh(o.cancelado_em)}${o.cancelado_por_nome?' por '+esc(o.cancelado_por_nome):''}: ${esc(o.cancelado_motivo||'')}</span></div>`:''}
+    <div class="grid">
+      <div class="f"><span>Cliente contratante</span><b>${esc(o.contratante_nome||'—')}</b></div>
+      <div class="f"><span>Loja / local atendido</span><b>${esc(o.loja_nome||'—')}</b></div>
+      <div class="f" style="grid-column:1/-1"><span>Objeto</span><b>${esc(o.titulo||e.solTitulo||'—')}</b></div>
+      <div class="f"><span>Endereço</span><b>${esc(o.local||'—')}</b></div>
+      <div class="f"><span>Proposta de origem</span><b>${esc(o.proposta_numero||'—')}${o.revisao?' · R'+o.revisao:''}</b></div>
+      <div class="f"><span>OS / pedido do cliente</span><b>${esc(o.os_cliente||'—')}</b></div>
+      <div class="f"><span>Emitida em</span><b>${dh(o.created_at)} · ${esc(o.gerada_por_nome||'')}${o.como==='master'?' (master, como operacional)':''}</b></div>
+      <div class="f"><span>Responsável pela execução</span><b>${esc(o.executor_nome||'—')}</b></div>
+      <div class="f"><span>Equipe</span><b>${esc((o.equipe||[]).join(', ')||'—')}</b></div>
+      <div class="f"><span>Início previsto</span><b>${dt(o.inicio_previsto)}</b></div>
+      <div class="f"><span>Término previsto</span><b>${dt(o.fim_previsto)}${e.prazoDias?' · prazo orçado '+esc(e.prazoDias)+' dia(s)':''}</b></div>
+    </div>
+    ${e.solDesc?`<div class="sec">Descrição da solicitação</div><div class="txt">${esc(e.solDesc)}</div>`:''}
+    ${itens(e.servicos,'Serviços (escopo congelado da proposta)')}
+    ${itens(e.materiais,'Materiais')}
+    ${o.obs?`<div class="sec">Observações</div><div class="txt">${esc(o.obs)}</div>`:''}
+    <div class="sig">
+      <div><div class="sigimg">${o.assinatura_png?`<img src="${o.assinatura_png}" alt="assinatura">`:''}</div><div class="sigbox">${o.assinatura_png?`${esc(o.assinado_nome)} · ${dh(o.assinado_em)}`:'Assinatura do responsável pela execução'}<br><b>Recebi e aceito esta OS</b></div></div>
+      <div><div class="sigimg"></div><div class="sigbox">eX Eletric · Operacional<br>${esc(o.gerada_por_nome||'')}</div></div>
+    </div>
+    ${o.status==='emitida'?`<div class="signer" id="signer"><h3><span class="material-symbols-rounded">draw</span>Assinatura do executor</h3>
+      <div style="font-size:12px;color:var(--tx2)">O responsável pela execução assina com o dedo ou o mouse. A assinatura não pode ser trocada depois.</div>
+      <input class="fi" id="sigNome" value="${esc(o.executor_nome||'')}" placeholder="Nome de quem assina">
+      <canvas class="pad" id="pad"></canvas>
+      <div class="row"><button class="btn" onclick="limpar()"><span class="material-symbols-rounded">ink_eraser</span>Limpar</button><span style="flex:1"></span><button class="btn btn-p" id="sigGo" onclick="assinar()"><span class="material-symbols-rounded">check</span>Assinar a OS</button></div></div>`:''}
+  </div>`;
+  if(o.status==='emitida') setupPad();
+}
+let _ctx=null, _tem=false;
+function setupPad(){ const c=document.getElementById('pad'); const r=c.getBoundingClientRect(), k=window.devicePixelRatio||1;
+  c.width=r.width*k; c.height=r.height*k; _ctx=c.getContext('2d'); _ctx.scale(k,k); _ctx.lineWidth=2.2; _ctx.lineCap='round'; _ctx.lineJoin='round'; _ctx.strokeStyle='#111'; _tem=false;
+  let on=false; const pos=ev=>{ const b=c.getBoundingClientRect(); return [ev.clientX-b.left, ev.clientY-b.top]; };
+  c.onpointerdown=ev=>{ on=true; c.setPointerCapture(ev.pointerId); const [x,y]=pos(ev); _ctx.beginPath(); _ctx.moveTo(x,y); };
+  c.onpointermove=ev=>{ if(!on) return; const [x,y]=pos(ev); _ctx.lineTo(x,y); _ctx.stroke(); _tem=true; };
+  c.onpointerup=c.onpointercancel=()=>{ on=false; }; }
+function limpar(){ const c=document.getElementById('pad'); _ctx.save(); _ctx.setTransform(1,0,0,1,0,0); _ctx.clearRect(0,0,c.width,c.height); _ctx.restore(); _tem=false; }
+function recorte(){ // corta o espaço em branco e reduz, para a assinatura ficar leve
+  const c=document.getElementById('pad'), w=c.width, h=c.height, px=_ctx.getImageData(0,0,w,h).data; let x0=w,y0=h,x1=0,y1=0;
+  for(let y=0;y<h;y++) for(let x=0;x<w;x++){ if(px[(y*w+x)*4+3]>0){ if(x<x0)x0=x; if(y<y0)y0=y; if(x>x1)x1=x; if(y>y1)y1=y; } }
+  if(x1<=x0||y1<=y0) return null; const pad=6; x0=Math.max(0,x0-pad); y0=Math.max(0,y0-pad); x1=Math.min(w,x1+pad); y1=Math.min(h,y1+pad);
+  const esc2=Math.min(1,500/(x1-x0)), o=document.createElement('canvas'); o.width=Math.round((x1-x0)*esc2); o.height=Math.round((y1-y0)*esc2);
+  o.getContext('2d').drawImage(c,x0,y0,x1-x0,y1-y0,0,0,o.width,o.height); return o.toDataURL('image/png'); }
+async function assinar(){ const nome=(document.getElementById('sigNome').value||'').trim();
+  if(!nome){ alert('Escreva o nome de quem assina.'); return; }
+  if(!_tem){ alert('Faça a assinatura no quadro.'); return; }
+  const png=recorte(); if(!png){ alert('Faça a assinatura no quadro.'); return; }
+  if(!confirm('Confirmar a assinatura de '+nome+' na '+OS.numero+'? Não dá para trocar depois.')) return;
+  const b=document.getElementById('sigGo'); b.disabled=true;
+  const {data,error}=await SB.from('ordens_servico').update({assinatura_png:png,assinado_nome:nome}).eq('id',OS.id).select('*').single();
+  if(error){ b.disabled=false; alert('Não consegui salvar a assinatura: '+error.message); return; }
+  OS=data; render(); try{ localStorage.setItem('ex_orc_sync',JSON.stringify({os:OS.id,t:Date.now()})); }catch(_){}
+}
+carregar();
+</script>
+</body>
+</html>

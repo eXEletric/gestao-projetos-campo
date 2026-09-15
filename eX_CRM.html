@@ -112,6 +112,9 @@ select.fi{appearance:auto;cursor:pointer}
 .kprox .material-symbols-rounded{font-size:14px}.kprox.cob{color:var(--amber)}.kprox.val{color:var(--red)}
 .kcard.aprov{border-left:3px solid #d4af37}
 .kprox.red{color:var(--red)}
+.os-tw{overflow-x:auto;margin-top:6px}.os-t{width:100%;border-collapse:collapse;font-size:12.5px}.os-t td{padding:6px 4px;border-top:1px solid var(--line);vertical-align:middle}.os-t tr:first-child td{border-top:none}
+.os-pill{font-size:10.5px;font-weight:700;border-radius:8px;padding:2px 8px;white-space:nowrap;margin-left:4px}.os-pill.ok{background:#e9f2dd;color:var(--green)}.os-pill.wait{background:#faeeda;color:var(--amber)}.os-pill.no{background:var(--surf2);color:var(--tx3)}
+.es-mini{font-size:11px;color:var(--tx3)}
 .kbar{display:flex;gap:3px;margin-top:6px}.kbar i{flex:1;height:4px;border-radius:3px;background:var(--surf2)}.kbar i.ok{background:var(--green)}.kbar i.cur{background:var(--pri)}
 .es{display:flex;gap:11px;position:relative;padding-bottom:12px}
 .es:not(:last-child)::before{content:'';position:absolute;left:14px;top:30px;bottom:0;width:2px;background:var(--line)}.es.ok:not(:last-child)::before{background:var(--green)}
@@ -588,9 +591,12 @@ function setCampoMulti(oid,faseId,campoId,op){ const o=S.oportunidades.find(x=>x
   setCampo(oid,faseId,campoId,cur); }
 function camposFaltando(o,faseId){ return colCampos(faseId).filter(c=>{ const a=valorAuto(o,c); return c.obr && !campoCheio(a!==undefined?a:campoVal(o,faseId,c.id)); }); }
 /* ===== envio da proposta registrado pelo sistema (eX_Envio.js) → preenche sozinho "forma de envio" e "confirmação de recebimento" ===== */
-let ENVIO_CLOUD={}, EVT_CLOUD={}, SEMVINC=[], TRFILT=null, USER_NOME='', OBRA_CLOUD={}, USER_PAPEL='', USER_ID='', DEPTOS=[], MEUS_DEPTOS=new Set(), FECH_CLOUD={}, COMP_CLOUD={};
+let ENVIO_CLOUD={}, EVT_CLOUD={}, SEMVINC=[], TRFILT=null, USER_NOME='', OBRA_CLOUD={}, USER_PAPEL='', USER_ID='', DEPTOS=[], MEUS_DEPTOS=new Set(), FECH_CLOUD={}, COMP_CLOUD={}, OS_CLOUD={}, COLAB_ROWS=[];
 async function carregarFechamento(){ if(!CLOUD||!SB) return;
   try{
+    SB.from('ordens_servico').select('id,numero,oportunidade_id,base_oportunidade_id,lote_id,executor_nome,inicio_previsto,status,assinado_em,assinado_nome,projeto_id,cancelado_motivo,created_at').order('created_at',{ascending:true}).then(({data,error})=>{ if(error) return;
+      const m={}; (data||[]).forEach(x=>{ (m[x.oportunidade_id]=m[x.oportunidade_id]||[]).push(x); }); const mudou=JSON.stringify(m)!==JSON.stringify(OS_CLOUD); OS_CLOUD=m; if(mudou) render(); });
+    if(!COLAB_ROWS.length) SB.from('colaboradores').select('id,nome').eq('ativo',true).is('deleted_at',null).order('nome').then(({data})=>{ COLAB_ROWS=data||[]; });
     const [dp,mb,fe,oc]=await Promise.all([
       SB.from('departamentos').select('id,chave,nome,email').is('deleted_at',null).eq('ativo',true),
       SB.from('departamento_membros').select('departamento_id,user_id'),
@@ -689,15 +695,21 @@ const formalizacaoDe=o=>(((COMP_CLOUD[o.id]||{}).comps)||[]).filter(x=>x&&FORM_T
 function finEstado(o){ const ev=(FECH_CLOUD[o.id]||[]).filter(e=>e.tipo!=='nota'), u=ev[ev.length-1];
   if(!u) return {k:'pend'}; if(u.tipo==='financeiro_liberado') return {k:'ok',ev:u}; if(u.tipo==='financeiro_devolvido') return {k:'dev',ev:u}; return {k:'pend',reenv:u}; }
 const liberadoOpp=o=>finEstado(o).k==='ok';
+const loteDaBase=o=>(S.lotes||[]).find(l=>l.baseOppId===o.id)||null;
+const unidadesDe=o=>{ const l=loteDaBase(o); return l?loteUnitsOf(l.id):[o]; };
+const osAtiva=u=>(OS_CLOUD[u.id]||[]).find(x=>x.status!=='cancelada')||null;
 function esteira(o){ if(!o||!aprovadaOpp(o)) return null;
-  const docs=formalizacaoDe(o), fin=finEstado(o), obra=OBRA_CLOUD[o.id];
-  const passo=fin.k==='ok'?(obra?6:4):(docs.length?3:2);
-  return {docs,fin,obra,passo}; }
+  const docs=formalizacaoDe(o), fin=finEstado(o), us=unidadesDe(o);
+  const comOS=us.filter(osAtiva), obra=OBRA_CLOUD[o.id]||(us.length&&us.every(u=>(osAtiva(u)||{}).projeto_id)?{nome:'atendimentos criados'}:null);
+  const passo=fin.k!=='ok'?(docs.length?3:2):(us.length&&comOS.length===us.length?(obra?6:5):4);
+  return {docs,fin,obra,passo,us,comOS}; }
 const podeDepto=ch=>MEUS_DEPTOS.has(ch)||USER_PAPEL==='fundador';
 const comoMaster=ch=>!MEUS_DEPTOS.has(ch)&&USER_PAPEL==='fundador';
 const deptoEmail=ch=>(DEPTOS.find(d=>d.chave===ch)||{}).email||'';
 function esteiraCardHTML(o){ const s=esteira(o); if(!s) return '';
-  const L={2:['description','Formalizar: contrato ou OS do cliente',''],3:s.fin.k==='dev'?['undo','Devolvido pelo Financeiro: corrigir','red']:['account_balance','Aguardando o Financeiro liberar','cob'],4:['engineering','Operacional: gerar a OS',''],6:['check_circle','Obra criada no Operacional','ok']}[s.passo];
+  const L={2:['description','Formalizar: contrato ou OS do cliente',''],3:s.fin.k==='dev'?['undo','Devolvido pelo Financeiro: corrigir','red']:['account_balance','Aguardando o Financeiro liberar','cob'],
+    4:['engineering',s.us.length>1?`Operacional: gerar OS por loja (${s.comOS.length}/${s.us.length})`:'Operacional: gerar a OS',''],
+    5:['assignment_turned_in',s.us.length>1?`${s.comOS.length} OS emitidas · atendimento a criar`:`${(osAtiva(s.us[0])||{}).numero||'OS'} emitida · atendimento a criar`,'ok'],6:['check_circle','Atendimento criado no Operacional','ok']}[s.passo];
   const bar=[1,2,3,4,5].map(i=>`<i class="${i<s.passo||s.passo===6?'ok':i===s.passo?'cur':''}"></i>`).join('');
   return `<div class="kprox ${L[2]}"><span class="material-symbols-rounded">${L[0]}</span>${L[1]}</div><div class="kbar">${bar}</div>`; }
 function aprovDetalheHTML(o){ const s=esteira(o); if(!s) return '';
@@ -724,13 +736,22 @@ function aprovDetalheHTML(o){ const s=esteira(o); if(!s) return '';
       <div class="es-acts"><button class="btn btn-s btn-p" onclick="liberarFinUI('${o.id}')"><span class="material-symbols-rounded">verified_user</span>Conferir e liberar</button><button class="btn btn-s" style="color:var(--red)" onclick="devolverFinUI('${o.id}')"><span class="material-symbols-rounded">undo</span>Devolver com motivo</button></div>`;
     else f3=reenv+`<div class="es-sd">Quem libera é o <b>Financeiro</b>. Ele confere faturamento, condição de pagamento e situação do cliente.</div><div class="es-acts">${avisar}</div>`;
   }
-  // 4 · OS
+  // 4 · OS da eX (Operacional)
   let f4='';
-  if(s.passo===4) f4=`<div class="es-sd">Quem gera a OS da eX é o <b>Operacional</b>${lote?' (uma por loja)':''}.</div>
-    <div class="es-note warn"><span class="material-symbols-rounded">construction</span><span>A geração da OS chega na próxima entrega. Até lá, o Operacional move o card para Execução pelo menu "Mover card para fase".</span></div>
-    ${!podeDepto('operacional')&&deptoEmail('operacional')?`<div class="es-acts"><button class="btn btn-s" onclick="avisarDepto('operacional','${o.id}')"><span class="material-symbols-rounded">notifications</span>Avisar o Operacional</button></div>`:''}`;
+  if(s.fin.k==='ok'){ const op=podeDepto('operacional'), faltam=s.us.filter(u=>!osAtiva(u));
+    const nomeU=u=>esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade');
+    const linha=u=>{ const x=osAtiva(u);
+      const st=!x?'<span class="os-pill no">a gerar</span>':x.status==='assinada'?`<span class="os-pill ok">assinada</span>`:`<span class="os-pill wait">aguarda assinatura</span>`;
+      const acts=x?`<button class="btn btn-s" onclick="abrirOS('${x.id}')"><span class="material-symbols-rounded">open_in_new</span>Abrir</button>${op&&!x.projeto_id?`<button class="btn btn-s" title="Cancelar OS" onclick="cancelarOSUI('${x.id}','${o.id}')"><span class="material-symbols-rounded">block</span></button>`:''}`
+        :(op?`<button class="btn btn-s ${lote?'':'btn-p'}" onclick="gerarOSUI('${o.id}',['${u.id}'])"><span class="material-symbols-rounded">assignment_add</span>Gerar OS</button>`:'');
+      return `<tr><td>${lote?nomeU(u):'OS da eX'}</td><td>${x?`<b>${esc(x.numero)}</b> <span class="es-mini">${esc(x.executor_nome||'')}${x.inicio_previsto?' · início '+x.inicio_previsto.split('-').reverse().join('/'):''}</span>`:''} ${st}</td><td style="text-align:right;white-space:nowrap">${acts}</td></tr>`; };
+    f4=`${!op&&faltam.length?`<div class="es-sd">Quem gera a OS é o <b>Operacional</b>${lote?' (uma por loja)':''}.</div>`:''}
+      ${op&&comoMaster('operacional')&&faltam.length?`<div class="es-note dark"><span class="material-symbols-rounded">admin_panel_settings</span><span>Você não é do Operacional: vai gerar <b>como master</b>, e fica registrado assim.</span></div>`:''}
+      <div class="os-tw"><table class="os-t">${s.us.map(linha).join('')}</table></div>
+      <div class="es-acts">${op&&lote&&faltam.length>1?`<button class="btn btn-s btn-p" onclick="gerarOSUI('${o.id}',${JSON.stringify(faltam.map(u=>u.id)).replace(/"/g,"'")})"><span class="material-symbols-rounded">playlist_add</span>Gerar para as ${faltam.length} restantes</button>`:''}
+        ${!op&&faltam.length&&deptoEmail('operacional')?`<button class="btn btn-s" onclick="avisarDepto('operacional','${o.id}')"><span class="material-symbols-rounded">notifications</span>Avisar o Operacional</button>`:''}</div>`; }
   // 5 · atendimento
-  const f5=s.obra?`<div class="es-sd">${esc(s.obra.nome||'Obra criada')}</div>`:(s.passo>=4?'<div class="es-sd">Nasce de cada OS gerada.</div>':'');
+  const f5=s.obra?`<div class="es-sd">${esc(s.obra.nome||'Obra criada')}</div>`:(s.passo===5?'<div class="es-note warn"><span class="material-symbols-rounded">construction</span><span>Criar o atendimento a partir da OS chega na próxima entrega.</span></div>':(s.passo>=4?'<div class="es-sd">Nasce de cada OS gerada.</div>':''));
   return `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">conveyor_belt</span>Da aprovação até o atendimento</div>
     ${step(1,'verified','Aprovada',`<div class="es-sd">${rev?'R'+rev+' · ':''}${ap?_dh(ap.ocorrido_em)+' · '+esc(ap.canal||'e-mail'):'comprovante na proposta'} · preços congelados</div>`)}
     ${step(2,'description','Formalização do cliente',f2)}
@@ -771,6 +792,61 @@ async function gravarFin(oid,tipo){ const o=S.oportunidades.find(x=>x.id===oid),
   const {error}=await SB.from('fechamento_eventos').insert(row);
   if(error){ alert('Não consegui gravar: '+error.message); return; }
   fechFechar(); await carregarFechamento(); render(); }
+/* ===== entrega 2: OS interna da eX ===== */
+function abrirOS(id){ window.open('eX_OS.html?id='+encodeURIComponent(id),'_blank'); }
+function gerarOSUI(oid,alvos){ const o=S.oportunidades.find(x=>x.id===oid), s=esteira(o); if(!s) return;
+  const us=alvos.map(id=>S.oportunidades.find(x=>x.id===id)).filter(Boolean), lote=!!loteDaBase(o);
+  const docOS=s.docs.slice().reverse().find(d=>d.tipo==='os'), osCli=docOS?[docOS.obs,docOS.origem].filter(Boolean).join(' · '):'';
+  const lj=us.length===1?(S.lojas||[]).find(x=>x.id===us[0].contempladoId):null;
+  window._osEq=new Set();
+  const pint=()=>`<div class="opts">${(COLAB_ROWS.length?COLAB_ROWS:COLABS.map(n=>({id:'',nome:n}))).map(c=>`<button class="opt ${_osEq.has(c.nome)?'on':''}" onclick="_osEq.has('${_js(c.nome)}')?_osEq.delete('${_js(c.nome)}'):_osEq.add('${_js(c.nome)}');document.getElementById('osEqBox').innerHTML=_osEqPint()">${esc(c.nome)}</button>`).join('')}</div>`;
+  window._osEqPint=pint;
+  fechModal(fechHead(`Gerar OS da eX${us.length>1?' · '+us.length+' lojas':''}`,`${esc(titulo(o))}${comoMaster('operacional')?' · <b>você está gerando como master</b>':''}`)+`<div style="padding:0 18px;max-height:62vh;overflow:auto">
+    ${lote?`<div class="es-sd" style="margin-bottom:6px">${us.map(u=>esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto)).join(' · ')}</div>`:''}
+    <label class="fl">Responsável pela execução (líder)</label><select id="osExec" class="fi"><option value="">Escolha…</option>${(COLAB_ROWS.length?COLAB_ROWS:COLABS.map(n=>({id:'',nome:n}))).map(c=>`<option value="${esc(c.id)}|${esc(c.nome)}">${esc(c.nome)}</option>`).join('')}</select>
+    <label class="fl" style="margin-top:10px">Equipe (opcional)</label><div id="osEqBox">${pint()}</div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px"><div><label class="fl">Início previsto</label><input id="osIni" type="date" class="fi"></div><div><label class="fl">Término previsto</label><input id="osFim" type="date" class="fi"></div></div>
+    ${us.length===1?`<label class="fl" style="margin-top:10px">Local</label><input id="osLocal" class="fi" value="${esc((lj&&lj.endereco)||'')}">`:''}
+    <label class="fl" style="margin-top:10px">OS / pedido do cliente (referência)</label><input id="osCli" class="fi" value="${esc(osCli)}" placeholder="nº da OS do cliente, se houver">
+    <label class="fl" style="margin-top:10px">Observação</label><textarea id="osObs" class="fi" style="height:60px"></textarea>
+    <div class="es-note warn"><span class="material-symbols-rounded">lock</span><span>O escopo vai <b>congelado</b> da revisão aprovada de cada loja. Depois de gerada, a OS não se apaga (só cancela com motivo) e o executor assina na tela.</span></div></div>
+    <div class="cfgm-foot"><button class="btn" onclick="fechFechar()">Cancelar</button><button class="btn btn-p" id="osGo" onclick="gerarOS('${oid}',${JSON.stringify(alvos).replace(/"/g,"'")})"><span class="material-symbols-rounded">assignment_add</span>Gerar ${us.length>1?us.length+' OS':'OS'}</button></div>`); }
+async function escopoCongelado(u){
+  const v=await SB.from('orcamento_versoes').select('id,revisao,numero,dados').eq('oportunidade_id',u.id).eq('status','aprovada').is('deleted_at',null).order('revisao',{ascending:false}).limit(1);
+  let dados=null, versao=null, rev=null, orcId=(COMP_CLOUD[u.id]||{}).orcId||null;
+  if(v.data&&v.data[0]){ dados=v.data[0].dados; versao=v.data[0].id; rev=v.data[0].revisao; }
+  else { const q=await SB.from('orcamentos').select('id,dados').eq('oportunidade_id',u.id).is('deleted_at',null).order('created_at',{ascending:false}).limit(1); if(q.data&&q.data[0]){ dados=q.data[0].dados; orcId=q.data[0].id; } }
+  dados=dados||{};
+  const it=a=>(Array.isArray(a)?a:[]).filter(x=>x&&x.desc).map(x=>({desc:x.desc,qtd:x.qtd||'',und:x.und||''}));
+  return {versao,rev,orcId,numero:dados.numero||'',lojaId:dados.lojaId||u.contempladoId||null,
+    escopo:{servicos:it(dados.servicos),materiais:it(dados.materiais),solTitulo:dados.solTitulo||'',solDesc:dados.solDesc||'',prazoDias:dados.prazoDias||'',equipeOrcada:typeof dados.equipe==='string'?dados.equipe:''}}; }
+async function gerarOS(oid,alvos){ const o=S.oportunidades.find(x=>x.id===oid); if(!o) return;
+  const g=id=>document.getElementById(id), ex=(g('osExec')||{}).value||'';
+  if(!ex){ alert('Escolha o responsável pela execução.'); return; }
+  const [exId,exNome]=ex.split('|'), btn=g('osGo'); if(btn){ btn.disabled=true; btn.textContent='Gerando…'; }
+  const l=loteDaBase(o), ct=cli(o.contratanteId), feitas=[];
+  try{
+    for(const id of alvos){ const u=S.oportunidades.find(x=>x.id===id); if(!u||osAtiva(u)) continue;
+      const e=await escopoCongelado(u), lj=(S.lojas||[]).find(x=>x.id===(u.contempladoId||e.lojaId));
+      const row={empresa_id:EMPRESA_ID,oportunidade_id:u.id,base_oportunidade_id:l?o.id:null,lote_id:l?l.id:(u.loteId||null),orcamento_id:e.orcId,versao_id:e.versao,proposta_numero:e.numero,revisao:e.rev,
+        loja_id:lj?lj.id:null,loja_nome:lj?((lj.nome||'')+(lj.numero?' #'+lj.numero:'')):((contempl(u.contempladoId)||{}).nome||''),contratante_nome:ct?ct.nome:'',titulo:u.objeto||titulo(u),
+        local:(g('osLocal')?g('osLocal').value:(lj&&lj.endereco)||'')||null,os_cliente:(g('osCli')||{}).value||null,escopo:e.escopo,
+        executor_colaborador_id:exId||null,executor_nome:exNome,equipe:[...(window._osEq||[])],inicio_previsto:(g('osIni')||{}).value||null,fim_previsto:(g('osFim')||{}).value||null,obs:(g('osObs')||{}).value||null,gerada_por_nome:USER_NOME||''};
+      const {data,error}=await SB.from('ordens_servico').insert(row).select('id,numero').single();
+      if(error) throw error; feitas.push(data.numero); }
+  }catch(err){ console.error(err); alert((feitas.length?feitas.length+' OS gerada(s) antes do erro. ':'')+'Não consegui gerar: '+(err.message||err)); }
+  fechFechar();
+  // 1ª OS → o card vai para Execução
+  const exec=S.colunas.find(c=>c.papel==='execucao'); let movido=false;
+  if(feitas.length&&exec&&!['execucao','ganho'].includes(colPapel(o.colId))){ o.colId=exec.id; save(); cUp('oportunidades',mOpp(o)); movido=true; }
+  await carregarFechamento(); render();
+  if(feitas.length) alert(`${feitas.length>1?feitas.length+' OS geradas':'OS gerada'}: ${feitas.join(', ')}.${movido?'\n\nO card foi para "'+exec.nome+'".':''}\n\nAbra a OS para o executor assinar.`); }
+function cancelarOSUI(osid,oid){
+  fechModal(fechHead('Cancelar OS','A OS não se apaga: fica cancelada, com o motivo. Depois dá para gerar outra.')+`<div style="padding:0 18px"><textarea id="osCanc" class="fi" style="height:90px" placeholder="Motivo (obrigatório)"></textarea></div>
+    <div class="cfgm-foot"><button class="btn" onclick="fechFechar()">Voltar</button><button class="btn btn-p" style="background:var(--red);border-color:var(--red)" onclick="cancelarOS('${osid}')"><span class="material-symbols-rounded">block</span>Cancelar OS</button></div>`); }
+async function cancelarOS(osid){ const m=((document.getElementById('osCanc')||{}).value||'').trim(); if(!m){ alert('Escreva o motivo.'); return; }
+  const {error}=await SB.from('ordens_servico').update({status:'cancelada',cancelado_motivo:m,cancelado_por_nome:USER_NOME||''}).eq('id',osid);
+  if(error){ alert('Não consegui cancelar: '+error.message); return; } fechFechar(); await carregarFechamento(); render(); }
 function abrirTratativas(oid){ abrirOrcNoShell('?opp='+oid+'&trat=1'); }
 async function declinarPorRecusa(oid){ const k=S.colunas.find(c=>c.papel==='perdido'); if(!k){ alert('Não achei a fase de papel "perdido" (Declinado).'); return; } moverOppPara(oid,k.id); }
 function registrarCobranca(oid){ const t=tratEstado(S.oportunidades.find(x=>x.id===oid)); if(!t) return;
@@ -1354,6 +1430,7 @@ function renderLoteDetail(){
     const gerar = pend>0 ? `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">bolt</span>Levantamento pronto</div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--pri-bg,#efeafc);border:1px solid var(--line2);border-radius:10px;padding:11px 12px;font-size:12.5px;color:var(--tx2)"><span><b>${pend}</b> candidata(s) do levantamento ainda não viraram unidade.</span><button class="btn btn-s btn-p" style="margin-left:auto" onclick="openGerarLev('${l.id}')"><span class="material-symbols-rounded">rocket_launch</span>Selecionar e gerar unidades</button></div></div>` : '';
     main = `<div class="dinfo">${di('Contratante',ct?ct.nome:'')}${di('Total do lote',fmtBRL(tot))}${di('Unidades',us.length+' loja(s)')}</div>
+      ${b?aprovDetalheHTML(b):''}
       ${b?oppFormHTML(b):''}
       ${gerar}
       <div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">store</span>Unidades do lote <span style="color:var(--tx3);font-weight:500">— clique numa loja p/ abrir a proposta dela</span></div>${unidades}</div>`;
