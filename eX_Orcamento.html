@@ -1200,7 +1200,7 @@ function pushOrc(){
     // BASE do lote mudou → sincroniza o TOTAL das unidades "igual à base" (elas não têm trabalho próprio; corrige o total do lote sem precisar propagar)
     if(S&&S._base&&S_LOTE_ID){ let _q=SB.from('orcamentos').update({total:num(S._total)||0}).eq('lote_id',S_LOTE_ID).eq('herda_base',true).is('deleted_at',null);
       const _va=S.varAtiva||'v1'; _q=(_va==='v1')?_q.or('dados->>variacaoId.is.null,dados->>variacaoId.eq.v1'):_q.eq('dados->>variacaoId',_va);   // variações: só as lojas da variação aberta recebem o total dela
-      _q.then(({error:e2})=>{ if(e2)console.error('sync total lote',e2); }); }
+      _q.then(({error:e2})=>{ if(e2)console.error('sync total lote',e2); }); try{ loteCfgPropagar(); }catch(e3){ console.error('cfg lote',e3); } }
   }); }
   else { SB.from('orcamentos').insert(p).select('id').then(({data,error})=>{ if(error){console.error('orc ins',error);cloudMsg('erro ao salvar');return;} if(data&&data[0])ORC_ID=data[0].id; }); }
 }
@@ -1245,7 +1245,7 @@ async function initOrc(){
   try{ if(window.parent && window.parent!==window) window.parent.postMessage({type:'exOrcOpen', qs: location.search||''}, '*'); }catch(_){}   // avisa o shell qual orçamento está aberto (p/ persistir no reload)
   if(isLoteBase()){ try{ await initLoteBasePanel(); }catch(e){ console.error('lote base panel',e); } }   // base do lote = mestra: injeta o painel de lojas
   else if(isLoteUnit()){ (async function(){ try{ const l=await SB.from('orcamento_lotes').select('base_oportunidade_id').eq('id',S_LOTE_ID).limit(1); const bo=l.data&&l.data[0]&&l.data[0].base_oportunidade_id; if(!bo)return;
-      const b=await SB.from('orcamentos').select('dados,total').eq('oportunidade_id',bo).is('deleted_at',null).order('created_at',{ascending:false}).limit(1); if(!(b.data&&b.data[0]))return; UNIT_BASE_VARS=((b.data[0].dados||{}).variacoes)||[]; try{ const us=await SB.from('orcamentos').select('total,dados').eq('lote_id',S_LOTE_ID).is('deleted_at',null); gloteCalc(us.data||[]); }catch(_){} BLKS.forEach(b=>{ try{ renderBlk(b); }catch(_){} }); recalc(); }catch(e){ console.error('modelo da loja',e); } })(); }   // loja do lote: carrega a base só p/ mostrar o MODELO (variação) que a loja segue
+      const b=await SB.from('orcamentos').select('dados,total').eq('oportunidade_id',bo).is('deleted_at',null).order('created_at',{ascending:false}).limit(1); if(!(b.data&&b.data[0]))return; UNIT_BASE_VARS=((b.data[0].dados||{}).variacoes)||[]; try{ loteCfgEnforce(b.data[0].dados); }catch(_){} try{ const us=await SB.from('orcamentos').select('total,dados').eq('lote_id',S_LOTE_ID).is('deleted_at',null); gloteCalc(us.data||[]); }catch(_){} BLKS.forEach(b=>{ try{ renderBlk(b); }catch(_){} }); recalc(); }catch(e){ console.error('modelo da loja',e); } })(); }   // loja do lote: carrega a base só p/ mostrar o MODELO (variação) que a loja segue
 }
 
 /* ---------- LISTA de orçamentos (Comercial › Orçamentos) ---------- */
@@ -1430,7 +1430,7 @@ function mkComboCell(blk,r){   // célula de margem da linha com VALOR COMBINADO
   return '<span class="mkcombo'+(v<0?' neg':'')+'" data-blk="'+blk+'" title="VALOR COMBINADO ativo — esta linha segue a Margem '+(blk==='servicos'?'serviços':'materiais')+' do painel de preço'+(trav?' (TRAVADA)':' (calculada)')+'.'+(propria?' A margem própria desta linha ('+esc(r.margem)+'%) está sendo IGNORADA.':'')+'"><span class="material-symbols-rounded">'+(trav?'lock':'handshake')+'</span><span class="mkcv">'+_d1(v)+'</span>%'+(propria?'<span class="material-symbols-rounded" style="color:#c77b12">warning</span>':'')+'</span>'; }
 function comboMgMat(){ return comboFixa('materiais'); }   // compatibilidade
 function comboMgServ(){ return comboMgBlk('servicos'); }
-function toggleTrava(k){ const t=travas(); t[k]=!t[k];
+function toggleTrava(k){ if(loteCfgBloqueia())return; const t=travas(); t[k]=!t[k];
   if(comboActive() && (k==='serv'||k==='mat')){ const blk=(k==='serv')?'servicos':'materiais', campo=(k==='serv')?'margemServCombo':'margemMatCombo';
     if(t[k]){ if(S[campo]==null||S[campo]==='') S[campo]=+(comboMgBlk(blk)*100).toFixed(1); const o=(k==='serv')?'mat':'serv'; if(t[o]){ t[o]=false; cloudMsg('só uma margem fica travada com valor combinado — a outra passa a absorver'); } } }
   save(); try{ renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} recalc(); }
@@ -1443,7 +1443,7 @@ function diariasPreco(){ return diariasCusto()*(1+baseMg('despesas')/100); }
 function passPreco(blk){ if(!blocoAtivo(blk))return 0; return (S[blk]||[]).reduce((a,r)=>{ if(!r||r.adic)return a; r._blk=blk; return a+linePreco(r); },0); }   // preço (com % geral) de despesas/locações fora os adicionais — entra fixo no valor combinado
 const mgOf=r=>{ if(comboActive() && (r._blk==='servicos'||r._blk==='materiais') && !r.adic) return comboMgBlk(r._blk)*100;   // adicional NÃO entra no combo — margem própria, cobra por cima
   return (r.margem===''||r.margem==null)?mgBaseLinha(r):num(r.margem); };
-function setMgGeral(key,v){ const tk={deslocamento:'desl',despesas:'desp',equip:'equip'}[key]; if(travas()[tk]){ alert('Este percentual está TRAVADO. Destrave o cadeado para alterar.'); recalc(); return; } if(!S.margem)S.margem={}; S.margem[key]=num(v); const blk=(key==='equip')?'equip':'despesas';
+function setMgGeral(key,v){ if(loteCfgBloqueia())return; const tk={deslocamento:'desl',despesas:'desp',equip:'equip'}[key]; if(travas()[tk]){ alert('Este percentual está TRAVADO. Destrave o cadeado para alterar.'); recalc(); return; } if(!S.margem)S.margem={}; S.margem[key]=num(v); const blk=(key==='equip')?'equip':'despesas';
   const pr=(S[blk]||[]).filter(r=>r&&!r.adic&&!(r.margem===''||r.margem==null)&&(blk==='equip'||(despGrupo(r)==='desl')===(key==='deslocamento')));
   if(pr.length && confirm(pr.length+' linha(s) têm MARGEM PRÓPRIA e não seguem este percentual geral — ex.: '+pr.slice(0,3).map(r=>(r.desc||'item')+' '+r.margem+'%').join('; ')+'.\n\nAplicar '+num(v)+'% também nessas linhas?')) pr.forEach(r=>{ r.margem=''; });
   save(); try{ renderBlk(BLKS.find(b=>b.key===blk)); }catch(_){} recalc(); }
@@ -1453,7 +1453,7 @@ function aplicarCombo(){ const i=document.getElementById('in_combo'); if(!i)retu
   setValorCombinado(i.value); cloudMsg(n>0?('valor combinado '+fmt(n)+' aplicado'):'valor combinado removido'); }
 function setValorCombinado(v){ const n=num(v); S.valorCombinado=(n>0?n:null); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); }
 function clearCombo(){ S.valorCombinado=null; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); }
-function setBlkMargem(blk,v){
+function setBlkMargem(blk,v){ if(loteCfgBloqueia())return;
   const k=(blk==='servicos')?'serv':'mat', t=travas();
   if(comboActive()){   // com valor combinado: digitar a margem TRAVA este bloco nesse valor; o outro absorve
     const campo=(blk==='servicos')?'margemServCombo':'margemMatCombo';
@@ -1469,7 +1469,7 @@ function linhasMargemPropria(blk){   // linhas com margem própria no bloco — 
   const out=[]; const push=(arr,onde)=>(arr||[]).forEach(r=>{ if(r&&!r.adic&&!(r.margem===''||r.margem==null)) out.push({r:r,onde:onde}); });
   push(S[blk],'aberta'); if(isLoteBase()) varLista().forEach(v=>{ if(v.conteudo) push(v.conteudo[blk],v.nome); });
   return out; }
-function aplicarMargemLinhas(blk){ const pr=linhasMargemPropria(blk); if(!pr.length)return;
+function aplicarMargemLinhas(blk){ if(loteCfgBloqueia())return; const pr=linhasMargemPropria(blk); if(!pr.length)return;
   if(!confirm('Aplicar a margem do bloco ('+_d1(baseMg(blk))+'%) nas '+pr.length+' linha(s) de '+blk+' com margem própria'+(isLoteBase()&&varLista().length>1?' em todas as variações':'')+'?'))return;
   pr.forEach(x=>{ x.r.margem=''; }); save(); try{ renderBlk(BLKS.find(b=>b.key===blk)); }catch(_){} recalc(); cloudMsg(pr.length+' linha(s) passaram a seguir a margem do bloco'); }
 // controle de margem no cabeçalho do bloco: só Serviços/Materiais (lucro); Despesas/Locações = etiqueta "custo + imposto"
@@ -3730,6 +3730,27 @@ function gloteRender(){   // painel de preço em 2 colunas: ESTA LOJA (ou base) 
   var da=document.getElementById('ln_descad'); if(da){ var soG=(da.style.display==='none')&&g.descAd>0.005; da.classList.toggle('gonly',soG); if(soG) da.style.display=''; }   // linha só com valor global (a loja/base não tem adicional)
   var dif=Math.abs(g.calc-g.gravado)>1, w=document.getElementById('glote_warn');
   if(dif){ if(!w){ w=document.createElement('div'); w.id='glote_warn'; w.className='combo-note neg noprint'; tt.parentElement.after(w); } w.innerHTML='<span class="material-symbols-rounded">warning</span>Global: gravado '+fmt(g.gravado)+' ≠ calculado '+fmt(g.calc); } else if(w) w.remove(); }
+/* REGRA IRREVOGÁVEL (dono, 15/09): loja de lote OBEDECE a configuração de preço da BASE — margens, % gerais, cadeados, imposto e desconto.
+   Loja: ao abrir, recebe a config da base e os campos ficam bloqueados. Base: ao salvar, empurra a config para todas as lojas (total recalculado). */
+var LOTE_CFG=['margem','margemMatCombo','margemServCombo','travas','impostoPct','descontoPct'];
+var UNIT_BASE_CFG=null;
+function loteCfgDe(d){ var o={}; d=d||{}; LOTE_CFG.forEach(function(k){ var v=d[k]; o[k]=(v===undefined||v===''||v===null)?null:_deep(v); }); return o; }
+function _canon(v){ if(Array.isArray(v)) return "["+v.map(_canon).join(",")+"]"; if(v&&typeof v==="object") return "{"+Object.keys(v).sort().filter(function(k){ return !(v[k]===false||v[k]===null||v[k]===undefined||v[k]===""); }).map(function(k){ return JSON.stringify(k)+":"+_canon(v[k]); }).join(",")+"}"; if(typeof v==="string"&&v.trim()!==""&&!isNaN(+v)) return String(+v); return JSON.stringify(v); }   // comparação estável: ordem de chaves e "20"×20 não contam
+function loteCfgIgual(a,b){ return _canon(loteCfgDe(a))===_canon(loteCfgDe(b)); }
+function loteCfgAplicar(dst,src){ var c=loteCfgDe(src); LOTE_CFG.forEach(function(k){ if(c[k]===null) delete dst[k]; else dst[k]=c[k]; }); return dst; }
+function loteCfgEnforce(baseDados){ if(!isLoteUnit()||!baseDados)return; UNIT_BASE_CFG=loteCfgDe(baseDados);
+  if(!loteCfgIgual(S,baseDados)){ loteCfgAplicar(S,baseDados); try{ save(); }catch(_){} BLKS.forEach(function(b){ try{ renderBlk(b); }catch(_){} }); recalc(); cloudMsg('percentuais atualizados pela base do lote — salve para gravar'); } }
+function loteCfgBloqueia(){ if(!isLoteUnit())return false; alert('Esta loja faz parte do lote: margens, percentuais, cadeados, imposto e desconto seguem a BASE DO LOTE.\n\nAltere na proposta-base — ao salvar a base, todas as lojas recebem.'); try{ recalc(); }catch(_){} return true; }
+async function loteCfgPropagar(){   // base salva → todas as lojas recebem a config (conteúdo, identidade e adicionais intocados)
+  if(!(isLoteBase()&&CLOUD))return; var base=_deep(S);
+  var r=await SB.from('orcamentos').select('id,total,dados').eq('lote_id',S_LOTE_ID).is('deleted_at',null); if(r.error){ console.error('cfg lote',r.error); return; }
+  var alvo=(r.data||[]).filter(function(u){ return u.dados&&!u.dados._base&&!loteCfgIgual(u.dados,base); }); var n=0;
+  for(var i=0;i<alvo.length;i++){ var u=alvo[i], d=loteCfgAplicar(_deep(u.dados),base), p=null;
+    try{ p=precoDe(dadosLojaCalc({dados:d})); }catch(_){}
+    if(p){ d._total=p.total; }
+    var up=await SB.from('orcamentos').update({dados:d,total:(p?p.total:num(u.total)),imposto_pct:num(d.impostoPct),desconto_pct:num(d.descontoPct)}).eq('id',u.id);
+    if(up.error) console.error('cfg loja',up.error); else n++; }
+  if(n){ cloudMsg(n+' loja(s) receberam os percentuais da base'); try{ loteReload(); }catch(_){} } }
 function unitVarChip(){ var n=unitVarNome(); return n?'<span class="varchip-un" title="Modelo base (variação da base do lote) que esta loja segue"><span class="material-symbols-rounded">layers</span>Modelo: '+esc(n)+'</span>':''; }
 function unitsDaVar(id){ return (LOTE_UNITS||[]).filter(function(u){return unitVar(u)===id;}); }
 function varUnitsAlvo(){ return (isLoteBase()&&varLista().length>1)?unitsDaVar(S.varAtiva):(LOTE_UNITS||[]); }   // ações base→lojas alcançam só as lojas da variação aberta
@@ -3846,6 +3867,8 @@ function preEnvioChecks(){
   add(B, lojBl.length, 'Loja(s) com bloco fora do total: '+lojBl.map(lojaNome).join(' · '));
   var conc=us.map(function(u){ var p=precoDe(dadosLojaCalc(u)); return {u:u, d:p?Math.abs(p.total-num(u.total)):0, calc:p?p.total:0}; }).filter(function(x){ return x.d>1; });
   add(B, conc.length, 'Resumo não fecha com o total gravado: '+conc.map(function(x){ return lojaNome(x.u)+' (doc '+fmt(x.calc)+' × gravado '+fmt(num(x.u.total))+')'; }).join(' · ')+' — abra e salve a loja.');
+  var cfgDiv=us.filter(function(u){ return u.dados&&!loteCfgIgual(u.dados,S); });
+  add(B, cfgDiv.length, 'Loja(s) com percentuais/cadeados/imposto DIFERENTES da base do lote: '+cfgDiv.map(lojaNome).join(' · ')+' — salve a base para aplicar em todas.', '<button class="pebtn" onclick="loteCfgPropagar().then(function(){setTimeout(preEnvioAbrir,1500)})">Aplicar agora</button>');
   var comb=num(S.valorCombinado), cDiv=us.filter(function(u){ return comb>0 && Math.abs(num(u.dados&&u.dados.valorCombinado)-comb)>0.01; });
   add(B, cDiv.length, 'Valor combinado diferente de '+fmt(comb)+': '+cDiv.map(function(u){ return lojaNome(u)+' ('+fmt(num(u.dados&&u.dados.valorCombinado))+')'; }).join(' · '));
   var negs=us.map(function(u){ return {u:u,m:lojaMgServ(u)}; }).filter(function(x){ return x.m!==null && x.m<0; });
@@ -4493,6 +4516,11 @@ function recalc(){
     document.querySelectorAll('.mkcombo[data-blk]').forEach(el=>{ const v=_combo?comboMgBlk(el.dataset.blk)*100:0; const s=el.querySelector('.mkcv'); if(s)s.textContent=_d1(v); el.classList.toggle('neg',v<0); });   // margem aplicada nas linhas com valor combinado
     [['mg_desl_in','deslocamento','desl'],['mg_desp_in','despesas','desp'],['mg_equip_in','equip','equip']].forEach(p=>{ const e=document.getElementById(p[0]); if(e&&document.activeElement!==e) e.value=_d1(baseMg(p[1])); if(e){ e.disabled=!!t[p[2]]; e.title=t[p[2]]?'travado':''; } });
     const im=document.querySelector('[data-f="impostoPct"]'); if(im) im.disabled=!!t.imp;
+    if(isLoteUnit()){   // loja do lote: configuração de preço vem da BASE — tudo bloqueado aqui
+      ['mg_serv_in','mg_mat_in','mg_desl_in','mg_desp_in','mg_equip_in'].forEach(id=>{ const e=document.getElementById(id); if(e){ e.disabled=true; e.title='definido na base do lote'; } });
+      document.querySelectorAll('[data-f="impostoPct"],[data-f="descontoPct"]').forEach(e=>{ e.disabled=true; e.title='definido na base do lote'; });
+      ['lk_serv','lk_mat','lk_imp','lk_desc','lk_desl','lk_desp','lk_equip'].forEach(id=>{ const b=document.getElementById(id); if(b){ b.style.pointerEvents='none'; b.style.opacity='.55'; b.title='cadeado definido na base do lote'; } });
+      const ih=document.querySelector('.intbox .ih'); if(ih&&!document.getElementById('ih_base')){ const s=document.createElement('span'); s.id='ih_base'; s.style.cssText='margin-left:auto;text-transform:none;letter-spacing:0;font-weight:700;color:var(--pri);display:inline-flex;align-items:center;gap:3px'; s.innerHTML='<span class="material-symbols-rounded" style="font-size:14px">link</span>segue a base do lote'; ih.appendChild(s); } }
     lk('lk_serv',t.serv); lk('lk_mat',t.mat); lk('lk_imp',t.imp); lk('lk_desc',t.desc); lk('lk_desl',t.desl); lk('lk_desp',t.desp); lk('lk_equip',t.equip); { const dc=document.querySelector('[data-f="descontoPct"]'); if(dc) dc.disabled=!!t.desc; }
     [['servicos','mg_serv_in'],['materiais','mg_mat_in']].forEach(p=>{ const inp=document.getElementById(p[1]); if(!inp)return; let a=document.getElementById('ap_'+p[0]); const n=linhasMargemPropria(p[0]).length;
       const row=inp.closest('.iln'); if(row) row.classList.add('mgrow');   // cada margem numa caixa própria (o botão fica DENTRO da caixa dela)
