@@ -3436,7 +3436,7 @@ function fxRenderDrawer(){ var d=document.getElementById('fxDrawer');
   d.innerHTML='<div class="fxhd"><span class="material-symbols-rounded" style="color:var(--pri)">view_agenda</span><b>Organizar a proposta</b><span style="flex:1"></span><button class="fxib" onclick="fxToggleOrg()" title="fechar"><span class="material-symbols-rounded">close</span></button></div>'
     +'<div class="fxbody"><div style="font-size:12px;color:var(--tx3);line-height:1.5">Arraste pela alça <span class="material-symbols-rounded" style="font-size:14px;vertical-align:-3px">drag_indicator</span> ou use as setas. A proposta muda na hora, na tela e no documento. <b>Nenhum valor é alterado.</b> Faixa apagada = não aparece no modo/visão atual (a posição fica guardada).</div>'
     +'<div class="fxsec">Legenda das cores · edite o significado</div>'+leg
-    +'<div class="fxsec" style="display:flex;align-items:center;gap:6px">Faixas<span style="flex:1"></span><button class="fxbtn" onclick="fxNovoGrupo()"><span class="material-symbols-rounded">create_new_folder</span>Novo grupo</button></div>'
+    +'<div class="fxsec" style="display:flex;align-items:center;gap:6px">Faixas<span style="flex:1"></span><button class="fxbtn" onclick="fxAgruparPorCor()" title="Um grupo por cor, com o nome da legenda"><span class="material-symbols-rounded">palette</span>Agrupar pelas cores</button><button class="fxbtn" onclick="fxNovoGrupo()"><span class="material-symbols-rounded">create_new_folder</span>Novo grupo</button></div>'
     +rows+'<div class="fxrow" style="justify-content:center;border-style:dashed;border-left-width:1px;color:var(--tx3);cursor:default"'+drop(ord.length)+'>soltar no fim</div></div>'
     +'<div class="fxft"><button class="fxbtn" onclick="fxReset()"><span class="material-symbols-rounded">restart_alt</span>Ordem original</button><span style="flex:1;font-size:11px;color:var(--tx3);align-self:center">'+(MANUAL?'grava ao clicar <b>Salvar</b>':'salva sozinho')+'</span><button class="fxbtn pri" onclick="fxToggleOrg()"><span class="material-symbols-rounded">check</span>Pronto</button></div>';
   var nb=d.querySelector('.fxbody'); if(nb)nb.scrollTop=sc;
@@ -3459,6 +3459,13 @@ function fxNovoGrupo(){ var L=fxLay(); var id='g'+Date.now().toString(36); L.gru
   var inp=document.querySelector('#fxDrawer .fxrow.grp input'); if(inp){ inp.focus(); inp.select(); } }
 function fxRenomearGrupo(g,v){ var L=fxLay(); if(!L.grupos[g])return; L.grupos[g].nome=String(v||'').trim(); save(); fxApply(); }
 function fxApagarGrupo(g){ var L=fxLay(); delete L.grupos[g]; L.ordem=L.ordem.filter(function(x){return x!=='g:'+g;}); save(); fxApply(); }
+function fxAgruparPorCor(){   // cria um grupo por cor (nome = legenda), na ordem em que cada cor aparece; faixas da mesma cor ficam juntas
+  var L=fxLay(); if(Object.keys(L.grupos).length && !confirm('Substituir os grupos atuais por grupos pelas cores?'))return;
+  var ord=fxOrdem().filter(function(x){return x.indexOf('g:')!==0;}); var seq=[], por={};
+  ord.forEach(function(id){ var c=L.cor[id]||''; if(!por[c]){por[c]=[];seq.push(c);} por[c].push(id); });
+  var novo=[]; L.grupos={};
+  seq.forEach(function(c){ var gid='cor_'+(c||'sem'); L.grupos[gid]={nome:c?fxLeg(c):'Sem classificação',cor:c}; novo.push('g:'+gid); novo=novo.concat(por[c]); });
+  L.ordem=novo; save(); fxApply(); }
 function fxReset(){ if(!confirm('Voltar à ordem original e apagar os grupos?\n\nAs cores e a legenda ficam.'))return; var L=fxLay(); L.ordem=[]; L.grupos={}; save(); fxApply(); }
 function fxHl(id,on){ var el=fxEl(id); if(el)el.classList.toggle('fxhl',!!on); }
 function fxIr(id){ var el=fxEl(id); if(el)el.scrollIntoView({behavior:'smooth',block:'start'}); }
