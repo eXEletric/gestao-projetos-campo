@@ -729,6 +729,7 @@ body.fxon [data-fx="mat.base"],body.fxon [data-fx="mat.global"]{margin-bottom:12
 body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{margin-bottom:0!important}
 body.fxon #blk_materiais.fxsplit.blk-off>[data-fx="mat.cab"]{display:block!important;opacity:.72}
 body.fxon #blk_materiais.fxsplit.blk-off>[data-fx="mat.base"],body.fxon #blk_materiais.fxsplit.blk-off>[data-fx="mat.global"]{display:none!important}
+details.lotemais>summary::-webkit-details-marker{display:none}
 .fxg{display:flex;align-items:center;gap:8px;margin:6px 0 10px;padding:8px 12px;border-radius:10px;background:var(--surf2,#f4f2fb);border-left:5px solid var(--fxc,#9a96ad);font-weight:800;font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx2)}
 .fxg .material-symbols-rounded{font-size:17px;color:var(--fxc,#9a96ad)}
 body.fxorg [data-fxnm]{position:relative;outline:2px dashed var(--fxc,#b9b4cc);outline-offset:3px;margin-top:18px}
@@ -785,6 +786,7 @@ body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{backgrou
       <button id="mEdit" class="on" onclick="setMode('edit')"><span class="material-symbols-rounded">edit</span>Editar</button>
       <button id="mView" onclick="setMode('view')"><span class="material-symbols-rounded">visibility</span>Ver como o cliente</button>
     </div>
+    <button class="btn noprint" id="fxDocBtn" onclick="verComoClienteLote()" style="display:none" title="Documento consolidado do lote, como o cliente recebe (documento + mapa)"><span class="material-symbols-rounded">description</span>Documento do lote<span id="fxDocWarn" style="display:none;margin-left:4px;background:var(--red,#a32d2d);color:#fff;border-radius:6px;padding:1px 6px;font-size:10.5px;font-weight:800">custo visível</span></button>
     <button class="btn noprint" id="fxOrgBtn" onclick="fxToggleOrg()" style="display:none" title="Organizar a ordem das etapas da proposta (faixas) e classificar por cor"><span class="material-symbols-rounded">view_agenda</span>Organizar</button>
     <span id="saveState" class="savestate"></span>
     <button class="btn btnsalvar" id="btnSalvar" onclick="salvarManual()"><span class="material-symbols-rounded">save</span>Salvar</button>
@@ -3032,12 +3034,14 @@ function renderLoteBaseHtml(){
   const prz=lotePrazoResumo();
   const prazoSomaK=(LOTE_UNITS||[]).reduce(function(a,o){return a+num(o._prazo);},0);   // ótica Global = SOMA de todas as lojas (o total)
   const prazoTot=num(S.prazoLoteDias)>0?num(S.prazoLoteDias):prazoSomaK;   // manual sobrescreve; senão a soma
+  const _matG=(typeof loteMatSoma==='function')?loteMatSoma():[]; const _matGt=_matG.reduce(function(a,r){return a+num(r.custo);},0);   // custo de material Σ lojas (KPI)
   const kpis=nUn?`<div class="loteKpis">
-      <div style="border:1px solid var(--pri);background:var(--pri);color:#fff;border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;opacity:.85">Total do lote</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:19px;margin-top:4px;font-variant-numeric:tabular-nums">${fmt(total)}</div><div style="font-size:11px;opacity:.8">${comboOn?'valor combinado · macro no custo':(rateado?'com rateio por loja':'unidades + macro')}</div></div>
+      <div style="border:1px solid var(--pri);background:var(--pri);color:#fff;border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;opacity:.85">Total do lote</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:19px;margin-top:4px;font-variant-numeric:tabular-nums">${fmt(total)}</div><div style="font-size:11px;opacity:.8">${comboOn?('valor combinado · macro '+fmt(macroT)+' é custo interno (não cobrado)'):(macroT>0?('macro '+fmt(macroT)+' rateado · '+fmt(rateioPer)+'/loja'):'soma das unidades')}</div></div>
       <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Valor médio / unidade</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px;font-variant-numeric:tabular-nums">${fmt(vMed)}</div><div style="font-size:11px;color:var(--tx3)">só as unidades</div></div>
       <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Prazo médio</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px">${modo==='estimativa'?fmtPrazo(obraPrazo()):(prz.n?fmtPrazo(prz.media):'—')}</div><div style="font-size:11px;color:var(--tx3)">${modo==='estimativa'?'do base':'por unidade'}</div></div>
       <div style="border:1px solid var(--line);background:var(--pri-bg2,#f6f3fd);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Faixa de prazo</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px">${modo==='estimativa'?'—':(prz.n?(Math.abs(prz.min.p-prz.max.p)<1e-9?fmtPrazo(prz.min.p):fmtPrazo(prz.min.p)+'–'+fmtPrazo(prz.max.p)):'—')}</div><div style="font-size:11px;color:var(--tx3)">${modo==='estimativa'?'no detalhado':'menor → maior'}</div></div>
       <div style="border:1px solid var(--pri-line,#ddd3f6);background:var(--pri-bg,#eeedfe);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--pri)">Prazo do lote</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px;color:var(--pri)">${modo==='estimativa'?'—':(prazoTot>0?fmtPrazo(prazoTot):'—')}</div><div style="font-size:11px;color:var(--tx3)">${num(S.prazoLoteDias)>0?'manual':'total · soma das lojas'}</div></div>
+      ${_matGt>0?`<div style="border:1px dashed var(--line2);background:var(--surf);border-radius:11px;padding:11px 13px"><div style="font-size:10px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--tx3)">Custo de material</div><div style="font-family:'Sora',sans-serif;font-weight:800;font-size:18px;margin-top:4px;font-variant-numeric:tabular-nums">${fmt(_matGt)}</div><div style="font-size:11px;color:var(--tx3)">Σ ${LOTE_UNITS.length} lojas · custo, não preço</div></div>`:''}
     </div>`:'';
   const contrNome=S.cliNome||'';
   const rows=LOTE_UNITS.length?LOTE_UNITS.map(o=>{ const st=unitStatus(o); return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 14px;border-top:1px solid var(--line2)">
@@ -3052,11 +3056,13 @@ function renderLoteBaseHtml(){
         ${o.herda_base?'':`<button class="lbtn" onclick="loteResetUnit('${o.id}')"><span class="material-symbols-rounded">restart_alt</span></button>`}
         <button class="lbtn danger" onclick="loteDelUnit('${o.id}','${o.oportunidade_id}')"><span class="material-symbols-rounded">delete</span></button>
       </div></div>`; }).join(''):'<div style="padding:16px 14px;color:var(--tx3);font-size:13px">Nenhuma loja ainda — adicione a primeira acima.</div>';
+  // junta 15/09: "Como calcular o lote" mora na Configuração (junto do Ver). Estimativa só é oferecida sem lojas (com lojas o total ignoraria as lojas reais)
+  const podeEstim = modo==='estimativa' || !LOTE_UNITS.length;
   const modoTog=`<div style="display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line2);align-items:center;flex-wrap:wrap">
-    <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.04em;margin-right:4px">Modo</span>
-    <button class="lbtn" style="${modo==='estimativa'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteModo('estimativa')"><span class="material-symbols-rounded" style="${modo==='estimativa'?'color:#fff':''}">calculate</span>Estimativa (× N)</button>
-    <button class="lbtn" style="${modo==='detalhado'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteModo('detalhado')"><span class="material-symbols-rounded" style="${modo==='detalhado'?'color:#fff':''}">splitscreen</span>Detalhado (unidades)</button>
-    <span style="margin-left:auto;font-size:11.5px;color:var(--tx3)">${modo==='estimativa'?'volume, sem loja a loja':'cada loja é uma proposta'}</span></div>`;
+    <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.04em;margin-right:4px">Como calcular o lote</span>
+    ${podeEstim?`<button class="lbtn" style="${modo==='estimativa'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteModo('estimativa')"><span class="material-symbols-rounded" style="${modo==='estimativa'?'color:#fff':''}">calculate</span>Estimativa rápida (base × quantidade)</button>`:''}
+    <button class="lbtn" style="${modo==='detalhado'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteModo('detalhado')"><span class="material-symbols-rounded" style="${modo==='detalhado'?'color:#fff':''}">splitscreen</span>Loja a loja</button>
+    <span style="margin-left:auto;font-size:11.5px;color:var(--tx3)">${modo==='estimativa'?'volume, sem loja a loja':('cada loja é uma proposta · '+LOTE_UNITS.length+' loja(s)')}</span></div>`;
   const disp=(LOJAS||[]).filter(l=>!LOTE_UNITS.some(u=>(u.dados&&u.dados.lojaId)===l.id)).length;
   const addBar=`<div style="padding:12px 14px;border-bottom:1px solid var(--line2)">
       <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:flex-start">
@@ -3065,7 +3071,6 @@ function renderLoteBaseHtml(){
           <span class="material-symbols-rounded" style="position:absolute;left:9px;top:9px;font-size:17px;color:var(--tx3)">search</span>
           <div id="lbLojaResults" style="display:none;position:absolute;left:0;right:0;top:calc(100% + 4px);z-index:40;background:var(--surf);border:1px solid var(--line2);border-radius:10px;box-shadow:0 12px 32px rgba(20,10,50,.18);max-height:270px;overflow:auto;padding:4px"></div>
         </div>
-        ${LOTE_UNITS.some(u=>u.herda_base)?`<button class="lbtn" style="padding:9px 12px" onclick="lotePropagar()" title="reaplica o escopo base nas lojas que estão iguais à base"><span class="material-symbols-rounded">sync</span>Propagar base</button>`:''}
       </div>
       <div style="font-size:11px;color:var(--tx3);margin-top:6px">digite e clique na loja pra adicionar${LOJAS&&LOJAS.length?` · ${disp} disponíve${disp===1?'l':'is'}`:''}</div>
     </div>`;
@@ -3082,26 +3087,17 @@ function renderLoteBaseHtml(){
       <button class="lbtn" onclick="salvarComoModelo()"><span class="material-symbols-rounded">bookmark_add</span>Salvar como modelo</button>
       <select id="lbModelo" style="min-width:170px;padding:7px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— aplicar um modelo —</option>${(MODELOS_LIST||[]).map(m=>`<option value="${m.id}">${esc(m.nome)}</option>`).join('')}</select>
       <button class="lbtn" onclick="aplicarModeloNaBase()"><span class="material-symbols-rounded">download</span>Aplicar na base</button>
-      <span style="font-size:11.5px;color:var(--tx3);margin-left:auto">salve o escopo atual como modelo, ou traga um modelo pra base</span>
+      ${LOTE_UNITS.some(u=>u.herda_base)?`<button class="lbtn" style="margin-left:auto;border-color:var(--pri);color:var(--pri)" onclick="lotePropagar()" title="Base → lojas: reaplica o escopo base nas lojas que estão iguais à base (as editadas ficam protegidas)"><span class="material-symbols-rounded">sync</span>Propagar base nas lojas</button>`:`<span style="font-size:11.5px;color:var(--tx3);margin-left:auto">salve o escopo atual como modelo, ou traga um modelo pra base</span>`}
     </div>`;
-  const ccp=!!S.colCustoProposta;
-  const custoChaveStrip= ccp
-    ? `<div style="display:flex;align-items:center;gap:9px;padding:11px 14px;border-bottom:1px solid var(--line2);flex-wrap:wrap;font-size:12px;background:#fdeceb;border-left:4px solid var(--red)">
-      <span class="material-symbols-rounded" style="font-size:19px;color:var(--red)">warning</span>
-      <b style="font-size:11.5px;color:var(--red)">ATENÇÃO: seu CUSTO e LUCRO vão APARECER na proposta do cliente</b>
-      <button class="lbtn" style="margin-left:auto;background:var(--red);color:#fff;border-color:var(--red)" onclick="setColCustoProposta(false)"><span class="material-symbols-rounded" style="color:#fff">visibility_off</span>Esconder do cliente</button>
-    </div>`
-    : `<div style="display:flex;align-items:center;gap:9px;padding:8px 14px;border-bottom:1px solid var(--line2);flex-wrap:wrap;font-size:12px;color:var(--tx3)">
-      <span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">payments</span>
-      <b style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)">Custo / lucro por loja</b>
-      <span>sempre na lista abaixo (interno) · não vai pro cliente</span>
-      <button class="lbtn" style="margin-left:auto" onclick="setColCustoProposta(true)"><span class="material-symbols-rounded">visibility</span>Mostrar na proposta do cliente</button>
-    </div>`;
+  const ccp=!!S.colCustoProposta;   // junta 15/09: a chave custo/lucro→cliente mora no título da coluna da Lista de lojas (+ selo no botão "Documento do lote")
+  const custoChaveCol = ccp
+    ? `<button class="lbtn" onclick="setColCustoProposta(false)" title="Custo e lucro ESTÃO aparecendo no documento do cliente — clique para esconder" style="padding:2px 7px;font-size:10px;background:var(--red,#a32d2d);color:#fff;border-color:var(--red,#a32d2d)"><span class="material-symbols-rounded" style="font-size:13px;color:#fff">visibility</span>vai pro cliente</button>`
+    : `<button class="lbtn" onclick="setColCustoProposta(true)" title="Custo e lucro são internos (não vão pro cliente) — clique para mostrar no documento do cliente" style="padding:2px 7px;font-size:10px"><span class="material-symbols-rounded" style="font-size:13px">visibility_off</span>interno</button>`;
   const viewTog=`<div style="display:flex;gap:6px;padding:10px 14px;border-bottom:1px solid var(--line2);align-items:center;flex-wrap:wrap">
       <span style="font-size:11px;font-weight:700;text-transform:uppercase;color:var(--tx3);letter-spacing:.04em;margin-right:4px">Ver</span>
-      <button class="lbtn" style="${LOTE_VIEW==='pad'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteView('pad')"><span class="material-symbols-rounded" style="${LOTE_VIEW==='pad'?'color:#fff':''}">summarize</span>Escopo somado</button>
+      <button class="lbtn" style="${LOTE_VIEW==='pad'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteView('pad')"><span class="material-symbols-rounded" style="${LOTE_VIEW==='pad'?'color:#fff':''}">summarize</span>Serviços somados</button>
       <button class="lbtn" style="${LOTE_VIEW==='lev'?'background:var(--pri);color:#fff;border-color:var(--pri)':''}" onclick="setLoteView('lev')"><span class="material-symbols-rounded" style="${LOTE_VIEW==='lev'?'color:#fff':''}">store</span>Por loja</button>
-      <span style="margin-left:auto;font-size:11.5px;color:var(--tx3)">${LOTE_VIEW==='pad'?'serviços + materiais somados do lote':'cada loja: valor · custo · lucro'}</span>
+      <span style="margin-left:auto;font-size:11.5px;color:var(--tx3)">${LOTE_VIEW==='pad'?'serviços somados do lote':'cada loja: valor · custo · lucro'}</span>
     </div>`;
   const cnpjC=contratanteCnpj();
   const condStrip=`<div style="padding:12px 14px;border-top:1px solid var(--line2);background:#faf9ff">
@@ -3117,25 +3113,24 @@ function renderLoteBaseHtml(){
         <label style="flex:1;min-width:130px">Fim<input type="date" value="${esc(S.dataFim||'')}" onchange="setCond('dataFim',this.value)" style="width:100%;box-sizing:border-box;margin-top:3px;padding:7px 9px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"></label>
       </div>
     </div>`;
-  const colHeader=`<div style="display:flex;align-items:center;gap:7px;justify-content:flex-end;padding:7px 14px 5px;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);border-bottom:1px solid var(--line)"><span style="min-width:82px;text-align:right">prazo</span><span style="min-width:120px;text-align:right">custo · lucro</span><span style="min-width:92px;text-align:right">valor fechado</span><span style="width:112px">&nbsp;</span></div>`;
-  // etapa 4b: subdivisão — Global (agregado) × Por unidade — e o material global dentro da área global
-  const _matG=(typeof loteMatSoma==='function')?loteMatSoma():[]; const _matGt=_matG.reduce(function(a,r){return a+num(r.custo);},0);
-  const matGlobResumo = _matGt>0 ? `<div style="padding:0 14px 12px"><div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;border:1px solid #e3ddf6;border-radius:11px;padding:11px 14px;background:#f6f3fd"><span style="display:flex;align-items:center;gap:8px;font-weight:700;font-size:12.5px;color:var(--pri)"><span class="material-symbols-rounded" style="font-size:17px">inventory_2</span>Material global do lote</span><span style="font-size:11px;color:var(--tx3)">soma das ${LOTE_UNITS.length} lojas · detalhe/edição no bloco Materiais</span><b style="font-size:16px;color:var(--pri);font-variant-numeric:tabular-nums">${fmt(_matGt)}</b></div></div>` : '';
+  const colHeader=`<div style="display:flex;align-items:center;gap:7px;justify-content:flex-end;padding:7px 14px 5px;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);border-bottom:1px solid var(--line)"><span style="min-width:82px;text-align:right">prazo</span><span style="min-width:120px;text-align:right;display:inline-flex;align-items:center;justify-content:flex-end;gap:5px">custo · lucro ${custoChaveCol}</span><span style="min-width:92px;text-align:right">valor fechado</span><span style="width:112px">&nbsp;</span></div>`;
+  // junta 15/09: "Material global (resumo)" excluído (repetia o rodapé do Material global) → virou KPI "Custo de material"
   const _subH=`padding:12px 14px 2px;display:flex;align-items:center;gap:8px;flex-wrap:wrap`;
   const globHeader=`<div style="${_subH}"><span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">public</span><b style="font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri)">Global do lote · o agregado</b><span style="font-size:11px;color:var(--tx3)">totais do lote · material global (custos globais no painel abaixo)</span></div>`;
-  const unidHeader=`<div style="${_subH};border-top:1px solid var(--line2);margin-top:2px"><span class="material-symbols-rounded" style="color:#0f6d6b;font-size:18px">storefront</span><b style="font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:#0f6d6b">Por unidade · cada loja</b><span style="font-size:11px;color:var(--tx3)">a lista detalhada, separada por loja</span></div>`;
   const fxw=function(id,h){ return h?('<div data-fx="'+id+'">'+h+'</div>'):''; };   // faixa ordenável (ver fxApply)
-  const corpo = fxw('lote.modelo',modelosStrip) + fxw('lote.ver',viewTog) + (LOTE_VIEW==='pad' ? fxw('lote.escopo',resumoEscopoHtml()) : (fxw('lote.custo',custoChaveStrip) + (modo==='estimativa' ? fxw('lote.unid',estimBlock) : (fxw('lote.unid',unidHeader+addBar)+fxw('lote.lista',(LOTE_UNITS.length?colHeader:'')+rows))))) + fxw('lote.cond',condStrip);
+  // junta 15/09: Configuração do lote = Como calcular + Ver (+ nº de unidades na estimativa); Lista de lojas = busca/adicionar + colunas + lojas
+  const listaTit=`<div style="display:flex;align-items:center;gap:8px;padding:11px 14px 4px"><span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">storefront</span><b style="font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri)">Lista de lojas · ${LOTE_UNITS.length}</b></div>`;
+  const corpo = fxw('lote.modelo',modelosStrip) + fxw('lote.ver',modoTog+viewTog+(modo==='estimativa'?estimBlock:''))
+    + (LOTE_VIEW==='pad' ? fxw('lote.escopo',resumoEscopoHtml()) : (modo==='estimativa' ? '' : fxw('lote.lista',listaTit+addBar+(LOTE_UNITS.length?colHeader:'')+rows)))
+    + fxw('lote.cond',condStrip);
   return `<style>.lbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:5px 9px;font:600 12px inherit;cursor:pointer;text-decoration:none}.lbtn:hover{border-color:var(--pri);color:var(--pri)}.lbtn.danger{color:var(--red)}.lbtn.danger:hover{border-color:var(--red)}.lbtn .material-symbols-rounded{font-size:15px}.loteKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:14px}@media(max-width:640px){.loteKpis{grid-template-columns:1fr 1fr}}.lbres:hover{background:var(--pri-bg,#f0ecfb)}</style>
   <div style="background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden">
     <div data-fx="lote.topo"><div style="display:flex;align-items:center;gap:9px;padding:11px 14px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8;flex-wrap:wrap">
       <span class="material-symbols-rounded" style="color:var(--pri)">apartment</span><h3 style="margin:0;font-size:12px;font-weight:800;color:var(--pri);text-transform:uppercase;letter-spacing:.04em">Rede &amp; lojas do lote</h3>
       <span style="font-size:12px;color:var(--tx3)">— cada loja é uma proposta que herda o escopo acima</span>
-      <span style="margin-left:auto;font-size:12px;color:var(--tx3)">${LOTE_UNITS.length} loja(s)</span></div>
-    <div style="display:flex;gap:18px;flex-wrap:wrap;padding:9px 14px;border-bottom:1px solid var(--line2);font-size:12.5px;color:var(--tx3)"><span>Valor do lote <b style="color:var(--pri);font-size:14px">${fmt(total)}</b></span><span>Tempo total de instalação <b style="color:var(--pri)">${num(S.prazoLoteDias)>0?_d1(num(S.prazoLoteDias))+' dias corridos':((LOTE_UNITS||[]).reduce((a,o)=>a+num(o._prazo),0)>0?_d1((LOTE_UNITS||[]).reduce((a,o)=>a+num(o._prazo),0))+' dias (soma das lojas)':'—')}</b></span></div></div>
+      <span style="margin-left:auto;font-size:12px;color:var(--tx3)">${LOTE_UNITS.length} loja(s)</span>${LOTE_UNITS.length?`<details class="lotemais" style="position:relative"><summary class="lbtn" title="Mais ações do lote" style="list-style:none;padding:3px 7px"><span class="material-symbols-rounded">more_horiz</span></summary><div style="position:absolute;right:0;top:calc(100% + 4px);z-index:30;background:var(--surf);border:1px solid var(--line2);border-radius:10px;box-shadow:0 12px 32px rgba(20,10,50,.18);padding:6px;min-width:190px"><button class="lbtn danger" style="width:100%;justify-content:flex-start;border:0" onclick="loteDesmembrar()"><span class="material-symbols-rounded">call_split</span>Desmembrar lote</button></div></details>`:''}</div>
+    <div style="display:flex;gap:18px;flex-wrap:wrap;padding:9px 14px;border-bottom:1px solid var(--line2);font-size:12.5px;color:var(--tx3)"><span>Tempo total de instalação <b style="color:var(--pri)">${num(S.prazoLoteDias)>0?_d1(num(S.prazoLoteDias))+' dias corridos':((LOTE_UNITS||[]).reduce((a,o)=>a+num(o._prazo),0)>0?_d1((LOTE_UNITS||[]).reduce((a,o)=>a+num(o._prazo),0))+' dias (soma das lojas)':'—')}</b></span></div></div>
     ${fxw('lote.global',globHeader+kpis)}
-    ${fxw('lote.matglob',matGlobResumo)}
-    ${fxw('lote.modo',modoTog)}
     ${corpo}
     <div data-fx="lote.macro" style="border-top:1px solid var(--line);padding:13px 14px;background:#f2fafb">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;flex-wrap:wrap">
@@ -3176,12 +3171,6 @@ function renderLoteBaseHtml(){
         <span style="color:var(--amber,#b0701a)">maior <b>${fmtPrazo(pr.max.p)}</b> · ${esc((pr.max.nome||'').slice(0,22))}</span>
         <span style="color:var(--tx3)">faixa ${fmtPrazo(pr.min.p)}–${fmtPrazo(pr.max.p)}</span>`}
       </div>`; })()}
-    <div data-fx="lote.total"><div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;padding:12px 14px;background:var(--surf2,#faf9fe);border-top:1px solid var(--line)">
-      <span style="font-size:12px;color:var(--tx3)">${comboOn?('Unidades <b>'+fmt(unitsSum)+'</b> · macro <b style="color:#0f7b8a">'+fmt(macroT)+'</b> = custo interno (não cobrado — valor combinado)'):(rateado?('Unidades <b>'+fmt(total)+'</b> · macro rateado nas '+LOTE_UNITS.length+' lojas ('+fmt(rateioPer)+'/loja)'):('Unidades <b>'+fmt(total-macroT)+'</b> + Macro <b style="color:#0f7b8a">'+fmt(macroT)+'</b>'))}</span>
-      <span style="font-size:13px;font-weight:800">Total do lote: <span style="color:var(--pri);font-size:16px">${fmt(total)}</span></span></div>
-    ${LOTE_UNITS.length?`<div style="padding:10px 14px 12px;display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-      <button class="lbtn" style="background:var(--pri);color:#fff;border-color:var(--pri);padding:9px 15px" onclick="verComoClienteLote()"><span class="material-symbols-rounded" style="color:#fff">visibility</span>Ver como o cliente (documento + mapa)</button>
-      <button class="lbtn danger" onclick="loteDesmembrar()"><span class="material-symbols-rounded">call_split</span>Desmembrar lote</button></div>`:''}</div>
   </div>`;
 }
 function lbFiltrarLojas(q){ const box=_lg('lbLojaResults'); if(!box)return;
@@ -3279,10 +3268,10 @@ function verComoClienteLote(){
           <tr><td style="padding:10px 14px;color:#7d7799">Subtotal · ${nUn} unidades${(!comboOn&&macroT>0)?' <span style="font-size:10.5px;color:#a49fbb">(logística embutida)</span>':''}</td><td></td>${cc?'<td style="padding:10px 14px;text-align:right;color:#7d7799;font-variant-numeric:tabular-nums">'+fmt(sumCusto)+'</td><td style="padding:10px 14px;text-align:right;font-weight:700;color:#127a54;font-variant-numeric:tabular-nums">'+fmt(sumLucro)+'</td>':''}<td style="padding:10px 14px;text-align:right;font-weight:700;font-variant-numeric:tabular-nums">${fmt(subUn+(comboOn?0:macroT))}</td></tr>
           ${(showOrig&&macroT>0)?`<tr><td style="padding:7px 14px;color:#8b86a1;font-size:11.5px"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">subdirectory_arrow_right</span> inclui Mobilização &amp; logística do lote: ${fmt(macroT)} · rateado ${fmt(rateioPer)}/loja (já no valor acima)</td><td></td>${cc?'<td></td><td></td>':''}<td style="padding:7px 14px;text-align:right;color:#8b86a1;font-size:11.5px">incluído</td></tr>`:''}
         </tfoot></table></div>`;
-  _ds['lote.total']=`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0;padding:14px;border-top:2px solid #e2ddf1;background:#f6f4fc;border-radius:0 0 10px 10px"><span style="font-weight:800;color:#3f2c8f;font-size:14px">Total da proposta${cc?' <span style="font-weight:600;font-size:11.5px;color:#7d7799">· custo '+fmt(sumCusto)+' · lucro '+fmt(sumLucro)+'</span>':''}</span><span style="font-weight:800;font-size:17px;color:#3f2c8f;font-variant-numeric:tabular-nums">${fmt(total)}</span></div>`;
+  const _dsTotal=`<div style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0;padding:14px;border-top:2px solid #e2ddf1;background:#f6f4fc;border-radius:0 0 10px 10px"><span style="font-weight:800;color:#3f2c8f;font-size:14px">Total da proposta${cc?' <span style="font-weight:600;font-size:11.5px;color:#7d7799">· custo '+fmt(sumCusto)+' · lucro '+fmt(sumLucro)+'</span>':''}</span><span style="font-weight:800;font-size:17px;color:#3f2c8f;font-variant-numeric:tabular-nums">${fmt(total)}</span></div>`;
   _ds['blk.servicos']=escopoSec;
   if(S.matSomaOn!==false) _ds['mat.global']=matSec; else _ds['mat.base']=matSec;
-  _ds['lote.global']=`<div style="display:flex;gap:12px;flex-wrap:wrap;padding-top:6px">
+  _ds['lote.global']=_dsTotal+`<div style="display:flex;gap:12px;flex-wrap:wrap;padding-top:6px">
         <div style="flex:1;min-width:150px;background:#f6f3fd;border:1px solid #eee;border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;text-transform:uppercase;color:#7d7799;font-weight:700">Valor médio / unidade</div><div style="font-weight:800;font-size:16px;font-variant-numeric:tabular-nums">${fmt(vMed)}</div></div>
         <div style="flex:1;min-width:150px;background:#f6f3fd;border:1px solid #eee;border-radius:10px;padding:12px 14px"><div style="font-size:10.5px;text-transform:uppercase;color:#7d7799;font-weight:700">Prazo médio por unidade</div><div style="font-weight:800;font-size:16px">${prz.n?fmtPrazo(prz.media):'—'}</div>${(prz.n&&Math.abs(prz.min.p-prz.max.p)>=1e-9)?`<div style="font-size:11px;color:#7d7799">de ${fmtPrazo(prz.min.p)} a ${fmtPrazo(prz.max.p)}</div>`:''}</div>
       </div>`;
@@ -3344,21 +3333,16 @@ function marcarRevisaoBase(){ if(!isLoteBase())return;
    style.order conforme S.fxLayout.ordem — vale na tela e na impressão. Painel/bloco-contêiner viram display:contents. */
 var FX_DEF=[
   {id:'cab',nm:'Cabeçalho da proposta',ic:'badge'},
-  {id:'lote.topo',nm:'Rede & lojas · valor e tempo total',ic:'apartment'},
+  {id:'lote.topo',nm:'Rede & lojas · tempo total',ic:'apartment'},
   {id:'lote.global',nm:'Global do lote · indicadores',ic:'public'},
-  {id:'lote.matglob',nm:'Material global (resumo)',ic:'inventory_2'},
-  {id:'lote.modo',nm:'Modo: Estimativa × Detalhado',ic:'splitscreen'},
   {id:'lote.modelo',nm:'Escopo padrão (modelo)',ic:'bookmark'},
-  {id:'lote.ver',nm:'Ver: Escopo somado × Por loja',ic:'visibility'},
+  {id:'lote.ver',nm:'Configuração do lote · cálculo e visão',ic:'tune'},
   {id:'lote.escopo',nm:'Serviços global (Σ lojas)',ic:'summarize'},
-  {id:'lote.custo',nm:'Custo / lucro por loja (chave)',ic:'payments'},
-  {id:'lote.unid',nm:'Por unidade · adicionar loja',ic:'add_business'},
   {id:'lote.lista',nm:'Lista de lojas',ic:'storefront'},
   {id:'lote.cond',nm:'Condições comerciais & partes',ic:'gavel'},
   {id:'lote.fatores',nm:'Fatores da obra · base e abrangência',ic:'tune'},
   {id:'lote.macro',nm:'Macro da operação · custos globais',ic:'hub'},
   {id:'lote.prazo',nm:'Prazo (média · menor · maior)',ic:'schedule'},
-  {id:'lote.total',nm:'Total do lote',ic:'functions'},
   {id:'desc',nm:'Descrição geral',ic:'notes'},
   {id:'blk.servicos',nm:'Serviços',ic:'build'},
   {id:'blk.equip',nm:'Locações',ic:'construction'},
@@ -3397,6 +3381,8 @@ function fxEl(id){ var col=document.getElementById('fxCol'); if(!col)return null
 function fxApply(){ var col=document.getElementById('fxCol'); if(!col)return;
   var on=false; try{ on=!!(S&&isLoteBase()); }catch(_){}
   var btn=document.getElementById('fxOrgBtn'); if(btn)btn.style.display=on?'inline-flex':'none';
+  var dbtn=document.getElementById('fxDocBtn'); if(dbtn)dbtn.style.display=(on&&(LOTE_UNITS||[]).length)?'inline-flex':'none';
+  var dw=document.getElementById('fxDocWarn'); if(dw)dw.style.display=(on&&S.colCustoProposta)?'inline':'none';
   document.body.classList.toggle('fxon',on);
   if(!on){ if(FX_ORG)fxToggleOrg(); col.querySelectorAll(':scope > .fxg').forEach(function(g){g.remove();}); return; }
   var L=fxLay();
