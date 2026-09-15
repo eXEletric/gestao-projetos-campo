@@ -33,7 +33,18 @@ const listaEmails=s=>String(s||'').split(/[,;\s]+/).map(x=>x.trim()).filter(Bool
 const ms=(i,st)=>`<span class="material-symbols-rounded"${st?` style="${st}"`:''}>${i}</span>`;
 const safeKey=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9_.-]+/g,'-');
 function codigoFull(){ let c=S.numero||''; if(S.ofertaSigla){ c+='-'+S.ofertaSigla; if(S.ofertaSeq) c+='-'+String(S.ofertaSeq).padStart(2,'0'); } return c; }
-function ehLote(){ try{ return (typeof isLoteUnit==='function'&&isLoteUnit())||(typeof isLoteBase==='function'&&isLoteBase()); }catch(e){ return false; } }
+// lote (15/09): a BASE do lote é a proposta que vai ao cliente (documento do lote, valor = soma das lojas); a LOJA não é enviada sozinha
+function ehLote(){ try{ return typeof isLoteUnit==='function'&&isLoteUnit(); }catch(e){ return false; } }
+function ehBaseLote(){ try{ return typeof isLoteBase==='function'&&isLoteBase(); }catch(e){ return false; } }
+// total que o cliente vê no documento do lote (mesma conta do verComoClienteLote)
+function totalLoteCliente(){ try{
+  const modo=(S.macro&&S.macro.modo)||'detalhado', qtd=num(S.macro&&S.macro.qtd), baseT=num(S._total)||0, U=(typeof LOTE_UNITS!=='undefined'&&LOTE_UNITS)||[];
+  const subUn=modo==='estimativa'?baseT*qtd:U.reduce((a,o)=>a+num(o.total),0);
+  const comboOn=typeof comboActive==='function'&&comboActive(), macroT=typeof macroTotal==='function'?num(macroTotal()):0;
+  return subUn+(modo==='estimativa'?(comboOn?0:macroT*(1+num(S.impostoPct)/100)):(typeof macroPendente==='function'?num(macroPendente()):0));
+}catch(e){ console.error('total do lote',e); return 0; } }
+const totalEnvio=()=>ehBaseLote()?totalLoteCliente():(num(S._total)||0);
+const nLojasLote=()=>((typeof LOTE_UNITS!=='undefined'&&LOTE_UNITS)||[]).length;
 function aprovada(){ return !!(S&&(S.comprovantes||[]).length); }
 function toast(t){ let el=$('envToast'); if(!el){ el=document.createElement('div'); el.id='envToast'; document.body.appendChild(el); } el.innerHTML=t; el.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('on'),5200); }
 
@@ -101,7 +112,7 @@ function decorar(){
   } else {
     if(ult) h+=`<span class="envchip">${ms('edit_note')}R${n} em edição · R${ult.revisao} enviada ${br(ult.enviado_em)}</span>`;
     else if(S.status==='enviado') h+=`<span class="envchip" title="Foi marcada como enviada antes do registro de versões — nada foi congelado.">${ms('info')}marcada como enviada (sem registro)</span>`;
-    if(ehLote()) h+=`<span class="envchip">${ms('inventory_2')}Lote: envio em conjunto (próximo passo)</span>`;
+    if(ehLote()) h+=`<span class="envchip" title="O cliente recebe o documento do lote, enviado pela base">${ms('inventory_2')}Loja do lote: o envio é pela base do lote</span>`;
     else h+=`<button class="envbtn pri" ${CLOUD?'':'disabled title="Entre no app (login) para enviar"'} onclick="EXENV.abrirEnvio()">${ms('send')}Enviar ${n>1?'R'+n:'proposta'}</button>`;
   }
   if(hist) h+=`<button class="envbtn ghost" onclick="EXENV.historico()" title="Revisões enviadas">${ms('history')}${hist}</button>`;
@@ -145,22 +156,30 @@ async function checar(){
   L.push({ok:numOk,t:'Número único',d:numMsg,fix:numOk?null:['Gerar número novo','renumerar']});
   const vOk=!!S.validadeISO && S.validadeISO>=hoje();
   L.push({ok:vOk,t:'Validade no futuro',d:S.validadeISO?('até '+br(S.validadeISO)+(vOk?'':' (vencida)')):'sem validade',data:!vOk});
-  const tot=num(S._total)||0;
-  L.push({ok:tot>0,t:'Total maior que zero',d:fmt(tot)});
-  const vaz=(typeof BLKS!=='undefined'?BLKS:[]).filter(b=>blocoAtivo(b.key) && !(S[b.key]||[]).some(r=>r&&String(r.desc||'').trim()) && !(b.key==='despesas' && typeof diariasCusto==='function' && diariasCusto()>0));
-  L.push({ok:!vaz.length,t:'Nenhum bloco ligado vazio',d:vaz.length?(vaz.map(b=>b.titulo).join(', ')+' sem itens'):'tudo certo',fix:vaz.length?['Desligar os vazios','desligarVazios']:null});
-  L.push({ok:!!String(S.finNome||'').trim(),t:'Cliente final / loja',d:String(S.finNome||'').trim()||'não preenchido: escolha a loja na proposta'});
+  const tot=totalEnvio();
+  L.push({ok:tot>0,t:ehBaseLote()?'Total do lote maior que zero':'Total maior que zero',d:fmt(tot)+(ehBaseLote()?' · soma das lojas (documento do lote)':'')});
+  if(ehBaseLote()){
+    const nl=nLojasLote(); L.push({ok:nl>0,t:'Lojas no lote',d:nl?nl+' loja(s)':'nenhuma loja gerada no lote'});
+    // checagem do próprio lote (sessão do orçamento): bloqueios travam, avisos só informam
+    try{ if(typeof preEnvioLista==='function') preEnvioLista().forEach(x=>L.push({ok:x.nivel!=='bloqueio',t:x.nivel==='bloqueio'?'Lote: bloqueio':'Lote: aviso',d:x.d})); }catch(e){ console.error('pré-envio do lote',e); }
+  } else {
+    const vaz=(typeof BLKS!=='undefined'?BLKS:[]).filter(b=>blocoAtivo(b.key) && !(S[b.key]||[]).some(r=>r&&String(r.desc||'').trim()) && !(b.key==='despesas' && typeof diariasCusto==='function' && diariasCusto()>0));
+    L.push({ok:!vaz.length,t:'Nenhum bloco ligado vazio',d:vaz.length?(vaz.map(b=>b.titulo).join(', ')+' sem itens'):'tudo certo',fix:vaz.length?['Desligar os vazios','desligarVazios']:null});
+    L.push({ok:!!String(S.finNome||'').trim(),t:'Cliente final / loja',d:String(S.finNome||'').trim()||'não preenchido: escolha a loja na proposta'});
+  }
   L.push({ok:!!String(S.respNome||'').trim(),t:'Responsável comercial',d:S.respNome?(S.respNome+(emailOk(S.respEmail)?' · vai em cópia':' · sem e-mail, não vai em cópia')):'não definido'});
   if(aprovada()) L.push({ok:false,t:'Proposta ainda não aprovada',d:'Aprovada não aceita novo envio.'});
   ENV.checks=L; return L;
 }
-function assuntoPadrao(n){ return `[${codigoFull()} R${n}] Proposta · ${S.cliNome||''}${S.finNome?' — '+S.finNome:''}`; }
+function assuntoPadrao(n){ return ehBaseLote()
+  ? `[${codigoFull()} R${n}] Proposta · ${S.cliNome||''} — lote com ${nLojasLote()} lojas`
+  : `[${codigoFull()} R${n}] Proposta · ${S.cliNome||''}${S.finNome?' — '+S.finNome:''}`; }
 function corpoPadrao(n){
   const nome=(String(S.cliContato||'').trim().split(/\s+/)[0])||'';
-  const sol=[S.solTitulo,S.finNome].filter(x=>String(x||'').trim()).join(' — ');
+  const sol=(ehBaseLote()?[S.solTitulo,nLojasLote()+' lojas']:[S.solTitulo,S.finNome]).filter(x=>String(x||'').trim()).join(' — ');
   const L=[nome?`Olá, ${nome},`:'Olá,',''];
   L.push(n>1?`Segue a revisão R${n} da nossa proposta ${codigoFull()}${sol?' — '+sol:''}, conforme conversamos.`:`Segue em anexo a nossa proposta ${codigoFull()}${sol?' — '+sol:''}.`);
-  L.push('',`Valor total: ${fmt(num(S._total)||0)}`);
+  L.push('',`Valor total${ehBaseLote()?' do lote':''}: ${fmt(totalEnvio())}`);
   if(S.validadeISO) L.push(`Validade da proposta: ${br(S.validadeISO)}`);
   L.push('','Fico à disposição para qualquer ajuste ou dúvida.','','Atenciosamente,',S.respNome||USER_NOME||'');
   const c=[S.respFone,S.respEmail].filter(Boolean).join(' · '); if(c) L.push(c);
@@ -172,7 +191,7 @@ function canalSalvo(){ try{ return localStorage.getItem('ex_envio_canal')||'gmai
 async function abrirEnvio(){
   if(!ENV.carregado){ await carregarVersoes(); if(S.envioRev==null && maxRev()) S.envioRev=maxRev(); window.renderBanner(); }
   if(travada()){ avisoTravada(); return; }
-  if(ehLote()){ toast('Proposta de <b>lote</b>: o envio em conjunto é o próximo passo.'); return; }
+  if(ehLote()){ toast('Esta é uma <b>loja do lote</b>: o cliente recebe o documento do lote inteiro. Envie pela <b>base do lote</b>.'); return; }
   modal(`<div class="envh">${ms('hourglass_top')}Conferindo a proposta…</div>`);
   const [L]=await Promise.all([checar(),checarSistema()]); const n=revTrab();
   const form=ENV._form||{ para:S.cliEmail||'', cc:emailOk(S.respEmail)?S.respEmail:'', assunto:assuntoPadrao(n), corpo:corpoPadrao(n), canal:canalSalvo() };
@@ -233,7 +252,34 @@ function cssDeImpressao(){ let out='';
   for(const ss of document.styleSheets){ let rs; try{ rs=ss.cssRules; }catch(e){ continue; }
     for(const r of rs){ if(r.type===CSSRule.MEDIA_RULE && /\bprint\b/.test(r.media.mediaText) && !/\bscreen\b/.test(r.media.mediaText)) for(const x of r.cssRules) out+=x.cssText+'\n'; } }
   return out; }
+// PDF do LOTE = o "Documento do lote" (verComoClienteLote), com as chaves de seção (S.docOpt) e as regras de impressão dele
+async function gerarPDFLote(nome){
+  await loadH2P();
+  if(typeof verComoClienteLote!=='function') throw new Error('documento do lote indisponível nesta página');
+  const jaAberto=!!document.getElementById('vcOverlay');
+  verComoClienteLote();
+  const emu=document.createElement('style'); emu.id='envPrintEmuLote';
+  emu.textContent=`#vcBar,#vcWarn,#vcMenu,.vctog,.docoff,.noprint{display:none!important}
+    #vcSheet{box-shadow:none!important;border-radius:0!important;max-width:none!important;width:${PDF_W}px!important;margin:0!important}
+    #vcSheet.off-lojas-modelo .col-modelo,#vcSheet.off-lojas-dias .col-dias,#vcSheet.off-lojas-adic .col-adic{display:none!important}`;
+  document.head.appendChild(emu);
+  await new Promise(r=>setTimeout(r,500));   // mapa/SVG e fontes
+  try{
+    const el=document.getElementById('vcSheet'); if(!el) throw new Error('não achei o documento do lote');
+    const m=22, pageW=PDF_W+2*m, pageH=Math.round(pageW*297/210);
+    return await window.html2pdf().set({
+      margin:m, filename:nome, image:{type:'jpeg',quality:0.92},
+      html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',scrollX:0,scrollY:0},
+      jsPDF:{unit:'px',format:[pageW,pageH],orientation:'portrait',hotfixes:['px_scaling']},
+      pagebreak:{mode:['css','legacy'],avoid:['tr','svg','table thead']}
+    }).from(el).outputPdf('blob');
+  } finally {
+    emu.remove();
+    if(!jaAberto && typeof closeVerCliente==='function'){ try{ closeVerCliente(); }catch(_){} }
+  }
+}
 async function gerarPDF(nome){
+  if(ehBaseLote()) return gerarPDFLote(nome);
   await loadH2P();
   const wasView=document.body.classList.contains('viewing'), sy=window.scrollY;
   _setMode('view'); document.body.classList.add('env-pdf');
@@ -282,7 +328,7 @@ async function preparar(){
     await SB.from('orcamento_versoes').update({status:'descartada'}).eq('orcamento_id',ORC_ID).eq('status','preparada');   // tentativa anterior abandonada
     const snap=JSON.parse(JSON.stringify(S));
     const ins=await SB.from('orcamento_versoes').insert({ empresa_id:EMPRESA_ID, orcamento_id:ORC_ID, oportunidade_id:OPP, numero:S.numero, codigo:cod, revisao:n,
-      dados:snap, total:num(S._total)||0, para:listaEmails(f.para).join(', '), cc:listaEmails(f.cc).join(', '), assunto:f.assunto, corpo:f.corpo,
+      dados:snap, total:totalEnvio(), para:listaEmails(f.para).join(', '), cc:listaEmails(f.cc).join(', '), assunto:f.assunto, corpo:f.corpo,
       preparado_por_nome:USER_NOME||S.respNome||'' }).select('id').single();
     if(ins.error) throw ins.error; vid=ins.data.id;
     progresso('Guardando o PDF…');
@@ -518,7 +564,7 @@ function revChip(e){ if(!e.revisao) return ''; const ult=ultimaEnviada(); const 
 function renderTrat(){
   const el=trEl(); if(!el) return;
   const enviada=!!ultimaEnviada();
-  if(!(CLOUD&&ORC_ID) || ehMestra() || (!ENV.eventos.length && !enviada && S.status!=='enviado')){ el.innerHTML=''; return; }
+  if(!(CLOUD&&ORC_ID) || ehLote() || (!ENV.eventos.length && !enviada && S.status!=='enviado')){ el.innerHTML=''; return; }
   const pend=pendentes(), outros=ENV.eventos.filter(e=>!pend.includes(e));
   const v=vAtual();
   // próxima ação depois de um pedido de ajuste: criar a revisão seguinte
