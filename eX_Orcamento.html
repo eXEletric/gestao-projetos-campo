@@ -1397,9 +1397,16 @@ function setBlkMargem(blk,v){
     save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); return; }
   if(t[k]){ alert('Margem de '+blk+' está TRAVADA. Destrave o cadeado para alterar.'); recalc(); return; }
   if(!S.margem)S.margem={}; S.margem[blk]=num(v);
-  const proprias=(S[blk]||[]).filter(r=>r&&!r.adic&&!(r.margem===''||r.margem==null));
-  if(proprias.length && confirm(proprias.length+' linha(s) de '+blk+' têm MARGEM PRÓPRIA e não seguem a margem do bloco (ex.: '+proprias.slice(0,3).map(r=>(r.desc||'item')+' '+r.margem+'%').join('; ')+').\n\nAplicar '+num(v)+'% também nessas linhas?')){ proprias.forEach(r=>{ r.margem=''; }); }
+  const pr=linhasMargemPropria(blk);
+  if(pr.length && confirm(pr.length+' linha(s) de '+blk+' têm MARGEM PRÓPRIA e não seguem a margem do bloco'+(isLoteBase()&&varLista().length>1?' (em todas as variações)':'')+' — ex.: '+pr.slice(0,3).map(x=>(x.r.desc||'item')+' '+x.r.margem+'%').join('; ')+'.\n\nAplicar '+num(v)+'% também nessas linhas?')){ pr.forEach(x=>{ x.r.margem=''; }); }
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
+function linhasMargemPropria(blk){   // linhas com margem própria no bloco — na base do lote, também dentro das variações guardadas
+  const out=[]; const push=(arr,onde)=>(arr||[]).forEach(r=>{ if(r&&!r.adic&&!(r.margem===''||r.margem==null)) out.push({r:r,onde:onde}); });
+  push(S[blk],'aberta'); if(isLoteBase()) varLista().forEach(v=>{ if(v.conteudo) push(v.conteudo[blk],v.nome); });
+  return out; }
+function aplicarMargemLinhas(blk){ const pr=linhasMargemPropria(blk); if(!pr.length)return;
+  if(!confirm('Aplicar a margem do bloco ('+_d1(baseMg(blk))+'%) nas '+pr.length+' linha(s) de '+blk+' com margem própria'+(isLoteBase()&&varLista().length>1?' em todas as variações':'')+'?'))return;
+  pr.forEach(x=>{ x.r.margem=''; }); save(); try{ renderBlk(BLKS.find(b=>b.key===blk)); }catch(_){} recalc(); cloudMsg(pr.length+' linha(s) passaram a seguir a margem do bloco'); }
 // controle de margem no cabeçalho do bloco: só Serviços/Materiais (lucro); Despesas/Locações = etiqueta "custo + imposto"
 function blkMargemCtrl(cfg){ if(!cfg.custo) return '';
   if(cfg.key==='servicos'||cfg.key==='materiais'){
@@ -4376,7 +4383,11 @@ function recalc(){
     if(ms){ if(document.activeElement!==ms) ms.value=_d1(_combo?comboMgBlk('servicos')*100:baseMg('servicos')); ms.disabled=_combo?false:!!t.serv; ms.classList.toggle('calc',_combo&&!t.serv); ms.title=_combo?(t.serv?'travada neste valor (material absorve)':'calculada — digite para travar'):(t.serv?'travada':''); }
     if(mm){ if(document.activeElement!==mm) mm.value=_d1(_combo?comboMgBlk('materiais')*100:baseMg('materiais')); mm.disabled=_combo?false:!!t.mat; mm.classList.toggle('calc',_combo&&!t.mat); mm.title=_combo?(t.mat?'travada neste valor (serviços absorvem)':'calculada — digite para travar'):(t.mat?'travada':''); }
     const im=document.querySelector('[data-f="impostoPct"]'); if(im) im.disabled=!!t.imp;
-    lk('lk_serv',t.serv); lk('lk_mat',t.mat); lk('lk_imp',t.imp); }
+    lk('lk_serv',t.serv); lk('lk_mat',t.mat); lk('lk_imp',t.imp);
+    [['servicos','mg_serv_in'],['materiais','mg_mat_in']].forEach(p=>{ const inp=document.getElementById(p[1]); if(!inp)return; let a=document.getElementById('ap_'+p[0]); const n=_combo?0:linhasMargemPropria(p[0]).length;
+      if(!n){ if(a)a.remove(); return; }
+      if(!a){ a=document.createElement('div'); a.id='ap_'+p[0]; a.className='noprint'; a.style.cssText='font-size:10.5px;margin:2px 0 4px;text-align:right'; const row=inp.closest('.iln'); if(row) row.insertAdjacentElement('afterend',a); }
+      a.innerHTML='<button onclick="aplicarMargemLinhas(\''+p[0]+'\')" style="border:1px solid #c77b12;background:#fff4e0;color:#8a5a12;border-radius:6px;padding:1px 7px;font:inherit;font-weight:800;cursor:pointer" title="Estas linhas têm margem própria e ignoram a margem do bloco">aplicar '+_d1(baseMg(p[0]))+'% nas '+n+' linha(s) com margem própria</button>'; }); }
   // prazo espelho (direita) — reflete o prazo da mão de obra; avisa quando manual
   const sp=document.getElementById('s_prazo'); if(sp)sp.textContent=fmtPrazo(obraPrazo());
   const spm=document.getElementById('s_prazo_man'); if(spm)spm.style.display=prazoManualOn()?'':'none';
