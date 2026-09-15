@@ -309,6 +309,36 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .summ .cap .l{font-size:11px;opacity:.85;text-transform:uppercase;letter-spacing:.05em;font-weight:600}
 .summ .cap .v{font-size:27px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
 .summ .body{padding:14px 16px}
+/* painel de preço em 2 colunas (lote): Esta loja | Global do lote */
+@media(min-width:941px){.grid:has(.summ.cmp){grid-template-columns:1fr 430px}}
+.summ.cmp .cap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;padding:0}
+.summ.cmp .cap .capU,.summ.cmp .cap .capG{padding:12px 16px 11px}
+.summ.cmp .cap .capU .v{font-size:22px;white-space:nowrap}
+.summ.cmp .cap .l{white-space:nowrap}
+.summ.cmp .cap .capG{background:#3f2c8f;cursor:pointer;text-align:right;user-select:none}
+.summ.cmp .cap .capG .l{display:flex;justify-content:flex-end;align-items:center;gap:2px}
+.summ.cmp .cap .capG .l .material-symbols-rounded{font-size:15px;color:#fff;opacity:.8}
+.summ.cmp .cap .capG .v{font-size:18px;line-height:1.6;white-space:nowrap}
+.summ.cmp .cap .capG .s{font-size:10.5px;opacity:.75;font-variant-numeric:tabular-nums}
+.summ.cmp.cmpfechado .cap{grid-template-columns:minmax(0,1fr) auto}
+.summ.cmp.cmpfechado .cap .capG .v,.summ.cmp.cmpfechado .cap .capG .s{display:none}
+.summ.cmp.cmpfechado .cap .capG{display:flex;align-items:center}
+.ln .valg,.ln.colh{display:none}
+.summ.cmp .body>.ln:not(.combo){display:grid;grid-template-columns:minmax(0,1fr) auto auto;column-gap:10px}
+.summ.cmp .body>.ln .val{text-align:right;min-width:90px}
+.summ.cmp .body>.ln .valg{display:block;text-align:right;min-width:98px;font-variant-numeric:tabular-nums;font-weight:600;color:#3f2c8f;background:#f3f0fb;margin:-5px -16px -5px 0;padding:5px 16px 5px 10px;border-left:1px solid #e3ddf6}
+.summ.cmp .body>.ln.tt .valg{margin-top:-9px;padding-top:9px;font-size:15px;font-weight:800}
+.summ.cmp .body>.ln.colh{display:grid;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);padding:0 0 4px}
+.summ.cmp .body>.ln.colh .valg{color:#5b3fb8;padding-top:14px;margin-top:-14px}
+.summ.cmp.cmpfechado .body>.ln .valg{display:none}
+.summ.cmp.cmpfechado .body>.ln:not(.combo){grid-template-columns:minmax(0,1fr) auto}
+.summ.cmp.cmpfechado .body>.ln.colh{display:none}
+@media print{.summ.cmp .cap .capG,.summ.cmp .body>.ln .valg,.summ.cmp .body>.ln.colh{display:none!important}.summ.cmp .cap{display:block;padding:13px 16px}.summ.cmp .body>.ln:not(.combo){display:flex}}
+body.viewing .summ.cmp .cap .capG,body.viewing .summ.cmp .body>.ln .valg,body.viewing .summ.cmp .body>.ln.colh{display:none!important}
+body.viewing .summ.cmp .cap{display:block;padding:13px 16px}
+body.viewing .summ.cmp .body>.ln:not(.combo){display:flex}
+@media print{.ln.gonly{display:none!important}}
+body.viewing .ln.gonly{display:none!important}
 .ln{display:flex;justify-content:space-between;align-items:center;padding:5px 0;font-size:12.5px}
 .ln .lbl{color:var(--tx2);display:flex;align-items:center;gap:7px}
 .ln .lbl .material-symbols-rounded{font-size:16px;color:var(--tx3)}
@@ -317,17 +347,6 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .ln.tt .val{font-size:16px;color:var(--pri)}
 .pcref{font-size:11px;color:var(--tx3);font-weight:600}
 .lockph{display:inline-block;width:30px}
-.gloteBox{background:#efeafc;border-bottom:1px solid #ddd6ee;padding:9px 16px 10px}
-.gloteBox .gh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;cursor:pointer;user-select:none}
-.gloteBox .gh .t{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#5b3fb8;display:flex;align-items:center;gap:5px}
-.gloteBox .gh .t .material-symbols-rounded{font-size:15px;color:#5b3fb8}
-.gloteBox .gh .v{font-size:18px;font-weight:800;color:#3f2c8f;font-variant-numeric:tabular-nums}
-.gloteBox .gs{font-size:11px;color:#6f6790;margin-top:1px}
-.gloteBox .gl{display:flex;justify-content:space-between;gap:8px;font-size:12px;padding:2px 0;color:#4a4560}
-.gloteBox .gl b{font-variant-numeric:tabular-nums;font-weight:600}
-.gloteBox .gl.sep{border-top:1px dashed #cfc5ea;margin-top:3px;padding-top:4px}
-.gloteBox .gl.warn{color:#b3261e}
-.gloteBox .gd{margin-top:6px}
 .hr{height:1px;background:var(--line);margin:11px 0}
 .intbox{background:var(--surf2);border-radius:9px;padding:11px 12px;margin-top:4px}
 .intbox .ih{font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);display:flex;align-items:center;gap:6px;margin-bottom:8px}
@@ -929,7 +948,7 @@ body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{backgrou
           <div class="l">Preço da proposta</div>
           <div class="v" id="s_preco">R$ 0,00</div>
         </div>
-        <div class="gloteBox noprint" id="gloteBox" hidden></div>
+
         <div class="body">
           <div class="ln" id="ln_servicos"><span class="lbl"><span class="material-symbols-rounded">build</span>Serviços</span><span class="val" id="s_serv">—</span></div>
           <div class="ln" id="ln_despesas"><span class="lbl"><span class="material-symbols-rounded">local_shipping</span>Despesas</span><span class="val" id="s_desp">—</span></div>
@@ -3660,20 +3679,34 @@ function unitVarNome(){   // na proposta de UMA loja do lote: nome do modelo (va
 /* GLOBAL DO LOTE no painel de preço (base e loja): soma das propostas GRAVADAS das lojas — calculado ao carregar (não a cada tecla) */
 var GLOTE=null;
 function gloteCalc(units){ var us=(units||[]).filter(function(u){ return u&&u.dados&&!u.dados._base; }); if(!us.length){ GLOTE=null; gloteRender(); return; }
-  var g={n:us.length,serv:0,desp:0,equip:0,mat:0,bruto:0,desc:0,imp:0,calc:0,gravado:0};
+  var g={n:us.length,serv:0,desp:0,equip:0,mat:0,bruto:0,descPct:0,descAd:0,imp:0,calc:0,gravado:0};
   us.forEach(function(u){ var p=null; try{ p=precoDe(dadosLojaCalc(u)); }catch(_){} g.gravado+=num(u.total); if(!p)return;
     var d=u.dados, dp=num(d.descontoPct)/100, ip=num(d.impostoPct)/100, f=((1-dp)*(1+ip))||1;
     var sv=p.serv/f, de=(p.desp+p.desl)/f, eq=p.equip/f, mt=p.mat/f, br=sv+de+eq+mt, dAd=p.descAd/(1+ip), liq=br*(1-dp)-dAd;
-    g.serv+=sv; g.desp+=de; g.equip+=eq; g.mat+=mt; g.bruto+=br; g.desc+=br*dp+dAd; g.imp+=liq*ip; g.calc+=p.total; });
-  GLOTE=g; gloteRender(); }
-function gloteToggle(){ try{ localStorage.setItem('gloteAberto', gloteAberto()?'0':'1'); }catch(_){} gloteRender(); }
+    g.serv+=sv; g.desp+=de; g.equip+=eq; g.mat+=mt; g.bruto+=br; g.descPct+=br*dp; g.descAd+=dAd; g.imp+=liq*ip; g.calc+=p.total; });
+  GLOTE=g; try{ recalc(); }catch(_){ gloteRender(); } }
+function gloteToggle(){ try{ localStorage.setItem('gloteAberto', gloteAberto()?'0':'1'); }catch(_){} try{ recalc(); }catch(_){ gloteRender(); } }
 function gloteAberto(){ try{ return localStorage.getItem('gloteAberto')!=='0'; }catch(_){ return true; } }
-function gloteRender(){ var b=document.getElementById('gloteBox'); if(!b)return; var g=GLOTE; if(!g||!S_LOTE_ID){ b.hidden=true; return; } b.hidden=false;
-  var ab=gloteAberto(), ln=function(l,v,c){ return '<div class="gl'+(c?' '+c:'')+'"><span>'+l+'</span><b>'+fmt(v)+'</b></div>'; }, dif=Math.abs(g.calc-g.gravado)>1;
-  b.innerHTML='<div class="gh" onclick="gloteToggle()" title="Soma das propostas gravadas das lojas do lote — clique para '+(ab?'recolher':'abrir')+'"><span class="t"><span class="material-symbols-rounded">'+(ab?'expand_less':'expand_more')+'</span>Global do lote · '+g.n+' lojas</span><span class="v">'+fmt(g.gravado)+'</span></div>'
-    +'<div class="gs">média por loja '+fmt(g.gravado/g.n)+(isLoteBase()?'':' · esta loja acima')+'</div>'
-    +(ab?'<div class="gd">'+ln('Serviços',g.serv)+ln('Despesas',g.desp)+ln('Locações',g.equip)+ln('Materiais',g.mat)+ln('Subtotal',g.bruto,'sep')+(g.desc>0.005?ln('Desconto (inclui adicionais abatidos)',-g.desc):'')+ln('Impostos',g.imp)+ln('Total do lote',g.calc,'sep')
-      +(dif?'<div class="gl warn"><span><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">warning</span> gravado difere do calculado</span><b>'+fmt(g.gravado-g.calc)+'</b></div>':'')+'</div>':''); }
+function gloteRender(){   // painel de preço em 2 colunas: ESTA LOJA (ou base) | GLOBAL DO LOTE — mesmas linhas, cada total no topo da sua coluna
+  var summ=document.querySelector('.side .summ'); if(!summ)return; var cap=summ.querySelector('.cap'), body=summ.querySelector('.body'); if(!cap||!body)return;
+  var capL=cap.querySelector('.l'); var g=GLOTE, on=!!(g&&S_LOTE_ID);
+  if(capL) capL.textContent=!S_LOTE_ID?'Preço da proposta':(isLoteBase()?'Base do lote (modelo)':'Esta loja');
+  var tg=document.getElementById('capG');
+  if(!on){ summ.classList.remove('cmp','cmpfechado'); if(tg)tg.remove(); var h0=document.getElementById('ln_colh'); if(h0)h0.remove(); body.querySelectorAll('.valg').forEach(function(e){e.remove();}); return; }
+  var ab=gloteAberto(); summ.classList.add('cmp'); summ.classList.toggle('cmpfechado',!ab);
+  if(!cap.querySelector('.capU')){ var u=document.createElement('div'); u.className='capU'; while(cap.firstChild)u.appendChild(cap.firstChild); cap.appendChild(u); }
+  if(!tg){ tg=document.createElement('div'); tg.id='capG'; tg.className='capG'; cap.appendChild(tg); }
+  tg.title='Soma das propostas GRAVADAS das '+g.n+' lojas do lote — clique para '+(ab?'recolher':'mostrar')+' a coluna'; tg.onclick=gloteToggle;
+  tg.innerHTML='<div class="l"><span class="material-symbols-rounded">'+(ab?'chevron_right':'chevron_left')+'</span>Global do lote · '+g.n+' lojas</div><div class="v">'+fmt(g.gravado)+'</div><div class="s">média '+fmt(g.gravado/g.n)+'/loja</div>';
+  var h=document.getElementById('ln_colh'); if(!h){ h=document.createElement('div'); h.id='ln_colh'; h.className='ln colh'; body.insertBefore(h,body.firstChild); }
+  h.innerHTML='<span class="lbl"></span><span class="val">'+(isLoteBase()?'Base':'Esta loja')+'</span><span class="valg">Global</span>';
+  var sb=document.getElementById('s_bruto'), tt=document.getElementById('s_total');
+  var rows=[['ln_servicos',g.serv],['ln_despesas',g.desp],['ln_equip',g.equip],['ln_materiais',g.mat],[sb&&sb.parentElement,g.bruto],['ln_desc',-g.descPct],['ln_descad',-g.descAd],['ln_imp',g.imp],[tt&&tt.parentElement,g.calc]];
+  rows.forEach(function(x){ var ln=typeof x[0]==='string'?document.getElementById(x[0]):x[0]; if(!ln)return; var s=ln.querySelector('.valg'); if(!s){ s=document.createElement('span'); s.className='valg'; ln.appendChild(s); }
+    s.textContent=(x[1]<0?'− ':'')+fmt(Math.abs(x[1])); });
+  var da=document.getElementById('ln_descad'); if(da){ var soG=(da.style.display==='none')&&g.descAd>0.005; da.classList.toggle('gonly',soG); if(soG) da.style.display=''; }   // linha só com valor global (a loja/base não tem adicional)
+  var dif=Math.abs(g.calc-g.gravado)>1, w=document.getElementById('glote_warn');
+  if(dif){ if(!w){ w=document.createElement('div'); w.id='glote_warn'; w.className='combo-note neg noprint'; tt.parentElement.after(w); } w.innerHTML='<span class="material-symbols-rounded">warning</span>Global: gravado '+fmt(g.gravado)+' ≠ calculado '+fmt(g.calc); } else if(w) w.remove(); }
 function unitVarChip(){ var n=unitVarNome(); return n?'<span class="varchip-un" title="Modelo base (variação da base do lote) que esta loja segue"><span class="material-symbols-rounded">layers</span>Modelo: '+esc(n)+'</span>':''; }
 function unitsDaVar(id){ return (LOTE_UNITS||[]).filter(function(u){return unitVar(u)===id;}); }
 function varUnitsAlvo(){ return (isLoteBase()&&varLista().length>1)?unitsDaVar(S.varAtiva):(LOTE_UNITS||[]); }   // ações base→lojas alcançam só as lojas da variação aberta
@@ -4405,6 +4438,7 @@ function recalc(){
   set('s_serv',fmt(preco.servicos)); set('s_equip',fmt(preco.equip));
   set('s_desp',fmt(preco.despesas+diaP+ratPreco)); set('s_mat',fmt(preco.materiais));   // Despesas inclui alimentação + hospedagem + rateio (só quando NÃO há valor combinado)
   set('s_diarias',fmt(diaP)); const lndia=document.getElementById('ln_diarias'); if(lndia) lndia.style.display='none';   // linha própria removida — vai dentro de Despesas
+  try{ gloteRender(); }catch(_){}   // coluna Global do lote (lojas gravadas)
   set('s_bruto',fmt(bruto+ratPreco)); set('s_desc','− '+fmt(desc));
   set('s_total',fmt(total+ratPreco)); set('s_preco',fmt(total+ratPreco));
   set('s_imp','+ '+fmt(imp)); set('s_desc_pc','('+_d1(num(S.descontoPct))+'%)'); set('s_imp_pc','('+_d1(num(S.impostoPct))+'%)'); set('s_custo',fmt(custo));
