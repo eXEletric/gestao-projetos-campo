@@ -21,8 +21,9 @@
   .canvas{position:relative;width:2400px;height:1800px}
   .card{position:absolute;width:270px;background:var(--surf);border:1px solid var(--line);border-radius:12px;box-shadow:0 4px 16px -8px rgba(20,10,50,.25);overflow:hidden}
   .card.base{border-top:3px solid var(--base)} .card.unid{border-top:3px solid var(--unid)} .card.glob{border-top:3px solid var(--glob)} .card.neu{border-top:3px solid var(--neu)}
-  .card .port{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);width:16px;height:16px;border-radius:50%;background:var(--pri);border:2px solid var(--surf);cursor:crosshair;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,.3)}
-  .card .port:hover{transform:translateX(-50%) scale(1.2)}
+  .card .port{position:absolute;left:50%;bottom:-9px;transform:translateX(-50%);width:18px;height:18px;border-radius:50%;background:var(--pri);border:2px solid var(--surf);cursor:pointer;z-index:3;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+  .card .port:hover{transform:translateX(-50%) scale(1.25)}
+  .card .port.armed{background:var(--green);box-shadow:0 0 0 4px color-mix(in srgb,var(--green) 35%,transparent)}
   #edges path,#edges text{}
   .ch{display:flex;align-items:center;gap:7px;padding:9px 10px;background:var(--surf2);cursor:grab;user-select:none}
   .ch.grab{cursor:grabbing}
@@ -71,10 +72,14 @@
   <div class="sp">
     <button class="btn pri" id="addcard"><span class="material-symbols-rounded">add_box</span>Adicionar quadro</button>
     <button class="btn" id="allc"><span class="material-symbols-rounded">unfold_more</span>Expandir tudo</button>
+    <button class="btn" id="download"><span class="material-symbols-rounded">download</span>Salvar (.json)</button>
+    <button class="btn" id="import"><span class="material-symbols-rounded">upload</span>Importar</button>
     <button class="btn" id="reset"><span class="material-symbols-rounded">restart_alt</span>Restaurar</button>
     <button class="btn" id="export"><span class="material-symbols-rounded">ios_share</span>Exportar</button>
+    <input type="file" id="file" accept="application/json,.json" style="display:none">
   </div>
 </div>
+<div id="lkban" style="display:none;position:fixed;top:88px;left:50%;transform:translateX(-50%);z-index:25;background:var(--pri);color:#fff;border-radius:20px;padding:7px 16px;font-size:12.5px;font-weight:700;box-shadow:0 6px 18px rgba(20,10,50,.3);align-items:center;gap:7px"></div>
 <div class="guide">
   <span class="st"><span class="n">1</span>Veja as <b>3 leituras</b> (cores): Base · Por unidade · Global</span>
   <span class="st"><span class="n">2</span>Arraste os quadros pra <b>onde fizer sentido</b></span>
@@ -83,7 +88,7 @@
 </div>
 <div class="board" id="board"><div class="canvas" id="canvas"></div></div>
 <div class="cpop" id="cpop"></div>
-<div class="hint"><span class="material-symbols-rounded">tune</span><span>Arraste o <b>topo</b> pra mover · arraste o <b>●&nbsp;roxo</b> (embaixo do quadro) até outro quadro pra <b>LIGAR/desenhar</b> · clique na <b>linha</b> pra dar nome ou "apagar" · <b>switch</b> tira/põe função · <b>×</b> remove · <b>cor</b> troca a leitura · nomes editáveis.</span></div>
+<div class="hint"><span class="material-symbols-rounded">tune</span><span>Arraste o <b>topo</b> pra mover · clique no <b>●&nbsp;roxo</b> (embaixo) e depois no <b>outro quadro</b> pra <b>LIGAR</b> · clique na <b>linha</b> pra dar nome ou "apagar" · <b>switch</b> tira/põe função · <b>×</b> remove · <b>cor</b> troca a leitura · <b>Salvar (.json)</b> baixa um backup.</span></div>
 <div id="exp"><div class="box"><textarea id="exptx" readonly></textarea><div class="r"><button class="btn" id="expcopy"><span class="material-symbols-rounded">content_copy</span>Copiar</button><button class="btn" id="expclose">Fechar</button></div></div></div>
 <script>
 (function(){
@@ -138,12 +143,18 @@
       if(ed.label){var mx=(p1[0]+p2[0])/2,my=(p1[1]+p2[1])/2;var tt=document.createElementNS(NS,'text');tt.setAttribute('x',mx);tt.setAttribute('y',my-5);tt.setAttribute('text-anchor','middle');tt.setAttribute('font-size','11');tt.setAttribute('fill','#5f5e5a');tt.setAttribute('stroke','var(--bg)');tt.setAttribute('stroke-width','3');tt.setAttribute('paint-order','stroke');tt.style.pointerEvents='none';tt.textContent=ed.label;svg.appendChild(tt);}
     });
   }
-  var link=null,tmp=null;
-  function ptr(e){var r=canvas.getBoundingClientRect();return{x:e.clientX-r.left,y:e.clientY-r.top};}
-  function cardAt(e){var el=document.elementFromPoint(e.clientX,e.clientY);if(!el||!el.closest)return null;var nd=el.closest('.card');if(!nd)return null;var id=null;Object.keys(elMap).forEach(function(k){if(elMap[k]===nd)id=k;});return id;}
-  function startLink(id,port,e){link=id;try{port.setPointerCapture(e.pointerId);}catch(_){}document.body.style.userSelect='none';}
-  function moveLink(e){var p=ptr(e),a=cardCenter(link);if(!a)return;var s=bound(a,p.x,p.y);if(!tmp){tmp=document.createElementNS(NS,'path');tmp.setAttribute('stroke','var(--pri)');tmp.setAttribute('stroke-width','2.2');tmp.setAttribute('fill','none');tmp.setAttribute('stroke-dasharray','5 4');tmp.style.pointerEvents='none';svg.appendChild(tmp);}tmp.setAttribute('d','M'+s.x+' '+s.y+' L'+p.x+' '+p.y);}
-  function endLink(e){document.body.style.userSelect='';var id=cardAt(e);if(id&&id!==link&&!edges.some(function(x){return x.f===link&&x.t===id;})){edges.push({f:link,t:id});save();}if(tmp){tmp.remove();tmp=null;}link=null;renderEdges();}
+  var linkFrom=null;
+  function banner(t){var b=document.getElementById('lkban');if(!b)return;if(t){b.textContent=t;b.style.display='flex';}else{b.style.display='none';}}
+  function idOfCard(nd){var id=null;Object.keys(elMap).forEach(function(k){if(elMap[k]===nd)id=k;});return id;}
+  function portClick(id){ if(linkFrom===id){linkFrom=null;banner('');render();return;} linkFrom=id;banner('🔗 Ligando… clique no OUTRO quadro pra conectar (● de novo ou Esc pra cancelar)');render(); }
+  document.addEventListener('click',function(e){
+    if(!linkFrom)return;
+    var nd=e.target.closest&&e.target.closest('.card');
+    if(!nd){linkFrom=null;banner('');render();return;}
+    var id=idOfCard(nd);
+    if(id&&id!==linkFrom){ if(!edges.some(function(x){return x.f===linkFrom&&x.t===id;})){edges.push({f:linkFrom,t:id});save();} linkFrom=null;banner('');render(); }
+  },true);
+  document.addEventListener('keydown',function(e){if(e.key==='Escape'&&linkFrom){linkFrom=null;banner('');render();}});
   function cardEl(p){
     var card=document.createElement('div');card.className='card '+(p.col||'neu');card.style.left=(p.x||20)+'px';card.style.top=(p.y||20)+'px';
     var on=p.fns.filter(function(f){return f.on;}).length;
@@ -164,10 +175,9 @@
     ch.appendChild(cr);ch.appendChild(dot);ch.appendChild(nm);ch.appendChild(ct);ch.appendChild(xc);
     dragHead(ch,card,p);
     card.appendChild(ch);
-    var port=document.createElement('div');port.className='port';port.title='arraste até outro quadro pra LIGAR (desenhar a relação)';
-    port.addEventListener('pointerdown',function(e){e.stopPropagation();e.preventDefault();startLink(p.id,port,e);});
-    port.addEventListener('pointermove',function(e){if(link)moveLink(e);});
-    port.addEventListener('pointerup',function(e){if(link)endLink(e);});
+    var port=document.createElement('div');port.className='port'+(linkFrom===p.id?' armed':'');port.title='clique pra LIGAR: aqui e depois no outro quadro';
+    port.addEventListener('pointerdown',function(e){e.stopPropagation();});
+    port.onclick=function(e){e.stopPropagation();portClick(p.id);};
     card.appendChild(port);
     if(p.collapsed){return card;}
     var fns=document.createElement('div');fns.className='fns';
@@ -219,6 +229,9 @@
     data.push(c);save();render();
   };
   document.getElementById('allc').onclick=function(){var anyOpen=data.some(function(p){return !p.collapsed;});data.forEach(function(p){p.collapsed=anyOpen;});save();render();this.innerHTML='<span class="material-symbols-rounded">'+(anyOpen?'unfold_more':'unfold_less')+'</span>'+(anyOpen?'Expandir tudo':'Recolher tudo');};
+  document.getElementById('download').onclick=function(){var blob=new Blob([JSON.stringify({v:3,cards:data,edges:edges},null,2)],{type:'application/json'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='eX_lote_blocos.json';document.body.appendChild(a);a.click();setTimeout(function(){a.remove();URL.revokeObjectURL(a.href);},100);};
+  document.getElementById('import').onclick=function(){document.getElementById('file').click();};
+  document.getElementById('file').onchange=function(e){var f=e.target.files[0];if(!f)return;var rd=new FileReader();rd.onload=function(){try{var o=JSON.parse(rd.result);if(o&&o.cards){data=o.cards;edges=o.edges||[];save();render();alert('Importado! ✓');}else alert('Arquivo não reconhecido.');}catch(err){alert('Não consegui ler o JSON.');}};rd.readAsText(f);e.target.value='';};
   document.getElementById('reset').onclick=function(){if(confirm('Restaurar todos os quadros ao padrão? (perde suas mudanças)')){data=seed();edges=[];save();render();}};
   var expEl=document.getElementById('exp'),exptx=document.getElementById('exptx');
   document.getElementById('export').onclick=function(){
