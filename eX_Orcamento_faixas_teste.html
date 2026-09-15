@@ -2845,6 +2845,9 @@ function loteRota(){ const base=baseMun(); const pts=[]; const seen=new Set();
 function macroKmManualOn(){ return num(S.macro&&S.macro.kmManual)>0; }
 function macroRotaKm(){ return macroKmManualOn()?num(S.macro.kmManual):loteRota().km; }
 function macroRotaCusto(){ return macroRotaKm()*num(S.macro&&S.macro.rkm); }
+function macroPendente(){   // parte do macro (logística do lote) que AINDA não está no total gravado das lojas — sempre com desconto e IMPOSTO da loja; loja com valor combinado absorve como custo
+  var mt=macroTotal(), us=LOTE_UNITS||[]; if(!(mt>0)||!us.length) return 0; var per=mt/us.length;
+  return us.reduce(function(a,u){ var d=u.dados||{}; if(num(d.valorCombinado)>0) return a; var falta=Math.max(0,per-num(d._ratNoTotal)); return a+falta*(1-num(d.descontoPct)/100)*(1+num(d.impostoPct)/100); },0); }
 function macroTotal(){ return ((S.macro&&S.macro.estruturas)||[]).reduce((a,e)=>a+num(e.custo),0) + macroRotaCusto(); }
 const ESTR_IC={van:'airport_shuttle',caminhao:'local_shipping',equipe:'groups',outro:'category'};
 async function computeLoteUnitsAbr(){
@@ -3186,9 +3189,9 @@ function renderLoteBaseHtml(){
   const rota=loteRota(); const rotaKm=macroRotaKm(); const rotaCusto=macroRotaCusto(); const rkm=num(S.macro&&S.macro.rkm);
   const modo=(S.macro&&S.macro.modo)||'detalhado'; const qtd=num(S.macro&&S.macro.qtd); const baseT=num(S._total)||0;
   const unitsSum = modo==='estimativa' ? (baseT*qtd) : LOTE_UNITS.reduce((a,o)=>a+num(o.total),0);
-  const total = unitsSum + (comboOn?0:macroT);   // com valor combinado, o macro NÃO entra no preço (é custo interno)
+  const total = unitsSum + (modo==='estimativa'?(comboOn?0:macroT*(1+num(S.impostoPct)/100)):macroPendente());   // macro fora das lojas entra COM imposto; com valor combinado é custo interno
   const nUn = modo==='estimativa' ? qtd : LOTE_UNITS.length;
-  const vMed = modo==='estimativa' ? baseT : (LOTE_UNITS.length?(unitsSum+((rateado&&!comboOn)?macroT:0))/LOTE_UNITS.length:0);   // rateado (sem combinado) → média já com a fatia do macro
+  const vMed = modo==='estimativa' ? baseT : (LOTE_UNITS.length?(unitsSum+macroPendente())/LOTE_UNITS.length:0);   // rateado (sem combinado) → média já com a fatia do macro
   const prz=lotePrazoResumo();
   const prazoSomaK=(LOTE_UNITS||[]).reduce(function(a,o){return a+num(o._prazo);},0);   // ótica Global = SOMA de todas as lojas (o total)
   const prazoTot=num(S.prazoLoteDias)>0?num(S.prazoLoteDias):prazoSomaK;   // manual sobrescreve; senão a soma
@@ -3382,7 +3385,7 @@ function buildLoteMapaSVG(){ const base=baseMun(); const us=(LOTE_UNIT_ABR||[]).
 function verComoClienteLote(){
   const contrNome=S.cliNome||(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):'')||'—';
   const modo=(S.macro&&S.macro.modo)||'detalhado'; const qtd=num(S.macro&&S.macro.qtd); const baseT=num(S._total)||0;
-  const subUn = modo==='estimativa' ? baseT*qtd : LOTE_UNITS.reduce((a,o)=>a+num(o.total),0); const macroT=macroTotal(); const comboOn=comboActive(); const total=subUn+(comboOn?0:macroT);   // combinado soberano: macro é custo interno, não soma no preço do cliente
+  const subUn = modo==='estimativa' ? baseT*qtd : LOTE_UNITS.reduce((a,o)=>a+num(o.total),0); const macroT=macroTotal(); const comboOn=comboActive(); const total=subUn+(modo==='estimativa'?(comboOn?0:macroT*(1+num(S.impostoPct)/100)):macroPendente());   // combinado soberano: macro é custo interno, não soma no preço do cliente
   const _nunG=(LOTE_UNITS.length||1); const rateioPer=(macroT>0)?macroT/_nunG:0;   // etapa 3: macro GERADO no global, RATEADO nas unidades (fatia/loja)
   const showOrig=!!(S.macro&&S.macro.showOrigin);   // mostrar a ORIGEM do custo global no doc (transparência — não soma, já está rateado nas lojas)
   const cc=!!S.colCustoProposta; const sumCusto=(modo==='estimativa')?0:LOTE_UNITS.reduce((a,o)=>a+num(o._custo),0); const sumLucro=subUn-sumCusto;   // 2.3: custo/lucro por loja na proposta (chave)
@@ -3790,7 +3793,7 @@ function precoDe(dados){ var keep=S, out=null;
     var f=(1-num(S.descontoPct)/100)*(1+num(S.impostoPct)/100), on=function(k){return blocoAtivo(k);};
     var sum=function(k,flt){ return on(k)?(S[k]||[]).filter(flt||function(){return true;}).reduce(function(a,r){r._blk=k;return a+linePreco(r);},0):0; };
     var isDesl=function(r){return despGrupo(r)==='desl';};
-    var serv=sum('servicos'), mat=sum('materiais'), equip=sum('equip'), desl=sum('despesas',isDesl), desp=sum('despesas',function(r){return !isDesl(r);})+diariasPreco();
+    var serv=sum('servicos'), mat=sum('materiais'), equip=sum('equip'), desl=sum('despesas',isDesl), desp=sum('despesas',function(r){return !isDesl(r);})+diariasPreco(); desl+=(comboActive()?0:num(S._ratNoTotal));   // rateio do macro já dentro do total (com imposto)
     var adicItens=[]; ['servicos','materiais','despesas','equip'].forEach(function(k){ if(!on(k))return; (S[k]||[]).forEach(function(r){ if(r&&r.adic){ r._blk=k; adicItens.push({desc:r.desc,qtd:qtyOf(r),und:r.und,total:linePreco(r)*f,motivo:r.adicMotivo||'',cobrado:!!r.adicCobrar}); } }); });
     var itens=(on('servicos')?S.servicos:[]).filter(function(r){return num(qtyOf(r))>0;}).map(function(r){ r._blk='servicos'; return {desc:r.desc,und:r.und,qtd:qtyOf(r),unit:lineUnit(r)*f,total:linePreco(r)*f,adic:!!r.adic}; });
     var impF=1+num(S.impostoPct)/100, descAd=S.descontoAdic?adicAbatidoTotal()*impF:0;
@@ -3823,9 +3826,9 @@ function docLojasHtml(_secTit,_th,_td){ var us=LOTE_UNITS||[]; if(!us.length)ret
     return '<tr style="'+bg+'"><td style="'+_td+(tem?';border-bottom:0':'')+'"><b>'+esc(lojaLabel(u))+'</b>'+(tem?' <span style="font-size:10px;font-weight:800;color:#fff;background:#c77b12;border-radius:10px;padding:1px 7px">ADICIONAL</span>':'')+'</td><td class="col-modelo" style="'+_td+(tem?';border-bottom:0':'')+'">'+(vs.length>1?esc(varNome(unitVar(u))):'—')+'</td><td class="col-dias" style="'+_td+';text-align:right;font-variant-numeric:tabular-nums'+(tem?';border-bottom:0':'')+'">'+(num(u._prazo)?_d1(num(u._prazo))+' dias':'—')+'</td><td class="col-adic" style="'+_td+';text-align:right;font-variant-numeric:tabular-nums'+(tem?';border-bottom:0;color:#c77b12;font-weight:700':'')+'">'+(tem?fmt(p.adic):'—')+'</td><td style="'+_td+';text-align:right;font-weight:800;font-variant-numeric:tabular-nums'+(tem?';border-bottom:0':'')+'">'+fmt(num(u.total))+'</td></tr>'+det; }).join('');
   var tot=us.reduce(function(a,u){return a+num(u.total);},0), dias=us.reduce(function(a,u){return a+num(u._prazo);},0);
   return '<div style="'+_secTit+'">Unidades do lote</div><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Unidade</th><th class="col-modelo" style="text-align:left;'+_th+'">Modelo</th><th class="col-dias" style="text-align:right;'+_th+'">Dias</th><th class="col-adic" style="text-align:right;'+_th+'">Adicionais</th><th style="text-align:right;'+_th+'">Valor total</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr style="background:#f6f4fc"><td style="padding:11px 13px;font-weight:800;color:#3f2c8f">'+us.length+' unidades</td><td class="col-modelo"></td><td class="col-dias" style="padding:11px 13px;text-align:right;font-weight:700">'+_d1(dias)+' dias</td><td class="col-adic"></td><td style="padding:11px 13px;text-align:right;font-weight:800;color:#3f2c8f;font-variant-numeric:tabular-nums">'+fmt(tot)+'</td></tr></tfoot></table>'; }
-function docMacroHtml(_secTit,_td){ var mt=macroTotal(); if(!(mt>0))return ''; var n=(LOTE_UNITS||[]).length||1; var est=((S.macro&&S.macro.estruturas)||[]); var rc=macroRotaCusto();
-  var linhas=est.map(function(e){return '<tr><td style="'+_td+'">'+esc(e.nome)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(num(e.custo))+'</td></tr>';}).join('')+(rc>0?'<tr><td style="'+_td+'">Deslocamento do circuito ('+_d1(macroRotaKm())+' km)</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(rc)+'</td></tr>':'');
-  return '<div style="'+_secTit+'">Despesa macro do lote (rateada)</div><table style="width:100%;max-width:560px;border-collapse:collapse;font-size:12.5px"><tbody>'+linhas+'<tr style="background:#f6f4fc"><td style="padding:10px 13px;font-weight:800;color:#3f2c8f">Total macro · rateado em '+n+' unidades</td><td style="padding:10px 13px;text-align:right;font-weight:800;color:#3f2c8f;font-variant-numeric:tabular-nums">'+fmt(mt)+' <span style="font-weight:600;color:#7d7799;font-size:11.5px">('+fmt(mt/n)+'/unidade)</span></td></tr></tbody></table><div style="font-size:11.5px;color:#7d7799;margin-top:5px">Já incluída no valor de cada unidade.</div>'; }
+function docMacroHtml(_secTit,_td){ var mt=macroTotal(); if(!(mt>0))return ''; var n=(LOTE_UNITS||[]).length||1; var est=((S.macro&&S.macro.estruturas)||[]); var rc=macroRotaCusto(); var fI=1+num(S.impostoPct)/100;   // documento do cliente: valores COM imposto
+  var linhas=est.map(function(e){return '<tr><td style="'+_td+'">'+esc(e.nome)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(num(e.custo)*fI)+'</td></tr>';}).join('')+(rc>0?'<tr><td style="'+_td+'">Deslocamento do circuito ('+_d1(macroRotaKm())+' km)</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(rc*fI)+'</td></tr>':'');
+  return '<div style="'+_secTit+'">Despesa macro do lote (rateada)</div><table style="width:100%;max-width:560px;border-collapse:collapse;font-size:12.5px"><tbody>'+linhas+'<tr style="background:#f6f4fc"><td style="padding:10px 13px;font-weight:800;color:#3f2c8f">Total macro · rateado em '+n+' unidades</td><td style="padding:10px 13px;text-align:right;font-weight:800;color:#3f2c8f;font-variant-numeric:tabular-nums">'+fmt(mt*fI)+' <span style="font-weight:600;color:#7d7799;font-size:11.5px">('+fmt(mt*fI/n)+'/unidade)</span></td></tr></tbody></table><div style="font-size:11.5px;color:#7d7799;margin-top:5px">Valores com impostos. Já incluída no valor de cada unidade.</div>'; }
 function imprimirProposta(){   // lote: abre o DOCUMENTO DO LOTE e passa pelo PAINEL PRÉ-ENVIO antes de imprimir; demais propostas: impressão normal
   if(isLoteBase() && (LOTE_UNITS||[]).length){ verComoClienteLote(); setTimeout(preEnvioAbrir,300); return; }
   window.print(); }
@@ -3971,7 +3974,7 @@ function docPreset(t){
   save(); verComoClienteLote(); }
 function docTotaisHtml(_secTit){ var us=LOTE_UNITS||[]; if(!us.length)return ''; var t={serv:0,mat:0,desp:0,desl:0,equip:0,adic:0,descAd:0};
   us.forEach(function(u){ var p=precoDe(dadosLojaCalc(u)); if(!p)return; Object.keys(t).forEach(function(k){ t[k]+=p[k]; }); });
-  var tot=us.reduce(function(a,u){return a+num(u.total);},0);
+  var tot=us.reduce(function(a,u){return a+num(u.total);},0)+macroPendente();   // + logística do lote ainda fora das lojas (com imposto)
   var ln=function(l,v,s,k){ return '<div data-pt="'+(k||'')+'" style="display:flex;justify-content:space-between;gap:12px;padding:8px 14px;border-bottom:1px solid #efecf7;font-size:13px"><span>'+l+(s?' <span style="font-size:11px;color:#7d7799">'+s+'</span>':'')+'</span><b style="font-variant-numeric:tabular-nums">'+fmt(v)+'</b></div>'; };
   return '<div style="'+_secTit+'">Resumo de valores do lote</div><div style="border:1px solid #e3ddf6;border-radius:12px;overflow:hidden;max-width:620px">'
     +ln('Valor total de serviços',t.serv,'','res:serv')+ln('Valor total de material',t.mat,'','res:mat')+ln('Valor total de despesas',t.desp,'rateadas','res:desp')+ln('Deslocamento',t.desl,'','res:desl')+ln('Locações',t.equip,'','res:equip')
@@ -4443,15 +4446,15 @@ function recalc(){
   BLKS.forEach(b=>{ const on=blocoAtivo(b.key); preco[b.key]=on?blkSub(b.key):0; cst[b.key]=on?blkCusto(b.key):0; });
   // DIÁRIAS da equipe (alimentação+hospedagem): entram a CUSTO (sem lucro); o imposto incide sobre tudo depois
   const diaC=diariasCusto(), diaP=diariasPreco();   // diárias: custo + % geral de Outras despesas
-  const rat=ratioUnit(); const ratPreco=comboActive()?0:rat; const ratCusto=comboActive()?rat:0;   // VALOR COMBINADO É SOBERANO: com ele, o rateio do macro vira CUSTO (reduz a margem, não soma ao preço); sem ele, soma ao preço
-  const bruto=preco.servicos+preco.equip+preco.despesas+preco.materiais+diaP;
+  const rat=ratioUnit(); const ratPreco=comboActive()?0:rat; const ratCusto=rat;   // VALOR COMBINADO É SOBERANO: com ele, o rateio do macro vira CUSTO (reduz a margem); sem ele, soma ao preço — SEMPRE dentro do desconto e do IMPOSTO (nota emitida = imposto existe)
+  const bruto=preco.servicos+preco.equip+preco.despesas+preco.materiais+diaP+ratPreco;
   const desc=bruto*num(S.descontoPct)/100;
   const adicP=adicPrecoTotal(), descAd=S.descontoAdic?adicAbatidoTotal():0;   // desconto comercial que abate os ADICIONAIS (a loja volta ao valor combinado; custo real mantido → lucro cai no valor absorvido)
   const liquido=bruto-desc-descAd;                          // valor antes do imposto
   { const l=document.getElementById('ln_descad'); if(l) l.style.display=(adicP>0)?'':'none'; const sd=document.getElementById('s_descad'); if(sd) sd.textContent=S.descontoAdic?('− '+fmt(descAd)):'não aplicado'; const bt=document.getElementById('descad_tog'); if(bt){ bt.textContent=S.descontoAdic?'abatido ✓':'abater'; bt.style.background=S.descontoAdic?'#e6f5ec':'var(--surf)'; bt.style.color=S.descontoAdic?'#17693f':''; } }
   const imp=liquido*num(S.impostoPct)/100;
   const total=liquido+imp;                                  // imposto SOMA ao total (repasse ao cliente)
-  const custo=cst.servicos+cst.equip+cst.despesas+cst.materiais+diaC+ratCusto;   // custo real (auto) — inclui o rateio do macro quando há valor combinado
+  const custo=cst.servicos+cst.equip+cst.despesas+cst.materiais+diaC+ratCusto;   // custo real (auto) — inclui o rateio do macro (é custo com ou sem valor combinado)
   const lucro=liquido-custo;                                // imposto é repasse — NÃO reduz o lucro
   const marg=liquido?lucro/liquido*100:0;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
@@ -4459,8 +4462,8 @@ function recalc(){
   set('s_desp',fmt(preco.despesas+diaP+ratPreco)); set('s_mat',fmt(preco.materiais));   // Despesas inclui alimentação + hospedagem + rateio (só quando NÃO há valor combinado)
   set('s_diarias',fmt(diaP)); const lndia=document.getElementById('ln_diarias'); if(lndia) lndia.style.display='none';   // linha própria removida — vai dentro de Despesas
   try{ gloteRender(); }catch(_){}   // coluna Global do lote (lojas gravadas)
-  set('s_bruto',fmt(bruto+ratPreco)); set('s_desc','− '+fmt(desc));
-  set('s_total',fmt(total+ratPreco)); set('s_preco',fmt(total+ratPreco));
+  set('s_bruto',fmt(bruto)); set('s_desc','− '+fmt(desc));
+  set('s_total',fmt(total)); set('s_preco',fmt(total));
   set('s_imp','+ '+fmt(imp)); set('s_desc_pc','('+_d1(num(S.descontoPct))+'%)'); set('s_imp_pc','('+_d1(num(S.impostoPct))+'%)'); set('s_custo',fmt(custo));
   const lu=document.getElementById('s_lucro'), mg=document.getElementById('s_marg');
   if(lu)lu.textContent=fmt(lucro); if(mg)mg.textContent=marg.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
@@ -4507,7 +4510,7 @@ function recalc(){
   // prazo espelho (direita) — reflete o prazo da mão de obra; avisa quando manual
   const sp=document.getElementById('s_prazo'); if(sp)sp.textContent=fmtPrazo(obraPrazo());
   const spm=document.getElementById('s_prazo_man'); if(spm)spm.style.display=prazoManualOn()?'':'none';
-  S._total=total; S._custo=custo; S._lucro=lucro;
+  S._total=total; S._custo=custo; S._lucro=lucro; S._ratNoTotal=ratPreco;   // fatia do macro JÁ dentro deste total (com imposto) — o total do lote não soma de novo
   writeback(total);
 }
 /* aviso de validade vencida (interno, some na proposta) */
