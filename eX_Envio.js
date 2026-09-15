@@ -325,7 +325,8 @@ async function gerarPDFLote(nome){
   const jaAberto=!!document.getElementById('vcOverlay');
   verComoClienteLote();
   const emu=document.createElement('style'); emu.id='envPrintEmuLote';
-  emu.textContent=cssDeImpressao().replace(/body\s*>\s*\*:not\(#vcOverlay\)\s*\{[^}]*\}/g,'')+`\n.env-papel #vcBar,.env-papel #vcWarn,.env-papel #vcMenu,.env-papel .vctog,.env-papel .docoff,.env-papel .noprint{display:none!important}
+  // o documento do lote já é estilizado por dentro; das regras de impressão só interessam as dele (as da folha escondiam tudo fora do overlay)
+  emu.textContent=`.env-papel #vcBar,.env-papel #vcWarn,.env-papel #vcMenu,.env-papel .vctog,.env-papel .docoff,.env-papel .noprint{display:none!important}
     #vcSheet.env-papel.off-lojas-modelo .col-modelo,#vcSheet.env-papel.off-lojas-dias .col-dias,#vcSheet.env-papel.off-lojas-adic .col-adic{display:none!important}`;
   document.head.appendChild(emu);
   await new Promise(r=>setTimeout(r,500));   // mapa e fontes
