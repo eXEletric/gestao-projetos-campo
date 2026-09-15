@@ -1551,12 +1551,25 @@ function diariasRowsHtml(){   // <tr> derivadas dentro da tabela de Despesas (11
     <td class="pint"></td>
   </tr>`).join('');
 }
-function equipePrintHtml(){   // bloco "Equipe em campo" (só cliente/impressão) — quem e quantos, sem valor
+function docEfetivoHtml(_secTit,_th,_td){   // documento do lote: efetivo alocado por unidade (profissionais × quantidade, sem valores) — chave "efetivo"
+  var us=LOTE_UNITS||[]; if(!us.length)return ''; var fn={}, ordem=[], prz=[];
+  us.forEach(function(u){ var keep=S; try{ S=_deep(dadosLojaCalc(u)); sanitize(); aggMaoObra().forEach(function(f){ var k=f.funcao+' · '+f.nivel; if(!fn[k]){ fn[k]={min:f.pes,max:f.pes}; ordem.push(k); } fn[k].min=Math.min(fn[k].min,f.pes); fn[k].max=Math.max(fn[k].max,f.pes); }); prz.push(obraPrazo()); }catch(_){} finally{ S=keep; } });
+  if(!ordem.length)return '';
+  var totMin=ordem.reduce(function(a,k){return a+fn[k].min;},0), totMax=ordem.reduce(function(a,k){return a+fn[k].max;},0);
+  var faixa=function(a,b){ return a===b?String(a):(a+' a '+b); };
+  var linhas=ordem.map(function(k){ return '<tr><td style="'+_td+'">'+esc(k)+'</td><td style="'+_td+';text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+faixa(fn[k].min,fn[k].max)+'</td></tr>'; }).join('');
+  var pmin=Math.min.apply(null,prz), pmax=Math.max.apply(null,prz);
+  return '<div data-pt="efetivo" style="margin-top:18px"><div style="'+_secTit+'">Efetivo alocado para a execução</div>'
+    +'<div style="font-size:12.5px;color:#5f5b72;margin:0 0 8px">Equipe dedicada por unidade · <b>'+faixa(totMin,totMax)+' profissionais</b> · prazo de '+fmtPrazo(pmin)+(pmax-pmin>0.05?' a '+fmtPrazo(pmax):'')+' por unidade. Mão de obra técnica já inclusa nos valores.</div>'
+    +'<table style="width:100%;max-width:560px;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Profissional</th><th style="text-align:right;'+_th+'">Colaboradores por unidade</th></tr></thead><tbody>'+linhas+'</tbody></table></div>'; }
+function setEquipeOn(){ S.equipeOn=(S.equipeOn===false); save(); try{ refreshMaoPanel(); }catch(_){} cloudMsg(S.equipeOn?'efetivo aparece na proposta':'efetivo oculto na proposta'); }
+function equipePrintHtml(){   // bloco "Efetivo alocado para a execução" (só cliente/impressão) — quem e quantos, sem valor
+  if(S&&S.equipeOn===false) return '';
   const fs=aggMaoObra(); if(!fs.length) return '';
   const pes=fs.reduce((a,f)=>a+num(f.pes),0);
   const rows=fs.map(f=>`<tr><td>${esc(f.funcao)} · ${esc(f.nivel)}</td><td class="r">${f.pes}</td><td class="r">${fmtPrazo(diariasModo()==='fim'?obraPrazo():f.dias)}</td></tr>`).join('');
   return `<div class="eqprint">
-    <div class="eqhd"><span class="material-symbols-rounded">groups</span>Equipe em campo<span class="eqcnt">${pes} colaborador${pes!=1?'es':''}</span></div>
+    <div class="eqhd"><span class="material-symbols-rounded">groups</span>Efetivo alocado para a execução<span class="eqcnt">${pes} colaborador${pes!=1?'es':''}</span></div>
     <div class="eqsub">Mão de obra técnica já inclusa no valor dos Serviços.</div>
     <table class="eqtbl"><thead><tr><th>Profissional</th><th class="r">Colaboradores</th><th class="r">Diárias</th></tr></thead><tbody>${rows}</tbody></table>
   </div>`;
@@ -2214,7 +2227,7 @@ function efetivoHtml(){
     <button class="diagear" onclick="openDiaBase()" title="Valores base — ver / editar"><span class="material-symbols-rounded">settings</span></button>
   </div>${needBase?`<div class="dianote2"><span class="material-symbols-rounded">edit</span>Defina o <b>valor base</b> de alimentação/hospedagem na engrenagem <span class="material-symbols-rounded" style="font-size:14px">settings</span> — as diárias só entram no total depois disso.</div>`:''}`;
   return `<div class="efcard noprint">
-    <div class="efhd"><span class="material-symbols-rounded">groups</span><h3>Mão de obra da proposta</h3><span class="efcnt"><span class="material-symbols-rounded">event</span>${fmtPrazo(gargalo)}</span></div>
+    <div class="efhd"><span class="material-symbols-rounded">groups</span><h3>Mão de obra da proposta</h3><button class="olhotog ${S.equipeOn===false?'off':'on'}" style="margin-left:8px" onclick="setEquipeOn()" title="Efetivo alocado (profissionais e quantidades, sem valores) na proposta do cliente"><span class="material-symbols-rounded">${S.equipeOn===false?'visibility_off':'visibility'}</span>${S.equipeOn===false?'efetivo oculto no PDF':'efetivo no PDF'}</button><span class="efcnt"><span class="material-symbols-rounded">event</span>${fmtPrazo(gargalo)}</span></div>
     <div class="efhint">As <b>funções somadas</b> dos serviços. Mais pessoas → menos prazo; o <b>custo não muda</b>. O gargalo (função mais carregada) está em âmbar e dita o prazo.</div>
     ${ctrl}
     <div class="moahd"><span>Função · nível</span><span>Pessoas</span><span>Prazo</span><span>Custo M.O.</span><span>Alimentação</span><span>Hospedagem</span><span>Soma diárias</span></div>
@@ -3449,7 +3462,7 @@ function verComoClienteLote(){
   // 15/09 (pedido do dono, provisório — chaves depois): logística com raio · modelos com serviços e valores finais · unidades c/ adicionais destacados · macro rateado · resumo de valores
   _ds['lote.fatores']='<div data-pt="mapa">'+(_ds['lote.fatores']||'')+'</div><div data-pt="logistica">'+docLogisticaHtml(_secTit,_th,_td)+'</div>';
   _ds['lote.var']=docOpt('anexo')?docModelosHtml(_secTit,_th,_td,'resumo'):docModelosHtml(_secTit,_th,_td);   // com anexo: corpo só com o resumo de valores de cada modelo
-  _ds['lote.lista']=docLojasHtml(_secTit,_th,_td);
+  _ds['lote.lista']=docLojasHtml(_secTit,_th,_td)+docEfetivoHtml(_secTit,_th,_td);
   _ds['lote.macro']=docMacroHtml(_secTit,_td);
   _ds['lote.global']=docTotaisHtml(_secTit)+'<div data-pt="indicadores">'+(_ds['lote.global']||'').replace(_dsTotal,'')+'</div>';
   // MENU da visão do cliente: TUDO é renderizado; o que está desligado fica cinza na tela (docoff) e SOME no PDF (@media print)
@@ -4004,7 +4017,7 @@ function docMenuHtml(){
     +'<div class="vmh">Partes do documento</div>'+secs; }
 function docInlineToggles(ov){   // CHAVES EM CIMA DE CADA PARTE do documento (só na tela; somem na impressão)
   var nm={}; DOC_MENU.forEach(function(m){ nm[m.sec]=m.nm; if(Array.isArray(m.pts)) m.pts.forEach(function(p){ nm[p[0]]=p[1]; }); });
-  nm['modelo:itens']='Lista de serviços com valores'; nm['modelo:resumo']='Resumo de valores do modelo';
+  nm['modelo:itens']='Lista de serviços com valores'; nm['efetivo']='Efetivo alocado para a execução'; nm['modelo:resumo']='Resumo de valores do modelo';
   var mk=function(on,label,onclick,nivel){ return '<div class="vctog '+nivel+(on?' on':' off')+'" onclick="'+onclick+'"><span class="sw"><i></i></span><span class="lb">'+label+'</span><span class="material-symbols-rounded" style="font-size:15px">'+(on?'visibility':'visibility_off')+'</span><span class="st">'+(on?'no PDF':'oculto no PDF')+'</span></div>'; };
   var sheet=ov.querySelector('#vcSheet'); if(!sheet)return;
   sheet.querySelectorAll('.docsec').forEach(function(sec){ var id=sec.getAttribute('data-sec'); sec.insertAdjacentHTML('beforebegin', mk(fxVis(id)!==false, esc(nm[id]||id), "docSecTog('"+id+"')", 'n1')); });
