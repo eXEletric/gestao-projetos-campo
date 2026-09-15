@@ -3350,7 +3350,7 @@ var FX_DEF=[
   {id:'lote.modo',nm:'Modo: Estimativa × Detalhado',ic:'splitscreen'},
   {id:'lote.modelo',nm:'Escopo padrão (modelo)',ic:'bookmark'},
   {id:'lote.ver',nm:'Ver: Escopo somado × Por loja',ic:'visibility'},
-  {id:'lote.escopo',nm:'Escopo somado do lote',ic:'summarize'},
+  {id:'lote.escopo',nm:'Serviços global (Σ lojas)',ic:'summarize'},
   {id:'lote.custo',nm:'Custo / lucro por loja (chave)',ic:'payments'},
   {id:'lote.unid',nm:'Por unidade · adicionar loja',ic:'add_business'},
   {id:'lote.lista',nm:'Lista de lojas',ic:'storefront'},
@@ -3484,7 +3484,7 @@ function contratanteCnpj(){ const id=S.contratanteId||(LOTE_ROW&&LOTE_ROW.contra
 function lojaLabel(o){ const n=(o&&o.dados&&o.dados.finNum)||''; return (n?n+' · ':'')+((o&&(o.cliente_final||o.numero))||'unidade'); }   // nº da loja + nome
 function fmtCnpj(v){ v=(v||'').replace(/\D/g,''); if(v.length!==14) return v||''; return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12); }
 function empresaCnpj(){ return (S.cnpjEmpresa && String(S.cnpjEmpresa).trim())? S.cnpjEmpresa : fmtCnpj((typeof EMP!=='undefined'&&EMP&&EMP.cnpj)||''); }   // eX: manual (se houver) senão do cadastro da empresa
-function resumoEscopoHtml(){   // Escopo somado do lote: SERVIÇOS + MATERIAIS (as duas somas juntas)
+function resumoEscopoHtml(){   // Serviços global do lote (Σ lojas) — o material somado fica só na faixa Material global (sem repetir)
   var _th='text-align:left;padding:0 14px 7px;font-size:10px;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3);border-bottom:1px solid var(--line2)';
   var _thr='text-align:right;padding:0 14px 7px;font-size:10px;text-transform:uppercase;color:var(--tx3);border-bottom:1px solid var(--line2)';
   var _td='padding:9px 14px;border-bottom:1px solid var(--line)';
@@ -3493,14 +3493,10 @@ function resumoEscopoHtml(){   // Escopo somado do lote: SERVIÇOS + MATERIAIS (
   (LOTE_UNITS||[]).forEach(function(u){ const sv=(u.dados&&u.dados.servicos)||[]; sv.forEach(function(r){ const k=r.desc||'—'; if(!map[k])map[k]={desc:k,und:r.und||'',qtd:0}; map[k].qtd+=num(r.qtd); }); });
   const srows=Object.keys(map).map(function(k){return map[k];}).filter(function(r){return r.qtd>0;});
   const sBody=srows.length?srows.map(function(r){ return '<tr><td style="'+_td+'">'+esc(r.desc)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums;font-weight:700">'+_d1(r.qtd)+'</td><td style="'+_td+';color:var(--tx3)">'+esc(r.und)+'</td></tr>'; }).join(''):'<tr><td colspan="3" style="padding:16px 14px;color:var(--tx3)">Sem serviços no escopo ainda.</td></tr>';
-  const mrows=loteMatSoma(); const mtot=mrows.reduce(function(a,r){return a+r.custo;},0);
-  const mBody=mrows.length?mrows.map(function(r){ return '<tr><td style="'+_td+'">'+esc(r.desc)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums;font-weight:700">'+_d1(r.qtd)+'</td><td style="'+_td+';color:var(--tx3)">'+esc(r.und)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+(r.custo>0?fmt(r.custo):'—')+'</td></tr>'; }).join(''):'<tr><td colspan="4" style="padding:16px 14px;color:var(--tx3)">Sem material ainda.</td></tr>';
   return '<div style="padding:4px 0">'
-    +'<div style="padding:10px 14px;color:var(--tx3);font-size:12px">Escopo somado em '+((LOTE_UNITS||[]).length)+' loja(s) — <b>serviços</b> e <b>materiais</b> que vão pras unidades.</div>'
+    +'<div style="padding:10px 14px;color:var(--tx3);font-size:12px">Serviços somados em '+((LOTE_UNITS||[]).length)+' loja(s). O material do lote fica na faixa <b>Material global (Σ lojas)</b>.</div>'
     +'<div style="'+_sec+'">Serviços</div>'
     +'<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="'+_th+'">Serviço (escopo)</th><th style="'+_thr+'">Σ do lote</th><th style="'+_th+'">und</th></tr></thead><tbody>'+sBody+'</tbody></table>'
-    +'<div style="'+_sec+'">Materiais <span style="color:var(--tx3);font-weight:400;text-transform:none">· a custo (interno)</span></div>'
-    +'<table style="width:100%;border-collapse:collapse;font-size:13px"><thead><tr><th style="'+_th+'">Material</th><th style="'+_thr+'">Σ qtd</th><th style="'+_th+'">und</th><th style="'+_thr+'">custo total</th></tr></thead><tbody>'+mBody+'</tbody><tfoot><tr><td style="padding:10px 14px;font-weight:800;color:var(--pri);border-top:2px solid var(--line2)">Total de material</td><td></td><td></td><td style="padding:10px 14px;text-align:right;font-weight:800;color:var(--pri);border-top:2px solid var(--line2);font-variant-numeric:tabular-nums">'+fmt(mtot)+'</td></tr></tfoot></table>'
     +'</div>';
 }
 function setMacroRateio(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rateio=!!v; S.macro._total=macroTotal(); S.macro._nun=(LOTE_UNITS||[]).length; save(); try{ pushOrc(); }catch(_){}; injectLoteBasePanel(); }
