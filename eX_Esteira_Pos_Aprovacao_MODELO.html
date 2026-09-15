@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MODELO · Esteira pós-aprovação</title>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0" rel="stylesheet">
+<style>
+:root{--bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--pri:#533ab7;--pri-bg:#eeedfe;--blue:#185fa5;--green:#3b6d11;--amber:#ba7517;--red:#a32d2d;--gold:#d4af37}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
+.material-symbols-rounded{font-family:'Material Symbols Rounded';line-height:1;vertical-align:middle;font-size:20px}
+.app{max-width:1280px;margin:0 auto;padding:16px 18px 60px}
+.btn{font-size:13px;padding:8px 13px;border-radius:8px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:6px}
+.btn:hover{background:var(--surf2)}.btn .material-symbols-rounded{font-size:18px}
+.btn-p{background:var(--pri);color:#fff;border-color:var(--pri)}.btn-p:hover{background:#472f9e}
+.btn-s{font-size:12px;padding:5px 10px}.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn-red{color:var(--red);border-color:#e7b9b9}
+.modelo{background:#111110;color:#f3f1ea;border-radius:12px;padding:12px 14px;display:flex;gap:14px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.modelo h1{font-size:15px}.modelo p{font-size:12px;color:#c9c6bc}
+.seg{display:inline-flex;background:#2a2a27;border-radius:9px;padding:3px}
+.seg button{border:none;background:none;color:#c9c6bc;font:600 12px inherit;padding:6px 11px;border-radius:7px;cursor:pointer}
+.seg button.on{background:#f3f1ea;color:#111110}
+.seglb{font-size:10.5px;text-transform:uppercase;letter-spacing:.05em;color:#8f8c83;font-weight:800;margin-right:4px}
+.grid{display:grid;grid-template-columns:540px 1fr;gap:16px;align-items:start}
+@media(max-width:1000px){.grid{grid-template-columns:1fr}}
+.board{display:flex;gap:10px}
+.kcol{flex:1;background:var(--surf2);border-radius:12px;padding:8px;min-height:200px}
+.kcol-h{font-size:12.5px;font-weight:700;padding:4px 6px 8px;display:flex;gap:6px;align-items:center}
+.kcol-ct{font-size:11px;font-weight:700;color:var(--tx2);background:var(--surf);border-radius:10px;padding:1px 8px}
+.kcard{background:var(--surf);border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:9px;padding:10px 11px;box-shadow:0 0 0 2px var(--pri-bg)}
+.kcard-nm{font-size:12.5px;font-weight:700}.kcard-cli{font-size:11px;color:var(--tx3);margin-top:3px}
+.vez{display:inline-flex;align-items:center;gap:4px;font-size:10.5px;font-weight:700;padding:3px 8px;border-radius:8px;margin-top:6px}
+.vez .material-symbols-rounded{font-size:13px}.vez.ok{background:var(--gold);color:#2b2000}
+.kprox{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--pri);margin-top:5px}.kprox .material-symbols-rounded{font-size:14px}
+.kprox.fin{color:var(--amber)}.kprox.done{color:var(--green)}
+.mini{display:flex;gap:3px;margin-top:7px}.mini i{flex:1;height:4px;border-radius:3px;background:var(--surf2)}.mini i.ok{background:var(--green)}.mini i.cur{background:var(--pri)}
+.empty{font-size:11.5px;color:var(--tx3);padding:8px}
+.detail{background:var(--surf);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.dhead{display:flex;gap:12px;align-items:center;margin-bottom:12px}
+.davatar{width:42px;height:42px;border-radius:10px;background:var(--pri-bg);color:var(--pri);font-weight:800;display:grid;place-items:center}
+.dhead h2{font-size:16px}.sub{font-size:12px;color:var(--tx3)}
+.est-t{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);font-weight:800;margin:4px 0 10px;display:flex;gap:6px;align-items:center}
+.step{display:flex;gap:12px;position:relative;padding-bottom:14px}
+.step:not(:last-child)::before{content:'';position:absolute;left:15px;top:32px;bottom:0;width:2px;background:var(--line)}
+.step.ok:not(:last-child)::before{background:var(--green)}
+.sic{flex:0 0 32px;height:32px;border-radius:50%;display:grid;place-items:center;background:var(--surf2);color:var(--tx3);z-index:1}
+.step.ok .sic{background:#e9f2dd;color:var(--green)}.step.cur .sic{background:var(--pri);color:#fff}.step.gold .sic{background:var(--gold);color:#2b2000}
+.step.lock{opacity:.55}
+.sb{flex:1;min-width:0;border:1px solid var(--line);border-radius:12px;padding:10px 12px}
+.step.cur .sb{border:2px solid var(--pri)}
+.sh{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.sh b{font-size:13.5px}
+.st{font-size:10px;font-weight:800;border-radius:6px;padding:1px 7px;text-transform:uppercase;letter-spacing:.03em}
+.st.ok{background:#e9f2dd;color:var(--green)}.st.cur{background:var(--pri-bg);color:var(--pri)}.st.lock{background:var(--surf2);color:var(--tx3)}.st.dev{background:#fcebeb;color:var(--red)}
+.sd{font-size:12px;color:var(--tx2);margin-top:3px}
+.acts{display:flex;gap:6px;flex-wrap:wrap;margin-top:9px}
+.doc{display:inline-flex;align-items:center;gap:6px;font-size:12px;background:var(--surf2);border-radius:8px;padding:5px 9px;margin-top:7px}
+.doc .material-symbols-rounded{font-size:16px;color:var(--pri)}
+.note{font-size:12px;border-radius:9px;padding:8px 10px;margin-top:8px;display:flex;gap:7px;align-items:flex-start}
+.note .material-symbols-rounded{font-size:17px}
+.note.info{background:var(--pri-bg);color:var(--pri)}.note.warn{background:#faeeda;color:#8a560f}.note.red{background:#fcebeb;color:var(--red)}.note.dark{background:#111110;color:#f3f1ea}
+.chk{display:flex;gap:7px;align-items:center;font-size:12.5px;margin-top:6px;cursor:pointer}.chk input{width:16px;height:16px;accent-color:var(--pri)}
+table{width:100%;border-collapse:collapse;margin-top:8px;font-size:12.5px}
+td,th{padding:7px 6px;border-top:1px solid var(--line);text-align:left;vertical-align:middle}
+th{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);border-top:none}
+.pill{font-size:10.5px;font-weight:700;border-radius:8px;padding:2px 8px;white-space:nowrap}
+.pill.ok{background:#e9f2dd;color:var(--green)}.pill.wait{background:#faeeda;color:var(--amber)}.pill.no{background:var(--surf2);color:var(--tx3)}
+.ov{position:fixed;inset:0;background:rgba(20,14,40,.55);display:none;z-index:50;padding:20px;overflow:auto}.ov.on{display:block}
+.box{background:var(--surf);width:min(520px,95vw);margin:6vh auto;border-radius:14px;padding:18px 20px}
+.box h3{font-size:16px;margin-bottom:8px;display:flex;gap:8px;align-items:center}
+.lb{display:block;font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);margin:10px 0 4px}
+.fi{width:100%;border:1px solid var(--line2);border-radius:8px;padding:7px 9px;font-size:13px;background:var(--surf)}
+.opts{display:flex;gap:6px;flex-wrap:wrap}
+.opt{font-size:12.5px;padding:7px 11px;border-radius:8px;border:1px solid var(--line2);background:var(--surf);cursor:pointer;display:inline-flex;gap:5px;align-items:center}
+.opt.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.foot{display:flex;justify-content:flex-end;gap:8px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
+#toast{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#111110;color:#f3f1ea;font-size:12.5px;padding:11px 16px;border-radius:10px;opacity:0;transition:.25s;z-index:99;max-width:560px}
+#toast.on{opacity:1}
+.drop{border:2px dashed var(--line2);border-radius:10px;padding:14px;text-align:center;font-size:12.5px;color:var(--tx3)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="modelo">
+    <div style="flex:1;min-width:260px"><h1>MODELO clicável · o que acontece depois da aprovação</h1><p>Nada aqui grava no sistema. Clique nos botões para andar a esteira; troque o caso e quem está logado.</p></div>
+    <div><span class="seglb">Caso</span><span class="seg" id="segCaso"></span></div>
+    <div><span class="seglb">Logado como</span><span class="seg" id="segPerfil"></span></div>
+    <button class="btn btn-s" onclick="reset()"><span class="material-symbols-rounded">restart_alt</span>Recomeçar</button>
+  </div>
+  <div class="grid">
+    <div>
+      <div class="est-t"><span class="material-symbols-rounded">view_kanban</span>Funil</div>
+      <div class="board" id="board"></div>
+      <div class="note info" style="margin-top:12px"><span class="material-symbols-rounded">info</span><span>O card só vai para <b>Obra / execução</b> quando a <b>primeira OS da eX</b> é gerada — e a OS só libera depois do <b>Financeiro</b>.</span></div>
+    </div>
+    <div class="detail" id="detail"></div>
+  </div>
+</div>
+<div class="ov" id="ov" onclick="if(event.target===this)fechar()"><div class="box" id="box"></div></div>
+<div id="toast"></div>
+<script>
+const ms=(i,s)=>`<span class="material-symbols-rounded"${s?` style="${s}"`:''}>${i}</span>`;
+const CASOS={
+  avulsa:{nome:'Obra única',titulo:'AOC · AOC TESTE · orçamento teste',cli:'AOC',lojas:[{id:'l1',nome:'AOC TESTE'}]},
+  lote:{nome:'Lote',titulo:'Copeland · Onda 2 GO/DF (lote)',cli:'COPELAND',lojas:[{id:'a',nome:'Assaí Goiânia #112'},{id:'b',nome:'Atacadão Brasília #208'},{id:'c',nome:'Assaí Anápolis #131'},{id:'d',nome:'Atacadão Aparecida #220'}]}
+};
+const PERFIS={comercial:'Comercial',financeiro:'Financeiro',master:'Adm master'};
+const NOME={comercial:'Marina (Comercial)',financeiro:'Paula (Financeiro)',master:'André (Adm master)'};
+let caso='avulsa', perfil='comercial', E;
+function reset(){ E={form:null,fin:null,dev:null,chk:{fat:false,pag:false,cred:false},os:{},avisado:false}; render(); }
+const osN=()=>Object.keys(E.os).length, lojas=()=>CASOS[caso].lojas;
+function passoAtual(){ if(!E.form) return 2; if(!E.fin) return 3; if(osN()<lojas().length) return 4; return 6; }
+function toast(t){ const el=document.getElementById('toast'); el.innerHTML=t; el.classList.add('on'); clearTimeout(toast._t); toast._t=setTimeout(()=>el.classList.remove('on'),4200); }
+function segs(){
+  document.getElementById('segCaso').innerHTML=Object.keys(CASOS).map(k=>`<button class="${caso===k?'on':''}" onclick="caso='${k}';reset()">${CASOS[k].nome}</button>`).join('');
+  document.getElementById('segPerfil').innerHTML=Object.keys(PERFIS).map(k=>`<button class="${perfil===k?'on':''}" onclick="perfil='${k}';render()">${PERFIS[k]}</button>`).join('');
+}
+function cardHTML(){
+  const p=passoAtual(), C=CASOS[caso];
+  const prox={2:[ms('description'),'Formalizar: contrato ou OS do cliente',''],3:[ms('account_balance'),'Aguardando liberação do Financeiro','fin'],
+    4:[ms('assignment'),caso==='lote'?`Gerar OS por loja (${osN()}/${lojas().length})`:'Gerar OS da eX',''],6:[ms('check_circle'),caso==='lote'?`${lojas().length} atendimentos criados`:'Atendimento criado no Operacional','done']}[p];
+  const mini=[1,2,3,4,5].map(i=>`<i class="${i<p||(i===5&&p===6)||(i===4&&osN()>0&&p===6)?'ok':(i===p||(i===5&&p===4&&osN()>0)?'cur':'')}"></i>`).join('');
+  return `<div class="kcard"><div class="kcard-nm">${C.titulo}</div><div class="kcard-cli">${C.cli}${caso==='lote'?' · '+lojas().length+' lojas':''}</div>
+    <div class="vez ok">${ms('verified')}Aprovada · R1</div><div class="kprox ${prox[2]}">${prox[0]}${prox[1]}</div><div class="mini">${mini}</div></div>`;
+}
+function renderBoard(){ const exec=osN()>0;
+  document.getElementById('board').innerHTML=`<div class="kcol"><div class="kcol-h">Em negociação <span class="kcol-ct">${exec?0:1}</span></div>${exec?'<div class="empty">—</div>':cardHTML()}</div>
+    <div class="kcol"><div class="kcol-h">Obra / execução <span class="kcol-ct">${exec?1:0}</span></div>${exec?cardHTML():'<div class="empty">Entra quando a 1ª OS da eX for gerada.</div>'}</div>`; }
+function step(n,ic,titulo,estado,corpo){ const cls=estado==='ok'?'ok':estado==='cur'?'cur':'lock';
+  const tag={ok:'<span class="st ok">feito</span>',cur:'<span class="st cur">agora</span>',lock:'<span class="st lock">aguarda o anterior</span>'}[cls];
+  return `<div class="step ${cls} ${n===1?'gold':''}"><div class="sic">${ms(estado==='ok'&&n!==1?'check':ic,'font-size:17px')}</div><div class="sb"><div class="sh"><b>${n}. ${titulo}</b>${n===1?'<span class="st" style="background:var(--gold);color:#2b2000">aprovada</span>':tag}</div>${corpo||''}</div></div>`; }
+function renderDetail(){
+  const C=CASOS[caso], p=passoAtual(), lote=caso==='lote';
+  // 2 formalização
+  let f2='';
+  if(E.form){ f2=`<div class="doc">${ms(E.form.tipo==='contrato'?'contract':'assignment')}${E.form.tipo==='contrato'?'Contrato assinado':'OS do cliente nº '+E.form.num} · ${E.form.data} · ${E.form.origem}</div><div class="sd">Registrado por ${E.form.por}${lote?' · vale para o lote inteiro':''}</div>`; }
+  else if(p===2){ f2=`<div class="sd">Obrigatório: <b>contrato assinado</b> ou <b>OS/pedido do cliente</b>. Sem um dos dois, não segue.${lote?' Um documento vale para o <b>lote inteiro</b>.':''}</div>
+    ${E.dev?`<div class="note red">${ms('undo')}<span><b>Devolvido pelo Financeiro:</b> ${E.dev}</span></div>`:''}
+    <div class="acts"><button class="btn btn-s btn-p" onclick="formUI('contrato')">${ms('contract')}Anexar contrato assinado</button><button class="btn btn-s btn-p" onclick="formUI('os')">${ms('assignment')}Anexar OS do cliente</button><button class="btn btn-s" onclick="formUI('os',true)">${ms('attach_email')}Usar anexo de e-mail</button></div>`; }
+  // 3 financeiro
+  let f3='';
+  if(E.fin){ f3=`<div class="sd">Liberado por <b>${E.fin.por}</b> em ${E.fin.data}${E.fin.master?' <span class="st dev" style="background:#111110;color:#f3f1ea">como financeiro</span>':''}${E.fin.obs?' · “'+E.fin.obs+'”':''}</div>`; }
+  else if(p===3){
+    if(perfil==='comercial') f3=`<div class="sd">O Financeiro confere e libera. Você não consegue liberar.</div><div class="acts"><button class="btn btn-s" ${E.avisado?'disabled':''} onclick="E.avisado=true;toast('Financeiro avisado (vira tarefa pra ele).');render()">${ms('notifications')}${E.avisado?'Financeiro avisado':'Avisar o Financeiro'}</button></div>`;
+    else { const c=E.chk, ok=c.fat&&c.pag&&c.cred;
+      f3=`${perfil==='master'?`<div class="note dark">${ms('admin_panel_settings')}<span>Você é <b>Adm master</b>: está liberando <b>como Financeiro</b>. Fica registrado assim.</span></div>`:''}
+      <div class="sd" style="margin-top:6px">Conferir antes de liberar${lote?' (o lote inteiro)':''}:</div>
+      <label class="chk"><input type="checkbox" ${c.fat?'checked':''} onchange="E.chk.fat=this.checked;render()">Dados de faturamento do cliente (CNPJ, endereço, e-mail da NF)</label>
+      <label class="chk"><input type="checkbox" ${c.pag?'checked':''} onchange="E.chk.pag=this.checked;render()">Condição de pagamento combinada</label>
+      <label class="chk"><input type="checkbox" ${c.cred?'checked':''} onchange="E.chk.cred=this.checked;render()">Situação do cliente (crédito / pendências)</label>
+      <input class="fi" id="finObs" style="margin-top:8px" placeholder="Observação (opcional)">
+      <div class="acts"><button class="btn btn-s btn-p" ${ok?'':'disabled'} onclick="liberar()">${ms('verified_user')}Liberar</button><button class="btn btn-s btn-red" onclick="devolverUI()">${ms('undo')}Devolver com motivo</button></div>`; }
+  }
+  // 4 OS
+  let f4='';
+  if(p>=4){ const podeGerar=perfil!=='financeiro';
+    if(!lote){ const os=E.os.l1;
+      f4= os?`<div class="doc">${ms('assignment')}${os.num} · executor ${os.exec} · início ${os.ini}</div><div class="sd">Aguardando a <b>assinatura do executor</b> na OS (desenho na tela).</div>`
+            :`<div class="sd">A OS da eX é sempre emitida. Leva o escopo congelado da R1${E.form&&E.form.tipo==='os'?' e o nº da OS do cliente ('+E.form.num+')':''}.</div><div class="acts"><button class="btn btn-s btn-p" ${podeGerar?'':'disabled title="Quem gera é o comercial/operacional"'} onclick="osUI('l1')">${ms('assignment_add')}Gerar OS da eX</button></div>`; }
+    else { f4=`<div class="sd">Uma OS <b>por loja</b>. Cada OS gerada cria o atendimento daquela loja.</div>
+      <table><tr><th>Loja</th><th>OS da eX</th><th></th></tr>${lojas().map(l=>{ const os=E.os[l.id]; return `<tr><td>${l.nome}</td><td>${os?`<span class="pill ok">${os.num}</span> <span style="font-size:11px;color:var(--tx3)">${os.exec}</span>`:'<span class="pill no">a gerar</span>'}</td><td style="text-align:right">${os?'':`<button class="btn btn-s" ${podeGerar?'':'disabled'} onclick="osUI('${l.id}')">${ms('assignment_add')}Gerar</button>`}</td></tr>`; }).join('')}</table>
+      ${osN()<lojas().length&&podeGerar?`<div class="acts"><button class="btn btn-s btn-p" onclick="osUI('todas')">${ms('playlist_add')}Gerar para as ${lojas().length-osN()} restantes</button></div>`:''}`; }
+  }
+  // 5 atendimento
+  let f5='';
+  if(osN()){ f5=`<table><tr><th>Atendimento no Operacional</th><th>Situação</th></tr>${lojas().filter(l=>E.os[l.id]).map(l=>`<tr><td>${ms('storefront','font-size:15px;color:var(--pri)')} ${l.nome} <span style="font-size:11px;color:var(--tx3)">· ${E.os[l.id].num}</span></td><td><span class="pill ok">criado</span> <span class="pill wait">aguarda assinatura</span></td></tr>`).join('')}</table>
+    <div class="sd" style="margin-top:6px">A loja vem do cadastro (não cria cadastro novo). O atendimento nasce com o executor como líder e o orçado congelado.</div>`; }
+  else f5=`<div class="sd">Nasce sozinho quando cada OS é gerada.</div>`;
+  const st=n=>n<p?'ok':n===p?'cur':'lock';
+  document.getElementById('detail').innerHTML=`
+    <div class="dhead"><div class="davatar">${C.cli.slice(0,2)}</div><div><h2>${C.titulo}</h2><div class="sub">Oportunidade · fase <b>${osN()?'Obra / execução':'Em negociação'}</b> · logado como <b>${NOME[perfil]}</b></div></div></div>
+    <div class="est-t">${ms('conveyor_belt','font-size:16px')}Da aprovação até o atendimento</div>
+    ${step(1,'verified','Aprovada','ok',`<div class="sd">R1 aprovada por e-mail em 14/09 20:33 · comprovante na proposta</div>`)}
+    ${step(2,'description','Formalização do cliente',st(2),f2)}
+    ${step(3,'account_balance','Liberação do Financeiro',st(3),f3)}
+    ${step(4,'assignment','OS interna da eX'+(lote?' (por loja)':''),p===6?'ok':st(4),f4)}
+    ${step(5,'storefront','Atendimento no Operacional',p===6?'ok':(osN()?'cur':'lock'),f5)}`;
+}
+function render(){ segs(); renderBoard(); renderDetail(); }
+function fechar(){ document.getElementById('ov').classList.remove('on'); }
+function abrir(h){ document.getElementById('box').innerHTML=h; document.getElementById('ov').classList.add('on'); }
+function formUI(tipo,email){ window._f={tipo,email};
+  abrir(`<h3>${ms(tipo==='contrato'?'contract':'assignment')}${tipo==='contrato'?'Contrato assinado':'OS / pedido do cliente'}</h3>
+    ${email?`<label class="lb">Anexo de e-mail das tratativas</label><div class="opts"><button class="opt on">${ms('picture_as_pdf','font-size:16px')}OS_4471_Copeland.pdf · Re: Proposta · 14/09</button></div>`:`<label class="lb">Arquivo</label><div class="drop">${ms('upload_file')} Arraste o PDF aqui ou clique para escolher</div>`}
+    ${tipo==='os'?`<label class="lb">Nº da OS do cliente</label><input class="fi" id="fNum" value="4471">`:''}
+    <label class="lb">Data ${tipo==='contrato'?'da assinatura':'da OS'}</label><input class="fi" id="fData" type="date" value="2026-09-15">
+    <div class="foot"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn btn-p" onclick="salvarForm()">${ms('check')}Registrar</button></div>`); }
+function salvarForm(){ const f=window._f; E.form={tipo:f.tipo,num:(document.getElementById('fNum')||{}).value||'',data:document.getElementById('fData').value.split('-').reverse().join('/'),origem:f.email?'anexo de e-mail':'arquivo enviado',por:NOME[perfil]}; E.dev=null; E.avisado=false; fechar(); toast('Formalização registrada. Próximo: <b>Financeiro</b> libera (aviso vai pra ele).'); render(); }
+function liberar(){ const obs=(document.getElementById('finObs')||{}).value||''; E.fin={por:NOME[perfil],master:perfil==='master',data:'15/09 09:12',obs}; toast('Liberado pelo Financeiro. Próximo: <b>gerar a OS da eX</b>.'); render(); }
+function devolverUI(){ abrir(`<h3>${ms('undo')}Devolver para o comercial</h3><label class="lb">Motivo (obrigatório)</label><textarea class="fi" id="dvM" style="height:90px" placeholder="Ex.: contrato sem a cláusula de pagamento; pedir versão assinada por ambos"></textarea>
+  <div class="foot"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn btn-p" onclick="devolver()">Devolver</button></div>`); }
+function devolver(){ const m=document.getElementById('dvM').value.trim(); if(!m){ alert('Escreva o motivo.'); return; } E.dev=m; E.form=null; E.chk={fat:false,pag:false,cred:false}; fechar(); toast('Devolvido. A formalização volta para o comercial com o motivo.'); render(); }
+let _seq=17;
+function osUI(alvo){ window._os=alvo;
+  const nome=alvo==='todas'?`as ${lojas().length-osN()} lojas restantes`:(lojas().find(l=>l.id===alvo)||{}).nome;
+  abrir(`<h3>${ms('assignment_add')}Gerar OS da eX · ${nome}</h3>
+    <label class="lb">Responsável pela execução (líder)</label><select class="fi" id="oExec"><option>Carlos Souza</option><option>João Silva</option><option>Equipe A</option></select>
+    <label class="lb">Início previsto</label><input class="fi" id="oIni" type="date" value="2026-09-22">
+    <div class="note info">${ms('info')}<span>A OS leva o escopo <b>congelado da R1</b>${E.form&&E.form.tipo==='os'?' e o nº da OS do cliente':''}. Depois o executor assina na tela. Gerar ${alvo==='todas'?'cada OS cria o atendimento de cada loja':'a OS cria o atendimento desta loja'} no Operacional.</span></div>
+    <div class="foot"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn btn-p" onclick="gerarOS()">${ms('assignment_add')}Gerar</button></div>`); }
+function gerarOS(){ const alvo=window._os, exec=document.getElementById('oExec').value, ini=document.getElementById('oIni').value.split('-').reverse().join('/');
+  const primeira=osN()===0; const ids=alvo==='todas'?lojas().filter(l=>!E.os[l.id]).map(l=>l.id):[alvo];
+  ids.forEach(id=>{ E.os[id]={num:'OS-2026-'+String(++_seq).padStart(4,'0'),exec,ini}; });
+  fechar(); toast((primeira?'Card movido para <b>Obra / execução</b>. ':'')+`${ids.length>1?ids.length+' OS geradas e '+ids.length+' atendimentos criados':'OS gerada e atendimento criado'} no Operacional.`); render(); }
+reset();
+</script>
+</body>
+</html>
