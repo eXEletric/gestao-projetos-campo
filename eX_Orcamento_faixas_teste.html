@@ -789,7 +789,7 @@ body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{backgrou
   <span class="pv-lbl"><span class="material-symbols-rounded">visibility</span>Prévia — é assim que o cliente recebe</span>
   <span style="flex:1"></span>
   <button class="pv-btn" onclick="setMode('edit')"><span class="material-symbols-rounded">edit</span>Voltar a editar</button>
-  <button class="pv-btn pv-print" onclick="window.print()"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
+  <button class="pv-btn pv-print" onclick="imprimirProposta()"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
 </div>
 <div class="app">
 
@@ -807,7 +807,7 @@ body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{backgrou
     <button class="btn noprint" id="fxOrgBtn" onclick="fxToggleOrg()" style="display:none" title="Organizar a ordem das etapas da proposta (faixas) e classificar por cor"><span class="material-symbols-rounded">view_agenda</span>Organizar</button>
     <span id="saveState" class="savestate"></span>
     <button class="btn btnsalvar" id="btnSalvar" onclick="salvarManual()"><span class="material-symbols-rounded">save</span>Salvar</button>
-    <button class="btn" onclick="window.print()"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
+    <button class="btn" onclick="imprimirProposta()"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
   </div>
   <script>/* página-módulo aberta fora do app (nível-topo) → oferecer volta ao menu; embutida no iframe fica escondida */try{if(window.top===window.self){var _va=document.getElementById('voltarApp');if(_va)_va.style.display='inline-flex';}}catch(e){}</script>
   <div class="sub">Folha de cotação.</div>
@@ -3323,6 +3323,7 @@ function verComoClienteLote(){
   window._DOC_SECS=Object.keys(_ds).filter(function(k){ return !!_ds[k]; });
   let _ordDoc=fxOrdem().filter(function(id){ return id.indexOf('g:')!==0 && _ds[id]; });
   const _anexo=docOpt('anexo') && _ordDoc.indexOf('lote.var')>-1; if(_anexo) _ordDoc=_ordDoc.filter(function(x){ return x!=='lote.var'; });
+  _ds['cab']=docCabHtml();   // cabeçalho COMPLETO, igual ao da proposta
   const _fxDoc=_ordDoc.map(function(id){ return '<div class="docsec'+(fxVis(id)===false?' docoff':'')+'" data-sec="'+id+'">'+_ds[id]+'</div>'; }).join('')
     + (_anexo?('<div class="docsec'+(fxVis('lote.var')===false?' docoff':'')+'" data-sec="lote.var"><div style="break-before:page;page-break-before:always;margin-top:28px;padding-top:10px;border-top:2px solid #e2ddf1;font-size:13px;font-weight:800;color:#3f2c8f;text-transform:uppercase;letter-spacing:.06em">Anexo — Serviços base por modelo</div>'+_ds['lote.var']+'</div>'):'');
   const doc=`<div id="vcSheet" class="${docColCls()}" style="max-width:820px;margin:0 auto;background:#fff;color:#221c39;border-radius:12px;box-shadow:0 20px 60px rgba(20,10,50,.3);overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif">
@@ -3357,7 +3358,7 @@ function verComoClienteLote(){
     <div id="vcBar" style="position:sticky;top:0;display:flex;gap:10px;justify-content:space-between;align-items:center;flex-wrap:wrap;padding:12px 16px;background:rgba(20,14,40,.06)">
       <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span style="font-size:11.5px;color:#3a3550;font-weight:700">Material na proposta:</span>${['qtd','val','lista','tot'].map(function(m){var lbl={qtd:'Quantidade',val:'Valor',lista:'Lista',tot:'Só total'}[m];var on=matModo===m;return '<button onclick="setMatModoDoc(\''+m+'\')" style="border:1px solid '+(on?'#533ab7':'#c9c4dd')+';background:'+(on?'#533ab7':'#fff')+';color:'+(on?'#fff':'#57536b')+';border-radius:8px;padding:6px 11px;font:600 12px inherit;cursor:pointer">'+lbl+'</button>';}).join('')}</div>
       <div style="display:flex;gap:8px;align-items:center">
-      <button onclick="window.print()" style="border:none;background:#533ab7;color:#fff;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
+      <button onclick="salvarManual();setTimeout(verComoClienteLote,1500)" title="Grava as escolhas do menu (e o que mais estiver pendente na proposta)" style="border:1px solid #533ab7;background:#fff;color:#533ab7;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span class="material-symbols-rounded">save</span>${DIRTY?'Salvar alterações':'Salvo'}</button><button onclick="window.print()" style="border:none;background:#533ab7;color:#fff;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer;display:inline-flex;align-items:center;gap:6px"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
       <button onclick="closeVerCliente()" style="border:1px solid #ccc;background:#fff;color:#333;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer">Fechar</button></div></div>
     <div id="vcWrap"><div id="vcMenu">${docMenuHtml()}</div><div style="flex:1;min-width:0">${doc}</div></div>`;
   ov.style.cssText='position:fixed;inset:0;z-index:99998;background:rgba(20,14,40,.55);overflow:auto';
@@ -3642,6 +3643,26 @@ function docLojasHtml(_secTit,_th,_td){ var us=LOTE_UNITS||[]; if(!us.length)ret
 function docMacroHtml(_secTit,_td){ var mt=macroTotal(); if(!(mt>0))return ''; var n=(LOTE_UNITS||[]).length||1; var est=((S.macro&&S.macro.estruturas)||[]); var rc=macroRotaCusto();
   var linhas=est.map(function(e){return '<tr><td style="'+_td+'">'+esc(e.nome)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(num(e.custo))+'</td></tr>';}).join('')+(rc>0?'<tr><td style="'+_td+'">Deslocamento do circuito ('+_d1(macroRotaKm())+' km)</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(rc)+'</td></tr>':'');
   return '<div style="'+_secTit+'">Despesa macro do lote (rateada)</div><table style="width:100%;max-width:560px;border-collapse:collapse;font-size:12.5px"><tbody>'+linhas+'<tr style="background:#f6f4fc"><td style="padding:10px 13px;font-weight:800;color:#3f2c8f">Total macro · rateado em '+n+' unidades</td><td style="padding:10px 13px;text-align:right;font-weight:800;color:#3f2c8f;font-variant-numeric:tabular-nums">'+fmt(mt)+' <span style="font-weight:600;color:#7d7799;font-size:11.5px">('+fmt(mt/n)+'/unidade)</span></td></tr></tbody></table><div style="font-size:11.5px;color:#7d7799;margin-top:5px">Já incluída no valor de cada unidade.</div>'; }
+function imprimirProposta(){   // lote: imprime o DOCUMENTO DO LOTE com as escolhas do menu; demais propostas: impressão normal
+  if(isLoteBase() && (LOTE_UNITS||[]).length){ verComoClienteLote(); setTimeout(function(){ window.print(); },450); return; }
+  window.print(); }
+function docCabHtml(){   // cabeçalho completo — os mesmos dados do cabeçalho da proposta
+  var br=function(d){ return d?String(d).split('-').reverse().join('/'):'—'; };
+  var kv=function(l,v){ return v?('<div style="display:flex;gap:8px;font-size:12.5px;line-height:1.5"><span style="min-width:74px;color:#7d7799">'+l+'</span><span style="color:#221c39;font-weight:600">'+esc(v)+'</span></div>'):''; };
+  var cap=function(t){ return '<div style="font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#533ab7;margin:0 0 5px">'+t+'</div>'; };
+  var oS=document.getElementById('ofertaSel'); var oferta=(oS&&oS.selectedIndex>-1&&oS.options[oS.selectedIndex])?oS.options[oS.selectedIndex].text:'';
+  var cod=((document.getElementById('codigoFull')||{}).textContent||'').trim(); if(cod==='—')cod='';
+  var cnpjC=(typeof contratanteCnpj==='function')?contratanteCnpj():''; var nUn=(LOTE_UNITS||[]).length;
+  var esq='<div>'+cap('Contratante')+'<div style="font-weight:800;font-size:15.5px;margin-bottom:4px">'+esc(S.cliNome||'—')+'</div>'+kv('CNPJ',cnpjC)+kv('Contato',S.cliContato)+kv('Fone',S.cliFone)+kv('E-mail',S.cliEmail)
+    +'<div style="height:10px"></div>'+cap('Rede / lojas do lote')+kv('Rede',S.finRede)+kv('Unidades',nUn?(nUn+' unidades'):'')+kv('Região',S.finEnd)+'</div>';
+  var dir='<div>'+cap('Proposta comercial')+kv('Nº',S.numero)+kv('Emissão',S.dataISO?br(S.dataISO):'')+kv('Validade',S.validadeISO?br(S.validadeISO):'')
+    +'<div style="height:10px"></div>'+cap('Responsável')+kv('Nome',S.respNome)+kv('Fone',S.respFone)+kv('E-mail',S.respEmail)+'</div>';
+  var sol='<div style="margin-top:14px;padding-top:12px;border-top:1px dashed #e2ddf1">'
+    +(oferta?('<div style="font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#7d7799">Oferta (tipo)</div><div style="font-weight:700;font-size:13.5px;margin:2px 0 2px">'+esc(oferta)+'</div>'):'')
+    +(cod?('<div style="font-size:12px;color:#533ab7;font-weight:700;margin-bottom:8px">Código: '+esc(cod)+'</div>'):'')
+    +(S.solTitulo?('<div style="font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#7d7799">Solução</div><div style="font-weight:700;font-size:13.5px;margin:2px 0 8px">'+esc(S.solTitulo)+'</div>'):'')
+    +(S.solDesc?('<div style="font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#7d7799">Escopo</div><div style="font-size:12.5px;color:#4b4665;line-height:1.55;margin-top:2px">'+esc(S.solDesc)+'</div>'):'')+'</div>';
+  return '<div style="padding:18px 0 16px;border-bottom:1px solid #eee"><div style="display:grid;grid-template-columns:1fr 1fr;gap:18px 28px">'+esq+dir+'</div>'+sol+'</div>'; }
 /* ===== MENU da visão do cliente (liga/desliga de cada parte; desligado = cinza na tela e fora do PDF) ===== */
 function docOpt(k){ var o=(S&&S.docOpt)||{}; return k==='anexo' ? o[k]===true : o[k]!==false; }   // padrão: tudo ligado; "anexo" começa desligado
 function docColCls(){ return ['lojas:modelo','lojas:dias','lojas:adic'].filter(function(k){ return !docOpt(k); }).map(function(k){ return 'off-'+k.replace(':','-'); }).join(' '); }
