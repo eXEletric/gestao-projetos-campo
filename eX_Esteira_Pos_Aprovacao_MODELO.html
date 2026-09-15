@@ -135,11 +135,11 @@ function renderDetail(){
   let f2='';
   if(E.form){ f2=`<div class="doc">${ms(E.form.tipo==='contrato'?'contract':'assignment')}${E.form.tipo==='contrato'?'Contrato assinado':'OS do cliente nº '+E.form.num} · ${E.form.data} · ${E.form.origem}</div><div class="sd">Registrado por ${E.form.por}${lote?' · vale para o lote inteiro':''}</div>`; }
   else if(p===2){ f2=`<div class="sd">Obrigatório: <b>contrato assinado</b> ou <b>OS/pedido do cliente</b>. Sem um dos dois, não segue.${lote?' Um documento vale para o <b>lote inteiro</b>.':''}</div>
-    ${E.dev?`<div class="note red">${ms('undo')}<span><b>Devolvido pelo Financeiro:</b> ${E.dev}</span></div>`:''}
     <div class="acts"><button class="btn btn-s btn-p" onclick="formUI('contrato')">${ms('contract')}Anexar contrato assinado</button><button class="btn btn-s btn-p" onclick="formUI('os')">${ms('assignment')}Anexar OS do cliente</button><button class="btn btn-s" onclick="formUI('os',true)">${ms('attach_email')}Usar anexo de e-mail</button></div>`; }
   // 3 financeiro
   let f3='';
-  if(E.fin){ f3=`<div class="sd">Liberado por <b>${E.fin.por}</b> em ${E.fin.data}${E.fin.master?' <span class="st dev" style="background:#111110;color:#f3f1ea">como financeiro</span>':''}${E.fin.obs?' · “'+E.fin.obs+'”':''}</div>`; }
+  if(!E.fin && p===3 && E.dev){ f3=`<div class="note red">${ms('undo')}<span><b>Devolvido pelo Financeiro:</b> ${E.dev}</span></div>`+(perfil==='financeiro'?`<div class="sd" style="margin-top:6px">Aguardando o comercial corrigir e reenviar.</div>`:`<div class="sd" style="margin-top:6px">O documento continua anexado. Corrija o que foi apontado (cadastro, condição, documento novo se for o caso) e reenvie.</div><div class="acts"><button class="btn btn-s" onclick="formUI('contrato')">${ms('swap_horiz')}Trocar documento</button><button class="btn btn-s btn-p" onclick="reenviar()">${ms('send')}Corrigido: reenviar ao Financeiro</button></div>`); }
+  else if(E.fin){ f3=`<div class="sd">Liberado por <b>${E.fin.por}</b> em ${E.fin.data}${E.fin.master?' <span class="st dev" style="background:#111110;color:#f3f1ea">como financeiro</span>':''}${E.fin.obs?' · “'+E.fin.obs+'”':''}</div>`; }
   else if(p===3){
     if(perfil==='comercial') f3=`<div class="sd">O Financeiro confere e libera. Você não consegue liberar.</div><div class="acts"><button class="btn btn-s" ${E.avisado?'disabled':''} onclick="E.avisado=true;toast('Financeiro avisado (vira tarefa pra ele).');render()">${ms('notifications')}${E.avisado?'Financeiro avisado':'Avisar o Financeiro'}</button></div>`;
     else { const c=E.chk, ok=c.fat&&c.pag&&c.cred;
@@ -191,7 +191,8 @@ function salvarForm(){ const f=window._f; E.form={tipo:f.tipo,num:(document.getE
 function liberar(){ const obs=(document.getElementById('finObs')||{}).value||''; E.fin={por:NOME[perfil],master:perfil==='master',data:'15/09 09:12',obs}; toast('Liberado pelo Financeiro. Próximo: <b>gerar a OS da eX</b>.'); render(); }
 function devolverUI(){ abrir(`<h3>${ms('undo')}Devolver para o comercial</h3><label class="lb">Motivo (obrigatório)</label><textarea class="fi" id="dvM" style="height:90px" placeholder="Ex.: contrato sem a cláusula de pagamento; pedir versão assinada por ambos"></textarea>
   <div class="foot"><button class="btn" onclick="fechar()">Cancelar</button><button class="btn btn-p" onclick="devolver()">Devolver</button></div>`); }
-function devolver(){ const m=document.getElementById('dvM').value.trim(); if(!m){ alert('Escreva o motivo.'); return; } E.dev=m; E.form=null; E.chk={fat:false,pag:false,cred:false}; fechar(); toast('Devolvido. A formalização volta para o comercial com o motivo.'); render(); }
+function devolver(){ const m=document.getElementById('dvM').value.trim(); if(!m){ alert('Escreva o motivo.'); return; } E.dev=m; E.devOk=false; E.chk={fat:false,pag:false,cred:false}; fechar(); toast('Devolvido ao comercial com o motivo. O documento continua anexado.'); render(); }
+function reenviar(){ E.devOk=true; E.dev=null; toast('Corrigido e reenviado ao Financeiro.'); render(); }
 let _seq=17;
 function osUI(alvo){ window._os=alvo;
   const nome=alvo==='todas'?`as ${lojas().length-osN()} lojas restantes`:(lojas().find(l=>l.id===alvo)||{}).nome;
