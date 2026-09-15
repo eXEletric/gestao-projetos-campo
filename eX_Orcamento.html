@@ -1396,36 +1396,37 @@ const custoUn=r=>{ if(r.usarBase!==false && r.composicao){ const cc=custoCompost
 const MG_DEF={servicos:30,materiais:30,despesas:0,equip:0,deslocamento:0};
 function baseMg(blk){ if(S.margem && S.margem[blk]!==undefined && S.margem[blk]!=='') return num(S.margem[blk]); return (MG_DEF[blk]!==undefined?MG_DEF[blk]:0); }
 // VALOR FINAL COMBINADO: fixa o preço; a margem dos blocos de lucro (serviços+materiais) deriva pra bater
-function comboActive(){ if(S&&S._base&&S_LOTE_ID) return false;   // BASE DO LOTE = cadastro/formação: o valor combinado vale só nas LOJAS (na base não reescreve margens)
+function comboActive(){   // base e lojas: valor combinado fecha o total; quem estiver destravado absorve
   return S.valorCombinado!=null && num(S.valorCombinado)>0; }
 function adicPrecoTotal(){ return ['servicos','materiais','despesas','equip'].reduce(function(a,k){ if(!blocoAtivo(k))return a; return a+(S[k]||[]).reduce(function(b,r){ if(r&&r.adic){ r._blk=k; return b+linePreco(r); } return b; },0); },0); }   // preço (antes do imposto) das linhas adicionais
 function adicAbatidoTotal(){ return ['servicos','materiais','despesas','equip'].reduce(function(a,k){ if(!blocoAtivo(k))return a; return a+(S[k]||[]).reduce(function(b,r){ if(r&&r.adic&&!r.adicCobrar){ r._blk=k; return b+linePreco(r); } return b; },0); },0); }   // só os adicionais marcados ABATIDO entram no desconto comercial
 function setAdicCobrar(blk,id){ var r=(S[blk]||[]).find(function(x){return x.id===id;}); if(!r)return; r.adicCobrar=!r.adicCobrar; save(); try{ renderBlk(BLKS.find(function(b){return b.key===blk;})); }catch(_){} recalc(); cloudMsg(r.adicCobrar?'adicional COBRADO do cliente':'adicional ABATIDO pelo desconto comercial'); }
 function toggleDescontoAdic(){ S.descontoAdic=!S.descontoAdic; save(); recalc(); }
 function adicCusto(blk){ return (S[blk]||[]).reduce(function(a,r){ return a+(r&&r.adic?lineCusto(r):0); },0); }   // custo das linhas ADICIONAIS (escopo além do modelo) — ficam FORA do combo, cobradas por cima
-function comboMg(){   // margem uniforme (fração) nos blocos de lucro — só sobre o escopo-base (adicionais fora)
-  const cL=(blocoAtivo('servicos')?blkCusto('servicos')-adicCusto('servicos'):0)+(blocoAtivo('materiais')?blkCusto('materiais')-adicCusto('materiais'):0);
-  if(cL<=0) return 0;
-  const cP=passPreco('despesas')+passPreco('equip')+diariasPreco();   // despesas/locações/diárias entram FIXAS pelo preço (custo + % geral)
-  const desc=num(S.descontoPct)/100, imp=num(S.impostoPct)/100;
-  const bruto=num(S.valorCombinado)/(((1-desc)||1)*(1+imp));   // tira imposto e desconto
-  return (bruto-cP)/cL - 1;
-}
-/* TRAVAS (cadeado) de margem de serviços / materiais / impostos — S.travas={serv,mat,imp}
-   Com valor combinado: a margem TRAVADA fica fixa (S.margemServCombo / S.margemMatCombo) e o outro bloco ABSORVE o restante.
-   Nenhuma travada = margem uniforme. Sem valor combinado: trava só protege o campo contra alteração. */
+/* VALOR COMBINADO — regra do dono (15/09): TRAVADO entra fixo pelo seu percentual; quem estiver DESTRAVADO absorve (mesmo % para todos os destravados).
+   Grupos: Serviços (serv) · Materiais (mat) · Deslocamento (desl) · Outras despesas + diárias (desp) · Locações (equip). Adicionais ficam fora (margem própria, cobrados por cima). */
+var COMBO_GRUPOS=[['servicos','serv'],['materiais','mat'],['desl','desl'],['outras','desp'],['equip','equip']];
+var GRUPO_NOME={servicos:'Serviços',materiais:'Materiais',desl:'Deslocamento',outras:'Outras despesas',equip:'Locações'};
+function grupoDe(r){ if(!r)return 'outras'; if(r._blk==='despesas') return despGrupo(r)==='desl'?'desl':'outras'; return r._blk; }
+function grupoMgFixa(g){   // fração do grupo quando NÃO absorve
+  if(g==='servicos'){ const v=S.margemServCombo; return (travas().serv&&v!=null&&v!=='')?num(v)/100:baseMg('servicos')/100; }
+  if(g==='materiais'){ const v=S.margemMatCombo; return (travas().mat&&v!=null&&v!=='')?num(v)/100:baseMg('materiais')/100; }
+  return baseMg(g==='desl'?'deslocamento':(g==='outras'?'despesas':'equip'))/100; }
+function comboAbsorve(){ const t=travas(); const abs=COMBO_GRUPOS.filter(function(x){ return !t[x[1]]; }).map(function(x){ return x[0]; });
+  const desc=num(S.descontoPct)/100, imp=num(S.impostoPct)/100, bruto=num(S.valorCombinado)/(((1-desc)||1)*(1+imp));
+  let fixo=0, custoAbs=0;
+  ['servicos','materiais','despesas','equip'].forEach(function(k){ if(!blocoAtivo(k))return; (S[k]||[]).forEach(function(r){ if(!r||r.adic)return; r._blk=k; const g=grupoDe(r), c=lineCusto(r);
+    if(abs.indexOf(g)>=0) custoAbs+=c;
+    else { const own=(k==='despesas'||k==='equip')&&!(r.margem===''||r.margem==null); fixo+=c*(1+(own?num(r.margem)/100:grupoMgFixa(g))); } }); });
+  const dc=diariasCusto(); if(abs.indexOf('outras')>=0) custoAbs+=dc; else fixo+=dc*(1+grupoMgFixa('outras'));
+  const m=(abs.length&&custoAbs>0)?(bruto-fixo)/custoAbs-1:null;
+  return {grupos:abs, m:m, fixo:fixo, custoAbs:custoAbs, bruto:bruto}; }
+function comboMgGrupo(g){ const a=comboAbsorve(); return (a.m!==null&&a.grupos.indexOf(g)>=0)?a.m:grupoMgFixa(g); }
+function comboMg(){ const a=comboAbsorve(); return a.m!==null?a.m:grupoMgFixa('servicos'); }   // compatibilidade
+/* TRAVAS (cadeado) — S.travas={serv,mat,desl,desp,equip,imp,desc}. Sem valor combinado: a trava só protege o campo. */
 function travas(){ if(!S.travas||typeof S.travas!=='object'){ S.travas={}; if(S.margemMatCombo!=null&&S.margemMatCombo!=='') S.travas.mat=true; } return S.travas; }
-function comboFixa(blk){ if(!comboActive()) return null; const t=travas(); const v=(blk==='materiais')?(t.mat?S.margemMatCombo:null):(t.serv?S.margemServCombo:null); return (v==null||v==='')?null:num(v)/100; }
-function comboMgBlk(blk){
-  const outro=(blk==='servicos')?'materiais':'servicos';
-  const cB=b=>blocoAtivo(b)?blkCusto(b)-adicCusto(b):0;
-  const fx=comboFixa(blk), fxo=comboFixa(outro);
-  if(fx!==null && !(fxo!==null && cB(outro)<=0)) return fx;                 // este bloco travado
-  if(fxo===null || cB(outro)<=0) return comboMg();                           // ninguém travado (ou o outro vazio) → uniforme
-  const cMe=cB(blk); if(cMe<=0) return 0;                                     // o outro travado → este ABSORVE
-  const cP=passPreco('despesas')+passPreco('equip')+diariasPreco();   // despesas/locações/diárias entram FIXAS pelo preço (custo + % geral)
-  const bruto=num(S.valorCombinado)/(((1-num(S.descontoPct)/100)||1)*(1+num(S.impostoPct)/100));
-  return (bruto-cP-cB(outro)*(1+fxo))/cMe - 1; }
+function comboFixa(blk){ if(!comboActive()) return null; const a=comboAbsorve(); return (a.m!==null&&a.grupos.indexOf(blk)>=0)?null:grupoMgFixa(blk); }
+function comboMgBlk(blk){ return comboMgGrupo(blk); }
 function mkComboCell(blk,r){   // célula de margem da linha com VALOR COMBINADO: mostra a margem realmente aplicada (vem do painel de preço)
   const propria=!(r.margem===''||r.margem==null), v=comboMgBlk(blk)*100, t=travas(), trav=(blk==='materiais')?t.mat:t.serv;
   return '<span class="mkcombo'+(v<0?' neg':'')+'" data-blk="'+blk+'" title="VALOR COMBINADO ativo — esta linha segue a Margem '+(blk==='servicos'?'serviços':'materiais')+' do painel de preço'+(trav?' (TRAVADA)':' (calculada)')+'.'+(propria?' A margem própria desta linha ('+esc(r.margem)+'%) está sendo IGNORADA.':'')+'"><span class="material-symbols-rounded">'+(trav?'lock':'handshake')+'</span><span class="mkcv">'+_d1(v)+'</span>%'+(propria?'<span class="material-symbols-rounded" style="color:#c77b12">warning</span>':'')+'</span>'; }
@@ -1433,18 +1434,18 @@ function comboMgMat(){ return comboFixa('materiais'); }   // compatibilidade
 function comboMgServ(){ return comboMgBlk('servicos'); }
 function toggleTrava(k){ if(loteCfgBloqueia())return; const t=travas(); t[k]=!t[k];
   if(comboActive() && (k==='serv'||k==='mat')){ const blk=(k==='serv')?'servicos':'materiais', campo=(k==='serv')?'margemServCombo':'margemMatCombo';
-    if(t[k]){ if(S[campo]==null||S[campo]==='') S[campo]=+(comboMgBlk(blk)*100).toFixed(1); const o=(k==='serv')?'mat':'serv'; if(t[o]){ t[o]=false; cloudMsg('só uma margem fica travada com valor combinado — a outra passa a absorver'); } } }
-  save(); try{ renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); }catch(_){} recalc(); }
+    if(t[k]){ if(S[campo]==null||S[campo]==='') S[campo]=+(baseMg(blk)).toFixed(1); } }
+  save(); try{ BLKS.forEach(b=>renderBlk(b)); }catch(_){} recalc(); }
 /* PERCENTUAIS GERAIS de despesas: Deslocamento (S.margem.deslocamento) · Outras despesas (S.margem.despesas, inclui diárias) · Locações (S.margem.equip) */
 function despGrupo(r){ if(!r)return 'outras'; const c=(r.catId&&CATALOGO&&CATALOGO.despesas)?CATALOGO.despesas.find(x=>x.id===r.catId):null;
   if(c&&c.categoria) return (/desloc/i.test(c.categoria))?'desl':'outras';
   return /desloc|ped[aá]gio|estacionamento|loca[cç][aã]o de ve[ií]culo|combust[ií]vel|rateio do lote/i.test(r.desc||'')?'desl':'outras'; }
 function mgBaseLinha(r){ return (r&&r._blk==='despesas'&&despGrupo(r)==='desl')?baseMg('deslocamento'):baseMg(r._blk); }
-function diariasPreco(){ return diariasCusto()*(1+baseMg('despesas')/100); }
+function diariasPreco(){ if(comboActive()){ const a=comboAbsorve(); return diariasCusto()*(1+((a.m!==null&&a.grupos.indexOf('outras')>=0)?a.m:grupoMgFixa('outras'))); } return diariasCusto()*(1+baseMg('despesas')/100); }
 function passPreco(blk){ if(!blocoAtivo(blk))return 0; return (S[blk]||[]).reduce((a,r)=>{ if(!r||r.adic)return a; r._blk=blk; return a+linePreco(r); },0); }   // preço (com % geral) de despesas/locações fora os adicionais — entra fixo no valor combinado
-const mgOf=r=>{ if(comboActive() && (r._blk==='servicos'||r._blk==='materiais') && !r.adic) return comboMgBlk(r._blk)*100;   // adicional NÃO entra no combo — margem própria, cobra por cima
+const mgOf=r=>{ if(comboActive() && !r.adic){ const g=grupoDe(r); if(g==='servicos'||g==='materiais') return comboMgGrupo(g)*100; const a=comboAbsorve(); if(a.m!==null && a.grupos.indexOf(g)>=0) return a.m*100; }   // combinado: destravado absorve; adicional fica fora (margem própria)
   return (r.margem===''||r.margem==null)?mgBaseLinha(r):num(r.margem); };
-function setMgGeral(key,v){ if(loteCfgBloqueia())return; const tk={deslocamento:'desl',despesas:'desp',equip:'equip'}[key]; if(travas()[tk]){ alert('Este percentual está TRAVADO. Destrave o cadeado para alterar.'); recalc(); return; } if(!S.margem)S.margem={}; S.margem[key]=num(v); const blk=(key==='equip')?'equip':'despesas';
+function setMgGeral(key,v){ if(loteCfgBloqueia())return; const tk={deslocamento:'desl',despesas:'desp',equip:'equip'}[key]; if(travas()[tk]){ alert('Este percentual está TRAVADO. Destrave o cadeado para alterar.'); recalc(); return; } if(!S.margem)S.margem={}; S.margem[key]=num(v); if(comboActive()) travas()[tk]=true;   // com combinado: digitar fixa (trava) este percentual const blk=(key==='equip')?'equip':'despesas';
   const pr=(S[blk]||[]).filter(r=>r&&!r.adic&&!(r.margem===''||r.margem==null)&&(blk==='equip'||(despGrupo(r)==='desl')===(key==='deslocamento')));
   if(pr.length && confirm(pr.length+' linha(s) têm MARGEM PRÓPRIA e não seguem este percentual geral — ex.: '+pr.slice(0,3).map(r=>(r.desc||'item')+' '+r.margem+'%').join('; ')+'.\n\nAplicar '+num(v)+'% também nessas linhas?')) pr.forEach(r=>{ r.margem=''; });
   save(); try{ renderBlk(BLKS.find(b=>b.key===blk)); }catch(_){} recalc(); }
@@ -1459,7 +1460,7 @@ function setBlkMargem(blk,v){ if(loteCfgBloqueia())return;
   if(comboActive()){   // com valor combinado: digitar a margem TRAVA este bloco nesse valor; o outro absorve
     const campo=(blk==='servicos')?'margemServCombo':'margemMatCombo';
     if(String(v).trim()===''){ S[campo]=null; t[k]=false; }
-    else { S[campo]=num(v); t[k]=true; const o=(k==='serv')?'mat':'serv'; t[o]=false; }
+    else { S[campo]=num(v); t[k]=true; }
     save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); return; }
   if(t[k]){ alert('Margem de '+blk+' está TRAVADA. Destrave o cadeado para alterar.'); recalc(); return; }
   if(!S.margem)S.margem={}; S.margem[blk]=num(v);
@@ -3852,7 +3853,7 @@ function modeloServQtd(v){ var f=varFonte(v), us=unitsDaVar(v.id);   // quantida
   var src=(f==='pior'&&us.length)?((modeloPiorLoja(v)||{}).dados||{}).servicos:dadosModeloCalc(v.id).servicos;
   return (src||[]).filter(function(r){ return r&&num(r.qtd)>0; }).map(function(r){ return {desc:r.desc,und:r.und,qtd:(r.composicao&&r.composicao.base==='total')?1:num(r.qtd)}; }); }
 function dadosModeloCalc(id){ var d=_deep(S); var c=varConteudo(S,id); VAR_KEYS.forEach(function(k){ d[k]=c[k]; });
-  d.valorCombinado=null; delete d._base;   // modelo pelo CADASTRO BASE: percentuais de formação, nunca o valor combinado
+  // modelo "cadastro base" = a base como está (valor combinado + travas: destravado absorve)
   d.blocoOn={servicos:true,materiais:true,despesas:true,equip:true};   // MODELO = referência do tipo de sistema: sempre com os 4 blocos (não herda a chave "soma no total" da base). Valor combinado é EXCEÇÃO: sem ele, vale margem normal
   return d; }
 function docLogisticaHtml(_secTit,_th,_td){ var a=LOTE_UNIT_ABR||[]; if(!a.length)return ''; var bm=baseMun(); var r=loteAbrResumo(); var rota=loteRota();
@@ -4539,11 +4540,11 @@ function recalc(){
   if(comboActive()){
     if(ci && document.activeElement!==ci) ci.value=num(S.valorCombinado).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2});
     if(cx)cx.style.display='';
-    const _ms=comboMgBlk('servicos')*100, _mt=comboMgBlk('materiais')*100, _fs=comboFixa('servicos'), _fm=comboFixa('materiais'); const m=Math.min(_ms,_mt);
-    const _txt=(_fs!==null&&_fm!==null)?('Serviços e material TRAVADOS — o valor combinado pode não fechar')
-      :(_fm!==null?('Material travado em <b>'+_d1(_mt)+'%</b> · Serviços ajustados em <b>'+_d1(_ms)+'%</b>')
-      :(_fs!==null?('Serviços travados em <b>'+_d1(_ms)+'%</b> · Material ajustado em <b>'+_d1(_mt)+'%</b>')
-      :('Margem ajustada em Serviços/Materiais: <b>'+_d1(_ms)+'%</b>')));
+    const _ms=comboMgBlk('servicos')*100, _mt=comboMgBlk('materiais')*100, _fs=comboFixa('servicos'), _fm=comboFixa('materiais');
+    const _ab=comboAbsorve(); const m=(_ab.m!==null)?_ab.m*100:Math.min(_ms,_mt);
+    const _trav=COMBO_GRUPOS.filter(function(x){ return _ab.grupos.indexOf(x[0])<0; }).map(function(x){ return GRUPO_NOME[x[0]]; });
+    const _txt=(_ab.m===null)?('<b>Tudo travado</b> — ninguém absorve; o valor combinado não fecha. Destrave um percentual.')
+      :((_trav.length?('Travados: '+_trav.join(', ')+' · '):'')+'<b>'+_ab.grupos.map(function(g){ return GRUPO_NOME[g]; }).join(', ')+'</b> absorve'+(_ab.grupos.length>1?'m':'')+' em <b>'+_d1(_ab.m*100)+'%</b>');
     if(cn){ cn.style.display=''; cn.className='combo-note'+(m<0?' neg':(m<5?' low':'')); cn.innerHTML=(m<0?'<span class="material-symbols-rounded">warning</span>Abaixo do custo · ':(m<5?'<span class="material-symbols-rounded">warning</span>Margem baixa · ':''))+_txt; }
   } else if(isLoteBase()&&num(S.valorCombinado)>0){ if(ci&&document.activeElement!==ci) ci.value=num(S.valorCombinado).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); if(cx)cx.style.display=''; if(cn){ cn.style.display=''; cn.className='combo-note'; cn.innerHTML='<span class="material-symbols-rounded">storefront</span>Valor combinado <b>por loja</b> — vale nas lojas. A base e os modelos usam os percentuais do cadastro.'; } }
   else { if(cx)cx.style.display='none'; if(cn)cn.style.display='none'; if(ci && document.activeElement!==ci) ci.value=''; }
@@ -4554,7 +4555,7 @@ function recalc(){
     if(ms){ if(document.activeElement!==ms) ms.value=_d1(_combo?comboMgBlk('servicos')*100:baseMg('servicos')); ms.disabled=_combo?false:!!t.serv; ms.classList.toggle('calc',_combo&&!t.serv); ms.title=_combo?(t.serv?'travada neste valor (material absorve)':'calculada — digite para travar'):(t.serv?'travada':''); }
     if(mm){ if(document.activeElement!==mm) mm.value=_d1(_combo?comboMgBlk('materiais')*100:baseMg('materiais')); mm.disabled=_combo?false:!!t.mat; mm.classList.toggle('calc',_combo&&!t.mat); mm.title=_combo?(t.mat?'travada neste valor (serviços absorvem)':'calculada — digite para travar'):(t.mat?'travada':''); }
     document.querySelectorAll('.mkcombo[data-blk]').forEach(el=>{ const v=_combo?comboMgBlk(el.dataset.blk)*100:0; const s=el.querySelector('.mkcv'); if(s)s.textContent=_d1(v); el.classList.toggle('neg',v<0); });   // margem aplicada nas linhas com valor combinado
-    [['mg_desl_in','deslocamento','desl'],['mg_desp_in','despesas','desp'],['mg_equip_in','equip','equip']].forEach(p=>{ const e=document.getElementById(p[0]); if(e&&document.activeElement!==e) e.value=_d1(baseMg(p[1])); if(e){ e.disabled=!!t[p[2]]; e.title=t[p[2]]?'travado':''; } });
+    { const _abP=_combo?comboAbsorve():null; [['mg_desl_in','deslocamento','desl','desl'],['mg_desp_in','despesas','desp','outras'],['mg_equip_in','equip','equip','equip']].forEach(p=>{ const e=document.getElementById(p[0]); const absv=_abP&&_abP.m!==null&&_abP.grupos.indexOf(p[3])>=0; if(e&&document.activeElement!==e) e.value=_d1(absv?_abP.m*100:baseMg(p[1])); if(e) e.classList.toggle('calc',!!absv); if(e){ e.disabled=!!t[p[2]]; e.title=t[p[2]]?'travado':''; } }); }
     const im=document.querySelector('[data-f="impostoPct"]'); if(im) im.disabled=!!t.imp;
     if(isLoteUnit()){   // loja do lote: configuração de preço vem da BASE — tudo bloqueado aqui
       ['mg_serv_in','mg_mat_in','mg_desl_in','mg_desp_in','mg_equip_in'].forEach(id=>{ const e=document.getElementById(id); if(e){ e.disabled=true; e.title='definido na base do lote'; } });
