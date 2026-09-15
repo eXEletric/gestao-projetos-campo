@@ -722,7 +722,8 @@ body.viewing .clientonly{display:block!important}
 /* ===== FAIXAS do lote: cada etapa da proposta é uma faixa ordenável (S.fxLayout) ===== */
 body.fxon #fxCol{display:flex;flex-direction:column;min-width:0}
 body.fxon #loteBasePanel,body.fxon #loteBasePanel>div,body.fxon #blk_materiais.fxsplit{display:contents}
-body.fxon [data-fx^="lote."]{background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden;margin-bottom:12px}
+body.fxon [data-fx="lote.fatores"]{margin-bottom:12px}
+body.fxon [data-fx^="lote."]:not([data-fx="lote.fatores"]){background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden;margin-bottom:12px}
 body.fxon [data-fx="mat.cab"]{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:12px}
 body.fxon [data-fx="mat.base"],body.fxon [data-fx="mat.global"]{margin-bottom:12px}
 body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{margin-bottom:0!important}
@@ -3350,6 +3351,7 @@ var FX_DEF=[
   {id:'lote.unid',nm:'Por unidade · adicionar loja',ic:'add_business'},
   {id:'lote.lista',nm:'Lista de lojas',ic:'storefront'},
   {id:'lote.cond',nm:'Condições comerciais & partes',ic:'gavel'},
+  {id:'lote.fatores',nm:'Fatores da obra · base e abrangência',ic:'tune'},
   {id:'lote.macro',nm:'Macro da operação · custos globais',ic:'hub'},
   {id:'lote.prazo',nm:'Prazo (média · menor · maior)',ic:'schedule'},
   {id:'lote.total',nm:'Total do lote',ic:'functions'},
@@ -3392,6 +3394,8 @@ function fxApply(){ var col=document.getElementById('fxCol'); if(!col)return;
   if(!on){ if(FX_ORG)fxToggleOrg(); col.querySelectorAll(':scope > .fxg').forEach(function(g){g.remove();}); return; }
   var L=fxLay();
   var bm=document.getElementById('blk_materiais'); if(bm) bm.classList.toggle('fxsplit',!!bm.querySelector(':scope > [data-fx]'));
+  var fp=document.getElementById('fatoresPanel');   // Fatores da obra: sai de dentro de Serviços e vira faixa própria (global)
+  if(fp && fp.parentElement && fp.parentElement.id==='svcTopPanels'){ var fpOld=col.querySelector(':scope > [data-fx="lote.fatores"]'); if(fpOld)fpOld.remove(); fp.setAttribute('data-fx','lote.fatores'); col.appendChild(fp); }
   col.querySelectorAll(':scope > .fxg').forEach(function(g){ if(!L.grupos[g.id.slice(4)])g.remove(); });
   Object.keys(L.grupos).forEach(function(g){ var el=document.getElementById('fxg_'+g);
     if(!el){ el=document.createElement('div'); el.id='fxg_'+g; el.className='fxg noprint'; col.appendChild(el); }
