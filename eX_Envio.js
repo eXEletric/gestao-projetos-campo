@@ -302,6 +302,8 @@ async function gerarPDFDe(src,nome,prep){
     clone.querySelectorAll('*').forEach(e=>{ const r=e.getBoundingClientRect(); if(r.width>0 && r.right-L>w) w=Math.ceil(r.right-L); });
     w=Math.min(w+8,980); stage.style.width=w+'px'; clone.style.width=w+'px';
     await new Promise(r=>setTimeout(r,120));
+    // degradê em elemento sem tamanho derruba o gerador ("addColorStop non-finite"): tira o degradê desses
+    clone.querySelectorAll('*').forEach(e=>{ const cs=getComputedStyle(e); if(/gradient/.test(cs.backgroundImage)){ const r=e.getBoundingClientRect(); if(r.width<2||r.height<2||cs.display==='none') e.style.backgroundImage='none'; } });
     // não quebrar no meio: linhas de tabela e blocos pequenos (até 1/3 da folha)
     const m=24, pageW=w+3*m, pageH=Math.round(pageW*297/210), limite=(pageH-2*m)/3;   // +1 margem de folga: o gerador desloca o conteúdo e cortava a borda direita
     clone.querySelectorAll('tr,thead,p,h1,h2,h3,h4,li,img,div,section').forEach(e=>{ const h=e.getBoundingClientRect().height; if(h>0 && h<=limite) e.classList.add('env-nobreak'); });
