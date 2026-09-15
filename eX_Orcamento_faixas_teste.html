@@ -315,6 +315,8 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .ln .val{font-variant-numeric:tabular-nums;font-weight:600}
 .ln.tt{border-top:1px solid var(--line2);margin-top:6px;padding-top:9px;font-size:15px;font-weight:700}
 .ln.tt .val{font-size:16px;color:var(--pri)}
+.pcref{font-size:11px;color:var(--tx3);font-weight:600}
+.lockph{display:inline-block;width:30px}
 .gloteBox{background:#efeafc;border-bottom:1px solid #ddd6ee;padding:9px 16px 10px}
 .gloteBox .gh{display:flex;justify-content:space-between;align-items:baseline;gap:8px;cursor:pointer;user-select:none}
 .gloteBox .gh .t{font-size:10.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#5b3fb8;display:flex;align-items:center;gap:5px}
@@ -935,9 +937,9 @@ body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{backgrou
           <div class="ln" id="ln_equip"><span class="lbl"><span class="material-symbols-rounded">construction</span>Locações</span><span class="val" id="s_equip">—</span></div>
           <div class="ln" id="ln_materiais"><span class="lbl"><span class="material-symbols-rounded">inventory_2</span>Materiais</span><span class="val" id="s_mat">—</span></div>
           <div class="ln"><span class="lbl">Subtotal</span><span class="val" id="s_bruto">—</span></div>
-          <div class="ln" id="ln_desc"><span class="lbl">Desconto <input class="pin" style="width:52px" data-f="descontoPct" inputmode="decimal">%</span><span class="val" id="s_desc">—</span></div>
+          <div class="ln" id="ln_desc"><span class="lbl">Desconto <span class="pcref" id="s_desc_pc"></span></span><span class="val" id="s_desc">—</span></div>
           <div class="ln" id="ln_descad" style="display:none"><span class="lbl"><button class="noprint" id="descad_tog" onclick="toggleDescontoAdic()" title="Abater o valor dos adicionais como desconto comercial (a loja volta ao valor combinado)" style="border:1px solid var(--line2);background:var(--surf);border-radius:6px;padding:1px 6px;font:700 10.5px inherit;cursor:pointer;margin-right:4px">abater</button>Desconto comercial <span style="font-size:10.5px;color:var(--tx3)">(abatimento dos adicionais)</span></span><span class="val" id="s_descad">—</span></div>
-          <div class="ln" id="ln_imp"><span class="lbl">Impostos <input class="pin" style="width:52px" data-f="impostoPct" inputmode="decimal">%<button class="lockbtn noprint" id="lk_imp" onclick="toggleTrava('imp')"></button></span><span class="val" id="s_imp">—</span></div>
+          <div class="ln" id="ln_imp"><span class="lbl">Impostos <span class="pcref" id="s_imp_pc"></span></span><span class="val" id="s_imp">—</span></div>
           <div class="ln tt"><span class="lbl">Total</span><span class="val" id="s_total">R$ 0,00</span></div>
           <div class="ln combo noprint" id="ln_combo"><span class="lbl"><span class="material-symbols-rounded">handshake</span>Valor combinado</span><span class="val"><span style="color:var(--tx3);font-size:12px">R$</span> <input class="pin" id="in_combo" style="width:84px;text-align:right" inputmode="decimal" placeholder="—" onkeydown="if(event.key==='Enter'){event.preventDefault();aplicarCombo();}" oninput="var b=document.getElementById('combo_apl');if(b)b.classList.add('pend')"><button id="combo_apl" class="combo-apl" onclick="aplicarCombo()" title="Aplicar o valor combinado">Aplicar</button><button id="combo_clear" class="combo-x" onclick="clearCombo()" title="soltar — voltar às margens das abas" style="display:none"><span class="material-symbols-rounded">close</span></button></span></div>
           <div class="combo-note noprint" id="combo_note" style="display:none"></div>
@@ -945,6 +947,8 @@ body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{backgrou
           <!-- VISÃO INTERNA -->
           <div class="intbox">
             <div class="ih"><span class="material-symbols-rounded">lock</span>Visão interna — não vai pro cliente</div>
+            <div class="iln mgrow"><span class="lbl">Desconto</span><span class="val"><input class="pin" style="width:48px;text-align:right" data-f="descontoPct" inputmode="decimal">%<span class="lockph"></span></span></div>
+            <div class="iln mgrow"><span class="lbl">Impostos</span><span class="val"><input class="pin" style="width:48px;text-align:right" data-f="impostoPct" inputmode="decimal">%<button class="lockbtn noprint" id="lk_imp" onclick="toggleTrava('imp')"></button></span></div>
             <div class="iln"><span class="lbl">Margem serviços</span><span class="val"><input class="pin" style="width:48px;text-align:right" id="mg_serv_in" inputmode="decimal" onchange="setBlkMargem('servicos',this.value)">%<button class="lockbtn noprint" id="lk_serv" onclick="toggleTrava('serv')"></button></span></div>
             <div class="iln"><span class="lbl">Margem materiais</span><span class="val"><input class="pin" style="width:48px;text-align:right" id="mg_mat_in" inputmode="decimal" onchange="setBlkMargem('materiais',this.value)">%<button class="lockbtn noprint" id="lk_mat" onclick="toggleTrava('mat')"></button></span></div>
             <div class="iln"><span class="lbl">Custo real <span style="color:var(--tx3);font-weight:400">(auto)</span></span><span class="val" id="s_custo">—</span></div>
@@ -4403,7 +4407,7 @@ function recalc(){
   set('s_diarias',fmt(diaP)); const lndia=document.getElementById('ln_diarias'); if(lndia) lndia.style.display='none';   // linha própria removida — vai dentro de Despesas
   set('s_bruto',fmt(bruto+ratPreco)); set('s_desc','− '+fmt(desc));
   set('s_total',fmt(total+ratPreco)); set('s_preco',fmt(total+ratPreco));
-  set('s_imp','+ '+fmt(imp)); set('s_custo',fmt(custo));
+  set('s_imp','+ '+fmt(imp)); set('s_desc_pc','('+_d1(num(S.descontoPct))+'%)'); set('s_imp_pc','('+_d1(num(S.impostoPct))+'%)'); set('s_custo',fmt(custo));
   const lu=document.getElementById('s_lucro'), mg=document.getElementById('s_marg');
   if(lu)lu.textContent=fmt(lucro); if(mg)mg.textContent=marg.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
   const neg=(lucro<0);
