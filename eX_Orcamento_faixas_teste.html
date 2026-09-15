@@ -739,6 +739,13 @@ body.fxorg [data-fxnm].fxhl{outline:3px solid var(--pri);outline-offset:3px}
 #fxDrawer .fxhd{display:flex;align-items:center;gap:8px;padding:12px 14px;border-bottom:1px solid var(--line)}
 #fxDrawer .fxhd b{font-size:14px}
 #fxDrawer .fxbody{flex:1;overflow:auto;padding:10px 12px 16px}
+#fxDrawer.wide{width:min(1180px,96vw)!important}
+#fxDrawer.multicol .fxlist{columns:3 330px;column-gap:14px}
+#fxDrawer.multicol .fxleg{grid-template-columns:18px 1fr 18px 1fr 18px 1fr;max-width:1000px}
+#fxDrawer .fxlist .fxrow{break-inside:avoid}
+#fxDrawer .fxgrip{position:absolute;left:-5px;top:0;bottom:0;width:10px;cursor:ew-resize;z-index:3}
+#fxDrawer .fxgrip:hover,#fxDrawer .fxgrip.on{background:rgba(83,58,183,.22)}
+@media(max-width:700px){#fxDrawer .fxgrip{display:none}#fxDrawer.wide{width:100%!important}}
 #fxDrawer .fxsec{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--tx3);margin:10px 2px 6px}
 #fxDrawer .fxleg{display:grid;grid-template-columns:18px 1fr;gap:6px 8px;align-items:center}
 #fxDrawer .fxleg i{width:16px;height:16px;border-radius:50%;display:block}
@@ -3427,6 +3434,13 @@ function fxApply(){ var col=document.getElementById('fxCol'); if(!col)return;
   if(bm){ bm.style.order = bm.classList.contains('fxsplit') ? '' : String(ord.indexOf('mat.cab')+1); }   // editor a custo (sem faixas): o bloco inteiro fica na posição do cabeçalho
   if(FX_ORG)fxRenderDrawer();
 }
+var FX_WIDE=false, FX_W=0; try{ FX_WIDE=localStorage.getItem('ex_fx_wide')==='1'; FX_W=+(localStorage.getItem('ex_fx_w')||0); }catch(_){}   // visão ampla do Organizar (conveniência por navegador)
+function fxToggleWide(){ FX_WIDE=!FX_WIDE; try{ localStorage.setItem('ex_fx_wide',FX_WIDE?'1':'0'); }catch(_){} fxRenderDrawer(); }
+function fxGripStart(e){ e.preventDefault(); var d=document.getElementById('fxDrawer'); if(!d)return; var g=e.currentTarget; if(g)g.classList.add('on');
+  FX_WIDE=false; d.classList.remove('wide');
+  var mv=function(ev){ var w=Math.max(360,Math.min(window.innerWidth*0.96,window.innerWidth-ev.clientX)); FX_W=Math.round(w); d.style.width=FX_W+'px'; d.classList.toggle('multicol',FX_W>=720); };
+  var up=function(){ document.removeEventListener('mousemove',mv); document.removeEventListener('mouseup',up); try{ localStorage.setItem('ex_fx_w',String(FX_W)); localStorage.setItem('ex_fx_wide','0'); }catch(_){} fxRenderDrawer(); };
+  document.addEventListener('mousemove',mv); document.addEventListener('mouseup',up); }
 function fxToggleOrg(){ FX_ORG=!FX_ORG; document.body.classList.toggle('fxorg',FX_ORG);
   var b=document.getElementById('fxOrgBtn'); if(b)b.classList.toggle('on',FX_ORG);
   if(FX_ORG)fxRenderDrawer(); else { var d=document.getElementById('fxDrawer'); if(d)d.remove(); } }
@@ -3448,11 +3462,12 @@ function fxRenderDrawer(){ var d=document.getElementById('fxDrawer');
       : '<button class="fxvis '+(vis?'on':'off')+'" onclick="event.stopPropagation();fxSetVis(\''+id+'\')" title="'+(vis?'Aparece no documento do cliente — clique para tirar':'Fora do documento do cliente — clique para mostrar')+(id==='mat.base'&&vis&&S.matSomaOn!==false?' (com o Material global ligado, o cliente vê só o Global)':'')+'"><span class="material-symbols-rounded">'+(vis?'visibility':'visibility_off')+'</span>'+(vis?'na proposta':'fora')+'</button>';
     return '<div class="fxrow'+(miss?' miss':'')+'"'+drop(i)+' style="'+(inG?'margin-left:16px;':'')+(cc?'--fxc:'+cc:'')+'" onmouseenter="fxHl(\''+id+'\',true)" onmouseleave="fxHl(\''+id+'\',false)" onclick="fxIr(\''+id+'\')" title="'+(miss?'não aparece agora (depende do modo/visão) — a posição fica guardada':'clique para ir até a faixa')+'">'+handle(i)+'<span class="material-symbols-rounded" style="font-size:17px;color:var(--fxc,var(--tx3))">'+def.ic+'</span><span class="nm"'+(vis===false?' style="text-decoration:line-through;color:var(--tx3)"':'')+'>'+esc(def.nm)+'</span>'+arrows(i)+'<div class="fxrow2">'+visBtn+sw('f',id,ck)+'</div></div>'; }).join('');
   var leg='<div class="fxleg">'+FX_CORES.map(function(c){ return '<i style="background:'+c.c+'"></i><input class="fxin" value="'+esc(fxLeg(c.k))+'" onchange="fxSetLeg(\''+c.k+'\',this.value)">'; }).join('')+'</div>';
-  d.innerHTML='<div class="fxhd"><span class="material-symbols-rounded" style="color:var(--pri)">view_agenda</span><b>Organizar a proposta</b><span style="flex:1"></span><button class="fxib" onclick="fxToggleOrg()" title="fechar"><span class="material-symbols-rounded">close</span></button></div>'
+  var _w=FX_WIDE?0:FX_W; d.style.width=_w?(_w+'px'):''; d.classList.toggle('wide',FX_WIDE); d.classList.toggle('multicol',FX_WIDE||_w>=720);
+  d.innerHTML='<div class="fxgrip" onmousedown="fxGripStart(event)" title="Arraste para ajustar a largura"></div><div class="fxhd"><span class="material-symbols-rounded" style="color:var(--pri)">view_agenda</span><b>Organizar a proposta</b><span style="flex:1"></span><button class="fxbtn" onclick="fxToggleWide()" title="Visão ampla: faixas em colunas"><span class="material-symbols-rounded">'+(FX_WIDE?'close_fullscreen':'open_in_full')+'</span>'+(FX_WIDE?'Recolher':'Expandir')+'</button><button class="fxib" onclick="fxToggleOrg()" title="fechar"><span class="material-symbols-rounded">close</span></button></div>'
     +'<div class="fxbody"><div style="font-size:12px;color:var(--tx3);line-height:1.5">Arraste pela alça <span class="material-symbols-rounded" style="font-size:14px;vertical-align:-3px">drag_indicator</span> ou use as setas. A proposta muda na hora, na tela e no documento. <b>Nenhum valor é alterado.</b> Faixa apagada = não aparece no modo/visão atual (a posição fica guardada).</div>'
     +'<div class="fxsec">Legenda das cores · edite o significado</div>'+leg
     +'<div class="fxsec" style="display:flex;align-items:center;gap:6px">Faixas<span style="flex:1"></span><button class="fxbtn" onclick="fxAgruparPorCor()" title="Um grupo por cor, com o nome da legenda"><span class="material-symbols-rounded">palette</span>Agrupar pelas cores</button><button class="fxbtn" onclick="fxNovoGrupo()"><span class="material-symbols-rounded">create_new_folder</span>Novo grupo</button></div>'
-    +rows+'<div class="fxrow" style="justify-content:center;border-style:dashed;border-left-width:1px;color:var(--tx3);cursor:default"'+drop(ord.length)+'>soltar no fim</div></div>'
+    +'<div class="fxlist">'+rows+'<div class="fxrow" style="justify-content:center;border-style:dashed;border-left-width:1px;color:var(--tx3);cursor:default"'+drop(ord.length)+'>soltar no fim</div></div></div>'
     +'<div class="fxft"><button class="fxbtn" onclick="fxReset()"><span class="material-symbols-rounded">restart_alt</span>Ordem original</button><span style="flex:1;font-size:11px;color:var(--tx3);align-self:center">'+(MANUAL?'grava ao clicar <b>Salvar</b>':'salva sozinho')+'</span><button class="fxbtn pri" onclick="fxToggleOrg()"><span class="material-symbols-rounded">check</span>Pronto</button></div>';
   var nb=d.querySelector('.fxbody'); if(nb)nb.scrollTop=sc;
 }
