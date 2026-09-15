@@ -486,6 +486,14 @@ async function carregarEventos(){
     if(error) throw error;
     const antes=JSON.stringify(ENV.eventos.map(e=>[e.id,e.classificacao,e.anulado_em]));
     ENV.eventos=data||[]; ENV.evCarregado=true;
+    // proposta já aprovada: respostas abertas da revisão aprovada que dizem "aprovado" = confirmação, sozinhas
+    // (antigas ou chegando depois). Ajuste/recusa/dúvida continuam abertas para a pessoa conferir.
+    if(aprovada()){ const ra=revAprovada(); ENV._autoConf=ENV._autoConf||{};
+      const alvo=pendentes().filter(x=>x.sugestao==='aprovacao' && (!x.revisao||!ra||x.revisao===ra) && !ENV._autoConf[x.id]);
+      if(alvo.length){ for(const x of alvo){ ENV._autoConf[x.id]=1; try{ await SB.from('orcamento_eventos').update({classificacao:'outro',classificacao_motivo:`confirmação da aprovação da R${ra||x.revisao||''}`,classificado_por_nome:`automático (R${ra||x.revisao||''} já aprovada)`}).eq('id',x.id).is('classificacao',null); }catch(_){} }
+        const r2=await SB.from('orcamento_eventos').select('*').eq('orcamento_id',ORC_ID).is('deleted_at',null).order('ocorrido_em',{ascending:false});
+        if(!r2.error) ENV.eventos=r2.data||[];
+        toast(`${alvo.length===1?'1 resposta que dizia "aprovado" foi registrada':alvo.length+' respostas que diziam "aprovado" foram registradas'} como <b>confirmação</b> da R${ra} (já aprovada).`); } }
     if(antes!==JSON.stringify(ENV.eventos.map(e=>[e.id,e.classificacao,e.anulado_em]))){ try{ decorar(); }catch(_){ renderTrat(); } }
   }catch(e){ console.error('tratativas',e); }
 }
@@ -533,7 +541,7 @@ function renderTrat(){
         <button class="envbtn ghost sm2" onclick="EXENV.anular('${e.id}')" title="Não é desta proposta / registrado por engano">${ms('link_off')}Não é desta proposta</button>
       </div></div>`; };
   const linha=e=>{ const [ic,c]=ehConfirmacao(e)&&!e.anulado_em?['task_alt','green']:evIcone(e); const cl=ehConfirmacao(e)?['task_alt','Confirmação','green']:(e.classificacao&&CLS[e.classificacao]);
-    const manual=['contato','nota','cobranca'].includes(e.tipo)||(e.tipo==='email_cliente'&&e.classificacao);
+    const manual=(['contato','nota','cobranca'].includes(e.tipo)&&e.canal!=='sistema')||(e.tipo==='email_cliente'&&e.classificacao);   // nota automática do sistema não se anula
     return `<div class="trev ${e.anulado_em?'off':''}"><span class="tric ${c}">${ms(ic)}</span><div class="trevb">
       <div class="trevt">${esc(e.titulo||'')} ${revChip(e)} ${cl?`<span class="trcl ${cl[2]}">${cl[1]}${ehConfirmacao(e)?(' da R'+(String(e.classificacao_motivo).match(/R(\d+)/)||['',''])[1]):(e.classificacao_motivo?' · '+esc(e.classificacao_motivo):'')}</span>`:''}</div>
       <div class="trm">${brDH(e.ocorrido_em)}${e.canal?' · '+esc(e.canal):''}${e.criado_por_nome?' · '+esc(e.criado_por_nome):''}${e.classificado_por_nome?' · classificado por '+esc(e.classificado_por_nome):''}</div>
