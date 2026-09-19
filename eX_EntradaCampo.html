@@ -178,9 +178,10 @@ function listAvul(){
   var box=document.getElementById('list'); if(!box)return;
   if(!ITENS.length){ box.innerHTML='<div class="state" style="padding:16px;font-size:13px">Vazia por enquanto. O que você cadastrar aqui aparece nesta lista.</div>'; return; }
   box.innerHTML=ITENS.map(function(m){
-    return '<div class="row2 done" onclick="openFicha(\''+m.id+'\')"><span class="ck">'+CK+'</span>'+
-      '<div class="info"><div class="nm">'+esc(m.descricao)+'</div><div class="cd">'+esc(m.codigo||'')+(m.unidade?(' · '+esc(m.unidade)):'')+'</div></div>'+
-      '<span class="qt">'+(m.saldo||0)+'</span></div>';
+    return '<div class="row2 done"><span class="ck" onclick="openFicha(\''+m.id+'\')">'+CK+'</span>'+
+      '<div class="info" onclick="openFicha(\''+m.id+'\')"><div class="nm">'+esc(m.descricao)+'</div>'+
+      '<div class="cd" style="color:var(--amber)"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" style="vertical-align:-1px"><path d="M12 9v4M12 17h.01M10.3 3.9l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.7-3l-8-14a2 2 0 0 0-3.4 0z"/></svg> falta definir compartimento · saldo '+(m.saldo||0)+'</div></div>'+
+      '<button onclick="atribuirAbrir(\''+m.id+'\')" style="flex:none;border:1px solid var(--pri);background:#faf9ff;color:var(--pri);border-radius:9px;padding:8px 10px;font-size:12px;font-weight:600">definir</button></div>';
   }).join('');
 }
 function novoItemAvulso(){
@@ -200,6 +201,18 @@ function setDest(id,v){
     return;
   }
   reg(id).destino=v; saveDraft();
+}
+function atribuirAbrir(id){
+  var reais=COMPARTS.filter(function(c){return c.modo!=='avulso';});
+  var m=ITMAP[id]||{};
+  if(!reais.length){ openSheet('<h3>Atribuir compartimento</h3><div class="iacampo">Nenhuma bolsa/caixa criada ainda. Crie no painel de compartimentos.</div><div class="iabtns"><button onclick="closeSheet()">Fechar</button></div>'); return; }
+  var opts=reais.map(function(c){ return '<a onclick="atribuirEm(\''+id+'\',\''+c.qr+'\')" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border:1px solid var(--line);border-radius:10px;margin-bottom:8px;text-decoration:none;color:var(--ink)"><span><b style="color:var(--pri2)">'+esc(c.numero)+'</b> · '+esc(c.rotulo||'')+'</span><span class="go">›</span></a>'; }).join('');
+  openSheet('<h3>Guardar em qual compartimento?</h3><div style="font-size:13px;color:var(--ink2);margin-bottom:10px">'+esc(m.descricao||'item')+'</div>'+opts+'<div class="iabtns"><button onclick="closeSheet()">Cancelar</button></div>');
+}
+function atribuirEm(id,destinoQr){
+  api('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'atribuir_compartimento',origem_qr:BQR,destino_qr:destinoQr,material_id:id})}).then(function(d){
+    if(d.error)throw new Error(d.error); closeSheet(); loadBolsa();
+  }).catch(function(e){ alert('Erro: '+e.message); });
 }
 function salvarUm(id){
   if(qtd(id)<=0){ alert(isFerr(id)?'Adicione ao menos uma unidade.':'Informe a quantidade.'); return; }
