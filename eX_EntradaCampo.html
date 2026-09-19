@@ -217,7 +217,10 @@ function openFicha(id){
   var foto='<label class="foto'+(r.foto?' ok':'')+'"><input type="file" accept="image/*" capture="environment" style="display:none" onchange="foto(\''+id+'\',this)">'+(r.foto?('<img src="'+r.foto.thumb+'"> foto ok'):(camsvg+' Foto / IA'))+'</label>';
   var body='';
   if(isFerr(id)){
-    if(!r.units)r.units=[];
+    if(!r.units || !r.units.length){
+      if(m.unidades && m.unidades.length){ r.units=m.unidades.map(function(u){return {serial:u.serial||'',patrimonio:u.patrimonio||'',estado:u.estado||'bom'};}); saveDraft(); }
+      else if(!r.units){ r.units=[]; }
+    }
     var us=r.units.map(function(u,i){ return unitRow(id,i,u); }).join('');
     body='<div class="fld"><label>Unidades — uma por nº de série</label><div id="units">'+us+'</div><button class="addu" onclick="unitAdd(\''+id+'\')">+ Adicionar unidade</button></div>'+
       '<div class="fld"><label>Foto do modelo (opcional)</label><div class="qtrow">'+foto+'</div></div>';
@@ -230,8 +233,9 @@ function openFicha(id){
   var destFld='';
   if(avul){
     var dq=r.destino||BQR;
-    var opts=COMPARTS.map(function(c){return '<option value="'+c.qr+'"'+(dq===c.qr?' selected':'')+'>'+esc(c.numero+' · '+(c.rotulo||''))+'</option>';}).join('');
-    destFld='<div class="fld"><label>Guardar em</label><select class="inp" onchange="setDest(\''+id+'\',this.value)">'+opts+'<option value="__new">+ criar nova bag/caixa…</option></select></div>';
+    var destinos=COMPARTS.filter(function(c){return c.modo==='avulso';});
+    var opts=destinos.map(function(c){return '<option value="'+c.qr+'"'+(dq===c.qr?' selected':'')+'>'+esc(c.numero+' · '+(c.rotulo||''))+'</option>';}).join('');
+    destFld='<div class="fld"><label>Guardar em</label><select class="inp" onchange="setDest(\''+id+'\',this.value)">'+opts+'<option value="__new">+ criar nova bag…</option></select></div>';
   }
   var backJs=avul?'renderAvulso()':'renderList()';
   var confFn=avul?'salvarUm':'fichaOk';
@@ -272,7 +276,7 @@ function novoItem(){ var nome=prompt('Descrição do item novo (neste grupo/subg
     if(d.error)throw new Error(d.error); ITENS.push(d.material); ITMAP[d.material.id]=d.material; openFicha(d.material.id);
   }).catch(function(e){ alert('Erro: '+e.message); });
 }
-function catDoGrupo(){ return (ITENS[0]&&ITENS[0].categoria)||'material'; }
+function catDoGrupo(){ return (BOLSA&&BOLSA.categoria)||(ITENS[0]&&ITENS[0].categoria)||'material'; }
 /* ===== SALVAR ===== */
 function salvar(){
   var itens=[]; ITENS.forEach(function(m){ var id=m.id,r=REG[id]; if(!r)return; var q=qtd(id); if(q<=0)return;
