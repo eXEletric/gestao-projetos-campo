@@ -148,7 +148,7 @@ function renderList(){
   box.innerHTML=COMPS.map(function(b){
     var modoChip = b.modo==='hierarquia'
       ? '<span class="chip hier">hierarquia</span>'
-      : '<span class="chip dem">demanda</span>';
+      : (b.modo==='avulso' ? '<span class="chip dem">avulsos</span>' : '<span class="chip dem">demanda</span>');
     var saldo = b.itens_com_saldo?('<span class="chip saldo">'+b.itens_com_saldo+' com saldo</span>'):'';
     var tsel='';['bolsa','caixa','bag'].forEach(function(t){ tsel+='<option value="'+t+'"'+(b.tipo===t?' selected':'')+'>'+tipoLabel(t)+'</option>'; });
     var editable = b.modo!=='hierarquia';

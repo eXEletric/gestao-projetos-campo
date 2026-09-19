@@ -73,6 +73,7 @@ var qs=new URLSearchParams(location.search);
 var TOKEN=qs.get('t')||'ex-campo-2026';
 var BQR=qs.get('b')||''; var ESTOQUE=qs.get('e')||'Almox. Móvel · Frente 1';
 var BOLSA=null, ITENS=[], ITMAP={}, BUSCA='', REG={}, IA_LAST=null;
+var COMPARTS=[], SR=[], SRQ='', SRT=null;
 var EST_OPT=[['novo','Novo'],['bom','Bom'],['desgaste','Desgaste'],['danificado','Danificado']];
 var DKEY='ex_bolsa_'+BQR;
 try{ REG=JSON.parse(localStorage.getItem(DKEY)||'{}')||{}; }catch(e){ REG={}; }
@@ -89,15 +90,21 @@ function boot(){ if(BQR) loadBolsa(); else loadPick(); }
 function loadBolsa(){
   api('?action=bolsa&b='+encodeURIComponent(BQR)).then(function(d){
     if(d.error) throw new Error(d.error);
-    BOLSA=d.bolsa; ITENS=d.itens||[]; ITMAP={}; ITENS.forEach(function(m){ITMAP[m.id]=m;}); renderList();
+    BOLSA=d.bolsa; ITENS=d.itens||[]; ITMAP={}; ITENS.forEach(function(m){ITMAP[m.id]=m;});
+    if(BOLSA.modo==='avulso'){ loadComparts(renderAvulso); } else { renderList(); }
   }).catch(function(e){ document.getElementById('root').innerHTML='<div class="state">Não carregou ('+esc(e.message)+').</div>'; });
+}
+function loadComparts(cb){
+  api('?action=estrutura&estoque='+encodeURIComponent(BOLSA.estoque||ESTOQUE)).then(function(d){
+    COMPARTS=(d.compartimentos||d.bolsas||[]); cb&&cb();
+  }).catch(function(){ COMPARTS=[]; cb&&cb(); });
 }
 function loadPick(){
   api('?action=estrutura&estoque='+encodeURIComponent(ESTOQUE)).then(function(d){
     if(d.error) throw new Error(d.error); var bs=d.bolsas||[];
     var h='<div class="hd"><div class="t">'+esc(d.estoque.nome)+'</div><div class="m">escolha a bolsa</div></div><div class="pick">';
     if(!bs.length)h+='<div class="state">Nenhuma bolsa criada ainda.</div>';
-    h+=bs.map(function(b){return '<a href="?b='+b.qr+'&t='+TOKEN+'"><span><span class="n">'+esc(b.numero)+'</span> · '+esc(b.grupo||'')+(b.subgrupo?(' / '+esc(b.subgrupo)):'')+'</span><span class="go">›</span></a>';}).join('');
+    h+=bs.map(function(b){return '<a href="?b='+b.qr+'&t='+TOKEN+'"><span><span class="n">'+esc(b.numero)+'</span> · '+esc(b.rotulo||b.grupo||'')+'</span><span class="go">›</span></a>';}).join('');
     document.getElementById('root').innerHTML=h+'</div>';
   }).catch(function(e){ document.getElementById('root').innerHTML='<div class="state">Erro: '+esc(e.message)+'</div>'; });
 }
@@ -137,6 +144,72 @@ function foot(){ var it=0,un=0; ITENS.forEach(function(m){ var q=qtd(m.id); if(q
   var fi=document.getElementById('fi'),fu=document.getElementById('fu'); if(fi)fi.textContent=it; if(fu)fu.textContent=un;
   var pl=document.getElementById('pl'),pb=document.getElementById('pbar'); if(pl)pl.textContent=it+' de '+ITENS.length; if(pb)pb.style.width=(ITENS.length?Math.round(it/ITENS.length*100):0)+'%';
 }
+/* ===== MODO ITEM-FIRST (bag Avulsos) ===== */
+function renderAvulso(){
+  var b=BOLSA;
+  var h='<div class="hd"><a href="?e='+encodeURIComponent(b.estoque||'')+'&t='+TOKEN+'">‹ compartimentos</a>'+
+    '<div class="t">'+esc(b.numero)+' · '+esc(b.rotulo||'Avulsos')+'</div>'+
+    '<div class="m">'+esc(b.estoque||'')+' — busque o item e cadastre</div></div>'+
+    '<div class="tools"><input class="srch" id="srch" placeholder="Buscar item no catálogo…" oninput="onSearch(this.value)">'+
+      '<label class="aibtn"><input type="file" accept="image/*" capture="environment" style="display:none" onchange="iaIdentificar(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 5.1L19 9l-5.3 1.9L12 16l-1.7-5.1L5 9l5.3-1.9z"/></svg> Identificar por foto (IA)</label></div>'+
+    '<div id="sr"></div>'+
+    '<div class="newb" onclick="novoItemAvulso()">+ Cadastrar item novo</div>'+
+    '<div class="grp">Já nesta bag · '+ITENS.length+'</div><div id="list"></div><div style="height:24px"></div>';
+  document.getElementById('root').innerHTML=h; renderSR(); listAvul();
+}
+function onSearch(v){ SRQ=(v||'').trim(); if(SRT)clearTimeout(SRT); SRT=setTimeout(buscarCat,260); }
+function buscarCat(){
+  if(SRQ.length<2){ SR=[]; renderSR(); return; }
+  api('?action=buscar&q='+encodeURIComponent(SRQ)).then(function(d){ SR=(d.itens||[]); renderSR(); });
+}
+function renderSR(){
+  var box=document.getElementById('sr'); if(!box)return;
+  if(SRQ.length<2){ box.innerHTML='<div class="state" style="padding:22px">Digite ao menos 2 letras para buscar no catálogo.</div>'; return; }
+  if(!SR.length){ box.innerHTML='<div class="state" style="padding:22px">Nada encontrado. Use “Cadastrar item novo”.</div>'; return; }
+  box.innerHTML='<div class="grp">Resultados · '+SR.length+'</div>'+SR.map(function(m,i){
+    return '<div class="row2" onclick="tapSR('+i+')"><span class="ck" style="border-style:dashed"></span>'+
+      '<div class="info"><div class="nm">'+esc(m.descricao)+'</div><div class="cd">'+esc(m.codigo||'')+' · '+({ferramenta:'ferramenta',epi:'EPI',uniforme:'uniforme',consumivel:'consumível',material:'material'}[m.categoria]||'material')+(m.subgrupo?(' · '+esc(m.subgrupo)):'')+'</div></div><span class="go">›</span></div>';
+  }).join('');
+}
+function tapSR(i){ var m=SR[i]; if(!m)return; ITMAP[m.id]={id:m.id,descricao:m.descricao,codigo:m.codigo,categoria:m.categoria||'material',unidade:m.unidade,subgrupo:m.subgrupo,saldo:0}; openFicha(m.id); }
+function listAvul(){
+  var box=document.getElementById('list'); if(!box)return;
+  if(!ITENS.length){ box.innerHTML='<div class="state" style="padding:16px;font-size:13px">Vazia por enquanto. O que você cadastrar aqui aparece nesta lista.</div>'; return; }
+  box.innerHTML=ITENS.map(function(m){
+    return '<div class="row2 done" onclick="openFicha(\''+m.id+'\')"><span class="ck">'+CK+'</span>'+
+      '<div class="info"><div class="nm">'+esc(m.descricao)+'</div><div class="cd">'+esc(m.codigo||'')+(m.unidade?(' · '+esc(m.unidade)):'')+'</div></div>'+
+      '<span class="qt">'+(m.saldo||0)+'</span></div>';
+  }).join('');
+}
+function novoItemAvulso(){
+  var nome=prompt('Descrição do item novo:'); if(!nome)return;
+  var cat=(prompt('Natureza: material, ferramenta, epi, consumivel ou uniforme','material')||'material').trim().toLowerCase();
+  if(['material','ferramenta','epi','consumivel','uniforme'].indexOf(cat)<0)cat='material';
+  api('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'cadastrar_material',descricao:nome,categoria:cat})}).then(function(d){
+    if(d.error)throw new Error(d.error); ITMAP[d.material.id]=d.material; openFicha(d.material.id);
+  }).catch(function(e){ alert('Erro: '+e.message); });
+}
+function setDest(id,v){
+  if(v==='__new'){
+    var nome=prompt('Nome da nova bag/caixa:'); if(!nome){ openFicha(id); return; }
+    api('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'criar_compartimento',estoque:BOLSA.estoque||ESTOQUE,tipo:'bag',modo:'avulso',nome:nome})}).then(function(d){
+      if(d.error)throw new Error(d.error); var c=d.compartimento||d.bolsa; COMPARTS.push({qr:c.qr,numero:c.numero,rotulo:c.rotulo||nome}); reg(id).destino=c.qr; saveDraft(); openFicha(id);
+    }).catch(function(e){ alert('Erro: '+e.message); openFicha(id); });
+    return;
+  }
+  reg(id).destino=v; saveDraft();
+}
+function salvarUm(id){
+  if(qtd(id)<=0){ alert(isFerr(id)?'Adicione ao menos uma unidade.':'Informe a quantidade.'); return; }
+  var r=reg(id); var it={material_id:id,quantidade:qtd(id),foto:r.foto?r.foto.path:null,obs:r.obs||null};
+  if(isFerr(id)){ it.unidades=(r.units||[]).map(function(u){return {serial:u.serial||null,patrimonio:u.patrimonio||null,estado:u.estado||'bom'};}); }
+  if(isEpi(id)){ it.ca=r.ca||null; it.validade_ca=r.validade_ca||null; it.tamanho=r.tamanho||null; }
+  var dest=r.destino||BQR;
+  var btn=document.querySelector('.conf'); if(btn){btn.disabled=true;btn.textContent='Salvando…';}
+  api('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'salvar',b:dest,itens:[it]})}).then(function(d){
+    if(d.error)throw new Error(d.error); delete REG[id]; saveDraft(); loadBolsa();
+  }).catch(function(e){ var b=document.querySelector('.conf'); if(b)b.disabled=false; alert('Erro ao salvar: '+e.message); });
+}
 /* ===== FICHA POR ITEM ===== */
 function openFicha(id){
   var m=ITMAP[id]; if(!m)return; var r=reg(id);
@@ -153,9 +226,19 @@ function openFicha(id){
     if(isEpi(id)) body+='<div class="fld"><label>CA · validade · tamanho</label><div class="three"><input class="inp" placeholder="CA" value="'+esc(r.ca||'')+'" oninput="rset(\''+id+'\',\'ca\',this.value)"><input class="inp" placeholder="dd/mm/aaaa" value="'+esc(r.validade_ca||'')+'" oninput="rset(\''+id+'\',\'validade_ca\',this.value)"><input class="inp" placeholder="tam" style="max-width:70px" value="'+esc(r.tamanho||'')+'" oninput="rset(\''+id+'\',\'tamanho\',this.value)"></div></div>';
     body+='<div class="fld"><label>Observação (opcional)</label><input class="inp" placeholder="estado, marca…" value="'+esc(r.obs||'')+'" oninput="rset(\''+id+'\',\'obs\',this.value)"></div>';
   }
-  var h='<div class="hd"><a onclick="renderList();return false" href="#">‹ voltar à bolsa</a><div class="t">Cadastrar item</div></div>'+
+  var avul=BOLSA&&BOLSA.modo==='avulso';
+  var destFld='';
+  if(avul){
+    var dq=r.destino||BQR;
+    var opts=COMPARTS.map(function(c){return '<option value="'+c.qr+'"'+(dq===c.qr?' selected':'')+'>'+esc(c.numero+' · '+(c.rotulo||''))+'</option>';}).join('');
+    destFld='<div class="fld"><label>Guardar em</label><select class="inp" onchange="setDest(\''+id+'\',this.value)">'+opts+'<option value="__new">+ criar nova bag/caixa…</option></select></div>';
+  }
+  var backJs=avul?'renderAvulso()':'renderList()';
+  var confFn=avul?'salvarUm':'fichaOk';
+  var confTxt=avul?'Cadastrar':'Cadastrar e voltar';
+  var h='<div class="hd"><a onclick="'+backJs+';return false" href="#">‹ voltar</a><div class="t">Cadastrar item</div></div>'+
     '<div class="fk"><div class="big">'+esc(m.descricao)+'</div><div class="cd2">'+esc(m.codigo||'')+' · '+esc(m.subgrupo||BOLSA.subgrupo||BOLSA.grupo||'')+' · '+({ferramenta:'ferramenta',epi:'EPI',uniforme:'uniforme',consumivel:'consumível',material:'material'}[m.categoria]||'material')+'</div>'+
-    body+'<button class="conf" onclick="fichaOk(\''+id+'\')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12.5l4 4 10-10"/></svg> Cadastrar e voltar</button></div>';
+    destFld+body+'<button class="conf" onclick="'+confFn+'(\''+id+'\')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12.5l4 4 10-10"/></svg> '+confTxt+'</button></div>';
   document.getElementById('root').innerHTML=h; window.scrollTo(0,0);
 }
 function unitRow(id,i,u){
