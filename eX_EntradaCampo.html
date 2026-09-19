@@ -53,6 +53,9 @@ body{margin:0;background:var(--bg);color:var(--ink);font-family:-apple-system,Bl
 .pick{padding:14px}.pick a{display:flex;justify-content:space-between;align-items:center;background:var(--surf);border:1px solid var(--line);border-radius:11px;padding:13px 15px;margin-bottom:10px;text-decoration:none;color:var(--ink)}
 .pick .n{font-weight:600;color:var(--pri2)}
 svg.ic{vertical-align:-3px}
+.aibtn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:9px;border:1px solid #cfe4b6;background:#f4fbee;color:var(--ok);border-radius:10px;padding:11px;font-size:14px;font-weight:600}
+.iabtns{display:flex;gap:8px;margin-top:14px}.iabtns button{flex:1;border-radius:9px;padding:12px 0;font-size:14px;font-weight:600;border:1px solid var(--line);background:#fff;color:var(--ink2)}.iabtns .use{background:var(--pri);color:#fff;border-color:var(--pri)}
+.iacampo{font-size:13px;color:var(--ink2);background:#f7f5f0;border-radius:8px;padding:8px 10px;margin-top:8px}.iacampo b{color:var(--ink)}
 </style></head><body>
 <div id="root"><div class="state">Carregando…</div></div>
 <script>
@@ -100,7 +103,7 @@ function render(){
     '<div class="t">'+esc(b.numero)+' · '+esc(b.grupo||'')+(b.subgrupo?(' › '+esc(b.subgrupo)):'')+'</div>'+
     '<div class="m">'+esc(b.estoque||'')+' — conte o que há nesta bolsa</div>'+
     '<div class="prog"><i id="pbar"></i></div><div class="pl"><span>lançados</span><span id="pl"></span></div></div>'+
-    '<div class="tools"><input class="srch" id="srch" placeholder="Buscar nesta bolsa…"></div>'+
+    '<div class="tools"><input class="srch" id="srch" placeholder="Buscar nesta bolsa…"><label class="aibtn"><input type="file" accept="image/*" capture="environment" style="display:none" onchange="iaIdentificar(this)"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l1.7 5.1L19 9l-5.3 1.9L12 16l-1.7-5.1L5 9l5.3-1.9z"/></svg> Identificar por foto (IA)</label></div>'+
     '<div id="list"></div>'+
     '<div class="newb" onclick="novoItem()">+ Não achou? Item novo</div>'+
     '<div style="height:74px"></div>'+
@@ -114,9 +117,8 @@ function render(){
 function vis(){ return ITENS.filter(function(m){ if(!BUSCA)return true; return (m.descricao+' '+(m.codigo||'')+' '+(m.marca||'')).toLowerCase().indexOf(BUSCA)>=0; }); }
 function detFields(m){
   var c=m.categoria||'material'; var d=DET[m.id]||{};
-  var f='<label class="fotob'+(FOTO[m.id]?' ok':'')+'" id="fb_'+m.id+'"><input type="file" accept="image/*" capture="environment" style="display:none" onchange="foto(\''+m.id+'\',this)">'+
-    (FOTO[m.id]?('<img class="thumb" src="'+FOTO[m.id].thumb+'">'):'📷')+' '+(FOTO[m.id]?'foto ok':'Foto')+'</label>'+
-    ' <span class="aib" onclick="alert(\'A IA da foto entra no próximo passo (Bloco B).\')">✦ Foto → IA</span>';
+  var camsvg='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="vertical-align:-4px"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg>';
+  var f='<label class="fotob'+(FOTO[m.id]?' ok':'')+'" id="fb_'+m.id+'"><input type="file" accept="image/*" capture="environment" style="display:none" onchange="foto(\''+m.id+'\',this)">'+(FOTO[m.id]?('<img class="thumb" src="'+FOTO[m.id].thumb+'">'):camsvg)+' '+(FOTO[m.id]?'foto ok':'Foto')+'</label>';
   var extra='';
   if(c==='epi'||c==='uniforme'){ extra='<div class="r"><input placeholder="CA" value="'+esc(d.ca||'')+'" oninput="setDet(\''+m.id+'\',\'ca\',this.value)"><input placeholder="Validade (dd/mm/aaaa)" value="'+esc(d.validade_ca||'')+'" oninput="setDet(\''+m.id+'\',\'validade_ca\',this.value)"><input placeholder="Tamanho" value="'+esc(d.tamanho||'')+'" oninput="setDet(\''+m.id+'\',\'tamanho\',this.value)"></div>'; }
   else if(c==='ferramenta'){ extra='<div class="r"><input placeholder="Nº de série / patrimônio" value="'+esc(d.serial||'')+'" oninput="setDet(\''+m.id+'\',\'serial\',this.value)"></div>'; }
@@ -180,6 +182,48 @@ function salvar(){
     if(d.error) throw new Error(d.error); try{localStorage.removeItem(DKEY);}catch(e){}
     document.getElementById('root').innerHTML='<div class="okscr"><div class="c">✓</div><h2>Bolsa salva</h2><p>'+d.itens+' itens · '+d.unidades+' unidades<br><b>'+esc(BOLSA.numero+' · '+(BOLSA.grupo||''))+'</b></p></div>';
   }).catch(function(e){ var bs=sh.querySelector('.bigsave'); bs.disabled=false; bs.textContent='Salvar entrada da bolsa'; alert('Erro: '+e.message); });
+}
+var IA_FN='https://djguxdgaobtminatxkdr.supabase.co/functions/v1/visao-ia';
+var IA_LAST=null;
+function openSheet(html){ var sh=document.getElementById('sheet'); if(!sh)return; sh.innerHTML=html; document.getElementById('ovl').classList.add('show'); }
+function closeSheet(){ var o=document.getElementById('ovl'); if(o)o.classList.remove('show'); }
+function iaIdentificar(input){
+  var f=input.files&&input.files[0]; if(!f)return; input.value='';
+  openSheet('<h3>Identificar por foto</h3><div style="text-align:center;padding:16px 8px;color:#5f5d57">Analisando a foto…</div>');
+  compress(f,function(dataUrl){
+    fetch(IA_FN,{method:'POST',headers:{'Content-Type':'application/json','x-token':TOKEN},body:JSON.stringify({b:BQR,imagem_base64:dataUrl})})
+     .then(function(r){return r.json();}).then(function(d){ IA_LAST=d; iaResult(d); })
+     .catch(function(e){ openSheet('<h3>Identificar por foto</h3><div class="iacampo">Erro: '+esc(e.message)+'</div><div class="iabtns"><button onclick="closeSheet()">Fechar</button></div>'); });
+  });
+}
+function campoLinha(c){
+  var p=[]; if(c.ca)p.push('CA <b>'+esc(c.ca)+'</b>'); if(c.validade)p.push('validade <b>'+esc(c.validade)+'</b>'); if(c.tamanho)p.push('tam <b>'+esc(c.tamanho)+'</b>'); if(c.marca)p.push('marca <b>'+esc(c.marca)+'</b>'); if(c.modelo)p.push('modelo <b>'+esc(c.modelo)+'</b>');
+  return p.length? '<div class="iacampo">'+p.join(' · ')+'</div>':'';
+}
+function iaResult(d){
+  if(d && (d.configurar||d.error==='sem_chave')){ openSheet('<h3>IA da foto</h3><div class="iacampo">Ainda não configurada — falta a chave <b>ANTHROPIC_API_KEY</b> no Supabase.</div><div class="iabtns"><button onclick="closeSheet()">Fechar</button></div>'); return; }
+  if(!d || d.error){ openSheet('<h3>IA da foto</h3><div class="iacampo">Não deu: '+esc((d&&d.error)||'erro')+'</div><div class="iabtns"><button onclick="closeSheet()">Fechar</button></div>'); return; }
+  if(d.material){
+    openSheet('<h3>A IA reconheceu</h3><div style="font-weight:600;font-size:15px">'+esc(d.material.descricao)+'</div><div style="font-size:12px;color:#8c8981">confiança '+(d.confianca||0)+'%</div>'+campoLinha(d.campos||{})+'<div class="iabtns"><button onclick="closeSheet()">Não é</button><button class="use" onclick="iaUsar()">Usar · +1</button></div>');
+  } else {
+    var c=d.campos||{};
+    openSheet('<h3>Item novo</h3><div class="iacampo">Não está no catálogo desta bolsa.'+(c.descricao?' A IA leu: <b>'+esc(c.descricao)+'</b>':'')+'</div>'+campoLinha(c)+'<div class="iabtns"><button onclick="closeSheet()">Cancelar</button><button class="use" onclick="iaCadastrar()">Cadastrar e +1</button></div>');
+  }
+}
+function iaUsar(){
+  var d=IA_LAST; if(!d||!d.material){ closeSheet(); return; }
+  var id=d.material.id; COUNTS[id]=(COUNTS[id]||0)+1; var c=d.campos||{};
+  DET[id]=DET[id]||{}; if(c.ca)DET[id].ca=c.ca; if(c.validade)DET[id].validade_ca=c.validade; if(c.tamanho)DET[id].tamanho=c.tamanho;
+  saveDraft(); closeSheet(); renderList(); upFoot();
+  var row=document.getElementById('row_'+id); if(row){ EXPAND[id]=true; var dt=document.getElementById('det_'+id); if(dt)dt.classList.add('show'); row.scrollIntoView({block:'center'}); }
+}
+function iaCadastrar(){
+  var d=IA_LAST; var c=(d&&d.campos)||{}; var nome=c.descricao||prompt('Descrição do item novo:'); if(!nome){ return; }
+  api('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'cadastrar_material',descricao:nome,grupo_material_id:BOLSA.grupo_id,subgrupo:BOLSA.subgrupo,categoria:catDoGrupo(),marca:c.marca||null,modelo:c.modelo||null,ca:c.ca||null,validade_ca:c.validade||null,tamanho:c.tamanho||null})}).then(function(r){
+    if(r.error) throw new Error(r.error); ITENS.push(r.material); COUNTS[r.material.id]=1;
+    if(c.ca||c.tamanho||c.validade){ DET[r.material.id]={ca:c.ca||null,validade_ca:c.validade||null,tamanho:c.tamanho||null}; }
+    saveDraft(); closeSheet(); renderList(); upFoot();
+  }).catch(function(e){ alert('Erro ao cadastrar: '+e.message); });
 }
 boot();
 </script>
