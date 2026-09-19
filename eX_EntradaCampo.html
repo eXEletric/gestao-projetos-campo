@@ -299,8 +299,8 @@ function iaIdentificar(input){ var f=input.files&&input.files[0]; if(!f)return; 
 }
 function campoLinha(c){ var p=[]; if(c.ca)p.push('CA <b>'+esc(c.ca)+'</b>'); if(c.validade)p.push('validade <b>'+esc(c.validade)+'</b>'); if(c.tamanho)p.push('tam <b>'+esc(c.tamanho)+'</b>'); if(c.marca)p.push('marca <b>'+esc(c.marca)+'</b>'); if(c.modelo)p.push('modelo <b>'+esc(c.modelo)+'</b>'); return p.length?'<div class="iacampo">'+p.join(' · ')+'</div>':''; }
 function iaResult(d){
-  if(d&&(d.configurar||d.error==='sem_chave')){ openSheet('<h3>IA da foto</h3><div class="iacampo">Ainda não configurada — falta a chave <b>ANTHROPIC_API_KEY</b> no Supabase.</div><div class="iabtns"><button onclick="closeSheet()">Fechar</button></div>'); return; }
-  if(!d||d.error){ openSheet('<h3>IA da foto</h3><div class="iacampo">Não deu: '+esc((d&&d.error)||'erro')+'</div><div class="iabtns"><button onclick="closeSheet()">Fechar</button></div>'); return; }
+  if(d&&(d.configurar||d.error==='sem_chave')){ openSheet('<h3>IA da foto</h3><div class="iacampo">Ainda não configurada — falta a chave <b>ANTHROPIC_API_KEY</b> no Supabase. Você pode cadastrar manualmente.</div><div class="iabtns"><button onclick="closeSheet()">Fechar</button><button class="use" onclick="iaNovo()">Cadastrar item novo</button></div>'); return; }
+  if(!d||d.error){ openSheet('<h3>IA da foto</h3><div class="iacampo">Não consegui identificar. Cadastre manualmente.</div><div class="iabtns"><button onclick="closeSheet()">Fechar</button><button class="use" onclick="iaNovo()">Cadastrar item novo</button></div>'); return; }
   if(d.material){ openSheet('<h3>A IA reconheceu</h3><div style="font-weight:600;font-size:15px">'+esc(d.material.descricao)+'</div><div style="font-size:12px;color:#8c8981">confiança '+(d.confianca||0)+'%</div>'+campoLinha(d.campos||{})+'<div class="iabtns"><button onclick="closeSheet()">Não é</button><button class="use" onclick="iaAbrir()">Abrir ficha</button></div>'); }
   else { var c=d.campos||{}; openSheet('<h3>Item novo</h3><div class="iacampo">Não está no catálogo desta bolsa.'+(c.descricao?' A IA leu: <b>'+esc(c.descricao)+'</b>':'')+'</div>'+campoLinha(c)+'<div class="iabtns"><button onclick="closeSheet()">Cancelar</button><button class="use" onclick="iaCadastrar()">Cadastrar e abrir</button></div>'); }
 }
@@ -308,6 +308,7 @@ function iaAbrir(){ var d=IA_LAST; if(!d||!d.material){closeSheet();return;} var
   if(isEpi(id)){ if(c.ca)r.ca=c.ca; if(c.validade)r.validade_ca=c.validade; if(c.tamanho)r.tamanho=c.tamanho; }
   if(!isFerr(id)&&!(Number(r.qtd)>0))r.qtd=1; saveDraft(); closeSheet(); openFicha(id);
 }
+function iaNovo(){ closeSheet(); if(BOLSA&&BOLSA.modo==='avulso'){ novoItemAvulso(); } else { novoItem(); } }
 function iaCadastrar(){ var d=IA_LAST,c=(d&&d.campos)||{}; var nome=c.descricao||prompt('Descrição do item novo:'); if(!nome)return;
   api('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'cadastrar_material',descricao:nome,grupo_material_id:BOLSA.grupo_id,subgrupo:BOLSA.subgrupo,categoria:catDoGrupo(),marca:c.marca||null,modelo:c.modelo||null,ca:c.ca||null,validade_ca:c.validade||null,tamanho:c.tamanho||null})}).then(function(r){
     if(r.error)throw new Error(r.error); ITENS.push(r.material); ITMAP[r.material.id]=r.material; var rr=reg(r.material.id); if(c.ca)rr.ca=c.ca; if(c.validade)rr.validade_ca=c.validade; if(c.tamanho)rr.tamanho=c.tamanho; if(!isFerr(r.material.id))rr.qtd=1; saveDraft(); closeSheet(); openFicha(r.material.id);

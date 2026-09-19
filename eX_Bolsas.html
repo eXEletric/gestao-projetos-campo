@@ -37,6 +37,10 @@ input,select{width:100%;border:1px solid var(--line);border-radius:9px;padding:1
 .edit .row{margin-bottom:9px}
 .btn.danger{background:var(--surf);color:#a4302a;border:1px solid #e3b6b3}
 .btn.sm{padding:8px 13px;font-size:13px}
+.avutop{display:flex;gap:14px;align-items:center;border:2px solid var(--pri);background:#f4f2ff;border-radius:13px;padding:14px;margin:0 0 16px}
+.avutop .bnum{color:var(--pri2)}
+.avutop .brot{font-size:13px;color:var(--ink2);margin-top:2px}
+.avutop .bmeta a{color:var(--pri);font-weight:600}
 @media print{ body *{visibility:hidden} .print,.print *{visibility:visible} .print{position:absolute;left:0;top:0;width:100%} .noprint{display:none} .bolsa{page-break-inside:avoid} }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -145,7 +149,16 @@ function renderList(){
   document.getElementById('bc').textContent='· '+COMPS.length;
   var box=document.getElementById('lista');
   if(!COMPS.length){ box.innerHTML='<p class="mut">Nenhum compartimento ainda. Crie o primeiro acima.</p>'; return; }
-  box.innerHTML=COMPS.map(function(b){
+  var avul=COMPS.find(function(c){return c.modo==='avulso';});
+  var topHtml='';
+  if(avul){
+    topHtml='<div class="avutop"><div class="qr" id="qr_top"></div>'+
+      '<div class="bi"><div class="bnum">Avulsos · começar pelo item</div>'+
+      '<div class="brot">Cole este QR no veículo ou na porta do almoxarifado. O time escaneia e cadastra pelo item.</div>'+
+      '<div class="bmeta noprint" style="margin-top:6px"><a href="'+fieldURL(avul.qr)+'" target="_blank">abrir agora</a></div></div></div>';
+  }
+  var restantes=COMPS.filter(function(c){return c.modo!=='avulso';});
+  box.innerHTML=topHtml+restantes.map(function(b){
     var modoChip = b.modo==='hierarquia'
       ? '<span class="chip hier">hierarquia</span>'
       : (b.modo==='avulso' ? '<span class="chip dem">avulsos</span>' : '<span class="chip dem">demanda</span>');
@@ -168,7 +181,8 @@ function renderList(){
       '<div class="bmeta noprint" style="margin-top:6px"><a href="'+fieldURL(b.qr)+'" target="_blank">abrir contagem</a></div></div>'+
       edit+'</div>';
   }).join('');
-  COMPS.forEach(function(b){ var el=document.getElementById('qr_'+b.qr); if(el){ el.innerHTML=''; new QRCode(el,{text:fieldURL(b.qr),width:88,height:88,correctLevel:QRCode.CorrectLevel.M}); } });
+  if(avul){ var et=document.getElementById('qr_top'); if(et){ et.innerHTML=''; new QRCode(et,{text:fieldURL(avul.qr),width:104,height:104,correctLevel:QRCode.CorrectLevel.M}); } }
+  restantes.forEach(function(b){ var el=document.getElementById('qr_'+b.qr); if(el){ el.innerHTML=''; new QRCode(el,{text:fieldURL(b.qr),width:88,height:88,correctLevel:QRCode.CorrectLevel.M}); } });
 }
 function toggleEdit(qr){ var el=document.getElementById('ed_'+qr); if(el) el.style.display = el.style.display==='none'?'block':'none'; }
 function salvarEdit(id,qr,editable){
