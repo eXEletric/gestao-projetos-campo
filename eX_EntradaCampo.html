@@ -75,6 +75,8 @@ var BQR=qs.get('b')||''; var ESTOQUE=qs.get('e')||'Almox. Móvel · Frente 1';
 var BOLSA=null, ITENS=[], ITMAP={}, BUSCA='', REG={}, IA_LAST=null;
 var COMPARTS=[], SR=[], SRQ='', SRT=null;
 var EST_OPT=[['novo','Novo'],['bom','Bom'],['desgaste','Desgaste'],['danificado','Danificado']];
+var CATLBL={ferramenta:'ferramenta',epi:'EPI',uniforme:'uniforme',consumivel:'consumível',material:'material'};
+function catLbl(c){ return CATLBL[c]||'material'; }
 var DKEY='ex_bolsa_'+BQR;
 try{ REG=JSON.parse(localStorage.getItem(DKEY)||'{}')||{}; }catch(e){ REG={}; }
 function saveDraft(){ try{ localStorage.setItem(DKEY,JSON.stringify(REG)); }catch(e){} }
@@ -168,7 +170,7 @@ function renderSR(){
   if(!SR.length){ box.innerHTML='<div class="state" style="padding:22px">Nada encontrado. Use “Cadastrar item novo”.</div>'; return; }
   box.innerHTML='<div class="grp">Resultados · '+SR.length+'</div>'+SR.map(function(m,i){
     return '<div class="row2" onclick="tapSR('+i+')"><span class="ck" style="border-style:dashed"></span>'+
-      '<div class="info"><div class="nm">'+esc(m.descricao)+'</div><div class="cd">'+esc(m.codigo||'')+' · '+({ferramenta:'ferramenta',epi:'EPI',uniforme:'uniforme',consumivel:'consumível',material:'material'}[m.categoria]||'material')+(m.subgrupo?(' · '+esc(m.subgrupo)):'')+'</div></div><span class="go">›</span></div>';
+      '<div class="info"><div class="nm">'+esc(m.descricao)+'</div><div class="cd">'+esc(m.codigo||'')+' · '+catLbl(m.categoria)+(m.subgrupo?(' · '+esc(m.subgrupo)):'')+'</div></div><span class="go">›</span></div>';
   }).join('');
 }
 function tapSR(i){ var m=SR[i]; if(!m)return; ITMAP[m.id]={id:m.id,descricao:m.descricao,codigo:m.codigo,categoria:m.categoria||'material',unidade:m.unidade,subgrupo:m.subgrupo,saldo:0}; openFicha(m.id); }
@@ -241,7 +243,7 @@ function openFicha(id){
   var confFn=avul?'salvarUm':'fichaOk';
   var confTxt=avul?'Cadastrar':'Cadastrar e voltar';
   var h='<div class="hd"><a onclick="'+backJs+';return false" href="#">‹ voltar</a><div class="t">Cadastrar item</div></div>'+
-    '<div class="fk"><div class="big">'+esc(m.descricao)+'</div><div class="cd2">'+esc(m.codigo||'')+' · '+esc(m.subgrupo||BOLSA.subgrupo||BOLSA.grupo||'')+' · '+({ferramenta:'ferramenta',epi:'EPI',uniforme:'uniforme',consumivel:'consumível',material:'material'}[m.categoria]||'material')+'</div>'+
+    '<div class="fk"><div class="big">'+esc(m.descricao)+'</div><div class="cd2">'+esc(m.codigo||'')+' · '+esc(m.subgrupo||BOLSA.subgrupo||BOLSA.grupo||'')+' · '+catLbl(m.categoria)+'</div>'+
     destFld+body+'<button class="conf" onclick="'+confFn+'(\''+id+'\')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><path d="M5 12.5l4 4 10-10"/></svg> '+confTxt+'</button></div>';
   document.getElementById('root').innerHTML=h; window.scrollTo(0,0);
 }
