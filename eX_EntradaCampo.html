@@ -133,7 +133,12 @@ function rowHTML(m){
 }
 function renderList(){
   var v=vis(); var box=document.getElementById('list');
-  box.innerHTML=v.length? v.map(rowHTML).join('') : '<div class="state">Nenhum item nesta bolsa'+(BUSCA?' p/ a busca':'')+'.</div>';
+  if(!v.length){ box.innerHTML='<div class="state">Nenhum item nesta bolsa'+(BUSCA?' p/ a busca':'')+'.</div>'; return; }
+  var groups={}, order=[];
+  v.forEach(function(m){ var s=(m.subgrupo&&String(m.subgrupo).trim())||'(sem subgrupo)'; if(!groups[s]){groups[s]=[];order.push(s);} groups[s].push(m); });
+  var html='';
+  order.forEach(function(s){ html+='<div class="grp">'+esc(s)+' · '+groups[s].length+'</div>'+groups[s].map(rowHTML).join(''); });
+  box.innerHTML=html;
 }
 function setDet(id,k,val){ DET[id]=DET[id]||{}; DET[id][k]=val; saveDraft(); }
 function upRow(id){ var qd=document.getElementById('q_'+id); var row=document.getElementById('row_'+id); if(qd)qd.textContent=q(id); if(row)row.classList.toggle('on',q(id)>0); }
