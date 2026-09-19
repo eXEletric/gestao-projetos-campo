@@ -32,6 +32,11 @@ input,select{width:100%;border:1px solid var(--line);border-radius:9px;padding:1
 .chip.dem{background:#e1f3ee;color:var(--teal)}
 .chip.saldo{background:#eef6e8;color:var(--ok)}
 .mut{color:var(--ink3);font-size:13px}
+.iconbtn{border:none;background:none;color:var(--ink3);font-size:20px;line-height:1;cursor:pointer;padding:2px 6px}
+.edit{border-top:1px dashed var(--line);margin-top:10px;padding-top:10px}
+.edit .row{margin-bottom:9px}
+.btn.danger{background:var(--surf);color:#a4302a;border:1px solid #e3b6b3}
+.btn.sm{padding:8px 13px;font-size:13px}
 @media print{ body *{visibility:hidden} .print,.print *{visibility:visible} .print{position:absolute;left:0;top:0;width:100%} .noprint{display:none} .bolsa{page-break-inside:avoid} }
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
@@ -145,14 +150,44 @@ function renderList(){
       ? '<span class="chip hier">hierarquia</span>'
       : '<span class="chip dem">demanda</span>';
     var saldo = b.itens_com_saldo?('<span class="chip saldo">'+b.itens_com_saldo+' com saldo</span>'):'';
-    return '<div class="bolsa"><div class="qr" id="qr_'+b.qr+'"></div>'+
-      '<div class="bi"><div class="bnum">'+esc(b.numero)+'</div>'+
-      '<div class="brot">'+esc(b.rotulo||'')+'</div>'+
+    var tsel='';['bolsa','caixa','bag'].forEach(function(t){ tsel+='<option value="'+t+'"'+(b.tipo===t?' selected':'')+'>'+tipoLabel(t)+'</option>'; });
+    var editable = b.modo!=='hierarquia';
+    var rotField = editable
+      ? '<div><label>Nome do compartimento</label><input id="er_'+b.qr+'" value="'+esc(b.rotulo||'')+'"></div>'
+      : '<div><label>Rótulo (grupo→subgrupo, travado)</label><input value="'+esc(b.rotulo||'')+'" disabled></div>';
+    var edit = '<div class="edit noprint" id="ed_'+b.qr+'" style="display:none">'+
+      '<div class="row">'+rotField+'<div style="flex:none;min-width:120px"><label>Continente</label><select id="et_'+b.qr+'">'+tsel+'</select></div></div>'+
+      '<button class="btn sm" onclick="salvarEdit(\''+b.id+'\',\''+b.qr+'\','+editable+')">Salvar</button> '+
+      '<button class="btn sm danger" onclick="remover(\''+b.id+'\','+(b.itens_com_saldo||0)+')">Remover</button>'+
+      '<span id="em_'+b.qr+'" class="mut" style="margin-left:8px"></span></div>';
+    return '<div class="bolsa" style="flex-wrap:wrap"><div class="qr" id="qr_'+b.qr+'"></div>'+
+      '<div class="bi"><div style="display:flex;align-items:flex-start"><div style="flex:1;min-width:0"><div class="bnum">'+esc(b.numero)+'</div>'+
+      '<div class="brot">'+esc(b.rotulo||'')+'</div></div>'+
+      '<button class="iconbtn noprint" aria-label="editar" onclick="toggleEdit(\''+b.qr+'\')">&#8942;</button></div>'+
       '<div style="margin-top:6px"><span class="chip tipo">'+tipoLabel(b.tipo)+'</span>'+modoChip+saldo+'</div>'+
-      '<div class="bmeta noprint" style="margin-top:6px"><a href="'+fieldURL(b.qr)+'" target="_blank">abrir contagem</a></div>'+
-      '</div></div>';
+      '<div class="bmeta noprint" style="margin-top:6px"><a href="'+fieldURL(b.qr)+'" target="_blank">abrir contagem</a></div></div>'+
+      edit+'</div>';
   }).join('');
   COMPS.forEach(function(b){ var el=document.getElementById('qr_'+b.qr); if(el){ el.innerHTML=''; new QRCode(el,{text:fieldURL(b.qr),width:88,height:88,correctLevel:QRCode.CorrectLevel.M}); } });
+}
+function toggleEdit(qr){ var el=document.getElementById('ed_'+qr); if(el) el.style.display = el.style.display==='none'?'block':'none'; }
+function salvarEdit(id,qr,editable){
+  var body={action:'editar_compartimento',id:id};
+  if(editable){ var r=(document.getElementById('er_'+qr)||{}).value; if(r) body.rotulo=r.trim(); }
+  body.tipo=(document.getElementById('et_'+qr)||{}).value;
+  var m=document.getElementById('em_'+qr); if(m) m.textContent='salvando…';
+  fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','x-token':TOKEN},body:JSON.stringify(body)})
+   .then(function(r){return r.json();}).then(function(d){
+     if(d.error){ if(m) m.textContent=''; alert(d.error); return; } carregar();
+   }).catch(function(e){ if(m) m.textContent=''; alert('Erro: '+e.message); });
+}
+function remover(id,comSaldo){
+  if(comSaldo>0){ alert('Este compartimento tem '+comSaldo+' item(ns) com saldo. Esvazie ou transfira antes de remover.'); return; }
+  if(!confirm('Remover este compartimento? (só é permitido se estiver vazio)')) return;
+  fetch(FN,{method:'POST',headers:{'Content-Type':'application/json','x-token':TOKEN},body:JSON.stringify({action:'remover_compartimento',id:id})})
+   .then(function(r){return r.json();}).then(function(d){
+     if(d.error){ alert(d.error); return; } carregar();
+   }).catch(function(e){ alert('Erro: '+e.message); });
 }
 onNat(); carregar();
 </script>
