@@ -3073,8 +3073,9 @@ async function carregarGaveta(){
 async function _loadGavetaSaldo(){
   GAVETA_SALDO={};
   if(!SB||!GAVETA_LOCAL) return;
-  const r=await SB.from('saldos').select('material_id,quantidade,minimo').eq('local_id',GAVETA_LOCAL);
-  (r.data||[]).forEach(s=>{ GAVETA_SALDO[s.material_id]={q:Number(s.quantidade||0),min:s.minimo}; });
+  const ids=[GAVETA_LOCAL].concat(_filhosDe(GAVETA_LOCAL).map(f=>f.id));
+  const r=await SB.from('saldos').select('material_id,quantidade,minimo').in('local_id',ids);
+  (r.data||[]).forEach(s=>{ const c=GAVETA_SALDO[s.material_id]||{q:0,min:null}; c.q+=Number(s.quantidade||0); if(c.min==null)c.min=s.minimo; GAVETA_SALDO[s.material_id]=c; });
 }
 function gavetaLocalChanged(){ const sel=document.getElementById('gaveta-local'); GAVETA_LOCAL=sel.value; _loadGavetaSaldo().then(renderGaveta); }
 function _gavSaldoCell(m){ const sd=GAVETA_SALDO[m.id]; const q=sd?sd.q:0; const mn=(sd&&sd.min!=null)?sd.min:m.quantidade_minima; const low=(mn!=null&&q<Number(mn));
@@ -3105,8 +3106,11 @@ function renderGaveta(){
 }
 
 /* ===== ALMOXARIFADO · SALDO (lente sobre materiais) ===== */
-let ALMOX=[], ALMOX_LOCAIS=[], ALMOX_LOCAL='', AJEDIT=null;
+let ALMOX=[], ALMOX_LOCAIS=[], ALMOX_TODOS=[], ALMOX_LOCAL='', AJEDIT=null;
 function fmtN(v){ if(v==null||v==='')return ''; const n=Number(v); return Number.isInteger(n)?String(n):n.toFixed(2); }
+function _filhosDe(pid){ return (ALMOX_TODOS||[]).filter(l=>l.parent_id===pid); }
+function _compLabel(loc){ if(!loc)return ''; const nm=loc.nome||''; const pre=(loc.numero||'')+' . '; let rot=nm; if(loc.numero&&nm.indexOf(pre)===0) rot=nm.slice(pre.length); return loc.numero?(loc.numero+(rot&&rot!==loc.numero?' · '+rot:'')):nm; }
+function _ondeBadge(s){ if(!s||s.local_id===ALMOX_LOCAL) return ''; const loc=(ALMOX_TODOS||[]).find(l=>l.id===s.local_id); if(!loc)return ''; return `<span style="display:inline-block;font-size:10.5px;color:var(--tx2);background:var(--surf2);border-radius:8px;padding:1px 7px;margin-top:3px"><span class="msr" style="font-size:12px;vertical-align:-2px">inventory_2</span> ${_compLabel(loc)}</span>`; }
 async function carregarAlmox(){
   if(!SB){ document.getElementById('almox-list').innerHTML='<div class="empty">Sem conexão com a nuvem.</div>'; return; }
   document.getElementById('almox-list').innerHTML='<div class="empty">Carregando saldos…</div>';
@@ -3116,7 +3120,8 @@ async function carregarAlmox(){
     SB.from('locais').select('*').is('deleted_at',null).eq('ativo',true).order('nome'),
     SB.from('saldos').select('*, materiais(*)')
   ]);
-  ALMOX_LOCAIS=rl.data||[];
+  ALMOX_TODOS=rl.data||[];
+  ALMOX_LOCAIS=ALMOX_TODOS.filter(l=>!l.parent_id);
   if(rs.error){ document.getElementById('almox-list').innerHTML='<div class="empty">Erro: '+rs.error.message+'</div>'; return; }
   ALMOX=rs.data||[];
   const sel=document.getElementById('almox-local');
@@ -3128,7 +3133,8 @@ async function carregarAlmox(){
 function renderAlmox(){
   const sel=document.getElementById('almox-local'); ALMOX_LOCAL=sel.value||ALMOX_LOCAL;
   const q=(document.getElementById('almox-busca').value||'').toLowerCase().trim();
-  let rows=ALMOX.filter(s=>s.local_id===ALMOX_LOCAL && s.materiais);
+  const _ids=[ALMOX_LOCAL].concat(_filhosDe(ALMOX_LOCAL).map(f=>f.id));
+  let rows=ALMOX.filter(s=>_ids.indexOf(s.local_id)>=0 && s.materiais);
   rows=rows.filter(s=>{ if(!q)return true; const m=s.materiais; return [m.descricao_padronizada,m.codigo_interno,m.codigo_barras,m.marca].some(x=>(x||'').toLowerCase().indexOf(q)>=0); });
   document.getElementById('almox-count').textContent='· '+rows.length+' com saldo';
   if(!rows.length){ document.getElementById('almox-list').innerHTML='<div class="empty">Nenhum saldo neste local ainda. Use <b>+ Lançar saldo</b> para registrar a primeira contagem.</div>'; return; }
@@ -3143,7 +3149,7 @@ function renderAlmox(){
     arr.forEach(s=>{ const m=s.materiais; const low=(s.minimo!=null && s.quantidade!=null && Number(s.quantidade)<Number(s.minimo));
       html+=`<tr onclick="openAj('${s.id}')">
         <td>${m.codigo_interno?`<span class="cod">${m.codigo_interno}</span>`:''}</td>
-        <td><div class="desc">${m.descricao_padronizada||'(sem descrição)'}</div>${m.marca?`<div class="sub">${m.marca}</div>`:''}</td>
+        <td><div class="desc">${m.descricao_padronizada||'(sem descrição)'}</div>${m.marca?`<div class="sub">${m.marca}</div>`:''}${_ondeBadge(s)}</td>
         <td class="num" style="font-weight:700${low?';color:#e11d48':''}">${fmtN(s.quantidade)}${low?' <span class="msr" style="font-size:14px;vertical-align:-2px" title="abaixo do mínimo">warning</span>':''}</td>
         <td class="num sub">${s.minimo!=null?fmtN(s.minimo):''}</td>
         <td class="num sub">${s.maximo!=null?fmtN(s.maximo):''}</td>
@@ -3166,7 +3172,8 @@ function ajMatOptions(selId){
   const s=document.getElementById('aj-mat'); s.innerHTML=h; s.value=selId||'';
 }
 function openAj(saldoId){
-  const loc=ALMOX_LOCAIS.find(l=>l.id===ALMOX_LOCAL);
+  const _sr=saldoId?ALMOX.find(x=>x.id===saldoId):null;
+  const loc=_sr?ALMOX_TODOS.find(l=>l.id===_sr.local_id):ALMOX_LOCAIS.find(l=>l.id===ALMOX_LOCAL);
   document.getElementById('aj-local-nm').value=loc?loc.nome:'';
   AJEDIT=saldoId?ALMOX.find(s=>s.id===saldoId):null;
   ajMatOptions(AJEDIT?AJEDIT.material_id:'');
@@ -3212,7 +3219,7 @@ function matOptionsHTML(selId){
   return h;
 }
 async function _ensureLocais(){
-  if(!ALMOX_LOCAIS.length){ const rl=await SB.from('locais').select('*').is('deleted_at',null).eq('ativo',true).order('nome'); ALMOX_LOCAIS=rl.data||[]; }
+  if(!ALMOX_LOCAIS.length){ const rl=await SB.from('locais').select('*').is('deleted_at',null).eq('ativo',true).order('nome'); ALMOX_TODOS=rl.data||[]; ALMOX_LOCAIS=ALMOX_TODOS.filter(l=>!l.parent_id); }
   if((!ALMOX_LOCAL||!ALMOX_LOCAIS.some(l=>l.id===ALMOX_LOCAL))&&ALMOX_LOCAIS.length) ALMOX_LOCAL=ALMOX_LOCAIS[0].id;
 }
 async function carregarNF(){
