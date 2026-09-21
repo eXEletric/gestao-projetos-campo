@@ -1449,12 +1449,12 @@ function setMgGeral(key,v){ if(loteCfgBloqueia())return; const tk={deslocamento:
   const pr=(S[blk]||[]).filter(r=>r&&!r.adic&&!(r.margem===''||r.margem==null)&&(blk==='equip'||(despGrupo(r)==='desl')===(key==='deslocamento')));
   if(pr.length && confirm(pr.length+' linha(s) têm MARGEM PRÓPRIA e não seguem este percentual geral — ex.: '+pr.slice(0,3).map(r=>(r.desc||'item')+' '+r.margem+'%').join('; ')+'.\n\nAplicar '+num(v)+'% também nessas linhas?')) pr.forEach(r=>{ r.margem=''; });
   save(); try{ renderBlk(BLKS.find(b=>b.key===blk)); }catch(_){} recalc(); }
-function aplicarCombo(){ const i=document.getElementById('in_combo'); if(!i)return; const n=num(i.value); const b=document.getElementById('combo_apl'); if(b)b.classList.remove('pend');
+function aplicarCombo(){ if(loteCfgBloqueia())return; const i=document.getElementById('in_combo'); if(!i)return; const n=num(i.value); const b=document.getElementById('combo_apl'); if(b)b.classList.remove('pend');
   if(n>0){ const t=travas(); const regra=t.mat?'material travado, serviços absorvem':(t.serv?'serviços travados, material absorve':'serviços e material ajustam juntos');
     if(!confirm('Aplicar valor combinado de '+fmt(n)+'?\n\nO total passa a fechar neste valor ('+regra+').')){ recalc(); return; } }
   setValorCombinado(i.value); cloudMsg(n>0?('valor combinado '+fmt(n)+' aplicado'):'valor combinado removido'); }
 function setValorCombinado(v){ const n=num(v); S.valorCombinado=(n>0?n:null); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); }
-function clearCombo(){ S.valorCombinado=null; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); }
+function clearCombo(){ if(loteCfgBloqueia())return; S.valorCombinado=null; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); }
 function setBlkMargem(blk,v){ if(loteCfgBloqueia())return;
   const k=(blk==='servicos')?'serv':'mat', t=travas();
   if(comboActive()){   // com valor combinado: digitar a margem TRAVA este bloco nesse valor; o outro absorve
@@ -3770,7 +3770,7 @@ function gloteRender(){   // painel de preço em 2 colunas: ESTA LOJA (ou base) 
   if(dif){ if(!w){ w=document.createElement('div'); w.id='glote_warn'; w.className='combo-note neg noprint'; tt.parentElement.after(w); } w.innerHTML='<span class="material-symbols-rounded">warning</span>Global: gravado '+fmt(g.gravado)+' ≠ calculado '+fmt(g.calc); } else if(w) w.remove(); }
 /* REGRA IRREVOGÁVEL (dono, 15/09): loja de lote OBEDECE a configuração de preço da BASE — margens, % gerais, cadeados, imposto e desconto.
    Loja: ao abrir, recebe a config da base e os campos ficam bloqueados. Base: ao salvar, empurra a config para todas as lojas (total recalculado). */
-var LOTE_CFG=['margem','margemMatCombo','margemServCombo','travas','impostoPct','descontoPct'];
+var LOTE_CFG=['margem','margemMatCombo','margemServCombo','travas','impostoPct','descontoPct','valorCombinado'];   // valor combinado = preço soberano do lote → obedece à base (dono 20/09): salvar a base leva o combinado a TODAS as lojas (inclusive editadas), reprecifica; escopo/levantamento/campo próprio intactos; fechadas congeladas
 var UNIT_BASE_CFG=null;
 function loteCfgDe(d){ var o={}; d=d||{}; LOTE_CFG.forEach(function(k){ var v=d[k]; o[k]=(v===undefined||v===''||v===null)?null:_deep(v); }); return o; }
 function _canon(v){ if(Array.isArray(v)) return "["+v.map(_canon).join(",")+"]"; if(v&&typeof v==="object") return "{"+Object.keys(v).sort().filter(function(k){ return !(v[k]===false||v[k]===null||v[k]===undefined||v[k]===""); }).map(function(k){ return JSON.stringify(k)+":"+_canon(v[k]); }).join(",")+"}"; if(typeof v==="string"&&v.trim()!==""&&!isNaN(+v)) return String(+v); return JSON.stringify(v); }   // comparação estável: ordem de chaves e "20"×20 não contam
@@ -3779,7 +3779,7 @@ function loteCfgAplicar(dst,src){ var c=loteCfgDe(src); LOTE_CFG.forEach(functio
 function lojaFechadaLocal(d,status){ d=d||{}; return /^(enviad|aprovad)/i.test(String(status||d.status||''))||!!(d.abrSnap&&typeof d.abrSnap==='object')||(Array.isArray(d.comprovantes)&&d.comprovantes.length>0); }   // preço já fechado com o cliente: nada muda (mudança = nova revisão)
 function loteCfgEnforce(baseDados){ if(!isLoteUnit()||!baseDados)return; UNIT_BASE_CFG=loteCfgDe(baseDados); if(lojaFechadaLocal(S)){ cloudMsg('loja fechada — percentuais congelados'); return; }
   if(!loteCfgIgual(S,baseDados)){ loteCfgAplicar(S,baseDados); try{ save(); }catch(_){} BLKS.forEach(function(b){ try{ renderBlk(b); }catch(_){} }); recalc(); cloudMsg('percentuais atualizados pela base do lote — salve para gravar'); } }
-function loteCfgBloqueia(){ if(!isLoteUnit())return false; alert('Esta loja faz parte do lote: margens, percentuais, cadeados, imposto e desconto seguem a BASE DO LOTE.\n\nAltere na proposta-base — ao salvar a base, todas as lojas recebem.'); try{ recalc(); }catch(_){} return true; }
+function loteCfgBloqueia(){ if(!isLoteUnit())return false; alert('Esta loja faz parte do lote: margens, percentuais, cadeados, imposto, desconto e valor combinado seguem a BASE DO LOTE.\n\nAltere na proposta-base — ao salvar a base, todas as lojas recebem.'); try{ recalc(); }catch(_){} return true; }
 async function loteCfgPropagar(){   // base salva → todas as lojas recebem a config (conteúdo, identidade e adicionais intocados)
   if(!(isLoteBase()&&CLOUD))return; var base=_deep(S);
   var r=await SB.from('orcamentos').select('id,total,dados,status,oportunidade_id').eq('lote_id',S_LOTE_ID).is('deleted_at',null); if(r.error){ console.error('cfg lote',r.error); return; }
