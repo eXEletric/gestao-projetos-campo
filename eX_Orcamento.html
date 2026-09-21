@@ -292,6 +292,9 @@ select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 @media(max-width:820px){.moacusto{border-right:none;padding-right:0}.diachaves-m{display:flex;gap:10px;flex-wrap:wrap;width:100%}}
 .negchip{display:inline-flex;align-items:center;gap:2px;margin-left:6px;font-size:9.5px;font-weight:700;color:#8a5a12;background:#fff4e0;border:1px solid #f0d29a;border-radius:20px;padding:0 6px;vertical-align:middle;white-space:nowrap;cursor:help}
 .negchip .material-symbols-rounded{font-size:11px}
+.descmode{display:inline-flex;border:1px solid var(--line2);border-radius:6px;overflow:hidden;margin-right:5px;vertical-align:middle}
+.descmode button{border:0;background:var(--surf);color:var(--tx3);font:700 10px inherit;padding:2px 6px;cursor:pointer}
+.descmode button.on{background:var(--pri);color:#fff}
 .tbl tr.grpsep td{background:#f7f5fc;border-top:2px solid #e3dcfa;padding:7px 12px}
 .tbl tr.grpsep .gsl{font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:10.5px;color:var(--tx3)}
 .tbl tr.grpsep .gsv{float:right;font-weight:800;font-variant-numeric:tabular-nums;color:var(--tx);font-size:13px}
@@ -987,7 +990,7 @@ body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{backgrou
           <!-- VISÃO INTERNA -->
           <div class="intbox">
             <div class="ih"><span class="material-symbols-rounded">lock</span>Visão interna — não vai pro cliente</div>
-            <div class="iln mgrow"><span class="lbl">Desconto</span><span class="val"><input class="pin" style="width:48px;text-align:right" data-f="descontoPct" inputmode="decimal">%<button class="lockbtn noprint" id="lk_desc" onclick="toggleTrava('desc')"></button></span></div>
+            <div class="iln mgrow" id="row_desc"><span class="lbl">Desconto <span id="desc_eq" class="pcref"></span></span><span class="val"><span class="descmode noprint" id="descmode"><button type="button" id="dm_pct" onclick="setDescontoModo('pct')">%</button><button type="button" id="dm_val" onclick="setDescontoModo('val')">R$</button></span><span id="desc_pfx" style="color:var(--tx3);font-size:12px;display:none;margin-right:2px">R$</span><input class="pin" id="desc_in" style="width:58px;text-align:right" inputmode="decimal" onchange="setDesconto(this.value)"><span id="desc_un">%</span><button class="lockbtn noprint" id="lk_desc" onclick="toggleTrava('desc')"></button></span></div>
             <div class="iln mgrow"><span class="lbl">Impostos</span><span class="val"><input class="pin" style="width:48px;text-align:right" data-f="impostoPct" inputmode="decimal">%<button class="lockbtn noprint" id="lk_imp" onclick="toggleTrava('imp')"></button></span></div>
             <div class="iln"><span class="lbl">Margem serviços</span><span class="val"><input class="pin" style="width:48px;text-align:right" id="mg_serv_in" inputmode="decimal" onchange="setBlkMargem('servicos',this.value)">%<button class="lockbtn noprint" id="lk_serv" onclick="toggleTrava('serv')"></button></span></div>
             <div class="iln"><span class="lbl">Margem materiais</span><span class="val"><input class="pin" style="width:48px;text-align:right" id="mg_mat_in" inputmode="decimal" onchange="setBlkMargem('materiais',this.value)">%<button class="lockbtn noprint" id="lk_mat" onclick="toggleTrava('mat')"></button></span></div>
@@ -1420,6 +1423,14 @@ function adicPrecoTotal(){ return ['servicos','materiais','despesas','equip'].re
 function adicAbatidoTotal(){ return ['servicos','materiais','despesas','equip'].reduce(function(a,k){ if(!blocoAtivo(k))return a; return a+(S[k]||[]).reduce(function(b,r){ if(r&&r.adic&&!r.adicCobrar){ r._blk=k; return b+linePreco(r); } return b; },0); },0); }   // só os adicionais marcados ABATIDO entram no desconto comercial
 function setAdicCobrar(blk,id){ var r=(S[blk]||[]).find(function(x){return x.id===id;}); if(!r)return; r.adicCobrar=!r.adicCobrar; save(); try{ renderBlk(BLKS.find(function(b){return b.key===blk;})); }catch(_){} recalc(); cloudMsg(r.adicCobrar?'adicional COBRADO do cliente':'adicional ABATIDO pelo desconto comercial'); }
 function toggleDescontoAdic(){ S.descontoAdic=!S.descontoAdic; save(); recalc(); }
+/* DESCONTO com chave %/R$ (dono 21/09): entra por percentual OU valor; canônico = descontoPct (o combo e a proposta usam o %); descontoVal é a entrada em R$, convertida pelo último subtotal (_lastBruto) — evita dependência circular no modo combo. */
+var _lastBruto=0;
+function setDescontoModo(m){ if(loteCfgBloqueia())return; S.descontoModo=(m==='val')?'val':'pct';
+  if(S.descontoModo==='val') S.descontoVal=+(_lastBruto*num(S.descontoPct)/100).toFixed(2); save(); recalc(); }
+function setDesconto(v){ if(loteCfgBloqueia())return; const n=num(v);
+  if(S.descontoModo==='val'){ S.descontoVal=n; S.descontoPct=(_lastBruto>0)?+(n/_lastBruto*100).toFixed(4):0; }
+  else { S.descontoPct=n; S.descontoVal=+(_lastBruto*n/100).toFixed(2); }
+  save(); recalc(); }
 function adicCusto(blk){ return (S[blk]||[]).reduce(function(a,r){ return a+(r&&r.adic?lineCusto(r):0); },0); }   // custo das linhas ADICIONAIS (escopo além do modelo) — ficam FORA do combo, cobradas por cima
 /* VALOR COMBINADO — regra do dono (15/09): TRAVADO entra fixo pelo seu percentual; quem estiver DESTRAVADO absorve (mesmo % para todos os destravados).
    Grupos: Serviços (serv) · Materiais (mat) · Deslocamento (desl) · Outras despesas + diárias (desp) · Locações (equip). Adicionais ficam fora (margem própria, cobrados por cima). */
@@ -4652,7 +4663,8 @@ function recalc(){
   const diaC=diariasCusto(), diaP=diariasPreco();   // diárias: custo + % geral de Outras despesas
   const rat=ratioUnit(); const ratPreco=comboActive()?0:rat; const ratCusto=rat;   // VALOR COMBINADO É SOBERANO: com ele, o rateio do macro vira CUSTO (reduz a margem); sem ele, soma ao preço — SEMPRE dentro do desconto e do IMPOSTO (nota emitida = imposto existe)
   const bruto=preco.servicos+preco.equip+preco.despesas+preco.materiais+diaP+ratPreco;
-  const desc=bruto*num(S.descontoPct)/100;
+  _lastBruto=bruto; const _dModo=(S.descontoModo==='val')?'val':'pct';
+  const desc=(_dModo==='val')?Math.min(num(S.descontoVal),bruto):bruto*num(S.descontoPct)/100;   // modo R$ usa o valor exato (sem arredondar pelo %)
   const adicP=adicPrecoTotal(), descAd=S.descontoAdic?adicAbatidoTotal():0;   // desconto comercial que abate os ADICIONAIS (a loja volta ao valor combinado; custo real mantido → lucro cai no valor absorvido)
   const liquido=bruto-desc-descAd;                          // valor antes do imposto
   { const l=document.getElementById('ln_descad'); if(l) l.style.display=(adicP>0)?'':'none'; const sd=document.getElementById('s_descad'); if(sd) sd.textContent=S.descontoAdic?('− '+fmt(descAd)):'não aplicado'; const bt=document.getElementById('descad_tog'); if(bt){ bt.textContent=S.descontoAdic?'abatido ✓':'abater'; bt.style.background=S.descontoAdic?'#e6f5ec':'var(--surf)'; bt.style.color=S.descontoAdic?'#17693f':''; } }
@@ -4667,6 +4679,11 @@ function recalc(){
   set('s_diarias',fmt(diaP)); const lndia=document.getElementById('ln_diarias'); if(lndia) lndia.style.display='none';   // linha própria removida — vai dentro de Despesas
   try{ gloteRender(); }catch(_){}   // coluna Global do lote (lojas gravadas)
   set('s_bruto',fmt(bruto)); set('s_desc','− '+fmt(desc));
+  { const di=document.getElementById('desc_in'), dp=document.getElementById('dm_pct'), dv=document.getElementById('dm_val'), du=document.getElementById('desc_un'), dpfx=document.getElementById('desc_pfx'), deq=document.getElementById('desc_eq');   // controle Desconto %/R$
+    if(dp) dp.classList.toggle('on',_dModo==='pct'); if(dv) dv.classList.toggle('on',_dModo==='val');
+    if(di && document.activeElement!==di) di.value=(_dModo==='val')?(num(S.descontoVal)?moneyVal(S.descontoVal):''):_d1(num(S.descontoPct));
+    if(du) du.style.display=(_dModo==='val')?'none':''; if(dpfx) dpfx.style.display=(_dModo==='val')?'':'none';
+    if(deq) deq.textContent=(num(S.descontoPct)>0||num(S.descontoVal)>0)?((_dModo==='val')?('= '+_d1(num(S.descontoPct))+'%'):('= '+fmt(desc))):''; }
   set('s_total',fmt(total)); set('s_preco',fmt(total));
   set('s_imp','+ '+fmt(imp)); set('s_desc_pc','('+_d1(num(S.descontoPct))+'%)'); set('s_imp_pc','('+_d1(num(S.impostoPct))+'%)'); set('s_custo',fmt(custo));
   const lu=document.getElementById('s_lucro'), mg=document.getElementById('s_marg');
@@ -4702,10 +4719,10 @@ function recalc(){
     const im=document.querySelector('[data-f="impostoPct"]'); if(im) im.disabled=!!t.imp;
     if(isLoteUnit()){   // loja do lote: configuração de preço vem da BASE — tudo bloqueado aqui
       ['mg_serv_in','mg_mat_in','mg_desl_in','mg_desp_in','mg_equip_in'].forEach(id=>{ const e=document.getElementById(id); if(e){ e.disabled=true; e.title='definido na base do lote'; } });
-      document.querySelectorAll('[data-f="impostoPct"],[data-f="descontoPct"]').forEach(e=>{ e.disabled=true; e.title='definido na base do lote'; });
+      document.querySelectorAll('[data-f="impostoPct"],[data-f="descontoPct"],#desc_in').forEach(e=>{ e.disabled=true; e.title='definido na base do lote'; });
       ['lk_serv','lk_mat','lk_imp','lk_desc','lk_desl','lk_desp','lk_equip'].forEach(id=>{ const b=document.getElementById(id); if(b){ b.style.pointerEvents='none'; b.style.opacity='.55'; b.title='cadeado definido na base do lote'; } });
       const ih=document.querySelector('.intbox .ih'); if(ih&&!document.getElementById('ih_base')){ const s=document.createElement('span'); s.id='ih_base'; s.style.cssText='margin-left:auto;text-transform:none;letter-spacing:0;font-weight:700;color:var(--pri);display:inline-flex;align-items:center;gap:3px'; s.innerHTML='<span class="material-symbols-rounded" style="font-size:14px">link</span>segue a base do lote'; ih.appendChild(s); } }
-    lk('lk_serv',t.serv); lk('lk_mat',t.mat); lk('lk_imp',t.imp); lk('lk_desc',t.desc); lk('lk_desl',t.desl); lk('lk_desp',t.desp); lk('lk_equip',t.equip); { const dc=document.querySelector('[data-f="descontoPct"]'); if(dc) dc.disabled=!!t.desc; }
+    lk('lk_serv',t.serv); lk('lk_mat',t.mat); lk('lk_imp',t.imp); lk('lk_desc',t.desc); lk('lk_desl',t.desl); lk('lk_desp',t.desp); lk('lk_equip',t.equip); { const dc=document.getElementById('desc_in'); if(dc) dc.disabled=!!t.desc; }
     [['servicos','mg_serv_in'],['materiais','mg_mat_in']].forEach(p=>{ const inp=document.getElementById(p[1]); if(!inp)return; let a=document.getElementById('ap_'+p[0]); const n=linhasMargemPropria(p[0]).length;
       const row=inp.closest('.iln'); if(row) row.classList.add('mgrow');   // cada margem numa caixa própria (o botão fica DENTRO da caixa dela)
       if(_combo){   // COM valor combinado: avisa quem está fora do percentual do bloco (margem própria ignorada · adicionais com margem própria)
