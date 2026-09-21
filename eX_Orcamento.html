@@ -279,8 +279,17 @@ select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 .prazoman{display:inline-flex;align-items:center;gap:2px;margin-left:6px;font-size:10.5px;font-weight:600;color:var(--amber,#a45a00);background:var(--amber-bg,#fdf1de);border:1px solid var(--amber-line,#f0d29a);border-radius:20px;padding:0 7px}
 .prazoman .material-symbols-rounded{font-size:12px}
 .moapz.g b{color:var(--amber)}.moapz.g span{color:var(--amber)}
-.moacusto{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-size:13.5px}
-.moatot{border-top:2px solid var(--line);background:var(--surf2)}.moatot .efn{font-weight:800}.moatot .moacusto b{color:var(--pri);font-size:15px}
+.moacusto{text-align:right;font-weight:600;font-variant-numeric:tabular-nums;font-size:13px;color:var(--tx3);border-right:2px dashed var(--line2);padding-right:8px}
+.moacst-note{display:block;font-size:8.5px;font-weight:400;color:var(--tx3)}
+.moahd-cst{display:flex;flex-direction:column;align-items:flex-end;border-right:2px dashed var(--line2);padding-right:8px}
+.moahd-cst .moahd-sub{font-weight:600;text-transform:none;letter-spacing:0;font-size:8.5px;color:var(--tx3)}
+.moahd-dia{display:flex;flex-direction:column;align-items:flex-end;gap:3px}
+.moahd-dl{font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3)}
+.moahd-dl.on{color:#127a54}
+.moahd-db{font-size:9px;font-weight:700;color:#127a54;font-variant-numeric:tabular-nums}
+.diachaves-m{display:none}
+.moatot{border-top:2px solid var(--line);background:var(--surf2)}.moatot .efn{font-weight:800}.moatot .moacusto b{color:var(--tx3);font-size:13px;font-weight:700}
+@media(max-width:820px){.moacusto{border-right:none;padding-right:0}.diachaves-m{display:flex;gap:10px;flex-wrap:wrap;width:100%}}
 .eff{flex:1;min-width:0}
 .eff .efn{font-weight:600;font-size:13px}
 .eff .efd{font-size:10.5px;color:var(--tx3)}
@@ -2201,6 +2210,7 @@ function efetivoHtml(){
   const MO=fs.reduce((a,f)=>a+f.custo,0), totPes=fs.reduce((a,f)=>a+f.pes,0);
   const modo=diariasModo(), totPD=obraPessoaDias();
   const swA=diaOn('alim'), swH=diaOn('hosp'), baseA=diaValKey('alim'), baseH=diaValKey('hosp');
+  const hsw=(key,nome,on,base)=>`<div class="ex-switch ${on?'on':''}" onclick="setDiaOn('${key}')" title="${nome}: liga/desliga para toda a equipe"><span class="lb off">NÃO</span><span class="lb onx">SIM</span><span class="kb"><span class="pin"></span></span></div><span class="moahd-dl ${on?'on':''}">${nome}</span>${on&&base>0?`<span class="moahd-db">${fmt(base)}</span>`:''}`;   // chave da diária no cabeçalho da coluna (desktop)
   const rows=fs.map(f=>{ const isG=Math.abs(f.dias-gargalo)<1e-9&&fs.length>1;
     const pd=fnPessoaDias(f);
     const av=swA?pd*baseA:0, hv=swH?pd*baseH:0, sv=av+hv;
@@ -2222,20 +2232,19 @@ function efetivoHtml(){
   const ctrl=`<div class="diactrl">
     <span class="dclbl"><span class="material-symbols-rounded">restaurant</span>Diárias em campo</span>
     <span class="cmpseg diaseg2"><button class="${modo==='fim'?'on':''}" onclick="setDiaModo('fim')">Todos até o fim</button><button class="${modo==='exec'?'on':''}" onclick="setDiaModo('exec')">Por execução</button></span>
-    ${chave('alim','restaurant','Alimentação',swA,baseA)}
-    ${chave('hosp','hotel','Hospedagem',swH,baseH)}
+    <span class="diachaves-m">${chave('alim','restaurant','Alimentação',swA,baseA)}${chave('hosp','hotel','Hospedagem',swH,baseH)}</span>
     <button class="diagear" onclick="openDiaBase()" title="Valores base — ver / editar"><span class="material-symbols-rounded">settings</span></button>
   </div>${needBase?`<div class="dianote2"><span class="material-symbols-rounded">edit</span>Defina o <b>valor base</b> de alimentação/hospedagem na engrenagem <span class="material-symbols-rounded" style="font-size:14px">settings</span> — as diárias só entram no total depois disso.</div>`:''}`;
   return `<div class="efcard noprint">
     <div class="efhd"><span class="material-symbols-rounded">groups</span><h3>Mão de obra da proposta</h3><button class="olhotog ${S.equipeOn===false?'off':'on'}" style="margin-left:8px" onclick="setEquipeOn()" title="Efetivo alocado (profissionais e quantidades, sem valores) na proposta do cliente"><span class="material-symbols-rounded">${S.equipeOn===false?'visibility_off':'visibility'}</span>${S.equipeOn===false?'efetivo oculto no PDF':'efetivo no PDF'}</button><span class="efcnt"><span class="material-symbols-rounded">event</span>${fmtPrazo(gargalo)}</span></div>
-    <div class="efhint">As <b>funções somadas</b> dos serviços. Mais pessoas → menos prazo; o <b>custo não muda</b>. O gargalo (função mais carregada) está em âmbar e dita o prazo.</div>
+    <div class="efhint">As <b>funções somadas</b> dos serviços. Mais pessoas → menos prazo; o <b>custo não muda</b>. O gargalo (função mais carregada) está em âmbar e dita o prazo. A coluna <b>Custo M.O.</b> é referência (já está nos serviços) e <b>não entra</b> na soma — o total do bloco são só as diárias.</div>
     ${ctrl}
-    <div class="moahd"><span>Função · nível</span><span>Pessoas</span><span>Prazo</span><span>Custo M.O.</span><span>Alimentação</span><span>Hospedagem</span><span>Soma diárias</span></div>
+    <div class="moahd"><span>Função · nível</span><span>Pessoas</span><span>Prazo</span><span class="moahd-cst">Custo M.O.<span class="moahd-sub">não entra</span></span><span class="moahd-dia">${hsw('alim','Alimentação',swA,baseA)}</span><span class="moahd-dia">${hsw('hosp','Hospedagem',swH,baseH)}</span><span style="color:var(--pri)">Soma diárias</span></div>
     ${rows}
     <div class="moarow moatot"><div class="moawho"><span style="width:34px"></span><div class="efn">Total</div></div>
       <div class="moapz" style="text-align:center" data-l="Pessoas"><b>${totPes}</b><br><span>pessoas</span></div>
       <div class="moapz moapzedit" data-l="Prazo"><span class="mopzwrap"><input class="mopzin" value="${_d1(obraPrazo())}" inputmode="decimal" onchange="setPrazoManual(this.value)" title="dias — edite para sobrescrever o prazo"><span class="mopzu">d</span>${prazoManualOn()?`<button class="mopzrst" onclick="clearPrazoManual()" title="voltar ao calculado (${_d1(prazoCalc())} d)"><span class="material-symbols-rounded">restart_alt</span></button>`:''}</span><br><span>${prazoManualOn()?'<b class="mopzman">manual</b>':'prazo'}</span></div>
-      <div class="moacusto" data-l="Custo M.O."><b>${fmt(MO)}</b></div>
+      <div class="moacusto" data-l="Custo M.O."><b>${fmt(MO)}</b><span class="moacst-note">já nos serviços</span></div>
       <div class="moaali ${swA?'':'off'}" data-l="Alimentação"><b>${swA?fmt(totAli):'—'}</b></div>
       <div class="moahosp ${swH?'':'off'}" data-l="Hospedagem"><b>${swH?fmt(totHosp):'—'}</b></div>
       <div class="moasoma" data-l="Soma diárias"><b>${fmt(totDia)}</b><br><span>a custo${totDia>0?' + imp.':''}</span></div></div>
