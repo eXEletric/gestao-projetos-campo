@@ -290,6 +290,13 @@ select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 .diachaves-m{display:none}
 .moatot{border-top:2px solid var(--line);background:var(--surf2)}.moatot .efn{font-weight:800}.moatot .moacusto b{color:var(--tx3);font-size:13px;font-weight:700}
 @media(max-width:820px){.moacusto{border-right:none;padding-right:0}.diachaves-m{display:flex;gap:10px;flex-wrap:wrap;width:100%}}
+.tbl tr.grpsep td{background:#f7f5fc;border-top:2px solid #e3dcfa;padding:7px 12px}
+.tbl tr.grpsep .gsl{font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:10.5px;color:var(--tx3)}
+.tbl tr.grpsep .gsv{float:right;font-weight:800;font-variant-numeric:tabular-nums;color:var(--tx);font-size:13px}
+.tbl tr.grphd td{background:#fff7ea;border-top:1px solid #f0d29a;padding:8px 12px;color:#8a5a12;font-weight:800;font-size:12px}
+.tbl tr.grphd .material-symbols-rounded{font-size:15px;vertical-align:-3px;margin-right:5px}
+.tbl tr.grphd .gsc{font-weight:600;font-size:10.5px;color:#a5771f;margin-left:8px}
+.tbl tr.grphd .gsv{float:right;font-weight:800;font-variant-numeric:tabular-nums;color:#8a5a12;font-size:13px}
 .eff{flex:1;min-width:0}
 .eff .efn{font-weight:600;font-size:13px}
 .eff .efd{font-size:10.5px;color:var(--tx3)}
@@ -2052,6 +2059,14 @@ function renderBlk(cfg){
   const soT = !!(S.soTotal && S.soTotal[cfg.key]);   // "só o total" = apresentação (agrupar na proposta), independente do modo
   (S[cfg.key]||[]).forEach(r=>r._blk=cfg.key);   // marca o bloco (p/ margem base certa)
   const rows=S[cfg.key], sub=blkSub(cfg.key);
+  // divisão PADRÃO × ADICIONAIS (loja de lote): adicionais descem pro fim do bloco, com subtotais separados
+  const _adicSplit=(typeof isLoteUnit==='function'&&isLoteUnit())&&(cfg.key==='servicos'||cfg.key==='materiais')&&rows.some(r=>r&&r.adic);
+  const _pad=_adicSplit?rows.filter(r=>!(r&&r.adic)):rows, _adi=_adicSplit?rows.filter(r=>r&&r.adic):[];
+  const _rowsOrd=_adicSplit?_pad.concat(_adi):rows;
+  const _padSub=_pad.reduce((a,r)=>{r._blk=cfg.key;return a+linePreco(r);},0), _adiSub=_adi.reduce((a,r)=>{r._blk=cfg.key;return a+linePreco(r);},0);
+  const _asm=(cells,cs)=>{ if(_adicSplit){ cells.splice(_pad.length,0,
+      `<tr class="grpsep"><td colspan="${cs}"><span class="gsl">Padrão · contratação</span><b class="gsv">${fmt(_padSub)}</b></td></tr>`,
+      `<tr class="grphd"><td colspan="${cs}"><span class="material-symbols-rounded">add_circle</span>Adicionais<span class="gsc">cobrados por cima do combo</span><b class="gsv">${fmt(_adiSub)}</b></td></tr>`); } return cells.join(''); };
   let cols, body, foot='';
   if(modo==='geral'){
     // Valor geral: você digita o valor final por item. Na EDIÇÃO mostra o detalhe interno (custo/margem/lucro, classe .pint);
@@ -2059,7 +2074,7 @@ function renderBlk(cfg){
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
     const fmtMg=m=>(m==null?'—':String(m).replace('.',',')+'%');
     cols = `<th>#</th><th>${nomeLbl}</th>${cfg.key==='servicos'?'<th>Categoria</th>':''}${cfg.mat?'<th>Marca</th>':''}${cfg.key==='servicos'?'<th>Detalhes do serviço</th>':'<th class="pint">Valor</th>'}<th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r"><span class="pint">Valor (geral)</span><span class="printonly">Preço</span></th><th class="r pint">Lucro</th><th class="pint"></th>`;
-    body=rows.map((r,i)=>{
+    body=_asm(_rowsOrd.map((r,i)=>{
       const cu=custoUn(r), custo=num(r.qtd)*cu, preco=num(r.geral), lucro=preco-custo;
       const margImpl = custo>0?(Math.round((preco/custo-1)*1000)/10):null;
       const custoCell = r.usarBase
@@ -2087,7 +2102,7 @@ function renderBlk(cfg){
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
         <td class="pint rowact">${editCad}<button class="swp" onclick="dupRow('${cfg.key}','${r.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
-    }).join('');
+    }),(cfg.mat?11:10)+(cfg.key==='servicos'?1:0));
     if(!rows.length) body=`<tr><td colspan="${(cfg.mat?11:10)+(cfg.key==='servicos'?1:0)}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
     if(soT){   // "Só o total": edição idêntica aos outros modos; na IMPRESSÃO os itens saem (Desc/Qtd/Und) com "incluso" no valor + o total agrupado do bloco no fim
       foot=`<tfoot><tr class="ftot"><td class="ftl" colspan="${(cfg.mat?8:7)+(cfg.key==='servicos'?1:0)}">Total do bloco (agrupado)</td><td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(effBlocoTotal(cfg.key))}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlurBloco(this,'${cfg.key}')" oninput="updBloco('${cfg.key}',this.value)" title="Acompanha a soma dos itens; digite um valor para sobrescrever"></span></td><td colspan="2"></td></tr></tfoot>`;
@@ -2096,7 +2111,7 @@ function renderBlk(cfg){
     // MODELO base+margem: custo (do cadastro, usar/alterar) → margem → preço e lucro
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
     cols = `<th>#</th><th class="sortth" onclick="sortBlk('${cfg.key}','desc')">${nomeLbl}${sortArrow(cfg.key,'desc')}</th>${cfg.key==='servicos'?`<th class="sortth" onclick="sortBlk('${cfg.key}','categoria')">Categoria${sortArrow(cfg.key,'categoria')}</th>`:''}${cfg.mat?'<th>Marca</th>':''}${cfg.key==='servicos'?'<th>Detalhes do serviço</th>':'<th class="pint">Valor</th>'}<th class="r pint sortth" onclick="sortBlk('${cfg.key}','custo')">Custo un.${sortArrow(cfg.key,'custo')}</th><th class="r sortth" onclick="sortBlk('${cfg.key}','qtd')">Qtd${sortArrow(cfg.key,'qtd')}</th><th class="sortth" onclick="sortBlk('${cfg.key}','und')">Und${sortArrow(cfg.key,'und')}</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r pint sortth" onclick="sortBlk('${cfg.key}','custot')">Custo total<span class="thsub">sem margem</span>${sortArrow(cfg.key,'custot')}</th><th class="r sortth" onclick="sortBlk('${cfg.key}','unit')">Unitário<span class="thsub">c/ margem</span>${sortArrow(cfg.key,'unit')}</th><th class="r sortth" onclick="sortBlk('${cfg.key}','preco')">Total<span class="thsub">c/ margem</span>${sortArrow(cfg.key,'preco')}</th><th class="pint"></th>`;
-    body=rows.map((r,i)=>{
+    body=_asm(_rowsOrd.map((r,i)=>{
       const preco=linePreco(r), custo=lineCusto(r), unit=lineUnit(r);
       const propria=!(r.margem===''||r.margem==null);
       const custoCell = r.usarBase
@@ -2125,7 +2140,7 @@ function renderBlk(cfg){
         <td class="r money preco" id="tp_${r.id}"><b>${fmt(preco)}</b></td>
         <td class="pint rowact">${editCad}<button class="swp" onclick="dupRow('${cfg.key}','${r.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
-    }).join('');
+    }),(cfg.mat?12:11)+(cfg.key==='servicos'?1:0));
     if(!rows.length) body=`<tr><td colspan="${(cfg.mat?12:11)+(cfg.key==='servicos'?1:0)}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
     if(cfg.key==='despesas' && !soT) body += diariasRowsHtml();   // alimentação + hospedagem como linhas de despesa (derivadas)
     if(cfg.key==='despesas' && !soT && !comboActive()) body += rateioRowHtml();   // rateio do macro no PREÇO só sem valor combinado (com combinado vira custo interno)
