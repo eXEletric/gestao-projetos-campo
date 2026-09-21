@@ -290,6 +290,8 @@ select.cin.un:focus{outline:none;border-color:var(--pri);background:#fff}
 .diachaves-m{display:none}
 .moatot{border-top:2px solid var(--line);background:var(--surf2)}.moatot .efn{font-weight:800}.moatot .moacusto b{color:var(--tx3);font-size:13px;font-weight:700}
 @media(max-width:820px){.moacusto{border-right:none;padding-right:0}.diachaves-m{display:flex;gap:10px;flex-wrap:wrap;width:100%}}
+.negchip{display:inline-flex;align-items:center;gap:2px;margin-left:6px;font-size:9.5px;font-weight:700;color:#8a5a12;background:#fff4e0;border:1px solid #f0d29a;border-radius:20px;padding:0 6px;vertical-align:middle;white-space:nowrap;cursor:help}
+.negchip .material-symbols-rounded{font-size:11px}
 .tbl tr.grpsep td{background:#f7f5fc;border-top:2px solid #e3dcfa;padding:7px 12px}
 .tbl tr.grpsep .gsl{font-weight:700;text-transform:uppercase;letter-spacing:.03em;font-size:10.5px;color:var(--tx3)}
 .tbl tr.grpsep .gsv{float:right;font-weight:800;font-variant-numeric:tabular-nums;color:var(--tx);font-size:13px}
@@ -4695,6 +4697,8 @@ function recalc(){
     if(mm){ if(document.activeElement!==mm) mm.value=_d1(_combo?comboMgBlk('materiais')*100:baseMg('materiais')); mm.disabled=_combo?false:!!t.mat; mm.classList.toggle('calc',_combo&&!t.mat); mm.title=_combo?(t.mat?'travada neste valor (serviços absorvem)':'calculada — digite para travar'):(t.mat?'travada':''); }
     document.querySelectorAll('.mkcombo[data-blk]').forEach(el=>{ const v=_combo?comboMgBlk(el.dataset.blk)*100:0; const s=el.querySelector('.mkcv'); if(s)s.textContent=_d1(v); el.classList.toggle('neg',v<0); });   // margem aplicada nas linhas com valor combinado
     { const _abP=_combo?comboAbsorve():null; [['mg_desl_in','deslocamento','desl','desl'],['mg_desp_in','despesas','desp','outras'],['mg_equip_in','equip','equip','equip']].forEach(p=>{ const e=document.getElementById(p[0]); const absv=_abP&&_abP.m!==null&&_abP.grupos.indexOf(p[3])>=0; if(e&&document.activeElement!==e) e.value=_d1(absv?_abP.m*100:baseMg(p[1])); if(e) e.classList.toggle('calc',!!absv); if(e){ e.disabled=!!t[p[2]]; e.title=t[p[2]]?'travado':''; } }); }
+    const negBadge=(id,on)=>{ const inp=document.getElementById(id); if(!inp)return; const row=inp.closest('.iln'); const lbl=row&&row.querySelector('.lbl'); if(!lbl)return; let c=lbl.querySelector('.negchip'); if(on){ if(!c){ c=document.createElement('span'); c.className='negchip'; c.title='Este percentual foi recalculado pelo valor total negociado (combinado) — não é a margem do cadastro'; c.innerHTML='<span class="material-symbols-rounded">handshake</span>valor negociado'; lbl.appendChild(c); } } else if(c){ c.remove(); } };   // ponto 2 (dono): % mexido pelo valor negociado ganha aviso
+    { const _abP=_combo?comboAbsorve():null; negBadge('mg_serv_in',_combo&&!t.serv); negBadge('mg_mat_in',_combo&&!t.mat); negBadge('mg_desl_in',!!(_abP&&_abP.m!==null&&_abP.grupos.indexOf('desl')>=0)); negBadge('mg_desp_in',!!(_abP&&_abP.m!==null&&_abP.grupos.indexOf('outras')>=0)); negBadge('mg_equip_in',!!(_abP&&_abP.m!==null&&_abP.grupos.indexOf('equip')>=0)); }
     const im=document.querySelector('[data-f="impostoPct"]'); if(im) im.disabled=!!t.imp;
     if(isLoteUnit()){   // loja do lote: configuração de preço vem da BASE — tudo bloqueado aqui
       ['mg_serv_in','mg_mat_in','mg_desl_in','mg_desp_in','mg_equip_in'].forEach(id=>{ const e=document.getElementById(id); if(e){ e.disabled=true; e.title='definido na base do lote'; } });
