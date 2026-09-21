@@ -1442,7 +1442,9 @@ function grupoMgFixa(g){   // fração do grupo quando NÃO absorve
   if(g==='materiais'){ const v=S.margemMatCombo; return (travas().mat&&v!=null&&v!=='')?num(v)/100:baseMg('materiais')/100; }
   return baseMg(g==='desl'?'deslocamento':(g==='outras'?'despesas':'equip'))/100; }
 function comboAbsorve(){ const t=travas(); const abs=COMBO_GRUPOS.filter(function(x){ return !t[x[1]]; }).map(function(x){ return x[0]; });
-  const desc=num(S.descontoPct)/100, imp=num(S.impostoPct)/100, bruto=num(S.valorCombinado)/(((1-desc)||1)*(1+imp));
+  const imp=num(S.impostoPct)/100, adicP=adicPrecoTotal();   // adicionais VISÍVEIS entram no subtotal; o combo dimensiona só o PADRÃO (alvo = combinado ÷ (1+imp) ajustado pelo desconto, menos os adicionais)
+  const bruto=(S.descontoModo==='val') ? (num(S.valorCombinado)/(1+imp)+num(S.descontoVal)-adicP)   // total=(padrão+adic−descVal)(1+imp)=combinado
+    : (num(S.valorCombinado)/(((1-num(S.descontoPct)/100)||1)*(1+imp))-adicP);                       // total=(padrão+adic)(1−desc%)(1+imp)=combinado
   let fixo=0, custoAbs=0;
   ['servicos','materiais','despesas','equip'].forEach(function(k){ if(!blocoAtivo(k))return; (S[k]||[]).forEach(function(r){ if(!r||r.adic)return; r._blk=k; const g=grupoDe(r), c=lineCusto(r);
     if(abs.indexOf(g)>=0) custoAbs+=c;
@@ -1481,6 +1483,7 @@ function setMgGeral(key,v){ if(loteCfgBloqueia())return; const tk={deslocamento:
 function aplicarCombo(){ if(loteCfgBloqueia())return; const i=document.getElementById('in_combo'); if(!i)return; const n=num(i.value); const b=document.getElementById('combo_apl'); if(b)b.classList.remove('pend');
   if(n>0){ const t=travas(); const regra=t.mat?'material travado, serviços absorvem':(t.serv?'serviços travados, material absorve':'serviços e material ajustam juntos');
     if(!confirm('Aplicar valor combinado de '+fmt(n)+'?\n\nO total passa a fechar neste valor ('+regra+').')){ recalc(); return; } }
+  if(n>0 && !travas().desc){ const ap=adicPrecoTotal(); if(ap>0){ S.descontoModo='val'; S.descontoVal=+ap.toFixed(2); } }   // cadeado do desconto ABERTO: dá o adicional como desconto (auto-preenche pra fechar); travado → serviços absorvem em torno do desconto fixado
   setValorCombinado(i.value); cloudMsg(n>0?('valor combinado '+fmt(n)+' aplicado'):'valor combinado removido'); }
 function setValorCombinado(v){ const n=num(v); S.valorCombinado=(n>0?n:null); save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); }
 function clearCombo(){ if(loteCfgBloqueia())return; S.valorCombinado=null; save(); renderBlk(BLKS.find(b=>b.key==='servicos')); renderBlk(BLKS.find(b=>b.key==='materiais')); recalc(); }
@@ -3971,10 +3974,13 @@ function varSecaoBtnHtml(vs){ if(vs.length<2)return ''; var on=fxVis('lote.var')
 /* ===== DOCUMENTO DO LOTE — valores finais (sem %): calcula qualquer proposta (loja ou modelo) com o MESMO motor da tela ===== */
 function precoDe(dados){ var keep=S, out=null;
   try{ S=_deep(dados||{}); sanitize();
-    var f=(1-num(S.descontoPct)/100)*(1+num(S.impostoPct)/100), on=function(k){return blocoAtivo(k);};
+    var on=function(k){return blocoAtivo(k);};
     var sum=function(k,flt){ return on(k)?(S[k]||[]).filter(flt||function(){return true;}).reduce(function(a,r){r._blk=k;return a+linePreco(r);},0):0; };
     var isDesl=function(r){return despGrupo(r)==='desl';};
     var serv=sum('servicos'), mat=sum('materiais'), equip=sum('equip'), desl=sum('despesas',isDesl), desp=sum('despesas',function(r){return !isDesl(r);})+diariasPreco(); desl+=(comboActive()?0:num(S._ratNoTotal));   // rateio do macro já dentro do total (com imposto)
+    var _bruto=serv+mat+equip+desl+desp;
+    var _descPct=(S.descontoModo==='val') ? (_bruto>0?Math.min(num(S.descontoVal),_bruto)/_bruto*100:0) : num(S.descontoPct);   // desconto por VALOR → converte pra % sobre o subtotal
+    var f=(1-_descPct/100)*(1+num(S.impostoPct)/100);
     var adicItens=[]; ['servicos','materiais','despesas','equip'].forEach(function(k){ if(!on(k))return; (S[k]||[]).forEach(function(r){ if(r&&r.adic){ r._blk=k; adicItens.push({desc:r.desc,qtd:qtyOf(r),und:r.und,total:linePreco(r)*f,motivo:r.adicMotivo||'',cobrado:!!r.adicCobrar}); } }); });
     var itens=(on('servicos')?S.servicos:[]).filter(function(r){return num(qtyOf(r))>0;}).map(function(r){ r._blk='servicos'; return {desc:r.desc,und:r.und,qtd:qtyOf(r),unit:lineUnit(r)*f,total:linePreco(r)*f,adic:!!r.adic}; });
     var impF=1+num(S.impostoPct)/100, descAd=S.descontoAdic?adicAbatidoTotal()*impF:0;
@@ -4667,7 +4673,7 @@ function recalc(){
   const desc=(_dModo==='val')?Math.min(num(S.descontoVal),bruto):bruto*num(S.descontoPct)/100;   // modo R$ usa o valor exato (sem arredondar pelo %)
   const adicP=adicPrecoTotal(), descAd=S.descontoAdic?adicAbatidoTotal():0;   // desconto comercial que abate os ADICIONAIS (a loja volta ao valor combinado; custo real mantido → lucro cai no valor absorvido)
   const liquido=bruto-desc-descAd;                          // valor antes do imposto
-  { const l=document.getElementById('ln_descad'); if(l) l.style.display=(adicP>0)?'':'none'; const sd=document.getElementById('s_descad'); if(sd) sd.textContent=S.descontoAdic?('− '+fmt(descAd)):'não aplicado'; const bt=document.getElementById('descad_tog'); if(bt){ bt.textContent=S.descontoAdic?'abatido ✓':'abater'; bt.style.background=S.descontoAdic?'#e6f5ec':'var(--surf)'; bt.style.color=S.descontoAdic?'#17693f':''; } }
+  { const l=document.getElementById('ln_descad'); if(l) l.style.display=S.descontoAdic?'':'none'; const sd=document.getElementById('s_descad'); if(sd) sd.textContent=S.descontoAdic?('− '+fmt(descAd)):'não aplicado'; const bt=document.getElementById('descad_tog'); if(bt){ bt.textContent=S.descontoAdic?'abatido ✓':'abater'; bt.style.background=S.descontoAdic?'#e6f5ec':'var(--surf)'; bt.style.color=S.descontoAdic?'#17693f':''; } }   // retirada: linha "Desconto comercial" só aparece se o abatimento antigo estiver ligado (migrado usa o campo Desconto)
   const imp=liquido*num(S.impostoPct)/100;
   const total=liquido+imp;                                  // imposto SOMA ao total (repasse ao cliente)
   const custo=cst.servicos+cst.equip+cst.despesas+cst.materiais+diaC+ratCusto;   // custo real (auto) — inclui o rateio do macro (é custo com ou sem valor combinado)
@@ -4683,7 +4689,7 @@ function recalc(){
     if(dp) dp.classList.toggle('on',_dModo==='pct'); if(dv) dv.classList.toggle('on',_dModo==='val');
     if(di && document.activeElement!==di) di.value=(_dModo==='val')?(num(S.descontoVal)?moneyVal(S.descontoVal):''):_d1(num(S.descontoPct));
     if(du) du.style.display=(_dModo==='val')?'none':''; if(dpfx) dpfx.style.display=(_dModo==='val')?'':'none';
-    if(deq) deq.textContent=(num(S.descontoPct)>0||num(S.descontoVal)>0)?((_dModo==='val')?('= '+_d1(num(S.descontoPct))+'%'):('= '+fmt(desc))):''; }
+    if(deq){ const _ep=(bruto>0?desc/bruto*100:0); deq.textContent=(desc>0)?((_dModo==='val')?('= '+_d1(_ep)+'%'):('= '+fmt(desc))):''; } }
   set('s_total',fmt(total)); set('s_preco',fmt(total));
   set('s_imp','+ '+fmt(imp)); set('s_desc_pc','('+_d1(num(S.descontoPct))+'%)'); set('s_imp_pc','('+_d1(num(S.impostoPct))+'%)'); set('s_custo',fmt(custo));
   const lu=document.getElementById('s_lucro'), mg=document.getElementById('s_marg');
