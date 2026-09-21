@@ -3345,6 +3345,7 @@ function renderLoteBaseHtml(){
   const listaTit=`<div style="display:flex;align-items:center;gap:8px;padding:11px 14px 4px"><span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">storefront</span><b style="font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri)">Lista de lojas · ${LOTE_UNITS.length}</b></div>`;
   const corpo = fxw('lote.var',varFaixaHtml()) + fxw('lote.modelo',modelosStrip) + fxw('lote.ver',modoTog+viewTog+(modo==='estimativa'?estimBlock:''))
     + (LOTE_VIEW==='pad' ? fxw('lote.escopo',resumoEscopoHtml()) : (modo==='estimativa' ? '' : fxw('lote.lista',listaTit+addBar+(LOTE_UNITS.length?colHeader:'')+rows)))
+    + fxw('lote.balanco',balancoHtml())
     + fxw('lote.cond',condStrip);
   return `<style>.lbtn{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:8px;padding:5px 9px;font:600 12px inherit;cursor:pointer;text-decoration:none}.lbtn:hover{border-color:var(--pri);color:var(--pri)}.lbtn.danger{color:var(--red)}.lbtn.danger:hover{border-color:var(--red)}.lbtn .material-symbols-rounded{font-size:15px}.loteKpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;padding:14px}@media(max-width:640px){.loteKpis{grid-template-columns:1fr 1fr}}.lbres:hover{background:var(--pri-bg,#f0ecfb)}</style>
   <div style="background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden">
@@ -3828,6 +3829,84 @@ function dadosLojaDaBase(base,id){   // dados de uma loja a partir da base, com 
   var d=_deep(base||{}); var vid=id||(base&&base.varAtiva)||'v1'; var c=varConteudo(base,vid);
   VAR_KEYS.forEach(function(k){ d[k]=c[k]; }); delete d.variacoes; delete d.varAtiva; delete d._base; delete d.macro; delete d.fxLayout; delete d.numero; d.variacaoId=vid; return d; }   // nº da proposta NUNCA vem da base
 function varRerender(){ save(); try{ sanitize(); }catch(_){} BLKS.forEach(function(b){ try{ renderBlk(b); }catch(_){} }); try{ applyBlocoVis(); }catch(_){} try{ recalc(); }catch(_){} try{ injectLoteBasePanel(); }catch(_){} }
+/* ===== BALANÇO loja × modelo (dono 21/09): por loja, quantos itens PASSAM do modelo (excedente→adicional) e quantos FALTAM, com o custo da diferença — serviços+materiais+despesas ===== */
+var BAL_OPEN={};
+function _balKey(r){ return (r&&r.catId)||('d:'+String((r&&r.desc)||'').trim().toLowerCase()); }
+function balancoLoteModelo(){
+  if(!isLoteBase()) return [];
+  var KEYS=['servicos','materiais','despesas'];
+  return (LOTE_UNITS||[]).map(function(u){
+    var vid=unitVar(u), mc=varConteudo(S,vid), d=(u&&u.dados)||{};
+    var passN=0,passC=0,faltN=0,faltC=0,passIt=[],faltIt=[];
+    KEYS.forEach(function(k){
+      var model=(mc[k]||[]), store=(d[k]||[]), mset={}, sset={};
+      model.forEach(function(r){ mset[_balKey(r)]=1; });
+      store.forEach(function(r){ sset[_balKey(r)]=1; });
+      store.forEach(function(r){ if(r&&r.adic) return; if(!mset[_balKey(r)]){ r._blk=k; var c=lineCusto(r); passN++; passC+=c; passIt.push({k:k,id:r.id,desc:r.desc,qtd:r.qtd,c:c}); } });
+      model.forEach(function(r){ if(!sset[_balKey(r)]){ r._blk=k; var c=lineCusto(r); faltN++; faltC+=c; faltIt.push({k:k,desc:r.desc,qtd:r.qtd,c:c}); } });
+    });
+    return {id:u.id,u:u,vid:vid,passN:passN,passC:passC,faltN:faltN,faltC:faltC,dif:passC-faltC,passIt:passIt,faltIt:faltIt};
+  });
+}
+function toggleBalancoLoja(id){ BAL_OPEN[id]=!BAL_OPEN[id]; try{ injectLoteBasePanel(); }catch(_){} }
+function balancoHtml(){
+  if(!isLoteBase() || !(LOTE_UNITS||[]).length || varLista().length<2) return '';
+  var bal=balancoLoteModelo(); if(!bal.length) return '';
+  var GC='1fr 120px 120px 104px';
+  var vs=varLista(), tPassN=0,tPassC=0,tFaltN=0,tFaltC=0;
+  var blocos=vs.map(function(v){
+    var rows=bal.filter(function(b){ return b.vid===v.id; }); if(!rows.length) return '';
+    var sPassN=0,sPassC=0,sFaltN=0,sFaltC=0;
+    var lojas=rows.map(function(b){
+      sPassN+=b.passN;sPassC+=b.passC;sFaltN+=b.faltN;sFaltC+=b.faltC;
+      var ab=!!BAL_OPEN[b.id], difc=b.dif>0.5?'#159a6a':(b.dif<-0.5?'#a32d2d':'#8f8a9c');
+      var pC=b.passN?('<b style="color:#8a5a12">'+b.passN+'</b> · '+fmt(b.passC)):'<span style="color:#c9c4d2">—</span>';
+      var fC=b.faltN?('<b style="color:#a32d2d">'+b.faltN+'</b> · '+fmt(b.faltC)):'<span style="color:#159a6a;font-size:10.5px;font-weight:700">bate</span>';
+      var det='';
+      if(ab){ var ln=function(it,t){ return '<div style="display:flex;gap:8px;padding:3px 0;font-size:11.5px"><span style="width:12px;color:'+(t==='p'?'#8a5a12':'#a32d2d')+'">'+(t==='p'?'+':'−')+'</span><span style="flex:1;color:var(--tx2)">'+esc(it.desc||'item')+' <span style="color:var(--tx3)">('+_d1(num(it.qtd))+')</span></span><span style="font-variant-numeric:tabular-nums;color:var(--tx3)">'+fmt(it.c)+'</span></div>'; };
+        det='<div style="grid-column:1/-1;background:#faf9ff;border-radius:8px;padding:8px 12px;margin:2px 0 6px">'
+          +(b.passIt.length?'<div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#8a5a12;margin-bottom:2px">Passam (excedente → adicional)</div>'+b.passIt.map(function(i){return ln(i,'p');}).join(''):'')
+          +(b.faltIt.length?'<div style="font-size:10px;font-weight:800;text-transform:uppercase;color:#a32d2d;margin:6px 0 2px">Faltam (do modelo)</div>'+b.faltIt.map(function(i){return ln(i,'f');}).join(''):'')
+          +(!b.passIt.length&&!b.faltIt.length?'<div style="font-size:11.5px;color:#159a6a">Esta loja bate 100% com o modelo.</div>':'')+'</div>';
+      }
+      return '<div style="display:grid;grid-template-columns:'+GC+';gap:6px;align-items:center;padding:8px 14px;border-top:1px solid var(--line2);cursor:pointer" onclick="toggleBalancoLoja(\''+b.id+'\')">'
+        +'<span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:12.5px"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-3px;color:var(--tx3)">'+(ab?'expand_more':'chevron_right')+'</span>'+esc(lojaLabel(b.u))+'</span>'
+        +'<span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums">'+pC+'</span>'
+        +'<span style="text-align:right;font-size:12px;font-variant-numeric:tabular-nums">'+fC+'</span>'
+        +'<b style="text-align:right;font-size:12.5px;font-variant-numeric:tabular-nums;color:'+difc+'">'+(b.dif>0.5?'+ ':(b.dif<-0.5?'− ':''))+fmt(Math.abs(b.dif))+'</b>'+det+'</div>';
+    }).join('');
+    tPassN+=sPassN;tPassC+=sPassC;tFaltN+=sFaltN;tFaltC+=sFaltC;
+    return '<div style="padding:6px 14px;background:#faf9ff;font-size:10px;font-weight:800;color:var(--pri);text-transform:uppercase;letter-spacing:.03em;border-top:1px solid var(--line2)"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px">layers</span> '+esc(v.nome)+' · '+rows.length+' loja(s)</div>'+lojas
+      +'<div style="display:grid;grid-template-columns:'+GC+';gap:6px;padding:6px 14px;background:#f6f4fb;border-top:1px solid #e3dcfa;font-size:11.5px"><b style="color:var(--pri)">Subtotal '+esc(v.nome)+'</b><span style="text-align:right;color:#8a5a12">'+(sPassN?sPassN+' · '+fmt(sPassC):'0')+'</span><span style="text-align:right;color:#a32d2d">'+(sFaltN?sFaltN+' · '+fmt(sFaltC):'0')+'</span><b style="text-align:right;color:'+((sPassC-sFaltC)<-0.5?'#a32d2d':'#159a6a')+'">'+((sPassC-sFaltC)<-0.5?'− ':'+ ')+fmt(Math.abs(sPassC-sFaltC))+'</b></div>';
+  }).join('');
+  var difT=tPassC-tFaltC, btn=tPassN?'<button class="lbtn" style="margin-left:auto;border-color:#e0b060;color:#8a5a12;background:#fff7ea" onclick="marcarExcedentesLote()"><span class="material-symbols-rounded">add_circle</span>Marcar '+tPassN+' excedente(s) como adicional</button>':'';
+  return '<div style="background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden;margin-top:2px">'
+    +'<div style="display:flex;align-items:center;gap:9px;padding:11px 14px;background:linear-gradient(90deg,#efe9ff,#f7f4ff);border-bottom:1px solid #e7e1f8;flex-wrap:wrap"><span class="material-symbols-rounded" style="color:var(--pri)">balance</span><b style="font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)">Balanço loja × modelo</b><span style="font-size:11px;color:var(--tx3)">cada loja vs a lista-base do seu modelo · custo (serviços+materiais+despesas)</span>'+btn+'</div>'
+    +'<div style="display:grid;grid-template-columns:'+GC+';gap:6px;padding:7px 14px;font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--tx3)"><span>Loja</span><span style="text-align:right">Passam → adic.</span><span style="text-align:right">Faltam</span><span style="text-align:right">Diferença</span></div>'
+    +blocos
+    +'<div style="display:grid;grid-template-columns:'+GC+';gap:6px;padding:11px 14px;background:var(--pri);color:#fff"><b>Total do lote · '+bal.length+' lojas</b><span style="text-align:right;font-variant-numeric:tabular-nums"><b>'+tPassN+'</b> · '+fmt(tPassC)+'</span><span style="text-align:right;font-variant-numeric:tabular-nums"><b>'+tFaltN+'</b> · '+fmt(tFaltC)+'</span><b style="text-align:right;font-variant-numeric:tabular-nums">'+(difT<-0.5?'− ':'+ ')+fmt(Math.abs(difT))+'</b></div>'
+    +'<div style="padding:8px 14px;background:#f6f4fb;font-size:10.5px;color:var(--tx3)"><span class="material-symbols-rounded" style="font-size:13px;vertical-align:-2px;color:var(--pri)">info</span> Diferença de <b>custo</b> (não preço — o combo segue). Excedente vira adicional (cobra por cima); falta = escopo do modelo que a loja não tem. Clique na loja pra ver os itens.</div>'
+  +'</div>';
+}
+async function marcarExcedentesLote(){
+  if(!(isLoteBase()&&CLOUD)){ alert('Abra a base do lote para marcar.'); return; }
+  if(typeof loteExigeSalvo==='function' && !loteExigeSalvo('Marcar excedentes')) return;
+  var bal=balancoLoteModelo().filter(function(b){return b.passIt.length;});
+  var tot=bal.reduce(function(a,b){return a+b.passIt.length;},0);
+  if(!tot){ alert('Não há excedentes a marcar.'); return; }
+  if(!confirm('Marcar '+tot+' item(ns) excedente(s) como ADICIONAL em '+bal.length+' loja(s)?\n\n• Backup automático (dados._bkpExced).\n• Passam a ser cobrados POR CIMA do combo (o preço dessas lojas sobe).')) return;
+  var n=0;
+  for(var i=0;i<bal.length;i++){ var b=bal[i], u=b.u, d=_deep(u.dados||{});
+    if(!d._bkpExced){ d._bkpExced={t:Date.now(),servicos:_deep(d.servicos||[]),materiais:_deep(d.materiais||[]),despesas:_deep(d.despesas||[])}; }
+    b.passIt.forEach(function(it){ var arr=d[it.k]||[]; var row=arr.find(function(x){return x&&x.id===it.id;}); if(row){ row.adic=true; if(!row.adicMotivo) row.adicMotivo='excedente ao modelo'; n++; } });
+    var p=null; try{ p=precoDe(dadosLojaCalc({dados:d})); }catch(_){}
+    if(p) d._total=p.total;
+    var up=await SB.from('orcamentos').update({dados:d,total:(p?p.total:num(u.total))}).eq('id',u.id);
+    if(up.error) console.error('marcar exced',up.error);
+  }
+  cloudMsg(n+' excedente(s) marcados como adicional');
+  try{ await loteReload(); }catch(_){}
+}
 function varTrocar(id){ var vs=varLista(); if(id===S.varAtiva)return; var atual=vs.find(function(x){return x.id===S.varAtiva;}), nova=vs.find(function(x){return x.id===id;}); if(!nova)return;
   if(typeof lmePendente==='function'&&lmePendente()>0&&!confirm('Há edição de material a custo NÃO aplicada — trocar de variação descarta. Continuar?'))return;
   try{ LME_ON=false; LME_STAGE=null; }catch(_){}
