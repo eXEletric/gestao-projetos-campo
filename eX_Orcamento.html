@@ -1466,6 +1466,7 @@ function comboMgServ(){ return comboMgBlk('servicos'); }
 function toggleTrava(k){ if(loteCfgBloqueia())return; const t=travas(); t[k]=!t[k];
   if(comboActive() && (k==='serv'||k==='mat')){ const blk=(k==='serv')?'servicos':'materiais', campo=(k==='serv')?'margemServCombo':'margemMatCombo';
     if(t[k]){ if(S[campo]==null||S[campo]==='') S[campo]=+(baseMg(blk)).toFixed(1); } }
+  if(comboActive()){ try{ if(comboAbsorve().m===null) alert('⚠️ Todos os percentuais estão TRAVADOS — não sobra ninguém pra ABSORVER, então o VALOR COMBINADO não fecha (o total vai pra onde os % fixos mandarem). Destrave pelo menos um (normalmente Serviços).'); }catch(_){} }   // guarda-corpo (dono 21/09): travar tudo quebra o fechamento
   save(); try{ BLKS.forEach(b=>renderBlk(b)); }catch(_){} recalc(); }
 /* PERCENTUAIS GERAIS de despesas: Deslocamento (S.margem.deslocamento) · Outras despesas (S.margem.despesas, inclui diárias) · Locações (S.margem.equip) */
 function despGrupo(r){ if(!r)return 'outras'; const c=(r.catId&&CATALOGO&&CATALOGO.despesas)?CATALOGO.despesas.find(x=>x.id===r.catId):null;
@@ -3824,6 +3825,7 @@ function loteCfgEnforce(baseDados){ if(!isLoteUnit()||!baseDados)return; UNIT_BA
 function loteCfgBloqueia(){ if(!isLoteUnit())return false; alert('Esta loja faz parte do lote: margens, percentuais, cadeados, imposto, desconto e valor combinado seguem a BASE DO LOTE.\n\nAltere na proposta-base — ao salvar a base, todas as lojas recebem.'); try{ recalc(); }catch(_){} return true; }
 async function loteCfgPropagar(){   // base salva → todas as lojas recebem a config (conteúdo, identidade e adicionais intocados)
   if(!(isLoteBase()&&CLOUD))return; var base=_deep(S);
+  try{ if(comboActive()&&comboAbsorve().m===null){ delete base.travas; cloudMsg('Base com tudo travado — as travas NÃO foram propagadas (protegendo as lojas). Destrave um percentual na base.'); } }catch(_){}   // guarda-corpo (dono 21/09): não propaga um estado que quebra o fechamento das lojas
   var r=await SB.from('orcamentos').select('id,total,dados,status,oportunidade_id').eq('lote_id',S_LOTE_ID).is('deleted_at',null); if(r.error){ console.error('cfg lote',r.error); return; }
   var ids=(r.data||[]).map(function(u){return u.id;}), opps=(r.data||[]).map(function(u){return u.oportunidade_id;}).filter(Boolean), fech={};
   try{ var vv=await SB.from('orcamento_versoes').select('orcamento_id,status').in('orcamento_id',ids).in('status',['enviada','aprovada']).is('deleted_at',null); (vv.data||[]).forEach(function(x){ fech[x.orcamento_id]=1; }); }catch(_){}
