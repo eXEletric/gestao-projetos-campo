@@ -332,6 +332,27 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .summ .body{padding:14px 16px}
 /* painel de preço em 2 colunas (lote): Esta loja | Global do lote */
 @media(min-width:941px){body:not(.viewing) .grid:has(.summ.cmp){grid-template-columns:1fr 430px}}   /* só na edição: na visão do cliente/impressão a folha tem 900px e a coluna larga espremia o cabeçalho */
+/* painel de CONSULTA das lojas (só na visão travada/cliente, na tela; nunca no PDF) */
+.vwonly{display:none}
+body.viewing .vwonly{display:block}
+@media print{.vwonly{display:none!important}}
+.rocard{border:1px solid var(--line2);border-radius:12px;background:var(--surf);margin:0 0 16px;overflow:hidden}
+.rohd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 13px;background:var(--pri-bg,#efeafc);border-bottom:1px solid var(--line2);font-size:13px;color:var(--pri)}
+.rohd .material-symbols-rounded{font-size:18px}
+.rohd .rocnt{font-weight:700;font-variant-numeric:tabular-nums}
+.rohd .rohint{margin-left:auto;font-size:11px;color:var(--tx3);font-weight:600}
+.rorow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:8px 13px;border-bottom:1px solid var(--line)}
+.rorow:last-child{border-bottom:0}
+.roid{min-width:220px;flex:1 1 220px;display:flex;flex-direction:column;line-height:1.3}
+.roid b{font-size:13px}.roid span{font-size:11px;color:var(--tx3)}
+.rov{display:flex;align-items:center;gap:10px;flex-wrap:wrap;font-size:12px;color:var(--tx2)}
+.rov b{font-variant-numeric:tabular-nums;color:var(--tx)}
+.rov .roadic{background:#fff4e0;border:1px solid #e6c360;color:#8a5a12;border-radius:20px;padding:1px 8px;font-weight:700;font-size:11px}
+.roact{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
+.roact .lbtn{font-size:12px;padding:4px 9px;text-decoration:none}
+.roempty{font-size:11.5px;color:var(--tx3)}
+.rodet{flex-basis:100%;display:none;white-space:pre-wrap;font-size:12px;color:var(--tx2);background:var(--surf2);border-radius:9px;padding:9px 11px;margin:6px 0 2px;line-height:1.5}
+.rodet.open{display:block}
 /* FOLHA DO CLIENTE (visão travada e impressão): coluna única — cabeçalho e tabelas usam a largura toda; resumo de preço vai abaixo */
 body.viewing .grid{grid-template-columns:1fr}
 body.viewing .side{margin-top:6px}
@@ -4281,6 +4302,33 @@ var DEFAULT_COND='Pagamento: 50% do total do lote na entrada; saldo pago a cada 
 function condComerciais(){ return (S.condComerciais!==undefined && S.condComerciais!==null)?S.condComerciais:DEFAULT_COND; }
 function setCond(k,v){ S[k]=v; save(); }
 function contratanteCnpj(){ const id=S.contratanteId||(LOTE_ROW&&LOTE_ROW.contratante_id); const c=(CLIENTES||[]).find(function(x){return x.id===id;}); return (c&&c.cnpj)||''; }
+/* CONSULTA DAS LOJAS na proposta TRAVADA/visão do cliente (só tela, nunca no PDF):
+   o dono precisa chegar no relatório e nos dados de cada unidade mesmo com a proposta fechada. */
+function loteROHtml(){
+  if(!isLoteBase()||!(LOTE_UNITS||[]).length) return '';
+  var linhas=(LOTE_UNITS||[]).map(function(u){ var d=u.dados||{}, lev=d.levUnidade||{}, p=null;
+    try{ p=precoDe(dadosLojaCalc(u)); }catch(_){}
+    var adic=(p&&p.adicItens&&p.adicItens.length)||0;
+    var rel=lev.relatorio||'', abrir='eX_Orcamento.html?opp='+u.oportunidade_id+'&lote='+S_LOTE_ID;
+    var det=[lev.relatorioEscopo||'', lev.obs||''].filter(Boolean).join('\n\n');
+    return '<div class="rorow">'
+      +'<div class="roid"><b>'+esc(lojaLabel(u))+'</b><span>'+esc(lev.sub||d.finEnd||'')+'</span></div>'
+      +'<div class="rov"><span>'+esc(varNome(unitVar(u)))+'</span><span>'+(num(u._prazo)?_d1(num(u._prazo))+' dias':'—')+'</span><b>'+fmt(num(u.total))+'</b>'+(adic?'<span class="roadic">'+adic+' adicional'+(adic>1?'is':'')+'</span>':'')+'</div>'
+      +'<div class="roact">'
+        +(rel?'<a class="lbtn" href="'+esc(rel)+'" target="_blank" rel="noopener"><span class="material-symbols-rounded">description</span>Relatório</a>':'<span class="roempty">sem relatório</span>')
+        +'<a class="lbtn" href="'+esc(abrir)+'" target="_blank" rel="noopener"><span class="material-symbols-rounded">open_in_new</span>Proposta da loja</a>'
+        +(det?'<button class="lbtn" onclick="this.closest(\'.rorow\').querySelector(\'.rodet\').classList.toggle(\'open\')"><span class="material-symbols-rounded">expand_more</span>Levantamento</button>':'')
+      +'</div>'
+      +(det?'<div class="rodet">'+esc(det)+'</div>':'')+'</div>'; }).join('');
+  var tot=(LOTE_UNITS||[]).reduce(function(a,u){return a+num(u.total);},0);
+  return '<div class="rocard"><div class="rohd"><span class="material-symbols-rounded">storefront</span><b>Lojas da proposta</b>'
+    +'<span class="rocnt">'+LOTE_UNITS.length+' unidades · '+fmt(tot)+'</span>'
+    +'<span class="rohint">consulta — não entra no PDF</span></div>'+linhas+'</div>'; }
+function injectLoteRO(){ if(!isLoteBase())return; var el=document.getElementById('loteRO');
+  if(!el){ var g=document.querySelector('.grid'); if(!g||!g.parentElement)return; el=document.createElement('div'); el.id='loteRO'; el.className='vwonly'; g.parentElement.insertBefore(el,g); }
+  el.innerHTML=loteROHtml(); }
+(function(){ var _lr=loteReload; loteReload=async function(){ var r=await _lr.apply(this,arguments); try{ injectLoteRO(); }catch(_){} return r; };
+  try{ new MutationObserver(function(){ try{ if(document.body.classList.contains('viewing')) injectLoteRO(); }catch(_){} }).observe(document.body,{attributes:true,attributeFilter:['class']}); }catch(_){} })();
 function lojaLabel(o){ const n=(o&&o.dados&&o.dados.finNum)||''; return (n?n+' · ':'')+((o&&(o.cliente_final||o.numero))||'unidade'); }   // nº da loja + nome
 function fmtCnpj(v){ v=(v||'').replace(/\D/g,''); if(v.length!==14) return v||''; return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12); }
 function empresaCnpj(){ return (S.cnpjEmpresa && String(S.cnpjEmpresa).trim())? S.cnpjEmpresa : fmtCnpj((typeof EMP!=='undefined'&&EMP&&EMP.cnpj)||''); }   // eX: manual (se houver) senão do cadastro da empresa
