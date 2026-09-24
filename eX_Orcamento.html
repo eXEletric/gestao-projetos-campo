@@ -332,7 +332,11 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .summ .body{padding:14px 16px}
 /* painel de preço em 2 colunas (lote): Esta loja | Global do lote */
 @media(min-width:941px){body:not(.viewing) .grid:has(.summ.cmp){grid-template-columns:1fr 430px}}   /* só na edição: na visão do cliente/impressão a folha tem 900px e a coluna larga espremia o cabeçalho */
-@media print{.grid:has(.summ.cmp){grid-template-columns:1fr 340px}}
+/* FOLHA DO CLIENTE (visão travada e impressão): coluna única — cabeçalho e tabelas usam a largura toda; resumo de preço vai abaixo */
+body.viewing .grid{grid-template-columns:1fr}
+body.viewing .side{margin-top:6px}
+body.viewing .summ{max-width:460px;margin-left:auto}
+@media print{.grid{grid-template-columns:1fr!important;gap:10px}.side{margin-top:6px}.summ{max-width:460px;margin-left:auto}}
 .summ.cmp .cap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;padding:0}
 .summ.cmp .cap .capU,.summ.cmp .cap .capG{padding:12px 16px 11px}
 .summ.cmp .cap .capU .v{font-size:22px;white-space:nowrap}
