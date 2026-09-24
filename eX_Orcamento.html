@@ -331,7 +331,8 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .summ .cap .v{font-size:27px;font-weight:800;font-variant-numeric:tabular-nums;letter-spacing:-.5px}
 .summ .body{padding:14px 16px}
 /* painel de preço em 2 colunas (lote): Esta loja | Global do lote */
-@media(min-width:941px){.grid:has(.summ.cmp){grid-template-columns:1fr 430px}}
+@media(min-width:941px){body:not(.viewing) .grid:has(.summ.cmp){grid-template-columns:1fr 430px}}   /* só na edição: na visão do cliente/impressão a folha tem 900px e a coluna larga espremia o cabeçalho */
+@media print{.grid:has(.summ.cmp){grid-template-columns:1fr 340px}}
 .summ.cmp .cap{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:0;padding:0}
 .summ.cmp .cap .capU,.summ.cmp .cap .capG{padding:12px 16px 11px}
 .summ.cmp .cap .capU .v{font-size:22px;white-space:nowrap}
@@ -4744,8 +4745,8 @@ function recalc(){
     const _trav=COMBO_GRUPOS.filter(function(x){ return _ab.grupos.indexOf(x[0])<0; }).map(function(x){ return GRUPO_NOME[x[0]]; });
     const _txt=(_ab.m===null)?('<b>Tudo travado</b> — ninguém absorve; o valor combinado não fecha. Destrave um percentual.')
       :((_trav.length?('Travados: '+_trav.join(', ')+' · '):'')+'<b>'+_ab.grupos.map(function(g){ return GRUPO_NOME[g]; }).join(', ')+'</b> absorve'+(_ab.grupos.length>1?'m':'')+' em <b>'+_d1(_ab.m*100)+'%</b>');
-    if(cn){ cn.style.display=''; cn.className='combo-note'+(m<0?' neg':(m<5?' low':'')); cn.innerHTML=(m<0?'<span class="material-symbols-rounded">warning</span>Abaixo do custo · ':(m<5?'<span class="material-symbols-rounded">warning</span>Margem baixa · ':''))+_txt; }
-  } else if(isLoteBase()&&num(S.valorCombinado)>0){ if(ci&&document.activeElement!==ci) ci.value=num(S.valorCombinado).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); if(cx)cx.style.display=''; if(cn){ cn.style.display=''; cn.className='combo-note'; cn.innerHTML='<span class="material-symbols-rounded">storefront</span>Valor combinado <b>por loja</b> — vale nas lojas. A base e os modelos usam os percentuais do cadastro.'; } }
+    if(cn){ cn.style.display=''; cn.className='combo-note noprint'+(m<0?' neg':(m<5?' low':'')); cn.innerHTML=(m<0?'<span class="material-symbols-rounded">warning</span>Abaixo do custo · ':(m<5?'<span class="material-symbols-rounded">warning</span>Margem baixa · ':''))+_txt; }
+  } else if(isLoteBase()&&num(S.valorCombinado)>0){ if(ci&&document.activeElement!==ci) ci.value=num(S.valorCombinado).toLocaleString('pt-BR',{minimumFractionDigits:2,maximumFractionDigits:2}); if(cx)cx.style.display=''; if(cn){ cn.style.display=''; cn.className='combo-note noprint'; cn.innerHTML='<span class="material-symbols-rounded">storefront</span>Valor combinado <b>por loja</b> — vale nas lojas. A base e os modelos usam os percentuais do cadastro.'; } }
   else { if(cx)cx.style.display='none'; if(cn)cn.style.display='none'; if(ci && document.activeElement!==ci) ci.value=''; }
   // margens no painel da direita (travam quando o valor combinado está ativo)
   const _combo=comboActive();
