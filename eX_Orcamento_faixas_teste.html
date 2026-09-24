@@ -4282,7 +4282,7 @@ function varFaixaHtml(){ var vs=varLista(); if(!vs.length)return ''; var at=S.va
     +'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--pri-bg,#eeedfe);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">edit</span><span>Editando <b>'+esc(atv.nome)+'</b>'+(idx===0?' <span style="color:var(--tx3)">(modelo)</span>':'')+' — Serviços, Material, Despesas e Locações desta variação.</span><span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'+varMostraBtnHtml(atv,vs)+'<button class="lbtn" onclick="varRenomear(\''+atv.id+'\')"><span class="material-symbols-rounded">edit_note</span>Renomear</button>'+(idx>0?'<button class="lbtn danger" onclick="varExcluir(\''+atv.id+'\')"><span class="material-symbols-rounded">delete</span>Excluir</button>':'')+'</span></div>'
     +((LOTE_UNITS||[]).length?'<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--tx3)"><span>Preencher esta variação com o conteúdo de uma loja:</span><select id="varCopLoja" style="min-width:220px;padding:6px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:12.5px;background:var(--surf);color:var(--tx)"><option value="">— escolha a loja —</option>'+lojaOpts+'</select><button class="lbtn" onclick="varCopiarDeLoja()"><span class="material-symbols-rounded">content_copy</span>Copiar</button></div>':'')
     +'</div>'; }
-(function(){ const _ib=injectLoteBasePanel; injectLoteBasePanel=function(){ const r=_ib.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } try{ injectLoteRO(); }catch(_){} return r; };
+(function(){ const _ib=injectLoteBasePanel; injectLoteBasePanel=function(){ const r=_ib.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } try{ injectLoteRO(); levArqInit(); }catch(_){} return r; };
   const _rb2=renderBlk; renderBlk=function(){ const r=_rb2.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } return r; }; })();
 function _macroSave(){ save(); injectLoteBasePanel(); }
 function setMacroRkm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rkm=Math.max(0,num(v)); _macroSave(); }
@@ -4304,30 +4304,68 @@ function setCond(k,v){ S[k]=v; save(); }
 function contratanteCnpj(){ const id=S.contratanteId||(LOTE_ROW&&LOTE_ROW.contratante_id); const c=(CLIENTES||[]).find(function(x){return x.id===id;}); return (c&&c.cnpj)||''; }
 /* CONSULTA DAS LOJAS na proposta TRAVADA/visão do cliente (só tela, nunca no PDF):
    o dono precisa chegar no relatório e nos dados de cada unidade mesmo com a proposta fechada. */
+/* RELATÓRIOS DE LEVANTAMENTO NO PRÓPRIO SISTEMA (bucket 'anexos' + tabela levantamento_arquivos).
+   O link do Drive fica só como legado: depende de conta externa e o dono perde acesso. */
+var LEV_ARQ={};
+async function levArqCarregar(){ LEV_ARQ={}; if(!(SB&&S_LOTE_ID))return LEV_ARQ;
+  try{ const r=await SB.from('levantamento_arquivos').select('*').eq('lote_id',S_LOTE_ID).is('deleted_at',null).order('created_at');
+    (r.data||[]).forEach(function(a){ LEV_ARQ[String(a.loja_num||'')]=a; }); }catch(e){ console.error('levArq',e); }
+  return LEV_ARQ; }
+function levArqDe(u){ var n=String((u&&u.dados&&u.dados.finNum)||''); return LEV_ARQ[n]||null; }
+async function levArqAbrir(num){ var a=LEV_ARQ[String(num)]; if(!a){ alert('Sem arquivo no sistema para esta loja.'); return; }
+  try{ const {data,error}=await SB.storage.from('anexos').createSignedUrl(a.path,3600); if(error)throw error; window.open(data.signedUrl,'_blank'); }
+  catch(e){ alert('Não consegui abrir: '+(e.message||e)); } }
+function levArqPick(num,multi){ var inp=document.createElement('input'); inp.type='file'; if(multi)inp.multiple=true;
+  inp.accept='.pdf,.doc,.docx,.png,.jpg,.jpeg,.xlsx,.xls';
+  inp.onchange=function(){ var fs=[].slice.call(inp.files||[]); if(fs.length) levArqSubir(fs,multi?null:num); };
+  inp.click(); }
+async function levArqSubir(files,num){ if(!SB){ alert('Sem conexão.'); return; }
+  var us=LOTE_UNITS||[], ok=0, erros=[];
+  for(var i=0;i<files.length;i++){ var f=files[i];
+    var n=num||((f.name.match(/^\s*(\d{1,4})\b/)||[])[1]||'');
+    var u=us.find(function(x){ return String((x.dados&&x.dados.finNum)||'')===String(n); });
+    if(!u){ erros.push(f.name+' (loja não identificada — renomeie começando pelo nº da loja)'); continue; }
+    var limpo=f.name.replace(/[^\w.\-]+/g,'_').slice(-80);
+    var path='lote/'+S_LOTE_ID+'/relatorios/'+n+'_'+Date.now()+'_'+limpo;
+    try{ const up=await SB.storage.from('anexos').upload(path,f,{upsert:true,contentType:f.type||'application/octet-stream'}); if(up.error)throw up.error;
+      const anterior=LEV_ARQ[String(n)];
+      const ins=await SB.from('levantamento_arquivos').insert({lote_id:S_LOTE_ID,oportunidade_id:u.oportunidade_id,loja_id:(u.dados&&u.dados.lojaId)||null,loja_num:String(n),tipo:'relatorio',nome:f.name,path:path,mime:f.type||null,tamanho:f.size,origem:'upload'}).select('*');
+      if(ins.error)throw ins.error;
+      if(anterior){ await SB.from('levantamento_arquivos').update({deleted_at:new Date().toISOString()}).eq('id',anterior.id); }
+      ok++; }catch(e){ erros.push(f.name+' — '+(e.message||e)); } }
+  await levArqCarregar(); try{ injectLoteRO(); }catch(_){}
+  cloudMsg(ok+' relatório(s) no sistema'+(erros.length?' · '+erros.length+' com erro':''));
+  if(erros.length) alert('Não subiram:\n\n'+erros.join('\n')); }
 function loteROHtml(){
   if(!isLoteBase()||!(LOTE_UNITS||[]).length) return '';
   var linhas=(LOTE_UNITS||[]).map(function(u){ var d=u.dados||{}, lev=d.levUnidade||{}, p=null;
     try{ p=precoDe(dadosLojaCalc(u)); }catch(_){}
     var adic=(p&&p.adicItens&&p.adicItens.length)||0;
     var rel=lev.relatorio||'', abrir='eX_Orcamento.html?opp='+u.oportunidade_id+'&lote='+S_LOTE_ID;
+    var nloja=String((u.dados&&u.dados.finNum)||''), arq=levArqDe(u);
     var det=[lev.relatorioEscopo||'', lev.obs||''].filter(Boolean).join('\n\n');
     return '<div class="rorow">'
       +'<div class="roid"><b>'+esc(lojaLabel(u))+'</b><span>'+esc(lev.sub||d.finEnd||'')+'</span></div>'
       +'<div class="rov"><span>'+esc(varNome(unitVar(u)))+'</span><span>'+(num(u._prazo)?_d1(num(u._prazo))+' dias':'—')+'</span><b>'+fmt(num(u.total))+'</b>'+(adic?'<span class="roadic">'+adic+(adic>1?' adicionais':' adicional')+'</span>':'')+'</div>'
       +'<div class="roact">'
-        +(rel?'<a class="lbtn" href="'+esc(rel)+'" target="_blank" rel="noopener"><span class="material-symbols-rounded">description</span>Relatório</a>':'<span class="roempty">sem relatório</span>')
+        +(arq?'<button class="lbtn" onclick="levArqAbrir(''+esc(nloja)+'')" title="'+esc(arq.nome)+' — guardado no sistema"><span class="material-symbols-rounded">description</span>Relatório</button>':(rel?'<a class="lbtn" href="'+esc(rel)+'" target="_blank" rel="noopener" title="link do Drive (fora do sistema)"><span class="material-symbols-rounded">link</span>Relatório (Drive)</a>':'<span class="roempty">sem relatório</span>'))+'<button class="lbtn" onclick="levArqPick(''+esc(nloja)+'')" title="Guardar o relatório no sistema"><span class="material-symbols-rounded">upload_file</span>'+(arq?'Trocar':'Anexar')+'</button>'
         +'<a class="lbtn" href="'+esc(abrir)+'" target="_blank" rel="noopener"><span class="material-symbols-rounded">open_in_new</span>Proposta da loja</a>'
         +(det?'<button class="lbtn" onclick="this.closest(\'.rorow\').querySelector(\'.rodet\').classList.toggle(\'open\')"><span class="material-symbols-rounded">expand_more</span>Levantamento</button>':'')
       +'</div>'
       +(det?'<div class="rodet">'+esc(det)+'</div>':'')+'</div>'; }).join('');
   var tot=(LOTE_UNITS||[]).reduce(function(a,u){return a+num(u.total);},0);
+  var noSis=(LOTE_UNITS||[]).filter(function(u){ return !!levArqDe(u); }).length;
   return '<div class="rocard"><div class="rohd"><span class="material-symbols-rounded">storefront</span><b>Lojas da proposta</b>'
     +'<span class="rocnt">'+LOTE_UNITS.length+' unidades · '+fmt(tot)+'</span>'
+    +'<span class="rocnt" style="color:var(--tx3);font-weight:600">'+noSis+'/'+LOTE_UNITS.length+' relatórios no sistema</span>'
+    +'<button class="lbtn" onclick="levArqPick(null,true)" title="Suba vários de uma vez — o arquivo precisa começar pelo número da loja"><span class="material-symbols-rounded">upload</span>Anexar relatórios</button>'
     +'<span class="rohint">consulta — não entra no PDF</span></div>'+linhas+'</div>'; }
 function injectLoteRO(){ if(!isLoteBase())return; var el=document.getElementById('loteRO');
   if(!el){ var g=document.querySelector('.grid'); if(!g||!g.parentElement)return; el=document.createElement('div'); el.id='loteRO'; el.className='vwonly'; g.parentElement.insertBefore(el,g); }
   el.innerHTML=loteROHtml(); }
-(function(){ var _lr=loteReload; loteReload=async function(){ var r=await _lr.apply(this,arguments); try{ injectLoteRO(); }catch(_){} return r; };
+var _levArqLoad=false;
+async function levArqInit(){ if(_levArqLoad||!isLoteBase())return; _levArqLoad=true; await levArqCarregar(); try{ injectLoteRO(); }catch(_){} }
+(function(){ var _lr=loteReload; loteReload=async function(){ var r=await _lr.apply(this,arguments); try{ injectLoteRO(); levArqInit(); }catch(_){} return r; };
   try{ new MutationObserver(function(){ try{ if(document.body.classList.contains('viewing')) injectLoteRO(); }catch(_){} }).observe(document.body,{attributes:true,attributeFilter:['class']}); }catch(_){} })();
 function lojaLabel(o){ const n=(o&&o.dados&&o.dados.finNum)||''; return (n?n+' · ':'')+((o&&(o.cliente_final||o.numero))||'unidade'); }   // nº da loja + nome
 function fmtCnpj(v){ v=(v||'').replace(/\D/g,''); if(v.length!==14) return v||''; return v.slice(0,2)+'.'+v.slice(2,5)+'.'+v.slice(5,8)+'/'+v.slice(8,12)+'-'+v.slice(12); }
