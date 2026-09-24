@@ -4322,7 +4322,7 @@ function levArqPick(num,multi){ var inp=document.createElement('input'); inp.typ
 async function levArqSubir(files,num){ if(!SB){ alert('Sem conexão.'); return; }
   var us=LOTE_UNITS||[], ok=0, erros=[];
   for(var i=0;i<files.length;i++){ var f=files[i];
-    var n=num||((f.name.match(/^\s*(\d{1,4})\b/)||[])[1]||'');
+    var n=num||((f.name.match(/^[^0-9]*(\d{1,4})(?!\d)/)||[])[1]||'');   // "929_GOIANIA_..._Relatorio.docx" → 929
     var u=us.find(function(x){ return String((x.dados&&x.dados.finNum)||'')===String(n); });
     if(!u){ erros.push(f.name+' (loja não identificada — renomeie começando pelo nº da loja)'); continue; }
     var limpo=f.name.replace(/[^\w.\-]+/g,'_').slice(-80);
