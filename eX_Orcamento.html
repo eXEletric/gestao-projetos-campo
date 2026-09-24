@@ -4348,7 +4348,7 @@ function loteROHtml(){
       +'<div class="roid"><b>'+esc(lojaLabel(u))+'</b><span>'+esc(lev.sub||d.finEnd||'')+'</span></div>'
       +'<div class="rov"><span>'+esc(varNome(unitVar(u)))+'</span><span>'+(num(u._prazo)?_d1(num(u._prazo))+' dias':'—')+'</span><b>'+fmt(num(u.total))+'</b>'+(adic?'<span class="roadic">'+adic+(adic>1?' adicionais':' adicional')+'</span>':'')+'</div>'
       +'<div class="roact">'
-        +(arq?'<button class="lbtn" onclick="levArqAbrir(''+esc(nloja)+'')" title="'+esc(arq.nome)+' — guardado no sistema"><span class="material-symbols-rounded">description</span>Relatório</button>':(rel?'<a class="lbtn" href="'+esc(rel)+'" target="_blank" rel="noopener" title="link do Drive (fora do sistema)"><span class="material-symbols-rounded">link</span>Relatório (Drive)</a>':'<span class="roempty">sem relatório</span>'))+'<button class="lbtn" onclick="levArqPick(''+esc(nloja)+'')" title="Guardar o relatório no sistema"><span class="material-symbols-rounded">upload_file</span>'+(arq?'Trocar':'Anexar')+'</button>'
+        +(arq?'<button class="lbtn roabrir" data-num="'+esc(nloja)+'" title="'+esc(arq.nome)+' — guardado no sistema"><span class="material-symbols-rounded">description</span>Relatório</button>':(rel?'<a class="lbtn" href="'+esc(rel)+'" target="_blank" rel="noopener" title="link do Drive (fora do sistema, depende de conta externa)"><span class="material-symbols-rounded">link</span>Relatório (Drive)</a>':'<span class="roempty">sem relatório</span>'))+'<button class="lbtn roup" data-num="'+esc(nloja)+'" title="Guardar o relatório no sistema"><span class="material-symbols-rounded">upload_file</span>'+(arq?'Trocar':'Anexar')+'</button>'
         +'<a class="lbtn" href="'+esc(abrir)+'" target="_blank" rel="noopener"><span class="material-symbols-rounded">open_in_new</span>Proposta da loja</a>'
         +(det?'<button class="lbtn" onclick="this.closest(\'.rorow\').querySelector(\'.rodet\').classList.toggle(\'open\')"><span class="material-symbols-rounded">expand_more</span>Levantamento</button>':'')
       +'</div>'
@@ -4358,11 +4358,14 @@ function loteROHtml(){
   return '<div class="rocard"><div class="rohd"><span class="material-symbols-rounded">storefront</span><b>Lojas da proposta</b>'
     +'<span class="rocnt">'+LOTE_UNITS.length+' unidades · '+fmt(tot)+'</span>'
     +'<span class="rocnt" style="color:var(--tx3);font-weight:600">'+noSis+'/'+LOTE_UNITS.length+' relatórios no sistema</span>'
-    +'<button class="lbtn" onclick="levArqPick(null,true)" title="Suba vários de uma vez — o arquivo precisa começar pelo número da loja"><span class="material-symbols-rounded">upload</span>Anexar relatórios</button>'
+    +'<button class="lbtn romult" title="Suba vários de uma vez — o arquivo precisa começar pelo número da loja"><span class="material-symbols-rounded">upload</span>Anexar relatórios</button>'
     +'<span class="rohint">consulta — não entra no PDF</span></div>'+linhas+'</div>'; }
 function injectLoteRO(){ if(!isLoteBase())return; var el=document.getElementById('loteRO');
   if(!el){ var g=document.querySelector('.grid'); if(!g||!g.parentElement)return; el=document.createElement('div'); el.id='loteRO'; el.className='vwonly'; g.parentElement.insertBefore(el,g); }
-  el.innerHTML=loteROHtml(); }
+  el.innerHTML=loteROHtml();
+  el.querySelectorAll('.roabrir').forEach(function(b){ b.onclick=function(){ levArqAbrir(b.dataset.num); }; });
+  el.querySelectorAll('.roup').forEach(function(b){ b.onclick=function(){ levArqPick(b.dataset.num); }; });
+  var mult=el.querySelector('.romult'); if(mult) mult.onclick=function(){ levArqPick(null,true); }; }
 var _levArqLoad=false;
 async function levArqInit(){ if(_levArqLoad||!isLoteBase())return; _levArqLoad=true; await levArqCarregar(); try{ injectLoteRO(); }catch(_){} }
 (function(){ var _lr=loteReload; loteReload=async function(){ var r=await _lr.apply(this,arguments); try{ injectLoteRO(); levArqInit(); }catch(_){} return r; };
