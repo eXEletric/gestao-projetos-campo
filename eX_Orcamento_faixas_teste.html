@@ -374,6 +374,7 @@ body.viewing .vwonly{display:block}
 .roact{display:flex;gap:6px;flex-wrap:wrap;margin-left:auto}
 .roact .lbtn{font-size:12px;padding:4px 9px;text-decoration:none}
 .roempty{font-size:11.5px;color:var(--tx3)}
+.rogerados{font-size:11px;color:var(--pri);background:var(--pri-bg,#efeafc);border-radius:20px;padding:2px 8px;font-weight:700}
 .rodet{flex-basis:100%;display:none;white-space:pre-wrap;font-size:12px;color:var(--tx2);background:var(--surf2);border-radius:9px;padding:9px 11px;margin:6px 0 2px;line-height:1.5}
 .rodet.open{display:block}
 /* FOLHA DO CLIENTE (visão travada e impressão): coluna única — cabeçalho e tabelas usam a largura toda; resumo de preço vai abaixo */
@@ -4453,10 +4454,10 @@ async function relPdfSalvar(){ var doc=document.getElementById('relDoc'); if(!do
    o dono precisa chegar no relatório e nos dados de cada unidade mesmo com a proposta fechada. */
 /* RELATÓRIOS DE LEVANTAMENTO NO PRÓPRIO SISTEMA (bucket 'anexos' + tabela levantamento_arquivos).
    O link do Drive fica só como legado: depende de conta externa e o dono perde acesso. */
-var LEV_ARQ={};
-async function levArqCarregar(){ LEV_ARQ={}; if(!(SB&&S_LOTE_ID))return LEV_ARQ;
+var LEV_ARQ={}, LEV_GER={};
+async function levArqCarregar(){ LEV_ARQ={}; LEV_GER={}; if(!(SB&&S_LOTE_ID))return LEV_ARQ;
   try{ const r=await SB.from('levantamento_arquivos').select('*').eq('lote_id',S_LOTE_ID).is('deleted_at',null).order('created_at');
-    (r.data||[]).forEach(function(a){ LEV_ARQ[String(a.loja_num||'')]=a; }); }catch(e){ console.error('levArq',e); }
+    (r.data||[]).forEach(function(a){ var k=String(a.loja_num||''); if(a.tipo==='relatorio') LEV_ARQ[k]=a; else { (LEV_GER[k]=LEV_GER[k]||[]).push(a); } }); }catch(e){ console.error('levArq',e); }
   return LEV_ARQ; }
 function levArqDe(u){ var n=String((u&&u.dados&&u.dados.finNum)||''); return LEV_ARQ[n]||null; }
 async function levArqAbrir(num){ var a=LEV_ARQ[String(num)]; if(!a){ alert('Sem arquivo no sistema para esta loja.'); return; }
@@ -4495,7 +4496,7 @@ function loteROHtml(){
       +'<div class="roid"><b>'+esc(lojaLabel(u))+'</b><span>'+esc(lev.sub||d.finEnd||'')+'</span></div>'
       +'<div class="rov"><span>'+esc(varNome(unitVar(u)))+'</span><span>'+(num(u._prazo)?_d1(num(u._prazo))+' dias':'—')+'</span><b>'+fmt(num(u.total))+'</b>'+(adic?'<span class="roadic">'+adic+(adic>1?' adicionais':' adicional')+'</span>':'')+'</div>'
       +'<div class="roact">'
-        +(arq?'<button class="lbtn roabrir" data-num="'+esc(nloja)+'" title="'+esc(arq.nome)+' — guardado no sistema"><span class="material-symbols-rounded">description</span>Relatório</button>':(rel?'<a class="lbtn" href="'+esc(rel)+'" target="_blank" rel="noopener" title="link do Drive (fora do sistema, depende de conta externa)"><span class="material-symbols-rounded">link</span>Relatório (Drive)</a>':'<span class="roempty">sem relatório</span>'))+'<button class="lbtn roup" data-num="'+esc(nloja)+'" title="Guardar o relatório no sistema"><span class="material-symbols-rounded">upload_file</span>'+(arq?'Trocar':'Anexar')+'</button>'+'<button class="lbtn rorel" data-num="'+esc(nloja)+'" title="Relatório da unidade gerado pelo sistema (cliente ou interno)"><span class="material-symbols-rounded">summarize</span>Relatório do sistema</button>'
+        +(arq?'<button class="lbtn roabrir" data-num="'+esc(nloja)+'" title="'+esc(arq.nome)+' — guardado no sistema"><span class="material-symbols-rounded">description</span>Relatório</button>':(rel?'<a class="lbtn" href="'+esc(rel)+'" target="_blank" rel="noopener" title="link do Drive (fora do sistema, depende de conta externa)"><span class="material-symbols-rounded">link</span>Relatório (Drive)</a>':'<span class="roempty">sem relatório</span>'))+'<button class="lbtn roup" data-num="'+esc(nloja)+'" title="Guardar o relatório no sistema"><span class="material-symbols-rounded">upload_file</span>'+(arq?'Trocar':'Anexar')+'</button>'+'<button class="lbtn rorel" data-num="'+esc(nloja)+'" title="Relatório da unidade gerado pelo sistema (cliente ou interno)"><span class="material-symbols-rounded">summarize</span>Relatório do sistema</button>'+((LEV_GER[nloja]||[]).length?'<span class="rogerados">'+(LEV_GER[nloja]||[]).length+' PDF gerado'+((LEV_GER[nloja]||[]).length>1?'s':'')+'</span>':'')
         +'<a class="lbtn" href="'+esc(abrir)+'" target="_blank" rel="noopener"><span class="material-symbols-rounded">open_in_new</span>Proposta da loja</a>'
         +(det?'<button class="lbtn" onclick="this.closest(\'.rorow\').querySelector(\'.rodet\').classList.toggle(\'open\')"><span class="material-symbols-rounded">expand_more</span>Levantamento</button>':'')
       +'</div>'
