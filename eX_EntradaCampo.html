@@ -228,8 +228,7 @@ function salvarUm(id){
 /* ===== FICHA POR ITEM ===== */
 function openFicha(id){
   var m=ITMAP[id]; if(!m){ alert('Não consegui abrir a ficha desse item. Tente "Cadastrar item novo".'); return; } var r=reg(id);
-  var camsvg='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg>';
-  var foto='<label class="foto'+(r.foto?' ok':'')+'"><input type="file" accept="image/*" capture="environment" style="display:none" onchange="foto(\''+id+'\',this)">'+(r.foto?('<img src="'+r.foto.thumb+'"> foto ok'):(camsvg+' Foto / IA'))+'</label>';
+  var foto='<label id="fotolbl" class="foto'+(r.foto?' ok':'')+'">'+fotoInner(id,r)+'</label>';
   var body='';
   if(isFerr(id)){
     if(!r.units || !r.units.length){
@@ -275,14 +274,18 @@ function fichaOk(id){
   saveDraft(); renderList();
   var row=document.querySelector('.row2.done'); // scroll handled by re-render
 }
-/* ===== FOTO ===== */
+/* ===== FOTO (anexo do item — não conta, não identifica) ===== */
+var CAMSVG='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg>';
+function fotoInner(id,r){ return '<input type="file" accept="image/*" capture="environment" style="display:none" onchange="foto(\''+id+'\',this)">'+(r.foto?('<img src="'+r.foto.thumb+'"> foto anexada'):(CAMSVG+' Anexar foto (opcional)')); }
+function _refreshFoto(id){ var r=reg(id); var el=document.getElementById('fotolbl'); if(el){ el.className='foto'+(r.foto?' ok':''); el.innerHTML=fotoInner(id,r); } }
 function compress(file,cb){ var img=new Image(),rd=new FileReader();
   rd.onload=function(){ img.onload=function(){ var mx=1280,s=Math.min(1,mx/Math.max(img.width,img.height)),c=document.createElement('canvas'); c.width=img.width*s; c.height=img.height*s; c.getContext('2d').drawImage(img,0,0,c.width,c.height); cb(c.toDataURL('image/jpeg',0.7)); }; img.src=rd.result; }; rd.readAsDataURL(file); }
 function foto(id,input){ var f=input.files&&input.files[0]; if(!f)return;
+  var el=document.getElementById('fotolbl'); if(el){ el.innerHTML='<span style="font-size:12px">enviando…</span>'; }
   compress(f,function(dataUrl){ reg(id).foto={thumb:dataUrl}; saveDraft();
     api('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'foto',base64:dataUrl,pasta:(BOLSA&&BOLSA.numero)||'bolsa'})}).then(function(d){
-      if(d.error)throw new Error(d.error); reg(id).foto={path:d.path,url:d.url,thumb:dataUrl}; saveDraft(); openFicha(id);
-    }).catch(function(e){ delete reg(id).foto; alert('Foto não subiu: '+e.message); openFicha(id); });
+      if(d.error)throw new Error(d.error); reg(id).foto={path:d.path,url:d.url,thumb:dataUrl}; saveDraft(); _refreshFoto(id);
+    }).catch(function(e){ delete reg(id).foto; _refreshFoto(id); alert('Foto não subiu: '+e.message); });
   });
 }
 /* ===== NOVO ITEM ===== */
