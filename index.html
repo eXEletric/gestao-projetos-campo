@@ -742,6 +742,7 @@ body.papel-tecnico .adm-only{display:none !important}
         <button class="btn btn-s" onclick="addLocal()" title="criar novo local"><span class="msr" style="font-size:15px;vertical-align:-3px">add_location_alt</span> Local</button>
         <button class="btn btn-s" onclick="openTransf()" title="transferir entre locais"><span class="msr" style="font-size:15px;vertical-align:-3px">swap_horiz</span> Transferir</button>
         <button class="btn btn-s" onclick="openAplicar()" title="baixa por consumo na obra"><span class="msr" style="font-size:15px;vertical-align:-3px">engineering</span> Aplicar</button>
+        <button class="btn btn-s" onclick="window.open('eX_Bolsas.html','_blank')" title="entrada de campo pelo celular: compartimentos, QR e contagem (com IA)"><span class="msr" style="font-size:15px;vertical-align:-3px">qr_code_2</span> Entrada de campo</button>
         <button class="btn btn-p btn-s" onclick="openAj(null)">+ Lançar saldo</button>
       </div>
     </div>
@@ -5038,6 +5039,7 @@ var INI_SECS=[
  {t:'Time & Recursos',items:[
    {id:'equipe',nm:'Equipe',ic:'groups'},
    {id:'almoxarifado',nm:'Almoxarifado',ic:'warehouse'},
+   {id:'entrada_campo',nm:'Entrada de campo',ic:'qr_code_2'},
    {id:'estoque',nm:'Estoque (vendável)',ic:'sell',soon:1},
    {id:'frota',nm:'Frota',ic:'local_shipping',soon:1},
    {id:'atividades',nm:'Atividades',ic:'history',soon:1}
@@ -5114,6 +5116,7 @@ function iniGo(id){
     else if(id==='sst'){ navSST('painel',null); }
     else if(id==='equipe'){ navView('colab',null); }
     else if(id==='almoxarifado'){ navView('almox',null); }
+    else if(id==='entrada_campo'){ window.open('eX_Bolsas.html','_blank'); }
     else if(id==='kits'){ navKits(null); }
     else if(id==='politica'){ navPolitica(null); }
     else if(id==='config'){ navEmpresa(null); }
