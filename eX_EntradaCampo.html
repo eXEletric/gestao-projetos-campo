@@ -278,8 +278,22 @@ function fichaOk(id){
 var CAMSVG='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 8h3l1.5-2h7L17 8h3v11H4z"/><circle cx="12" cy="13" r="3.2"/></svg>';
 function fotoInner(id,r){ return '<input type="file" accept="image/*" capture="environment" style="display:none" onchange="foto(\''+id+'\',this)">'+(r.foto?('<img src="'+r.foto.thumb+'"> foto anexada'):(CAMSVG+' Anexar foto (opcional)')); }
 function _refreshFoto(id){ var r=reg(id); var el=document.getElementById('fotolbl'); if(el){ el.className='foto'+(r.foto?' ok':''); el.innerHTML=fotoInner(id,r); } }
-function compress(file,cb){ var img=new Image(),rd=new FileReader();
-  rd.onload=function(){ img.onload=function(){ var mx=1280,s=Math.min(1,mx/Math.max(img.width,img.height)),c=document.createElement('canvas'); c.width=img.width*s; c.height=img.height*s; c.getContext('2d').drawImage(img,0,0,c.width,c.height); cb(c.toDataURL('image/jpeg',0.7)); }; img.src=rd.result; }; rd.readAsDataURL(file); }
+function compress(file,cb){
+  var url=URL.createObjectURL(file), img=new Image();
+  img.onload=function(){
+    try{
+      var mx=1024, s=Math.min(1, mx/Math.max(img.width,img.height));
+      var w=Math.max(1,Math.round(img.width*s)), h=Math.max(1,Math.round(img.height*s));
+      var c=document.createElement('canvas'); c.width=w; c.height=h;
+      c.getContext('2d').drawImage(img,0,0,w,h);
+      var out=c.toDataURL('image/jpeg',0.62);
+      URL.revokeObjectURL(url); c.width=0; c.height=0; img.src='';
+      cb(out);
+    }catch(e){ URL.revokeObjectURL(url); alert('Não consegui processar a foto (memória do aparelho). Tente afastar um pouco e bater de novo, ou feche outros apps.'); }
+  };
+  img.onerror=function(){ URL.revokeObjectURL(url); alert('Não consegui abrir a foto. Tente de novo.'); };
+  img.src=url;
+}
 function foto(id,input){ var f=input.files&&input.files[0]; if(!f)return;
   var el=document.getElementById('fotolbl'); if(el){ el.innerHTML='<span style="font-size:12px">enviando…</span>'; }
   compress(f,function(dataUrl){ reg(id).foto={thumb:dataUrl}; saveDraft();
