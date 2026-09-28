@@ -212,9 +212,19 @@ function atribuirAbrir(id){
   openSheet('<h3>Guardar em qual compartimento?</h3><div style="font-size:13px;color:var(--ink2);margin-bottom:10px">'+esc(m.descricao||'item')+'</div>'+opts+'<div class="iabtns"><button onclick="closeSheet()">Cancelar</button></div>');
 }
 function atribuirEm(id,destinoQr){
-  api('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'atribuir_compartimento',origem_qr:BQR,destino_qr:destinoQr,material_id:id})}).then(function(d){
-    if(d.error)throw new Error(d.error); closeSheet(); loadBolsa();
-  }).catch(function(e){ alert('Erro: '+e.message); });
+  var r=reg(id);
+  function done(d){ if(d&&d.error)throw new Error(d.error); delete REG[id]; saveDraft(); closeSheet(); loadBolsa(); }
+  function move(){ return api('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'atribuir_compartimento',origem_qr:BQR,destino_qr:destinoQr,material_id:id})}); }
+  if(qtd(id)>0){
+    var it={material_id:id,quantidade:qtd(id),foto:r.foto?r.foto.path:null,obs:r.obs||null};
+    if(isFerr(id)) it.unidades=(r.units||[]).map(function(u){return {serial:u.serial||null,patrimonio:u.patrimonio||null,estado:u.estado||'bom'};});
+    if(isEpi(id)){ it.ca=r.ca||null; it.validade_ca=r.validade_ca||null; it.tamanho=r.tamanho||null; }
+    api('',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'salvar',b:BQR,itens:[it]})})
+      .then(function(sd){ if(sd.error)throw new Error(sd.error); return move(); }).then(done)
+      .catch(function(e){ alert('Erro: '+e.message); });
+  } else {
+    move().then(done).catch(function(e){ alert(String(e.message||e).indexOf('saldo')>=0?'Esse item ainda não tem quantidade. Toque nele, informe a quantidade e Cadastrar primeiro.':'Erro: '+e.message); });
+  }
 }
 function salvarUm(id){
   if(qtd(id)<=0){ alert(isFerr(id)?'Adicione ao menos uma unidade.':'Informe a quantidade.'); return; }
