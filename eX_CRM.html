@@ -365,7 +365,7 @@ select.fi{appearance:auto;cursor:pointer}
 
   <!-- FUNIL -->
   <div class="view on" id="v-funil">
-    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn btn-p" onclick="location.href='eX_Orcamento.html?nova'" title="começa uma oportunidade — escolha Obra única ou Orçamento em lote na própria tela"><span class="material-symbols-rounded">add</span>Nova oportunidade</button><div id="trFiltros" class="trfilt"></div></div>
+    <div style="margin-bottom:12px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><button class="btn btn-p" onclick="abrirOrcNoShell('?nova')" title="começa uma oportunidade — escolha Obra única ou Orçamento em lote na própria tela"><span class="material-symbols-rounded">add</span>Nova oportunidade</button><div id="trFiltros" class="trfilt"></div></div>
     <div class="board" id="board"></div>
     <div class="detailmodal" id="detailModal" onclick="if(event.target===this)closeDetail()">
       <div class="detailmodal-card">
@@ -1172,7 +1172,7 @@ function oppCardHTML(o,ci){
   return `<div class="kcard ${SELO===o.id?'sel':''} ${aprovadaOpp(o)?'aprov':''}" draggable="true" ondragstart="dragStart(event,'${o.id}')" ondragend="_drag=null" onclick="selOpp('${o.id}')">
     <button class="cardmenu-btn" title="Ações" onclick="event.stopPropagation();cardMenuToggle(this)"><span class="material-symbols-rounded">more_vert</span></button>
     <div class="cardmenu">
-      <button onclick="event.stopPropagation();cardMenuClose();location.href='eX_Orcamento.html?opp=${o.id}'"><span class="material-symbols-rounded">request_quote</span>${oc?'Abrir orçamento':'Criar orçamento'}</button>
+      <button onclick="event.stopPropagation();cardMenuClose();abrirOrcNoShell('?opp=')"><span class="material-symbols-rounded">request_quote</span>${oc?'Abrir orçamento':'Criar orçamento'}</button>
       <button onclick="event.stopPropagation();cardMenuClose();openOpp('${o.id}')"><span class="material-symbols-rounded">edit</span>Editar</button>
       <button class="danger" onclick="event.stopPropagation();cardMenuClose();excluirOppFunil('${o.id}')"><span class="material-symbols-rounded">delete</span>Excluir</button>
     </div>
