@@ -17,7 +17,8 @@
 body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
 .material-symbols-rounded{font-family:'Material Symbols Rounded';font-weight:normal;font-style:normal;line-height:1;vertical-align:middle;font-size:20px}
 .app{max-width:1220px;margin:0 auto;padding:16px 18px 80px}
-@media screen{body.editing .app{max-width:min(1760px,98vw)}}   /* edição: tabelas largas sem rolagem lateral (Ver como o cliente e impressão mantêm a largura do documento) */
+@media screen{body.editing .app{max-width:min(1760px,98vw)}}
+@media screen and (min-width:1100px){body:has(#orcList[style*="block"]) .app{max-width:none;padding-left:14px;padding-right:14px}}   /* lista de propostas usa a tela inteira do PC */   /* edição: tabelas largas sem rolagem lateral (Ver como o cliente e impressão mantêm a largura do documento) */
 
 /* ===== TOPO ===== */
 .appbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:6px;position:sticky;top:0;z-index:30;background:var(--bg,#f6f5fb);padding:8px 0 7px;border-bottom:1px solid var(--line2,#e2ddf0)}
