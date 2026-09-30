@@ -357,6 +357,18 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .relfoot{margin-top:22px;border-top:1px solid #eee;padding-top:8px;font-size:11px;color:#8b86a1;text-align:right}
 @media print{body.relopen>*:not(#relOv){display:none!important}body.relopen #relOv{position:static;background:#fff;padding:0;overflow:visible}body.relopen .relwrap{padding:0}body.relopen .relsheet{box-shadow:none;max-width:none;padding:0}}
 /* matriz serviços × escopos (base do lote, biblioteca única) */
+.esctbl th.escth{cursor:pointer;user-select:none}
+.esctbl th.escth:hover{color:var(--pri)}
+.esctbl th.escth.on{background:var(--pri-bg,#efeafc);color:var(--pri)}
+.escadic{font-size:9.5px;font-weight:800;color:#fff;background:#c77b12;border-radius:10px;padding:1px 7px;vertical-align:1px}
+.escfora{color:#b3261e}
+.esctbl tr.escradic td{background:#fffaf1}
+.esctbl tr.escradic:hover td{background:#fff4e0}
+.esctbl tr.escsep td{background:#fff4e0;color:#8a5a12;font-weight:800;font-size:11.5px;padding:7px 10px;border-top:1px solid #e6c360}
+.esctbl tr.escsep .material-symbols-rounded{font-size:15px;vertical-align:-3px;margin-right:4px}
+.esctbl tr.escsep .escsub{font-weight:600;color:#8a5a12;opacity:.85}
+.escin.escprev{border-style:dashed;color:#8a5a12;background:#fff8ec}
+.escin.escbase{border-color:#c77b12;background:#fff4e0;color:#8a5a12;font-weight:700}
 .escwrap{margin-top:12px;border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--surf)}
 .eschd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 12px;background:var(--pri-bg,#efeafc);border-bottom:1px solid var(--line2);font-size:12.5px;color:var(--pri)}
 .eschd .material-symbols-rounded{font-size:17px}
@@ -3974,26 +3986,46 @@ function escUnificar(){
 /* painel "Serviços × escopos" (matriz) — só na base, depois de unificar */
 var ESC_BLK='servicos';
 function escSetBlk(k){ ESC_BLK=k; try{ injectLoteBasePanel(); }catch(_){} }
+/* matriz "itens × escopos": lista única, adicionais numa seção própria, foco por escopo.
+   Estados da célula: "—" fora do escopo · 0 = previsto (aparece nas atividades, não entra na conta) · nº = entra na conta.
+   Num adicional, quantidade > 0 significa ADICIONAL BASE: já vai na proposta de todas as lojas daquele escopo. */
+var ESC_FOCO=null;
+function escFocar(id){ ESC_FOCO=(ESC_FOCO===id)?null:id; try{ injectLoteBasePanel(); }catch(_){} }
+function escCel(blk,r,v){
+  var tem=escTem(r,v.id), q=tem?num(r.qtdEsc[v.id]):null;
+  if(!tem) return '<td class="escq"><button class="escoff" title="não entra neste escopo — clique para incluir" onclick="escToggle(\''+blk+'\',\''+r.id+'\',\''+v.id+'\')">—</button></td>';
+  var cls='cin num escin'+(r.adic?(q>0?' escbase':' escprev'):'');
+  var tit=r.adic?(q>0?'adicional BASE: entra na conta de todas as lojas deste escopo':'previsto: aparece nas atividades da loja como aviso de campo, sem entrar na conta'):('quantidade no escopo '+varNome(v.id));
+  return '<td class="escq"><input class="'+cls+'" value="'+esc(r.qtdEsc[v.id])+'" inputmode="decimal" onfocus="this.select()" onchange="escSetQtd(\''+blk+'\',\''+r.id+'\',\''+v.id+'\',this.value)" title="'+tit+'">'
+    +'<button class="escx" title="tirar deste escopo" onclick="escToggle(\''+blk+'\',\''+r.id+'\',\''+v.id+'\')"><span class="material-symbols-rounded">close</span></button></td>';
+}
+function escLinhaHtml(blk,r,vs){
+  var cels=vs.map(function(v){ return escCel(blk,r,v); }).join('');
+  var nEsc=vs.filter(function(v){ return escTem(r,v.id); }).length;
+  var marca=r.adic?'<span class="escadic">adicional</span>':'';
+  var alerta=(nEsc===0)?' · <b class="escfora">fora de todos os escopos</b>':'';
+  return '<tr'+(r.adic?' class="escradic"':'')+'><td class="escnm"><div>'+esc(r.desc||'—')+' '+marca+'</div><div class="escsub">'+esc(r.und||'')+(r.adicMotivo?' · '+esc(r.adicMotivo):'')+alerta+'</div></td>'+cels+'</tr>';
+}
 function escMatrizHtml(){
   if(!escUnificado()) return '';
-  var vs=varLista(), blk=ESC_BLK, cfg=BLKS.find(function(b){return b.key===blk;})||{titulo:blk};
+  var todos=varLista(), blk=ESC_BLK, cfg=BLKS.find(function(b){return b.key===blk;})||{titulo:blk};
+  var vs=ESC_FOCO?todos.filter(function(v){ return v.id===ESC_FOCO; }):todos;
   var abas=BLKS.map(function(b){ return '<button class="lbtn'+(b.key===blk?' on':'')+'" onclick="escSetBlk(\''+b.key+'\')">'+esc(b.titulo)+' <span style="opacity:.7">'+((S[b.key]||[]).length)+'</span></button>'; }).join('');
-  var cabEsc=vs.map(function(v){ var n=unitsDaVar(v.id).length;
-    return '<th class="escth"><div>'+esc(v.nome)+'</div><div class="escsub">'+n+' loja'+(n===1?'':'s')+'</div></th>'; }).join('');
-  var linhas=(S[blk]||[]).map(function(r){
-    var cels=vs.map(function(v){
-      var tem=escTem(r,v.id);
-      return '<td class="escq">'+(tem
-        ? '<input class="cin num escin" value="'+esc(r.qtdEsc[v.id])+'" inputmode="decimal" onfocus="this.select()" onchange="escSetQtd(\''+blk+'\',\''+r.id+'\',\''+v.id+'\',this.value)">'
-        : '<button class="escoff" title="não entra neste escopo — clique para incluir" onclick="escToggle(\''+blk+'\',\''+r.id+'\',\''+v.id+'\')">—</button>')
-        +(tem?'<button class="escx" title="tirar deste escopo" onclick="escToggle(\''+blk+'\',\''+r.id+'\',\''+v.id+'\')"><span class="material-symbols-rounded">close</span></button>':'')+'</td>'; }).join('');
-    var nEsc=vs.filter(function(v){ return escTem(r,v.id); }).length;
-    return '<tr><td class="escnm"><div>'+esc(r.desc||'—')+'</div><div class="escsub">'+esc(r.und||'')+(r.adic?' · adicional':'')+(nEsc===0?' · <b style="color:var(--red,#b3261e)">fora de todos os escopos</b>':'')+'</div></td>'+cels+'</tr>';
-  }).join('');
+  var cabEsc=todos.map(function(v){ var n=unitsDaVar(v.id).length, on=(ESC_FOCO===v.id), fora=(ESC_FOCO&&!on);
+    if(fora) return '';
+    return '<th class="escth'+(on?' on':'')+'" title="clique para ver só as tarefas deste escopo" onclick="escFocar(\''+v.id+'\')"><div>'+esc(v.nome)+(on?' <span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">filter_alt</span>':'')+'</div><div class="escsub">'+n+' loja'+(n===1?'':'s')+'</div></th>'; }).join('');
+  var base=(S[blk]||[]).filter(function(r){ return !r.adic; }), adics=(S[blk]||[]).filter(function(r){ return !!r.adic; });
+  if(ESC_FOCO){ base=base.filter(function(r){ return escTem(r,ESC_FOCO); }); adics=adics.filter(function(r){ return escTem(r,ESC_FOCO); }); }
+  var nCols=vs.length+1;
+  var linhas=base.map(function(r){ return escLinhaHtml(blk,r,vs); }).join('')
+    || '<tr><td colspan="'+nCols+'" class="escsub">Nada neste bloco'+(ESC_FOCO?' para este escopo':'')+'.</td></tr>';
+  var linhasAd=adics.length?('<tr class="escsep"><td colspan="'+nCols+'"><span class="material-symbols-rounded">add_circle</span>Adicionais previstos <span class="escsub">quantidade 0 = aparece nas atividades da loja como aviso de campo, sem entrar na conta · quantidade acima de 0 = adicional base, já vai na proposta das lojas do escopo</span></td></tr>'
+    +adics.map(function(r){ return escLinhaHtml(blk,r,vs); }).join('')):'';
+  var foco=ESC_FOCO?('<button class="lbtn" onclick="escFocar(\''+ESC_FOCO+'\')"><span class="material-symbols-rounded">filter_alt_off</span>Ver todos os escopos</button>'):'';
   return '<div class="escwrap"><div class="eschd"><span class="material-symbols-rounded">grid_on</span><b>'+esc(cfg.titulo||blk)+' × escopos</b>'
-    +'<span class="escsub">a linha existe uma vez · a coluna diz a quantidade de cada escopo · "—" não entra</span>'
-    +'<span class="escabas">'+abas+'</span></div>'
-    +'<div class="scroll"><table class="esctbl"><thead><tr><th class="escnm">Item</th>'+cabEsc+'</tr></thead><tbody>'+(linhas||'<tr><td colspan="'+(vs.length+1)+'" class="escsub">Nada neste bloco.</td></tr>')+'</tbody></table></div></div>';
+    +'<span class="escsub">'+(ESC_FOCO?('só as tarefas de '+esc(varNome(ESC_FOCO))):'a linha existe uma vez · a coluna diz a quantidade de cada escopo · "—" não entra')+'</span>'
+    +'<span class="escabas">'+foco+abas+'</span></div>'
+    +'<div class="scroll"><table class="esctbl"><thead><tr><th class="escnm">Item</th>'+cabEsc+'</tr></thead><tbody>'+linhas+linhasAd+'</tbody></table></div></div>';
 }
 function varConteudo(base,id){ var c={}; var vs=(base&&base.variacoes)||[]; var at=(base&&base.varAtiva)||'v1';
   if(escUnifDe(base)){ var eid=id||at; VAR_KEYS.forEach(function(k){ c[k]=escLinhasDo(base,k,eid); }); return c; }   // biblioteca única: o escopo é só um recorte com a quantidade dele
