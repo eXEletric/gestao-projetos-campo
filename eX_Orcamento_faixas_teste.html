@@ -356,6 +356,22 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .relpend{font-size:12.5px;color:#3a3550;background:#fbf7ee;border:1px solid #e8dfc8;border-radius:9px;padding:10px 12px;white-space:pre-wrap;line-height:1.5}
 .relfoot{margin-top:22px;border-top:1px solid #eee;padding-top:8px;font-size:11px;color:#8b86a1;text-align:right}
 @media print{body.relopen>*:not(#relOv){display:none!important}body.relopen #relOv{position:static;background:#fff;padding:0;overflow:visible}body.relopen .relwrap{padding:0}body.relopen .relsheet{box-shadow:none;max-width:none;padding:0}}
+/* anexos da proposta (levantamento / detalhamento) */
+.apcard{border:1px solid var(--line2);border-radius:12px;background:var(--surf);margin:0 0 14px;overflow:hidden}
+.aphd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 13px;background:var(--surf2);border-bottom:1px solid var(--line2);font-size:13px}
+.aphd .material-symbols-rounded{font-size:18px;color:var(--pri)}
+.apsub{font-size:11.5px;color:var(--tx3)}
+.apbd{padding:6px 13px 10px}
+.apl{display:flex;align-items:center;gap:8px;padding:7px 0;border-top:1px solid var(--line);font-size:13px}
+.apl:first-child{border-top:0}
+.apl .material-symbols-rounded{font-size:17px;color:var(--tx3)}
+.apnome{border:0;background:transparent;color:var(--pri);font:700 13px inherit;cursor:pointer;text-align:left;padding:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.apnome:hover{text-decoration:underline}
+.aptipo{font-size:10.5px;font-weight:700;color:var(--pri-dark,#3f2c8f);background:var(--pri-bg,#efeafc);border-radius:20px;padding:2px 9px}
+.apmeta{font-size:11.5px;color:var(--tx3);font-variant-numeric:tabular-nums}
+.apx{border:0;background:transparent;color:var(--tx3);cursor:pointer;padding:2px;opacity:.5}
+.apx:hover{color:#b3261e;opacity:1}
+.apvazio{font-size:12.5px;color:var(--tx3);padding:8px 0}
 /* matriz serviços × escopos (base do lote, biblioteca única) */
 .esctbl th.escth{cursor:pointer;user-select:none}
 .esctbl th.escth:hover{color:var(--pri)}
@@ -1347,6 +1363,7 @@ async function initOrc(){
   if(!CLOUD){ load(); }
   boot();
   try{ if(window.parent && window.parent!==window) window.parent.postMessage({type:'exOrcOpen', qs: location.search||''}, '*'); }catch(_){}   // avisa o shell qual orçamento está aberto (p/ persistir no reload)
+  try{ arqPropInit(); }catch(e){ console.error('arqProp',e); }   /* anexos da proposta: levantamento ou detalhamento que originou o orçamento */
   if(isLoteBase()){ try{ await initLoteBasePanel(); }catch(e){ console.error('lote base panel',e); } }   // base do lote = mestra: injeta o painel de lojas
   else if(isLoteUnit()){ (async function(){ try{ const l=await SB.from('orcamento_lotes').select('base_oportunidade_id').eq('id',S_LOTE_ID).limit(1); const bo=l.data&&l.data[0]&&l.data[0].base_oportunidade_id; if(!bo)return;
       const b=await SB.from('orcamentos').select('dados,total').eq('oportunidade_id',bo).is('deleted_at',null).order('created_at',{ascending:false}).limit(1); if(!(b.data&&b.data[0]))return; UNIT_BASE_VARS=((b.data[0].dados||{}).variacoes)||[]; try{ loteCfgEnforce(b.data[0].dados); }catch(_){} try{ const us=await SB.from('orcamentos').select('total,dados').eq('lote_id',S_LOTE_ID).is('deleted_at',null); gloteCalc(us.data||[]); }catch(_){} BLKS.forEach(b=>{ try{ renderBlk(b); }catch(_){} }); recalc(); }catch(e){ console.error('modelo da loja',e); } })(); }   // loja do lote: carrega a base só p/ mostrar o MODELO (variação) que a loja segue
@@ -4607,6 +4624,60 @@ async function relPdfSalvar(){ var doc=document.getElementById('relDoc'); if(!do
    o dono precisa chegar no relatório e nos dados de cada unidade mesmo com a proposta fechada. */
 /* RELATÓRIOS DE LEVANTAMENTO NO PRÓPRIO SISTEMA (bucket 'anexos' + tabela levantamento_arquivos).
    O link do Drive fica só como legado: depende de conta externa e o dono perde acesso. */
+/* ===== LEVANTAMENTOS E DETALHAMENTOS DA PROPOSTA =====
+   Ponto para anexar o arquivo que VIRA a proposta (levantamento de campo, detalhamento gerado pelo Claude, planilha do cliente).
+   Guardado no sistema (bucket anexos + levantamento_arquivos), nunca no Drive. Some do PDF. */
+var ARQ_PROP=[];
+function arqTipoDe(nome){ var n=String(nome||'').toLowerCase();
+  if(/levant/.test(n)) return 'levantamento';
+  if(/relat/.test(n)) return 'relatorio';
+  if(/propost|orcament|orçament/.test(n)) return 'proposta';
+  return 'detalhamento'; }
+var ARQ_TIPO_LB={levantamento:'levantamento',detalhamento:'detalhamento',relatorio:'relatório',proposta:'proposta',relatorio_cliente:'PDF cliente',relatorio_interno:'PDF interno'};
+async function arqPropCarregar(){ ARQ_PROP=[]; if(!(SB&&OPP))return ARQ_PROP;
+  try{ const r=await SB.from('levantamento_arquivos').select('*').eq('oportunidade_id',OPP).is('deleted_at',null).order('created_at',{ascending:false});
+    ARQ_PROP=(r.data||[]); }catch(e){ console.error('arqProp',e); }
+  return ARQ_PROP; }
+async function arqPropAbrir(id){ var a=ARQ_PROP.find(function(x){return x.id===id;}); if(!a)return;
+  try{ const {data,error}=await SB.storage.from('anexos').createSignedUrl(a.path,3600); if(error)throw error; window.open(data.signedUrl,'_blank'); }
+  catch(e){ alert('Não consegui abrir: '+(e.message||e)); } }
+async function arqPropRemover(id){ var a=ARQ_PROP.find(function(x){return x.id===id;}); if(!a)return;
+  if(!confirm('Tirar "'+a.nome+'" desta proposta?\n\nO arquivo sai da lista e do armazenamento.'))return;
+  try{ await SB.storage.from('anexos').remove([a.path]); await SB.from('levantamento_arquivos').delete().eq('id',a.id); }catch(e){ alert('Erro: '+(e.message||e)); }
+  await arqPropCarregar(); arqPropRender(); }
+function arqPropPick(){ var inp=document.createElement('input'); inp.type='file'; inp.multiple=true;
+  inp.accept='.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.md,.png,.jpg,.jpeg,.webp,.json';
+  inp.onchange=function(){ var fs=[].slice.call(inp.files||[]); if(fs.length) arqPropSubir(fs); }; inp.click(); }
+async function arqPropSubir(files){ if(!(SB&&OPP)){ alert('Sem conexão.'); return; }
+  var ok=0, erro=null;
+  for(var i=0;i<files.length;i++){ var f=files[i];
+    var limpo=f.name.replace(/[^\w.\-]+/g,'_').slice(-90);
+    var path='proposta/'+OPP+'/'+Date.now()+'_'+limpo;
+    try{ const up=await SB.storage.from('anexos').upload(path,f,{upsert:true,contentType:f.type||'application/octet-stream'}); if(up.error)throw up.error;
+      const ins=await SB.from('levantamento_arquivos').insert({lote_id:S_LOTE_ID||null,oportunidade_id:OPP,loja_num:(S&&S.finNum)||null,tipo:arqTipoDe(f.name),nome:f.name,path:path,mime:f.type||null,tamanho:f.size,origem:'anexo da proposta'});
+      if(ins.error)throw ins.error; ok++; }catch(e){ erro=e.message||String(e); } }
+  await arqPropCarregar(); arqPropRender();
+  cloudMsg(ok+' arquivo(s) anexado(s) à proposta'+(erro?' · 1 com erro':''));
+  if(erro) alert('Não subiu: '+erro); }
+function arqPropHtml(){
+  var linhas=ARQ_PROP.map(function(a){
+    var kb=a.tamanho?(a.tamanho>1048576?((a.tamanho/1048576).toFixed(1)+' MB'):(Math.round(a.tamanho/1024)+' kB')):'';
+    var quando=a.created_at?new Date(a.created_at).toLocaleDateString('pt-BR'):'';
+    return '<div class="apl"><span class="material-symbols-rounded">description</span>'
+      +'<button class="apnome" onclick="arqPropAbrir(\''+a.id+'\')" title="abrir">'+esc(a.nome)+'</button>'
+      +'<span class="aptipo">'+esc(ARQ_TIPO_LB[a.tipo]||a.tipo||'arquivo')+'</span>'
+      +'<span class="apmeta">'+kb+(quando?' · '+quando:'')+'</span>'
+      +'<button class="apx" title="tirar da proposta" onclick="arqPropRemover(\''+a.id+'\')"><span class="material-symbols-rounded">close</span></button></div>'; }).join('');
+  return '<div class="apcard noprint"><div class="aphd"><span class="material-symbols-rounded">attach_file</span><b>Levantamentos e detalhamentos</b>'
+    +'<span class="apsub">o que originou esta proposta — fica no sistema, não entra no PDF</span>'
+    +'<button class="lbtn" style="margin-left:auto" onclick="arqPropPick()"><span class="material-symbols-rounded">upload_file</span>Anexar arquivo</button></div>'
+    +'<div class="apbd">'+(linhas||'<div class="apvazio">Nada anexado ainda. Aceita PDF, Word, Excel, CSV, texto, Markdown e imagem — inclusive o arquivo gerado no Claude com o levantamento ou o detalhamento do escopo.</div>')+'</div></div>'; }
+function arqPropRender(){ var el=document.getElementById('arqProp'); if(!el)return; el.innerHTML=arqPropHtml(); }
+async function arqPropInit(){ if(!(SB&&OPP))return;
+  var el=document.getElementById('arqProp');
+  if(!el){ var anchor=document.querySelector('.panel.prophead')||document.querySelector('.grid'); if(!anchor||!anchor.parentElement)return;
+    el=document.createElement('div'); el.id='arqProp'; anchor.parentElement.insertBefore(el, anchor.nextSibling); }
+  await arqPropCarregar(); arqPropRender(); }
 var LEV_ARQ={}, LEV_GER={};
 async function levArqCarregar(){ LEV_ARQ={}; LEV_GER={}; if(!(SB&&S_LOTE_ID))return LEV_ARQ;
   try{ const r=await SB.from('levantamento_arquivos').select('*').eq('lote_id',S_LOTE_ID).is('deleted_at',null).order('created_at');
