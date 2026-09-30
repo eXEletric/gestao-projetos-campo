@@ -356,6 +356,29 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .relpend{font-size:12.5px;color:#3a3550;background:#fbf7ee;border:1px solid #e8dfc8;border-radius:9px;padding:10px 12px;white-space:pre-wrap;line-height:1.5}
 .relfoot{margin-top:22px;border-top:1px solid #eee;padding-top:8px;font-size:11px;color:#8b86a1;text-align:right}
 @media print{body.relopen>*:not(#relOv){display:none!important}body.relopen #relOv{position:static;background:#fff;padding:0;overflow:visible}body.relopen .relwrap{padding:0}body.relopen .relsheet{box-shadow:none;max-width:none;padding:0}}
+/* começo do escopo (lote vazio) */
+.inicard{border:2px solid var(--pri);border-radius:14px;background:var(--surf);margin:0 0 14px;overflow:hidden}
+.inihd{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:12px 15px;background:var(--pri-bg,#efeafc);color:var(--pri);border-bottom:1px solid var(--line2);font-size:14px}
+.inihd .material-symbols-rounded{font-size:20px}
+.inisub{font-size:11.5px;color:var(--tx3);font-weight:500}
+.inigrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:10px;padding:13px 15px}
+.iniop{display:flex;flex-direction:column;align-items:flex-start;gap:4px;text-align:left;border:1px solid var(--line2);background:var(--surf2);border-radius:12px;padding:13px 14px;cursor:pointer;font:inherit;color:var(--tx)}
+.iniop:hover{border-color:var(--pri);background:var(--pri-bg,#efeafc)}
+.iniop .material-symbols-rounded{font-size:22px;color:var(--pri)}
+.iniop b{font-size:13.5px}
+.iniop span:not(.material-symbols-rounded){font-size:12.5px;color:var(--tx2);line-height:1.45}
+.inipe{display:flex;gap:8px;align-items:flex-start;padding:10px 15px;border-top:1px solid var(--line);font-size:12.5px;color:var(--tx3)}
+.inipe .material-symbols-rounded{font-size:16px;color:var(--pri)}
+/* origem da quantidade (escopo × levantamento × manual) */
+.levsel{max-width:170px;font-size:11.5px;padding:3px 6px}
+.levfat{width:52px;text-align:right;margin-left:5px;font-size:11.5px}
+.levarr{max-width:120px;font-size:11px;padding:3px 5px;margin-left:5px}
+.qorig{display:inline-block;margin-left:6px;font-size:10px;font-weight:700;border-radius:20px;padding:1px 7px;vertical-align:1px;white-space:nowrap}
+.qorig.qo-ok{background:var(--surf2);color:var(--tx3)}
+.qorig.qo-mais{background:#fff4e0;color:#8a5a12}
+.qorig.qo-menos{background:#eef4ff;color:#2f4f8a}
+.qorig.qo-man{background:#fdeceb;color:#b3261e}
+.esctbl td.escde{min-width:200px}
 /* importar escopo (formato padrão eX) */
 #impOv{position:fixed;inset:0;z-index:800;background:rgba(20,14,40,.55);display:grid;place-items:center;padding:18px}
 .impbox{background:var(--surf);border-radius:14px;width:min(980px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(20,10,50,.35)}
@@ -4025,6 +4048,118 @@ function escSetBlk(k){ ESC_BLK=k; try{ injectLoteBasePanel(); }catch(_){} }
 /* matriz "itens × escopos": lista única, adicionais numa seção própria, foco por escopo.
    Estados da célula: "—" fora do escopo · 0 = previsto (aparece nas atividades, não entra na conta) · nº = entra na conta.
    Num adicional, quantidade > 0 significa ADICIONAL BASE: já vai na proposta de todas as lojas daquele escopo. */
+/* ===== PASSO 2 · ORIGEM DA QUANTIDADE =====
+   No escopo, a linha diz DE ONDE a quantidade sai: fixa ou de um número do levantamento (com folga e arredondamento).
+   Na loja, cada quantidade carrega a origem: escopo · levantamento · manual — e a diferença contra o escopo fica visível. */
+var LEV_PARAMS=[
+  {k:'quadros',lb:'Quadros de iluminação'},
+  {k:'circuitos',lb:'Circuitos de iluminação'},
+  {k:'semContatora',lb:'Circuitos sem contatora'},
+  {k:'fancoils',lb:'Fancoils'},
+  {k:'splitoes',lb:'Splitões'},
+  {k:'termostatos',lb:'Termostatos'},
+  {k:'infraTotal',lb:'Infra de comunicação (m)'},
+  {k:'infraSimples',lb:'Infra rota simples (m)'},
+  {k:'infraDificil',lb:'Infra rota difícil (m)'},
+  {k:'trechos',lb:'Trechos de comunicação'},
+  {k:'pontosBUS',lb:'Pontos de BUS'},
+  {k:'dispositivos',lb:'Dispositivos a endereçar'},
+  {k:'caboRede',lb:'Cabo de rede (m)'},
+  {k:'sensoresSalao',lb:'Sensores de salão'},
+  {k:'trafosQGBT',lb:'Trafos no QGBT'},
+  {k:'medidoresClima',lb:'Medidores de clima'},
+  {k:'diasTotais',lb:'Dias do levantamento'}
+];
+function levParamLb(k){ var p=LEV_PARAMS.find(function(x){return x.k===k;}); return p?p.lb:k; }
+function levValor(params,k){ if(!params)return null;
+  if(k==='infraTotal') return num(params.infraSimples)+num(params.infraDificil);
+  var v=params[k]; return (v===null||v===undefined||v==='')?null:num(v); }
+function levQtdDe(r,params){   // quantidade que a linha teria com os números do levantamento
+  if(!r||!r.qtdDe) return null;
+  var v=levValor(params,r.qtdDe); if(v===null) return null;
+  var q=v*(r.qtdFator?num(r.qtdFator):1);
+  var a=r.qtdArred?num(r.qtdArred):0;
+  if(a>0) q=Math.ceil(q/a)*a; else q=Math.round(q*100)/100;
+  return q; }
+function levSetDe(blk,lineId,campo,v){ var r=(S[blk]||[]).find(function(x){return x.id===lineId;}); if(!r)return;
+  if(String(v).trim()==='') delete r[campo]; else r[campo]=(campo==='qtdDe')?v:num(v);
+  save(); try{ injectLoteBasePanel(); }catch(_){} }
+function levOrigemHtml(blk,r){   // seletor "quantidade vem de" + folga + arredondamento (na matriz do escopo)
+  var opts='<option value="">quantidade fixa</option>'+LEV_PARAMS.map(function(p){
+    return '<option value="'+p.k+'"'+(r.qtdDe===p.k?' selected':'')+'>'+esc(p.lb)+'</option>'; }).join('');
+  var extra=r.qtdDe?('<input class="cin num levfat" value="'+esc(r.qtdFator!=null?r.qtdFator:1)+'" inputmode="decimal" title="fator: 1 = igual ao levantado · 1,1 = 10% de folga" onchange="levSetDe(\''+blk+'\',\''+r.id+'\',\'qtdFator\',this.value)">'
+    +'<select class="cin levarr" title="arredondar para cima" onchange="levSetDe(\''+blk+'\',\''+r.id+'\',\'qtdArred\',this.value)">'
+    +['','1','5','10','50'].map(function(a){ return '<option value="'+a+'"'+((String(r.qtdArred||''))===a?' selected':'')+'>'+(a===''?'sem arredondar':'de '+a+' em '+a)+'</option>'; }).join('')+'</select>'):'';
+  return '<select class="cin levsel" onchange="levSetDe(\''+blk+'\',\''+r.id+'\',\'qtdDe\',this.value)">'+opts+'</select>'+extra; }
+/* ---- na LOJA: origem e diferença contra o escopo ---- */
+function levOrigemChip(r){
+  if(!isLoteUnit()||!r) return '';
+  var o=r.qtdOrig||'', base=(r.qtdEscopo!=null)?num(r.qtdEscopo):null, q=num(r.qtd), dif=(base!==null)?(q-base):0;
+  if(!o&&base===null) return '';
+  var lb={escopo:'escopo',levantamento:'levantado',manual:'manual'}[o]||o;
+  var cls=(o==='manual')?'qo-man':((dif>0.001)?'qo-mais':((dif<-0.001)?'qo-menos':'qo-ok'));
+  var tit=(base!==null)?('no escopo: '+_d1(base)+(dif?(' · '+(dif>0?'+':'')+_d1(dif)+' nesta loja'):' · igual')):'';
+  return '<span class="qorig '+cls+'" title="'+esc(tit)+'">'+esc(lb)+(base!==null&&dif?(' '+(dif>0?'+':'')+_d1(dif)):'')+'</span>'; }
+function levMarcarManual(blk,id){ if(!isLoteUnit())return; var r=(S[blk]||[]).find(function(x){return x.id===id;}); if(!r)return;
+  if(r.qtdOrig!=='manual'){ r.qtdOrig='manual'; } }
+/* ---- aplicar o levantamento nas quantidades da loja ---- */
+function levAplicarNaLoja(dados,escopoDados){
+  var params=(dados&&dados.levUnidade&&dados.levUnidade.params)||null; if(!params) return {mudou:0,semParam:0};
+  var mudou=0, semParam=0;
+  VAR_KEYS.forEach(function(k){
+    (dados[k]||[]).forEach(function(r){
+      var mod=escopoDados?((escopoDados[k]||[]).find(function(x){ return escChave(x)===escChave(r); })):null;
+      var regra=mod||r;
+      if(mod){ r.qtdEscopo=num(mod.qtd); }
+      var q=levQtdDe(regra,params);
+      if(q===null){ if(regra.qtdDe) semParam++; return; }
+      if(r.qtdOrig==='manual') return;   // ajuste manual não é sobrescrito
+      if(num(r.qtd)!==q){ r.qtd=q; mudou++; }
+      r.qtdOrig='levantamento';
+    });
+  });
+  return {mudou:mudou,semParam:semParam}; }
+async function levAplicarLote(){
+  if(!isLoteBase()){ alert('Só na proposta-base do lote.'); return; }
+  if(!loteExigeSalvo('Aplicar levantamento')) return;
+  var us=(LOTE_UNITS||[]).filter(function(u){ return u.dados&&u.dados.levUnidade&&u.dados.levUnidade.params; });
+  if(!us.length){ alert('Nenhuma loja tem os números do levantamento gravados ainda.'); return; }
+  var prev=us.map(function(u){ var d=_deep(u.dados), esc0=dadosLojaDaBase(S,unitVar(u));
+    var r=levAplicarNaLoja(d,esc0); return {u:u,d:d,r:r}; }).filter(function(x){ return x.r.mudou>0; });
+  if(!prev.length){ alert('As quantidades das lojas já estão iguais ao levantamento.'); return; }
+  if(!confirm('Aplicar o levantamento em '+prev.length+' loja(s)?\n\n'+prev.map(function(x){ return '• '+lojaLabel(x.u)+': '+x.r.mudou+' quantidade(s)'; }).join('\n')+'\n\nAjuste manual não é sobrescrito. As lojas enviadas ficam de fora.')) return;
+  var ok=0;
+  for(var i=0;i<prev.length;i++){ var x=prev[i];
+    if(lojaFechadaLocal(x.u.dados,x.u.status)) continue;
+    var p=null; try{ p=precoDe(dadosLojaCalc({dados:x.d})); }catch(_){}
+    if(p) x.d._total=p.total;
+    var up=await SB.from('orcamentos').update({dados:x.d,total:(p?p.total:num(x.u.total)),herda_base:false}).eq('id',x.u.id);
+    if(!up.error) ok++;
+  }
+  await loteReload(); cloudMsg(ok+' loja(s) atualizadas pelo levantamento'); }
+/* ===== COMEÇO DO ESCOPO — ponto de entrada quando o lote ainda não tem serviços =====
+   Sem isso a base abre com 14 faixas e nenhum caminho óbvio para lançar o primeiro serviço. */
+function escVazio(){ return isLoteBase() && VAR_KEYS.every(function(k){ return !((S&&S[k])||[]).length; }); }
+function escInicioHtml(){
+  if(!escVazio()) return '';
+  return '<div class="inicard">'
+    +'<div class="inihd"><span class="material-symbols-rounded">rocket_launch</span><b>Comece pelo escopo</b>'
+    +'<span class="inisub">o escopo é a lista de serviços e materiais da obra · as lojas herdam dele</span></div>'
+    +'<div class="inigrid">'
+      +'<button class="iniop" onclick="impAbrir()"><span class="material-symbols-rounded">table_view</span>'
+        +'<b>Importar de uma planilha</b><span>Cole a lista no formato padrão (uma linha por item, uma coluna por escopo) ou abra um CSV. É o caminho mais rápido.</span></button>'
+      +'<button class="iniop" onclick="escIrServicos()"><span class="material-symbols-rounded">playlist_add</span>'
+        +'<b>Lançar serviço a serviço</b><span>Abre o bloco Serviços e vai puxando do cadastro, com quantidade e composição.</span></button>'
+      +'<button class="iniop" onclick="escIrCopiar()"><span class="material-symbols-rounded">content_copy</span>'
+        +'<b>Copiar de uma loja existente</b><span>Usa o conteúdo de uma loja já montada como ponto de partida do escopo.</span></button>'
+    +'</div>'
+    +'<div class="inipe"><span class="material-symbols-rounded">lightbulb</span>Depois de lançar os serviços, as quantidades de cada escopo aparecem na matriz logo abaixo, e as lojas são geradas na Lista de lojas.</div>'
+  +'</div>';
+}
+function escIrServicos(){ var el=document.getElementById('blk_servicos'); if(el){ el.scrollIntoView({behavior:'smooth',block:'start'});
+    var b=el.querySelector('.addrow,[onclick*="addRow"]'); if(b){ setTimeout(function(){ try{ b.focus(); }catch(_){} },400); } } }
+function escIrCopiar(){ var s=document.getElementById('varCopLoja'); if(s){ s.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(function(){ try{ s.focus(); }catch(_){} },400); }
+  else alert('Adicione as lojas primeiro, na Lista de lojas — depois dá para copiar o conteúdo de uma delas para o escopo.'); }
 var ESC_FOCO=null;
 function escFocar(id){ ESC_FOCO=(ESC_FOCO===id)?null:id; try{ injectLoteBasePanel(); }catch(_){} }
 function escCel(blk,r,v){
@@ -4040,7 +4175,7 @@ function escLinhaHtml(blk,r,vs){
   var nEsc=vs.filter(function(v){ return escTem(r,v.id); }).length;
   var marca=r.adic?'<span class="escadic">adicional</span>':'';
   var alerta=(nEsc===0)?' · <b class="escfora">fora de todos os escopos</b>':'';
-  return '<tr'+(r.adic?' class="escradic"':'')+'><td class="escnm"><div>'+esc(r.desc||'—')+' '+marca+'</div><div class="escsub">'+esc(r.und||'')+(r.adicMotivo?' · '+esc(r.adicMotivo):'')+alerta+'</div></td>'+cels+'</tr>';
+  return '<tr'+(r.adic?' class="escradic"':'')+'><td class="escnm"><div>'+esc(r.desc||'—')+' '+marca+'</div><div class="escsub">'+esc(r.und||'')+(r.adicMotivo?' · '+esc(r.adicMotivo):'')+alerta+'</div></td>'+cels+'<td class="escde">'+levOrigemHtml(blk,r)+'</td></tr>';
 }
 function escMatrizHtml(){
   if(!escUnificado()) return '';
@@ -4052,7 +4187,7 @@ function escMatrizHtml(){
     return '<th class="escth'+(on?' on':'')+'" title="clique para ver só as tarefas deste escopo" onclick="escFocar(\''+v.id+'\')"><div>'+esc(v.nome)+(on?' <span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">filter_alt</span>':'')+'</div><div class="escsub">'+n+' loja'+(n===1?'':'s')+'</div></th>'; }).join('');
   var base=(S[blk]||[]).filter(function(r){ return !r.adic; }), adics=(S[blk]||[]).filter(function(r){ return !!r.adic; });
   if(ESC_FOCO){ base=base.filter(function(r){ return escTem(r,ESC_FOCO); }); adics=adics.filter(function(r){ return escTem(r,ESC_FOCO); }); }
-  var nCols=vs.length+1;
+  var nCols=vs.length+2;
   var linhas=base.map(function(r){ return escLinhaHtml(blk,r,vs); }).join('')
     || '<tr><td colspan="'+nCols+'" class="escsub">Nada neste bloco'+(ESC_FOCO?' para este escopo':'')+'.</td></tr>';
   var linhasAd=adics.length?('<tr class="escsep"><td colspan="'+nCols+'"><span class="material-symbols-rounded">add_circle</span>Adicionais previstos <span class="escsub">quantidade 0 = aparece nas atividades da loja como aviso de campo, sem entrar na conta · quantidade acima de 0 = adicional base, já vai na proposta das lojas do escopo</span></td></tr>'
@@ -4061,7 +4196,7 @@ function escMatrizHtml(){
   return '<div class="escwrap"><div class="eschd"><span class="material-symbols-rounded">grid_on</span><b>'+esc(cfg.titulo||blk)+' × escopos</b>'
     +'<span class="escsub">'+(ESC_FOCO?('só as tarefas de '+esc(varNome(ESC_FOCO))):'a linha existe uma vez · a coluna diz a quantidade de cada escopo · "—" não entra')+'</span>'
     +'<span class="escabas">'+foco+abas+'</span></div>'
-    +'<div class="scroll"><table class="esctbl"><thead><tr><th class="escnm">Item</th>'+cabEsc+'</tr></thead><tbody>'+linhas+linhasAd+'</tbody></table></div></div>';
+    +'<div class="scroll"><table class="esctbl"><thead><tr><th class="escnm">Item</th>'+cabEsc+'<th class="escnm">Quantidade vem de</th>'+'</tr></thead><tbody>'+linhas+linhasAd+'</tbody></table></div></div>';
 }
 function varConteudo(base,id){ var c={}; var vs=(base&&base.variacoes)||[]; var at=(base&&base.varAtiva)||'v1';
   if(escUnifDe(base)){ var eid=id||at; VAR_KEYS.forEach(function(k){ c[k]=escLinhasDo(base,k,eid); }); return c; }   // biblioteca única: o escopo é só um recorte com a quantidade dele
@@ -4493,7 +4628,7 @@ function varFaixaHtml(){ var vs=varLista(); if(!vs.length)return ''; var at=S.va
     +''
     +'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--pri-bg,#eeedfe);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">edit</span><span>Editando <b>'+esc(atv.nome)+'</b>'+(idx===0?' <span style="color:var(--tx3)">(modelo)</span>':'')+' — Serviços, Material, Despesas e Locações desta variação.</span><span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'+varMostraBtnHtml(atv,vs)+'<button class="lbtn" onclick="varRenomear(\''+atv.id+'\')"><span class="material-symbols-rounded">edit_note</span>Renomear</button>'+(idx>0?'<button class="lbtn danger" onclick="varExcluir(\''+atv.id+'\')"><span class="material-symbols-rounded">delete</span>Excluir</button>':'')+'</span></div>'
     +((LOTE_UNITS||[]).length?'<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--tx3)"><span>Preencher esta variação com o conteúdo de uma loja:</span><select id="varCopLoja" style="min-width:220px;padding:6px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:12.5px;background:var(--surf);color:var(--tx)"><option value="">— escolha a loja —</option>'+lojaOpts+'</select><button class="lbtn" onclick="varCopiarDeLoja()"><span class="material-symbols-rounded">content_copy</span>Copiar</button></div>':'')
-    +(escUnificado()?escMatrizHtml():'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:#fff4e0;border:1px solid #e6c360;color:#8a5a12;font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="material-symbols-rounded" style="font-size:17px">warning</span><span><b>Cada escopo ainda guarda uma cópia dos serviços.</b> Corrigir um serviço num escopo não chega nos outros. Unifique para o serviço existir uma vez, com a quantidade de cada escopo ao lado.</span><button class="lbtn" style="margin-left:auto" onclick="escUnificar()"><span class="material-symbols-rounded">merge</span>Unificar escopos</button></div>')
+    +escInicioHtml()+(escUnificado()?escMatrizHtml():'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:#fff4e0;border:1px solid #e6c360;color:#8a5a12;font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="material-symbols-rounded" style="font-size:17px">warning</span><span><b>Cada escopo ainda guarda uma cópia dos serviços.</b> Corrigir um serviço num escopo não chega nos outros. Unifique para o serviço existir uma vez, com a quantidade de cada escopo ao lado.</span><button class="lbtn" style="margin-left:auto" onclick="escUnificar()"><span class="material-symbols-rounded">merge</span>Unificar escopos</button></div>')
     +'</div>'; }
 (function(){ const _ib=injectLoteBasePanel; injectLoteBasePanel=function(){ const r=_ib.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } try{ injectLoteRO(); levArqInit(); }catch(_){} return r; };
   const _rb2=renderBlk; renderBlk=function(){ const r=_rb2.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } return r; }; })();
