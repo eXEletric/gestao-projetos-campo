@@ -4218,6 +4218,8 @@ function abasApply(){
     var id=e.getAttribute('data-fx');
     e.style.display=(alvo.indexOf(id)>=0)?'':'none';
   });
+  [['.panel.prophead','preco'],['#descGeralPanel','preco'],['#blk_servicos','escopo'],['#blk_equip','escopo'],['#blk_despesas','escopo'],['#blk_materiais','escopo']].forEach(function(p){   // peças que são filhas diretas, sem marca de faixa
+    var e=col.querySelector(p[0]); if(e) e.style.display=(p[1]===k)?'':'none'; });
   col.querySelectorAll(':scope > .fxg').forEach(function(g){   // cabeçalho de grupo some quando o grupo não tem faixa nesta aba
     var vis=[].slice.call(g.querySelectorAll('[data-fx]')).some(function(e){ return e.style.display!=='none'; });
     g.style.display=vis?'':'none';
