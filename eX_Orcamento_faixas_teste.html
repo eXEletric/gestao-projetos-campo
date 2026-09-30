@@ -4758,6 +4758,9 @@ function impAplicar(){
     alvo.qtdEsc=alvo.qtdEsc||{};
     Object.keys(l.qtds).forEach(function(nome){ alvo.qtdEsc[mapa[nome]]=l.qtds[nome]; });
   });
+  var usados={}; VAR_KEYS.forEach(function(k){ (S[k]||[]).forEach(function(r){ Object.keys(r.qtdEsc||{}).forEach(function(id){ usados[id]=1; }); }); });   /* escopo sem item e sem loja (ex.: "Variação 1" criado automaticamente) sai */
+  S.variacoes=(S.variacoes||[]).filter(function(v){ return usados[v.id]||unitsDaVar(v.id).length; });
+  if(!S.variacoes.some(function(v){ return v.id===S.varAtiva; })) S.varAtiva=(S.variacoes[0]||{}).id;
   try{ sanitize(); }catch(_){}
   save(); BLKS.forEach(function(b){ try{ renderBlk(b); }catch(_){} });
   try{ injectLoteBasePanel(); }catch(_){} recalc();
