@@ -356,6 +356,25 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .relpend{font-size:12.5px;color:#3a3550;background:#fbf7ee;border:1px solid #e8dfc8;border-radius:9px;padding:10px 12px;white-space:pre-wrap;line-height:1.5}
 .relfoot{margin-top:22px;border-top:1px solid #eee;padding-top:8px;font-size:11px;color:#8b86a1;text-align:right}
 @media print{body.relopen>*:not(#relOv){display:none!important}body.relopen #relOv{position:static;background:#fff;padding:0;overflow:visible}body.relopen .relwrap{padding:0}body.relopen .relsheet{box-shadow:none;max-width:none;padding:0}}
+/* importar escopo (formato padrão eX) */
+#impOv{position:fixed;inset:0;z-index:800;background:rgba(20,14,40,.55);display:grid;place-items:center;padding:18px}
+.impbox{background:var(--surf);border-radius:14px;width:min(980px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(20,10,50,.35)}
+.imphd{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:12px 15px;border-bottom:1px solid var(--line2);background:var(--pri-bg,#efeafc);color:var(--pri)}
+.imphd .material-symbols-rounded{font-size:19px}
+.impsub{font-size:11.5px;color:var(--tx3);font-weight:500}
+.impbd{padding:12px 15px;overflow:auto;flex:1}
+.impacts{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:9px}
+.imptxt{width:100%;min-height:150px;border:1px solid var(--line2);border-radius:10px;padding:10px 12px;font:12.5px ui-monospace,Consolas,monospace;background:var(--surf2);color:var(--tx);resize:vertical}
+.impprev{margin-top:12px}
+.impinfo{font-size:12px;color:var(--tx3);margin-bottom:6px}
+.imperro{border:1px solid #e6c360;background:#fff4e0;color:#8a5a12;border-radius:9px;padding:8px 11px;font-size:12.5px;margin-bottom:8px}
+.imptbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.imptbl th{background:var(--surf2);text-align:left;font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);padding:6px 8px}
+.imptbl th.r,.imptbl td.r{text-align:right;font-variant-numeric:tabular-nums}
+.imptbl td{padding:5px 8px;border-top:1px solid var(--line)}
+.imptbl tr.impadic td{background:#fffaf1}
+.impft{display:flex;gap:8px;justify-content:flex-end;padding:11px 15px;border-top:1px solid var(--line2);background:var(--surf2)}
+.impft .lbtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
 /* anexos da proposta (levantamento / detalhamento) */
 .apcard{border:1px solid var(--line2);border-radius:12px;background:var(--surf);margin:0 0 14px;overflow:hidden}
 .aphd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 13px;background:var(--surf2);border-bottom:1px solid var(--line2);font-size:13px}
@@ -4465,7 +4484,7 @@ function varFaixaHtml(){ var vs=varLista(); if(!vs.length)return ''; var at=S.va
   var lojaOpts=(LOTE_UNITS||[]).map(function(u){ return '<option value="'+u.id+'">'+esc(lojaLabel(u))+(vs.length>1?' · '+esc(varNome(unitVar(u))):'')+'</option>'; }).join('');
   return '<div style="padding:12px 14px">'
     +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px"><span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">layers</span><b style="font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri)">Variações da base</b><span style="font-size:11.5px;color:var(--tx3)">cada variação tem seus serviços, material, despesas e locações</span>'+varSecaoBtnHtml(vs)+'</div>'
-    +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+tabs+'<button class="lbtn" onclick="varNova()" style="padding:7px 12px;border-style:dashed"><span class="material-symbols-rounded">add</span>Nova variação</button></div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+tabs+'<button class="lbtn" onclick="varNova()" style="padding:7px 12px;border-style:dashed"><span class="material-symbols-rounded">add</span>Nova variação</button><button class="lbtn" onclick="impAbrir()" style="padding:7px 12px" title="Importar serviços e quantidades de uma planilha no formato padrão"><span class="material-symbols-rounded">table_view</span>Importar escopo</button></div>'
     +(function(){ var f=varFonte(atv), mp=null; try{ mp=modeloPreco(atv); }catch(_){}
       var bt=function(k,ic){ var on=f===k; return '<button class="lbtn" onclick="varSetFonte(\''+atv.id+'\',\''+k+'\')" style="padding:5px 10px;'+(on?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'"><span class="material-symbols-rounded" style="'+(on?'color:#fff':'')+'">'+ic+'</span>'+VAR_FONTES[k]+'</button>'; };
       return '<div style="margin-top:9px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px"><b style="color:var(--tx2)">Valores de '+esc(atv.nome)+':</b>'+bt('cadastro','inventory')+bt('media','functions')+bt('pior','trending_up')
@@ -4678,6 +4697,116 @@ async function arqPropInit(){ if(!(SB&&OPP))return;
   if(!el){ var anchor=document.querySelector('.panel.prophead')||document.querySelector('.grid'); if(!anchor||!anchor.parentElement)return;
     el=document.createElement('div'); el.id='arqProp'; anchor.parentElement.insertBefore(el, anchor.nextSibling); }
   await arqPropCarregar(); arqPropRender(); }
+/* ===== IMPORTAR ESCOPO (formato padrão eX) =====
+   Uma linha por item. Colunas fixas: bloco · item · und · custo · funcao · nivel · tempo_min · adicional · motivo · detalhe.
+   Depois delas, uma coluna por escopo com o prefixo "escopo:" — o valor é a QUANTIDADE naquele escopo
+   (vazio = não entra · 0 = adicional previsto, aparece nas atividades sem entrar na conta).
+   Aceita colar (CSV, ponto e vírgula ou tabulação) ou soltar o arquivo. */
+var IMP_LIN=[], IMP_ESC=[], IMP_ERROS=[];
+var IMP_BLK={'servico':'servicos','serviço':'servicos','servicos':'servicos','serviços':'servicos','material':'materiais','materiais':'materiais','despesa':'despesas','despesas':'despesas','locacao':'equip','locação':'equip','locacoes':'equip','locações':'equip','equipamento':'equip'};
+function impSep(t){ var l=(t.split(/\r?\n/)[0]||''); var c=[[';',(l.split(';').length)],[/\t/.source==='\t'?'\t':'\t',(l.split('\t').length)],[',',(l.split(',').length)]];
+  c.sort(function(a,b){ return b[1]-a[1]; }); return c[0][1]>1?c[0][0]:';'; }
+function impCampos(l,sep){ var out=[],cur='',asp=false;
+  for(var i=0;i<l.length;i++){ var ch=l[i];
+    if(ch==='"'){ if(asp&&l[i+1]==='"'){ cur+='"'; i++; } else asp=!asp; }
+    else if(ch===sep&&!asp){ out.push(cur); cur=''; }
+    else cur+=ch; }
+  out.push(cur); return out.map(function(x){ return String(x).trim(); }); }
+function impParse(txt){
+  IMP_LIN=[]; IMP_ESC=[]; IMP_ERROS=[];
+  var linhas=String(txt||'').split(/\r?\n/).filter(function(l){ return l.trim()!==''; });
+  if(linhas.length<2){ IMP_ERROS.push('Preciso do cabeçalho e pelo menos uma linha.'); return; }
+  var sep=impSep(linhas[0]);
+  var cab=impCampos(linhas[0],sep).map(function(c){ return c.toLowerCase().replace(/^﻿/,''); });
+  var idx={}; cab.forEach(function(c,i){ if(c.indexOf('escopo:')===0){ IMP_ESC.push({col:i,nome:linhas[0].split(sep)[i].trim().replace(/^escopo:\s*/i,'').replace(/"/g,'')}); } else idx[c]=i; });
+  if(idx['item']===undefined){ IMP_ERROS.push('Falta a coluna "item".'); return; }
+  if(!IMP_ESC.length){ IMP_ERROS.push('Falta pelo menos uma coluna começando com "escopo:" (ex.: escopo:Medidor T-161).'); return; }
+  for(var n=1;n<linhas.length;n++){
+    var c=impCampos(linhas[n],sep); var pega=function(k){ return idx[k]!==undefined?(c[idx[k]]||''):''; };
+    var item=pega('item'); if(!item) continue;
+    var blk=IMP_BLK[String(pega('bloco')||'servico').toLowerCase()]||'servicos';
+    var qtds={}, tem=false;
+    IMP_ESC.forEach(function(e){ var v=(c[e.col]||'').trim(); if(v!==''){ qtds[e.nome]=num(v.replace(',','.')); tem=true; } });
+    if(!tem) IMP_ERROS.push('Linha '+(n+1)+' ("'+item+'") sem quantidade em nenhum escopo — vai entrar fora de todos.');
+    IMP_LIN.push({bloco:blk, item:item, und:pega('und')||UND_DFLT[blk]||'UND', custo:num(String(pega('custo')).replace(/\./g,'').replace(',','.')),
+      funcao:pega('funcao')||pega('função'), nivel:pega('nivel')||pega('nível'), tempo:num(String(pega('tempo_min')).replace(',','.')),
+      adic:/^(s|sim|x|1|true)$/i.test(pega('adicional')), motivo:pega('motivo'), detalhe:pega('detalhe'), qtds:qtds});
+  }
+}
+function impAplicar(){
+  if(!isLoteBase()){ alert('Só na proposta-base do lote.'); return; }
+  if(!IMP_LIN.length){ alert('Nada para importar.'); return; }
+  if(!escUnificado()){ S._escUnificado=true; if(!S.variacoes||!S.variacoes.length) S.variacoes=[]; }
+  var vs=S.variacoes=S.variacoes||[];
+  var mapa={};
+  IMP_ESC.forEach(function(e){
+    var v=vs.find(function(x){ return String(x.nome||'').trim().toLowerCase()===e.nome.trim().toLowerCase(); });
+    if(!v){ v={id:'v'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),nome:e.nome}; vs.push(v); }
+    mapa[e.nome]=v.id;
+  });
+  if(!S.varAtiva||!vs.some(function(v){ return v.id===S.varAtiva; })) S.varAtiva=vs[0].id;
+  var novos=0, atual=0;
+  IMP_LIN.forEach(function(l){
+    var blk=l.bloco; S[blk]=S[blk]||[];
+    var alvo=S[blk].find(function(x){ return String(x.desc||'').trim().toLowerCase()===l.item.trim().toLowerCase() && String(x.und||'')===l.und; });
+    if(!alvo){ alvo={id:uid(),desc:l.item,und:l.und,usarBase:true,custoBase:l.custo||0,custoAlt:l.custo||0,margem:'',qtdEsc:{}}; S[blk].push(alvo); novos++; }
+    else { atual++; if(l.custo){ alvo.custoBase=l.custo; alvo.custoAlt=l.custo; } }
+    if(l.detalhe) alvo.detalhe=l.detalhe;
+    if(l.adic){ alvo.adic=true; if(l.motivo) alvo.adicMotivo=l.motivo; }
+    if(l.funcao && l.tempo>0){ alvo.composicao={modo:'calc',base:'unidade',dif:0,desp:[],valorManual:0,
+      mo:[{funcao:l.funcao,nivel:l.nivel||'Sênior',un:'min',trab:(l.tempo/60)/JORNADA}]}; }
+    alvo.qtdEsc=alvo.qtdEsc||{};
+    Object.keys(l.qtds).forEach(function(nome){ alvo.qtdEsc[mapa[nome]]=l.qtds[nome]; });
+  });
+  try{ sanitize(); }catch(_){}
+  save(); BLKS.forEach(function(b){ try{ renderBlk(b); }catch(_){} });
+  try{ injectLoteBasePanel(); }catch(_){} recalc();
+  impFechar();
+  alert('Importado.\n\n• '+novos+' item(ns) novo(s) na biblioteca\n• '+atual+' item(ns) atualizado(s)\n• '+IMP_ESC.length+' escopo(s): '+IMP_ESC.map(function(e){return e.nome;}).join(', ')+'\n\nConfira a matriz e clique em Salvar para gravar.');
+}
+function impFechar(){ var ov=document.getElementById('impOv'); if(ov)ov.remove(); }
+function impPrevia(){
+  var ta=document.getElementById('impTxt'); if(!ta)return;
+  impParse(ta.value);
+  var el=document.getElementById('impPrev'); if(!el)return;
+  if(IMP_ERROS.length && !IMP_LIN.length){ el.innerHTML='<div class="imperro">'+IMP_ERROS.map(esc).join('<br>')+'</div>'; return; }
+  var cab='<tr><th>Bloco</th><th>Item</th><th>Und</th><th class="r">Custo</th>'+IMP_ESC.map(function(e){ return '<th class="r">'+esc(e.nome)+'</th>'; }).join('')+'</tr>';
+  var linhas=IMP_LIN.slice(0,40).map(function(l){
+    return '<tr'+(l.adic?' class="impadic"':'')+'><td>'+esc(l.bloco)+'</td><td>'+esc(l.item)+(l.adic?' <span class="escadic">adicional</span>':'')+'</td><td>'+esc(l.und)+'</td><td class="r">'+(l.custo?fmt(l.custo):'—')+'</td>'
+      +IMP_ESC.map(function(e){ var v=l.qtds[e.nome]; return '<td class="r">'+(v===undefined?'—':_d1(v))+'</td>'; }).join('')+'</tr>'; }).join('');
+  el.innerHTML='<div class="impinfo">'+IMP_LIN.length+' linha(s) · '+IMP_ESC.length+' escopo(s)'+(IMP_LIN.length>40?' · mostrando as 40 primeiras':'')+'</div>'
+    +(IMP_ERROS.length?'<div class="imperro">'+IMP_ERROS.slice(0,6).map(esc).join('<br>')+'</div>':'')
+    +'<div class="scroll"><table class="imptbl"><thead>'+cab+'</thead><tbody>'+linhas+'</tbody></table></div>';
+}
+function impArquivo(){ var inp=document.createElement('input'); inp.type='file'; inp.accept='.csv,.tsv,.txt';
+  inp.onchange=function(){ var f=(inp.files||[])[0]; if(!f)return; var fr=new FileReader();
+    fr.onload=function(){ var ta=document.getElementById('impTxt'); if(ta){ ta.value=String(fr.result||''); impPrevia(); } }; fr.readAsText(f,'utf-8'); };
+  inp.click(); }
+function impModelo(){
+  var ta=document.getElementById('impTxt'); if(!ta)return;
+  ta.value='bloco;item;und;custo;funcao;nivel;tempo_min;adicional;motivo;detalhe;escopo:Medidor T-161;escopo:Medidor A-968\n'
+    +'servico;Instalação de medidor de energia;UND;;Eletricista instalação;Sênior;90;;;medidor fornecido pelo cliente;2;2\n'
+    +'servico;Ligação e parametrização do medidor;UND;;Eletrotécnico;Sênior;45;;;inclui teste de comunicação;2;2\n'
+    +'material;Cabo PP 3x2,5mm²;m;6,90;;;;;;;30;30\n'
+    +'servico;Adequação do quadro (barramento/terra);SERV;;Eletricista instalação;Sênior;120;sim;quando o quadro não tem barramento de terra;;0;0\n'
+    +'locacao;Plataforma elevatória (PTA);DIA;350,00;;;;;;;1;1\n';
+  impPrevia(); }
+function impAbrir(){
+  if(document.getElementById('impOv')) return;
+  var ov=document.createElement('div'); ov.id='impOv';
+  ov.innerHTML='<div class="impbox"><div class="imphd"><span class="material-symbols-rounded">table_view</span><b>Importar escopo</b>'
+    +'<span class="impsub">uma linha por item · colunas "escopo:" com a quantidade de cada escopo</span>'
+    +'<button class="lbtn" onclick="impFechar()" style="margin-left:auto"><span class="material-symbols-rounded">close</span>Fechar</button></div>'
+    +'<div class="impbd"><div class="impacts">'
+    +'<button class="lbtn" onclick="impArquivo()"><span class="material-symbols-rounded">upload_file</span>Abrir arquivo (CSV)</button>'
+    +'<button class="lbtn" onclick="impModelo()"><span class="material-symbols-rounded">description</span>Colar modelo de exemplo</button>'
+    +'<span class="impsub">vazio = não entra no escopo · 0 = adicional previsto · número = quantidade</span></div>'
+    +'<textarea id="impTxt" class="imptxt" spellcheck="false" placeholder="bloco;item;und;custo;funcao;nivel;tempo_min;adicional;motivo;detalhe;escopo:Nome do escopo" oninput="impPrevia()"></textarea>'
+    +'<div id="impPrev" class="impprev"></div></div>'
+    +'<div class="impft"><button class="lbtn" onclick="impFechar()">Cancelar</button><button class="lbtn on" onclick="impAplicar()"><span class="material-symbols-rounded">download_done</span>Importar para a biblioteca</button></div></div>';
+  document.body.appendChild(ov);
+  setTimeout(function(){ var t=document.getElementById('impTxt'); if(t)t.focus(); },60);
+}
 var LEV_ARQ={}, LEV_GER={};
 async function levArqCarregar(){ LEV_ARQ={}; LEV_GER={}; if(!(SB&&S_LOTE_ID))return LEV_ARQ;
   try{ const r=await SB.from('levantamento_arquivos').select('*').eq('lote_id',S_LOTE_ID).is('deleted_at',null).order('created_at');
