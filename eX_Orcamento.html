@@ -356,6 +356,20 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .relpend{font-size:12.5px;color:#3a3550;background:#fbf7ee;border:1px solid #e8dfc8;border-radius:9px;padding:10px 12px;white-space:pre-wrap;line-height:1.5}
 .relfoot{margin-top:22px;border-top:1px solid #eee;padding-top:8px;font-size:11px;color:#8b86a1;text-align:right}
 @media print{body.relopen>*:not(#relOv){display:none!important}body.relopen #relOv{position:static;background:#fff;padding:0;overflow:visible}body.relopen .relwrap{padding:0}body.relopen .relsheet{box-shadow:none;max-width:none;padding:0}}
+/* três abas de trabalho + barra de situação (base do lote) */
+.abasbar{position:sticky;top:0;z-index:30;background:var(--bg,#f6f4fb);border-bottom:1px solid var(--line2);padding:8px 0 7px;margin:0 0 12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.abasbar .abas{display:flex;gap:6px;flex-wrap:wrap}
+.abasbar .aba{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:11px;padding:9px 15px;font:700 13.5px inherit;cursor:pointer}
+.abasbar .aba:hover{border-color:var(--pri)}
+.abasbar .aba.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.abasbar .aba .material-symbols-rounded{font-size:18px}
+.abasbar .sit{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-left:auto}
+.sitchip{font-size:11.5px;color:var(--tx2);background:var(--surf);border:1px solid var(--line2);border-radius:20px;padding:3px 10px;white-space:nowrap}
+.sitchip b{color:var(--tx);font-variant-numeric:tabular-nums}
+.sitchip.sit-val{background:var(--pri-bg,#efeafc);border-color:var(--pri-bg,#efeafc);color:var(--pri-dark,#3f2c8f)}
+.sitchip.sit-warn{background:#fff4e0;border-color:#e6c360;color:#8a5a12}
+.sitchip.sit-neg{background:#fdeceb;border-color:#e3a19b;color:#b3261e}
+@media print{.abasbar{display:none!important}}
 /* começo do escopo (lote vazio) */
 .inicard{border:2px solid var(--pri);border-radius:14px;background:var(--surf);margin:0 0 14px;overflow:hidden}
 .inihd{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:12px 15px;background:var(--pri-bg,#efeafc);color:var(--pri);border-bottom:1px solid var(--line2);font-size:14px}
@@ -4160,6 +4174,57 @@ function escIrServicos(){ var el=document.getElementById('blk_servicos'); if(el)
     var b=el.querySelector('.addrow,[onclick*="addRow"]'); if(b){ setTimeout(function(){ try{ b.focus(); }catch(_){} },400); } } }
 function escIrCopiar(){ var s=document.getElementById('varCopLoja'); if(s){ s.scrollIntoView({behavior:'smooth',block:'center'}); setTimeout(function(){ try{ s.focus(); }catch(_){} },400); }
   else alert('Adicione as lojas primeiro, na Lista de lojas — depois dá para copiar o conteúdo de uma delas para o escopo.'); }
+/* ===== PASSO 3 · TRÊS ABAS DE TRABALHO + BARRA DE SITUAÇÃO (base do lote) =====
+   A tela tinha 14 faixas empilhadas. Agora: Escopo (o que será feito) · Lojas (onde) · Preço e documento (quanto e o que o cliente vê).
+   As faixas continuam as mesmas — a aba só decide quais aparecem. A ordem dentro de cada aba segue o Organizar. */
+var LOTE_ABAS=[
+  {k:'escopo',lb:'Escopo',ic:'build',dica:'serviços, material e as quantidades de cada escopo',fx:['lote.var','lote.modelo','blk.servicos','blk.equip','blk.despesas','mat.cab','mat.base','mat.global']},
+  {k:'lojas',lb:'Lojas',ic:'storefront',dica:'unidades, levantamento, prazo e o que difere do escopo',fx:['lote.topo','lote.lista','lote.escopo','lote.fatores','lote.prazo']},
+  {k:'preco',lb:'Preço e documento',ic:'payments',dica:'formação, custos globais, condições e o que vai no PDF',fx:['cab','desc','lote.cond','lote.ver','lote.macro','lote.global']}
+];
+function abaAtual(){ try{ var v=localStorage.getItem('ex_lote_aba_'+(S_LOTE_ID||'')); if(v&&LOTE_ABAS.some(function(a){return a.k===v;})) return v; }catch(_){}
+  return 'escopo'; }
+function abaIr(k){ try{ localStorage.setItem('ex_lote_aba_'+(S_LOTE_ID||''),k); }catch(_){}
+  abasApply(); var col=document.getElementById('fxCol'); if(col){ var t=document.getElementById('abasBar'); if(t) t.scrollIntoView({block:'start',behavior:'smooth'}); } }
+function abaDe(fx){ var a=LOTE_ABAS.find(function(x){ return x.fx.indexOf(fx)>=0; }); return a?a.k:'escopo'; }
+function abasSituacao(){
+  var us=LOTE_UNITS||[], n=us.length;
+  var tot=us.reduce(function(a,u){ return a+num(u.total); },0);
+  var semEsc=us.filter(function(u){ return !(u.dados&&u.dados.variacaoId); }).length;
+  var ajust=us.filter(function(u){ return u.herda_base===false; }).length;
+  var itens=VAR_KEYS.reduce(function(a,k){ return a+((S[k]||[]).length); },0);
+  var escs=(escUnificado()?varLista().length:(S.variacoes||[]).length)||0;
+  var chip=function(t,cls,tit){ return '<span class="sitchip'+(cls?' '+cls:'')+'"'+(tit?' title="'+esc(tit)+'"':'')+'>'+t+'</span>'; };
+  return chip('<b>'+itens+'</b> itens no escopo','', 'serviços, material, despesas e locações na biblioteca do lote')
+    +chip('<b>'+escs+'</b> escopo'+(escs===1?'':'s'))
+    +chip('<b>'+n+'</b> loja'+(n===1?'':'s'))
+    +(n?chip('<b>'+fmt(tot)+'</b>','sit-val','soma das lojas gravadas'):'')
+    +(ajust?chip(ajust+' ajustada'+(ajust===1?'':'s'),'sit-warn','lojas com conteúdo próprio, diferente do escopo'):'')
+    +(semEsc?chip(semEsc+' sem escopo','sit-neg','loja sem escopo apontado — escolha na Lista de lojas'):'')
+    +(DIRTY?chip('não salvo','sit-neg','há alteração não gravada'):''); }
+function abasApply(){
+  var col=document.getElementById('fxCol'); if(!col)return;
+  var on=false; try{ on=!!(S&&isLoteBase()); }catch(_){}
+  var bar=document.getElementById('abasBar');
+  if(!on){ if(bar)bar.remove(); col.querySelectorAll('[data-fx]').forEach(function(e){ e.style.display=''; }); return; }
+  var k=abaAtual();
+  if(!bar){ bar=document.createElement('div'); bar.id='abasBar'; bar.className='abasbar noprint'; col.insertBefore(bar,col.firstChild); }
+  else if(bar.parentElement!==col || col.firstChild!==bar) col.insertBefore(bar,col.firstChild);
+  bar.innerHTML='<div class="abas">'+LOTE_ABAS.map(function(a){
+      return '<button class="aba'+(a.k===k?' on':'')+'" onclick="abaIr(\''+a.k+'\')" title="'+esc(a.dica)+'"><span class="material-symbols-rounded">'+a.ic+'</span>'+esc(a.lb)+'</button>'; }).join('')
+    +'</div><div class="sit">'+abasSituacao()+'</div>';
+  var alvo=(LOTE_ABAS.find(function(a){ return a.k===k; })||LOTE_ABAS[0]).fx;
+  col.querySelectorAll('[data-fx]').forEach(function(e){
+    var id=e.getAttribute('data-fx');
+    e.style.display=(alvo.indexOf(id)>=0)?'':'none';
+  });
+  [['.panel.prophead','preco'],['#descGeralPanel','preco'],['#blk_servicos','escopo'],['#blk_equip','escopo'],['#blk_despesas','escopo'],['#blk_materiais','escopo']].forEach(function(p){   // peças que são filhas diretas, sem marca de faixa
+    var e=col.querySelector(p[0]); if(e) e.style.display=(p[1]===k)?'':'none'; });
+  col.querySelectorAll(':scope > .fxg').forEach(function(g){   // cabeçalho de grupo some quando o grupo não tem faixa nesta aba
+    var vis=[].slice.call(g.querySelectorAll('[data-fx]')).some(function(e){ return e.style.display!=='none'; });
+    g.style.display=vis?'':'none';
+  });
+}
 var ESC_FOCO=null;
 function escFocar(id){ ESC_FOCO=(ESC_FOCO===id)?null:id; try{ injectLoteBasePanel(); }catch(_){} }
 function escCel(blk,r,v){
@@ -4630,8 +4695,8 @@ function varFaixaHtml(){ var vs=varLista(); if(!vs.length)return ''; var at=S.va
     +((LOTE_UNITS||[]).length?'<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--tx3)"><span>Preencher esta variação com o conteúdo de uma loja:</span><select id="varCopLoja" style="min-width:220px;padding:6px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:12.5px;background:var(--surf);color:var(--tx)"><option value="">— escolha a loja —</option>'+lojaOpts+'</select><button class="lbtn" onclick="varCopiarDeLoja()"><span class="material-symbols-rounded">content_copy</span>Copiar</button></div>':'')
     +escInicioHtml()+(escUnificado()?escMatrizHtml():'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:#fff4e0;border:1px solid #e6c360;color:#8a5a12;font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="material-symbols-rounded" style="font-size:17px">warning</span><span><b>Cada escopo ainda guarda uma cópia dos serviços.</b> Corrigir um serviço num escopo não chega nos outros. Unifique para o serviço existir uma vez, com a quantidade de cada escopo ao lado.</span><button class="lbtn" style="margin-left:auto" onclick="escUnificar()"><span class="material-symbols-rounded">merge</span>Unificar escopos</button></div>')
     +'</div>'; }
-(function(){ const _ib=injectLoteBasePanel; injectLoteBasePanel=function(){ const r=_ib.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } try{ injectLoteRO(); levArqInit(); }catch(_){} return r; };
-  const _rb2=renderBlk; renderBlk=function(){ const r=_rb2.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } return r; }; })();
+(function(){ const _ib=injectLoteBasePanel; injectLoteBasePanel=function(){ const r=_ib.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } try{ abasApply(); }catch(e){ console.error('abas',e); } try{ injectLoteRO(); levArqInit(); }catch(_){} return r; };
+  const _rb2=renderBlk; renderBlk=function(){ const r=_rb2.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } try{ abasApply(); }catch(e){} return r; }; })();
 function _macroSave(){ save(); injectLoteBasePanel(); }
 function setMacroRkm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.rkm=Math.max(0,num(v)); _macroSave(); }
 function setMacroKm(v){ if(!S.macro)S.macro={estruturas:[]}; S.macro.kmManual=Math.max(0,num(v)); _macroSave(); }
