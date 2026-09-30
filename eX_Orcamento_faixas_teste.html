@@ -356,6 +356,26 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .relpend{font-size:12.5px;color:#3a3550;background:#fbf7ee;border:1px solid #e8dfc8;border-radius:9px;padding:10px 12px;white-space:pre-wrap;line-height:1.5}
 .relfoot{margin-top:22px;border-top:1px solid #eee;padding-top:8px;font-size:11px;color:#8b86a1;text-align:right}
 @media print{body.relopen>*:not(#relOv){display:none!important}body.relopen #relOv{position:static;background:#fff;padding:0;overflow:visible}body.relopen .relwrap{padding:0}body.relopen .relsheet{box-shadow:none;max-width:none;padding:0}}
+/* matriz serviços × escopos (base do lote, biblioteca única) */
+.escwrap{margin-top:12px;border:1px solid var(--line2);border-radius:12px;overflow:hidden;background:var(--surf)}
+.eschd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:9px 12px;background:var(--pri-bg,#efeafc);border-bottom:1px solid var(--line2);font-size:12.5px;color:var(--pri)}
+.eschd .material-symbols-rounded{font-size:17px}
+.escsub{font-size:11px;color:var(--tx3);font-weight:500}
+.escabas{margin-left:auto;display:flex;gap:6px;flex-wrap:wrap}
+.escabas .lbtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.esctbl{width:100%;border-collapse:collapse;font-size:12.5px}
+.esctbl th{font-size:10px;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);text-align:center;padding:7px 8px;background:var(--surf2);border-bottom:1px solid var(--line2)}
+.esctbl th.escnm,.esctbl td.escnm{text-align:left;min-width:220px}
+.esctbl td{padding:5px 8px;border-bottom:1px solid var(--line);vertical-align:middle}
+.esctbl tr:hover td{background:var(--surf2)}
+.esctbl td.escq{text-align:center;white-space:nowrap}
+.escin{width:62px;text-align:right;display:inline-block}
+.escoff{border:1px dashed var(--line2);background:transparent;color:var(--tx3);border-radius:8px;padding:3px 12px;font:600 12px inherit;cursor:pointer}
+.escoff:hover{border-color:var(--pri);color:var(--pri)}
+.escx{border:0;background:transparent;color:var(--tx3);cursor:pointer;padding:0 2px;vertical-align:middle;opacity:0}
+.esctbl tr:hover .escx{opacity:.7}
+.escx:hover{color:var(--red,#b3261e);opacity:1}
+.escx .material-symbols-rounded{font-size:15px}
 /* painel de CONSULTA das lojas (só na visão travada/cliente, na tela; nunca no PDF) */
 .vwonly{display:none}
 body.viewing .vwonly{display:block}
@@ -1675,7 +1695,7 @@ function rateioRowHtml(){ const r=ratioUnit(); if(r<=0) return '';
     <td class="pint"></td>
   </tr>`;
 }
-const qtyOf=r=> (r.gatilho&&r.gatilho!=='fixo') ? despMult(r) : (isTotal(r)?1:num(r.qtd));
+const qtyOf=r=> (r.gatilho&&r.gatilho!=='fixo') ? despMult(r) : (isTotal(r)?1:(escUnificado()&&r&&r.qtdEsc?num(escQtd(r,escAtivo())||0):num(r.qtd)));   // base com biblioteca única: a qtd é a do escopo aberto
 // MARGEM MANDA: o preço é SEMPRE custo × margem (acabou o "valor geral" que zerava). "Só o total" = só apresentação.
 function linePreco(r){
   if(isCusto(r)) return qtyOf(r)*custoEf(r)*(1+mgOf(r)/100);
@@ -2586,6 +2606,11 @@ function qtdCellHtml(cfg,r){
   const gat=r.gatilho||'fixo';
   if(cfg.key==='despesas' && gat!=='fixo') return `<span class="und-fix" title="quantidade calculada — ${DESP_GAT[gat].lb}">${_d1(qtyOf(r))}</span>`;
   if(isTotal(r)) return `<span class="und-fix" title="valor total do serviço — quantidade não se aplica">total</span>`;
+  if(escUnificado()){   // biblioteca única: a caixa edita a quantidade do ESCOPO ABERTO; "—" = não entra nele
+    const q=escQtd(r,escAtivo());
+    if(q===null) return `<button class="escoff" title="não entra no escopo aberto — clique para incluir" onclick="escToggle('${cfg.key}','${r.id}','${escAtivo()}')">—</button>`;
+    return `<input class="cin num qt" value="${esc(r.qtdEsc[escAtivo()])}" inputmode="decimal" onfocus="this.select()" onchange="escSetQtd('${cfg.key}','${r.id}','${escAtivo()}',this.value)" title="quantidade no escopo ${esc(varNome(escAtivo()))}">`;
+  }
   return `<input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)">`;
 }
 
@@ -3893,7 +3918,86 @@ async function loteCfgPropagar(){   // base salva → todas as lojas recebem a c
 function unitVarChip(){ var n=unitVarNome(); return n?'<span class="varchip-un" title="Modelo base (variação da base do lote) que esta loja segue"><span class="material-symbols-rounded">layers</span>Modelo: '+esc(n)+'</span>':''; }
 function unitsDaVar(id){ return (LOTE_UNITS||[]).filter(function(u){return unitVar(u)===id;}); }
 function varUnitsAlvo(){ return (isLoteBase()&&varLista().length>1)?unitsDaVar(S.varAtiva):(LOTE_UNITS||[]); }   // ações base→lojas alcançam só as lojas da variação aberta
-function varConteudo(base,id){ var c={}; var vs=(base&&base.variacoes)||[]; var at=(base&&base.varAtiva)||'v1'; var v=vs.find(function(x){return x.id===id;});
+/* ===== ESCOPOS DO LOTE (passo 1) — biblioteca ÚNICA de serviços/material + quantidade por escopo =====
+   Antes: cada variação guardava uma CÓPIA do escopo (S.variacoes[i].conteudo) → corrigir numa não chegava nas outras.
+   Agora: a linha existe uma vez (S.servicos/materiais/despesas/equip) e cada escopo diz só a QUANTIDADE (r.qtdEsc[escopoId]).
+   "—" (null/vazio) = o item não entra naquele escopo. Editar a linha corrige todos os escopos de uma vez. */
+function escUnificado(){ return !!(S && S._base && S._escUnificado); }
+function escUnifDe(d){ return !!(d && d._escUnificado); }
+function escAtivo(){ return (S && S.varAtiva) || 'v1'; }
+function escTem(r,id){ return !!(r && r.qtdEsc && r.qtdEsc[id]!=null && r.qtdEsc[id]!==''); }
+function escQtd(r,id){ return escTem(r,id)?num(r.qtdEsc[id]):null; }
+function escSetQtd(blk,lineId,escId,v){ const r=(S[blk]||[]).find(x=>x.id===lineId); if(!r)return;
+  if(!r.qtdEsc||typeof r.qtdEsc!=='object') r.qtdEsc={};
+  if(String(v).trim()==='') delete r.qtdEsc[escId]; else r.qtdEsc[escId]=num(v);
+  save(); try{ renderBlk(BLKS.find(b=>b.key===blk)); }catch(_){} try{ injectLoteBasePanel(); }catch(_){} recalc(); }
+function escToggle(blk,lineId,escId){ const r=(S[blk]||[]).find(x=>x.id===lineId); if(!r)return;
+  if(!r.qtdEsc||typeof r.qtdEsc!=='object') r.qtdEsc={};
+  if(escTem(r,escId)) delete r.qtdEsc[escId];
+  else { const outro=Object.keys(r.qtdEsc)[0]; r.qtdEsc[escId]=outro?num(r.qtdEsc[outro]):1; }
+  save(); try{ renderBlk(BLKS.find(b=>b.key===blk)); }catch(_){} try{ injectLoteBasePanel(); }catch(_){} recalc(); }
+function escLinhasDo(d,blk,escId){   // linhas de um bloco que entram no escopo, já com a qtd daquele escopo
+  return ((d&&d[blk])||[]).filter(function(r){ return escTem(r,escId); }).map(function(r){ var c=_deep(r); c.qtd=num(r.qtdEsc[escId]); delete c.qtdEsc; return c; }); }
+/* unificação: junta as variações copiadas numa biblioteca só (uma vez, com backup) */
+function escChave(r){ return (r.catId||'')+'|'+String(r.desc||'').trim().toLowerCase()+'|'+String(r.und||'').trim().toLowerCase(); }
+function escUnificar(){
+  if(!isLoteBase()){ alert('Só na proposta-base do lote.'); return; }
+  if(escUnificado()){ alert('Este lote já usa biblioteca única de serviços.'); return; }
+  var vs=varLista(); if(!vs.length) return;
+  var lib={}, resumo=[];
+  VAR_KEYS.forEach(function(k){ lib[k]=[]; });
+  vs.forEach(function(v){
+    var c=varConteudo(S,v.id), novos=0, juntos=0;
+    VAR_KEYS.forEach(function(k){
+      var usados={};
+      (c[k]||[]).forEach(function(r){
+        var ch=escChave(r); usados[ch]=(usados[ch]||0)+1; var chn=ch+'#'+usados[ch];
+        var alvo=lib[k].find(function(x){ return x._ch===chn; });
+        if(!alvo){ alvo=_deep(r); alvo._ch=chn; alvo.qtdEsc={}; delete alvo.qtd; lib[k].push(alvo); novos++; }
+        else juntos++;
+        alvo.qtdEsc[v.id]=num(r.qtd);
+      });
+    });
+    resumo.push(v.nome+': '+novos+' novo(s), '+juntos+' já na biblioteca');
+  });
+  var tot=VAR_KEYS.reduce(function(a,k){ return a+lib[k].length; },0);
+  if(!confirm('Unificar os '+vs.length+' escopos numa biblioteca única?\n\n'+resumo.join('\n')+'\n\nTotal: '+tot+' linhas, cada uma existindo UMA vez, com a quantidade de cada escopo ao lado.\n\nO conteúdo antigo fica guardado como backup. As lojas não mudam.')) return;
+  S._bkpVariacoes=_deep(S.variacoes||[]);
+  VAR_KEYS.forEach(function(k){ S[k]=lib[k].map(function(r){ delete r._ch; return r; }); });
+  S.variacoes=(S.variacoes||[]).map(function(v){ var o={id:v.id,nome:v.nome}; if(v.mostrar!==undefined)o.mostrar=v.mostrar; if(v.fonte)o.fonte=v.fonte; return o; });
+  S._escUnificado=true;
+  try{ sanitize(); }catch(_){}
+  BLKS.forEach(function(b){ try{ renderBlk(b); }catch(_){} });
+  try{ injectLoteBasePanel(); }catch(_){} recalc();
+  cloudMsg('biblioteca única criada — '+tot+' linhas · salve para gravar');
+}
+/* painel "Serviços × escopos" (matriz) — só na base, depois de unificar */
+var ESC_BLK='servicos';
+function escSetBlk(k){ ESC_BLK=k; try{ injectLoteBasePanel(); }catch(_){} }
+function escMatrizHtml(){
+  if(!escUnificado()) return '';
+  var vs=varLista(), blk=ESC_BLK, cfg=BLKS.find(function(b){return b.key===blk;})||{titulo:blk};
+  var abas=BLKS.map(function(b){ return '<button class="lbtn'+(b.key===blk?' on':'')+'" onclick="escSetBlk(\''+b.key+'\')">'+esc(b.titulo)+' <span style="opacity:.7">'+((S[b.key]||[]).length)+'</span></button>'; }).join('');
+  var cabEsc=vs.map(function(v){ var n=unitsDaVar(v.id).length;
+    return '<th class="escth"><div>'+esc(v.nome)+'</div><div class="escsub">'+n+' loja'+(n===1?'':'s')+'</div></th>'; }).join('');
+  var linhas=(S[blk]||[]).map(function(r){
+    var cels=vs.map(function(v){
+      var tem=escTem(r,v.id);
+      return '<td class="escq">'+(tem
+        ? '<input class="cin num escin" value="'+esc(r.qtdEsc[v.id])+'" inputmode="decimal" onfocus="this.select()" onchange="escSetQtd(\''+blk+'\',\''+r.id+'\',\''+v.id+'\',this.value)">'
+        : '<button class="escoff" title="não entra neste escopo — clique para incluir" onclick="escToggle(\''+blk+'\',\''+r.id+'\',\''+v.id+'\')">—</button>')
+        +(tem?'<button class="escx" title="tirar deste escopo" onclick="escToggle(\''+blk+'\',\''+r.id+'\',\''+v.id+'\')"><span class="material-symbols-rounded">close</span></button>':'')+'</td>'; }).join('');
+    var nEsc=vs.filter(function(v){ return escTem(r,v.id); }).length;
+    return '<tr><td class="escnm"><div>'+esc(r.desc||'—')+'</div><div class="escsub">'+esc(r.und||'')+(r.adic?' · adicional':'')+(nEsc===0?' · <b style="color:var(--red,#b3261e)">fora de todos os escopos</b>':'')+'</div></td>'+cels+'</tr>';
+  }).join('');
+  return '<div class="escwrap"><div class="eschd"><span class="material-symbols-rounded">grid_on</span><b>'+esc(cfg.titulo||blk)+' × escopos</b>'
+    +'<span class="escsub">a linha existe uma vez · a coluna diz a quantidade de cada escopo · "—" não entra</span>'
+    +'<span class="escabas">'+abas+'</span></div>'
+    +'<div class="scroll"><table class="esctbl"><thead><tr><th class="escnm">Item</th>'+cabEsc+'</tr></thead><tbody>'+(linhas||'<tr><td colspan="'+(vs.length+1)+'" class="escsub">Nada neste bloco.</td></tr>')+'</tbody></table></div></div>';
+}
+function varConteudo(base,id){ var c={}; var vs=(base&&base.variacoes)||[]; var at=(base&&base.varAtiva)||'v1';
+  if(escUnifDe(base)){ var eid=id||at; VAR_KEYS.forEach(function(k){ c[k]=escLinhasDo(base,k,eid); }); return c; }   // biblioteca única: o escopo é só um recorte com a quantidade dele
+  var v=vs.find(function(x){return x.id===id;});
   var src=(!id||id===at||!v||!v.conteudo)?base:v.conteudo; VAR_KEYS.forEach(function(k){ c[k]=_deep((src&&src[k])||[]); }); return c; }
 function dadosLojaDaBase(base,id){   // dados de uma loja a partir da base, com o conteúdo da variação escolhida
   var d=_deep(base||{}); var vid=id||(base&&base.varAtiva)||'v1'; var c=varConteudo(base,vid);
@@ -4005,12 +4109,18 @@ async function reiniciarDescLote(){ if(!(isLoteBase()&&CLOUD))return; var mods=d
 function varTrocar(id){ var vs=varLista(); if(id===S.varAtiva)return; var atual=vs.find(function(x){return x.id===S.varAtiva;}), nova=vs.find(function(x){return x.id===id;}); if(!nova)return;
   if(typeof lmePendente==='function'&&lmePendente()>0&&!confirm('Há edição de material a custo NÃO aplicada — trocar de variação descarta. Continuar?'))return;
   try{ LME_ON=false; LME_STAGE=null; }catch(_){}
+  if(escUnificado()){ S.varAtiva=id; varRerender(); return; }   // biblioteca única: trocar de escopo é só mudar a lente, não move conteúdo
   if(atual){ atual.conteudo={}; VAR_KEYS.forEach(function(k){ atual.conteudo[k]=_deep(S[k]||[]); }); }
   VAR_KEYS.forEach(function(k){ S[k]=_deep((nova.conteudo&&nova.conteudo[k])||[]); }); delete nova.conteudo; S.varAtiva=id;
   varRerender(); }
 function varNova(){ var vs=varLista(); var v1=vs[0];
   var nome=prompt('Nome da nova variação (ex.: Splitão).\nEla nasce com os dados da "'+v1.nome+'" — depois você ajusta.','Variação '+(vs.length+1)); if(!nome||!nome.trim())return;
-  var id='v'+Date.now().toString(36); vs.push({id:id,nome:nome.trim(),conteudo:varConteudo(S,v1.id)});
+  var id='v'+Date.now().toString(36);
+  if(escUnificado()){ var de=S.varAtiva||v1.id, n=0;   // novo escopo = cópia só das QUANTIDADES do escopo aberto (os serviços continuam os mesmos)
+    VAR_KEYS.forEach(function(k){ (S[k]||[]).forEach(function(r){ if(escTem(r,de)){ if(!r.qtdEsc)r.qtdEsc={}; r.qtdEsc[id]=num(r.qtdEsc[de]); n++; } }); });
+    vs.push({id:id,nome:nome.trim()}); S.varAtiva=id; varRerender();
+    cloudMsg('escopo "'+nome.trim()+'" criado com as quantidades de '+varNome(de)+' ('+n+' itens)'); return; }
+  vs.push({id:id,nome:nome.trim(),conteudo:varConteudo(S,v1.id)});
   varTrocar(id); cloudMsg('variação "'+nome.trim()+'" criada com os dados da '+v1.nome); }
 function varRenomear(id){ var v=varLista().find(function(x){return x.id===id;}); if(!v)return; var n=prompt('Nome da variação:',v.nome); if(!n||!n.trim())return; v.nome=n.trim(); save(); try{ injectLoteBasePanel(); }catch(_){} }
 function varExcluir(id){ var vs=varLista(); if(vs.length<2||id===vs[0].id){ alert('A primeira variação é o modelo — não pode ser excluída.'); return; }
@@ -4020,6 +4130,15 @@ function varExcluir(id){ var vs=varLista(); if(vs.length<2||id===vs[0].id){ aler
 function varCopiarDeLoja(){ var sel=_lg('varCopLoja'); var uidL=sel&&sel.value; if(!uidL){ alert('Escolha a loja.'); return; }
   var u=(LOTE_UNITS||[]).find(function(x){return x.id===uidL;}); if(!u)return;
   if(!confirm('Preencher a variação "'+varNome(S.varAtiva)+'" com o conteúdo da loja "'+lojaLabel(u)+'"?\n\n• Serviços, Material, Despesas e Locações desta variação são SUBSTITUÍDOS.\n• Itens marcados como adicional na loja não entram.\n• A loja não muda.'))return;
+  if(escUnificado()){ var eid=S.varAtiva, novos=0, ajust=0;   // preenche só as QUANTIDADES deste escopo; item que a loja tem e a biblioteca não, entra na biblioteca
+    VAR_KEYS.forEach(function(k){
+      (S[k]||[]).forEach(function(r){ if(r.qtdEsc) delete r.qtdEsc[eid]; });
+      ((u.dados&&u.dados[k])||[]).filter(function(r){ return r&&!r.adic; }).forEach(function(r){
+        var alvo=(S[k]||[]).find(function(x){ return escChave(x)===escChave(r); });
+        if(!alvo){ alvo=_deep(r); delete alvo.own; delete alvo.qtd; alvo.qtdEsc={}; alvo.id=uid(); (S[k]=S[k]||[]).push(alvo); novos++; }
+        if(!alvo.qtdEsc)alvo.qtdEsc={}; alvo.qtdEsc[eid]=num(r.qtd); ajust++; });
+    });
+    varRerender(); cloudMsg('escopo "'+varNome(eid)+'" preenchido com '+lojaLabel(u)+' · '+ajust+' itens'+(novos?' · '+novos+' novo(s) na biblioteca':'')); return; }
   VAR_KEYS.forEach(function(k){ S[k]=_deep(((u.dados&&u.dados[k])||[]).filter(function(r){return r&&!r.adic;})).map(function(r){ delete r.own; return r; }); });
   varRerender(); cloudMsg('variação preenchida com '+lojaLabel(u)); }
 async function varDaLoja(unitId,id){ if(!loteExigeSalvo('Trocar variação da loja')){ try{ injectLoteBasePanel(); }catch(_){} return; } var u=(LOTE_UNITS||[]).find(function(x){return x.id===unitId;}); if(!u)return;
@@ -4306,6 +4425,7 @@ function varFaixaHtml(){ var vs=varLista(); if(!vs.length)return ''; var at=S.va
     +''
     +'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--pri-bg,#eeedfe);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">edit</span><span>Editando <b>'+esc(atv.nome)+'</b>'+(idx===0?' <span style="color:var(--tx3)">(modelo)</span>':'')+' — Serviços, Material, Despesas e Locações desta variação.</span><span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'+varMostraBtnHtml(atv,vs)+'<button class="lbtn" onclick="varRenomear(\''+atv.id+'\')"><span class="material-symbols-rounded">edit_note</span>Renomear</button>'+(idx>0?'<button class="lbtn danger" onclick="varExcluir(\''+atv.id+'\')"><span class="material-symbols-rounded">delete</span>Excluir</button>':'')+'</span></div>'
     +((LOTE_UNITS||[]).length?'<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--tx3)"><span>Preencher esta variação com o conteúdo de uma loja:</span><select id="varCopLoja" style="min-width:220px;padding:6px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:12.5px;background:var(--surf);color:var(--tx)"><option value="">— escolha a loja —</option>'+lojaOpts+'</select><button class="lbtn" onclick="varCopiarDeLoja()"><span class="material-symbols-rounded">content_copy</span>Copiar</button></div>':'')
+    +(escUnificado()?escMatrizHtml():'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:#fff4e0;border:1px solid #e6c360;color:#8a5a12;font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="material-symbols-rounded" style="font-size:17px">warning</span><span><b>Cada escopo ainda guarda uma cópia dos serviços.</b> Corrigir um serviço num escopo não chega nos outros. Unifique para o serviço existir uma vez, com a quantidade de cada escopo ao lado.</span><button class="lbtn" style="margin-left:auto" onclick="escUnificar()"><span class="material-symbols-rounded">merge</span>Unificar escopos</button></div>')
     +'</div>'; }
 (function(){ const _ib=injectLoteBasePanel; injectLoteBasePanel=function(){ const r=_ib.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } try{ injectLoteRO(); levArqInit(); }catch(_){} return r; };
   const _rb2=renderBlk; renderBlk=function(){ const r=_rb2.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } return r; }; })();
