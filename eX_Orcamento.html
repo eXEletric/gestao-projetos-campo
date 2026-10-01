@@ -472,6 +472,30 @@ tr.escli-ig td{color:var(--tx3)}
 .levchv{margin-left:auto;color:#2563a8}
 .levcorpo{padding:0 14px 13px;display:flex;flex-direction:column;gap:10px}
 .levcorpo .levcard{margin:0}
+/* chave do bloco empurrada para a direita (o nome do bloco vem primeiro) */
+.blktogwrap{display:inline-flex;flex:0 0 auto;margin-left:auto}
+.blkhead .modosw+.blktogwrap{margin-left:0}
+/* valores do modelo: leitura no escopo, escolha no preço */
+.valler{margin-top:9px;display:flex;align-items:center;gap:7px;flex-wrap:wrap;font-size:12px;color:var(--tx3)}
+.valler .material-symbols-rounded{font-size:15px}
+.valler b{color:var(--tx)}
+.valler .lbtn{padding:2px 8px;font-size:11px}
+.vallwarn{display:inline-flex;align-items:center;gap:3px;font-size:10.5px;font-weight:800;color:#8a5a12;background:#fff4e0;border:1px solid #e6c360;border-radius:20px;padding:1px 8px}
+.vallwarn .material-symbols-rounded{font-size:13px}
+.valfx{padding:12px 14px}
+.valfxh{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:10px}
+.valfxh b{font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri)}
+.valfxh .material-symbols-rounded{color:var(--pri);font-size:18px}
+.valcard{border:1px solid var(--line2);border-radius:11px;padding:10px 12px;margin-bottom:9px;background:var(--surf)}
+.valhd{display:flex;align-items:baseline;gap:9px;flex-wrap:wrap}
+.valhd b{font-size:13px;color:var(--tx)}
+.valtot{margin-left:auto;font-weight:800;font-size:14px;color:var(--pri);font-variant-numeric:tabular-nums}
+.valsub{font-size:11.5px;color:var(--tx3);font-weight:500}
+.valbt{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:9px}
+.valwarn{margin-top:9px;padding:7px 10px;border-radius:8px;background:#fff4e0;border:1px solid #e6c360;color:#8a5a12;font-size:11.5px;font-weight:700;display:flex;gap:6px;align-items:flex-start}
+.valwarn .material-symbols-rounded{font-size:15px;flex:none}
+.valpe{display:flex;gap:7px;align-items:flex-start;font-size:11.5px;color:var(--tx3);padding:2px 2px 0}
+.valpe .material-symbols-rounded{font-size:15px;color:var(--pri);flex:none}
 /* anexos da proposta (levantamento / detalhamento) */
 .apcard{border:1px solid var(--line2);border-radius:12px;background:var(--surf);margin:0 0 14px;overflow:hidden}
 .aphd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 13px;background:var(--surf2);border-bottom:1px solid var(--line2);font-size:13px}
@@ -2177,7 +2201,7 @@ function renderLoteMatBlock(cfg){   // master: 3 LEITURAS — Base (modelo) · P
   const mmb=function(v,l){return '<button class="lbtn" style="'+(mm===v?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'" onclick="setMatModo(\''+v+'\')">'+l+'</button>';};
   const sel='<div class="modosw" style="gap:6px;flex-wrap:wrap">'+mmb('qtd','Quantidade')+mmb('val','Valor')+mmb('lista','Lista + total')+mmb('tot','Só total')+'</div>';
   const blktog='<button class="blktog '+(bOn?'on':'off')+'" onclick="toggleBloco(\'materiais\')" title="'+(bOn?'Este bloco SOMA no total (muda o valor) — clique para tirar do cálculo':'Bloco FORA DO TOTAL — clique para voltar a somar')+'"><span class="blktog-sw"><i></i></span><span class="material-symbols-rounded blktog-ic">calculate</span><span class="blktog-lb">'+(bOn?'soma no total':'FORA DO TOTAL')+'</span></button>';
-  const head='<div class="blkhead">'+blktog+'<span class="ic"><span class="material-symbols-rounded">'+cfg.icon+'</span></span><h2>'+cfg.titulo+'</h2>'+(loteFnOn('g.modo')?sel:'')+'</div>';
+  const head='<div class="blkhead"><span class="ic"><span class="material-symbols-rounded">'+cfg.icon+'</span></span><h2>'+cfg.titulo+'</h2>'+(loteFnOn('g.modo')?sel:'')+'<span class="blktogwrap">'+blktog+'</span></div>';
   // ---- MODO EDITOR (a custo) — dentro da Soma ----
   if(LME_ON && rows.length){
     var eraS='font-size:10px;font-weight:700;color:var(--amber);text-align:right;margin-top:2px';
@@ -2204,7 +2228,7 @@ function renderLoteMatBlock(cfg){   // master: 3 LEITURAS — Base (modelo) · P
   var _shd='display:flex;align-items:center;gap:9px;padding:9px 12px;background:var(--surf2);border-bottom:1px solid var(--line);flex-wrap:wrap';
   // BASE (modelo) — âmbar
   var secBase='<div style="border:1px solid var(--line);border-left:4px solid '+C_BASE+';border-radius:10px;overflow:hidden;margin-bottom:10px">'
-    +'<div style="'+_shd+'">'+matViewSw('base',baseOn)+'<b style="font-size:12.5px;color:'+C_BASE+'">Base do lote'+(varLista().length>1?' · '+esc(varNome(S.varAtiva)):'')+'</b><span style="font-size:11px;color:var(--tx3)">modelo por loja · editável (média × contratante)</span></div>'
+    +'<div style="'+_shd+'">'+'<b style="font-size:12.5px;color:'+C_BASE+'">Base do lote'+(varLista().length>1?' · '+esc(varNome(S.varAtiva)):'')+'</b><span style="font-size:11px;color:var(--tx3)">modelo por loja · editável (média × contratante)</span><span style="margin-left:auto">'+matViewSw('base',baseOn)+'</span></div>'
     + baseMatTableHtml(cfg)
     +'<div class="sotot-hint noprint" style="margin:8px 12px 0"><span class="material-symbols-rounded">swap_vert</span><span><b>Via de duas mãos:</b> <b>puxe</b> a média das lojas pra montar/atualizar o modelo, edite, e <b>replique</b> de volta nas lojas (a loja ajustada à mão é preservada).</span></div>'
     +'<div class="addrow" style="padding:8px 12px;display:flex;gap:8px;flex-wrap:wrap">'
@@ -2215,7 +2239,7 @@ function renderLoteMatBlock(cfg){   // master: 3 LEITURAS — Base (modelo) · P
   // POR LOJA (real): a lista de unidades detalhada (injectLoteBasePanel) — mantida como era, NÃO duplicar aqui
   // GLOBAL (soma) — roxo
   var secGlobal='<div style="border:1px solid var(--line);border-left:4px solid '+C_GLOB+';border-radius:10px;overflow:hidden">'
-    +'<div style="'+_shd+'">'+matViewSw('soma',somaOn)+'<b style="font-size:12.5px;color:'+C_GLOB+'">Global do lote</b><span style="font-size:11px;color:var(--tx3)">total das '+N+' lojas · agregado</span></div>'
+    +'<div style="'+_shd+'">'+'<b style="font-size:12.5px;color:'+C_GLOB+'">Global do lote</b><span style="font-size:11px;color:var(--tx3)">total das '+N+' lojas · agregado</span><span style="margin-left:auto">'+matViewSw('soma',somaOn)+'</span></div>'
     + matBodyHtml(rows, tot, mm, 'Material do lote (somado)')
     +'<div class="addrow" style="padding:8px 12px">'+(loteFnOn('g.editar')?'<button onclick="loteMatEditOn()" style="border-style:solid;border-color:var(--amber);color:var(--amber)"><span class="material-symbols-rounded">edit</span>Editar a custo</button>':'')+(loteFnOn('g.addlote')?'<button onclick="loteAddPick(\'materiais\')" style="margin-left:8px;border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">hub</span>Adicionar ao lote</button>':'')+'</div>'
     +'</div>';
@@ -2391,12 +2415,12 @@ function renderBlk(cfg){
   const bOn=blocoAtivo(cfg.key);
   document.getElementById('blk_'+cfg.key).innerHTML=`
     <div class="blkhead">
-      <button class="blktog ${bOn?'on':'off'}" onclick="toggleBloco('${cfg.key}')" title="${bOn?'Este bloco SOMA no total (muda o valor) — clique para tirar do cálculo':'Bloco FORA DO TOTAL — clique para voltar a somar'}"><span class="blktog-sw"><i></i></span><span class="material-symbols-rounded blktog-ic">calculate</span><span class="blktog-lb">${bOn?'soma no total':'FORA DO TOTAL'}</span></button>
       <span class="ic"><span class="material-symbols-rounded">${cfg.icon}</span></span>
       <h2>${cfg.titulo}</h2>${(isLoteBase()&&varLista().length>1)?`<span title="conteúdo desta variação da base" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:800;border-radius:20px;padding:3px 9px;background:var(--pri);color:#fff"><span class="material-symbols-rounded" style="font-size:13px;color:#fff">layers</span>${esc(varNome(S.varAtiva))}</span>`:unitVarChip()}
       <div class="modosw">
         <button class="chip ${soT?'on':''}" onclick="toggleSoTotal('${cfg.key}')" title="Na proposta do cliente: agrupar os itens num total só (esconde item a item). Não muda o cálculo."><span class="material-symbols-rounded">${soT?'visibility_off':'format_list_bulleted'}</span>${soT?'Só o total':'Detalhado'}</button>
       </div>
+      <span class="blktogwrap">      <button class="blktog ${bOn?'on':'off'}" onclick="toggleBloco('${cfg.key}')" title="${bOn?'Este bloco SOMA no total (muda o valor) — clique para tirar do cálculo':'Bloco FORA DO TOTAL — clique para voltar a somar'}"><span class="blktog-sw"><i></i></span><span class="material-symbols-rounded blktog-ic">calculate</span><span class="blktog-lb">${bOn?'soma no total':'FORA DO TOTAL'}</span></button></span>
     </div>
     ${soT?`<div class="sotot-hint noprint"><span class="material-symbols-rounded">visibility_off</span><span>Modo <b>Só o total</b>: a edição é igual (você vê e ajusta cada item), mas na <b>impressão / envio da proposta</b> os itens saem como <b>“incluso”</b> e o valor aparece só no <b>total agrupado</b> do bloco — não item por item.</span></div>`:''}
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
@@ -3558,14 +3582,6 @@ function renderLoteBaseHtml(){
         <span style="font-size:13px;color:var(--tx3)">× base <b>${fmt(baseT)}</b> = <b style="color:var(--pri);font-size:15px">${fmt(baseT*qtd)}</b></span></div>
       <div style="font-size:12px;color:var(--tx3);margin-top:8px"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">info</span> Estimativa por volume — sem cidade/abrangência por loja. Pra fechar, <b>detalhe em unidades</b> (aí entram km e prazo reais de cada uma).</div>
       <button class="lbtn" style="margin-top:10px;background:var(--pri);color:#fff;border-color:var(--pri)" onclick="setLoteModo('detalhado')"><span class="material-symbols-rounded" style="color:#fff">splitscreen</span>Detalhar em unidades</button></div>`;
-  const modelosStrip=`<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line2);flex-wrap:wrap;background:#faf9ff">
-      <span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">bookmark</span>
-      <b style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)">Modelo da proposta inteira</b><span style="font-size:11px;color:var(--tx3)">traz serviços, percentuais, macro e equipe — para começar uma proposta igual a outra. Só o escopo (itens e quantidades por escopo) fica em “Modelos de escopo”, na faixa Escopos do lote.</span>
-      <button class="lbtn" onclick="salvarComoModelo()"><span class="material-symbols-rounded">bookmark_add</span>Salvar como modelo</button>
-      <select id="lbModelo" style="min-width:170px;padding:7px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— aplicar um modelo —</option>${(MODELOS_LIST||[]).map(m=>`<option value="${m.id}">${esc(m.nome)}</option>`).join('')}</select>
-      <button class="lbtn" onclick="aplicarModeloNaBase()"><span class="material-symbols-rounded">download</span>Aplicar na base</button>
-      ${LOTE_UNITS.some(u=>u.herda_base)?`<button class="lbtn" style="margin-left:auto;border-color:var(--pri);color:var(--pri)" onclick="lotePropagar()" title="Base → lojas: reaplica o escopo base nas lojas que estão iguais à base (as editadas ficam protegidas)"><span class="material-symbols-rounded">sync</span>Propagar base nas lojas</button>`:`<span style="font-size:11.5px;color:var(--tx3);margin-left:auto">salve o escopo atual como modelo, ou traga um modelo pra base</span>`}
-    </div>`;
   const ccp=!!S.colCustoProposta;   // junta 15/09: a chave custo/lucro→cliente mora no título da coluna da Lista de lojas (+ selo no botão "Documento do lote")
   const custoChaveCol = ccp
     ? `<button class="lbtn" onclick="setColCustoProposta(false)" title="Custo e lucro ESTÃO aparecendo no documento do cliente — clique para esconder" style="padding:2px 7px;font-size:10px;background:var(--red,#a32d2d);color:#fff;border-color:var(--red,#a32d2d)"><span class="material-symbols-rounded" style="font-size:13px;color:#fff">visibility</span>vai pro cliente</button>`
@@ -3597,7 +3613,7 @@ function renderLoteBaseHtml(){
   const fxw=function(id,h){ return h?('<div data-fx="'+id+'">'+h+'</div>'):''; };   // faixa ordenável (ver fxApply)
   // junta 15/09: Configuração do lote = Como calcular + Ver (+ nº de unidades na estimativa); Lista de lojas = busca/adicionar + colunas + lojas
   const listaTit=`<div style="display:flex;align-items:center;gap:8px;padding:11px 14px 4px"><span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">storefront</span><b style="font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri)">Lista de lojas · ${LOTE_UNITS.length}</b></div>`;
-  const corpo = fxw('lote.var',varFaixaHtml()) + fxw('lote.modelo',modelosStrip) + fxw('lote.ver',modoTog+viewTog+(modo==='estimativa'?estimBlock:''))
+  const corpo = fxw('lote.var',varFaixaHtml()) + fxw('lote.valores',valoresModelosHtml()) + fxw('lote.ver',modoTog+viewTog+(modo==='estimativa'?estimBlock:''))
     + (LOTE_VIEW==='pad' ? fxw('lote.escopo',resumoEscopoHtml()) : (modo==='estimativa' ? '' : fxw('lote.lista',listaTit+addBar+(LOTE_UNITS.length?colHeader:'')+rows)))
     + fxw('lote.balanco',balancoHtml())
     + fxw('lote.descgov',descGovHtml())
@@ -3857,7 +3873,7 @@ var FX_DEF=[
   {id:'lote.topo',nm:'Rede & lojas · tempo total',ic:'apartment'},
   {id:'lote.global',nm:'Global do lote · indicadores',ic:'public'},
   {id:'lote.var',nm:'Escopos do lote',ic:'layers'},
-  {id:'lote.modelo',nm:'Modelo da proposta inteira',ic:'bookmark'},
+  {id:'lote.valores',nm:'Valores dos modelos',ic:'payments'},
   {id:'lote.ver',nm:'Configuração do lote · cálculo e visão',ic:'tune'},
   {id:'lote.escopo',nm:'Serviços global (Σ lojas)',ic:'summarize'},
   {id:'lote.lista',nm:'Lista de lojas',ic:'storefront'},
@@ -4310,9 +4326,9 @@ function levAplicarAqui(){
   cloudMsg(r.mudou+' quantidade(s) atualizadas pelo levantamento — salve para gravar');
   alert('Pronto: '+r.mudou+' quantidade(s) recalculadas pelo levantamento.'+(r.semParam?('\n\n'+r.semParam+' item(ns) do escopo esperam um número que ainda não foi preenchido.'):'')+'\n\nAjuste manual não foi tocado. Clique em Salvar para gravar.'); }
 var LOTE_ABAS=[
-  {k:'escopo',lb:'Escopo',ic:'build',dica:'serviços, material e as quantidades de cada escopo',fx:['lote.var','lote.modelo','blk.servicos','blk.equip','blk.despesas','mat.cab','mat.base','mat.global']},
+  {k:'escopo',lb:'Escopo',ic:'build',dica:'serviços, material e as quantidades de cada escopo',fx:['lote.var','blk.servicos','blk.equip','blk.despesas','mat.cab','mat.base','mat.global']},
   {k:'lojas',lb:'Lojas',ic:'storefront',dica:'unidades, levantamento, prazo e o que difere do escopo',fx:['lote.topo','lote.lista','lote.escopo','lote.fatores','lote.prazo']},
-  {k:'preco',lb:'Preço e documento',ic:'payments',dica:'formação, custos globais, condições e o que vai no PDF',fx:['cab','desc','lote.cond','lote.ver','lote.macro','lote.global']}
+  {k:'preco',lb:'Preço e documento',ic:'payments',dica:'formação, custos globais, condições e o que vai no PDF',fx:['cab','desc','lote.valores','lote.cond','lote.ver','lote.macro','lote.global']}
 ];
 function abaAtual(){ try{ var v=localStorage.getItem('ex_lote_aba_'+(S_LOTE_ID||'')); if(v&&LOTE_ABAS.some(function(a){return a.k===v;})) return v; }catch(_){}
   return 'escopo'; }
@@ -4886,6 +4902,9 @@ function esclResumoHtml(){   // quantas lojas em cada escopo (cabeçalho do pain
   return vs.map(function(v){ var n=unitsDaVar(v.id).length;
     return '<span class="esclchip'+(v.id===S.varAtiva?' on':'')+'">'+esc(varRot(v.id))+' <b>'+n+'</b></span>'; }).join('')
     +(sem?'<span class="esclchip neg" title="loja gerada antes de existir mais de um escopo — está caindo no primeiro">sem escopo apontado <b>'+sem+'</b></span>':''); }
+function esclPropagarBtn(){   /* base → lojas: a ação que vivia na faixa "Modelo da proposta inteira"; cada loja recebe o conteúdo do SEU escopo */
+  var n=(LOTE_UNITS||[]).filter(function(u){ return u.herda_base; }).length; if(!n) return '';
+  return '<button class="lbtn" onclick="lotePropagar()" title="Reaplica o escopo da base nas lojas que estão iguais à base — cada uma pelo escopo que segue. As editadas ficam protegidas."><span class="material-symbols-rounded">sync</span>Atualizar as '+n+' loja(s) iguais à base</button>'; }
 function esclPainelHtml(){
   if(!isLoteBase()) return '';
   var vs=varLista(); if(vs.length<2) return '';
@@ -4911,7 +4930,7 @@ function esclPainelHtml(){
       +'<button class="lbtn" onclick="esclMarcarLote(\'outros\')">as de outro escopo</button>'
       +'<button class="lbtn" onclick="esclMarcarLote(\'nenhuma\')">limpar</button></div>'
     +'<div class="escllist">'+linhas+'</div>'
-    +'<div class="esclft"><span>'+(n?('<b>'+n+'</b> loja(s) marcada(s)'):'nenhuma loja marcada')+'</span>'
+    +'<div class="esclft">'+esclPropagarBtn()+'<span>'+(n?('<b>'+n+'</b> loja(s) marcada(s)'):'nenhuma loja marcada')+'</span>'
       +'<button class="lbtn'+(n?' on':'')+'"'+(n?'':' disabled')+' onclick="esclAplicarMarcadas()"><span class="material-symbols-rounded">how_to_reg</span>Apontar para '+esc(varNome(at))+'</button></div>'
   +'</div>'; }
 /* ---- LISTA COLADA / ARQUIVO: loja;escopo ---- */
@@ -4988,18 +5007,41 @@ function esclImpAbrir(){
     +'<div class="impft"><button class="lbtn" onclick="esclImpFechar()">Cancelar</button><button class="lbtn on" onclick="esclImpAplicar()"><span class="material-symbols-rounded">how_to_reg</span>Apontar as lojas</button></div></div>';
   document.body.appendChild(ov);
   setTimeout(function(){ var t=document.getElementById('esclTxt'); if(t)t.focus(); },60); }
+/* VALORES DO MODELO (ajuste 1, 01/10): a ESCOLHA da fonte do valor (cadastro · média das lojas · pior caso) é assunto de PREÇO.
+   Na aba Escopo fica só a leitura; a escolha mora na aba Preço e documento, com todos os escopos na mesma tela. */
+function valoresLeituraHtml(atv){
+  if(!atv) return '';
+  var mp=null; try{ mp=modeloPreco(atv); }catch(_){}
+  if(!mp||!mp.p) return '';
+  return '<div class="valler noprint"><span class="material-symbols-rounded">payments</span>'
+    +'<span>Valores deste escopo: <b>'+fmt(mp.p.total)+'</b> por unidade · '+esc(mp.ref)+'</span>'
+    +(mp.alerta?'<span class="vallwarn" title="valores herdados das lojas — podem divergir do cadastro base"><span class="material-symbols-rounded">warning</span>herdado</span>':'')
+    +'<button class="lbtn" onclick="abaIr(\'preco\')" title="a escolha da fonte do valor fica na aba Preço e documento"><span class="material-symbols-rounded">arrow_forward</span>ajustar em Preço e documento</button></div>'; }
+function valoresModelosHtml(){
+  var vs=varLista(); if(!vs.length) return '';
+  var cards=vs.map(function(v){
+    var f=varFonte(v), mp=null; try{ mp=modeloPreco(v); }catch(_){}
+    var n=unitsDaVar(v.id).length;
+    var bt=function(k,ic){ var on=f===k; return '<button class="lbtn" onclick="varSetFonte(\''+v.id+'\',\''+k+'\')" style="padding:5px 10px;'+(on?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'"><span class="material-symbols-rounded" style="'+(on?'color:#fff':'')+'">'+ic+'</span>'+VAR_FONTES[k]+'</button>'; };
+    return '<div class="valcard">'
+      +'<div class="valhd"><b>'+esc(varRot(v.id))+'</b><span class="valsub">'+n+' loja'+(n===1?'':'s')+'</span>'
+        +(mp&&mp.p?'<span class="valtot">'+fmt(mp.p.total)+' <span class="valsub">por unidade</span></span>':'')+'</div>'
+      +'<div class="valbt">'+bt('cadastro','inventory')+bt('media','functions')+bt('pior','trending_up')
+        +(mp?'<span class="valsub">'+esc(mp.ref)+'</span>':'')+'</div>'
+      +((mp&&mp.alerta)?'<div class="valwarn"><span class="material-symbols-rounded">warning</span>Valores herdados das propostas das lojas — podem divergir do cadastro base. Os itens editados no escopo não mudam esses valores.</div>':'')
+      +'</div>'; }).join('');
+  return '<div class="valfx"><div class="valfxh"><span class="material-symbols-rounded">payments</span><b>Valores dos modelos</b>'
+    +'<span class="valsub">de onde sai o valor por unidade de cada escopo — não muda o escopo, só como ele é precificado</span></div>'
+    +cards
+    +'<div class="valpe"><span class="material-symbols-rounded">info</span><b>Cadastro base:</b> o valor montado no escopo. <b>Média das lojas:</b> a média do que as lojas realmente ficaram. <b>Pior caso:</b> a loja com mais itens deste escopo.</div></div>'; }
 function varFaixaHtml(){ var vs=varLista(); if(!vs.length)return ''; var at=S.varAtiva; var atv=vs.find(function(x){return x.id===at;})||vs[0]; var idx=vs.indexOf(atv);
   var tabs=vs.map(function(v,i){ var n=unitsDaVar(v.id).length, on=v.id===at;
     return '<button class="lbtn" onclick="varTrocar(\''+v.id+'\')" style="padding:7px 12px;'+(on?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'"><span class="material-symbols-rounded" style="'+(on?'color:#fff':'')+'">'+(i===0?'star':'layers')+'</span>'+esc(varRot(v.id))+'<span style="opacity:.8;font-weight:500">· '+n+' loja'+(n===1?'':'s')+'</span></button>'; }).join('');
   var lojaOpts=(LOTE_UNITS||[]).map(function(u){ return '<option value="'+u.id+'">'+esc(lojaLabel(u))+(vs.length>1?' · '+esc(varRot(unitVar(u))):'')+'</option>'; }).join('');
   return '<div style="padding:12px 14px">'
     +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px"><span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">layers</span><b style="font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri)">Escopos do lote</b><span style="font-size:11.5px;color:var(--tx3)">cada escopo tem os seus serviços, material, despesas e locações</span>'+varSecaoBtnHtml(vs)+'</div>'
-    +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+tabs+'<button class="lbtn" onclick="varNova()" style="padding:7px 12px;border-style:dashed"><span class="material-symbols-rounded">add</span>Novo escopo</button><button class="lbtn" onclick="impAbrir()" style="padding:7px 12px" title="Importar serviços e quantidades de uma planilha no formato padrão"><span class="material-symbols-rounded">table_view</span>Importar escopo</button><button class="lbtn" onclick="escModAbrir()" style="padding:7px 12px" title="Gravar este escopo como modelo ou aplicar um modelo gravado"><span class="material-symbols-rounded">bookmarks</span>Modelos de escopo</button></div>'
-    +(function(){ var f=varFonte(atv), mp=null; try{ mp=modeloPreco(atv); }catch(_){}
-      var bt=function(k,ic){ var on=f===k; return '<button class="lbtn" onclick="varSetFonte(\''+atv.id+'\',\''+k+'\')" style="padding:5px 10px;'+(on?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'"><span class="material-symbols-rounded" style="'+(on?'color:#fff':'')+'">'+ic+'</span>'+VAR_FONTES[k]+'</button>'; };
-      return '<div style="margin-top:9px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px"><b style="color:var(--tx2)">Valores de '+esc(atv.nome)+':</b>'+bt('cadastro','inventory')+bt('media','functions')+bt('pior','trending_up')
-        +(mp&&mp.p?'<span style="margin-left:6px;color:var(--tx3)">total por unidade <b style="color:var(--tx)">'+fmt(mp.p.total)+'</b> · '+esc(mp.ref)+'</span>':'')
-        +(f!=='cadastro'?'<span style="flex-basis:100%;margin-top:4px;padding:6px 10px;border-radius:8px;background:#fff4e0;border:1px solid #e6c360;color:#8a5a12;font-weight:700"><span class="material-symbols-rounded" style="font-size:15px;vertical-align:-3px">warning</span> Valores herdados das propostas das lojas ('+esc(mp?mp.ref:'')+') — sem percentual, podem divergir do cadastro base. Os itens editados aqui não mudam esses valores.</span>':'')+'</div>'; })()
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+tabs+'<button class="lbtn" onclick="varNova()" style="padding:7px 12px;border-style:dashed"><span class="material-symbols-rounded">add</span>Novo escopo</button><button class="lbtn" onclick="impAbrir()" style="padding:7px 12px" title="Importar serviços e quantidades de uma planilha no formato padrão"><span class="material-symbols-rounded">table_view</span>Importar escopo</button><button class="lbtn" onclick="escModAbrir()" style="padding:7px 12px" title="Modelos de escopo e modelos de proposta inteira"><span class="material-symbols-rounded">bookmarks</span>Modelos</button></div>'
+    +valoresLeituraHtml(atv)
     +''
     +'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--pri-bg,#eeedfe);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">edit</span><span>Editando <b>'+esc(varRot(atv.id))+'</b>'+(idx===0?' <span style="color:var(--tx3)">(modelo)</span>':'')+' — Serviços, Material, Despesas e Locações deste escopo.</span><span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'+varMostraBtnHtml(atv,vs)+'<button class="lbtn" onclick="varSetModelo(&quot;'+atv.id+'&quot;)" title="nome do sistema que este escopo representa (aparece junto da variação e no documento)"><span class="material-symbols-rounded">label</span>Modelo</button><button class="lbtn" onclick="varRenomear(\''+atv.id+'\')"><span class="material-symbols-rounded">edit_note</span>Renomear</button>'+(idx>0?'<button class="lbtn danger" onclick="varExcluir(\''+atv.id+'\')"><span class="material-symbols-rounded">delete</span>Excluir</button>':'')+'</span></div>'
     +((LOTE_UNITS||[]).length?'<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--tx3)"><span>Preencher este escopo com o conteúdo de uma loja:</span><select id="varCopLoja" style="min-width:220px;padding:6px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:12.5px;background:var(--surf);color:var(--tx)"><option value="">— escolha a loja —</option>'+lojaOpts+'</select><button class="lbtn" onclick="varCopiarDeLoja()"><span class="material-symbols-rounded">content_copy</span>Copiar</button></div>':'')
@@ -5405,9 +5447,31 @@ async function escModExcluir(id){ var m=(ESC_MOD||[]).find(function(x){ return x
   if(!confirm('Excluir o modelo "'+m.nome+'"?\n\nOs lotes que já usaram continuam como estão — o modelo só deixa de aparecer aqui.')) return;
   try{ const r=await SB.from('escopo_modelos').update({deleted_at:new Date().toISOString()}).eq('id',id); if(r.error) throw r.error;
     await escModCarregar(); escModRender(); }catch(e){ alert('Não consegui excluir: '+(e.message||e)); } }
+/* PAINEL MODELOS (ajuste 3, 01/10): um botão só, duas abas — ESCOPO (itens e quantidades, tabela escopo_modelos)
+   e PROPOSTA INTEIRA (serviços + percentuais + macro + equipe, tabela orc_modelos, que antes era uma faixa no meio da montagem). */
+var ESC_MOD_ABA='escopo';
+function escModIrAba(k){ ESC_MOD_ABA=k; escModRender(); }
+function escModPropHtml(){
+  var ms=MODELOS_LIST||[];
+  var opts='<option value="">— escolha um modelo —</option>'+ms.map(function(m){ return '<option value="'+m.id+'">'+esc(m.nome)+'</option>'; }).join('');
+  return '<div class="impinfo">Guarda a proposta <b>inteira</b>: serviços, material, despesas, locações, macro, diárias, margem, imposto e equipe. Use para começar uma proposta nova igual a outra — não para montar escopos deste lote.</div>'
+    +'<div class="impacts" style="margin-top:10px"><button class="lbtn" onclick="salvarComoModelo()"><span class="material-symbols-rounded">bookmark_add</span>Salvar esta proposta como modelo</button></div>'
+    +'<div class="emlin"><div class="emnm"><b>Aplicar um modelo nesta base</b>'
+      +'<div class="impinfo" style="margin:2px 0 0">'+(ms.length?(ms.length+' modelo(s) gravado(s)'):'nenhum modelo gravado ainda')+'</div></div>'
+      +'<div class="emac"><select id="lbModelo" class="cin" style="min-width:200px;padding:6px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:12.5px;background:var(--surf);color:var(--tx)">'+opts+'</select>'
+      +'<button class="lbtn on" onclick="aplicarModeloNaBase()"><span class="material-symbols-rounded">download</span>Aplicar na base</button></div></div>'
+    +'<div class="impinfo" style="margin-top:10px;background:#fff8ec;border:1px solid #e6c360;color:#8a5a12;border-radius:9px;padding:9px 11px"><b>Atenção:</b> aplicar <b>substitui</b> o escopo atual da base (serviços, material, macro, diárias) e os percentuais pelos do modelo. As lojas iguais à base acompanham na próxima propagação; as editadas ficam como estão.</div>'; }
 function escModRender(){
   var el=document.getElementById('escModList'); if(!el) return;
-  if(!ESC_MOD.length){ el.innerHTML='<div class="impinfo">Nenhum modelo gravado ainda. Monte o escopo de um lote e clique em <b>Gravar o escopo deste lote como modelo</b> — na próxima proposta ele vem pronto.</div>'; return; }
+  var tabs=document.getElementById('escModTabs');
+  if(tabs) tabs.innerHTML='<button class="lbtn'+(ESC_MOD_ABA==='escopo'?' on':'')+'" onclick="escModIrAba(\'escopo\')"><span class="material-symbols-rounded">build</span>Escopo</button>'
+    +'<button class="lbtn'+(ESC_MOD_ABA==='prop'?' on':'')+'" onclick="escModIrAba(\'prop\')"><span class="material-symbols-rounded">description</span>Proposta inteira</button>';
+  var topo=document.getElementById('escModTopo');
+  if(topo) topo.innerHTML=(ESC_MOD_ABA==='escopo')
+    ? '<button class="lbtn" onclick="escModSalvarAtual()"><span class="material-symbols-rounded">bookmark_add</span>Gravar o escopo deste lote como modelo</button><span class="impsub">grava os itens, os escopos e as quantidades de cada escopo · margem, imposto e cadeados continuam sendo do lote</span>'
+    : '';
+  if(ESC_MOD_ABA==='prop'){ el.innerHTML=escModPropHtml(); return; }
+  if(!ESC_MOD.length){ el.innerHTML='<div class="impinfo">Nenhum modelo de escopo gravado ainda. Monte o escopo de um lote e clique em <b>Gravar o escopo deste lote como modelo</b> — na próxima proposta ele vem pronto.</div>'; return; }
   el.innerHTML=ESC_MOD.map(function(m){
     var dt=m.created_at?new Date(m.created_at).toLocaleDateString('pt-BR'):'';
     return '<div class="emlin"><div class="emnm"><b>'+esc(m.nome)+'</b>'
@@ -5419,15 +5483,18 @@ function escModFechar(){ var ov=document.getElementById('escModOv'); if(ov)ov.re
 async function escModAbrir(){
   if(document.getElementById('escModOv')) return;
   var ov=document.createElement('div'); ov.id='escModOv';
-  ov.innerHTML='<div class="impbox"><div class="imphd"><span class="material-symbols-rounded">bookmarks</span><b>Modelos de escopo</b>'
-    +'<span class="impsub">escopo pronto para reaproveitar em outro lote · margem, imposto e cadeados continuam sendo do lote</span>'
+  ov.innerHTML='<div class="impbox"><div class="imphd"><span class="material-symbols-rounded">bookmarks</span><b>Modelos</b>'
+    +'<span class="impsub">o que você já montou, pronto para reaproveitar</span>'
     +'<button class="lbtn" onclick="escModFechar()" style="margin-left:auto"><span class="material-symbols-rounded">close</span>Fechar</button></div>'
-    +'<div class="impbd"><div class="impacts"><button class="lbtn" onclick="escModSalvarAtual()"><span class="material-symbols-rounded">bookmark_add</span>Gravar o escopo deste lote como modelo</button>'
-    +'<span class="impsub">grava os itens, os escopos e as quantidades de cada escopo</span></div>'
+    +'<div class="impbd"><div id="escModTabs" class="impacts" style="margin-bottom:12px"></div>'
+    +'<div id="escModTopo" class="impacts"></div>'
     +'<div id="escModList"><div class="impinfo">carregando…</div></div></div>'
     +'<div class="impft"><button class="lbtn" onclick="escModFechar()">Fechar</button></div></div>';
   document.body.appendChild(ov);
-  await escModCarregar(); escModRender(); }
+  escModRender();
+  await escModCarregar();
+  try{ if(typeof carregarModelos==='function' && !(MODELOS_LIST||[]).length) await carregarModelos(); }catch(_){}
+  escModRender(); }
 var LEV_ARQ={}, LEV_GER={};
 async function levArqCarregar(){ LEV_ARQ={}; LEV_GER={}; if(!(SB&&S_LOTE_ID))return LEV_ARQ;
   try{ const r=await SB.from('levantamento_arquivos').select('*').eq('lote_id',S_LOTE_ID).is('deleted_at',null).order('created_at');
