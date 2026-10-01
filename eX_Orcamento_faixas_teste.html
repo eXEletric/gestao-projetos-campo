@@ -6059,8 +6059,8 @@ function levToggle(){ try{ localStorage.setItem('ex_lev_aberto_'+(S&&S.numero||'
 function levResumo(){
   var p=(S&&S.levUnidade&&S.levUnidade.params)||{}, out=[];
   var n=Object.keys(p).filter(function(k){ return k!=='estimados'&&k!=='fonte'&&k!=='lido_em'; }).length;
-  [['quadros','quadro'],['circuitos','circuito'],['splitoes','splitão'],['fancoils','fancoil'],['medidoresClima','medidor']].forEach(function(x){
-    if(num(p[x[0]])>0) out.push(_d1(num(p[x[0]]))+' '+x[1]+(num(p[x[0]])>1?'s':'')); });
+  [['quadros','quadro','quadros'],['circuitos','circuito','circuitos'],['splitoes','splitão','splitões'],['fancoils','fancoil','fancoils'],['medidoresClima','medidor','medidores']].forEach(function(x){
+    if(num(p[x[0]])>0) out.push(_d1(num(p[x[0]]))+' '+(num(p[x[0]])>1?x[2]:x[1])); });
   var inf=num(p.infraSimples)+num(p.infraDificil); if(inf>0) out.push(_d1(inf)+' m de infra');
   return {n:n, txt:out.slice(0,4).join(' · ')}; }
 function renderLevUnidade(){ const el=document.getElementById('levUnidadePanel'); if(!el)return; const L=S&&S.levUnidade;
