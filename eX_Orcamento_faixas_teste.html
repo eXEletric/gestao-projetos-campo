@@ -411,7 +411,7 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .qorig.qo-man{background:#fdeceb;color:#b3261e}
 .esctbl td.escde{min-width:200px}
 /* importar escopo (formato padrão eX) */
-#impOv,#escModOv{position:fixed;inset:0;z-index:800;background:rgba(20,14,40,.55);display:grid;place-items:center;padding:18px}
+#impOv,#escModOv,#esclOv{position:fixed;inset:0;z-index:800;background:rgba(20,14,40,.55);display:grid;place-items:center;padding:18px}
 .impbox{background:var(--surf);border-radius:14px;width:min(980px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(20,10,50,.35)}
 .imphd{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:12px 15px;border-bottom:1px solid var(--line2);background:var(--pri-bg,#efeafc);color:var(--pri)}
 .imphd .material-symbols-rounded{font-size:19px}
@@ -433,6 +433,35 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .emlin:last-child{border-bottom:0}
 .emnm{flex:1;min-width:220px}
 .emac{display:flex;gap:6px;flex-wrap:wrap}
+/* escopo × loja: painel de apontamento */
+.esclcard{margin-top:12px;border:1px solid var(--line2);border-radius:12px;background:var(--surf);overflow:hidden}
+.esclhd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 12px;background:var(--surf2);border-bottom:1px solid var(--line2);font-size:12.5px}
+.esclhd b{color:var(--pri)}
+.esclhd .material-symbols-rounded{font-size:18px;color:var(--pri)}
+.esclsub{font-size:11.5px;color:var(--tx3)}
+.esclres{display:flex;gap:5px;flex-wrap:wrap}
+.esclchip{font-size:11px;font-weight:700;border-radius:20px;padding:2px 9px;background:var(--surf);border:1px solid var(--line2);color:var(--tx2)}
+.esclchip.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.esclchip.neg{background:#fdeceb;border-color:#f0b4ae;color:#b3261e}
+.esclmrc{display:flex;align-items:center;gap:6px;flex-wrap:wrap;padding:8px 12px;font-size:11.5px;color:var(--tx3);border-bottom:1px solid var(--line)}
+.esclmrc .lbtn{padding:3px 9px;font-size:11px}
+.escllist{max-height:280px;overflow:auto}
+.escllin{display:grid;grid-template-columns:auto 1fr auto auto;gap:10px;align-items:center;padding:7px 12px;border-bottom:1px solid var(--line);font-size:12.5px;cursor:pointer}
+.escllin:last-child{border-bottom:0}
+.escllin:hover{background:var(--surf2)}
+.escllin.meu{background:var(--pri-bg,#eeedfe)}
+.escllin.trv{opacity:.6;cursor:default}
+.esclnm{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.esclesc{font-size:11px;font-weight:700;color:var(--pri);background:var(--surf);border:1px solid var(--line2);border-radius:20px;padding:2px 9px;white-space:nowrap}
+.esclesc i{font-weight:700;color:#b3261e;font-style:normal}
+.esclst{font-size:11px;color:var(--tx3);white-space:nowrap}
+.esclsel{font-weight:800;color:#17693f}
+.esclft{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 12px;background:var(--surf2);border-top:1px solid var(--line2);font-size:12px;color:var(--tx3)}
+.esclft .lbtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.esclvazio{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px;font-size:12.5px;color:var(--tx2)}
+.esclvazio .material-symbols-rounded{font-size:17px;color:var(--pri)}
+tr.escli-err td{background:#fdeceb;color:#8a2a22}
+tr.escli-ig td{color:var(--tx3)}
 /* anexos da proposta (levantamento / detalhamento) */
 .apcard{border:1px solid var(--line2);border-radius:12px;background:var(--surf);margin:0 0 14px;overflow:hidden}
 .aphd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 13px;background:var(--surf2);border-bottom:1px solid var(--line2);font-size:13px}
@@ -2067,7 +2096,7 @@ function baseMatTableHtml(cfg){   // Base do lote = modelo EDITÁVEL de material
   return '<div class="scroll"><table class="tbl"><thead><tr>'+cols+'</tr></thead><tbody>'+body+'</tbody>'+foot+'</table></div>'; }
 function loteSeedBaseMedia(){   // atualiza a Base com a MÉDIA por loja (total ÷ nº de lojas que TÊM o item) — MERGE, não substitui
   var soma=loteMatSoma(varUnitsAlvo());   // com variações: média só das lojas da variação aberta
-  if(!soma.length){ alert('Não há material somado nas lojas desta variação ainda.'); return; }
+  if(!soma.length){ alert('Não há material somado nas lojas deste escopo ainda.'); return; }
   var hasBase=(S.materiais||[]).length>0;
   var msg = hasBase
     ? 'Atualizar a Base com a MÉDIA por loja ('+soma.length+' item(ns))?\n\n• Item que já está na Base: atualiza qtd/valor pela média.\n• Item novo das lojas: entra.\n• Item que você criou na Base e não está nas lojas: fica como está.\n• Média = total ÷ nº de lojas que TÊM o item (não divide por 16 à toa).\nNão altera as lojas.'
@@ -2086,7 +2115,7 @@ async function loteReplicarMat(){ if(!loteExigeSalvo('Replicar material nas loja
   if(!isLoteBase()) return;
   var base=(S.materiais||[]).filter(function(r){return r&&(r.desc||num(r.custoBase)>0||num(r.custoAlt)>0);});
   if(!base.length){ alert('A Base do lote está vazia. Monte o modelo ("Trazer média" ou "Adicionar material") antes de replicar.'); return; }
-  var units=varUnitsAlvo(); if(!units.length){ alert('Sem lojas nesta variação.'); return; }   // com variações: só as lojas da variação aberta
+  var units=varUnitsAlvo(); if(!units.length){ alert('Sem lojas neste escopo.'); return; }   // com variações: só as lojas da variação aberta
   if(!confirm('Replicar o modelo da Base ('+base.length+' item(ns)) nas '+units.length+' loja(s)?\n\n• Item que já existe na loja: atualiza qtd/valor pelo modelo.\n• Item novo: entra na loja.\n• Linha que VOCÊ ajustou à mão na loja (campo próprio) é PRESERVADA.\n• Não muda o preço do cliente (soberano/42.000).')) return;
   try{
     await SB.from('orcamentos').update({dados:S}).eq('id',ORC_ID);   // garante a Base gravada antes do fan-out
@@ -2729,7 +2758,7 @@ var PICK_LOTE=false;   // ② governança por item: modo "adicionar ao lote" (fa
 function loteAddPick(blk){ PICK_LOTE=true; openPick(blk); }
 async function loteAddLinha(blk,line){ if(!loteExigeSalvo('Adicionar ao lote'))return;
   const units=varUnitsAlvo(); const n=units.length;   // com variações: só as lojas da variação aberta
-  if(!n){ cloudMsg('sem lojas nesta variação — ficou só na base'); return; }
+  if(!n){ cloudMsg('sem lojas neste escopo — ficou só na base'); return; }
   if(!confirm('Adicionar "'+(line.desc||'novo item')+'" às '+n+' loja(s) do lote?\n\nEntra em todas (qtd '+num(line.qtd)+') — você ajusta por loja depois.\nLojas que já tiverem esse item não recebem duplicata.')) return;   // recusou: fica só na base
   try{
     await SB.from('orcamentos').update({dados:S}).eq('id',ORC_ID);   // persiste a base com a linha nova
@@ -3210,7 +3239,7 @@ function renderLote(host){
   const nome=LOTE_ROW?esc(LOTE_ROW.nome||'Lote'):'Lote';
   const contrNome=LOTE_ROW&&LOTE_ROW.contratante_id?esc((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):'';
   const total=LOTE_UNITS.reduce((a,o)=>a+num(o.total),0);
-  const pendChips=LOTE_PEND.map((p,i)=>`<span style="display:inline-flex;align-items:center;gap:6px;background:var(--pri-bg);color:var(--pri-d);border-radius:8px;padding:5px 9px;font-size:12.5px;font-weight:600"><span class="material-symbols-rounded" style="font-size:15px;color:var(--pri)">store</span>${esc(p.nome)}<button onclick="loteRmPend(${i})" style="border:0;background:none;cursor:pointer;color:var(--tx3);display:inline-flex"><span class="material-symbols-rounded" style="font-size:15px">close</span></button></span>`).join('')||'<span style="color:var(--tx3);font-size:12.5px">Nenhuma pendente. Adicione lojas abaixo.</span>';
+  const pendChips=LOTE_PEND.map((p,i)=>`<span style="display:inline-flex;align-items:center;gap:6px;background:var(--pri-bg);color:var(--pri-d);border-radius:8px;padding:5px 9px;font-size:12.5px;font-weight:600"><span class="material-symbols-rounded" style="font-size:15px;color:var(--pri)">store</span>${esc(p.nome)}${lotePendEscSel(p,i)}<button onclick="loteRmPend(${i})" style="border:0;background:none;cursor:pointer;color:var(--tx3);display:inline-flex"><span class="material-symbols-rounded" style="font-size:15px">close</span></button></span>`).join('')||'<span style="color:var(--tx3);font-size:12.5px">Nenhuma pendente. Adicione lojas abaixo.</span>';
   const lojaOpts=(LOJAS||[]).map(l=>`<option value="${l.id}">${esc(l.nome)}</option>`).join('');
   const unitRows=LOTE_UNITS.length?LOTE_UNITS.map(o=>{ const st=unitStatus(o); return `<div style="display:grid;grid-template-columns:1fr auto auto;gap:12px;align-items:center;padding:11px 15px;border-top:1px solid var(--line2)">
       <div style="display:flex;align-items:center;gap:10px;min-width:0"><span style="width:30px;height:30px;border-radius:8px;background:var(--pri-bg);color:var(--pri);display:grid;place-items:center;flex:none"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">description</span></span>
@@ -3239,7 +3268,7 @@ function renderLote(host){
 
   <div class="lsec"><span class="material-symbols-rounded">add_location_alt</span>2 · Unidades do lote</div>
   <div class="lcard"><div style="padding:15px 17px">
-    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px">${pendChips}</div>
+    <div style="display:flex;flex-wrap:wrap;gap:7px;margin-bottom:12px">${pendChips}</div>${lotePendEscBarra()}
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
       <select id="lLoja" style="flex:1;min-width:200px;padding:8px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— escolha uma loja —</option>${lojaOpts}</select>
       <button class="lbtn" style="padding:8px 13px" onclick="lotePend()"><span class="material-symbols-rounded">add</span>Adicionar</button>
@@ -3258,6 +3287,21 @@ function renderLote(host){
     <span style="align-self:center;font-size:12px;color:var(--tx3)">Fechar/congelar cada proposta é feito dentro dela (abrir → status).</span></div>
   `;
 }
+/* ESCOPO NA HORA DE GERAR (tela mestra do lote): cada loja pendente escolhe o escopo que vai seguir.
+   Antes todas nasciam no primeiro escopo e o dono tinha que trocar uma por uma depois. */
+function loteEscs(){ var vs=(BASE_DADOS&&Array.isArray(BASE_DADOS.variacoes)&&BASE_DADOS.variacoes.length)?BASE_DADOS.variacoes:[{id:'v1',nome:'Variação 1'}]; return vs; }
+function loteEscNome(id){ var v=loteEscs().find(function(x){ return x.id===id; }); return v?v.nome:'—'; }
+function lotePendEsc(i,v){ if(LOTE_PEND[i]) LOTE_PEND[i]._esc=v||''; loteRerender(); }
+function lotePendEscTodas(v){ if(!v)return; LOTE_PEND.forEach(function(p){ p._esc=v; }); loteRerender(); }
+function lotePendEscSel(p,i){ var vs=loteEscs(); if(vs.length<2) return '';
+  var cur=p._esc||vs[0].id;
+  return '<select onchange="lotePendEsc('+i+',this.value)" title="escopo que esta loja vai seguir" style="margin-left:2px;padding:2px 5px;border:1px solid var(--line2);border-radius:6px;font:inherit;font-size:11px;font-weight:700;background:var(--surf);color:var(--pri)">'
+    +vs.map(function(v){ return '<option value="'+v.id+'"'+(cur===v.id?' selected':'')+'>'+esc(v.nome)+'</option>'; }).join('')+'</select>'; }
+function lotePendEscBarra(){ var vs=loteEscs(); if(vs.length<2||!LOTE_PEND.length) return '';
+  return '<div style="margin:8px 0 0;font-size:12px;color:var(--tx3);display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+    +'<span class="material-symbols-rounded" style="font-size:15px">layers</span>Escopo de todas as pendentes:'
+    +vs.map(function(v){ return '<button class="lbtn" style="padding:3px 9px;font-size:11px" onclick="lotePendEscTodas(\''+v.id+'\')">'+esc(v.nome)+'</button>'; }).join('')+'</div>'; }
+function _escTotal(dados){ var p=null; try{ p=precoDe(dadosLojaCalc({dados:dados})); }catch(_){} return p?p.total:BASE_TOTAL; }
 function lotePend(){ const id=_lg('lLoja').value; if(!id)return; const l=(LOJAS||[]).find(x=>x.id===id); if(!l)return; if(LOTE_PEND.some(p=>p.id===id)){alert('Essa loja já está na lista.');return;} LOTE_PEND.push(l); loteRerender(); }
 function loteRmPend(i){ LOTE_PEND.splice(i,1); loteRerender(); }
 async function loteGerar(){ if(!loteExigeSalvo('Gerar propostas'))return;
@@ -3270,9 +3314,9 @@ async function loteGerar(){ if(!loteExigeSalvo('Gerar propostas'))return;
       if(opp.error||!opp.data[0]) continue; const oppId=opp.data[0].id;
       const numero=await proximoNumero();
       const _cn=(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):'');
-      const dados=BASE_DADOS?dadosLojaDaBase(BASE_DADOS,null):{}; delete dados._base; delete dados.macro; dados.abrSnap=null; dados.finNome=l.nome; dados.lojaId=l.id; dados.numero=numero;
+      const _escId=(l._esc||((loteEscs()[0]||{}).id)||'v1'); const dados=BASE_DADOS?dadosLojaDaBase(BASE_DADOS,_escId):{}; dados.variacaoId=_escId; delete dados._base; delete dados.macro; dados.abrSnap=null; dados.finNome=l.nome; dados.lojaId=l.id; dados.numero=numero;
       if(LOTE_ROW&&LOTE_ROW.contratante_id){ dados.contratanteId=LOTE_ROW.contratante_id; dados.cliNome=_cn; }
-      await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:oppId,lote_id:LOTE_ID,herda_base:true,numero,status:'rascunho',cliente_final:l.nome,cliente_contratante:(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):''),dados,total:BASE_TOTAL});
+      await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:oppId,lote_id:LOTE_ID,herda_base:true,numero,status:'rascunho',cliente_final:l.nome,cliente_contratante:(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):''),dados,total:_escTotal(dados)});
     }
     LOTE_PEND=[]; await loteReload();
   }catch(e){ console.error('gerar',e); alert('Erro ao gerar: '+(e.message||e)); if(btn)btn.disabled=false; }
@@ -3802,7 +3846,7 @@ var FX_DEF=[
   {id:'cab',nm:'Cabeçalho da proposta',ic:'badge'},
   {id:'lote.topo',nm:'Rede & lojas · tempo total',ic:'apartment'},
   {id:'lote.global',nm:'Global do lote · indicadores',ic:'public'},
-  {id:'lote.var',nm:'Variações da base',ic:'layers'},
+  {id:'lote.var',nm:'Escopos do lote',ic:'layers'},
   {id:'lote.modelo',nm:'Escopo padrão (modelo)',ic:'bookmark'},
   {id:'lote.ver',nm:'Configuração do lote · cálculo e visão',ic:'tune'},
   {id:'lote.escopo',nm:'Serviços global (Σ lojas)',ic:'summarize'},
@@ -4451,7 +4495,7 @@ function varTrocar(id){ var vs=varLista(); if(id===S.varAtiva)return; var atual=
   VAR_KEYS.forEach(function(k){ S[k]=_deep((nova.conteudo&&nova.conteudo[k])||[]); }); delete nova.conteudo; S.varAtiva=id;
   varRerender(); }
 function varNova(){ var vs=varLista(); var v1=vs[0];
-  var nome=prompt('Nome da nova variação (ex.: Splitão).\nEla nasce com os dados da "'+v1.nome+'" — depois você ajusta.','Variação '+(vs.length+1)); if(!nome||!nome.trim())return;
+  var nome=prompt('Nome do novo escopo (ex.: Splitão).\nEla nasce com os dados da "'+v1.nome+'" — depois você ajusta.','Variação '+(vs.length+1)); if(!nome||!nome.trim())return;
   var id='v'+Date.now().toString(36);
   if(escUnificado()){ var de=S.varAtiva||v1.id, n=0;   // novo escopo = cópia só das QUANTIDADES do escopo aberto (os serviços continuam os mesmos)
     VAR_KEYS.forEach(function(k){ (S[k]||[]).forEach(function(r){ if(escTem(r,de)){ if(!r.qtdEsc)r.qtdEsc={}; r.qtdEsc[id]=num(r.qtdEsc[de]); n++; } }); });
@@ -4459,14 +4503,14 @@ function varNova(){ var vs=varLista(); var v1=vs[0];
     cloudMsg('escopo "'+nome.trim()+'" criado com as quantidades de '+varNome(de)+' ('+n+' itens)'); return; }
   vs.push({id:id,nome:nome.trim(),conteudo:varConteudo(S,v1.id)});
   varTrocar(id); cloudMsg('variação "'+nome.trim()+'" criada com os dados da '+v1.nome); }
-function varRenomear(id){ var v=varLista().find(function(x){return x.id===id;}); if(!v)return; var n=prompt('Nome da variação:',v.nome); if(!n||!n.trim())return; v.nome=n.trim(); save(); try{ injectLoteBasePanel(); }catch(_){} }
-function varExcluir(id){ var vs=varLista(); if(vs.length<2||id===vs[0].id){ alert('A primeira variação é o modelo — não pode ser excluída.'); return; }
-  var n=unitsDaVar(id).length; if(n){ alert('Há '+n+' loja(s) seguindo esta variação. Troque a variação delas na Lista de lojas antes de excluir.'); return; }
+function varRenomear(id){ var v=varLista().find(function(x){return x.id===id;}); if(!v)return; var n=prompt('Nome do escopo:',v.nome); if(!n||!n.trim())return; v.nome=n.trim(); save(); try{ injectLoteBasePanel(); }catch(_){} }
+function varExcluir(id){ var vs=varLista(); if(vs.length<2||id===vs[0].id){ alert('O primeiro escopo é o modelo — não pode ser excluído.'); return; }
+  var n=unitsDaVar(id).length; if(n){ alert('Há '+n+' loja(s) seguindo este escopo. Aponte outro escopo para elas em "Lojas de cada escopo" antes de excluir.'); return; }
   if(!confirm('Excluir a variação "'+varNome(id)+'"?\n\nO conteúdo dela (serviços, material, despesas, locações) é perdido.'))return;
   if(S.varAtiva===id) varTrocar(vs[0].id); S.variacoes=varLista().filter(function(x){return x.id!==id;}); varRerender(); }
 function varCopiarDeLoja(){ var sel=_lg('varCopLoja'); var uidL=sel&&sel.value; if(!uidL){ alert('Escolha a loja.'); return; }
   var u=(LOTE_UNITS||[]).find(function(x){return x.id===uidL;}); if(!u)return;
-  if(!confirm('Preencher a variação "'+varNome(S.varAtiva)+'" com o conteúdo da loja "'+lojaLabel(u)+'"?\n\n• Serviços, Material, Despesas e Locações desta variação são SUBSTITUÍDOS.\n• Itens marcados como adicional na loja não entram.\n• A loja não muda.'))return;
+  if(!confirm('Preencher a variação "'+varNome(S.varAtiva)+'" com o conteúdo da loja "'+lojaLabel(u)+'"?\n\n• Serviços, Material, Despesas e Locações deste escopo.são SUBSTITUÍDOS.\n• Itens marcados como adicional na loja não entram.\n• A loja não muda.'))return;
   if(escUnificado()){ var eid=S.varAtiva, novos=0, ajust=0;   // preenche só as QUANTIDADES deste escopo; item que a loja tem e a biblioteca não, entra na biblioteca
     VAR_KEYS.forEach(function(k){
       (S[k]||[]).forEach(function(r){ if(r.qtdEsc) delete r.qtdEsc[eid]; });
@@ -4478,13 +4522,12 @@ function varCopiarDeLoja(){ var sel=_lg('varCopLoja'); var uidL=sel&&sel.value; 
     varRerender(); cloudMsg('escopo "'+varNome(eid)+'" preenchido com '+lojaLabel(u)+' · '+ajust+' itens'+(novos?' · '+novos+' novo(s) na biblioteca':'')); return; }
   VAR_KEYS.forEach(function(k){ S[k]=_deep(((u.dados&&u.dados[k])||[]).filter(function(r){return r&&!r.adic;})).map(function(r){ delete r.own; return r; }); });
   varRerender(); cloudMsg('variação preenchida com '+lojaLabel(u)); }
-async function varDaLoja(unitId,id){ if(!loteExigeSalvo('Trocar variação da loja')){ try{ injectLoteBasePanel(); }catch(_){} return; } var u=(LOTE_UNITS||[]).find(function(x){return x.id===unitId;}); if(!u)return;
-  var msg=u.herda_base?'\n\nEla está "igual à base": o conteúdo dela passa a ser o desta variação agora.':'\n\nEla está "editada": o conteúdo dela NÃO muda agora — só passa a seguir esta variação nas próximas ações do lote (propagar, replicar, adicionar).';
+async function varDaLoja(unitId,id){   // seletor da Lista de lojas — passa pelo mesmo motor do painel "Lojas de cada escopo" (regrava o total)
+  var u=(LOTE_UNITS||[]).find(function(x){return x.id===unitId;}); if(!u)return;
+  if(esclTravada(u)){ alert('Esta loja está fechada (enviada/aprovada): o escopo dela não muda.\n\nMudança de escopo em loja fechada = nova revisão.'); try{ injectLoteBasePanel(); }catch(_){} return; }
+  var msg=u.herda_base?'\n\nEla está "igual à base": o conteúdo dela passa a ser o deste escopo agora e o valor é recalculado.':'\n\nEla está "editada": o conteúdo dela NÃO muda agora — só passa a seguir este escopo nas próximas ações do lote (propagar, replicar, adicionar).';
   if(!confirm('A loja "'+lojaLabel(u)+'" passa a seguir "'+varNome(id)+'"?'+msg)){ try{ injectLoteBasePanel(); }catch(_){} return; }
-  var d=_deep(u.dados||{}); d.variacaoId=id;
-  if(u.herda_base){ var nd=dadosLojaDaBase(S,id); VAR_KEYS.forEach(function(k){ d[k]=nd[k]; }); }
-  var r=await SB.from('orcamentos').update({dados:d}).eq('id',unitId); if(r.error){ alert('Erro: '+r.error.message); return; }
-  await loteReload(); }
+  await esclApontarIds([unitId],id); }
 // ALARME de identidade (15/09 — divergência recorrente no Copeland): o nº oficial da loja (finNum) tem que bater com
 // o vínculo da loja (lojaId), com a loja da oportunidade e com o levantamento anexado. Se não bater, a proposta mostra dados de OUTRA loja.
 function identDivergencias(d){ d=d||{}; var fin=String(d.finNum||'').trim(); if(!fin)return []; var out=[];
@@ -4499,7 +4542,7 @@ function loteExigeSalvo(acao){
   if(typeof MANUAL!=='undefined' && MANUAL && DIRTY){ alert('⚠️ SALVE ANTES\n\n"'+acao+'" grava direto nas lojas do lote.\nEsta proposta tem alterações NÃO salvas — clique em Salvar primeiro, para as lojas não receberem uma versão diferente da que está na tela.'); return false; }
   return true; }
 function varSelLojaHtml(o){ var vs=varLista(); if(vs.length<2)return '';
-  return '<select onchange="varDaLoja(\''+o.id+'\',this.value)" title="variação que esta loja segue" style="margin-top:3px;max-width:190px;padding:2px 6px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:11px;font-weight:700;background:var(--pri-bg,#eeedfe);color:var(--pri)">'+vs.map(function(v){ return '<option value="'+v.id+'"'+(unitVar(o)===v.id?' selected':'')+'>'+esc(v.nome)+'</option>'; }).join('')+'</select>'; }
+  return '<select onchange="varDaLoja(\''+o.id+'\',this.value)" title="escopo que esta loja segue" style="margin-top:3px;max-width:190px;padding:2px 6px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:11px;font-weight:700;background:var(--pri-bg,#eeedfe);color:var(--pri)">'+vs.map(function(v){ return '<option value="'+v.id+'"'+(unitVar(o)===v.id?' selected':'')+'>'+esc(v.nome)+'</option>'; }).join('')+'</select>'; }
 function varMostra(v){ return !(v && v.mostrar===false); }   // chave por variação no documento do cliente (padrão: mostra, se a seção estiver ligada)
 function varSetMostrar(id){ var v=varLista().find(function(x){return x.id===id;}); if(!v)return; v.mostrar=!varMostra(v); save(); try{ injectLoteBasePanel(); }catch(_){} }
 function varMostraBtnHtml(atv,vs){ if(vs.length<2)return ''; var on=varMostra(atv);
@@ -4757,22 +4800,186 @@ function varDocHtml(_secTit,_th,_td,_matSecDoc){   // seção "Variações" do d
       +'<div style="font-size:12px;color:#5f5b72;margin:4px 0 8px;line-height:1.55">'+us.map(function(u){return esc(lojaLabel(u));}).join(' · ')+'</div>'
       +tab+(mt.length?_matSecDoc(mt,'Material — '+v.nome):'')+'</div>'; }).join('');
   return blocos?('<div><div style="'+_secTit+'">Variações do escopo</div>'+blocos+'</div>'):''; }
+/* aviso de unificar: o dono PODE decidir manter os escopos separados (cada um com a sua cópia).
+   Decidido isso, o aviso para de brigar e vira uma linha discreta, com volta atrás. */
+function escSemUnificar(){
+  if(!confirm('Manter os escopos SEPARADOS neste lote?\n\nCada escopo continua com a sua própria cópia dos serviços — corrigir um serviço num escopo NÃO chega nos outros.\nO aviso para de aparecer; você pode rever quando quiser.')) return;
+  S._escSemUnificar=true; save(); try{ injectLoteBasePanel(); }catch(_){} cloudMsg('escopos mantidos separados'); }
+function escVoltarAvisoUnif(){ delete S._escSemUnificar; save(); try{ injectLoteBasePanel(); }catch(_){} }
+function escUnifAvisoHtml(){
+  if(S._escSemUnificar) return '<div style="margin-top:10px;font-size:11.5px;color:var(--tx3);display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
+    +'<span class="material-symbols-rounded" style="font-size:15px">call_split</span>Escopos separados por sua decisão — cada um guarda a sua cópia dos serviços.'
+    +'<button class="lbtn" style="padding:2px 8px;font-size:11px" onclick="escVoltarAvisoUnif()">rever</button></div>';
+  return '<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:#fff4e0;border:1px solid #e6c360;color:#8a5a12;font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap">'
+    +'<span class="material-symbols-rounded" style="font-size:17px">warning</span>'
+    +'<span><b>Cada escopo guarda uma cópia dos serviços.</b> Corrigir um serviço num escopo não chega nos outros.</span>'
+    +'<span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'
+    +'<button class="lbtn" onclick="escSemUnificar()"><span class="material-symbols-rounded">call_split</span>Manter separados</button>'
+    +'<button class="lbtn" onclick="escUnificar()"><span class="material-symbols-rounded">merge</span>Unificar escopos</button></span></div>'; }
+/* ===== ESCOPO × LOJA: APONTAR QUAIS LOJAS SEGUEM CADA ESCOPO (30/09) =====
+   O dono mantém os escopos separados (cada um com a sua cópia) — o que faltava era dizer, de um lugar só,
+   quais lojas seguem cada escopo: na mão (marcar e apontar) ou por uma LISTA colada/arquivo (loja;escopo).
+   Loja enviada/aprovada nunca é alterada. Apontar troca o conteúdo da loja "igual à base" e regrava o total. */
+var ESCL_MARC={}, ESCL_LIN=[], ESCL_ERROS=[];
+function esclNorm(s){ return String(s==null?'':s).trim().toLowerCase().replace(/\s+/g,' '); }
+function esclNum(u){ return String((u&&u.dados&&u.dados.finNum)||'').trim(); }
+function esclTravada(u){ return lojaFechadaLocal((u&&u.dados)||{},u&&u.status); }
+function esclMarcadas(){ return (LOTE_UNITS||[]).filter(function(u){ return ESCL_MARC[u.id]&&!esclTravada(u); }); }
+function esclMarcar(id,on){ if(on)ESCL_MARC[id]=1; else delete ESCL_MARC[id]; try{ injectLoteBasePanel(); }catch(_){} }
+function esclMarcarLote(quais){
+  var vs=varLista(), at=S.varAtiva;
+  (LOTE_UNITS||[]).forEach(function(u){
+    if(esclTravada(u)) return;
+    var ok = (quais==='todas') || (quais==='sem' && !((u.dados&&u.dados.variacaoId))) || (quais==='outros' && unitVar(u)!==at);
+    if(ok) ESCL_MARC[u.id]=1; });
+  if(quais==='nenhuma') ESCL_MARC={};
+  try{ injectLoteBasePanel(); }catch(_){} }
+/* grava o apontamento: lista de ids → escopo */
+async function esclApontarIds(ids,escId,silencioso){
+  if(!loteExigeSalvo('Apontar escopo da loja')) return 0;
+  var ok=0, pulou=[];
+  for(var i=0;i<ids.length;i++){
+    var u=(LOTE_UNITS||[]).find(function(x){ return x.id===ids[i]; }); if(!u) continue;
+    if(esclTravada(u)){ pulou.push(lojaLabel(u)); continue; }
+    var d=_deep(u.dados||{}); d.variacaoId=escId;
+    if(u.herda_base){ var nd=dadosLojaDaBase(S,escId); VAR_KEYS.forEach(function(k){ d[k]=nd[k]; }); }
+    var p=null; try{ p=precoDe(dadosLojaCalc({dados:d})); }catch(_){}
+    var r=await SB.from('orcamentos').update({dados:d,total:(p?p.total:num(u.total))}).eq('id',u.id);
+    if(!r.error) ok++;
+  }
+  ESCL_MARC={};
+  await loteReload();
+  if(!silencioso) cloudMsg(ok+' loja(s) apontada(s) para '+varNome(escId)+(pulou.length?(' · '+pulou.length+' fechada(s) não mudaram'):''));
+  return ok; }
+async function esclAplicarMarcadas(){
+  var us=esclMarcadas(); if(!us.length){ alert('Marque as lojas que vão seguir este escopo.'); return; }
+  var at=S.varAtiva, muda=us.filter(function(u){ return unitVar(u)!==at; });
+  if(!confirm(us.length+' loja(s) passam a seguir "'+varNome(at)+'".\n\n'+us.map(function(u){ return '• '+lojaLabel(u)+(unitVar(u)!==at?(' (hoje: '+varNome(unitVar(u))+')'):' (já segue)'); }).join('\n')
+    +'\n\nQuem está "igual à base" recebe o conteúdo deste escopo agora e o valor é recalculado. Quem está "editada" só passa a seguir este escopo nas próximas ações.')) return;
+  await esclApontarIds(us.map(function(u){ return u.id; }),at); }
+function esclResumoHtml(){   // quantas lojas em cada escopo (cabeçalho do painel)
+  var vs=varLista(), us=LOTE_UNITS||[], sem=us.filter(function(u){ return !(u.dados&&u.dados.variacaoId); }).length;
+  return vs.map(function(v){ var n=unitsDaVar(v.id).length;
+    return '<span class="esclchip'+(v.id===S.varAtiva?' on':'')+'">'+esc(v.nome)+' <b>'+n+'</b></span>'; }).join('')
+    +(sem?'<span class="esclchip neg" title="loja gerada antes de existir mais de um escopo — está caindo no primeiro">sem escopo apontado <b>'+sem+'</b></span>':''); }
+function esclPainelHtml(){
+  if(!isLoteBase()) return '';
+  var vs=varLista(); if(vs.length<2) return '';
+  var us=LOTE_UNITS||[], at=S.varAtiva;
+  var cab='<div class="esclhd"><span class="material-symbols-rounded">storefront</span><b>Lojas de cada escopo</b>'
+    +'<span class="esclsub">quem segue o quê · marque e aponte para <b>'+esc(varNome(at))+'</b></span>'
+    +'<span class="esclres">'+esclResumoHtml()+'</span>'
+    +'<button class="lbtn" style="margin-left:auto" onclick="esclImpAbrir()" title="Colar ou abrir um arquivo com a lista loja;escopo"><span class="material-symbols-rounded">playlist_add_check</span>Importar lista de lojas</button></div>';
+  if(!us.length) return '<div class="esclcard">'+cab
+    +'<div class="esclvazio"><span class="material-symbols-rounded">info</span>Este lote ainda não tem lojas. Gere as propostas na tela do lote — lá você escolhe o escopo de cada loja antes de gerar.'
+    +(S_LOTE_ID?' <a class="lbtn" href="eX_Orcamento.html?lote='+S_LOTE_ID+'"><span class="material-symbols-rounded">open_in_new</span>Abrir a tela do lote</a>':'')+'</div></div>';
+  var linhas=us.map(function(u){
+    var tr=esclTravada(u), meu=unitVar(u)===at, marc=!!ESCL_MARC[u.id];
+    return '<label class="escllin'+(meu?' meu':'')+(tr?' trv':'')+'">'
+      +'<input type="checkbox" '+(marc?'checked':'')+(tr?' disabled':'')+' onchange="esclMarcar(\''+u.id+'\',this.checked)">'
+      +'<span class="esclnm">'+esc(lojaLabel(u))+'</span>'
+      +'<span class="esclesc">'+((u.dados&&u.dados.variacaoId)?esc(varNome(unitVar(u))):'<i>sem escopo</i>')+'</span>'
+      +'<span class="esclst">'+(tr?'<span class="esclsel">fechada</span>':(u.herda_base?'igual à base':'editada'))+'</span></label>'; }).join('');
+  var n=esclMarcadas().length;
+  return '<div class="esclcard">'+cab
+    +'<div class="esclmrc"><span>Marcar:</span><button class="lbtn" onclick="esclMarcarLote(\'todas\')">todas</button>'
+      +'<button class="lbtn" onclick="esclMarcarLote(\'sem\')">sem escopo</button>'
+      +'<button class="lbtn" onclick="esclMarcarLote(\'outros\')">as de outro escopo</button>'
+      +'<button class="lbtn" onclick="esclMarcarLote(\'nenhuma\')">limpar</button></div>'
+    +'<div class="escllist">'+linhas+'</div>'
+    +'<div class="esclft"><span>'+(n?('<b>'+n+'</b> loja(s) marcada(s)'):'nenhuma loja marcada')+'</span>'
+      +'<button class="lbtn'+(n?' on':'')+'"'+(n?'':' disabled')+' onclick="esclAplicarMarcadas()"><span class="material-symbols-rounded">how_to_reg</span>Apontar para '+esc(varNome(at))+'</button></div>'
+  +'</div>'; }
+/* ---- LISTA COLADA / ARQUIVO: loja;escopo ---- */
+function esclImpParse(txt){
+  ESCL_LIN=[]; ESCL_ERROS=[];
+  var vs=varLista(), us=LOTE_UNITS||[];
+  var linhas=String(txt||'').split(/\r?\n/).map(function(l){ return l.trim(); }).filter(function(l){ return l!==''; });
+  if(!linhas.length){ ESCL_ERROS.push('Cole a lista: uma linha por loja, no formato loja;escopo.'); return; }
+  var escAtualDaLista=null;
+  linhas.forEach(function(l,i){
+    var c=l.split(/;|\t/).map(function(x){ return x.trim(); });
+    if(c.length===1){   // linha só com um nome: cabeçalho de escopo ("Medidor T-161:") ou loja do escopo corrente
+      var so=c[0].replace(/:$/,'');
+      var ve=vs.find(function(v){ return esclNorm(v.nome)===esclNorm(so); });
+      if(ve){ escAtualDaLista=ve.id; return; }
+      c=[so,''];
+    }
+    if(i===0 && esclNorm(c[0])==='loja') return;   // cabeçalho
+    var alvoEsc=c[1]?c[1]:null, escId=null;
+    if(alvoEsc){ var v=vs.find(function(x){ return esclNorm(x.nome)===esclNorm(alvoEsc); })
+        || vs.find(function(x){ return esclNorm(x.nome).indexOf(esclNorm(alvoEsc))===0 || esclNorm(alvoEsc).indexOf(esclNorm(x.nome))===0; });
+      if(v) escId=v.id; }
+    else escId=escAtualDaLista;
+    var chave=c[0], nChave=(String(chave).match(/^[^0-9]*(\d{1,5})(?!\d)/)||[])[1]||null;
+    var u=us.find(function(x){ return nChave && esclNum(x)===nChave; })
+       || us.find(function(x){ return esclNorm(lojaLabel(x))===esclNorm(chave); })
+       || us.find(function(x){ return esclNorm(x.cliente_final||'')===esclNorm(chave); })
+       || us.find(function(x){ return esclNorm(lojaLabel(x)).indexOf(esclNorm(chave))>=0 && esclNorm(chave).length>3; });
+    var sit = !u ? 'loja não está neste lote' : (!escId ? (alvoEsc?('escopo "'+alvoEsc+'" não existe'):'sem escopo na linha') : (esclTravada(u)?'loja fechada — não muda':(unitVar(u)===escId?'já segue':'ok')));
+    ESCL_LIN.push({txt:l,chave:chave,u:u||null,escId:escId,sit:sit});
+  });
+  ESCL_LIN.filter(function(x){ return x.sit!=='ok'&&x.sit!=='já segue'; }).forEach(function(x){ ESCL_ERROS.push('"'+x.txt+'" → '+x.sit); }); }
+function esclImpPrevia(){
+  var ta=document.getElementById('esclTxt'); if(!ta)return; esclImpParse(ta.value);
+  var el=document.getElementById('esclPrev'); if(!el)return;
+  if(!ESCL_LIN.length){ el.innerHTML='<div class="imperro">'+ESCL_ERROS.map(esc).join('<br>')+'</div>'; return; }
+  var ok=ESCL_LIN.filter(function(x){ return x.sit==='ok'; }).length;
+  var rows=ESCL_LIN.map(function(x){
+    var cls=(x.sit==='ok')?'':(x.sit==='já segue'?'escli-ig':'escli-err');
+    return '<tr class="'+cls+'"><td>'+esc(x.chave)+'</td><td>'+(x.u?esc(lojaLabel(x.u)):'—')+'</td><td>'+(x.escId?esc(varNome(x.escId)):'—')+'</td><td>'+esc(x.sit)+'</td></tr>'; }).join('');
+  el.innerHTML='<div class="impinfo"><b>'+ok+'</b> loja(s) serão apontadas · '+ESCL_LIN.length+' linha(s) lidas</div>'
+    +'<div class="scroll"><table class="imptbl"><thead><tr><th>Na lista</th><th>Loja do lote</th><th>Escopo</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>'; }
+async function esclImpAplicar(){
+  var alvos=ESCL_LIN.filter(function(x){ return x.sit==='ok'; });
+  if(!alvos.length){ alert('Nenhuma linha está pronta para aplicar. Confira a prévia.'); return; }
+  if(!confirm('Apontar '+alvos.length+' loja(s) conforme a lista?\n\n'+alvos.slice(0,12).map(function(x){ return '• '+lojaLabel(x.u)+' → '+varNome(x.escId); }).join('\n')+(alvos.length>12?('\n… e mais '+(alvos.length-12)):''))) return;
+  var porEsc={}; alvos.forEach(function(x){ (porEsc[x.escId]=porEsc[x.escId]||[]).push(x.u.id); });
+  var tot=0;
+  for(var k in porEsc){ tot+=await esclApontarIds(porEsc[k],k,true); }
+  esclImpFechar(); cloudMsg(tot+' loja(s) apontadas pela lista');
+  alert('Pronto: '+tot+' loja(s) apontadas.'); }
+function esclImpFechar(){ var ov=document.getElementById('esclOv'); if(ov)ov.remove(); }
+function esclImpArquivo(){ var inp=document.createElement('input'); inp.type='file'; inp.accept='.csv,.tsv,.txt';
+  inp.onchange=function(){ var f=(inp.files||[])[0]; if(!f)return; var fr=new FileReader();
+    fr.onload=function(){ var ta=document.getElementById('esclTxt'); if(ta){ ta.value=String(fr.result||''); esclImpPrevia(); } }; fr.readAsText(f,'utf-8'); };
+  inp.click(); }
+function esclImpModelo(){ var ta=document.getElementById('esclTxt'); if(!ta)return;
+  var vs=varLista(), us=LOTE_UNITS||[];
+  ta.value='loja;escopo\n'+us.slice(0,3).map(function(u){ return (esclNum(u)||lojaLabel(u))+';'+((vs[0]||{}).nome||''); }).join('\n')
+    +(us.length?'\n':'')+'\n'+((vs[1]||{}).nome||'Escopo 2')+'\n'+us.slice(3,5).map(function(u){ return (esclNum(u)||lojaLabel(u)); }).join('\n')+'\n';
+  esclImpPrevia(); }
+function esclImpAbrir(){
+  if(document.getElementById('esclOv')) return;
+  var ov=document.createElement('div'); ov.id='esclOv';
+  ov.innerHTML='<div class="impbox"><div class="imphd"><span class="material-symbols-rounded">playlist_add_check</span><b>Lista de lojas por escopo</b>'
+    +'<span class="impsub">uma linha por loja: <b>loja;escopo</b> — a loja pode ser o número ou o nome · também aceita o nome do escopo numa linha sozinha e as lojas dele abaixo</span>'
+    +'<button class="lbtn" onclick="esclImpFechar()" style="margin-left:auto"><span class="material-symbols-rounded">close</span>Fechar</button></div>'
+    +'<div class="impbd"><div class="impacts">'
+    +'<button class="lbtn" onclick="esclImpArquivo()"><span class="material-symbols-rounded">upload_file</span>Abrir arquivo (CSV/TXT)</button>'
+    +'<button class="lbtn" onclick="esclImpModelo()"><span class="material-symbols-rounded">description</span>Colar modelo de exemplo</button>'
+    +'<span class="impsub">loja fechada (enviada/aprovada) nunca é alterada</span></div>'
+    +'<textarea id="esclTxt" class="imptxt" spellcheck="false" placeholder="loja;escopo&#10;903;Medidor T-161&#10;Economart Centro;Medidor A-968" oninput="esclImpPrevia()"></textarea>'
+    +'<div id="esclPrev" class="impprev"></div></div>'
+    +'<div class="impft"><button class="lbtn" onclick="esclImpFechar()">Cancelar</button><button class="lbtn on" onclick="esclImpAplicar()"><span class="material-symbols-rounded">how_to_reg</span>Apontar as lojas</button></div></div>';
+  document.body.appendChild(ov);
+  setTimeout(function(){ var t=document.getElementById('esclTxt'); if(t)t.focus(); },60); }
 function varFaixaHtml(){ var vs=varLista(); if(!vs.length)return ''; var at=S.varAtiva; var atv=vs.find(function(x){return x.id===at;})||vs[0]; var idx=vs.indexOf(atv);
   var tabs=vs.map(function(v,i){ var n=unitsDaVar(v.id).length, on=v.id===at;
     return '<button class="lbtn" onclick="varTrocar(\''+v.id+'\')" style="padding:7px 12px;'+(on?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'"><span class="material-symbols-rounded" style="'+(on?'color:#fff':'')+'">'+(i===0?'star':'layers')+'</span>'+esc(v.nome)+'<span style="opacity:.8;font-weight:500">· '+n+' loja'+(n===1?'':'s')+'</span></button>'; }).join('');
   var lojaOpts=(LOTE_UNITS||[]).map(function(u){ return '<option value="'+u.id+'">'+esc(lojaLabel(u))+(vs.length>1?' · '+esc(varNome(unitVar(u))):'')+'</option>'; }).join('');
   return '<div style="padding:12px 14px">'
-    +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px"><span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">layers</span><b style="font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri)">Variações da base</b><span style="font-size:11.5px;color:var(--tx3)">cada variação tem seus serviços, material, despesas e locações</span>'+varSecaoBtnHtml(vs)+'</div>'
-    +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+tabs+'<button class="lbtn" onclick="varNova()" style="padding:7px 12px;border-style:dashed"><span class="material-symbols-rounded">add</span>Nova variação</button><button class="lbtn" onclick="impAbrir()" style="padding:7px 12px" title="Importar serviços e quantidades de uma planilha no formato padrão"><span class="material-symbols-rounded">table_view</span>Importar escopo</button><button class="lbtn" onclick="escModAbrir()" style="padding:7px 12px" title="Gravar este escopo como modelo ou aplicar um modelo gravado"><span class="material-symbols-rounded">bookmarks</span>Modelos de escopo</button></div>'
+    +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px"><span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">layers</span><b style="font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri)">Escopos do lote</b><span style="font-size:11.5px;color:var(--tx3)">cada escopo tem os seus serviços, material, despesas e locações</span>'+varSecaoBtnHtml(vs)+'</div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+tabs+'<button class="lbtn" onclick="varNova()" style="padding:7px 12px;border-style:dashed"><span class="material-symbols-rounded">add</span>Novo escopo</button><button class="lbtn" onclick="impAbrir()" style="padding:7px 12px" title="Importar serviços e quantidades de uma planilha no formato padrão"><span class="material-symbols-rounded">table_view</span>Importar escopo</button><button class="lbtn" onclick="escModAbrir()" style="padding:7px 12px" title="Gravar este escopo como modelo ou aplicar um modelo gravado"><span class="material-symbols-rounded">bookmarks</span>Modelos de escopo</button></div>'
     +(function(){ var f=varFonte(atv), mp=null; try{ mp=modeloPreco(atv); }catch(_){}
       var bt=function(k,ic){ var on=f===k; return '<button class="lbtn" onclick="varSetFonte(\''+atv.id+'\',\''+k+'\')" style="padding:5px 10px;'+(on?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'"><span class="material-symbols-rounded" style="'+(on?'color:#fff':'')+'">'+ic+'</span>'+VAR_FONTES[k]+'</button>'; };
       return '<div style="margin-top:9px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px"><b style="color:var(--tx2)">Valores de '+esc(atv.nome)+':</b>'+bt('cadastro','inventory')+bt('media','functions')+bt('pior','trending_up')
         +(mp&&mp.p?'<span style="margin-left:6px;color:var(--tx3)">total por unidade <b style="color:var(--tx)">'+fmt(mp.p.total)+'</b> · '+esc(mp.ref)+'</span>':'')
         +(f!=='cadastro'?'<span style="flex-basis:100%;margin-top:4px;padding:6px 10px;border-radius:8px;background:#fff4e0;border:1px solid #e6c360;color:#8a5a12;font-weight:700"><span class="material-symbols-rounded" style="font-size:15px;vertical-align:-3px">warning</span> Valores herdados das propostas das lojas ('+esc(mp?mp.ref:'')+') — sem percentual, podem divergir do cadastro base. Os itens editados aqui não mudam esses valores.</span>':'')+'</div>'; })()
     +''
-    +'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--pri-bg,#eeedfe);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">edit</span><span>Editando <b>'+esc(atv.nome)+'</b>'+(idx===0?' <span style="color:var(--tx3)">(modelo)</span>':'')+' — Serviços, Material, Despesas e Locações desta variação.</span><span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'+varMostraBtnHtml(atv,vs)+'<button class="lbtn" onclick="varRenomear(\''+atv.id+'\')"><span class="material-symbols-rounded">edit_note</span>Renomear</button>'+(idx>0?'<button class="lbtn danger" onclick="varExcluir(\''+atv.id+'\')"><span class="material-symbols-rounded">delete</span>Excluir</button>':'')+'</span></div>'
-    +((LOTE_UNITS||[]).length?'<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--tx3)"><span>Preencher esta variação com o conteúdo de uma loja:</span><select id="varCopLoja" style="min-width:220px;padding:6px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:12.5px;background:var(--surf);color:var(--tx)"><option value="">— escolha a loja —</option>'+lojaOpts+'</select><button class="lbtn" onclick="varCopiarDeLoja()"><span class="material-symbols-rounded">content_copy</span>Copiar</button></div>':'')
-    +escInicioHtml()+(escUnificado()?escMatrizHtml():'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:#fff4e0;border:1px solid #e6c360;color:#8a5a12;font-size:12.5px;display:flex;gap:8px;align-items:center;flex-wrap:wrap"><span class="material-symbols-rounded" style="font-size:17px">warning</span><span><b>Cada escopo ainda guarda uma cópia dos serviços.</b> Corrigir um serviço num escopo não chega nos outros. Unifique para o serviço existir uma vez, com a quantidade de cada escopo ao lado.</span><button class="lbtn" style="margin-left:auto" onclick="escUnificar()"><span class="material-symbols-rounded">merge</span>Unificar escopos</button></div>')
+    +'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--pri-bg,#eeedfe);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">edit</span><span>Editando <b>'+esc(atv.nome)+'</b>'+(idx===0?' <span style="color:var(--tx3)">(modelo)</span>':'')+' — Serviços, Material, Despesas e Locações deste escopo.</span><span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'+varMostraBtnHtml(atv,vs)+'<button class="lbtn" onclick="varRenomear(\''+atv.id+'\')"><span class="material-symbols-rounded">edit_note</span>Renomear</button>'+(idx>0?'<button class="lbtn danger" onclick="varExcluir(\''+atv.id+'\')"><span class="material-symbols-rounded">delete</span>Excluir</button>':'')+'</span></div>'
+    +((LOTE_UNITS||[]).length?'<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--tx3)"><span>Preencher este escopo com o conteúdo de uma loja:</span><select id="varCopLoja" style="min-width:220px;padding:6px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:12.5px;background:var(--surf);color:var(--tx)"><option value="">— escolha a loja —</option>'+lojaOpts+'</select><button class="lbtn" onclick="varCopiarDeLoja()"><span class="material-symbols-rounded">content_copy</span>Copiar</button></div>':'')
+    +esclPainelHtml()+escInicioHtml()+(escUnificado()?escMatrizHtml():escUnifAvisoHtml())
     +'</div>'; }
 (function(){ const _ib=injectLoteBasePanel; injectLoteBasePanel=function(){ const r=_ib.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } try{ abasApply(); }catch(e){ console.error('abas',e); } try{ injectLoteRO(); levArqInit(); }catch(_){} return r; };
   const _rb2=renderBlk; renderBlk=function(){ const r=_rb2.apply(this,arguments); try{ fxApply(); }catch(e){ console.error('fxApply',e); } try{ abasApply(); }catch(e){} return r; }; })();
