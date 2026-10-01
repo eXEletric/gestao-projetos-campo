@@ -4109,9 +4109,9 @@ function levValor(params,k){ if(!params)return null;
 function levQtdDe(r,params){   // quantidade que a linha teria com os números do levantamento
   if(!r||!r.qtdDe) return null;
   var v=levValor(params,r.qtdDe); if(v===null) return null;
-  var q=v*(r.qtdFator?num(r.qtdFator):1);
+  var q=+(v*(r.qtdFator?num(r.qtdFator):1)).toFixed(4);   /* tira o resto de ponto flutuante: 200 × 1,1 = 220, não 220,0000000000003 */
   var a=r.qtdArred?num(r.qtdArred):0;
-  if(a>0) q=Math.ceil(q/a)*a; else q=Math.round(q*100)/100;
+  if(a>0) q=Math.ceil(+(q/a).toFixed(6))*a; else q=Math.round(q*100)/100;
   return q; }
 function levSetDe(blk,lineId,campo,v){ var r=(S[blk]||[]).find(function(x){return x.id===lineId;}); if(!r)return;
   if(String(v).trim()==='') delete r[campo]; else r[campo]=(campo==='qtdDe')?v:num(v);
