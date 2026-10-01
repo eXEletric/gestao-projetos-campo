@@ -462,6 +462,16 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .esclvazio .material-symbols-rounded{font-size:17px;color:var(--pri)}
 tr.escli-err td{background:#fdeceb;color:#8a2a22}
 tr.escli-ig td{color:var(--tx3)}
+/* levantamento da loja: cartão recolhível (um cartão só) */
+.levtog{display:flex;align-items:center;gap:8px;flex-wrap:wrap;width:100%;padding:11px 14px;border:0;background:none;font:inherit;font-size:13px;color:#2563a8;cursor:pointer;text-align:left}
+.levtog:hover{background:#f3f7fd}
+.levtog b{color:#2563a8}
+.levtog .material-symbols-rounded{font-size:18px}
+.levtag{font-size:11px;font-weight:700;color:#2563a8;background:#e8f0fb;border-radius:20px;padding:1px 8px}
+.levrs{font-size:11.5px;color:var(--tx3);font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.levchv{margin-left:auto;color:#2563a8}
+.levcorpo{padding:0 14px 13px;display:flex;flex-direction:column;gap:10px}
+.levcorpo .levcard{margin:0}
 /* anexos da proposta (levantamento / detalhamento) */
 .apcard{border:1px solid var(--line2);border-radius:12px;background:var(--surf);margin:0 0 14px;overflow:hidden}
 .aphd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 13px;background:var(--surf2);border-bottom:1px solid var(--line2);font-size:13px}
@@ -4289,10 +4299,7 @@ function levFormHtml(){
     +'<div class="levgrid">'+campos+'</div>'
     +'<div class="levpe"><span class="material-symbols-rounded">info</span>'+n+' número(s) preenchido(s) · o que estiver marcado como <b>est.</b> aparece como estimativa no relatório · ajuste manual na linha não é sobrescrito</div></div>'; }
 function levFormRender(){ var el=document.getElementById('levForm'); if(el) el.innerHTML=levFormHtml(); }
-function levFormInit(){ if(!isLoteUnit())return; var el=document.getElementById('levForm');
-  if(!el){ var anchor=document.getElementById('arqProp')||document.querySelector('.panel.prophead'); if(!anchor||!anchor.parentElement)return;
-    el=document.createElement('div'); el.id='levForm'; anchor.parentElement.insertBefore(el,anchor.nextSibling); }
-  levFormRender(); }
+function levFormInit(){ if(!isLoteUnit())return; try{ renderLevUnidade(); }catch(_){} }   /* o formulário mora dentro do cartão do levantamento (um cartão só) */
 function levAplicarAqui(){
   if(!isLoteUnit()){ alert('Esta tela é da loja.'); return; }
   var bd=BASE_DADOS||UNIT_BASE_DADOS; var esc0=bd?dadosLojaDaBase(bd,(S.variacaoId||'v1')):null;
@@ -6044,16 +6051,39 @@ function renderBanner(){ const el=document.getElementById('oppBanner'); if(!el){
   renderComprovantes();
 }
 // painel do levantamento herdado do lote (cada unidade leva o seu)
+/* LEVANTAMENTO DA LOJA EM UM CARTÃO SÓ (01/10): antes havia DOIS — o painel do relatório (texto longo, ~2.700px no topo)
+   e a tela dos números medidos, separados. Agora é um cartão recolhido por padrão: a loja abre na proposta,
+   e o levantamento (resumo numa linha → números medidos → relatório e observações) fica a um clique. */
+function levAberto(){ try{ return localStorage.getItem('ex_lev_aberto_'+(S&&S.numero||''))==='1'; }catch(_){ return false; } }
+function levToggle(){ try{ localStorage.setItem('ex_lev_aberto_'+(S&&S.numero||''), levAberto()?'0':'1'); }catch(_){} renderLevUnidade(); }
+function levResumo(){
+  var p=(S&&S.levUnidade&&S.levUnidade.params)||{}, out=[];
+  var n=Object.keys(p).filter(function(k){ return k!=='estimados'&&k!=='fonte'&&k!=='lido_em'; }).length;
+  [['quadros','quadro'],['circuitos','circuito'],['splitoes','splitão'],['fancoils','fancoil'],['medidoresClima','medidor']].forEach(function(x){
+    if(num(p[x[0]])>0) out.push(_d1(num(p[x[0]]))+' '+x[1]+(num(p[x[0]])>1?'s':'')); });
+  var inf=num(p.infraSimples)+num(p.infraDificil); if(inf>0) out.push(_d1(inf)+' m de infra');
+  return {n:n, txt:out.slice(0,4).join(' · ')}; }
 function renderLevUnidade(){ const el=document.getElementById('levUnidadePanel'); if(!el)return; const L=S&&S.levUnidade;
-  if(!OPP||!L||!(L.obs||L.data||L.relatorio||L.relatorioEscopo)){ el.innerHTML=''; return; }
-  const stl={vis:'Visitada',mod:'Modelo',avis:'A visitar',nvis:'Não visitar'}[L.status]||'';
+  const temForm=(typeof isLoteUnit==='function')&&isLoteUnit();
+  if(!OPP||(!temForm&&!(L&&(L.obs||L.data||L.relatorio||L.relatorioEscopo)))){ el.innerHTML=''; return; }
+  const stl={vis:'Visitada',mod:'Modelo',avis:'A visitar',nvis:'Não visitar'}[(L&&L.status)]||'';
   const _dv=(typeof identDivergencias==='function')?identDivergencias(S):[];
-  el.innerHTML=(_dv.length?`<div class="noprint" style="margin:0 0 10px;padding:10px 14px;border-radius:10px;background:#fdecea;border:1px solid #f0b3ad;color:#8c1d18;font-size:13px;font-weight:700;display:flex;gap:8px;align-items:center"><span class="material-symbols-rounded">error</span>Loja divergente: nº oficial ${esc(String(S.finNum))} — ${esc(_dv.join(' · '))}. Não envie antes de corrigir.</div>`:'')+`<div class="cmp-wrap noprint" style="border-color:#bcd0ee">
-    <div class="cmp-h" style="color:#2563a8"><span class="material-symbols-rounded">fact_check</span>Levantamento desta unidade${stl?` · <span style="font-size:11.5px;font-weight:600">${esc(stl)}</span>`:''}${L.data?` · <span style="font-size:11.5px;font-weight:600">${esc(String(L.data).split('-').reverse().join('/'))}</span>`:''}</div>
-    ${L.relatorioEscopo?`<div class="cmp-hint" style="white-space:pre-wrap"><b style="color:#2563a8">Relatório${L.relatorioNome?' · '+esc(L.relatorioNome):''}</b><br>${esc(L.relatorioEscopo)}</div>`:''}
-    ${L.obs?`<div class="cmp-hint" style="white-space:pre-wrap"><b>Observações de campo</b><br>${esc(L.obs)}</div>`:''}
-    ${L.relatorio?`<a class="btn btn-s" href="${esc(L.relatorio)}" target="_blank"><span class="material-symbols-rounded">description</span>Relatório da visita</a>`:''}
-  </div>`;
+  const ab=levAberto(), rs=levResumo();
+  const alarme=_dv.length?`<div class="noprint" style="margin:0 0 10px;padding:10px 14px;border-radius:10px;background:#fdecea;border:1px solid #f0b3ad;color:#8c1d18;font-size:13px;font-weight:700;display:flex;gap:8px;align-items:center"><span class="material-symbols-rounded">error</span>Loja divergente: nº oficial ${esc(String(S.finNum))} — ${esc(_dv.join(' · '))}. Não envie antes de corrigir.</div>`:'';
+  const resumo=`<button class="levtog" onclick="levToggle()" title="${ab?'recolher':'abrir'} o levantamento desta unidade">
+      <span class="material-symbols-rounded">fact_check</span>
+      <b>Levantamento desta unidade</b>
+      ${stl?`<span class="levtag">${esc(stl)}</span>`:''}
+      ${(L&&L.data)?`<span class="levtag">${esc(String(L.data).split('-').reverse().join('/'))}</span>`:''}
+      <span class="levrs">${rs.txt?esc(rs.txt):(rs.n?rs.n+' número(s) preenchido(s)':'sem números preenchidos')}</span>
+      <span class="material-symbols-rounded levchv">${ab?'expand_less':'expand_more'}</span></button>`;
+  const corpo=ab?`<div class="levcorpo">
+      ${temForm?`<div id="levForm">${levFormHtml()}</div>`:""}
+      ${(L&&L.relatorioEscopo)?`<div class="cmp-hint" style="white-space:pre-wrap"><b style="color:#2563a8">Relatório${L.relatorioNome?' · '+esc(L.relatorioNome):''}</b><br>${esc(L.relatorioEscopo)}</div>`:''}
+      ${(L&&L.obs)?`<div class="cmp-hint" style="white-space:pre-wrap"><b>Observações de campo</b><br>${esc(L.obs)}</div>`:''}
+      ${(L&&L.relatorio)?`<a class="btn btn-s" href="${esc(L.relatorio)}" target="_blank"><span class="material-symbols-rounded">description</span>Relatório da visita</a>`:''}
+    </div>`:'';
+  el.innerHTML=alarme+`<div class="cmp-wrap noprint" style="border-color:#bcd0ee;padding:0;overflow:hidden">${resumo}${corpo}</div>`;
 }
 /* ===== Comprovantes de fechamento (Fase 1) — a aprovação vira reflexo da PROVA ===== */
 const CMP_TIPOS={email:{nome:'E-mail de aprovação',ic:'mail'},os:{nome:'Ordem de serviço / pedido',ic:'receipt_long'},contrato:{nome:'Contrato / termo',ic:'history_edu'},outro:{nome:'Outro',ic:'attach_file'}};
