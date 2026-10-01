@@ -411,7 +411,7 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .qorig.qo-man{background:#fdeceb;color:#b3261e}
 .esctbl td.escde{min-width:200px}
 /* importar escopo (formato padrão eX) */
-#impOv{position:fixed;inset:0;z-index:800;background:rgba(20,14,40,.55);display:grid;place-items:center;padding:18px}
+#impOv,#escModOv{position:fixed;inset:0;z-index:800;background:rgba(20,14,40,.55);display:grid;place-items:center;padding:18px}
 .impbox{background:var(--surf);border-radius:14px;width:min(980px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(20,10,50,.35)}
 .imphd{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:12px 15px;border-bottom:1px solid var(--line2);background:var(--pri-bg,#efeafc);color:var(--pri)}
 .imphd .material-symbols-rounded{font-size:19px}
@@ -429,6 +429,10 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .imptbl tr.impadic td{background:#fffaf1}
 .impft{display:flex;gap:8px;justify-content:flex-end;padding:11px 15px;border-top:1px solid var(--line2);background:var(--surf2)}
 .impft .lbtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.emlin{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line)}
+.emlin:last-child{border-bottom:0}
+.emnm{flex:1;min-width:220px}
+.emac{display:flex;gap:6px;flex-wrap:wrap}
 /* anexos da proposta (levantamento / detalhamento) */
 .apcard{border:1px solid var(--line2);border-radius:12px;background:var(--surf);margin:0 0 14px;overflow:hidden}
 .aphd{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:10px 13px;background:var(--surf2);border-bottom:1px solid var(--line2);font-size:13px}
@@ -4178,8 +4182,10 @@ function escInicioHtml(){
     +'<div class="inihd"><span class="material-symbols-rounded">rocket_launch</span><b>Comece pelo escopo</b>'
     +'<span class="inisub">o escopo é a lista de serviços e materiais da obra · as lojas herdam dele</span></div>'
     +'<div class="inigrid">'
+      +'<button class="iniop" onclick="escModAbrir()"><span class="material-symbols-rounded">bookmarks</span>'
+        +'<b>Usar um modelo de escopo</b><span>Escopo que você já gravou numa proposta anterior: itens, escopos e quantidades vêm prontos. É o caminho mais rápido quando a solução se repete.</span></button>'
       +'<button class="iniop" onclick="impAbrir()"><span class="material-symbols-rounded">table_view</span>'
-        +'<b>Importar de uma planilha</b><span>Cole a lista no formato padrão (uma linha por item, uma coluna por escopo) ou abra um CSV. É o caminho mais rápido.</span></button>'
+        +'<b>Importar de uma planilha</b><span>Cole a lista no formato padrão (uma linha por item, uma coluna por escopo) ou abra um CSV.</span></button>'
       +'<button class="iniop" onclick="escIrServicos()"><span class="material-symbols-rounded">playlist_add</span>'
         +'<b>Lançar serviço a serviço</b><span>Abre o bloco Serviços e vai puxando do cadastro, com quantidade e composição.</span></button>'
       +'<button class="iniop" onclick="escIrCopiar()"><span class="material-symbols-rounded">content_copy</span>'
@@ -4757,7 +4763,7 @@ function varFaixaHtml(){ var vs=varLista(); if(!vs.length)return ''; var at=S.va
   var lojaOpts=(LOTE_UNITS||[]).map(function(u){ return '<option value="'+u.id+'">'+esc(lojaLabel(u))+(vs.length>1?' · '+esc(varNome(unitVar(u))):'')+'</option>'; }).join('');
   return '<div style="padding:12px 14px">'
     +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px"><span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">layers</span><b style="font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri)">Variações da base</b><span style="font-size:11.5px;color:var(--tx3)">cada variação tem seus serviços, material, despesas e locações</span>'+varSecaoBtnHtml(vs)+'</div>'
-    +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+tabs+'<button class="lbtn" onclick="varNova()" style="padding:7px 12px;border-style:dashed"><span class="material-symbols-rounded">add</span>Nova variação</button><button class="lbtn" onclick="impAbrir()" style="padding:7px 12px" title="Importar serviços e quantidades de uma planilha no formato padrão"><span class="material-symbols-rounded">table_view</span>Importar escopo</button></div>'
+    +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+tabs+'<button class="lbtn" onclick="varNova()" style="padding:7px 12px;border-style:dashed"><span class="material-symbols-rounded">add</span>Nova variação</button><button class="lbtn" onclick="impAbrir()" style="padding:7px 12px" title="Importar serviços e quantidades de uma planilha no formato padrão"><span class="material-symbols-rounded">table_view</span>Importar escopo</button><button class="lbtn" onclick="escModAbrir()" style="padding:7px 12px" title="Gravar este escopo como modelo ou aplicar um modelo gravado"><span class="material-symbols-rounded">bookmarks</span>Modelos de escopo</button></div>'
     +(function(){ var f=varFonte(atv), mp=null; try{ mp=modeloPreco(atv); }catch(_){}
       var bt=function(k,ic){ var on=f===k; return '<button class="lbtn" onclick="varSetFonte(\''+atv.id+'\',\''+k+'\')" style="padding:5px 10px;'+(on?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'"><span class="material-symbols-rounded" style="'+(on?'color:#fff':'')+'">'+ic+'</span>'+VAR_FONTES[k]+'</button>'; };
       return '<div style="margin-top:9px;display:flex;align-items:center;gap:6px;flex-wrap:wrap;font-size:12px"><b style="color:var(--tx2)">Valores de '+esc(atv.nome)+':</b>'+bt('cadastro','inventory')+bt('media','functions')+bt('pior','trending_up')
@@ -5089,6 +5095,108 @@ function impAbrir(){
   document.body.appendChild(ov);
   setTimeout(function(){ var t=document.getElementById('impTxt'); if(t)t.focus(); },60);
 }
+/* ===== PASSO 4 · MODELO DE ESCOPO REUTILIZÁVEL =====
+   O escopo montado num lote vira modelo gravado (tabela escopo_modelos) e pode ser aplicado em outro lote:
+   a biblioteca de itens, os escopos e as quantidades de cada escopo chegam prontas.
+   Margem, imposto, cadeado e desconto NÃO vêm no modelo — isso é sempre do lote. */
+var ESC_MOD=[];
+var ESC_MOD_CAMPOS=['desc','und','catId','marca','codigo','codBase','detalhe','compTrab','custoBase','custoAlt','usarBase','gatilho','adic','adicMotivo','adicCobrar','qtdDe','qtdFator','qtdArred'];
+function escModNorm(s){ return String(s||'').trim().toLowerCase(); }
+function escModItem(r){ var o={};
+  ESC_MOD_CAMPOS.forEach(function(k){ if(r[k]!==undefined&&r[k]!==null&&r[k]!=='') o[k]=r[k]; });
+  if(r.composicao) o.composicao=_deep(r.composicao);
+  o.qtdEsc=_deep(r.qtdEsc||{});
+  return o; }
+function escModPayload(){
+  var vs=varLista().map(function(v){ return {id:v.id,nome:v.nome}; });
+  var blocos={}, n=0;
+  VAR_KEYS.forEach(function(k){ blocos[k]=(S[k]||[]).map(escModItem); n+=blocos[k].length; });
+  return {dados:{v:1,variacoes:vs,blocos:blocos}, itens:n, escopos:vs.length}; }
+async function escModCarregar(){ ESC_MOD=[]; if(!SB) return ESC_MOD;
+  try{ const r=await SB.from('escopo_modelos').select('id,nome,descricao,itens,escopos,created_at').is('deleted_at',null).order('nome');
+    ESC_MOD=r.data||[]; }catch(e){ console.error('escMod',e); }
+  return ESC_MOD; }
+async function escModSalvarAtual(){
+  if(!isLoteBase()){ alert('Só na proposta-base do lote.'); return; }
+  if(!escUnificado()){ alert('Este lote ainda está no formato antigo (cada variação com a sua cópia).\n\nUnifique os escopos primeiro — depois dá para gravar como modelo.'); return; }
+  var p=escModPayload();
+  if(!p.itens){ alert('O escopo está vazio: nada para gravar como modelo.'); return; }
+  var nome=prompt('Nome do modelo de escopo (como você vai reconhecer na próxima proposta):', ((LOTE_ROW&&LOTE_ROW.nome)||'')); if(nome===null) return;
+  nome=String(nome).trim(); if(!nome){ alert('Precisa de um nome.'); return; }
+  var desc=prompt('Uma linha de descrição (opcional) — quando usar este modelo:',''); if(desc===null) desc='';
+  try{
+    const r=await SB.from('escopo_modelos').insert({nome:nome,descricao:String(desc).trim()||null,dados:p.dados,itens:p.itens,escopos:p.escopos,origem_lote_id:S_LOTE_ID||null});
+    if(r.error) throw r.error;
+    await escModCarregar(); escModRender();
+    cloudMsg('modelo de escopo gravado');
+  }catch(e){ alert('Não consegui gravar o modelo: '+(e.message||e)); } }
+async function escModAplicar(id){
+  if(!isLoteBase()){ alert('Só na proposta-base do lote.'); return; }
+  var m=(ESC_MOD||[]).find(function(x){ return x.id===id; }); if(!m) return;
+  var d=null;
+  try{ const r=await SB.from('escopo_modelos').select('dados').eq('id',id).single(); if(r.error) throw r.error; d=r.data&&r.data.dados; }
+  catch(e){ alert('Não consegui ler o modelo: '+(e.message||e)); return; }
+  if(!d||!d.blocos){ alert('Modelo vazio.'); return; }
+  var nLojas=(LOTE_UNITS||[]).length;
+  if(!confirm('Aplicar o modelo "'+m.nome+'" no escopo deste lote?\n\n• '+(m.itens||0)+' item(ns) e '+(m.escopos||0)+' escopo(s) entram na biblioteca\n• item com o mesmo nome e unidade NÃO duplica: recebe as quantidades do modelo\n• margem, imposto, cadeados e desconto continuam os deste lote'
+    +(nLojas?('\n\n'+nLojas+' loja(s) já existem: elas não mudam agora — use o botão de aplicar o escopo nas lojas depois.'):''))) return;
+  if(!escUnificado()){   /* lote no formato antigo COM conteúdo: unificar primeiro, senão as cópias das variações ficariam sem quantidade */
+    if(VAR_KEYS.some(function(k){ return ((S[k]||[]).length)>0; })){ alert('Este lote está no formato antigo (cada variação com a sua cópia).\n\nUnifique os escopos primeiro — depois aplique o modelo.'); return; }
+    S._escUnificado=true; }
+  S.variacoes=S.variacoes||[];
+  var mapa={};
+  (d.variacoes||[]).forEach(function(v){
+    var ex=S.variacoes.find(function(x){ return escModNorm(x.nome)===escModNorm(v.nome); });
+    if(!ex){ ex={id:'v'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),nome:v.nome}; S.variacoes.push(ex); }
+    mapa[v.id]=ex.id; });
+  if(!S.varAtiva||!S.variacoes.some(function(v){ return v.id===S.varAtiva; })) S.varAtiva=(S.variacoes[0]||{}).id;
+  var novos=0, atual=0;
+  VAR_KEYS.forEach(function(k){ ((d.blocos&&d.blocos[k])||[]).forEach(function(src){
+    S[k]=S[k]||[];
+    var alvo=S[k].find(function(x){ return escModNorm(x.desc)===escModNorm(src.desc) && String(x.und||'')===String(src.und||''); });
+    if(!alvo){ alvo=_deep(src); alvo.id=uid(); alvo.qtd=0; alvo.margem=''; alvo.qtdEsc={}; S[k].push(alvo); novos++; }
+    else { atual++;
+      ['detalhe','composicao','qtdDe','qtdFator','qtdArred','adicMotivo'].forEach(function(c){ if(src[c]!=null&&(alvo[c]==null||alvo[c]==='')) alvo[c]=_deep(src[c]); });
+      if(src.adic) alvo.adic=true; }
+    alvo.qtdEsc=alvo.qtdEsc||{};
+    Object.keys(src.qtdEsc||{}).forEach(function(vid){ if(mapa[vid]) alvo.qtdEsc[mapa[vid]]=src.qtdEsc[vid]; });
+  }); });
+  try{ sanitize(); }catch(_){}
+  save(); BLKS.forEach(function(b){ try{ renderBlk(b); }catch(_){} });
+  try{ injectLoteBasePanel(); }catch(_){} recalc();
+  escModFechar();
+  alert('Modelo aplicado.\n\n• '+novos+' item(ns) novo(s)\n• '+atual+' item(ns) que já existiam receberam as quantidades do modelo\n\nConfira a matriz do escopo e clique em Salvar para gravar.'); }
+async function escModRenomear(id){ var m=(ESC_MOD||[]).find(function(x){ return x.id===id; }); if(!m)return;
+  var nome=prompt('Novo nome do modelo:', m.nome); if(nome===null) return; nome=String(nome).trim(); if(!nome) return;
+  try{ const r=await SB.from('escopo_modelos').update({nome:nome,updated_at:new Date().toISOString()}).eq('id',id); if(r.error) throw r.error;
+    await escModCarregar(); escModRender(); }catch(e){ alert('Não consegui renomear: '+(e.message||e)); } }
+async function escModExcluir(id){ var m=(ESC_MOD||[]).find(function(x){ return x.id===id; }); if(!m)return;
+  if(!confirm('Excluir o modelo "'+m.nome+'"?\n\nOs lotes que já usaram continuam como estão — o modelo só deixa de aparecer aqui.')) return;
+  try{ const r=await SB.from('escopo_modelos').update({deleted_at:new Date().toISOString()}).eq('id',id); if(r.error) throw r.error;
+    await escModCarregar(); escModRender(); }catch(e){ alert('Não consegui excluir: '+(e.message||e)); } }
+function escModRender(){
+  var el=document.getElementById('escModList'); if(!el) return;
+  if(!ESC_MOD.length){ el.innerHTML='<div class="impinfo">Nenhum modelo gravado ainda. Monte o escopo de um lote e clique em <b>Gravar o escopo deste lote como modelo</b> — na próxima proposta ele vem pronto.</div>'; return; }
+  el.innerHTML=ESC_MOD.map(function(m){
+    var dt=m.created_at?new Date(m.created_at).toLocaleDateString('pt-BR'):'';
+    return '<div class="emlin"><div class="emnm"><b>'+esc(m.nome)+'</b>'
+      +'<div class="impinfo" style="margin:2px 0 0">'+(m.itens||0)+' itens · '+(m.escopos||0)+' escopo'+((m.escopos||0)===1?'':'s')+(dt?(' · '+dt):'')+(m.descricao?(' · '+esc(m.descricao)):'')+'</div></div>'
+      +'<div class="emac"><button class="lbtn on" onclick="escModAplicar(\''+m.id+'\')"><span class="material-symbols-rounded">download_done</span>Aplicar neste lote</button>'
+      +'<button class="lbtn" onclick="escModRenomear(\''+m.id+'\')" title="renomear"><span class="material-symbols-rounded">edit</span></button>'
+      +'<button class="lbtn" onclick="escModExcluir(\''+m.id+'\')" title="excluir"><span class="material-symbols-rounded">delete</span></button></div></div>'; }).join(''); }
+function escModFechar(){ var ov=document.getElementById('escModOv'); if(ov)ov.remove(); }
+async function escModAbrir(){
+  if(document.getElementById('escModOv')) return;
+  var ov=document.createElement('div'); ov.id='escModOv';
+  ov.innerHTML='<div class="impbox"><div class="imphd"><span class="material-symbols-rounded">bookmarks</span><b>Modelos de escopo</b>'
+    +'<span class="impsub">escopo pronto para reaproveitar em outro lote · margem, imposto e cadeados continuam sendo do lote</span>'
+    +'<button class="lbtn" onclick="escModFechar()" style="margin-left:auto"><span class="material-symbols-rounded">close</span>Fechar</button></div>'
+    +'<div class="impbd"><div class="impacts"><button class="lbtn" onclick="escModSalvarAtual()"><span class="material-symbols-rounded">bookmark_add</span>Gravar o escopo deste lote como modelo</button>'
+    +'<span class="impsub">grava os itens, os escopos e as quantidades de cada escopo</span></div>'
+    +'<div id="escModList"><div class="impinfo">carregando…</div></div></div>'
+    +'<div class="impft"><button class="lbtn" onclick="escModFechar()">Fechar</button></div></div>';
+  document.body.appendChild(ov);
+  await escModCarregar(); escModRender(); }
 var LEV_ARQ={}, LEV_GER={};
 async function levArqCarregar(){ LEV_ARQ={}; LEV_GER={}; if(!(SB&&S_LOTE_ID))return LEV_ARQ;
   try{ const r=await SB.from('levantamento_arquivos').select('*').eq('lote_id',S_LOTE_ID).is('deleted_at',null).order('created_at');
