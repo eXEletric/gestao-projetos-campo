@@ -356,6 +356,23 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .relpend{font-size:12.5px;color:#3a3550;background:#fbf7ee;border:1px solid #e8dfc8;border-radius:9px;padding:10px 12px;white-space:pre-wrap;line-height:1.5}
 .relfoot{margin-top:22px;border-top:1px solid #eee;padding-top:8px;font-size:11px;color:#8b86a1;text-align:right}
 @media print{body.relopen>*:not(#relOv){display:none!important}body.relopen #relOv{position:static;background:#fff;padding:0;overflow:visible}body.relopen .relwrap{padding:0}body.relopen .relsheet{box-shadow:none;max-width:none;padding:0}}
+/* levantamento de campo da loja */
+.levcard{border:1px solid var(--line2);border-radius:12px;background:var(--surf);margin:0 0 14px;overflow:hidden}
+.levhd{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:10px 13px;background:var(--surf2);border-bottom:1px solid var(--line2);font-size:13px}
+.levhd .material-symbols-rounded{font-size:18px;color:var(--pri)}
+.levhd .right{margin-left:auto}
+.levsub{font-size:11.5px;color:var(--tx3)}
+.levgrid{display:grid;grid-template-columns:repeat(auto-fit,minmax(215px,1fr));gap:8px 12px;padding:12px 13px}
+.levcampo{display:flex;flex-direction:column;gap:3px;min-width:0}
+.levlb{font-size:11.5px;color:var(--tx2);display:flex;align-items:center;gap:5px}
+.levcampo.usado .levlb{color:var(--pri);font-weight:700}
+.levuso{font-size:9.5px;font-weight:800;color:#fff;background:var(--pri);border-radius:10px;padding:0 6px}
+.levin{display:flex;gap:5px;align-items:center}
+.levin .cin{flex:1;min-width:0;text-align:right}
+.leveb{border:1px dashed var(--line2);background:transparent;color:var(--tx3);border-radius:7px;padding:3px 7px;font:700 10.5px inherit;cursor:pointer}
+.leveb.on{border-style:solid;border-color:#c77b12;background:#fff4e0;color:#8a5a12}
+.levpe{display:flex;gap:7px;align-items:flex-start;padding:9px 13px;border-top:1px solid var(--line);font-size:12px;color:var(--tx3)}
+.levpe .material-symbols-rounded{font-size:15px;color:var(--pri)}
 /* três abas de trabalho + barra de situação (base do lote) */
 .abasbar{position:sticky;top:0;z-index:30;background:var(--bg,#f6f4fb);border-bottom:1px solid var(--line2);padding:8px 0 7px;margin:0 0 12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 .abasbar .abas{display:flex;gap:6px;flex-wrap:wrap}
@@ -1419,7 +1436,8 @@ async function initOrc(){
   if(!CLOUD){ load(); }
   boot();
   try{ if(window.parent && window.parent!==window) window.parent.postMessage({type:'exOrcOpen', qs: location.search||''}, '*'); }catch(_){}   // avisa o shell qual orçamento está aberto (p/ persistir no reload)
-  try{ arqPropInit(); }catch(e){ console.error('arqProp',e); }   /* anexos da proposta: levantamento ou detalhamento que originou o orçamento */
+  try{ arqPropInit(); }catch(e){ console.error('arqProp',e); }
+  if(isLoteUnit()){ setTimeout(function(){ try{ levFormInit(); }catch(e){ console.error('levForm',e); } },900); }   /* loja: tela do levantamento de campo */   /* anexos da proposta: levantamento ou detalhamento que originou o orçamento */
   if(isLoteBase()){ try{ await initLoteBasePanel(); }catch(e){ console.error('lote base panel',e); } }   // base do lote = mestra: injeta o painel de lojas
   else if(isLoteUnit()){ (async function(){ try{ const l=await SB.from('orcamento_lotes').select('base_oportunidade_id').eq('id',S_LOTE_ID).limit(1); const bo=l.data&&l.data[0]&&l.data[0].base_oportunidade_id; if(!bo)return;
       const b=await SB.from('orcamentos').select('dados,total').eq('oportunidade_id',bo).is('deleted_at',null).order('created_at',{ascending:false}).limit(1); if(!(b.data&&b.data[0]))return; UNIT_BASE_VARS=((b.data[0].dados||{}).variacoes)||[]; try{ loteCfgEnforce(b.data[0].dados); }catch(_){} try{ const us=await SB.from('orcamentos').select('total,dados').eq('lote_id',S_LOTE_ID).is('deleted_at',null); gloteCalc(us.data||[]); }catch(_){} BLKS.forEach(b=>{ try{ renderBlk(b); }catch(_){} }); recalc(); }catch(e){ console.error('modelo da loja',e); } })(); }   // loja do lote: carrega a base só p/ mostrar o MODELO (variação) que a loja segue
@@ -4177,6 +4195,46 @@ function escIrCopiar(){ var s=document.getElementById('varCopLoja'); if(s){ s.sc
 /* ===== PASSO 3 · TRÊS ABAS DE TRABALHO + BARRA DE SITUAÇÃO (base do lote) =====
    A tela tinha 14 faixas empilhadas. Agora: Escopo (o que será feito) · Lojas (onde) · Preço e documento (quanto e o que o cliente vê).
    As faixas continuam as mesmas — a aba só decide quais aparecem. A ordem dentro de cada aba segue o Organizar. */
+/* ===== LEVANTAMENTO DE CAMPO DA LOJA (passo 2) =====
+   Os números medidos em campo entram aqui, dizem o que é estimativa, e alimentam as quantidades do escopo. */
+function levParams(){ if(!S.levUnidade||typeof S.levUnidade!=='object') S.levUnidade={};
+  if(!S.levUnidade.params||typeof S.levUnidade.params!=='object') S.levUnidade.params={};
+  return S.levUnidade.params; }
+function levEstimados(){ var p=levParams(); if(!Array.isArray(p.estimados)) p.estimados=[]; return p.estimados; }
+function levSetParam(k,v){ var p=levParams(); if(String(v).trim()==='') delete p[k]; else p[k]=num(v); save(); levFormRender(); recalc(); }
+function levSetEst(k,on){ var e=levEstimados(), i=e.indexOf(k);
+  if(on&&i<0)e.push(k); if(!on&&i>=0)e.splice(i,1); save(); levFormRender(); }
+function levPrevisto(k){   // quantos itens do escopo usam esse número
+  var esc0=(BASE_DADOS&&isLoteUnit())?dadosLojaDaBase(BASE_DADOS,(S.variacaoId||'v1')):null; if(!esc0)return 0;
+  return VAR_KEYS.reduce(function(a,b){ return a+((esc0[b]||[]).filter(function(r){ return r.qtdDe===k; }).length); },0); }
+function levFormHtml(){
+  if(!isLoteUnit()) return '';
+  var p=levParams(), est=levEstimados(), lev=S.levUnidade||{};
+  var campos=LEV_PARAMS.map(function(x){
+    var usado=levPrevisto(x.k), v=(p[x.k]!=null?p[x.k]:'');
+    return '<label class="levcampo'+(usado?' usado':'')+'"><span class="levlb">'+esc(x.lb)+(usado?'<span class="levuso" title="'+usado+' item(ns) do escopo usam este número">'+usado+'</span>':'')+'</span>'
+      +'<span class="levin"><input class="cin num" inputmode="decimal" value="'+esc(v)+'" onchange="levSetParam(\''+x.k+'\',this.value)">'
+      +'<button class="leveb'+(est.indexOf(x.k)>=0?' on':'')+'" title="marcar como estimativa (entra na proposta com a marca est.)" onclick="levSetEst(\''+x.k+'\','+(est.indexOf(x.k)>=0?'false':'true')+')">est.</button></span></label>'; }).join('');
+  var fonte=lev.relatorioNome?('<span class="levsub">fonte: '+esc(lev.relatorioNome)+(lev.data?(' · '+esc(lev.data)):'')+'</span>'):'<span class="levsub">preencha pelo relatório de campo ou pelo que a equipe mediu</span>';
+  var n=Object.keys(p).filter(function(k){ return k!=='estimados'&&k!=='fonte'&&k!=='lido_em'; }).length;
+  return '<div class="levcard noprint"><div class="levhd"><span class="material-symbols-rounded">straighten</span><b>Levantamento de campo</b>'+fonte
+    +'<span class="right"><button class="lbtn" onclick="levAplicarAqui()" title="recalcular as quantidades desta loja com estes números"><span class="material-symbols-rounded">bolt</span>Aplicar no escopo desta loja</button></span></div>'
+    +'<div class="levgrid">'+campos+'</div>'
+    +'<div class="levpe"><span class="material-symbols-rounded">info</span>'+n+' número(s) preenchido(s) · o que estiver marcado como <b>est.</b> aparece como estimativa no relatório · ajuste manual na linha não é sobrescrito</div></div>'; }
+function levFormRender(){ var el=document.getElementById('levForm'); if(el) el.innerHTML=levFormHtml(); }
+function levFormInit(){ if(!isLoteUnit())return; var el=document.getElementById('levForm');
+  if(!el){ var anchor=document.getElementById('arqProp')||document.querySelector('.panel.prophead'); if(!anchor||!anchor.parentElement)return;
+    el=document.createElement('div'); el.id='levForm'; anchor.parentElement.insertBefore(el,anchor.nextSibling); }
+  levFormRender(); }
+function levAplicarAqui(){
+  if(!isLoteUnit()){ alert('Esta tela é da loja.'); return; }
+  var esc0=BASE_DADOS?dadosLojaDaBase(BASE_DADOS,(S.variacaoId||'v1')):null;
+  if(!esc0){ alert('Não consegui ler o escopo da base agora. Recarregue a página.'); return; }
+  var r=levAplicarNaLoja(S,esc0);
+  if(!r.mudou){ alert('Nada mudou: as quantidades já estão de acordo com o levantamento'+(r.semParam?(' · '+r.semParam+' item(ns) do escopo esperam um número que ainda não foi preenchido'):'')+'.'); return; }
+  save(); BLKS.forEach(function(b){ try{ renderBlk(b); }catch(_){} }); recalc(); levFormRender();
+  cloudMsg(r.mudou+' quantidade(s) atualizadas pelo levantamento — salve para gravar');
+  alert('Pronto: '+r.mudou+' quantidade(s) recalculadas pelo levantamento.'+(r.semParam?('\n\n'+r.semParam+' item(ns) do escopo esperam um número que ainda não foi preenchido.'):'')+'\n\nAjuste manual não foi tocado. Clique em Salvar para gravar.'); }
 var LOTE_ABAS=[
   {k:'escopo',lb:'Escopo',ic:'build',dica:'serviços, material e as quantidades de cada escopo',fx:['lote.var','lote.modelo','blk.servicos','blk.equip','blk.despesas','mat.cab','mat.base','mat.global']},
   {k:'lojas',lb:'Lojas',ic:'storefront',dica:'unidades, levantamento, prazo e o que difere do escopo',fx:['lote.topo','lote.lista','lote.escopo','lote.fatores','lote.prazo']},
@@ -4202,6 +4260,11 @@ function abasSituacao(){
     +(ajust?chip(ajust+' ajustada'+(ajust===1?'':'s'),'sit-warn','lojas com conteúdo próprio, diferente do escopo'):'')
     +(semEsc?chip(semEsc+' sem escopo','sit-neg','loja sem escopo apontado — escolha na Lista de lojas'):'')
     +(DIRTY?chip('não salvo','sit-neg','há alteração não gravada'):''); }
+function abasAcoes(k){   // ação contextual da aba
+  if(k!=='lojas') return '';
+  var comLev=(LOTE_UNITS||[]).filter(function(u){ var p=u.dados&&u.dados.levUnidade&&u.dados.levUnidade.params; return p&&Object.keys(p).length; }).length;
+  if(!comLev) return '<span class="sitchip" title="cada loja preenche o levantamento na própria proposta">nenhuma loja com levantamento</span>';
+  return '<button class="lbtn" onclick="levAplicarLote()" title="recalcula as quantidades das lojas pelos números do levantamento"><span class="material-symbols-rounded">bolt</span>Aplicar levantamento ('+comLev+')</button>'; }
 function abasApply(){
   var col=document.getElementById('fxCol'); if(!col)return;
   var on=false; try{ on=!!(S&&isLoteBase()); }catch(_){}
@@ -4212,7 +4275,7 @@ function abasApply(){
   else if(bar.parentElement!==col || col.firstChild!==bar) col.insertBefore(bar,col.firstChild);
   bar.innerHTML='<div class="abas">'+LOTE_ABAS.map(function(a){
       return '<button class="aba'+(a.k===k?' on':'')+'" onclick="abaIr(\''+a.k+'\')" title="'+esc(a.dica)+'"><span class="material-symbols-rounded">'+a.ic+'</span>'+esc(a.lb)+'</button>'; }).join('')
-    +'</div><div class="sit">'+abasSituacao()+'</div>';
+    +'</div><div class="sit">'+abasSituacao()+abasAcoes(k)+'</div>';
   var alvo=(LOTE_ABAS.find(function(a){ return a.k===k; })||LOTE_ABAS[0]).fx;
   col.querySelectorAll('[data-fx]').forEach(function(e){
     var id=e.getAttribute('data-fx');
