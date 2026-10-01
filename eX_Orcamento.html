@@ -1440,7 +1440,7 @@ async function initOrc(){
   if(isLoteUnit()){ setTimeout(function(){ try{ levFormInit(); }catch(e){ console.error('levForm',e); } },900); }   /* loja: tela do levantamento de campo */   /* anexos da proposta: levantamento ou detalhamento que originou o orçamento */
   if(isLoteBase()){ try{ await initLoteBasePanel(); }catch(e){ console.error('lote base panel',e); } }   // base do lote = mestra: injeta o painel de lojas
   else if(isLoteUnit()){ (async function(){ try{ const l=await SB.from('orcamento_lotes').select('base_oportunidade_id').eq('id',S_LOTE_ID).limit(1); const bo=l.data&&l.data[0]&&l.data[0].base_oportunidade_id; if(!bo)return;
-      const b=await SB.from('orcamentos').select('dados,total').eq('oportunidade_id',bo).is('deleted_at',null).order('created_at',{ascending:false}).limit(1); if(!(b.data&&b.data[0]))return; UNIT_BASE_VARS=((b.data[0].dados||{}).variacoes)||[]; try{ loteCfgEnforce(b.data[0].dados); }catch(_){} try{ const us=await SB.from('orcamentos').select('total,dados').eq('lote_id',S_LOTE_ID).is('deleted_at',null); gloteCalc(us.data||[]); }catch(_){} BLKS.forEach(b=>{ try{ renderBlk(b); }catch(_){} }); recalc(); }catch(e){ console.error('modelo da loja',e); } })(); }   // loja do lote: carrega a base só p/ mostrar o MODELO (variação) que a loja segue
+      const b=await SB.from('orcamentos').select('dados,total').eq('oportunidade_id',bo).is('deleted_at',null).order('created_at',{ascending:false}).limit(1); if(!(b.data&&b.data[0]))return; UNIT_BASE_VARS=((b.data[0].dados||{}).variacoes)||[]; UNIT_BASE_DADOS=b.data[0].dados||null; try{ loteCfgEnforce(b.data[0].dados); }catch(_){} try{ const us=await SB.from('orcamentos').select('total,dados').eq('lote_id',S_LOTE_ID).is('deleted_at',null); gloteCalc(us.data||[]); }catch(_){} BLKS.forEach(b=>{ try{ renderBlk(b); }catch(_){} }); recalc(); }catch(e){ console.error('modelo da loja',e); } })(); }   // loja do lote: carrega a base só p/ mostrar o MODELO (variação) que a loja segue
 }
 
 /* ---------- LISTA de orçamentos (Comercial › Orçamentos) ---------- */
@@ -3948,7 +3948,7 @@ function fxIr(id){ var el=fxEl(id); if(el)el.scrollIntoView({behavior:'smooth',b
 /* ===== VARIAÇÕES da base do lote (ex.: V1 Chiller full · V2 Splitão · …) =====
    Cada variação é um grupo completo: Serviços + Material + Despesas + Locações. A ATIVA vive em S.servicos/materiais/despesas/equip
    (o editor inteiro continua igual); as demais guardam o conteúdo em S.variacoes[i].conteudo. Cada loja segue uma: dados.variacaoId (sem = v1). */
-var UNIT_BASE_VARS=[];
+var UNIT_BASE_VARS=[], UNIT_BASE_DADOS=null;
 var VAR_KEYS=['servicos','materiais','despesas','equip'];
 function _deep(x){ return JSON.parse(JSON.stringify(x==null?null:x)); }
 function varLista(){ if(!S||!S._base)return [];
@@ -4205,7 +4205,7 @@ function levSetParam(k,v){ var p=levParams(); if(String(v).trim()==='') delete p
 function levSetEst(k,on){ var e=levEstimados(), i=e.indexOf(k);
   if(on&&i<0)e.push(k); if(!on&&i>=0)e.splice(i,1); save(); levFormRender(); }
 function levPrevisto(k){   // quantos itens do escopo usam esse número
-  var esc0=(BASE_DADOS&&isLoteUnit())?dadosLojaDaBase(BASE_DADOS,(S.variacaoId||'v1')):null; if(!esc0)return 0;
+  var bd=BASE_DADOS||UNIT_BASE_DADOS; var esc0=(bd&&isLoteUnit())?dadosLojaDaBase(bd,(S.variacaoId||'v1')):null; if(!esc0)return 0;
   return VAR_KEYS.reduce(function(a,b){ return a+((esc0[b]||[]).filter(function(r){ return r.qtdDe===k; }).length); },0); }
 function levFormHtml(){
   if(!isLoteUnit()) return '';
@@ -4228,7 +4228,7 @@ function levFormInit(){ if(!isLoteUnit())return; var el=document.getElementById(
   levFormRender(); }
 function levAplicarAqui(){
   if(!isLoteUnit()){ alert('Esta tela é da loja.'); return; }
-  var esc0=BASE_DADOS?dadosLojaDaBase(BASE_DADOS,(S.variacaoId||'v1')):null;
+  var bd=BASE_DADOS||UNIT_BASE_DADOS; var esc0=bd?dadosLojaDaBase(bd,(S.variacaoId||'v1')):null;
   if(!esc0){ alert('Não consegui ler o escopo da base agora. Recarregue a página.'); return; }
   var r=levAplicarNaLoja(S,esc0);
   if(!r.mudou){ alert('Nada mudou: as quantidades já estão de acordo com o levantamento'+(r.semParam?(' · '+r.semParam+' item(ns) do escopo esperam um número que ainda não foi preenchido'):'')+'.'); return; }
