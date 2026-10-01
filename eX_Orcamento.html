@@ -3550,7 +3550,7 @@ function renderLoteBaseHtml(){
       <button class="lbtn" style="margin-top:10px;background:var(--pri);color:#fff;border-color:var(--pri)" onclick="setLoteModo('detalhado')"><span class="material-symbols-rounded" style="color:#fff">splitscreen</span>Detalhar em unidades</button></div>`;
   const modelosStrip=`<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-bottom:1px solid var(--line2);flex-wrap:wrap;background:#faf9ff">
       <span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">bookmark</span>
-      <b style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)">Escopo padrão (modelo)</b>
+      <b style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)">Modelo da proposta inteira</b><span style="font-size:11px;color:var(--tx3)">traz serviços, percentuais, macro e equipe — para começar uma proposta igual a outra. Só o escopo (itens e quantidades por escopo) fica em “Modelos de escopo”, na faixa Escopos do lote.</span>
       <button class="lbtn" onclick="salvarComoModelo()"><span class="material-symbols-rounded">bookmark_add</span>Salvar como modelo</button>
       <select id="lbModelo" style="min-width:170px;padding:7px 10px;border:1px solid var(--line2);border-radius:9px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)"><option value="">— aplicar um modelo —</option>${(MODELOS_LIST||[]).map(m=>`<option value="${m.id}">${esc(m.nome)}</option>`).join('')}</select>
       <button class="lbtn" onclick="aplicarModeloNaBase()"><span class="material-symbols-rounded">download</span>Aplicar na base</button>
@@ -3847,7 +3847,7 @@ var FX_DEF=[
   {id:'lote.topo',nm:'Rede & lojas · tempo total',ic:'apartment'},
   {id:'lote.global',nm:'Global do lote · indicadores',ic:'public'},
   {id:'lote.var',nm:'Escopos do lote',ic:'layers'},
-  {id:'lote.modelo',nm:'Escopo padrão (modelo)',ic:'bookmark'},
+  {id:'lote.modelo',nm:'Modelo da proposta inteira',ic:'bookmark'},
   {id:'lote.ver',nm:'Configuração do lote · cálculo e visão',ic:'tune'},
   {id:'lote.escopo',nm:'Serviços global (Σ lojas)',ic:'summarize'},
   {id:'lote.lista',nm:'Lista de lojas',ic:'storefront'},
