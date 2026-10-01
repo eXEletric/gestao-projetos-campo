@@ -1,0 +1,26 @@
+name: Supabase keep-alive
+
+# Mantém o projeto Supabase (free tier) acordado, evitando o auto-pause
+# que trava o login de todos (o app mascara isso como "senha inválida").
+# Roda na infra do GitHub (internet aberta) — independe de qualquer PC ligado.
+
+on:
+  schedule:
+    - cron: '0 11 * * *'   # todo dia 11:00 UTC = 08:00 America/Sao_Paulo
+  workflow_dispatch:        # permite rodar manualmente pelo botão "Run workflow"
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping REST API do projeto (conta como atividade)
+        run: |
+          code=$(curl -s -o /dev/null -w '%{http_code}' \
+            -H "apikey: sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf" \
+            "https://djguxdgaobtminatxkdr.supabase.co/rest/v1/")
+          echo "HTTP $code"
+          # 200/401/403/404 todos contam como atividade e mantêm acordado.
+          # Só 000 (sem resposta) sugere projeto pausado/fora do ar.
+          if [ "$code" = "000" ]; then
+            echo "::warning::Sem resposta do Supabase (HTTP 000) — projeto pode estar pausado."
+          fi

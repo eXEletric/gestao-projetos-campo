@@ -2714,7 +2714,7 @@ function qtdCellHtml(cfg,r){
     if(q===null) return `<button class="escoff" title="não entra no escopo aberto — clique para incluir" onclick="escToggle('${cfg.key}','${r.id}','${escAtivo()}')">—</button>`;
     return `<input class="cin num qt" value="${esc(r.qtdEsc[escAtivo()])}" inputmode="decimal" onfocus="this.select()" onchange="escSetQtd('${cfg.key}','${r.id}','${escAtivo()}',this.value)" title="quantidade no escopo ${esc(varNome(escAtivo()))}">`;
   }
-  return `<input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)">`;
+  return `<input class="cin num qt" value="${esc(r.qtd)}" inputmode="decimal" onfocus="this.select()" onblur="qtBlur(this,'${cfg.key}','${r.id}')" oninput="upd('${cfg.key}','${r.id}','qtd',this.value)">`+levOrigemChip(r);
 }
 
 /* ---------- picker do cadastro ---------- */
@@ -4131,7 +4131,7 @@ function levOrigemChip(r){
   var lb={escopo:'escopo',levantamento:'levantado',manual:'manual'}[o]||o;
   var cls=(o==='manual')?'qo-man':((dif>0.001)?'qo-mais':((dif<-0.001)?'qo-menos':'qo-ok'));
   var tit=(base!==null)?('no escopo: '+_d1(base)+(dif?(' · '+(dif>0?'+':'')+_d1(dif)+' nesta loja'):' · igual')):'';
-  return '<span class="qorig '+cls+'" title="'+esc(tit)+'">'+esc(lb)+(base!==null&&dif?(' '+(dif>0?'+':'')+_d1(dif)):'')+'</span>'; }
+  return '<span class="qorig noprint '+cls+'" title="'+esc(tit)+'">'+esc(lb)+(base!==null&&dif?(' '+(dif>0?'+':'')+_d1(dif)):'')+'</span>'; }
 function levMarcarManual(blk,id){ if(!isLoteUnit())return; var r=(S[blk]||[]).find(function(x){return x.id===id;}); if(!r)return;
   if(r.qtdOrig!=='manual'){ r.qtdOrig='manual'; } }
 /* ---- aplicar o levantamento nas quantidades da loja ---- */
@@ -4535,6 +4535,16 @@ function modeloPreco(v){ var f=varFonte(v), us=unitsDaVar(v.id);
     if(n){ ks.forEach(function(k){ s[k]/=n; }); s.itens=[]; s.adicItens=[]; return {p:s,fonte:f,ref:'média de '+n+' loja'+(n===1?'':'s'),alerta:true}; } }
   if(f==='pior'&&us.length){ var u=modeloPiorLoja(v); if(u){ var pp=precoDe(dadosLojaCalc(u)); return {p:pp,fonte:f,ref:'pior caso: '+lojaLabel(u)+' ('+_d1(lojaQtdItens(u))+' itens)',alerta:true,loja:u}; } }
   return {p:precoDe(dadosModeloCalc(v.id)),fonte:'cadastro',ref:'cadastro base',alerta:false}; }
+/* possíveis adicionais: item marcado como adicional com quantidade ZERO — previsto no escopo, aparece como aviso de campo, sem valor */
+function previstosDe(d){ var out=[];
+  VAR_KEYS.forEach(function(k){ ((d&&d[k])||[]).forEach(function(r){ if(r&&r.adic&&num(r.qtd)===0) out.push(r); }); });
+  return out; }
+function previstosHtml(d,_secTit,_th,_td,titulo){
+  var ps=previstosDe(d); if(!ps.length) return '';
+  var linhas=ps.map(function(r){ return '<tr><td style="'+_td+'">'+esc(r.desc)+'</td><td style="'+_td+';color:#7d7799">'+esc(r.und||'')+'</td><td style="'+_td+';color:#8a5a12">'+esc(r.adicMotivo||'a confirmar em campo')+'</td></tr>'; }).join('');
+  return '<div style="margin-top:2px"><div style="'+_secTit+';margin:16px 0 8px">'+(titulo||'Possíveis adicionais')+'</div>'
+    +'<div style="font-size:12.5px;color:#8a5a12;background:#fff8ec;border:1px solid #e6c360;border-radius:9px;padding:9px 12px;margin:0 0 8px">Itens previstos que só serão executados se a condição aparecer em campo. <b>Não estão no valor desta proposta</b>; se ocorrerem, entram como adicional, com medição e aprovação antes.</div>'
+    +'<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#fff4e0"><th style="text-align:left;'+_th+'">Item</th><th style="text-align:left;'+_th+'">Und</th><th style="text-align:left;'+_th+'">Quando ocorre</th></tr></thead><tbody>'+linhas+'</tbody></table></div>'; }
 function modeloServQtd(v){ var f=varFonte(v), us=unitsDaVar(v.id);   // quantidades de serviço do modelo conforme a fonte
   if(f==='media'&&us.length){ var m={}, ordem=[]; us.forEach(function(u){ ((u.dados&&u.dados.servicos)||[]).forEach(function(r){ var k=r.desc||'—'; if(!m[k]){ m[k]={desc:k,und:r.und,qtd:0}; ordem.push(k); } m[k].qtd+=num(r.qtd); }); });
     return ordem.map(function(k){ return {desc:m[k].desc,und:m[k].und,qtd:m[k].qtd/us.length}; }).filter(function(x){ return x.qtd>0; }); }
@@ -4554,7 +4564,7 @@ function docModelosHtml(_secTit,_th,_td,modo){ var vs=varLista(); if(!vs.length)
     var fnote=mp.alerta?'<div class="noprint" style="margin:0 0 8px;padding:5px 9px;border-radius:7px;background:#fff4e0;border:1px solid #e6c360;color:#8a5a12;font-size:11.5px;font-weight:700"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-3px">warning</span> Valores do modelo herdados — '+esc(mp.ref)+' · podem divergir do cadastro base (aviso interno, não sai no PDF)</div>':'';
     if(modo==='anexo'){   // referência de instalação: quantidades conforme a fonte do modelo (cadastro · média · pior caso)
       var lin=modeloServQtd(v).map(function(x){ return '<tr><td style="'+_td+'">'+esc(x.desc)+'</td><td style="'+_td+';text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+_d1(x.qtd)+'</td><td style="'+_td+';color:#7d7799">'+esc(x.und||'')+'</td></tr>'; }).join('');
-      return '<div data-pt="var:'+v.id+'" style="margin:6px 0 18px;border:1px solid #e3ddf6;border-radius:12px;padding:12px 14px;break-inside:avoid-page"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px"><b style="font-size:15px;color:#3f2c8f">'+esc(v.nome)+'</b><span style="font-size:12px;color:#7d7799">quantidades por unidade · '+n+' unidade'+(n===1?'':'s')+'</span></div><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Serviço</th><th style="text-align:right;'+_th+'">Qtd</th><th style="'+_th+'">Und</th></tr></thead><tbody>'+lin+'</tbody></table></div>'; }
+      return '<div data-pt="var:'+v.id+'" style="margin:6px 0 18px;border:1px solid #e3ddf6;border-radius:12px;padding:12px 14px;break-inside:avoid-page"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px"><b style="font-size:15px;color:#3f2c8f">'+esc(v.nome)+'</b><span style="font-size:12px;color:#7d7799">quantidades por unidade · '+n+' unidade'+(n===1?'':'s')+'</span></div><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Serviço</th><th style="text-align:right;'+_th+'">Qtd</th><th style="'+_th+'">Und</th></tr></thead><tbody>'+lin+'</tbody></table>'+previstosHtml(varConteudo(S,v.id),_secTit,_th,_td,'Possíveis adicionais · a confirmar em campo')+'</div>'; }
     var itens=p.itens.map(function(x){ return '<tr><td style="'+_td+'">'+esc(x.desc)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+_d1(x.qtd)+'</td><td style="'+_td+';color:#7d7799">'+esc(x.und||'')+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(x.unit)+'</td><td style="'+_td+';text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+fmt(x.total)+'</td></tr>'; }).join('');
     return '<div data-pt="var:'+v.id+'" style="margin:6px 0 20px;border:1px solid #e3ddf6;border-radius:12px;padding:12px 14px;break-inside:avoid-page">'
       +'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px"><b style="font-size:15px;color:#3f2c8f">'+esc(v.nome)+'</b><span style="font-size:12px;color:#7d7799">'+n+' unidade'+(n===1?'':'s')+' · valores por unidade</span></div>'
@@ -4820,7 +4830,7 @@ function relLojaHtml(u,modo){ var d=u.dados||{}, lev=d.levUnidade||{}, p=relPara
       '<tr><td>Prazo estimado</td><td class="r">'+(num(u._prazo)?_d1(num(u._prazo))+' dias':'—')+'</td></tr>'
       +'<tr><td>Equipe em campo</td><td class="r">'+esc(relEquipe(u))+'</td></tr>'
       +'<tr><td>Valor da unidade</td><td class="r"><b>'+fmt(num(u.total))+'</b></td></tr>');
-  if(modo!=='interno') return '<div class="relsheet">'+cab+secEscopo+secLev+secPrazo+relRodape()+'</div>';
+  if(modo!=='interno') return '<div class="relsheet">'+cab+secEscopo+relPrevistos(d)+secLev+secPrazo+relRodape()+'</div>';
   var cmp=relCompara(u).map(function(x){ var dif=(x.lev==null)?null:(x.prop-num(x.lev));
     var cls=(dif===null||Math.abs(dif)<0.5)?'':(dif>0?'relmais':'relmenos');
     return '<tr class="'+cls+'"><td>'+esc(x.it)+(x.obs?' <span class="relobs">'+esc(x.obs)+'</span>':'')+'</td><td class="r">'+_d1(x.prop)+'</td><td class="r">'+(x.lev==null?'—':_d1(num(x.lev))+(x.est?' (est.)':''))+'</td><td class="r">'+(dif===null?'—':(dif>0?'+':'')+_d1(dif))+'</td></tr>'; }).join('');
@@ -4840,7 +4850,13 @@ function relLojaHtml(u,modo){ var d=u.dados||{}, lev=d.levUnidade||{}, p=relPara
       +(f.mgServ!=null?'<tr><td>Margem de serviços aplicada</td><td class="r">'+_d1(f.mgServ)+'%</td></tr>':''));
   var pend=[].concat((p&&p.pendencias)||[]).concat(lev.obs?[lev.obs]:[]);
   var secPend=pend.length?('<div class="relsec">Pendências e achados de campo</div><div class="relpend">'+pend.map(esc).join('<br><br>')+'</div>'):'';
-  return '<div class="relsheet">'+cab+secFin+secCmp+secAdic+secEscopo+secLev+secPrazo+secPend+relRodape()+'</div>'; }
+  return '<div class="relsheet">'+cab+secFin+secCmp+secAdic+secEscopo+relPrevistos(d)+secLev+secPrazo+secPend+relRodape()+'</div>'; }
+function relPrevistos(d){   // previsto (qtd 0) vira aviso de campo no relatório — cliente e interno
+  var ps=previstosDe(d); if(!ps.length) return '';
+  var lin=ps.map(function(r){ return '<tr><td>'+esc(r.desc||'—')+'</td><td>'+esc(r.und||'')+'</td><td>'+esc(r.adicMotivo||'a confirmar em campo')+'</td></tr>'; }).join('');
+  return '<div class="relsec">Possíveis adicionais · a confirmar em campo</div>'
+    +'<div class="relnota">Itens previstos no escopo que só serão executados se a condição aparecer em campo. <b>Não estão no valor desta proposta</b>; se ocorrerem, entram como adicional, com medição e aprovação antes.</div>'
+    +_relTab([['Item'],['Und'],['Quando ocorre']],lin); }
 function relEquipe(u){ var keep=S, t=''; try{ S=_deep(dadosLojaCalc(u)); sanitize(); var fs=aggMaoObra(); t=fs.map(function(f){ return f.pes+' '+f.funcao; }).join(' · '); }catch(_){} finally{ S=keep; } return t||'—'; }
 function relRodape(){ return '<div class="relfoot">eX Eletric · '+esc((S&&S.numero)||'')+' · gerado em '+new Date().toLocaleDateString('pt-BR')+'</div>'; }
 function relLoteHtml(modo){ var us=LOTE_UNITS||[]; if(!us.length) return '';
