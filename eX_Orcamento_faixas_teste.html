@@ -3296,11 +3296,11 @@ function lotePendEscTodas(v){ if(!v)return; LOTE_PEND.forEach(function(p){ p._es
 function lotePendEscSel(p,i){ var vs=loteEscs(); if(vs.length<2) return '';
   var cur=p._esc||vs[0].id;
   return '<select onchange="lotePendEsc('+i+',this.value)" title="escopo que esta loja vai seguir" style="margin-left:2px;padding:2px 5px;border:1px solid var(--line2);border-radius:6px;font:inherit;font-size:11px;font-weight:700;background:var(--surf);color:var(--pri)">'
-    +vs.map(function(v){ return '<option value="'+v.id+'"'+(cur===v.id?' selected':'')+'>'+esc(v.nome)+'</option>'; }).join('')+'</select>'; }
+    +vs.map(function(v){ return '<option value="'+v.id+'"'+(cur===v.id?' selected':'')+'>'+esc(v.modelo?(v.nome+" · "+v.modelo):v.nome)+'</option>'; }).join('')+'</select>'; }
 function lotePendEscBarra(){ var vs=loteEscs(); if(vs.length<2||!LOTE_PEND.length) return '';
   return '<div style="margin:8px 0 0;font-size:12px;color:var(--tx3);display:flex;align-items:center;gap:6px;flex-wrap:wrap">'
     +'<span class="material-symbols-rounded" style="font-size:15px">layers</span>Escopo de todas as pendentes:'
-    +vs.map(function(v){ return '<button class="lbtn" style="padding:3px 9px;font-size:11px" onclick="lotePendEscTodas(\''+v.id+'\')">'+esc(v.nome)+'</button>'; }).join('')+'</div>'; }
+    +vs.map(function(v){ return '<button class="lbtn" style="padding:3px 9px;font-size:11px" onclick="lotePendEscTodas(\''+v.id+'\')">'+esc(v.modelo?(v.nome+" · "+v.modelo):v.nome)+'</button>'; }).join('')+'</div>'; }
 function _escTotal(dados){ var p=null; try{ p=precoDe(dadosLojaCalc({dados:dados})); }catch(_){} return p?p.total:BASE_TOTAL; }
 function lotePend(){ const id=_lg('lLoja').value; if(!id)return; const l=(LOJAS||[]).find(x=>x.id===id); if(!l)return; if(LOTE_PEND.some(p=>p.id===id)){alert('Essa loja já está na lista.');return;} LOTE_PEND.push(l); loteRerender(); }
 function loteRmPend(i){ LOTE_PEND.splice(i,1); loteRerender(); }
@@ -4003,10 +4003,27 @@ function varLista(){ if(!S||!S._base)return [];
   if(!Array.isArray(S.variacoes)||!S.variacoes.length){ S.variacoes=[{id:'v1',nome:'Variação 1'}]; S.varAtiva='v1'; }
   if(!S.varAtiva||!S.variacoes.some(function(v){return v.id===S.varAtiva;}))S.varAtiva=S.variacoes[0].id; return S.variacoes; }
 function varNome(id){ var v=varLista().find(function(x){return x.id===id;}); return v?v.nome:'Variação 1'; }
+/* NOME DO MODELO DO ESCOPO (30/09, pedido do dono): a variação continua sendo "Variação 1/2" (identidade),
+   mas carrega o nome do SISTEMA que ela representa — "Variação 1 · Medidor IMS T-161" — para ninguém confundir escopo com escopo.
+   Na tela aparece junto; no documento do cliente aparece o nome do modelo (quando houver), que é o que ele entende. */
+function varModelo(id){ var v=varLista().find(function(x){ return x.id===id; }); return (v&&v.modelo)?String(v.modelo).trim():''; }
+function varRot(id){ var m=varModelo(id), n=varNome(id); return m?(n+' · '+m):n; }
+function varRotDoc(v){ return (v&&v.modelo)?String(v.modelo).trim():((v&&v.nome)||''); }   // documento do cliente: o sistema, não o número da variação
+function varModeloSug(id){   // sugestão: o detalhe (ou o nome) do primeiro serviço do escopo
+  var c=null; try{ c=varConteudo(S,id); }catch(_){}
+  var s=((c&&c.servicos)||[]).find(function(r){ return r&&(r.detalhe||r.desc); }); if(!s) return '';
+  return String(s.detalhe||s.desc||'').split(/\s+[-—]\s+/)[0].slice(0,40).trim(); }
+function varSetModelo(id){
+  var v=varLista().find(function(x){ return x.id===id; }); if(!v) return;
+  var m=prompt('Nome do modelo/sistema deste escopo — aparece junto da variação na tela e no documento do cliente.\n\n(ex.: Medidor IMS T-161 · Chiller full · Splitão RS485)', v.modelo||varModeloSug(id));
+  if(m===null) return;
+  m=String(m).trim(); if(m) v.modelo=m; else delete v.modelo;
+  save(); try{ injectLoteBasePanel(); }catch(_){} BLKS.forEach(function(b){ try{ renderBlk(b); }catch(_){} });
+  cloudMsg(m?('modelo: '+m):'nome do modelo removido'); }
 function unitVar(u){ return (u&&u.dados&&u.dados.variacaoId)||'v1'; }
 function unitVarNome(){   // na proposta de UMA loja do lote: nome do modelo (variação da base) que ela segue
   if(!isLoteUnit()||!S)return ''; var vs=Array.isArray(UNIT_BASE_VARS)?UNIT_BASE_VARS:[]; if(!vs.length)return '';
-  var id=S.variacaoId||'v1', v=vs.find(function(x){return x.id===id;}); return v?v.nome:('variação inexistente ('+id+')'); }
+  var id=S.variacaoId||'v1', v=vs.find(function(x){return x.id===id;}); return v?(v.modelo?(v.nome+' · '+v.modelo):v.nome):('escopo inexistente ('+id+')'); }
 /* GLOBAL DO LOTE no painel de preço (base e loja): soma das propostas GRAVADAS das lojas — calculado ao carregar (não a cada tecla) */
 var GLOTE=null;
 function gloteCalc(units){ var us=(units||[]).filter(function(u){ return u&&u.dados&&!u.dados._base; }); if(!us.length){ GLOTE=null; gloteRender(); return; }
@@ -4362,7 +4379,7 @@ function escMatrizHtml(){
   var abas=BLKS.map(function(b){ return '<button class="lbtn'+(b.key===blk?' on':'')+'" onclick="escSetBlk(\''+b.key+'\')">'+esc(b.titulo)+' <span style="opacity:.7">'+((S[b.key]||[]).length)+'</span></button>'; }).join('');
   var cabEsc=todos.map(function(v){ var n=unitsDaVar(v.id).length, on=(ESC_FOCO===v.id), fora=(ESC_FOCO&&!on);
     if(fora) return '';
-    return '<th class="escth'+(on?' on':'')+'" title="clique para ver só as tarefas deste escopo" onclick="escFocar(\''+v.id+'\')"><div>'+esc(v.nome)+(on?' <span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">filter_alt</span>':'')+'</div><div class="escsub">'+n+' loja'+(n===1?'':'s')+'</div></th>'; }).join('');
+    return '<th class="escth'+(on?' on':'')+'" title="clique para ver só as tarefas deste escopo" onclick="escFocar(\''+v.id+'\')"><div>'+esc(varRot(v.id))+(on?' <span class="material-symbols-rounded" style="font-size:14px;vertical-align:-2px">filter_alt</span>':'')+'</div><div class="escsub">'+n+' loja'+(n===1?'':'s')+'</div></th>'; }).join('');
   var base=(S[blk]||[]).filter(function(r){ return !r.adic; }), adics=(S[blk]||[]).filter(function(r){ return !!r.adic; });
   if(ESC_FOCO){ base=base.filter(function(r){ return escTem(r,ESC_FOCO); }); adics=adics.filter(function(r){ return escTem(r,ESC_FOCO); }); }
   var nCols=vs.length+2;
@@ -4542,7 +4559,7 @@ function loteExigeSalvo(acao){
   if(typeof MANUAL!=='undefined' && MANUAL && DIRTY){ alert('⚠️ SALVE ANTES\n\n"'+acao+'" grava direto nas lojas do lote.\nEsta proposta tem alterações NÃO salvas — clique em Salvar primeiro, para as lojas não receberem uma versão diferente da que está na tela.'); return false; }
   return true; }
 function varSelLojaHtml(o){ var vs=varLista(); if(vs.length<2)return '';
-  return '<select onchange="varDaLoja(\''+o.id+'\',this.value)" title="escopo que esta loja segue" style="margin-top:3px;max-width:190px;padding:2px 6px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:11px;font-weight:700;background:var(--pri-bg,#eeedfe);color:var(--pri)">'+vs.map(function(v){ return '<option value="'+v.id+'"'+(unitVar(o)===v.id?' selected':'')+'>'+esc(v.nome)+'</option>'; }).join('')+'</select>'; }
+  return '<select onchange="varDaLoja(\''+o.id+'\',this.value)" title="escopo que esta loja segue" style="margin-top:3px;max-width:190px;padding:2px 6px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:11px;font-weight:700;background:var(--pri-bg,#eeedfe);color:var(--pri)">'+vs.map(function(v){ return '<option value="'+v.id+'"'+(unitVar(o)===v.id?' selected':'')+'>'+esc(varRot(v.id))+'</option>'; }).join('')+'</select>'; }
 function varMostra(v){ return !(v && v.mostrar===false); }   // chave por variação no documento do cliente (padrão: mostra, se a seção estiver ligada)
 function varSetMostrar(id){ var v=varLista().find(function(x){return x.id===id;}); if(!v)return; v.mostrar=!varMostra(v); save(); try{ injectLoteBasePanel(); }catch(_){} }
 function varMostraBtnHtml(atv,vs){ if(vs.length<2)return ''; var on=varMostra(atv);
@@ -4613,7 +4630,7 @@ function docModelosHtml(_secTit,_th,_td,modo){ var vs=varLista(); if(!vs.length)
     var fnote=mp.alerta?'<div class="noprint" style="margin:0 0 8px;padding:5px 9px;border-radius:7px;background:#fff4e0;border:1px solid #e6c360;color:#8a5a12;font-size:11.5px;font-weight:700"><span class="material-symbols-rounded" style="font-size:14px;vertical-align:-3px">warning</span> Valores do modelo herdados — '+esc(mp.ref)+' · podem divergir do cadastro base (aviso interno, não sai no PDF)</div>':'';
     if(modo==='anexo'){   // referência de instalação: quantidades conforme a fonte do modelo (cadastro · média · pior caso)
       var lin=modeloServQtd(v).map(function(x){ return '<tr><td style="'+_td+'">'+esc(x.desc)+'</td><td style="'+_td+';text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+_d1(x.qtd)+'</td><td style="'+_td+';color:#7d7799">'+esc(x.und||'')+'</td></tr>'; }).join('');
-      return '<div data-pt="var:'+v.id+'" style="margin:6px 0 18px;border:1px solid #e3ddf6;border-radius:12px;padding:12px 14px;break-inside:avoid-page"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px"><b style="font-size:15px;color:#3f2c8f">'+esc(v.nome)+'</b><span style="font-size:12px;color:#7d7799">quantidades por unidade · '+n+' unidade'+(n===1?'':'s')+'</span></div><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Serviço</th><th style="text-align:right;'+_th+'">Qtd</th><th style="'+_th+'">Und</th></tr></thead><tbody>'+lin+'</tbody></table>'+previstosHtml(varConteudo(S,v.id),_secTit,_th,_td,'Possíveis adicionais · a confirmar em campo')+'</div>'; }
+      return '<div data-pt="var:'+v.id+'" style="margin:6px 0 18px;border:1px solid #e3ddf6;border-radius:12px;padding:12px 14px;break-inside:avoid-page"><div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px"><b style="font-size:15px;color:#3f2c8f">'+esc(varRotDoc(v))+'</b><span style="font-size:12px;color:#7d7799">quantidades por unidade · '+n+' unidade'+(n===1?'':'s')+'</span></div><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Serviço</th><th style="text-align:right;'+_th+'">Qtd</th><th style="'+_th+'">Und</th></tr></thead><tbody>'+lin+'</tbody></table>'+previstosHtml(varConteudo(S,v.id),_secTit,_th,_td,'Possíveis adicionais · a confirmar em campo')+'</div>'; }
     var itens=p.itens.map(function(x){ return '<tr><td style="'+_td+'">'+esc(x.desc)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+_d1(x.qtd)+'</td><td style="'+_td+';color:#7d7799">'+esc(x.und||'')+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(x.unit)+'</td><td style="'+_td+';text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+fmt(x.total)+'</td></tr>'; }).join('');
     return '<div data-pt="var:'+v.id+'" style="margin:6px 0 20px;border:1px solid #e3ddf6;border-radius:12px;padding:12px 14px;break-inside:avoid-page">'
       +'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:8px"><b style="font-size:15px;color:#3f2c8f">'+esc(v.nome)+'</b><span style="font-size:12px;color:#7d7799">'+n+' unidade'+(n===1?'':'s')+' · valores por unidade</span></div>'
@@ -4629,7 +4646,7 @@ function docLojasHtml(_secTit,_th,_td){ var us=LOTE_UNITS||[]; if(!us.length)ret
           : ('<b>+ '+nm+'</b> '+q+(docAdicVal()?' — <b>'+fmt(x.cheio)+'</b>':'')); }).join('<br>')
       +(docAdicVal()&&p.adicCheio>0.5?('<div style="margin-top:5px;padding-top:4px;border-top:1px dashed #e6cfa0"><span>Subtotal adicionais: <b>'+fmt(p.adicCheio)+'</b></span>'+(p.descCom>0.5?'<br><span style="color:#17693f">Desconto (adicionais inclusos no valor): <b>− '+fmt(p.descCom)+'</b></span>':'')+'</div>'):'')
       +'</td></tr>'):'';
-    return '<tr style="'+bg+'"><td style="'+_td+(tem?';border-bottom:0':'')+'"><b>'+esc(lojaLabel(u))+'</b>'+(tem?' <span style="font-size:10px;font-weight:800;color:#fff;background:#c77b12;border-radius:10px;padding:1px 7px">ADICIONAL</span>':'')+'</td><td class="col-modelo" style="'+_td+(tem?';border-bottom:0':'')+'">'+(vs.length>1?esc(varNome(unitVar(u))):'—')+'</td><td class="col-dias" style="'+_td+';text-align:right;font-variant-numeric:tabular-nums'+(tem?';border-bottom:0':'')+'">'+(num(u._prazo)?_d1(num(u._prazo))+' dias':'—')+'</td><td class="col-adic" style="'+_td+';text-align:right;font-variant-numeric:tabular-nums'+(tem?';border-bottom:0;color:#c77b12;font-weight:700':'')+'">'+(tem&&docAdicVal()?fmt(p.adicCheio):'—')+'</td><td style="'+_td+';text-align:right;font-weight:800;font-variant-numeric:tabular-nums'+(tem?';border-bottom:0':'')+'">'+fmt(num(u.total))+'</td></tr>'+det; }).join('');
+    return '<tr style="'+bg+'"><td style="'+_td+(tem?';border-bottom:0':'')+'"><b>'+esc(lojaLabel(u))+'</b>'+(tem?' <span style="font-size:10px;font-weight:800;color:#fff;background:#c77b12;border-radius:10px;padding:1px 7px">ADICIONAL</span>':'')+'</td><td class="col-modelo" style="'+_td+(tem?';border-bottom:0':'')+'">'+(vs.length>1?esc(varRot(unitVar(u))):'—')+'</td><td class="col-dias" style="'+_td+';text-align:right;font-variant-numeric:tabular-nums'+(tem?';border-bottom:0':'')+'">'+(num(u._prazo)?_d1(num(u._prazo))+' dias':'—')+'</td><td class="col-adic" style="'+_td+';text-align:right;font-variant-numeric:tabular-nums'+(tem?';border-bottom:0;color:#c77b12;font-weight:700':'')+'">'+(tem&&docAdicVal()?fmt(p.adicCheio):'—')+'</td><td style="'+_td+';text-align:right;font-weight:800;font-variant-numeric:tabular-nums'+(tem?';border-bottom:0':'')+'">'+fmt(num(u.total))+'</td></tr>'+det; }).join('');
   var tot=us.reduce(function(a,u){return a+num(u.total);},0), dias=us.reduce(function(a,u){return a+num(u._prazo);},0);
   return '<div style="'+_secTit+'">Unidades do lote</div><table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Unidade</th><th class="col-modelo" style="text-align:left;'+_th+'">Modelo</th><th class="col-dias" style="text-align:right;'+_th+'">Dias</th><th class="col-adic" style="text-align:right;'+_th+'">Adicionais</th><th style="text-align:right;'+_th+'">Valor total</th></tr></thead><tbody>'+rows+'</tbody><tfoot><tr style="background:#f6f4fc"><td style="padding:11px 13px;font-weight:800;color:#3f2c8f">'+us.length+' unidades</td><td class="col-modelo"></td><td class="col-dias" style="padding:11px 13px;text-align:right;font-weight:700">'+_d1(dias)+' dias</td><td class="col-adic"></td><td style="padding:11px 13px;text-align:right;font-weight:800;color:#3f2c8f;font-variant-numeric:tabular-nums">'+fmt(tot)+'</td></tr></tfoot></table>'; }
 function docMacroHtml(_secTit,_td){ var mt=macroTotal(); if(!(mt>0))return ''; var n=(LOTE_UNITS||[]).length||1; var est=((S.macro&&S.macro.estruturas)||[]); var rc=macroRotaCusto(); var fI=1+num(S.impostoPct)/100;   // documento do cliente: valores COM imposto
@@ -4796,7 +4813,7 @@ function varDocHtml(_secTit,_th,_td,_matSecDoc){   // seção "Variações" do d
     var sv=loteServSoma(us), mt=loteMatSoma(us);
     var tab=sv.length?'<table style="width:100%;border-collapse:collapse;font-size:12.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;'+_th+'">Serviço</th><th style="text-align:right;'+_th+'">Σ</th><th style="'+_th+'">Und</th></tr></thead><tbody>'+sv.map(function(r){return '<tr><td style="'+_td+'">'+esc(r.desc)+'</td><td style="'+_td+';text-align:right;font-weight:700;font-variant-numeric:tabular-nums">'+_d1(r.qtd)+'</td><td style="'+_td+';color:#7d7799">'+esc(r.und)+'</td></tr>';}).join('')+'</tbody></table>':'';
     return '<div style="margin:6px 0 18px;border:1px solid #e3ddf6;border-radius:12px;padding:12px 14px">'
-      +'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><b style="font-size:14.5px;color:#3f2c8f">'+esc(v.nome)+'</b><span style="font-size:12px;color:#7d7799">'+us.length+' unidade'+(us.length===1?'':'s')+'</span></div>'
+      +'<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><b style="font-size:14.5px;color:#3f2c8f">'+esc(varRotDoc(v))+'</b><span style="font-size:12px;color:#7d7799">'+us.length+' unidade'+(us.length===1?'':'s')+'</span></div>'
       +'<div style="font-size:12px;color:#5f5b72;margin:4px 0 8px;line-height:1.55">'+us.map(function(u){return esc(lojaLabel(u));}).join(' · ')+'</div>'
       +tab+(mt.length?_matSecDoc(mt,'Material — '+v.nome):'')+'</div>'; }).join('');
   return blocos?('<div><div style="'+_secTit+'">Variações do escopo</div>'+blocos+'</div>'):''; }
@@ -4860,14 +4877,14 @@ async function esclAplicarMarcadas(){
 function esclResumoHtml(){   // quantas lojas em cada escopo (cabeçalho do painel)
   var vs=varLista(), us=LOTE_UNITS||[], sem=us.filter(function(u){ return !(u.dados&&u.dados.variacaoId); }).length;
   return vs.map(function(v){ var n=unitsDaVar(v.id).length;
-    return '<span class="esclchip'+(v.id===S.varAtiva?' on':'')+'">'+esc(v.nome)+' <b>'+n+'</b></span>'; }).join('')
+    return '<span class="esclchip'+(v.id===S.varAtiva?' on':'')+'">'+esc(varRot(v.id))+' <b>'+n+'</b></span>'; }).join('')
     +(sem?'<span class="esclchip neg" title="loja gerada antes de existir mais de um escopo — está caindo no primeiro">sem escopo apontado <b>'+sem+'</b></span>':''); }
 function esclPainelHtml(){
   if(!isLoteBase()) return '';
   var vs=varLista(); if(vs.length<2) return '';
   var us=LOTE_UNITS||[], at=S.varAtiva;
   var cab='<div class="esclhd"><span class="material-symbols-rounded">storefront</span><b>Lojas de cada escopo</b>'
-    +'<span class="esclsub">quem segue o quê · marque e aponte para <b>'+esc(varNome(at))+'</b></span>'
+    +'<span class="esclsub">quem segue o quê · marque e aponte para <b>'+esc(varRot(at))+'</b></span>'
     +'<span class="esclres">'+esclResumoHtml()+'</span>'
     +'<button class="lbtn" style="margin-left:auto" onclick="esclImpAbrir()" title="Colar ou abrir um arquivo com a lista loja;escopo"><span class="material-symbols-rounded">playlist_add_check</span>Importar lista de lojas</button></div>';
   if(!us.length) return '<div class="esclcard">'+cab
@@ -4878,7 +4895,7 @@ function esclPainelHtml(){
     return '<label class="escllin'+(meu?' meu':'')+(tr?' trv':'')+'">'
       +'<input type="checkbox" '+(marc?'checked':'')+(tr?' disabled':'')+' onchange="esclMarcar(\''+u.id+'\',this.checked)">'
       +'<span class="esclnm">'+esc(lojaLabel(u))+'</span>'
-      +'<span class="esclesc">'+((u.dados&&u.dados.variacaoId)?esc(varNome(unitVar(u))):'<i>sem escopo</i>')+'</span>'
+      +'<span class="esclesc">'+((u.dados&&u.dados.variacaoId)?esc(varRot(unitVar(u))):'<i>sem escopo</i>')+'</span>'
       +'<span class="esclst">'+(tr?'<span class="esclsel">fechada</span>':(u.herda_base?'igual à base':'editada'))+'</span></label>'; }).join('');
   var n=esclMarcadas().length;
   return '<div class="esclcard">'+cab
@@ -4966,8 +4983,8 @@ function esclImpAbrir(){
   setTimeout(function(){ var t=document.getElementById('esclTxt'); if(t)t.focus(); },60); }
 function varFaixaHtml(){ var vs=varLista(); if(!vs.length)return ''; var at=S.varAtiva; var atv=vs.find(function(x){return x.id===at;})||vs[0]; var idx=vs.indexOf(atv);
   var tabs=vs.map(function(v,i){ var n=unitsDaVar(v.id).length, on=v.id===at;
-    return '<button class="lbtn" onclick="varTrocar(\''+v.id+'\')" style="padding:7px 12px;'+(on?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'"><span class="material-symbols-rounded" style="'+(on?'color:#fff':'')+'">'+(i===0?'star':'layers')+'</span>'+esc(v.nome)+'<span style="opacity:.8;font-weight:500">· '+n+' loja'+(n===1?'':'s')+'</span></button>'; }).join('');
-  var lojaOpts=(LOTE_UNITS||[]).map(function(u){ return '<option value="'+u.id+'">'+esc(lojaLabel(u))+(vs.length>1?' · '+esc(varNome(unitVar(u))):'')+'</option>'; }).join('');
+    return '<button class="lbtn" onclick="varTrocar(\''+v.id+'\')" style="padding:7px 12px;'+(on?'background:var(--pri);color:#fff;border-color:var(--pri)':'')+'"><span class="material-symbols-rounded" style="'+(on?'color:#fff':'')+'">'+(i===0?'star':'layers')+'</span>'+esc(varRot(v.id))+'<span style="opacity:.8;font-weight:500">· '+n+' loja'+(n===1?'':'s')+'</span></button>'; }).join('');
+  var lojaOpts=(LOTE_UNITS||[]).map(function(u){ return '<option value="'+u.id+'">'+esc(lojaLabel(u))+(vs.length>1?' · '+esc(varRot(unitVar(u))):'')+'</option>'; }).join('');
   return '<div style="padding:12px 14px">'
     +'<div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:9px"><span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">layers</span><b style="font-size:11.5px;text-transform:uppercase;letter-spacing:.05em;color:var(--pri)">Escopos do lote</b><span style="font-size:11.5px;color:var(--tx3)">cada escopo tem os seus serviços, material, despesas e locações</span>'+varSecaoBtnHtml(vs)+'</div>'
     +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+tabs+'<button class="lbtn" onclick="varNova()" style="padding:7px 12px;border-style:dashed"><span class="material-symbols-rounded">add</span>Novo escopo</button><button class="lbtn" onclick="impAbrir()" style="padding:7px 12px" title="Importar serviços e quantidades de uma planilha no formato padrão"><span class="material-symbols-rounded">table_view</span>Importar escopo</button><button class="lbtn" onclick="escModAbrir()" style="padding:7px 12px" title="Gravar este escopo como modelo ou aplicar um modelo gravado"><span class="material-symbols-rounded">bookmarks</span>Modelos de escopo</button></div>'
@@ -4977,7 +4994,7 @@ function varFaixaHtml(){ var vs=varLista(); if(!vs.length)return ''; var at=S.va
         +(mp&&mp.p?'<span style="margin-left:6px;color:var(--tx3)">total por unidade <b style="color:var(--tx)">'+fmt(mp.p.total)+'</b> · '+esc(mp.ref)+'</span>':'')
         +(f!=='cadastro'?'<span style="flex-basis:100%;margin-top:4px;padding:6px 10px;border-radius:8px;background:#fff4e0;border:1px solid #e6c360;color:#8a5a12;font-weight:700"><span class="material-symbols-rounded" style="font-size:15px;vertical-align:-3px">warning</span> Valores herdados das propostas das lojas ('+esc(mp?mp.ref:'')+') — sem percentual, podem divergir do cadastro base. Os itens editados aqui não mudam esses valores.</span>':'')+'</div>'; })()
     +''
-    +'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--pri-bg,#eeedfe);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">edit</span><span>Editando <b>'+esc(atv.nome)+'</b>'+(idx===0?' <span style="color:var(--tx3)">(modelo)</span>':'')+' — Serviços, Material, Despesas e Locações deste escopo.</span><span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'+varMostraBtnHtml(atv,vs)+'<button class="lbtn" onclick="varRenomear(\''+atv.id+'\')"><span class="material-symbols-rounded">edit_note</span>Renomear</button>'+(idx>0?'<button class="lbtn danger" onclick="varExcluir(\''+atv.id+'\')"><span class="material-symbols-rounded">delete</span>Excluir</button>':'')+'</span></div>'
+    +'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--pri-bg,#eeedfe);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">edit</span><span>Editando <b>'+esc(varRot(atv.id))+'</b>'+(idx===0?' <span style="color:var(--tx3)">(modelo)</span>':'')+' — Serviços, Material, Despesas e Locações deste escopo.</span><span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'+varMostraBtnHtml(atv,vs)+'<button class="lbtn" onclick="varSetModelo(&quot;'+atv.id+'&quot;)" title="nome do sistema que este escopo representa (aparece junto da variação e no documento)"><span class="material-symbols-rounded">label</span>Modelo</button><button class="lbtn" onclick="varRenomear(\''+atv.id+'\')"><span class="material-symbols-rounded">edit_note</span>Renomear</button>'+(idx>0?'<button class="lbtn danger" onclick="varExcluir(\''+atv.id+'\')"><span class="material-symbols-rounded">delete</span>Excluir</button>':'')+'</span></div>'
     +((LOTE_UNITS||[]).length?'<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--tx3)"><span>Preencher este escopo com o conteúdo de uma loja:</span><select id="varCopLoja" style="min-width:220px;padding:6px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:12.5px;background:var(--surf);color:var(--tx)"><option value="">— escolha a loja —</option>'+lojaOpts+'</select><button class="lbtn" onclick="varCopiarDeLoja()"><span class="material-symbols-rounded">content_copy</span>Copiar</button></div>':'')
     +esclPainelHtml()+escInicioHtml()+(escUnificado()?escMatrizHtml():escUnifAvisoHtml())
     +'</div>'; }
@@ -5028,7 +5045,7 @@ function relFin(u){ var p=null, custo=0, mgServ=null; try{ p=precoDe(dadosLojaCa
 function _relTab(cab,linhas){ return '<table class="reltbl"><thead><tr>'+cab.map(function(c){ return '<th'+(c[1]?' class="r"':'')+'>'+c[0]+'</th>'; }).join('')+'</tr></thead><tbody>'+linhas+'</tbody></table>'; }
 function relLojaHtml(u,modo){ var d=u.dados||{}, lev=d.levUnidade||{}, p=relParams(u), f=relFin(u), pr=f.p||{};
   var tit='Relatório da unidade — '+esc(lojaLabel(u));
-  var cab='<div class="relcab"><div><div class="reltit">'+esc(tit)+'</div><div class="relsub">'+esc(lev.sub||d.finEnd||'')+' · modelo '+esc(varNome(unitVar(u)))+' · lote '+esc((LOTE_ROW&&LOTE_ROW.nome)||'')+'</div></div>'
+  var cab='<div class="relcab"><div><div class="reltit">'+esc(tit)+'</div><div class="relsub">'+esc(lev.sub||d.finEnd||'')+' · modelo '+esc(varRot(unitVar(u)))+' · lote '+esc((LOTE_ROW&&LOTE_ROW.nome)||'')+'</div></div>'
     +'<div class="relsel">'+(modo==='interno'?'USO INTERNO':'VERSÃO DO CLIENTE')+'</div></div>';
   var esc0=(d.servicos||[]).filter(function(r){ return num(r.qtd)>0; }).map(function(r){ return '<tr><td>'+esc(r.desc)+(r.adic?' <span class="reladic">adicional</span>':'')+'</td><td class="r">'+_d1(num(r.qtd))+'</td><td>'+esc(r.und||'')+'</td>'+(modo==='interno'?'<td class="r">'+fmt(lineCusto(Object.assign(r,{_blk:'servicos'})))+'</td>':'')+'</tr>'; }).join('');
   var secEscopo='<div class="relsec">Escopo contratado</div>'+_relTab(modo==='interno'?[['Serviço'],['Qtd',1],['Und'],['Custo',1]]:[['Serviço'],['Qtd',1],['Und']],esc0);
@@ -5077,7 +5094,7 @@ function relLoteHtml(modo){ var us=LOTE_UNITS||[]; if(!us.length) return '';
   var fin=us.map(function(u){ var f=relFin(u); return {u:u,f:f}; });
   var custo=fin.reduce(function(a,x){ return a+x.f.custo; },0), lucro=fin.reduce(function(a,x){ return a+x.f.lucro; },0), liq=fin.reduce(function(a,x){ return a+x.f.liquido; },0);
   var linhas=fin.map(function(x){ var u=x.u, p=relParams(u)||{}, div=relCompara(u).filter(function(c){ return c.lev!=null && Math.abs(c.prop-num(c.lev))>0.5; }).length;
-    return '<tr><td>'+esc(lojaLabel(u))+'</td><td>'+esc(varNome(unitVar(u)))+'</td><td class="r">'+_d1(num(p.circuitos||0))+'</td><td class="r">'+(num(u._prazo)?_d1(num(u._prazo)):'—')+'</td><td class="r">'+fmt(num(u.total))+'</td>'
+    return '<tr><td>'+esc(lojaLabel(u))+'</td><td>'+esc(varRot(unitVar(u)))+'</td><td class="r">'+_d1(num(p.circuitos||0))+'</td><td class="r">'+(num(u._prazo)?_d1(num(u._prazo)):'—')+'</td><td class="r">'+fmt(num(u.total))+'</td>'
       +(modo==='interno'?('<td class="r">'+fmt(x.f.custo)+'</td><td class="r">'+fmt(x.f.lucro)+'</td><td class="r">'+_d1(x.f.margem)+'%</td><td class="r'+(div?' relmais':'')+'">'+(div||'—')+'</td>'):'')+'</tr>'; }).join('');
   var cabCols=[['Unidade'],['Modelo'],['Circuitos',1],['Dias',1],['Valor',1]].concat(modo==='interno'?[['Custo',1],['Lucro',1],['Margem',1],['Divergências',1]]:[]);
   var resumo='<div class="relsec">Resumo do lote</div>'+_relTab([['Item'],['Valor',1]],
@@ -5444,7 +5461,7 @@ function loteROHtml(){
     var det=[lev.relatorioEscopo||'', lev.obs||''].filter(Boolean).join('\n\n');
     return '<div class="rorow">'
       +'<div class="roid"><b>'+esc(lojaLabel(u))+'</b><span>'+esc(lev.sub||d.finEnd||'')+'</span></div>'
-      +'<div class="rov"><span>'+esc(varNome(unitVar(u)))+'</span><span>'+(num(u._prazo)?_d1(num(u._prazo))+' dias':'—')+'</span><b>'+fmt(num(u.total))+'</b>'+(adic?'<span class="roadic">'+adic+(adic>1?' adicionais':' adicional')+'</span>':'')+'</div>'
+      +'<div class="rov"><span>'+esc(varRot(unitVar(u)))+'</span><span>'+(num(u._prazo)?_d1(num(u._prazo))+' dias':'—')+'</span><b>'+fmt(num(u.total))+'</b>'+(adic?'<span class="roadic">'+adic+(adic>1?' adicionais':' adicional')+'</span>':'')+'</div>'
       +'<div class="roact">'
         +(arq?'<button class="lbtn roabrir" data-num="'+esc(nloja)+'" title="'+esc(arq.nome)+' — guardado no sistema"><span class="material-symbols-rounded">description</span>Relatório</button>':(rel?'<a class="lbtn" href="'+esc(rel)+'" target="_blank" rel="noopener" title="link do Drive (fora do sistema, depende de conta externa)"><span class="material-symbols-rounded">link</span>Relatório (Drive)</a>':'<span class="roempty">sem relatório</span>'))+'<button class="lbtn roup" data-num="'+esc(nloja)+'" title="Guardar o relatório no sistema"><span class="material-symbols-rounded">upload_file</span>'+(arq?'Trocar':'Anexar')+'</button>'+'<button class="lbtn rorel" data-num="'+esc(nloja)+'" title="Relatório da unidade gerado pelo sistema (cliente ou interno)"><span class="material-symbols-rounded">summarize</span>Relatório do sistema</button>'+((LEV_GER[nloja]||[]).length?'<span class="rogerados">'+(LEV_GER[nloja]||[]).length+' PDF gerado'+((LEV_GER[nloja]||[]).length>1?'s':'')+'</span>':'')
         +'<a class="lbtn" href="'+esc(abrir)+'" target="_blank" rel="noopener"><span class="material-symbols-rounded">open_in_new</span>Proposta da loja</a>'
