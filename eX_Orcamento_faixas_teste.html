@@ -866,6 +866,9 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .fpick .material-symbols-rounded{font-size:13px}
 .hintlbl{font-size:9px;color:var(--tx3);font-weight:400;text-transform:none;letter-spacing:0}
 .svcnm{font-size:13px;padding:5px 0;color:var(--tx);line-height:1.3}
+.detl{width:100%;margin-top:3px;font-size:11.5px;padding:3px 7px;color:var(--tx2);background:var(--surf2);border:1px dashed var(--line2)}
+.detl:focus{background:var(--surf);border-style:solid;color:var(--tx)}
+.detl::placeholder{color:var(--tx3);font-style:italic}
 .chip{font-size:11px;font-weight:600;color:var(--tx2);background:var(--surf2);border:1px solid var(--line);border-radius:20px;padding:4px 10px;cursor:pointer;display:inline-flex;align-items:center;gap:5px;white-space:nowrap}
 .chip:hover{border-color:var(--line2)}
 .chip .material-symbols-rounded{font-size:15px}
@@ -2332,7 +2335,7 @@ function renderBlk(cfg){
     // na IMPRESSÃO some tudo isso e o cliente vê só Descrição · Qtd · Und · Preço (= valor geral).
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
     const fmtMg=m=>(m==null?'—':String(m).replace('.',',')+'%');
-    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.key==='servicos'?'<th>Categoria</th>':''}${cfg.mat?'<th>Marca</th>':''}${cfg.key==='servicos'?'<th>Detalhes do serviço</th>':'<th class="pint">Valor</th>'}<th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r"><span class="pint">Valor (geral)</span><span class="printonly">Preço</span></th><th class="r pint">Lucro</th><th class="pint"></th>`;
+    cols = `<th>#</th><th>${nomeLbl}</th>${cfg.key==='servicos'?'<th>Categoria</th>':''}${cfg.mat?'<th>Marca</th>':''}${cfg.key==='servicos'?'':'<th class="pint">Valor</th>'}<th class="r pint">Custo</th><th class="r">Qtd</th><th>Und</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r"><span class="pint">Valor (geral)</span><span class="printonly">Preço</span></th><th class="r pint">Lucro</th><th class="pint"></th>`;
     body=_asm(_rowsOrd.map((r,i)=>{
       const cu=custoUn(r), custo=num(r.qtd)*cu, preco=num(r.geral), lucro=preco-custo;
       const margImpl = custo>0?(Math.round((preco/custo-1)*1000)/10):null;
@@ -2345,11 +2348,11 @@ function renderBlk(cfg){
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
-        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}${adicChipHtml(cfg,r)}</td>
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${detLinha(cfg,r)}${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}${adicChipHtml(cfg,r)}</td>
         ${cfg.key==='servicos'?`<td class="cat" style="font-size:12px;color:var(--tx2)">${esc(svcCatOf(r))}</td>`:''}
         ${marcaCell}
         ${cfg.key==='servicos'
-          ? `<td><input class="cin det" value="${esc(r.detalhe||'')}" placeholder="detalhes do serviço…" oninput="upd('${cfg.key}','${r.id}','detalhe',this.value)"></td>`
+          ? ''
           : `<td class="pint"><div class="swcell"><div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar"><span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span></div><span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'usar base':'alterar'}</span></div></td>`}
         ${cfg.key==='servicos'
           ? `<td class="r pint"><div class="custocell">${custoCell}<div class="swmini"><div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar"><span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span></div><span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'base':'alterar'}</span></div></div></td>`
@@ -2361,15 +2364,15 @@ function renderBlk(cfg){
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
         <td class="pint rowact">${editCad}<button class="swp" onclick="dupRow('${cfg.key}','${r.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
-    }),(cfg.mat?11:10)+(cfg.key==='servicos'?1:0));
-    if(!rows.length) body=`<tr><td colspan="${(cfg.mat?11:10)+(cfg.key==='servicos'?1:0)}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
+    }),(cfg.mat?11:10));
+    if(!rows.length) body=`<tr><td colspan="${(cfg.mat?11:10)}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
     if(soT){   // "Só o total": edição idêntica aos outros modos; na IMPRESSÃO os itens saem (Desc/Qtd/Und) com "incluso" no valor + o total agrupado do bloco no fim
-      foot=`<tfoot><tr class="ftot"><td class="ftl" colspan="${(cfg.mat?8:7)+(cfg.key==='servicos'?1:0)}">Total do bloco (agrupado)</td><td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(effBlocoTotal(cfg.key))}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlurBloco(this,'${cfg.key}')" oninput="updBloco('${cfg.key}',this.value)" title="Acompanha a soma dos itens; digite um valor para sobrescrever"></span></td><td colspan="2"></td></tr></tfoot>`;
+      foot=`<tfoot><tr class="ftot"><td class="ftl" colspan="${(cfg.mat?8:7)}">Total do bloco (agrupado)</td><td class="r"><span class="rsw"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(effBlocoTotal(cfg.key))}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlurBloco(this,'${cfg.key}')" oninput="updBloco('${cfg.key}',this.value)" title="Acompanha a soma dos itens; digite um valor para sobrescrever"></span></td><td colspan="2"></td></tr></tfoot>`;
     }
   } else if(cfg.custo){
     // MODELO base+margem: custo (do cadastro, usar/alterar) → margem → preço e lucro
     const nomeLbl = cfg.mat?'Material':(cfg.key==='servicos'?'Serviço':'Item');
-    cols = `<th>#</th><th class="sortth" onclick="sortBlk('${cfg.key}','desc')">${nomeLbl}${sortArrow(cfg.key,'desc')}</th>${cfg.key==='servicos'?`<th class="sortth" onclick="sortBlk('${cfg.key}','categoria')">Categoria${sortArrow(cfg.key,'categoria')}</th>`:''}${cfg.mat?'<th>Marca</th>':''}${cfg.key==='servicos'?'<th>Detalhes do serviço</th>':'<th class="pint">Valor</th>'}<th class="r pint sortth" onclick="sortBlk('${cfg.key}','custo')">Custo un.${sortArrow(cfg.key,'custo')}</th><th class="r sortth" onclick="sortBlk('${cfg.key}','qtd')">Qtd${sortArrow(cfg.key,'qtd')}</th><th class="sortth" onclick="sortBlk('${cfg.key}','und')">Und${sortArrow(cfg.key,'und')}</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r pint sortth" onclick="sortBlk('${cfg.key}','custot')">Custo total<span class="thsub">sem margem</span>${sortArrow(cfg.key,'custot')}</th><th class="r sortth" onclick="sortBlk('${cfg.key}','unit')">Unitário<span class="thsub">c/ margem</span>${sortArrow(cfg.key,'unit')}</th><th class="r sortth" onclick="sortBlk('${cfg.key}','preco')">Total<span class="thsub">c/ margem</span>${sortArrow(cfg.key,'preco')}</th><th class="pint"></th>`;
+    cols = `<th>#</th><th class="sortth" onclick="sortBlk('${cfg.key}','desc')">${nomeLbl}${sortArrow(cfg.key,'desc')}</th>${cfg.key==='servicos'?`<th class="sortth" onclick="sortBlk('${cfg.key}','categoria')">Categoria${sortArrow(cfg.key,'categoria')}</th>`:''}${cfg.mat?'<th>Marca</th>':''}${cfg.key==='servicos'?'':'<th class="pint">Valor</th>'}<th class="r pint sortth" onclick="sortBlk('${cfg.key}','custo')">Custo un.${sortArrow(cfg.key,'custo')}</th><th class="r sortth" onclick="sortBlk('${cfg.key}','qtd')">Qtd${sortArrow(cfg.key,'qtd')}</th><th class="sortth" onclick="sortBlk('${cfg.key}','und')">Und${sortArrow(cfg.key,'und')}</th><th class="r pint">Margem <button class="mkallbtn" title="Voltar todas as margens à base" onclick="zerarMargens('${cfg.key}')"><span class="material-symbols-rounded">refresh</span></button></th><th class="r pint sortth" onclick="sortBlk('${cfg.key}','custot')">Custo total<span class="thsub">sem margem</span>${sortArrow(cfg.key,'custot')}</th><th class="r sortth" onclick="sortBlk('${cfg.key}','unit')">Unitário<span class="thsub">c/ margem</span>${sortArrow(cfg.key,'unit')}</th><th class="r sortth" onclick="sortBlk('${cfg.key}','preco')">Total<span class="thsub">c/ margem</span>${sortArrow(cfg.key,'preco')}</th><th class="pint"></th>`;
     body=_asm(_rowsOrd.map((r,i)=>{
       const preco=linePreco(r), custo=lineCusto(r), unit=lineUnit(r);
       const propria=!(r.margem===''||r.margem==null);
@@ -2382,11 +2385,11 @@ function renderBlk(cfg){
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}">
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
-        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}${adicChipHtml(cfg,r)}</td>
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${detLinha(cfg,r)}${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}${adicChipHtml(cfg,r)}</td>
         ${cfg.key==='servicos'?`<td class="cat" style="font-size:12px;color:var(--tx2)">${esc(svcCatOf(r))}</td>`:''}
         ${marcaCell}
         ${cfg.key==='servicos'
-          ? `<td><input class="cin det" value="${esc(r.detalhe||'')}" placeholder="detalhes do serviço…" oninput="upd('${cfg.key}','${r.id}','detalhe',this.value)"></td>`
+          ? ''
           : `<td class="pint"><div class="swcell"><div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar"><span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span></div><span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'usar base':'alterar'}</span></div></td>`}
         ${cfg.key==='servicos'
           ? `<td class="r pint"><div class="custocell">${custoCell}<div class="swmini"><div class="ex-switch ${r.usarBase?'on':''}" onclick="togBase('${cfg.key}','${r.id}')" title="usar base ⇄ alterar"><span class="lb off">EDIT</span><span class="lb onx">BASE</span><span class="kb"><span class="pin"></span></span></div><span class="swlbl ${r.usarBase?'on':'off'}">${r.usarBase?'base':'alterar'}</span></div></div></td>`
@@ -2399,11 +2402,11 @@ function renderBlk(cfg){
         <td class="r money preco" id="tp_${r.id}"><b>${fmt(preco)}</b></td>
         <td class="pint rowact">${editCad}<button class="swp" onclick="dupRow('${cfg.key}','${r.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
-    }),(cfg.mat?12:11)+(cfg.key==='servicos'?1:0));
-    if(!rows.length) body=`<tr><td colspan="${(cfg.mat?12:11)+(cfg.key==='servicos'?1:0)}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
+    }),(cfg.mat?12:11));
+    if(!rows.length) body=`<tr><td colspan="${(cfg.mat?12:11)}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
     if(cfg.key==='despesas' && !soT) body += diariasRowsHtml();   // alimentação + hospedagem como linhas de despesa (derivadas)
     if(cfg.key==='despesas' && !soT && !comboActive()) body += rateioRowHtml();   // rateio do macro no PREÇO só sem valor combinado (com combinado vira custo interno)
-    if(soT){ foot=`<tfoot><tr class="ftot"><td class="ftl" colspan="${(cfg.mat?10:9)+(cfg.key==='servicos'?1:0)}">Total do bloco (agrupado)</td><td class="r money"><b>${fmt(blkSub(cfg.key))}</b></td><td colspan="1"></td></tr></tfoot>`; }
+    if(soT){ foot=`<tfoot><tr class="ftot"><td class="ftl" colspan="${(cfg.mat?10:9)}">Total do bloco (agrupado)</td><td class="r money"><b>${fmt(blkSub(cfg.key))}</b></td><td colspan="1"></td></tr></tfoot>`; }
   }
   const obsTxt=(S.obs&&S.obs[cfg.key])||'';
   const obsShow=!(S.obsOn&&S.obsOn[cfg.key]===false);
@@ -2773,6 +2776,9 @@ function despGatCtrl(cfg,r){
   const hint = gat==='fixo' ? '' : `<span class="gathint">${gat==='pd'?(obraPessoas()+' pes × '+_d1(obraPrazo())+' d'):gat==='dia'?(_d1(obraPrazo())+' dias'):(obraPessoas()+' pessoas')}</span>`;
   return `<div class="gatline noprint"><span class="material-symbols-rounded gaic">${DESP_GAT[gat].ic}</span><select class="gatsel" onchange="setGat('${cfg.key}','${r.id}',this.value)" title="Como esta despesa é calculada">${opts}</select>${hint}</div>`;
 }
+function detLinha(cfg,r){   /* detalhe do serviço na LINHA DE BAIXO, com largura para ler — antes era uma coluna estreita que cortava o texto */
+  if(cfg.key!=='servicos') return '';
+  return '<input class="cin detl" value="'+esc(r.detalhe||'')+'" placeholder="detalhe do serviço (aparece na proposta)" title="detalhe do serviço — sai na proposta do cliente" oninput="upd(\''+cfg.key+'\',\''+r.id+'\',\'detalhe\',this.value)">'; }
 function qtdCellHtml(cfg,r){
   const gat=r.gatilho||'fixo';
   if(cfg.key==='despesas' && gat!=='fixo') return `<span class="und-fix" title="quantidade calculada — ${DESP_GAT[gat].lb}">${_d1(qtyOf(r))}</span>`;
