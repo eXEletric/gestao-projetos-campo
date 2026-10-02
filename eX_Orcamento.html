@@ -3198,11 +3198,15 @@ async function computeLoteUnitsAbr(){
 // #3 PRAZO CONSOLIDADO: prazo de cada unidade = obraPrazo() no dados dela (temp-swap de S)
 function unitPrazoDias(dados){ if(!dados)return 0; const keep=S; try{ S=dados; return num(obraPrazo()); }catch(e){ return 0; } finally{ S=keep; } }
 function unitCusto(dados){ if(!dados)return 0; const keep=S; try{ S=dados; let c=0; BLKS.forEach(function(b){ if(blocoAtivo(b.key)) c+=blkCusto(b.key); }); return c+diariasCusto(); }catch(e){ return 0; } finally{ S=keep; } }   // custo por loja (material+serviço+diárias); macro é global do lote
+function varCfg(base,id){ var fc=varCampoFonte(base,id)||{}; var o={}; VAR_CAMPOS.forEach(function(k){ if(fc[k]!==undefined) o[k]=fc[k]; }); return o; }   // só equipe/prazo do escopo (sem copiar os blocos)
 function computeLoteUnitsPrazo(){
   // 2.1: unidade que SEGUE a mestra usa a equipe da mestra pra calcular o prazo (a editada usa a própria)
-  const basePes=(isLoteBase()?(S&&S.pessoasFn):(BASE_DADOS&&BASE_DADOS.pessoasFn))||null;
-  const baseEf =(isLoteBase()?(S&&S.efetivo):(BASE_DADOS&&BASE_DADOS.efetivo))||null;
+  // 02/10: a equipe e o prazo agora são do ESCOPO que a loja segue, não do lote inteiro
+  const _bb=(isLoteBase()?S:BASE_DADOS); const _cache={};
   (LOTE_UNITS||[]).forEach((u,i)=>{
+  const _vid=unitVar(u); if(_cache[_vid]===undefined) _cache[_vid]=_bb?varCfg(_bb,_vid):{};
+  const basePes=(_cache[_vid].pessoasFn!==undefined?_cache[_vid].pessoasFn:(_bb&&_bb.pessoasFn))||null;
+  const baseEf =(_cache[_vid].efetivo  !==undefined?_cache[_vid].efetivo  :(_bb&&_bb.efetivo  ))||null;
   // #cálc1: usa a faixa fresca (LOTE_UNIT_ABR, calculada do banco) em vez do _lojaMunId cacheado; respeita unidade já congelada
   const ab=(LOTE_UNIT_ABR||[])[i]; const hasSnap=u.dados&&u.dados.abrSnap&&typeof u.dados.abrSnap==='object';
   const d=Object.assign({},u.dados); const ov=(u.dados&&u.dados._ov)||{};
@@ -4429,13 +4433,24 @@ function escMatrizHtml(){
     +'<span class="escabas">'+foco+abas+'</span></div>'
     +'<div class="scroll"><table class="esctbl"><thead><tr><th class="escnm">Item</th>'+cabEsc+'<th class="escnm">Quantidade vem de</th>'+'</tr></thead><tbody>'+linhas+linhasAd+'</tbody></table></div></div>';
 }
+/* 02/10 (dono): EQUIPE e PRAZO também são do ESCOPO — 2 medidores exigem mais gente e mais dias que 1.
+   O que continua sendo da LOJA é o km/cidade (abrSnap) — senão a loja distante ficaria igual à perto. */
+var VAR_CAMPOS=['efetivo','pessoasFn','prazoManual'];
+function varCampoFonte(base,id){   // de onde vêm equipe/prazo do escopo: a ativa vive na base; as outras, no conteúdo (ou em v.cfg quando unificado)
+  var vs=(base&&base.variacoes)||[], at=(base&&base.varAtiva)||'v1', v=vs.find(function(x){return x.id===id;});
+  if(escUnifDe(base)) return (v&&v.cfg)?v.cfg:base;
+  return (!id||id===at||!v||!v.conteudo)?base:v.conteudo; }
 function varConteudo(base,id){ var c={}; var vs=(base&&base.variacoes)||[]; var at=(base&&base.varAtiva)||'v1';
+  var fc=varCampoFonte(base,id);
+  VAR_CAMPOS.forEach(function(k){ if(fc&&fc[k]!==undefined) c[k]=_deep(fc[k]); });
   if(escUnifDe(base)){ var eid=id||at; VAR_KEYS.forEach(function(k){ c[k]=escLinhasDo(base,k,eid); }); return c; }   // biblioteca única: o escopo é só um recorte com a quantidade dele
   var v=vs.find(function(x){return x.id===id;});
   var src=(!id||id===at||!v||!v.conteudo)?base:v.conteudo; VAR_KEYS.forEach(function(k){ c[k]=_deep((src&&src[k])||[]); }); return c; }
 function dadosLojaDaBase(base,id){   // dados de uma loja a partir da base, com o conteúdo da variação escolhida
   var d=_deep(base||{}); var vid=id||(base&&base.varAtiva)||'v1'; var c=varConteudo(base,vid);
-  VAR_KEYS.forEach(function(k){ d[k]=c[k]; }); delete d.variacoes; delete d.varAtiva; delete d._base; delete d.macro; delete d.fxLayout; delete d.numero; d.variacaoId=vid; return d; }   // nº da proposta NUNCA vem da base
+  VAR_KEYS.forEach(function(k){ d[k]=c[k]; });
+  VAR_CAMPOS.forEach(function(k){ if(c[k]!==undefined) d[k]=c[k]; });
+  delete d.variacoes; delete d.varAtiva; delete d._base; delete d.macro; delete d.fxLayout; delete d.numero; d.variacaoId=vid; return d; }   // nº da proposta NUNCA vem da base
 function varRerender(){ save(); try{ sanitize(); }catch(_){} BLKS.forEach(function(b){ try{ renderBlk(b); }catch(_){} }); try{ applyBlocoVis(); }catch(_){} try{ recalc(); }catch(_){} try{ injectLoteBasePanel(); }catch(_){} }
 /* ===== BALANÇO loja × modelo (dono 21/09): por loja, quantos itens PASSAM do modelo (excedente→adicional) e quantos FALTAM, com o custo da diferença — serviços+materiais+despesas ===== */
 var BAL_OPEN={};
@@ -4543,9 +4558,14 @@ async function reiniciarDescLote(){ if(!(isLoteBase()&&CLOUD))return; var mods=d
 function varTrocar(id){ var vs=varLista(); if(id===S.varAtiva)return; var atual=vs.find(function(x){return x.id===S.varAtiva;}), nova=vs.find(function(x){return x.id===id;}); if(!nova)return;
   if(typeof lmePendente==='function'&&lmePendente()>0&&!confirm('Há edição de material a custo NÃO aplicada — trocar de variação descarta. Continuar?'))return;
   try{ LME_ON=false; LME_STAGE=null; }catch(_){}
-  if(escUnificado()){ S.varAtiva=id; varRerender(); return; }   // biblioteca única: trocar de escopo é só mudar a lente, não move conteúdo
-  if(atual){ atual.conteudo={}; VAR_KEYS.forEach(function(k){ atual.conteudo[k]=_deep(S[k]||[]); }); }
-  VAR_KEYS.forEach(function(k){ S[k]=_deep((nova.conteudo&&nova.conteudo[k])||[]); }); delete nova.conteudo; S.varAtiva=id;
+  if(escUnificado()){   // biblioteca única: trocar de escopo é só mudar a lente — mas equipe/prazo são do escopo, então viajam em v.cfg
+    if(atual){ atual.cfg=atual.cfg||{}; VAR_CAMPOS.forEach(function(k){ atual.cfg[k]=_deep(S[k]); }); }
+    VAR_CAMPOS.forEach(function(k){ var fonte=(nova.cfg&&nova.cfg[k]!==undefined)?nova.cfg[k]:undefined; if(fonte!==undefined) S[k]=_deep(fonte); });
+    S.varAtiva=id; varRerender(); return; }
+  if(atual){ atual.conteudo={}; VAR_KEYS.forEach(function(k){ atual.conteudo[k]=_deep(S[k]||[]); }); VAR_CAMPOS.forEach(function(k){ atual.conteudo[k]=_deep(S[k]); }); }
+  VAR_KEYS.forEach(function(k){ S[k]=_deep((nova.conteudo&&nova.conteudo[k])||[]); });
+  VAR_CAMPOS.forEach(function(k){ if(nova.conteudo&&nova.conteudo[k]!==undefined) S[k]=_deep(nova.conteudo[k]); });   // equipe e prazo do escopo que abriu
+  delete nova.conteudo; S.varAtiva=id;
   varRerender(); }
 function varNova(){ var vs=varLista(); var v1=vs[0];
   var nome=prompt('Nome do novo escopo (ex.: Splitão).\nEla nasce com os dados da "'+v1.nome+'" — depois você ajusta.','Variação '+(vs.length+1)); if(!nome||!nome.trim())return;
@@ -5150,7 +5170,7 @@ function varFaixaHtml(){ var vs=varLista(); if(!vs.length)return ''; var at=S.va
     +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+tabs+'<button class="lbtn" onclick="varNova()" style="padding:7px 12px;border-style:dashed"><span class="material-symbols-rounded">add</span>Novo escopo</button><button class="lbtn" onclick="impAbrir()" style="padding:7px 12px" title="Importar serviços e quantidades de uma planilha no formato padrão"><span class="material-symbols-rounded">table_view</span>Importar escopo</button><button class="lbtn" onclick="escModAbrir()" style="padding:7px 12px" title="Modelos de escopo e modelos de proposta inteira"><span class="material-symbols-rounded">bookmarks</span>Modelos</button></div>'
     +valoresLeituraHtml(atv)
     +''
-    +'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--pri-bg,#eeedfe);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">edit</span><span>Editando <b>'+esc(varRot(atv.id))+'</b>'+(idx===0?' <span style="color:var(--tx3)">(modelo)</span>':'')+' — Serviços, Material, Despesas e Locações deste escopo.</span><span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'+varMostraBtnHtml(atv,vs)+'<button class="lbtn" onclick="varSetModelo(&quot;'+atv.id+'&quot;)" title="nome do sistema que este escopo representa (aparece junto da variação e no documento)"><span class="material-symbols-rounded">label</span>Modelo</button><button class="lbtn" onclick="varRenomear(\''+atv.id+'\')"><span class="material-symbols-rounded">edit_note</span>Renomear</button>'+(idx>0?'<button class="lbtn danger" onclick="varExcluir(\''+atv.id+'\')"><span class="material-symbols-rounded">delete</span>Excluir</button>':'')+'</span></div>'
+    +'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--pri-bg,#eeedfe);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">edit</span><span>Editando <b>'+esc(varRot(atv.id))+'</b>'+(idx===0?' <span style="color:var(--tx3)">(modelo)</span>':'')+' — Serviços, Material, Despesas, Locações, <b>equipe</b> e <b>prazo</b> deste escopo.</span><span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'+varMostraBtnHtml(atv,vs)+'<button class="lbtn" onclick="varSetModelo(&quot;'+atv.id+'&quot;)" title="nome do sistema que este escopo representa (aparece junto da variação e no documento)"><span class="material-symbols-rounded">label</span>Modelo</button><button class="lbtn" onclick="varRenomear(\''+atv.id+'\')"><span class="material-symbols-rounded">edit_note</span>Renomear</button>'+(idx>0?'<button class="lbtn danger" onclick="varExcluir(\''+atv.id+'\')"><span class="material-symbols-rounded">delete</span>Excluir</button>':'')+'</span></div>'
     +((LOTE_UNITS||[]).length?'<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--tx3)"><span>Preencher este escopo com o conteúdo de uma loja:</span><select id="varCopLoja" style="min-width:220px;padding:6px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:12.5px;background:var(--surf);color:var(--tx)"><option value="">— escolha a loja —</option>'+lojaOpts+'</select><button class="lbtn" onclick="varCopiarDeLoja()"><span class="material-symbols-rounded">content_copy</span>Copiar</button></div>':'')
     +esclPainelHtml()+escInicioHtml()+(escUnificado()?escMatrizHtml():escUnifAvisoHtml())
     +'</div>'; }
@@ -5511,7 +5531,7 @@ function escModPayloadDe(ids){
       });
     });
   });
-  return {dados:{v:1,variacoes:vs.map(function(v){ var o={id:v.id,nome:v.nome}; if(v.modelo)o.modelo=v.modelo; return o; }),blocos:blocos}, itens:n, escopos:vs.length}; }
+  return {dados:{v:1,variacoes:vs.map(function(v){ var o={id:v.id,nome:v.nome}; if(v.modelo)o.modelo=v.modelo; var cfg=varCfg(S,v.id); if(Object.keys(cfg).length) o.cfg=cfg; return o; }),blocos:blocos}, itens:n, escopos:vs.length}; }   /* cfg = equipe e prazo do escopo */
 function escModItensDe(id){ try{ return escModPayloadDe([id]).itens; }catch(_){ return 0; } }
 async function escModGravar(ids,nomeSug){
   if(!isLoteBase()){ alert('Só na proposta-base do lote.'); return; }
@@ -5551,6 +5571,10 @@ async function escModAplicar(id){
       if(ex){ ex.nome=v.nome; if(v.modelo)ex.modelo=v.modelo; } }
     if(!ex){ ex={id:'v'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),nome:v.nome}; if(v.modelo)ex.modelo=v.modelo; S.variacoes.push(ex); }
     else if(v.modelo&&!ex.modelo){ ex.modelo=v.modelo; }
+    if(v.cfg){   /* equipe e prazo do escopo: a ativa vive em S; as outras, no conteúdo (ou em cfg quando unificado) */
+      if(ex.id===S.varAtiva){ VAR_CAMPOS.forEach(function(k){ if(v.cfg[k]!==undefined) S[k]=_deep(v.cfg[k]); }); }
+      else if(escUnificado()){ ex.cfg=ex.cfg||{}; VAR_CAMPOS.forEach(function(k){ if(v.cfg[k]!==undefined) ex.cfg[k]=_deep(v.cfg[k]); }); }
+      else { ex.conteudo=ex.conteudo||{}; VAR_CAMPOS.forEach(function(k){ if(v.cfg[k]!==undefined) ex.conteudo[k]=_deep(v.cfg[k]); }); } }
     _usado[ex.id]=1; mapa[v.id]=ex.id; });
   if(!S.varAtiva||!S.variacoes.some(function(v){ return v.id===S.varAtiva; })) S.varAtiva=(S.variacoes[0]||{}).id;
   var novos=0, atual=0;
