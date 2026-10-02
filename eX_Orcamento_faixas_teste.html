@@ -411,7 +411,7 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .qorig.qo-man{background:#fdeceb;color:#b3261e}
 .esctbl td.escde{min-width:200px}
 /* importar escopo (formato padrão eX) */
-#impOv,#escModOv,#esclOv{position:fixed;inset:0;z-index:800;background:rgba(20,14,40,.55);display:grid;place-items:center;padding:18px}
+#impOv,#escModOv,#esclOv,#glOv{position:fixed;inset:0;z-index:800;background:rgba(20,14,40,.55);display:grid;place-items:center;padding:18px}
 .impbox{background:var(--surf);border-radius:14px;width:min(980px,96vw);max-height:92vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 20px 60px rgba(20,10,50,.35)}
 .imphd{display:flex;align-items:center;gap:9px;flex-wrap:wrap;padding:12px 15px;border-bottom:1px solid var(--line2);background:var(--pri-bg,#efeafc);color:var(--pri)}
 .imphd .material-symbols-rounded{font-size:19px}
@@ -429,7 +429,7 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .imptbl tr.impadic td{background:#fffaf1}
 .impft{display:flex;gap:8px;justify-content:flex-end;padding:11px 15px;border-top:1px solid var(--line2);background:var(--surf2)}
 .impft .lbtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
-#impOv .lbtn.on,#escModOv .lbtn.on,#esclOv .lbtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+#impOv .lbtn.on,#escModOv .lbtn.on,#esclOv .lbtn.on,#glOv .lbtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
 .emlin{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:10px 0;border-bottom:1px solid var(--line)}
 .emlin:last-child{border-bottom:0}
 .emnm{flex:1;min-width:220px}
@@ -4867,6 +4867,99 @@ function escUnifAvisoHtml(){
    O dono mantém os escopos separados (cada um com a sua cópia) — o que faltava era dizer, de um lugar só,
    quais lojas seguem cada escopo: na mão (marcar e apontar) ou por uma LISTA colada/arquivo (loja;escopo).
    Loja enviada/aprovada nunca é alterada. Apontar troca o conteúdo da loja "igual à base" e regrava o total. */
+/* ===== GERAR LOJAS A PARTIR DO ESCOPO (02/10) =====
+   O dono tem a relação de unidades do cliente e quer virar proposta: cola a lista, escolhe o escopo aberto,
+   e o sistema cria a loja no cadastro (com o município, quando a UF é informada), a oportunidade e a proposta,
+   já apontada para aquele escopo. É o "converter um escopo em lojas específicas". */
+var GL_LIN=[];
+function glNorm(s){ return String(s==null?'':s).trim().toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/\s+/g,' '); }
+function glCampos(){ var pf=document.getElementById('glPrefixo'), uf=document.getElementById('glUf');
+  return {prefixo:(pf?pf.value:'').trim(), uf:((uf?uf.value:'')||'').trim().toUpperCase().slice(0,2)}; }
+function glNomeFinal(base,c){ return (c.prefixo?(c.prefixo+' — '):'')+base+(c.uf?(' - '+c.uf):''); }
+function glParse(txt){
+  GL_LIN=[]; var c=glCampos();
+  var linhas=String(txt||'').split(/\r?\n/).map(function(l){ return l.trim(); }).filter(function(l){ return l!==''; });
+  linhas.forEach(function(l,i){
+    if(i===0 && /^(unidade|loja|cidade)\b/i.test(l)) return;
+    var p=l.split(/;|\t/).map(function(x){ return x.trim(); }).filter(function(x){ return x!==''; });
+    var base=p[0]||''; if(!base) return;
+    var cidade=p[1]||base;
+    var nome=glNomeFinal(base,c);
+    var loja=(LOJAS||[]).find(function(x){ return glNorm(x.nome)===glNorm(nome); })
+         || (LOJAS||[]).find(function(x){ return glNorm(x.nome).indexOf(glNorm(base))>=0 && glNorm(base).length>4; });
+    var noLote=(LOTE_UNITS||[]).some(function(u){ return glNorm(u.cliente_final||'')===glNorm(nome) || (loja && u.dados && u.dados.lojaId===loja.id); });
+    GL_LIN.push({base:base,cidade:cidade,nome:nome,loja:loja||null,noLote:noLote});
+  });
+}
+function glPrevia(){
+  var ta=document.getElementById('glTxt'); if(!ta)return; glParse(ta.value);
+  var el=document.getElementById('glPrev'); if(!el)return;
+  if(!GL_LIN.length){ el.innerHTML='<div class="impinfo">Cole a relação de unidades — uma por linha.</div>'; return; }
+  var novas=GL_LIN.filter(function(x){ return !x.noLote; }).length;
+  var rows=GL_LIN.map(function(x){
+    var sit=x.noLote?'já está no lote':(x.loja?'loja já cadastrada':'loja nova (vai ser criada)');
+    return '<tr class="'+(x.noLote?'escli-ig':'')+'"><td>'+esc(x.nome)+'</td><td>'+esc(x.cidade)+'</td><td>'+sit+'</td></tr>'; }).join('');
+  el.innerHTML='<div class="impinfo"><b>'+novas+'</b> proposta(s) serão geradas em <b>'+esc(varRot(S.varAtiva))+'</b> · '+GL_LIN.length+' linha(s) lidas</div>'
+    +'<div class="scroll"><table class="imptbl"><thead><tr><th>Unidade (nome final)</th><th>Cidade</th><th>Situação</th></tr></thead><tbody>'+rows+'</tbody></table></div>'; }
+function glFechar(){ var ov=document.getElementById('glOv'); if(ov)ov.remove(); }
+async function glGerar(){
+  if(!isLoteBase()){ alert('Só na proposta-base do lote.'); return; }
+  if(!loteExigeSalvo('Gerar lojas')) return;
+  var alvos=GL_LIN.filter(function(x){ return !x.noLote; });
+  if(!alvos.length){ alert('Nada para gerar: confira a prévia.'); return; }
+  var escId=S.varAtiva, c=glCampos();
+  if(!confirm('Gerar '+alvos.length+' proposta(s) no escopo "'+varRot(escId)+'"?\n\n'+alvos.slice(0,10).map(function(x){ return '• '+x.nome; }).join('\n')+(alvos.length>10?('\n… e mais '+(alvos.length-10)):'')
+    +'\n\nCada uma nasce igual a este escopo e pode ser ajustada depois.')) return;
+  var MUN={};
+  if(c.uf){ try{ const r=await SB.from('municipios').select('codigo_ibge,nome').eq('uf',c.uf); (r.data||[]).forEach(function(m){ MUN[glNorm(m.nome)]=m.codigo_ibge; }); }catch(_){} }
+  var cn=(LOTE_ROW&&LOTE_ROW.contratante_id)?(((typeof contratantes==='function'?contratantes():[]).find(function(x){ return x.id===LOTE_ROW.contratante_id; })||{}).nome||''):'';
+  var ok=0, erros=[], semMun=[];
+  for(var i=0;i<alvos.length;i++){
+    var x=alvos[i];
+    try{
+      var lojaId=x.loja?x.loja.id:null;
+      if(!lojaId){
+        var mid=MUN[glNorm(x.cidade)]||null; if(!mid && c.uf) semMun.push(x.cidade);
+        const li=await SB.from('lojas').insert({nome:x.nome,grupo:(c.prefixo||null),municipio_id:mid,municipio_origem:mid?'auto':null}).select('id').single();
+        if(li.error) throw li.error; lojaId=li.data.id;
+      }
+      const oi=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:(LOTE_ROW&&LOTE_ROW.contratante_id)||null,contemplado_id:lojaId,
+        objeto:((LOTE_ROW&&LOTE_ROW.nome)||'Lote')+' — '+x.nome,lote_id:S_LOTE_ID}).select('id').single();
+      if(oi.error) throw oi.error;
+      var numero=await proximoNumero();
+      var dados=dadosLojaDaBase(S,escId);
+      delete dados._base; delete dados.macro; dados.abrSnap=null;
+      dados.finNome=x.nome; dados.lojaId=lojaId; dados.numero=numero; dados.variacaoId=escId;
+      if(LOTE_ROW&&LOTE_ROW.contratante_id){ dados.contratanteId=LOTE_ROW.contratante_id; dados.cliNome=cn; }
+      var p=null; try{ p=precoDe(dadosLojaCalc({dados:dados})); }catch(_){}
+      const ci=await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:oi.data.id,lote_id:S_LOTE_ID,herda_base:true,numero:numero,
+        status:'rascunho',cliente_final:x.nome,cliente_contratante:cn,dados:dados,total:(p?p.total:0)});
+      if(ci.error) throw ci.error;
+      ok++;
+    }catch(e){ erros.push(x.nome+': '+(e.message||e)); }
+  }
+  try{ if(typeof carregarLojas==='function') await carregarLojas(); }catch(_){}
+  await loteReload();
+  glFechar();
+  alert(ok+' proposta(s) criada(s) no escopo "'+varNome(escId)+'".'
+    +(semMun.length?('\n\nSem município reconhecido ('+semMun.length+'): '+semMun.slice(0,6).join(', ')+' — ajuste na loja se precisar do km.'):'')
+    +(erros.length?('\n\nNão deu para criar '+erros.length+':\n'+erros.slice(0,6).join('\n')):'')); }
+function glAbrir(){
+  if(!isLoteBase()){ alert('Só na proposta-base do lote.'); return; }
+  if(document.getElementById('glOv')) return;
+  var ov=document.createElement('div'); ov.id='glOv';
+  ov.innerHTML='<div class="impbox"><div class="imphd"><span class="material-symbols-rounded">add_business</span><b>Gerar lojas neste escopo</b>'
+    +'<span class="impsub">cole a relação de unidades do cliente · cada linha vira uma proposta no escopo <b>'+esc(varRot(S.varAtiva))+'</b></span>'
+    +'<button class="lbtn" onclick="glFechar()" style="margin-left:auto"><span class="material-symbols-rounded">close</span>Fechar</button></div>'
+    +'<div class="impbd"><div class="impacts">'
+      +'<label class="impsub">Prefixo do nome <input id="glPrefixo" class="cin" style="width:150px;margin-left:6px" placeholder="ex.: Economart" oninput="glPrevia()"></label>'
+      +'<label class="impsub">UF <input id="glUf" class="cin" style="width:56px;margin-left:6px;text-transform:uppercase" maxlength="2" placeholder="BA" oninput="glPrevia()"></label>'
+      +'<span class="impsub">uma unidade por linha · <b>cidade</b> ou <b>nome;cidade</b> · a UF serve para achar o município (km e deslocamento)</span></div>'
+    +'<textarea id="glTxt" class="imptxt" spellcheck="false" placeholder="Santo Antônio de Jesus&#10;Jequié&#10;Itabuna" oninput="glPrevia()"></textarea>'
+    +'<div id="glPrev" class="impprev"></div></div>'
+    +'<div class="impft"><button class="lbtn" onclick="glFechar()">Cancelar</button><button class="lbtn on" onclick="glGerar()"><span class="material-symbols-rounded">bolt</span>Gerar as propostas</button></div></div>';
+  document.body.appendChild(ov);
+  setTimeout(function(){ var t=document.getElementById('glTxt'); if(t)t.focus(); glPrevia(); },60); }
 var ESCL_MARC={}, ESCL_LIN=[], ESCL_ERROS=[];
 function esclNorm(s){ return String(s==null?'':s).trim().toLowerCase().replace(/\s+/g,' '); }
 function esclNum(u){ return String((u&&u.dados&&u.dados.finNum)||'').trim(); }
@@ -4919,7 +5012,7 @@ function esclPainelHtml(){
   var cab='<div class="esclhd"><span class="material-symbols-rounded">storefront</span><b>Lojas de cada escopo</b>'
     +'<span class="esclsub">quem segue o quê · marque e aponte para <b>'+esc(varRot(at))+'</b></span>'
     +'<span class="esclres">'+esclResumoHtml()+'</span>'
-    +'<button class="lbtn" style="margin-left:auto" onclick="esclImpAbrir()" title="Colar ou abrir um arquivo com a lista loja;escopo"><span class="material-symbols-rounded">playlist_add_check</span>Importar lista de lojas</button></div>';
+    +'<button class="lbtn" style="margin-left:auto" onclick="glAbrir()" title="criar as propostas das unidades deste escopo a partir de uma lista"><span class="material-symbols-rounded">add_business</span>Gerar lojas neste escopo</button><button class="lbtn" onclick="esclImpAbrir()" title="Colar ou abrir um arquivo com a lista loja;escopo"><span class="material-symbols-rounded">playlist_add_check</span>Importar lista de lojas</button></div>';
   if(!us.length) return '<div class="esclcard">'+cab
     +'<div class="esclvazio"><span class="material-symbols-rounded">info</span>Este lote ainda não tem lojas. Gere as propostas na tela do lote — lá você escolhe o escopo de cada loja antes de gerar.'
     +(S_LOTE_ID?' <a class="lbtn" href="eX_Orcamento.html?lote='+S_LOTE_ID+'"><span class="material-symbols-rounded">open_in_new</span>Abrir a tela do lote</a>':'')+'</div></div>';
