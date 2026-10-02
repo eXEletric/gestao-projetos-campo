@@ -4886,7 +4886,8 @@ function glParse(txt){
     var cidade=p[1]||base;
     var nome=glNomeFinal(base,c);
     var loja=(LOJAS||[]).find(function(x){ return glNorm(x.nome)===glNorm(nome); })
-         || (LOJAS||[]).find(function(x){ return glNorm(x.nome).indexOf(glNorm(base))>=0 && glNorm(base).length>4; });
+         || (c.prefixo?(LOJAS||[]).find(function(x){ var n=glNorm(x.nome);   /* só casa parcial se o GRUPO também bate — senão "Santo Antônio de Jesus" pegaria a loja de outro cliente */
+              return n.indexOf(glNorm(c.prefixo))>=0 && n.indexOf(glNorm(base))>=0; }):null);
     var noLote=(LOTE_UNITS||[]).some(function(u){ return glNorm(u.cliente_final||'')===glNorm(nome) || (loja && u.dados && u.dados.lojaId===loja.id); });
     GL_LIN.push({base:base,cidade:cidade,nome:nome,loja:loja||null,noLote:noLote});
   });
