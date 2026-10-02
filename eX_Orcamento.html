@@ -5435,11 +5435,17 @@ async function escModAplicar(id){
     +(nLojas?('\n\n'+nLojas+' loja(s) já existem: elas não mudam agora — use "Atualizar as lojas iguais à base" depois.'):''))) return;
   S.variacoes=S.variacoes||[];
   var mapa={};
+  var _usado={};
+  var _escopoVazio=function(id){ if(unitsDaVar(id).length) return false;
+    var c=null; try{ c=varConteudo(S,id); }catch(_){ return false; }
+    return VAR_KEYS.every(function(k){ return !((c&&c[k])||[]).length; }); };
   (d.variacoes||[]).forEach(function(v){
-    var ex=S.variacoes.find(function(x){ return escModNorm(x.nome)===escModNorm(v.nome) || (v.modelo&&x.modelo&&escModNorm(x.modelo)===escModNorm(v.modelo)); });
+    var ex=S.variacoes.find(function(x){ return !_usado[x.id] && (escModNorm(x.nome)===escModNorm(v.nome) || (v.modelo&&x.modelo&&escModNorm(x.modelo)===escModNorm(v.modelo))); });
+    if(!ex){ ex=S.variacoes.find(function(x){ return !_usado[x.id] && _escopoVazio(x.id); });   /* escopo ainda vazio recebe o modelo (e o nome dele) em vez de criar outro */
+      if(ex){ ex.nome=v.nome; if(v.modelo)ex.modelo=v.modelo; } }
     if(!ex){ ex={id:'v'+Date.now().toString(36)+Math.random().toString(36).slice(2,5),nome:v.nome}; if(v.modelo)ex.modelo=v.modelo; S.variacoes.push(ex); }
     else if(v.modelo&&!ex.modelo){ ex.modelo=v.modelo; }
-    mapa[v.id]=ex.id; });
+    _usado[ex.id]=1; mapa[v.id]=ex.id; });
   if(!S.varAtiva||!S.variacoes.some(function(v){ return v.id===S.varAtiva; })) S.varAtiva=(S.variacoes[0]||{}).id;
   var novos=0, atual=0;
   if(escUnificado()){   // biblioteca única: o item existe uma vez, com a quantidade de cada escopo
