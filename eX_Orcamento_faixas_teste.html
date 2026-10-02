@@ -5479,9 +5479,23 @@ async function escModAplicar(id){
   escModFechar();
   alert('Modelo aplicado.\n\n• '+novos+' item(ns) novo(s)\n• '+atual+' item(ns) que já existiam receberam a quantidade do modelo\n\nConfira o escopo e clique em Salvar para gravar.'); }
 async function escModRenomear(id){ var m=(ESC_MOD||[]).find(function(x){ return x.id===id; }); if(!m)return;
-  var nome=prompt('Novo nome do modelo:', m.nome); if(nome===null) return; nome=String(nome).trim(); if(!nome) return;
-  try{ const r=await SB.from('escopo_modelos').update({nome:nome,updated_at:new Date().toISOString()}).eq('id',id); if(r.error) throw r.error;
-    await escModCarregar(); escModRender(); }catch(e){ alert('Não consegui renomear: '+(e.message||e)); } }
+  var nome=prompt('Nome do modelo:', m.nome); if(nome===null) return; nome=String(nome).trim(); if(!nome) return;
+  var desc=prompt('Descrição (opcional) — quando usar este modelo:', m.descricao||''); if(desc===null) desc=(m.descricao||'');
+  try{ const r=await SB.from('escopo_modelos').update({nome:nome,descricao:String(desc).trim()||null,updated_at:new Date().toISOString()}).eq('id',id); if(r.error) throw r.error;
+    await escModCarregar(); escModRender(); cloudMsg('modelo atualizado'); }catch(e){ alert('Não consegui renomear: '+(e.message||e)); } }
+async function escModAtualizar(id){   /* editar o CONTEÚDO do modelo = regravar por cima com o escopo que está no lote agora */
+  if(!isLoteBase()){ alert('Só na proposta-base do lote.'); return; }
+  var m=(ESC_MOD||[]).find(function(x){ return x.id===id; }); if(!m) return;
+  var umEscopo=(num(m.escopos)<=1);
+  var ids=umEscopo?[S.varAtiva]:null;
+  var p=escModPayloadDe(ids);
+  if(!p.itens){ alert('Não há item para gravar — o escopo está vazio.'); return; }
+  var de=umEscopo?('o escopo aberto: '+varRot(S.varAtiva)):('os '+p.escopos+' escopos deste lote');
+  if(!confirm('Atualizar o modelo "'+m.nome+'" com '+de+'?\n\nO conteúdo do modelo é SUBSTITUÍDO:\n• itens: '+(m.itens||0)+' → '+p.itens+'\n• escopos: '+(m.escopos||0)+' → '+p.escopos
+    +'\n\nO nome continua o mesmo. Os lotes que já usaram este modelo NÃO mudam.')) return;
+  try{ const r=await SB.from('escopo_modelos').update({dados:p.dados,itens:p.itens,escopos:p.escopos,updated_at:new Date().toISOString()}).eq('id',id); if(r.error) throw r.error;
+    await escModCarregar(); escModRender(); cloudMsg('modelo "'+m.nome+'" atualizado com '+p.itens+' item(ns)');
+  }catch(e){ alert('Não consegui atualizar: '+(e.message||e)); } }
 async function escModExcluir(id){ var m=(ESC_MOD||[]).find(function(x){ return x.id===id; }); if(!m)return;
   if(!confirm('Excluir o modelo "'+m.nome+'"?\n\nOs lotes que já usaram continuam como estão — o modelo só deixa de aparecer aqui.')) return;
   try{ const r=await SB.from('escopo_modelos').update({deleted_at:new Date().toISOString()}).eq('id',id); if(r.error) throw r.error;
@@ -5525,7 +5539,7 @@ function escModRender(){
     return '<div class="emlin"><div class="emnm"><b>'+esc(m.nome)+'</b>'
       +'<div class="impinfo" style="margin:2px 0 0">'+(m.itens||0)+' itens · '+(m.escopos||0)+' escopo'+((m.escopos||0)===1?'':'s')+(dt?(' · '+dt):'')+(m.descricao?(' · '+esc(m.descricao)):'')+'</div></div>'
       +'<div class="emac"><button class="lbtn on" onclick="escModAplicar(\''+m.id+'\')"><span class="material-symbols-rounded">download_done</span>Aplicar neste lote</button>'
-      +'<button class="lbtn" onclick="escModRenomear(\''+m.id+'\')" title="renomear"><span class="material-symbols-rounded">edit</span></button>'
+      +'<button class="lbtn" onclick="escModAtualizar(&quot;'+m.id+'&quot;)" title="substituir o conteúdo deste modelo pelo escopo que está no lote agora"><span class="material-symbols-rounded">sync</span>Atualizar</button>'+'<button class="lbtn" onclick="escModRenomear(\''+m.id+'\')" title="renomear"><span class="material-symbols-rounded">edit</span></button>'
       +'<button class="lbtn" onclick="escModExcluir(\''+m.id+'\')" title="excluir"><span class="material-symbols-rounded">delete</span></button></div></div>'; }).join(''); }
 function escModFechar(){ var ov=document.getElementById('escModOv'); if(ov)ov.remove(); }
 async function escModAbrir(){
