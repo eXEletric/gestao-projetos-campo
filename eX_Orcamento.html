@@ -3453,11 +3453,17 @@ async function lotePropagar(){ if(!loteExigeSalvo('Propagar base'))return;
   const alvo=(LOTE_UNITS||[]).filter(u=>u.herda_base).length;
   const editadas=(LOTE_UNITS||[]).length-alvo;
   if(!alvo){ alert('Nenhuma unidade “igual à base” para propagar — as editadas ficam como estão.'); return; }
-  if(!confirm('⚠️ PROPAGAR A BASE\n\nVai SOBRESCREVER o escopo de '+alvo+' unidade(s) “igual à base” com o conteúdo da base atual.\nTudo que houver nessas unidades e não estiver na base será PERDIDO.\n\n'+editadas+' unidade(s) EDITADA(s) ficam PROTEGIDAS (não mudam).\n\nConfirmar a propagação em '+alvo+' unidade(s)?')) return;
-  try{ for(const u of LOTE_UNITS){ if(!u.herda_base) continue; const _bb=(isLoteBase()?S:BASE_DADOS); const dados=_bb?dadosLojaDaBase(_bb,unitVar(u)):{}; delete dados._base; delete dados.macro; dados.abrSnap=(u.dados&&u.dados.abrSnap)||null; dados.finNome=(u.dados&&u.dados.finNome)||u.cliente_final; dados.finNum=(u.dados&&u.dados.finNum)||dados.finNum; dados.lojaId=(u.dados&&u.dados.lojaId)||null; dados.numero=u.numero; dados.variacaoId=unitVar(u);   // identidade oficial da loja preservada
-      var _pt=null; try{ _pt=precoDe(dadosLojaCalc({dados:dados})); }catch(_){} await SB.from('orcamentos').update({dados,total:(_pt?_pt.total:BASE_TOTAL)}).eq('id',u.id); }
-    await loteReload(); alert('Base propagada nas unidades “igual à base”.');
-  }catch(e){ console.error(e); alert('Erro: '+(e.message||e)); } }
+  if(!confirm('⚠️ PROPAGAR A BASE\n\nVai SOBRESCREVER o escopo de '+alvo+' unidade(s) “igual à base” com o conteúdo da base atual.\nTudo que houver nessas unidades e não estiver na base será PERDIDO.\n\n'+editadas+' unidade(s) editada(s) ficam intactas.\n\nContinuar?')) return;
+  var _ok=0, _falhas=[];   /* 02/10: contava nada e falhava calado — 4 lojas ficaram para trás numa propagação do lote IMS */
+  try{ for(const u of LOTE_UNITS){ if(!u.herda_base) continue; const _bb=(isLoteBase()?S:BASE_DADOS); const dados=_bb?dadosLojaDaBase(_bb,unitVar(u)):{}; delete dados._base; delete dados.macro; dados.abrSnap=(u.dados&&u.dados.abrSnap)||null; dados.finNome=(u.dados&&u.dados.finNome)||u.cliente_final; dados.finNum=(u.dados&&u.dados.finNum)||dados.finNum; dados.variacaoId=unitVar(u); dados.lojaId=(u.dados&&u.dados.lojaId)||null; dados.numero=u.numero;
+      var _pt=null; try{ _pt=precoDe(dadosLojaCalc({dados:dados})); }catch(_){}
+      var _r=null; try{ _r=await SB.from('orcamentos').update({dados,total:(_pt?_pt.total:BASE_TOTAL)}).eq('id',u.id); }catch(_e){ _r={error:_e}; }
+      if(_r&&_r.error) _falhas.push(lojaLabel(u)+': '+(_r.error.message||_r.error)); else _ok++; }
+    await loteReload();
+    alert(_falhas.length
+      ? ('Propagado em '+_ok+' de '+alvo+' unidade(s).\n\n⚠️ NÃO entrou em '+_falhas.length+':\n'+_falhas.slice(0,8).join('\n')+'\n\nClique em propagar de novo — as que já foram não mudam.')
+      : ('Base propagada nas '+_ok+' unidade(s) “igual à base”.'));
+  }catch(e){ console.error(e); alert('Erro depois de '+_ok+' unidade(s): '+(e.message||e)+'\n\nAs que faltaram continuam com o conteúdo antigo — rode a propagação de novo.'); } }
 async function loteDelUnit(id,oppId){ if(!loteExigeSalvo('Excluir loja'))return; if(!confirm('Excluir esta unidade do lote? A proposta individual dela é descartada.'))return;
   await SB.from('orcamentos').update({deleted_at:new Date().toISOString()}).eq('id',id);
   if(oppId) await SB.from('oportunidades').update({deleted_at:new Date().toISOString()}).eq('id',oppId);
