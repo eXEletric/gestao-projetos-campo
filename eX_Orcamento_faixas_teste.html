@@ -5385,6 +5385,10 @@ function escModItem(r){ var o={};
    O dono mantém os escopos separados (cada variação com a sua cópia), então gravar não pode exigir unificação:
    o payload é montado a partir do conteúdo de cada escopo (varConteudo), fundindo item igual numa biblioteca
    com a quantidade de cada escopo ao lado. Dá para gravar UM escopo (com o nome dele) ou o lote inteiro. */
+async function escModCarregar(){ ESC_MOD=[]; if(!SB) return ESC_MOD;
+  try{ const r=await SB.from('escopo_modelos').select('id,nome,descricao,itens,escopos,created_at').is('deleted_at',null).order('nome');
+    ESC_MOD=r.data||[]; }catch(e){ console.error('escMod',e); }
+  return ESC_MOD; }
 function escModPayloadDe(ids){
   var vs=varLista().filter(function(v){ return !ids || ids.indexOf(v.id)>=0; });
   var blocos={}, idx={}, n=0;
