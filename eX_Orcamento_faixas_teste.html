@@ -1391,18 +1391,30 @@ function _hhmm(){ const d=new Date(); return ('0'+d.getHours()).slice(-2)+':'+('
 let USUARIOS=[];   // COLABORADORES comerciais (Gestão › Equipe c/ função "Comercial / Vendas") — responsáveis da proposta
 function hoje(){ const t=new Date(); const p=n=>String(n).padStart(2,'0'); return t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate()); }
 function maisDias(iso,d){ const t=new Date(iso+'T00:00:00'); t.setDate(t.getDate()+d); const p=n=>String(n).padStart(2,'0'); return t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate()); }
+var VALIDADE_DIAS=15;   /* padrão do dono (06/10): toda proposta nasce com 15 dias de validade, já preenchida */
 function stampNovo(){ // orçamento novo: data de hoje + criador (usuário logado)
-  const d=hoje(); setM('dataISO',d); setM('validadeISO',maisDias(d,30));
+  const d=hoje(); setM('dataISO',d); setM('validadeISO',maisDias(d,VALIDADE_DIAS));
   // responsável = COLABORADOR do login (não o perfil de acesso); refreshClienteLive puxa nome/email/fone do colaborador comercial
   if(USER_COLAB_ID){ S.respId=USER_COLAB_ID; const u=USUARIOS.find(x=>x.id===USER_COLAB_ID); if(u){ setM('respNome',u.nome); setM('respFone',u.fone); setM('respEmail',u.email); } }
   else if(USER_NOME){ setM('respNome',USER_NOME); }   // sem vínculo colaborador ainda → só o nome; o refresh casa pelo nome
   S.criadoPor=USER_NOME||S.respNome||''; S.criadoEm=d;
 }
 // número automático e ÚNICO: ORÇ-<ano>-<sequência>, tomando o maior nº já usado no ano
+/* NUMERAÇÃO (regra do dono, 15/09): a sequência ORÇ-AAAA-NNNN é da PROPOSTA (avulsa ou base do lote).
+   Loja de lote NÃO consome a sequência: recebe o código do lote + sufixo — ORÇ-2026-9831-01, -02, … */
+function ehCodigoLoja(n){ return /^OR[ÇC]-\d{4}-\d{3,}-\d+$/.test(String(n||'').trim()); }
+function loteBaseNumero(){ var b=(isLoteBase()?S:BASE_DADOS)||{}; return String(b.numero||'').trim(); }
+function loteProxCodigo(numBase,usados){
+  numBase=String(numBase||'').trim(); if(!numBase) return '';
+  var mx=0; (usados||[]).forEach(function(n){ n=String(n||'').trim();
+    if(n.indexOf(numBase+'-')!==0) return; var m=n.match(/-(\d+)$/); if(m){ var v=+m[1]; if(v>mx)mx=v; } });
+  return numBase+'-'+String(mx+1).padStart(2,'0'); }
+function loteCodigosUsados(){ return (LOTE_UNITS||[]).map(function(u){ return u.numero; }); }
 async function proximoNumero(){
   const ano=new Date().getFullYear(), pref='ORÇ-'+ano+'-';
   try{ if(SB){ const {data}=await SB.from('orcamentos').select('numero').ilike('numero',pref+'%').is('deleted_at',null);
-    let mx=0; (data||[]).forEach(r=>{ const m=(r.numero||'').match(/(\d+)\s*$/); if(m){ const n=+m[1]; if(n>mx)mx=n; } });
+    let mx=0; (data||[]).forEach(r=>{ if(ehCodigoLoja(r.numero)) return;   /* código de loja de lote não entra na sequência */
+      const m=(r.numero||'').match(/(\d+)\s*$/); if(m){ const n=+m[1]; if(n>mx)mx=n; } });
     return pref+String(mx+1).padStart(4,'0'); } }catch(e){}
   return pref+'0001';
 }
@@ -2034,6 +2046,7 @@ usuarios:[
 
 /* ---------- carga / persistência ---------- */
 function sanitize(){
+  if(!S.validadeISO){ try{ S.validadeISO=maisDias(S.dataISO||hoje(),VALIDADE_DIAS); }catch(_){} }   /* validade sempre preenchida: 15 dias (dono 06/10) */
   ['servicos','equip','despesas','materiais'].forEach(k=>{ if(!Array.isArray(S[k]))S[k]=[]; });   // garante os arrays dos blocos (base do lote / dados incompletos não quebram o render)
   // migra orçamentos antigos: respContato combinado → Fone + E-mail separados; e rede/nº do cliente final
   if(S.respFone===undefined)S.respFone=''; if(S.respEmail===undefined)S.respEmail='';
@@ -3369,12 +3382,13 @@ function loteRmPend(i){ LOTE_PEND.splice(i,1); loteRerender(); }
 async function loteGerar(){ if(!loteExigeSalvo('Gerar propostas'))return;
   if(!LOTE_PEND.length)return;
   const btn=event&&event.target; if(btn)btn.disabled=true;
+  var _codUsados=loteCodigosUsados();
   try{
     for(const l of LOTE_PEND){
       if((LOTE_UNITS||[]).some(u=>((u.dados&&u.dados.lojaId)===l.id)||((u.cliente_final||'')===(l.nome||'')))){ continue; }   // já existe unidade dessa loja → não duplica
       const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:LOTE_ROW?LOTE_ROW.contratante_id:null,contemplado_id:l.id,objeto:(LOTE_ROW?LOTE_ROW.nome:'Lote')+' — '+l.nome,lote_id:LOTE_ID}).select('id').limit(1);
       if(opp.error||!opp.data[0]) continue; const oppId=opp.data[0].id;
-      const numero=await proximoNumero();
+      const numero=loteProxCodigo(loteBaseNumero(),_codUsados)||(await proximoNumero()); _codUsados.push(numero);   /* loja de lote: código do lote, não a sequência */
       const _cn=(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):'');
       const _escId=(l._esc||((loteEscs()[0]||{}).id)||'v1'); const dados=BASE_DADOS?dadosLojaDaBase(BASE_DADOS,_escId):{}; dados.variacaoId=_escId; delete dados._base; delete dados.macro; dados.abrSnap=null; dados.finNome=l.nome; dados.lojaId=l.id; dados.numero=numero;
       if(LOTE_ROW&&LOTE_ROW.contratante_id){ dados.contratanteId=LOTE_ROW.contratante_id; dados.cliNome=_cn; }
@@ -3720,7 +3734,7 @@ async function loteAddLojaNow(idArg){ if(!loteExigeSalvo('Adicionar loja'))retur
   try{
     const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:(LOTE_ROW?LOTE_ROW.contratante_id:S.contratanteId)||null,contemplado_id:lojaId,objeto:(LOTE_ROW&&LOTE_ROW.nome?LOTE_ROW.nome:(S.cliNome||'Lote'))+' — '+l.nome,lote_id:LOTE_ID}).select('id').limit(1);
     if(opp.error||!opp.data[0]) throw (opp.error||new Error('sem oportunidade')); const oppId=opp.data[0].id;
-    const numero=await proximoNumero();
+    const numero=loteProxCodigo(loteBaseNumero(),loteCodigosUsados())||(await proximoNumero());   /* loja de lote: código do lote */
     const dados=dadosLojaDaBase(S||{},(S&&S.varAtiva)||null); delete dados._base; delete dados.macro; dados.abrSnap=null; dados.finNome=l.nome; dados.lojaId=l.id; dados.numero=numero;   // loja nova segue a variação aberta
     await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:oppId,lote_id:LOTE_ID,herda_base:true,numero,status:'rascunho',cliente_final:l.nome,cliente_contratante:S.cliNome||'',dados,total:num(S._total)||0});
     await loteReload();
@@ -4963,7 +4977,7 @@ async function glGerar(){
   var MUN={};
   if(c.uf){ try{ const r=await SB.from('municipios').select('codigo_ibge,nome').eq('uf',c.uf); (r.data||[]).forEach(function(m){ MUN[glNorm(m.nome)]=m.codigo_ibge; }); }catch(_){} }
   var cn=(LOTE_ROW&&LOTE_ROW.contratante_id)?(((typeof contratantes==='function'?contratantes():[]).find(function(x){ return x.id===LOTE_ROW.contratante_id; })||{}).nome||''):'';
-  var ok=0, erros=[], semMun=[];
+  var ok=0, erros=[], semMun=[], _codUsados=loteCodigosUsados();
   for(var i=0;i<alvos.length;i++){
     var x=alvos[i];
     try{
@@ -4976,7 +4990,7 @@ async function glGerar(){
       const oi=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:(LOTE_ROW&&LOTE_ROW.contratante_id)||null,contemplado_id:lojaId,
         objeto:((LOTE_ROW&&LOTE_ROW.nome)||'Lote')+' — '+x.nome,lote_id:S_LOTE_ID}).select('id').single();
       if(oi.error) throw oi.error;
-      var numero=await proximoNumero();
+      var numero=loteProxCodigo(loteBaseNumero(),_codUsados)||(await proximoNumero()); _codUsados.push(numero);   /* loja de lote: código do lote */
       var dados=dadosLojaDaBase(S,escId);
       delete dados._base; delete dados.macro; dados.abrSnap=null;
       dados.finNome=x.nome; dados.lojaId=lojaId; dados.numero=numero; dados.variacaoId=escId;
