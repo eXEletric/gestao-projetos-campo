@@ -1392,6 +1392,17 @@ let USUARIOS=[];   // COLABORADORES comerciais (Gestão › Equipe c/ função "
 function hoje(){ const t=new Date(); const p=n=>String(n).padStart(2,'0'); return t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate()); }
 function maisDias(iso,d){ const t=new Date(iso+'T00:00:00'); t.setDate(t.getDate()+d); const p=n=>String(n).padStart(2,'0'); return t.getFullYear()+'-'+p(t.getMonth()+1)+'-'+p(t.getDate()); }
 var VALIDADE_DIAS=15;   /* padrão do dono (06/10): toda proposta nasce com 15 dias de validade, já preenchida */
+function respDoLogin(){   /* 06/10: a base do lote nascia sem responsável porque stampNovo só roda em proposta nova pelo caminho comum */
+  try{
+    if(!S || (S.respNome && String(S.respNome).trim())) return false;
+    var u=(USER_COLAB_ID && (USUARIOS||[]).find(function(x){ return x.id===USER_COLAB_ID; }))||null;
+    if(!u && USER_NOME) u={id:null,nome:USER_NOME,email:USER_EMAIL,fone:USER_TELEFONE};
+    if(!u || !u.nome) return false;
+    S.respId=u.id||S.respId||null; S.respNome=u.nome; 
+    if(!S.respFone && u.fone) S.respFone=u.fone;
+    if(!S.respEmail && u.email) S.respEmail=u.email;
+    return true;
+  }catch(_){ return false; } }
 function stampNovo(){ // orçamento novo: data de hoje + criador (usuário logado)
   const d=hoje(); setM('dataISO',d); setM('validadeISO',maisDias(d,VALIDADE_DIAS));
   // responsável = COLABORADOR do login (não o perfil de acesso); refreshClienteLive puxa nome/email/fone do colaborador comercial
@@ -1518,6 +1529,7 @@ async function initOrc(){
       try{ const p=await SB.from('perfis').select('nome,email,telefone,colaborador_id').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; USER_TELEFONE=p.data[0].telefone||''; USER_COLAB_ID=p.data[0].colaborador_id||null; } }catch(_){}
       await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarOfertas(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia(); await carregarDiariaBase(); await carregarModelos();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
+      respDoLogin();   // responsável em branco → assume o COLABORADOR do login (regra do dono 06/10: quem responde pela proposta é quem está logado no comercial)
       MANUAL = !!ORC_ID;   // já existia ao abrir → alterações exigem clicar Salvar; nova (ORC_ID null) → auto até nascer
       // vínculo: pega contratante/loja da OPORTUNIDADE (pra puxar dados ao vivo do CRM, mesmo em orçamentos antigos)
       if(OPP && !S.contratanteId){ try{ const {data}=await SB.from('oportunidades').select('contratante_id,contemplado_id').eq('id',OPP).limit(1); if(data&&data[0]){ if(data[0].contratante_id)S.contratanteId=data[0].contratante_id; if(data[0].contemplado_id)S.lojaId=data[0].contemplado_id; } }catch(_){} }
