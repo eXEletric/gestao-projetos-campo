@@ -4753,9 +4753,14 @@ function preEnvioChecks(){
   var negsAbertas=negs.filter(function(x){ return !(PRE_JUST[x.u.id]||'').trim(); });
   if(negs.length){ var html='Serviços ABAIXO DO CUSTO: '+negs.map(function(x){ return '<div style="margin:5px 0 0 0"><b>'+esc(lojaNome(x.u))+'</b> '+_d1(x.m*100)+'% <input class="pejust" placeholder="justificativa para liberar (ex.: absorvido no lote)" value="'+esc(PRE_JUST[x.u.id]||'')+'" oninput="PRE_JUST[\''+x.u.id+'\']=this.value;preEnvioRender()" style="width:100%;margin-top:3px"></div>'; }).join('');
     (negsAbertas.length?B:A).push({txt:html+(negsAbertas.length?'':'<div style="color:#17693f;font-weight:700;margin-top:4px">liberado com justificativa</div>'),acao:'',html:true}); } else ok++;
-  var dup={}; us.forEach(function(u){ var n=(u.dados&&u.dados.finNum)||''; dup[n]=(dup[n]||0)+1; });
-  var idErr=us.map(function(u){ var e=identDivergencias(u.dados||{}); if(!(u.dados&&u.dados.finNum)) e.push('sem nº oficial'); else if(dup[u.dados.finNum]>1) e.push('nº repetido no lote'); return {u:u,e:e}; }).filter(function(x){ return x.e.length; });
+  var dup={}; us.forEach(function(u){ var n=(u.dados&&u.dados.finNum)||''; if(n) dup[n]=(dup[n]||0)+1; });
+  var idErr=[], idSemNum=[];   /* 06/10: cliente que não numera as lojas (IMS/Economart) não pode travar o PDF — o que importa é o VÍNCULO com o cadastro */
+  us.forEach(function(u){ var d=(u&&u.dados)||{}; var e=identDivergencias(d);
+    if(d.finNum && dup[d.finNum]>1) e.push('nº repetido no lote');
+    if(!d.finNum && !d.lojaId) e.push('sem nº oficial e sem vínculo com o cadastro de lojas');
+    if(e.length) idErr.push({u:u,e:e}); else if(!d.finNum) idSemNum.push(u); });
   add(B, idErr.length, 'Identidade de loja: '+idErr.map(function(x){ return lojaNome(x.u)+' ('+x.e.join(', ')+')'; }).join(' · '));
+  add(A, idSemNum.length, idSemNum.length+' loja(s) sem nº oficial — a proposta sai pelo nome da unidade. Cada uma está vinculada ao cadastro de lojas; se este cliente numera as unidades, preencha o nº antes de enviar.');
   add(B, !!S.colCustoProposta, 'Custo e lucro por loja VÃO APARECER para o cliente.', '<button class="pebtn" onclick="setColCustoProposta(false);verComoClienteLote();preEnvioAbrir()">Esconder do cliente</button>');
   var semVar=us.filter(function(u){ return ids.length>1 && ids.indexOf(unitVar(u))<0; });
   add(B, semVar.length, 'Loja(s) com variação inexistente: '+semVar.map(lojaNome).join(' · '));
