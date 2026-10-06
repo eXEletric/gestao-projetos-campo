@@ -1447,9 +1447,24 @@ function fillCateg(sel,blk,current){
   sel.innerHTML=o; sel.value=current;
 }
 const MODELO_V2=false;  // motor promovido a oficial — gravação na nuvem ATIVA
-function pushOrc(){
+/* TRAVA DE SOBRESCRITA (06/10): a base do lote já foi apagada duas vezes por uma aba antiga que salvou por cima.
+   Cada gravação carimba dados._rev; antes de gravar a BASE, conferimos se o banco está mais novo que o que esta tela carregou. */
+var _REV0=0;
+function revDe(d){ return (d&&+d._rev)||0; }
+async function revConfere(){
+  if(!(S&&S._base&&S_LOTE_ID&&ORC_ID&&SB)) return true;
+  try{ const r=await SB.from('orcamentos').select('dados').eq('id',ORC_ID).single();
+    const rb=revDe(r&&r.data&&r.data.dados);
+    if(rb>_REV0){
+      return confirm('⚠️ ESTA PROPOSTA-BASE FOI ALTERADA EM OUTRO LUGAR\n\nDepois que esta tela carregou, a base foi salva em outra aba ou por outra pessoa.\n\nSalvar agora SOBRESCREVE o que foi feito lá.\n\nOK = salvar assim mesmo · Cancelar = não salvar (recarregue a página para ver a versão nova)');
+    }
+  }catch(_){}
+  return true; }
+async function pushOrc(){
   if(MODELO_V2)return;    // blindagem: v2 não persiste na nuvem
   if(!(OPP&&CLOUD))return;
+  if(!(await revConfere())) { cloudMsg("não salvei — a base mudou em outro lugar"); return; }   // trava de sobrescrita
+  S._rev=(+(S._rev)||0)+1; _REV0=S._rev;
   const p={ empresa_id:EMPRESA_ID, oportunidade_id:OPP, numero:S.numero||null, status:S.status||'rascunho',
     solucao:S.solTitulo||null, escopo:S.solDesc||null, responsavel:S.respNome||null,
     margem_base:num(S.margemBase), imposto_pct:num(S.impostoPct), desconto_pct:num(S.descontoPct),
@@ -1473,7 +1488,7 @@ async function carregarOrc(){
   const {data,error}=await SB.from('orcamentos').select('*').eq('oportunidade_id',OPP).is('deleted_at',null).order('created_at',{ascending:false}).limit(1);
   if(error) throw error;
   if(data&&data.length){ ORC_ID=data[0].id; S_LOTE_ID=data[0].lote_id||null; if(data[0].dados) S=data[0].dados; else S=orcVazio();
-    if(S_LOTE_ID && !S._base && data[0].numero) S.numero=data[0].numero; }   // loja do lote: o nº OFICIAL é o da coluna (nunca o herdado da base)
+    if(S_LOTE_ID && !S._base && data[0].numero) S.numero=data[0].numero; _REV0=revDe(S); }   // loja do lote: o nº OFICIAL é o da coluna (nunca o herdado da base)
   else { ORC_ID=null; S=orcVazio(); S.numero=await proximoNumero(); stampNovo(); }   // orçamento novo nasce EM BRANCO + número automático único
   sanitize();
 }
