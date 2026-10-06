@@ -3911,6 +3911,7 @@ var FX_DEF=[
   {id:'lote.ver',nm:'Configuração do lote · cálculo e visão',ic:'tune'},
   {id:'lote.escopo',nm:'Serviços global (Σ lojas)',ic:'summarize'},
   {id:'lote.lista',nm:'Lista de lojas',ic:'storefront'},
+  {id:'lote.balanco',nm:'Balanço loja × escopo',ic:'balance'},
   {id:'lote.cond',nm:'Condições comerciais & partes',ic:'gavel'},
   {id:'lote.fatores',nm:'Fatores da obra · base e abrangência',ic:'tune'},
   {id:'lote.macro',nm:'Macro da operação · custos globais',ic:'hub'},
@@ -4361,7 +4362,7 @@ function levAplicarAqui(){
   alert('Pronto: '+r.mudou+' quantidade(s) recalculadas pelo levantamento.'+(r.semParam?('\n\n'+r.semParam+' item(ns) do escopo esperam um número que ainda não foi preenchido.'):'')+'\n\nAjuste manual não foi tocado. Clique em Salvar para gravar.'); }
 var LOTE_ABAS=[
   {k:'escopo',lb:'Escopo',ic:'build',dica:'serviços, material e as quantidades de cada escopo',fx:['lote.var','blk.servicos','blk.equip','blk.despesas','mat.cab','mat.base','mat.global']},
-  {k:'lojas',lb:'Lojas',ic:'storefront',dica:'unidades, levantamento, prazo e o que difere do escopo',fx:['lote.topo','lote.lista','lote.escopo','lote.fatores','lote.prazo']},
+  {k:'lojas',lb:'Lojas',ic:'storefront',dica:'unidades, levantamento, prazo e o que difere do escopo',fx:['lote.topo','lote.lista','lote.balanco','lote.escopo','lote.fatores','lote.prazo']},
   {k:'preco',lb:'Preço e documento',ic:'payments',dica:'formação, custos globais, condições e o que vai no PDF',fx:['cab','desc','lote.valores','lote.cond','lote.ver','lote.macro','lote.global']}
 ];
 function abaAtual(){ try{ var v=localStorage.getItem('ex_lote_aba_'+(S_LOTE_ID||'')); if(v&&LOTE_ABAS.some(function(a){return a.k===v;})) return v; }catch(_){}
@@ -4490,7 +4491,7 @@ function balancoLoteModelo(){
 }
 function toggleBalancoLoja(id){ BAL_OPEN[id]=!BAL_OPEN[id]; try{ injectLoteBasePanel(); }catch(_){} }
 function balancoHtml(){
-  if(!isLoteBase() || !(LOTE_UNITS||[]).length || varLista().length<2) return '';
+  if(!isLoteBase() || !(LOTE_UNITS||[]).length) return '';   /* 06/10: valia só com 2+ escopos — mas a comparação loja × escopo serve igual com um escopo só */
   var bal=balancoLoteModelo(); if(!bal.length) return '';
   var GC='1fr 120px 120px 104px';
   var vs=varLista(), tPassN=0,tPassC=0,tFaltN=0,tFaltC=0;
