@@ -459,6 +459,8 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .esclsel{font-weight:800;color:#17693f}
 .esclft{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;padding:9px 12px;background:var(--surf2);border-top:1px solid var(--line2);font-size:12px;color:var(--tx3)}
 .esclft .lbtn.on{background:var(--pri);color:#fff;border-color:var(--pri)}
+.esclft .lbtn.danger{color:var(--red);border-color:#e0b4b4}
+.esclft .lbtn.danger:hover{background:#fdeceb}
 .esclvazio{display:flex;align-items:center;gap:8px;flex-wrap:wrap;padding:12px;font-size:12.5px;color:var(--tx2)}
 .esclvazio .material-symbols-rounded{font-size:17px;color:var(--pri)}
 tr.escli-err td{background:#fdeceb;color:#8a2a22}
@@ -5044,6 +5046,53 @@ function esclResumoHtml(){   // quantas lojas em cada escopo (cabeçalho do pain
   return vs.map(function(v){ var n=unitsDaVar(v.id).length;
     return '<span class="esclchip'+(v.id===S.varAtiva?' on':'')+'">'+esc(varRot(v.id))+' <b>'+n+'</b></span>'; }).join('')
     +(sem?'<span class="esclchip neg" title="loja gerada antes de existir mais de um escopo — está caindo no primeiro">sem escopo apontado <b>'+sem+'</b></span>':''); }
+/* EXCLUIR LOJAS / ESCOPO (06/10): o lote precisa encolher quando o cliente tira um estado inteiro.
+   Loja fechada (enviada/aprovada) nunca é excluída — sai da conta e o escopo não some enquanto ela existir. */
+async function esclExcluirIds(ids){
+  var ok=0, falhas=[];
+  for(var i=0;i<ids.length;i++){
+    var u=(LOTE_UNITS||[]).find(function(x){ return x.id===ids[i]; }); if(!u) continue;
+    if(esclTravada(u)){ falhas.push(lojaLabel(u)+': fechada'); continue; }
+    try{
+      var r=await SB.from('orcamentos').update({deleted_at:new Date().toISOString()}).eq('id',u.id);
+      if(r&&r.error) throw r.error;
+      if(u.oportunidade_id) await SB.from('oportunidades').update({deleted_at:new Date().toISOString()}).eq('id',u.oportunidade_id);
+      ok++;
+    }catch(e){ falhas.push(lojaLabel(u)+': '+(e.message||e)); }
+  }
+  return {ok:ok, falhas:falhas}; }
+async function esclExcluirMarcadas(){
+  if(!loteExigeSalvo('Excluir lojas')) return;
+  var us=esclMarcadas(); if(!us.length){ alert('Marque as lojas que você quer tirar do lote.'); return; }
+  if(!confirm('Tirar '+us.length+' loja(s) deste lote?\n\n'+us.slice(0,12).map(function(u){ return '• '+lojaLabel(u); }).join('\n')+(us.length>12?('\n… e mais '+(us.length-12)):'')
+    +'\n\nA proposta de cada uma é descartada (a loja continua no cadastro). Loja fechada não é tocada.')) return;
+  var r=await esclExcluirIds(us.map(function(u){ return u.id; }));
+  ESCL_MARC={};
+  await loteReload();
+  alert(r.ok+' loja(s) retirada(s) do lote.'+(r.falhas.length?('\n\nNão saíram ('+r.falhas.length+'):\n'+r.falhas.slice(0,8).join('\n')):'')); }
+async function escExcluirComLojas(id){
+  if(!loteExigeSalvo('Excluir escopo')) return;
+  var vs=varLista(); if(vs.length<2||id===vs[0].id){ alert('O primeiro escopo é o modelo — não pode ser excluído.'); return; }
+  var us=unitsDaVar(id), fechadas=us.filter(esclTravada);
+  if(us.length){
+    if(!confirm('Excluir o escopo "'+varNome(id)+'" E as '+us.length+' loja(s) que seguem ele?\n\n'
+      +us.slice(0,12).map(function(u){ return '• '+lojaLabel(u); }).join('\n')+(us.length>12?('\n… e mais '+(us.length-12)):'')
+      +'\n\nAs propostas dessas lojas são descartadas (as lojas continuam no cadastro).'
+      +(fechadas.length?('\n\n⚠️ '+fechadas.length+' loja(s) fechada(s) NÃO saem — e o escopo fica enquanto elas existirem.'):''))) return;
+    var r=await esclExcluirIds(us.filter(function(u){ return !esclTravada(u); }).map(function(u){ return u.id; }));
+    await loteReload();
+    if(unitsDaVar(id).length){ alert(r.ok+' loja(s) retirada(s). O escopo "'+varNome(id)+'" continua porque ainda tem '+unitsDaVar(id).length+' loja(s) fechada(s).'); return; }
+    cloudMsg(r.ok+' loja(s) retiradas');
+  }
+  if(!confirm('Agora excluir o escopo "'+varNome(id)+'"?\n\nO conteúdo dele (serviços, material, despesas, locações, equipe e prazo) é perdido.')) return;
+  if(escUnificado()){ VAR_KEYS.forEach(function(k){ (S[k]||[]).forEach(function(r){ if(r&&r.qtdEsc) delete r.qtdEsc[id]; }); }); }
+  S.variacoes=(S.variacoes||[]).filter(function(v){ return v.id!==id; });
+  if(S.varAtiva===id){ var v0=S.variacoes[0]; S.varAtiva=v0?v0.id:'v1';
+    if(!escUnificado() && v0){ VAR_KEYS.forEach(function(k){ S[k]=_deep((v0.conteudo&&v0.conteudo[k])||S[k]||[]); });
+      VAR_CAMPOS.forEach(function(k){ if(v0.conteudo&&v0.conteudo[k]!==undefined) S[k]=_deep(v0.conteudo[k]); }); delete v0.conteudo; } }
+  save(); try{ sanitize(); }catch(_){}
+  BLKS.forEach(function(b){ try{ renderBlk(b); }catch(_){} }); try{ injectLoteBasePanel(); }catch(_){} recalc();
+  alert('Escopo excluído. Clique em Salvar para gravar a base.'); }
 function esclPropagarBtn(){   /* base → lojas: a ação que vivia na faixa "Modelo da proposta inteira"; cada loja recebe o conteúdo do SEU escopo */
   var n=(LOTE_UNITS||[]).filter(function(u){ return u.herda_base; }).length; if(!n) return '';
   return '<button class="lbtn" onclick="lotePropagar()" title="Reaplica o escopo da base nas lojas que estão iguais à base — cada uma pelo escopo que segue. As editadas ficam protegidas."><span class="material-symbols-rounded">sync</span>Atualizar as '+n+' loja(s) iguais à base</button>'; }
@@ -5073,7 +5122,7 @@ function esclPainelHtml(){
       +'<button class="lbtn" onclick="esclMarcarLote(\'nenhuma\')">limpar</button></div>'
     +'<div class="escllist">'+linhas+'</div>'
     +'<div class="esclft">'+esclPropagarBtn()+'<span>'+(n?('<b>'+n+'</b> loja(s) marcada(s)'):'nenhuma loja marcada')+'</span>'
-      +'<button class="lbtn'+(n?' on':'')+'"'+(n?'':' disabled')+' onclick="esclAplicarMarcadas()"><span class="material-symbols-rounded">how_to_reg</span>Apontar para '+esc(varNome(at))+'</button></div>'
+      +'<button class="lbtn'+(n?' on':'')+'"'+(n?'':' disabled')+' onclick="esclAplicarMarcadas()"><span class="material-symbols-rounded">how_to_reg</span>Apontar para '+esc(varNome(at))+'</button>'+(n?('<button class="lbtn danger" onclick="esclExcluirMarcadas()" title="tira estas lojas do lote — a proposta de cada uma é descartada"><span class="material-symbols-rounded">delete</span>Excluir as marcadas</button>'):'')+'</div>'
   +'</div>'; }
 /* ---- LISTA COLADA / ARQUIVO: loja;escopo ---- */
 function esclImpParse(txt){
@@ -5185,7 +5234,7 @@ function varFaixaHtml(){ var vs=varLista(); if(!vs.length)return ''; var at=S.va
     +'<div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">'+tabs+'<button class="lbtn" onclick="varNova()" style="padding:7px 12px;border-style:dashed"><span class="material-symbols-rounded">add</span>Novo escopo</button><button class="lbtn" onclick="impAbrir()" style="padding:7px 12px" title="Importar serviços e quantidades de uma planilha no formato padrão"><span class="material-symbols-rounded">table_view</span>Importar escopo</button><button class="lbtn" onclick="escModAbrir()" style="padding:7px 12px" title="Modelos de escopo e modelos de proposta inteira"><span class="material-symbols-rounded">bookmarks</span>Modelos</button></div>'
     +valoresLeituraHtml(atv)
     +''
-    +'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--pri-bg,#eeedfe);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">edit</span><span>Editando <b>'+esc(varRot(atv.id))+'</b>'+(idx===0?' <span style="color:var(--tx3)">(modelo)</span>':'')+' — Serviços, Material, Despesas, Locações, <b>equipe</b> e <b>prazo</b> deste escopo.</span><span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'+varMostraBtnHtml(atv,vs)+'<button class="lbtn" onclick="varSetModelo(&quot;'+atv.id+'&quot;)" title="nome do sistema que este escopo representa (aparece junto da variação e no documento)"><span class="material-symbols-rounded">label</span>Modelo</button><button class="lbtn" onclick="varRenomear(\''+atv.id+'\')"><span class="material-symbols-rounded">edit_note</span>Renomear</button>'+(idx>0?'<button class="lbtn danger" onclick="varExcluir(\''+atv.id+'\')"><span class="material-symbols-rounded">delete</span>Excluir</button>':'')+'</span></div>'
+    +'<div style="margin-top:10px;padding:9px 12px;border-radius:9px;background:var(--pri-bg,#eeedfe);display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-size:12.5px"><span class="material-symbols-rounded" style="font-size:17px;color:var(--pri)">edit</span><span>Editando <b>'+esc(varRot(atv.id))+'</b>'+(idx===0?' <span style="color:var(--tx3)">(modelo)</span>':'')+' — Serviços, Material, Despesas, Locações, <b>equipe</b> e <b>prazo</b> deste escopo.</span><span style="margin-left:auto;display:flex;gap:6px;flex-wrap:wrap">'+varMostraBtnHtml(atv,vs)+'<button class="lbtn" onclick="varSetModelo(&quot;'+atv.id+'&quot;)" title="nome do sistema que este escopo representa (aparece junto da variação e no documento)"><span class="material-symbols-rounded">label</span>Modelo</button><button class="lbtn" onclick="varRenomear(\''+atv.id+'\')"><span class="material-symbols-rounded">edit_note</span>Renomear</button>'+(idx>0?'<button class="lbtn danger" onclick="escExcluirComLojas(\''+atv.id+'\')"><span class="material-symbols-rounded">delete</span>Excluir</button>':'')+'</span></div>'
     +((LOTE_UNITS||[]).length?'<div style="margin-top:9px;display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:12px;color:var(--tx3)"><span>Preencher este escopo com o conteúdo de uma loja:</span><select id="varCopLoja" style="min-width:220px;padding:6px 9px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:12.5px;background:var(--surf);color:var(--tx)"><option value="">— escolha a loja —</option>'+lojaOpts+'</select><button class="lbtn" onclick="varCopiarDeLoja()"><span class="material-symbols-rounded">content_copy</span>Copiar</button></div>':'')
     +esclPainelHtml()+escInicioHtml()+(escUnificado()?escMatrizHtml():escUnifAvisoHtml())
     +'</div>'; }
