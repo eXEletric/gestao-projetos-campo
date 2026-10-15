@@ -3796,8 +3796,12 @@ async function ufGeoCarregar(){
 function mapaUFsEnvolvidas(){ var s={}; var b=baseMun(); if(b&&b.codigo_ibge) s[ufDeIbge(b.codigo_ibge)]=1;
   (LOTE_UNIT_ABR||[]).forEach(function(x){ if(x&&x.mu&&x.mu.codigo_ibge) s[ufDeIbge(x.mu.codigo_ibge)]=1; });
   return s; }
+function mapaNomeDe(u,cidade){   /* no mapa vale o nome da UNIDADE (Feira de Santana 1 e 2 são cidades iguais, lojas diferentes) */
+  var n=String((u&&(u.cliente_final||(u.dados&&u.dados.finNome)))||'').trim();
+  if(n){ n=n.replace(/^.*?[—–-]\s+/,'').replace(/\s*-\s*[A-Z]{2}$/,'').trim(); if(n) return n; }
+  return cidade||''; }
 function buildLoteMapaSVG(){
-  const base=baseMun(); const us=(LOTE_UNIT_ABR||[]).map((x,i)=>({mu:x.mu,nome:(x.cidade||'').split('/')[0],label:i+1})).filter(x=>x.mu);
+  const base=baseMun(); const us=(LOTE_UNIT_ABR||[]).map((x,i)=>({mu:x.mu,nome:mapaNomeDe((LOTE_UNITS||[])[i],(x.cidade||'').split('/')[0]),label:i+1})).filter(x=>x.mu);
   if(!base||!us.length) return '<div style="padding:24px;text-align:center;color:#8a86a0;font-size:13px">Mapa indisponível — defina a base e a cidade das unidades.</div>';
   if(!UF_GEO && !UF_GEO_ERR){ try{ ufGeoCarregar(); }catch(_){} }
   const W=760,H=460,M=54; const all=[base,...us.map(u=>u.mu)];
@@ -3849,7 +3853,7 @@ function buildLoteMapaSVG(){
   return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;background:#f6f5f1;border-radius:10px">'+defs+mapa+linhas+pinos+pinBase+leg+'</svg>'; }
 function esc0(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 function mapaOrdemHtml(){   /* ordem de visita ao lado do mapa — mesma sequência e numeração dos pinos */
-  const base=baseMun(); const us=(LOTE_UNIT_ABR||[]).map((x,i)=>({mu:x.mu,cidade:(x.cidade||'').split('/')[0],u:(LOTE_UNITS||[])[i]})).filter(x=>x.mu);
+  const base=baseMun(); const us=(LOTE_UNIT_ABR||[]).map((x,i)=>({mu:x.mu,cidade:mapaNomeDe((LOTE_UNITS||[])[i],(x.cidade||'').split('/')[0]),u:(LOTE_UNITS||[])[i]})).filter(x=>x.mu);
   if(!base||!us.length) return '';
   let cur=base, rem=us.slice(), ordem=[], kmTot=0;
   while(rem.length){ let bi=0,bd=1e9; rem.forEach((x,i)=>{ const d=kmHaversine(cur,x.mu); if(d<bd){bd=d;bi=i;} });
