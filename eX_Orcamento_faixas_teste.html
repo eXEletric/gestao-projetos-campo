@@ -375,6 +375,13 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .levpe .material-symbols-rounded{font-size:15px;color:var(--pri)}
 /* três abas de trabalho + barra de situação (base do lote) */
 .abasbar{position:sticky;top:0;z-index:30;background:var(--bg,#f6f4fb);border-bottom:1px solid var(--line2);padding:8px 0 7px;margin:0 0 12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+/* identificação da proposta na barra de abas do lote */
+.idbar{flex-basis:100%;display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:0 0 8px;margin-bottom:8px;border-bottom:1px solid var(--line);font-size:12px;color:var(--tx2)}
+.idit{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis}
+.idit .material-symbols-rounded{font-size:15px;color:var(--tx3)}
+.idit b{color:var(--tx)}
+.idit+.idit::before{content:"·";margin-right:5px;color:var(--tx3)}
+.idedit{margin-left:auto;padding:2px 8px;font-size:11px}
 .abasbar .abas{display:flex;gap:6px;flex-wrap:wrap}
 .abasbar .aba{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:11px;padding:9px 15px;font:700 13.5px inherit;cursor:pointer}
 .abasbar .aba:hover{border-color:var(--pri)}
@@ -4396,6 +4403,21 @@ function abaAtual(){ try{ var v=localStorage.getItem('ex_lote_aba_'+(S_LOTE_ID||
 function abaIr(k){ try{ localStorage.setItem('ex_lote_aba_'+(S_LOTE_ID||''),k); }catch(_){}
   abasApply(); var col=document.getElementById('fxCol'); if(col){ var t=document.getElementById('abasBar'); if(t) t.scrollIntoView({block:'start',behavior:'smooth'}); } }
 function abaDe(fx){ var a=LOTE_ABAS.find(function(x){ return x.fx.indexOf(fx)>=0; }); return a?a.k:'escopo'; }
+function abasIdent(){   /* 15/10 (dono): quem monta o escopo precisa ver de quem é a proposta — o cabeçalho só aparecia na aba Preço */
+  var dt=function(iso){ return iso?String(iso).split('-').reverse().join('/'):'—'; };
+  var hoje=new Date(); hoje.setHours(0,0,0,0);
+  var venc=!!(S.validadeISO && new Date(S.validadeISO+'T00:00:00')<hoje);
+  var ct=[S.cliContato,S.cliFone,S.cliEmail].filter(Boolean).join(' · ');
+  var obj=(LOTE_ROW&&LOTE_ROW.nome)||S.solTitulo||'';
+  var it=function(ic,txt,tit,cls){ return '<span class="idit'+(cls?' '+cls:'')+'"'+(tit?' title="'+esc(tit)+'"':'')+'><span class="material-symbols-rounded">'+ic+'</span>'+txt+'</span>'; };
+  return '<div class="idbar">'
+    +it('business','<b>'+esc(S.cliNome||'sem contratante')+'</b>', ct?('Contato: '+ct):'contratante da proposta')
+    +(obj?it('inventory_2',esc(obj),'objeto da proposta'):'')
+    +it('tag',esc(S.numero||'sem nº'),'número da proposta')
+    +it('event',dt(S.dataISO)+' → <b'+(venc?' style="color:#b3261e"':'')+'>'+dt(S.validadeISO)+'</b>', venc?'VALIDADE VENCIDA':'emissão → validade')
+    +it('badge',esc(S.respNome||'sem responsável'),'responsável pela proposta')
+    +'<button class="lbtn idedit" onclick="abaIr(\'preco\')" title="o cabeçalho completo (contratante, contato, validade, responsável) fica na aba Preço e documento"><span class="material-symbols-rounded">edit_note</span>cabeçalho</button>'
+    +'</div>'; }
 function abasSituacao(){
   var us=LOTE_UNITS||[], n=us.length;
   var tot=us.reduce(function(a,u){ return a+num(u.total); },0);
@@ -4424,7 +4446,7 @@ function abasApply(){
   var k=abaAtual();
   if(!bar){ bar=document.createElement('div'); bar.id='abasBar'; bar.className='abasbar noprint'; col.insertBefore(bar,col.firstChild); }
   else if(bar.parentElement!==col || col.firstChild!==bar) col.insertBefore(bar,col.firstChild);
-  bar.innerHTML='<div class="abas">'+LOTE_ABAS.map(function(a){
+  bar.innerHTML=abasIdent()+'<div class="abas">'+LOTE_ABAS.map(function(a){
       return '<button class="aba'+(a.k===k?' on':'')+'" onclick="abaIr(\''+a.k+'\')" title="'+esc(a.dica)+'"><span class="material-symbols-rounded">'+a.ic+'</span>'+esc(a.lb)+'</button>'; }).join('')
     +'</div><div class="sit">'+abasSituacao()+abasAcoes(k)+'</div>';
   var alvo=(LOTE_ABAS.find(function(a){ return a.k===k; })||LOTE_ABAS[0]).fx;
