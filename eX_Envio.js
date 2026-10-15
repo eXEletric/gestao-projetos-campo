@@ -332,7 +332,7 @@ async function gerarPDFLote(nome){
   await new Promise(r=>setTimeout(r,500));   // mapa e fontes
   try{
     const el=document.getElementById('vcSheet'); if(!el) throw new Error('não achei o documento do lote');
-    return await gerarPDFDe(el,nome,c=>{ c.querySelectorAll('.vctog,.docoff,#vcBar,#vcWarn,#vcMenu').forEach(x=>x.remove()); });
+    return await gerarPDFDe(el,nome,c=>{ c.querySelectorAll('.vctog,.docoff,.noprint,#vcBar,#vcWarn,#vcMenu').forEach(x=>x.remove()); });
   } finally {
     emu.remove();
     if(!jaAberto && typeof closeVerCliente==='function'){ try{ closeVerCliente(); }catch(_){} }
