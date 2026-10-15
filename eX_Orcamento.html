@@ -1572,7 +1572,9 @@ async function initOrc(){
   try{ arqPropInit(); }catch(e){ console.error('arqProp',e); }
   if(isLoteUnit()){ setTimeout(function(){ try{ levFormInit(); }catch(e){ console.error('levForm',e); } },900); }   /* loja: tela do levantamento de campo */   /* anexos da proposta: levantamento ou detalhamento que originou o orçamento */
   if(isLoteBase()){ try{ await initLoteBasePanel(); }catch(e){ console.error('lote base panel',e); } }   // base do lote = mestra: injeta o painel de lojas
-  else if(isLoteUnit()){ (async function(){ try{ const l=await SB.from('orcamento_lotes').select('base_oportunidade_id').eq('id',S_LOTE_ID).limit(1); const bo=l.data&&l.data[0]&&l.data[0].base_oportunidade_id; if(!bo)return;
+  else if(isLoteUnit()){ (async function(){ try{ const l=await SB.from('orcamento_lotes').select('base_oportunidade_id,nome').eq('id',S_LOTE_ID).limit(1); const bo=l.data&&l.data[0]&&l.data[0].base_oportunidade_id;
+      UNIT_LOTE_NOME=(l.data&&l.data[0]&&l.data[0].nome)||''; UNIT_BASE_OPP=bo||null; try{ renderBanner(); }catch(_){}   // libera o botão "Proposta do lote" no topo da loja
+      if(!bo)return;
       const b=await SB.from('orcamentos').select('dados,total').eq('oportunidade_id',bo).is('deleted_at',null).order('created_at',{ascending:false}).limit(1); if(!(b.data&&b.data[0]))return; UNIT_BASE_VARS=((b.data[0].dados||{}).variacoes)||[]; UNIT_BASE_DADOS=b.data[0].dados||null; try{ loteCfgEnforce(b.data[0].dados); }catch(_){} try{ const us=await SB.from('orcamentos').select('total,dados').eq('lote_id',S_LOTE_ID).is('deleted_at',null); gloteCalc(us.data||[]); }catch(_){} BLKS.forEach(b=>{ try{ renderBlk(b); }catch(_){} }); recalc(); }catch(e){ console.error('modelo da loja',e); } })(); }   // loja do lote: carrega a base só p/ mostrar o MODELO (variação) que a loja segue
 }
 
@@ -4236,6 +4238,11 @@ function fxIr(id){ var el=fxEl(id); if(el)el.scrollIntoView({behavior:'smooth',b
    Cada variação é um grupo completo: Serviços + Material + Despesas + Locações. A ATIVA vive em S.servicos/materiais/despesas/equip
    (o editor inteiro continua igual); as demais guardam o conteúdo em S.variacoes[i].conteudo. Cada loja segue uma: dados.variacaoId (sem = v1). */
 var UNIT_BASE_VARS=[], UNIT_BASE_DADOS=null;
+/* 15/10 (dono): "deveria ter a opção de voltar para a proposta do lote assim que eu entrar na proposta da loja daquele lote" */
+var UNIT_BASE_OPP=null, UNIT_LOTE_NOME='';
+function irParaLote(){ if(!UNIT_BASE_OPP)return;
+  if(DIRTY && !confirm('Há alteração NÃO SALVA nesta loja.\n\nSair para a proposta do lote assim mesmo?')) return;
+  location.href='eX_Orcamento.html?opp='+encodeURIComponent(UNIT_BASE_OPP); }
 var VAR_KEYS=['servicos','materiais','despesas','equip'];
 function _deep(x){ return JSON.parse(JSON.stringify(x==null?null:x)); }
 function varLista(){ if(!S||!S._base)return [];
@@ -6580,6 +6587,7 @@ function renderBanner(){ const el=document.getElementById('oppBanner'); if(!el){
     <div class="ob-st">${aprovada
       ? `<span class="obst-aprov"><span class="material-symbols-rounded">verified</span>Aprovada</span>`
       : ['rascunho','enviado'].map(s=>`<button class="obst ${st===s?'on':''}" onclick="setStatus('${s}')">${s}</button>`).join('')}</div>
+    ${(isLoteUnit()&&UNIT_BASE_OPP)?`<button class="btn btn-s" onclick="irParaLote()" title="Voltar para a proposta do lote${UNIT_LOTE_NOME?' — '+esc(UNIT_LOTE_NOME):''}"><span class="material-symbols-rounded">apartment</span>Proposta do lote</button>`:''}
     <button class="btn btn-s" onclick="voltarFunil()"><span class="material-symbols-rounded">arrow_back</span>${(new URLSearchParams(location.search)).get('from')==='funil'?'Funil':'Orçamentos'}</button>
   </div>`;
   renderLevUnidade();
