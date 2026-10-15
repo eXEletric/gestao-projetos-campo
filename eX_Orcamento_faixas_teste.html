@@ -2065,6 +2065,7 @@ usuarios:[
 
 /* ---------- carga / persistência ---------- */
 function sanitize(){
+  if(!S.dataISO){ try{ S.dataISO=hoje(); }catch(_){} }   /* emissão sempre preenchida — a validade sai dela */
   if(!S.validadeISO){ try{ S.validadeISO=maisDias(S.dataISO||hoje(),VALIDADE_DIAS); }catch(_){} }   /* validade sempre preenchida: 15 dias (dono 06/10) */
   ['servicos','equip','despesas','materiais'].forEach(k=>{ if(!Array.isArray(S[k]))S[k]=[]; });   // garante os arrays dos blocos (base do lote / dados incompletos não quebram o render)
   // migra orçamentos antigos: respContato combinado → Fone + E-mail separados; e rede/nº do cliente final
