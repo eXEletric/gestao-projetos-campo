@@ -395,6 +395,7 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 .idit b{color:var(--tx)}
 .idit+.idit::before{content:"·";margin-right:5px;color:var(--tx3)}
 .idedit{margin-left:auto;padding:2px 8px;font-size:11px}
+.idedit.on{background:var(--pri);border-color:var(--pri);color:#fff}
 .abasbar .abas{display:flex;gap:6px;flex-wrap:wrap}
 .abasbar .aba{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);border-radius:11px;padding:9px 15px;font:700 13.5px inherit;cursor:pointer}
 .abasbar .aba:hover{border-color:var(--pri)}
@@ -4560,8 +4561,15 @@ function abasIdent(){   /* 15/10 (dono): quem monta o escopo precisa ver de quem
     +it('tag',esc(S.numero||'sem nº'),'número da proposta')
     +it('event',dt(S.dataISO)+' → <b'+(venc?' style="color:#b3261e"':'')+'>'+dt(S.validadeISO)+'</b>', venc?'VALIDADE VENCIDA':'emissão → validade')
     +it('badge',esc(S.respNome||'sem responsável'),'responsável pela proposta')
-    +'<button class="lbtn idedit" onclick="abaIr(\'preco\')" title="o cabeçalho completo (contratante, contato, validade, responsável) fica na aba Preço e documento"><span class="material-symbols-rounded">edit_note</span>cabeçalho</button>'
+    +(abaAtual()==='preco'?'':'<button class="lbtn idedit'+(cabAberto()?' on':'')+'" onclick="cabToggle()" title="mostrar ou esconder o cabeçalho completo (contratante, contato, emissão, validade, responsável) sem sair desta aba"><span class="material-symbols-rounded">'+(cabAberto()?'expand_less':'edit_note')+'</span>cabeçalho</button>')
     +'</div>'; }
+/* 15/10 (dono): "aqui tem que aparecer o cabeçalho também" — o cabeçalho completo abre em QUALQUER aba, pela chave da faixa de identificação.
+   Na aba Preço ele é da aba e aparece sempre; nas outras, quem manda é esta chave (lembrada por lote). */
+function cabAberto(){ try{ return localStorage.getItem('ex_lote_cab_'+(S_LOTE_ID||''))==='1'; }catch(_){ return false; } }
+function cabToggle(){ var novo=!cabAberto();
+  try{ localStorage.setItem('ex_lote_cab_'+(S_LOTE_ID||''), novo?'1':'0'); }catch(_){}
+  abasApply();
+  if(novo){ var e=document.querySelector('#fxCol > .panel.prophead'); if(e) e.scrollIntoView({block:'center',behavior:'smooth'}); } }
 function abasSituacao(){
   var us=LOTE_UNITS||[], n=us.length;
   var tot=us.reduce(function(a,u){ return a+num(u.total); },0);
@@ -4598,8 +4606,8 @@ function abasApply(){
     var id=e.getAttribute('data-fx');
     e.style.display=(alvo.indexOf(id)>=0)?'':'none';
   });
-  [['.panel.prophead','preco'],['#descGeralPanel','preco'],['#blk_servicos','escopo'],['#blk_equip','escopo'],['#blk_despesas','escopo'],['#blk_materiais','escopo']].forEach(function(p){   // peças que são filhas diretas, sem marca de faixa
-    var e=col.querySelector(p[0]); if(e) e.style.display=(p[1]===k)?'':'none'; });
+  [['.panel.prophead',(k==='preco'||cabAberto())],['#descGeralPanel',k==='preco'],['#blk_servicos',k==='escopo'],['#blk_equip',k==='escopo'],['#blk_despesas',k==='escopo'],['#blk_materiais',k==='escopo']].forEach(function(p){   // peças que são filhas diretas, sem marca de faixa (o cabeçalho é da aba Preço, mas a chave o abre em qualquer uma)
+    var e=col.querySelector(p[0]); if(e) e.style.display=p[1]?'':'none'; });
   col.querySelectorAll(':scope > .fxg').forEach(function(g){   // cabeçalho de grupo some quando o grupo não tem faixa nesta aba
     var vis=[].slice.call(g.querySelectorAll('[data-fx]')).some(function(e){ return e.style.display!=='none'; });
     g.style.display=vis?'':'none';
