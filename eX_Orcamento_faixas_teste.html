@@ -376,6 +376,19 @@ body.viewing .efstep,body.viewing .efrm,body.viewing .efadd{pointer-events:none;
 /* três abas de trabalho + barra de situação (base do lote) */
 .abasbar{position:sticky;top:0;z-index:30;background:var(--bg,#f6f4fb);border-bottom:1px solid var(--line2);padding:8px 0 7px;margin:0 0 12px;display:flex;flex-wrap:wrap;gap:10px;align-items:center}
 /* identificação da proposta na barra de abas do lote */
+/* mapa do percurso + ordem de visita (padrão do slide, 15/10) */
+.mapawrap{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(210px,1fr);gap:14px;align-items:start}
+@media (max-width:760px){.mapawrap{grid-template-columns:1fr}}
+.ordbox{border:1px solid var(--line);border-radius:10px;background:var(--surf);padding:10px 12px;font-size:12.5px}
+.ordhd{font-size:10.5px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:#1f5fb0;margin-bottom:7px}
+.ordlin{display:grid;grid-template-columns:22px 1fr auto auto;gap:7px;align-items:center;padding:4px 0;border-bottom:1px solid var(--line)}
+.ordlin:last-of-type{border-bottom:0}
+.ordn{width:19px;height:19px;border-radius:50%;background:#1f5fb0;color:#fff;font-size:10.5px;font-weight:800;display:grid;place-items:center}
+.ordc{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.ordkm{font-size:11px;color:var(--tx3);font-variant-numeric:tabular-nums}
+.ordd{font-size:11px;color:var(--tx2);font-variant-numeric:tabular-nums;min-width:38px;text-align:right}
+.ordtot .ordn{background:#8aa6c9}
+.ordpe{margin-top:8px;padding-top:7px;border-top:1px solid var(--line2);font-size:11.5px;color:var(--tx2)}
 .idbar{flex-basis:100%;display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:0 0 8px;margin-bottom:8px;border-bottom:1px solid var(--line);font-size:12px;color:var(--tx2)}
 .idit{display:inline-flex;align-items:center;gap:4px;white-space:nowrap;max-width:320px;overflow:hidden;text-overflow:ellipsis}
 .idit .material-symbols-rounded{font-size:15px;color:var(--tx3)}
@@ -1541,7 +1554,7 @@ async function initOrc(){
       // vínculo: pega contratante/loja da OPORTUNIDADE (pra puxar dados ao vivo do CRM, mesmo em orçamentos antigos)
       if(OPP && !S.contratanteId){ try{ const {data}=await SB.from('oportunidades').select('contratante_id,contemplado_id').eq('id',OPP).limit(1); if(data&&data[0]){ if(data[0].contratante_id)S.contratanteId=data[0].contratante_id; if(data[0].contemplado_id)S.lojaId=data[0].contemplado_id; } }catch(_){} }
       if(OPP && !S.lojaId){ try{ const {data}=await SB.from('oportunidades').select('contemplado_id').eq('id',OPP).limit(1); if(data&&data[0]&&data[0].contemplado_id)S.lojaId=data[0].contemplado_id; }catch(_){} }
-      await carregarRaio();
+      await carregarRaio(); try{ ufGeoCarregar(); }catch(_){}   /* contorno dos estados p/ o mapa do percurso */
       // UNIDADE DE LOTE: lê o macro da base pra ratear a fatia da logística (só exibição)
       if(S_LOTE_ID && !(S&&S._base)){ try{
         const {data:bd}=await SB.from('orcamentos').select('dados').eq('lote_id',S_LOTE_ID).is('deleted_at',null);
@@ -3768,21 +3781,88 @@ function macroAddEstrutura(){ const sel=_lg('lbEstr'); const id=sel?sel.value:''
   save(); injectLoteBasePanel(); }
 function macroRemove(i){ if(!(S.macro&&S.macro.estruturas))return; S.macro.estruturas.splice(i,1); save(); injectLoteBasePanel(); }
 // ---- mapa do lote (SVG por lat/lon) ----
-function buildLoteMapaSVG(){ const base=baseMun(); const us=(LOTE_UNIT_ABR||[]).map((x,i)=>({mu:x.mu,label:i+1})).filter(x=>x.mu);
+/* ===== MAPA DO PERCURSO (15/10) — padrão aprovado pelo dono (slide "Mapa do percurso")
+   Contorno real dos estados (IBGE, malha mínima em uf-br.json), base em losango, pinos numerados com o nome da cidade,
+   percurso com seta e retorno tracejado. A rota é a mesma de sempre (vizinho mais próximo a partir da base). */
+var UF_GEO=null, UF_GEO_ERR=false;
+function ufDeIbge(c){ return String(c||'').slice(0,2); }   // 2910800 → "29" (BA)
+async function ufGeoCarregar(){
+  if(UF_GEO||UF_GEO_ERR) return UF_GEO;
+  try{ const r=await fetch('uf-br.json',{cache:'force-cache'}); if(!r.ok) throw new Error(r.status);
+    UF_GEO=await r.json();
+    try{ injectLoteBasePanel(); }catch(_){}
+  }catch(e){ UF_GEO_ERR=true; console.error('uf-br.json',e); }
+  return UF_GEO; }
+function mapaUFsEnvolvidas(){ var s={}; var b=baseMun(); if(b&&b.codigo_ibge) s[ufDeIbge(b.codigo_ibge)]=1;
+  (LOTE_UNIT_ABR||[]).forEach(function(x){ if(x&&x.mu&&x.mu.codigo_ibge) s[ufDeIbge(x.mu.codigo_ibge)]=1; });
+  return s; }
+function buildLoteMapaSVG(){
+  const base=baseMun(); const us=(LOTE_UNIT_ABR||[]).map((x,i)=>({mu:x.mu,nome:(x.cidade||'').split('/')[0],label:i+1})).filter(x=>x.mu);
   if(!base||!us.length) return '<div style="padding:24px;text-align:center;color:#8a86a0;font-size:13px">Mapa indisponível — defina a base e a cidade das unidades.</div>';
-  const W=560,H=360,M=46; const all=[base,...us.map(u=>u.mu)];
-  const los=all.map(a=>a.lon), las=all.map(a=>a.lat);
+  if(!UF_GEO && !UF_GEO_ERR){ try{ ufGeoCarregar(); }catch(_){} }
+  const W=760,H=460,M=54; const all=[base,...us.map(u=>u.mu)];
+  const los=all.map(a=>+a.lon), las=all.map(a=>+a.lat);
   let loMin=Math.min(...los),loMax=Math.max(...los),laMin=Math.min(...las),laMax=Math.max(...las);
-  const pl=(loMax-loMin)*0.14||1,pa=(laMax-laMin)*0.14||1; loMin-=pl;loMax+=pl;laMin-=pa;laMax+=pa;
-  const X=lo=>M+(lo-loMin)/((loMax-loMin)||1)*(W-2*M), Y=la=>M+(laMax-la)/((laMax-laMin)||1)*(H-2*M);
-  // rota nearest-neighbor
-  let cur=base, rem=us.slice(), order=[base]; while(rem.length){let bi=0,bd=1e9;rem.forEach((u,i)=>{const d=kmHaversine(cur,u.mu);if(d<bd){bd=d;bi=i;}});cur=rem[bi].mu;order.push(cur);rem.splice(bi,1);} order.push(base);
-  let g=''; for(let i=0;i<=4;i++){const gx=M+i/4*(W-2*M);g+=`<line x1="${gx}" y1="${M}" x2="${gx}" y2="${H-M}" style="stroke:#dcdcef;stroke-width:1"/>`;} for(let i=0;i<=4;i++){const gy=M+i/4*(H-2*M);g+=`<line x1="${M}" y1="${gy}" x2="${W-M}" y2="${gy}" style="stroke:#dcdcef;stroke-width:1"/>`;}
-  const pts=order.map(p=>`${X(p.lon).toFixed(1)},${Y(p.lat).toFixed(1)}`).join(' ');
-  const route=`<polyline points="${pts}" style="fill:none;stroke:#0f7b8a;stroke-width:2.2;opacity:.85" stroke-dasharray="7 6" stroke-linejoin="round"/>`;
-  const pin=(mu,txt,isBase)=>{const x=X(mu.lon),y=Y(mu.lat);const r=isBase?12:10;return `<g><circle cx="${x}" cy="${y}" r="${r}" style="fill:${isBase?'#3f2c8f':'#533ab7'};stroke:#fff;stroke-width:2.4"/><text x="${x}" y="${y+4}" text-anchor="middle" font-family="Sora,sans-serif" font-weight="800" font-size="${isBase?12:11}" fill="#fff">${txt}</text><text x="${x}" y="${y-15}" text-anchor="middle" font-size="11" font-weight="700" style="fill:#221c39">${esc(mu.nome+'/'+mu.uf)}</text></g>`;};
-  const pins=us.map(u=>pin(u.mu,u.label,false)).join('')+pin(base,'B',true);
-  return `<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:auto;background:#eef0fb;border-radius:10px">${g}${route}${pins}</svg>`; }
+  const pl=(loMax-loMin)*0.18||1,pa=(laMax-laMin)*0.18||1; loMin-=pl;loMax+=pl;laMin-=pa;laMax+=pa;
+  const esc=Math.min((W-2*M)/((loMax-loMin)||1),(H-2*M)/((laMax-laMin)||1));   // mesma escala nos dois eixos: o mapa não distorce
+  const cx=(loMin+loMax)/2, cy=(laMin+laMax)/2;
+  const X=lo=>W/2+(lo-cx)*esc, Y=la=>H/2-(la-cy)*esc;
+  // ---- contorno dos estados ----
+  var mapa='';
+  if(UF_GEO&&UF_GEO.features){ const env=mapaUFsEnvolvidas();
+    mapa=UF_GEO.features.map(function(f){
+      const uf=(f.properties&&f.properties.codarea)||''; const dentro=!!env[uf];
+      const gs=(f.geometry.type==='Polygon')?[f.geometry.coordinates]:(f.geometry.coordinates||[]);
+      var d='';
+      gs.forEach(function(poly){ (poly||[]).forEach(function(ring){
+        if(!ring||ring.length<3) return;
+        var fora=true, p='';
+        ring.forEach(function(c,i){ const x=X(c[0]), y=Y(c[1]); if(x>-900&&x<W+900&&y>-900&&y<H+900) fora=false; p+=(i?'L':'M')+x.toFixed(1)+' '+y.toFixed(1); });
+        if(!fora) d+=p+'Z'; }); });
+      if(!d) return '';
+      return '<path d="'+d+'" fill="'+(dentro?'#dce7f7':'#f0efec')+'" stroke="'+(dentro?'#b9cde9':'#e0ded8')+'" stroke-width="1"/>'; }).join('');
+  }
+  // ---- rota: vizinho mais próximo a partir da base ----
+  let cur=base, rem=us.slice(), order=[]; while(rem.length){ let bi=0,bd=1e9; rem.forEach((u,i)=>{ const d=kmHaversine(cur,u.mu); if(d<bd){bd=d;bi=i;} }); cur=rem[bi].mu; order.push(rem[bi]); rem.splice(bi,1); }
+  const seq=[{mu:base,base:true}].concat(order);
+  var linhas='';
+  for(var i=0;i<seq.length-1;i++){ const a=seq[i].mu,b=seq[i+1].mu;
+    linhas+='<line x1="'+X(a.lon).toFixed(1)+'" y1="'+Y(a.lat).toFixed(1)+'" x2="'+X(b.lon).toFixed(1)+'" y2="'+Y(b.lat).toFixed(1)+'" stroke="#1f5fb0" stroke-width="2.2" opacity=".9" marker-end="url(#seta)"/>'; }
+  const ult=seq[seq.length-1].mu;
+  linhas+='<line x1="'+X(ult.lon).toFixed(1)+'" y1="'+Y(ult.lat).toFixed(1)+'" x2="'+X(base.lon).toFixed(1)+'" y2="'+Y(base.lat).toFixed(1)+'" stroke="#8aa6c9" stroke-width="1.8" stroke-dasharray="6 5"/>';
+  // ---- pinos + rótulos (lado alternado para não colidir) ----
+  var pinos='', usados=[];
+  order.forEach(function(u,idx){ const x=X(u.mu.lon), y=Y(u.mu.lat);
+    var dy=0; usados.forEach(function(p){ if(Math.abs(p.x-x)<70 && Math.abs(p.y+dy-y)<14) dy+=16; }); usados.push({x:x,y:y+dy});
+    const dir=(x>W*0.62)?-1:1, tx=x+dir*15, anchor=(dir<0)?'end':'start';
+    pinos+='<g><circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="11" fill="#1f5fb0" stroke="#fff" stroke-width="2.2"/>'
+      +'<text x="'+x.toFixed(1)+'" y="'+(y+4).toFixed(1)+'" text-anchor="middle" font-size="11.5" font-weight="700" fill="#fff">'+(idx+1)+'</text>'
+      +'<text x="'+tx.toFixed(1)+'" y="'+(y+dy+4).toFixed(1)+'" text-anchor="'+anchor+'" font-size="12" font-weight="600" fill="#1b2a44">'+esc0(u.nome)+'</text></g>'; });
+  const bx=X(base.lon), by=Y(base.lat);
+  const pinBase='<g><rect x="'+(bx-9).toFixed(1)+'" y="'+(by-9).toFixed(1)+'" width="18" height="18" transform="rotate(45 '+bx.toFixed(1)+' '+by.toFixed(1)+')" fill="#e08a1e" stroke="#fff" stroke-width="2.2"/>'
+    +'<text x="'+(bx).toFixed(1)+'" y="'+(by+26).toFixed(1)+'" text-anchor="middle" font-size="12" font-weight="800" fill="#b06a10">Base '+esc0(base.nome||'')+'</text></g>';
+  const defs='<defs><marker id="seta" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="#1f5fb0"/></marker></defs>';
+  const leg='<g font-size="11.5" fill="#5f5e5a"><rect x="14" y="'+(H-26)+'" width="11" height="11" transform="rotate(45 19.5 '+(H-20.5)+')" fill="#e08a1e"/><text x="34" y="'+(H-16)+'">Base da equipe</text>'
+    +'<line x1="140" y1="'+(H-20)+'" x2="178" y2="'+(H-20)+'" stroke="#1f5fb0" stroke-width="2.2"/><text x="186" y="'+(H-16)+'">Percurso</text>'
+    +'<line x1="260" y1="'+(H-20)+'" x2="298" y2="'+(H-20)+'" stroke="#8aa6c9" stroke-width="1.8" stroke-dasharray="6 5"/><text x="306" y="'+(H-16)+'">Retorno</text>'
+    +'<text x="380" y="'+(H-16)+'" fill="#9a968e">Traçado ilustrativo; o trajeto real segue as rodovias</text></g>';
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:auto;background:#f6f5f1;border-radius:10px">'+defs+mapa+linhas+pinos+pinBase+leg+'</svg>'; }
+function esc0(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+function mapaOrdemHtml(){   /* ordem de visita ao lado do mapa — mesma sequência e numeração dos pinos */
+  const base=baseMun(); const us=(LOTE_UNIT_ABR||[]).map((x,i)=>({mu:x.mu,cidade:(x.cidade||'').split('/')[0],u:(LOTE_UNITS||[])[i]})).filter(x=>x.mu);
+  if(!base||!us.length) return '';
+  let cur=base, rem=us.slice(), ordem=[], kmTot=0;
+  while(rem.length){ let bi=0,bd=1e9; rem.forEach((x,i)=>{ const d=kmHaversine(cur,x.mu); if(d<bd){bd=d;bi=i;} });
+    kmTot+=bd; ordem.push({x:rem[bi],km:bd}); cur=rem[bi].mu; rem.splice(bi,1); }
+  const volta=kmHaversine(cur,base); kmTot+=volta;
+  const linhas=ordem.map(function(o,i){
+    const d=o.x.u?num(o.x.u._prazo):0;
+    return '<div class="ordlin"><span class="ordn">'+(i+1)+'</span><span class="ordc">'+esc(o.x.cidade)+'</span>'
+      +'<span class="ordkm">'+Math.round(o.km)+' km</span><span class="ordd">'+(d?_d1(d)+' d':'—')+'</span></div>'; }).join('');
+  const dias=ordem.reduce(function(a,o){ return a+(o.x.u?num(o.x.u._prazo):0); },0);
+  return '<div class="ordbox"><div class="ordhd">Ordem de visita</div>'+linhas
+    +'<div class="ordlin ordtot"><span class="ordn">↩</span><span class="ordc">Retorno à base</span><span class="ordkm">'+Math.round(volta)+' km</span><span class="ordd">—</span></div>'
+    +'<div class="ordpe"><b>'+Math.round(kmTot)+' km</b> no circuito · <b>'+_d1(dias)+' dias</b> de execução somados</div></div>'; }
 // ---- Ver como o cliente (documento consolidado do lote) ----
 function verComoClienteLote(){
   const contrNome=S.cliNome||(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):'')||'—';
@@ -3823,7 +3903,8 @@ function verComoClienteLote(){
         ${cnpjC?`<div style="font-size:12px;color:#7d7799;margin-top:2px">CNPJ: ${esc(cnpjC)}</div>`:''}
         <div style="font-size:13px;color:#5f5b72;margin-top:10px;line-height:1.55">${esc0}</div>
       </div>`;
-  _ds['lote.fatores']=modo==='estimativa'?'':`<div style="padding:6px 0 6px"><div style="${_secTit}">Unidades no mapa</div>${buildLoteMapaSVG()}
+  _ds['lote.fatores']=modo==='estimativa'?'':`<div style="padding:6px 0 6px"><div style="${_secTit}">Mapa do percurso</div>
+        <div class="mapawrap">${buildLoteMapaSVG()}${mapaOrdemHtml()}</div>
         <div style="font-size:11.5px;color:#6b6684;margin-top:6px">Rota do circuito · ${rota.path.length?esc(rota.path.map(p=>p.split('/')[0]).join(' → ')):'—'} · ~ ${rota.km.toLocaleString('pt-BR')} km</div></div>`;
   _ds['lote.lista']=`<div style="padding:14px 0"><table style="width:100%;border-collapse:collapse;font-size:13.5px"><thead><tr style="background:#efeafc"><th style="text-align:left;padding:10px 14px;font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;color:#7d7799">Unidade</th><th style="padding:10px 14px;font-size:10.5px;text-transform:uppercase;color:#7d7799">Prazo</th>${cc?'<th style="text-align:right;padding:10px 14px;font-size:10.5px;text-transform:uppercase;color:#7d7799">Custo</th><th style="text-align:right;padding:10px 14px;font-size:10.5px;text-transform:uppercase;color:#7d7799">Lucro</th>':''}<th style="text-align:right;padding:10px 14px;font-size:10.5px;text-transform:uppercase;color:#7d7799">Valor</th></tr></thead>
         <tbody>${linhas}</tbody>
