@@ -112,6 +112,10 @@ select.fi{appearance:auto;cursor:pointer}
 .kprox{display:flex;align-items:center;gap:4px;font-size:11px;font-weight:600;color:var(--pri);margin-top:5px}
 .kprox .material-symbols-rounded{font-size:14px}.kprox.cob{color:var(--amber)}.kprox.val{color:var(--red)}
 .kcard.aprov{border-left:3px solid #d4af37}
+.selo{font-size:10.5px;font-weight:800;padding:3px 8px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;margin-top:6px;letter-spacing:.02em}
+.selo .material-symbols-rounded{font-size:14px}
+.selo.ok{color:#7a5c00;background:#fdf3d0;border:1px solid #e8d48a}
+.selo.pend{color:#8a4b00;background:#fff1e0;border:1px solid #f0cfa6}
 .kprox.red{color:var(--red)}
 .os-tw{overflow-x:auto;margin-top:6px}.os-t{width:100%;border-collapse:collapse;font-size:12.5px}.os-t td{padding:6px 4px;border-top:1px solid var(--line);vertical-align:middle}.os-t tr:first-child td{border-top:none}
 .os-pill{font-size:10.5px;font-weight:700;border-radius:8px;padding:2px 8px;white-space:nowrap;margin-left:4px}.os-pill.ok{background:#e9f2dd;color:var(--green)}.os-pill.wait{background:#faeeda;color:var(--amber)}.os-pill.no{background:var(--surf2);color:var(--tx3)}
@@ -571,6 +575,17 @@ function reqEntradaOK(o,destColId){ const req=(PAPEL_DEF[colPapel(destColId)]||{
   return true; }
 // proposta aprovada = versão aprovada nas tratativas OU orçamento com status "aprovado" (comprovante registrado antes do envio pelo sistema)
 function aprovadaOpp(o){ const E=o&&ENVIO_CLOUD[o.id]; if(E&&E.status==='aprovada') return true; const oc=o&&orcIndex()[o.id]; return !!oc && (oc.status||'').toLowerCase()==='aprovado'; }
+/* SELO do card (20/10, dono: "a Copeland venceu e o selo não apareceu no card").
+   Até aqui "proposta aprovada" era só uma borda dourada de 3px no card — na prática, invisível.
+   Agora é selo escrito. E o contrário também passa a aparecer: card em Ganho/Execução SEM a proposta
+   aprovada significa que a fase foi movida à mão e a esteira (formalização → financeiro → OS) não começou. */
+function seloCardHTML(o){
+  if(aprovadaOpp(o)) return '<div class="selo ok" title="Proposta aprovada pelo cliente (comprovante anexado)."><span class="material-symbols-rounded">verified</span>Proposta fechada</div>';
+  var pap=colPapel(o.colId);
+  if(pap==='ganho'||pap==='execucao')
+    return '<div class="selo pend" title="A fase diz ganho, mas no sistema a proposta não está aprovada: falta anexar o comprovante do cliente (e-mail de aprovação, ordem de serviço ou contrato). Sem ele a esteira de formalização → financeiro → OS não começa."><span class="material-symbols-rounded">gpp_maybe</span>Falta o comprovante de fechamento</div>';
+  return '';
+}
 function checaEntrada(o,destColId){ if(reqEntradaOK(o,destColId))return '';
   const req=(PAPEL_DEF[colPapel(destColId)]||{}).reqEntrada, alvo=colNome(destColId);
   return req==='orcamento'
@@ -1178,7 +1193,8 @@ function oppCardHTML(o,ci){
     </div>
     <div class="kcard-nm" style="padding-right:26px">${esc(o.objeto||'(sem objeto)')}</div>
     <div class="kcard-cli"><span class="material-symbols-rounded">business</span>${esc(ct?ct.nome:'—')}${o.contempladoId&&contempl(o.contempladoId)?' · '+esc(contempl(o.contempladoId).nome):''}</div>
-    ${oc?`<div class="orcb ${esc(oc.status||'rascunho')}"><span class="material-symbols-rounded">request_quote</span>${fmtBRL(oc.total)} · ${ENVIO_CLOUD[o.id]?'R'+ENVIO_CLOUD[o.id].rev+' · ':''}${esc(oc.status||'rascunho')}</div>`:''}
+    ${oc?`<div class="orcb ${esc(oc.status||'rascunho')}"><span class="material-symbols-rounded">request_quote</span>${oc.numero?esc(oc.numero)+' · ':''}${fmtBRL(oc.total)} · ${ENVIO_CLOUD[o.id]?'R'+ENVIO_CLOUD[o.id].rev+' · ':''}${esc(oc.status||'rascunho')}</div>`:''}
+    ${seloCardHTML(o)}
     ${tratCardHTML(o)}
     <div class="kcard-foot">
       <span class="temp ${tc}">${esc(o.temperatura||'Morno')}</span>
@@ -1237,7 +1253,8 @@ function loteCardHTML(l,ci){ const ct=cli(l.contratanteId); const us=loteUnitsOf
     <div class="lote-tag"><span class="material-symbols-rounded">apartment</span>Lote</div>
     <div class="kcard-nm" style="padding-right:26px">${esc(nm)}</div>
     <div class="kcard-cli"><span class="material-symbols-rounded">business</span>${esc(ct?ct.nome:'—')}</div>
-    <div class="orcb loteb"><span class="material-symbols-rounded">store</span>${us.length} loja(s) · ${fmtBRL(tot)}</div>
+    <div class="orcb loteb"><span class="material-symbols-rounded">store</span>${(()=>{const b=baseOppOf(l),bo=b&&orcIndex()[b.id];return bo&&bo.numero?esc(bo.numero)+' · ':'';})()}${us.length} loja(s) · ${fmtBRL(tot)}</div>
+    ${(()=>{const b=baseOppOf(l);return b?seloCardHTML(b):'';})()}
     <div class="lexpand" onclick="event.stopPropagation();loteToggle(this)"><span class="material-symbols-rounded">unfold_more</span>ver unidades</div>
     <div class="lote-units">
       ${show.map(u=>`<a class="lu" style="cursor:pointer" onclick="event.stopPropagation();abrirOrcNoShell('?opp=${u.id}')"><span class="material-symbols-rounded">description</span>${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</a>`).join('')}
