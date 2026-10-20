@@ -116,7 +116,7 @@ function decorar(){
     else h+=`<button class="envbtn pri" ${CLOUD?'':'disabled title="Entre no app (login) para enviar"'} onclick="EXENV.abrirEnvio()">${ms('send')}Enviar ${n>1?'R'+n:'proposta'}</button>`;
   }
   if(hist) h+=`<button class="envbtn ghost" onclick="EXENV.historico()" title="Revisões enviadas">${ms('history')}${hist}</button>`;
-  if(OPP && CLOUD) h+=`<button id="envIrFunil" class="btn btn-s" onclick="EXENV.irFunil()" title="Abrir o card desta oportunidade no funil">${ms('view_kanban')}Abrir no funil</button>`;
+  if(OPP && CLOUD) h+=`<button class="btn btn-s env-irfunil" onclick="EXENV.irFunil()" title="Abrir o card desta oportunidade no funil">${ms('view_kanban')}Abrir no funil</button>`;
   const pend=pendentes().length;
   if(pend) h=`<button class="envchip newr" onclick="EXENV.irTrat()" title="Classificar nas tratativas">${ms('mark_email_unread')}${pend} resposta${pend>1?'s':''} do cliente</button>`+h;
   box.innerHTML=h;
@@ -126,7 +126,8 @@ function decorar(){
   // proposta travada abre em visualização: mostra os painéis internos na TELA (nunca no PDF/impressão)
   const trv=travada(); document.body.classList.toggle('env-travada',trv);
   // navegação junta: "Abrir no funil" (card) fica ao lado do botão de voltar da folha, não no meio das ações da proposta
-  try{ const volta=document.querySelector('#oppBanner .oppbar > .btn.btn-s[onclick*="voltarFunil"]'), bf=$('envIrFunil');
+  try{ const volta=document.querySelector('#oppBanner .oppbar > .btn.btn-s[onclick*="voltarFunil"]');
+    const bts=[...document.querySelectorAll('.env-irfunil')], bf=bts.pop(); bts.forEach(b=>b.remove());   // nunca duplica
     if(volta && bf && bf.nextElementSibling!==volta) volta.parentElement.insertBefore(bf, volta); }catch(e){}
   // proposta travada: "Voltar a editar" seria mentira (editar = criar a próxima revisão) — some; a ação real fica no banner
   try{ const pvEd=[...document.querySelectorAll('#previewBar .pv-btn')].find(b=>/setMode\(.edit.\)/.test(b.getAttribute('onclick')||''));
