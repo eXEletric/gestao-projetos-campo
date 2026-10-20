@@ -644,6 +644,19 @@ body.viewing .ln.gonly{display:none!important}
 .pin:focus{outline:none;border-color:var(--pri)}
 .iln .val{font-variant-numeric:tabular-nums;font-weight:600}
 .luc{color:var(--green)}.luc.neg{color:var(--red)}
+/* chave "Impostos inclusos" — tributo já dentro do preço (tabela de contrato). Componente de PADRAO_UI_eX.md */
+.ex-led{width:15px;height:15px;border-radius:50%;flex-shrink:0;transition:.16s;background:radial-gradient(circle at 35% 30%,#ffffff,#eef1ef 72%);box-shadow:inset 0 1px 1px rgba(0,0,0,.12),0 1px 0 rgba(255,255,255,.6);border:1.5px solid #d9dcd9}
+.ex-led.on{background:radial-gradient(circle at 35% 30%,#c4ffdd,#22d27f 52%,#08a457);box-shadow:inset 0 1px 2px rgba(255,255,255,.6),0 0 8px rgba(34,210,127,.85),0 0 2px rgba(34,210,127,.95);border-color:#08a457}
+.ex-switch{position:relative;width:50px;height:25px;border-radius:13px;cursor:pointer;flex-shrink:0;background:linear-gradient(#bbbeb7,#9a9d95);box-shadow:inset 0 2px 4px rgba(0,0,0,.38),inset 0 -1px 1px rgba(255,255,255,.35);transition:.16s;font:800 8px ui-monospace,monospace;letter-spacing:.3px}
+.ex-switch.on{background:linear-gradient(#2fcf88,#0f8f5b);box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
+.ex-switch .lb{position:absolute;top:0;height:100%;display:flex;align-items:center;color:#fff}
+.ex-switch .lb.off{right:8px;color:#5a5a50}.ex-switch.on .lb.off{display:none}
+.ex-switch .lb.onx{left:8px;display:none}.ex-switch.on .lb.onx{display:flex}
+.ex-switch .kb{position:absolute;top:3px;left:3px;width:20px;height:19px;border-radius:10px;transition:.16s;background:linear-gradient(#ffffff,#d4d4cf);box-shadow:0 2px 2px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 2px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
+.ex-switch.on .kb{left:27px}
+.ex-switch .swpin{width:3px;height:11px;border-radius:2px;background:linear-gradient(#9a9a92,#565650);box-shadow:0 1px 1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5)}
+#ln_impinc .lbl{display:flex;align-items:center;gap:8px}
+#s_imp.inctag{color:var(--green,#3b6d11);font-weight:700}
 .meta{display:flex;flex-direction:column;gap:7px;margin-top:12px}
 .meta .m{display:flex;align-items:center;gap:9px;font-size:12px;color:var(--tx2)}
 .meta .m .material-symbols-rounded{font-size:17px;color:var(--pri)}
@@ -763,6 +776,18 @@ body.viewing .ex-switch{pointer-events:none;opacity:.55}
 .pkgroup{display:flex;align-items:center;gap:8px;font-size:10px;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:var(--pri);background:var(--pri-bg);border-radius:7px;padding:5px 9px;margin:10px 0 6px}
 .pkgroup:first-child{margin-top:0}
 .pkgroup .pkgcount{margin-left:auto;background:var(--surf);color:var(--tx3);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:700}
+/* tabela de preços do cliente: preço contratado, não custo — destaque próprio no seletor */
+.pkgroup.tabcli{color:#1d6b4f;background:#e7f6ef}
+.pkgroup.tabcli .material-symbols-rounded{font-size:15px}
+.pkgroup.tabcli .pkgcount{color:#1d6b4f}
+.pkitem .pkcusto.tabcli{color:#1d6b4f;font-weight:700}
+.pkitem .pkitn{display:inline-block;font-family:ui-monospace,monospace;font-size:10px;font-weight:700;color:#1d6b4f;background:#e7f6ef;border-radius:5px;padding:1px 5px;margin-right:5px;vertical-align:1px}
+.pkrow{display:flex;align-items:stretch;gap:6px;margin-bottom:6px}
+.pkrow .pkitem{margin-bottom:0;flex:1}
+.pkedit,.pkdel{border:1px solid var(--line);border-radius:9px;background:var(--surf);cursor:pointer;color:var(--tx3);padding:0 10px;display:flex;align-items:center}
+.pkedit:hover{border-color:var(--pri);color:var(--pri)}
+.pkdel:hover{border-color:#c0392b;color:#c0392b}
+.pkedit .material-symbols-rounded,.pkdel .material-symbols-rounded{font-size:18px}
 .pkrow{display:flex;align-items:stretch;gap:6px;margin-bottom:6px}
 .pkrow .pkitem{margin-bottom:0;flex:1}
 .pkedit,.pkdel{border:1px solid var(--line);border-radius:9px;background:var(--surf);cursor:pointer;color:var(--tx3);padding:0 10px;display:flex;align-items:center}
@@ -1258,6 +1283,8 @@ body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{backgrou
             <div class="ih"><span class="material-symbols-rounded">lock</span>Visão interna — não vai pro cliente</div>
             <div class="iln mgrow" id="row_desc"><span class="lbl">Desconto <span id="desc_eq" class="pcref"></span></span><span class="val"><span class="descmode noprint" id="descmode"><button type="button" id="dm_pct" onclick="setDescontoModo('pct')">%</button><button type="button" id="dm_val" onclick="setDescontoModo('val')">R$</button></span><span id="desc_pfx" style="color:var(--tx3);font-size:12px;display:none;margin-right:2px">R$</span><input class="pin" id="desc_in" style="width:58px;text-align:right" inputmode="decimal" onchange="setDesconto(this.value)"><span id="desc_un">%</span><button class="lockbtn noprint" id="lk_desc" onclick="toggleTrava('desc')"></button></span></div>
             <div class="iln mgrow"><span class="lbl">Impostos</span><span class="val"><input class="pin" style="width:48px;text-align:right" data-f="impostoPct" inputmode="decimal">%<button class="lockbtn noprint" id="lk_imp" onclick="toggleTrava('imp')"></button></span></div>
+            <div class="iln noprint" id="ln_impinc" title="Ligue quando o preço acordado com o cliente JÁ inclui o tributo (tabela de contrato). O imposto deixa de somar ao total e passa a sair da nossa margem."><span class="lbl"><span class="ex-led" id="impinc_led"></span>Impostos inclusos <span class="pcref">o preço já é o total</span></span><span class="val"><div class="ex-switch" id="impinc_sw" onclick="toggleImpostoIncluso()"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="swpin"></span></span></div></span></div>
+            <div class="iln" id="ln_impint" style="display:none"><span class="lbl">Imposto que sai do nosso</span><span class="val" id="s_impint" style="color:var(--red)">—</span></div>
             <div class="iln"><span class="lbl">Margem serviços</span><span class="val"><input class="pin" style="width:48px;text-align:right" id="mg_serv_in" inputmode="decimal" onchange="setBlkMargem('servicos',this.value)">%<button class="lockbtn noprint" id="lk_serv" onclick="toggleTrava('serv')"></button></span></div>
             <div class="iln"><span class="lbl">Margem materiais</span><span class="val"><input class="pin" style="width:48px;text-align:right" id="mg_mat_in" inputmode="decimal" onchange="setBlkMargem('materiais',this.value)">%<button class="lockbtn noprint" id="lk_mat" onclick="toggleTrava('mat')"></button></span></div>
             <div class="iln mgrow mgpass"><span class="lbl">Deslocamento <span class="pcref">km, veículo, pedágio, rateio</span></span><span class="val"><input class="pin" style="width:48px;text-align:right" id="mg_desl_in" inputmode="decimal" onchange="setMgGeral('deslocamento',this.value)">%<button class="lockbtn noprint" id="lk_desl" onclick="toggleTrava('desl')"></button></span></div>
@@ -1475,6 +1502,52 @@ async function carregarMateriaisEstoque(){
     });
   }catch(e){ console.error('materiais estoque',e); }
 }
+/* ---------- TABELA DE PREÇOS DO CLIENTE (preço contratado) ----------
+   Quando o cliente tem tabela de preços acordada — ex.: Anexo IV do Contrato
+   Guarda-Chuva da GreenYellow — o preço de VENDA sai dela, não do motor.
+   A linha entra com MARGEM 0 e SEM composição: assim o fator de abrangência
+   não encosta no valor acordado (obraMult só age em linha com composição). */
+let TABCLI={};   // { cliente_id: [linhas da tabela] }
+const TABCLI_BLK={servicos:'servicos',materiais:'materiais',despesas:'despesas',deslocamento:'despesas',equip:'equip'};
+async function carregarTabelasCliente(){
+  try{ const {data,error}=await SB.from('cliente_tabela_preco')
+        .select('id,cliente_id,tabela,item,grupo,descricao,detalhe,unidade,valor,modalidade,uf,fabricantes,ordem')
+        .eq('ativo',true).is('deleted_at',null).order('ordem');
+    if(error) throw error;
+    const g={}; (data||[]).forEach(r=>{ (g[r.cliente_id]=g[r.cliente_id]||[]).push(r); });
+    TABCLI=g;
+  }catch(e){ console.error('tabela de preços do cliente',e); }
+}
+function tabCliRows(blk){ const cid=S&&S.contratanteId; if(!cid)return [];
+  return (TABCLI[cid]||[]).filter(r=>TABCLI_BLK[r.grupo]===blk); }
+function tabCliNome(){ const l=(TABCLI[S&&S.contratanteId]||[]); return l.length?(l[0].tabela||'Tabela do cliente'):''; }
+function tabCliLabel(r){ return (r.descricao||'')+(r.modalidade?(' · '+r.modalidade):'')+(r.uf?(' ('+r.uf+')'):''); }
+function tabCliDetalhe(r){ return (r.tabela||'Tabela do cliente')+(r.item?(' · item '+r.item):'')+(r.detalhe?(' — '+r.detalhe):''); }
+function tabCliListHTML(blk,q){
+  let rows=tabCliRows(blk); if(!rows.length)return '';
+  q=(q||'').toLowerCase().trim();
+  if(q) rows=rows.filter(r=>((r.descricao||'')+' '+(r.item||'')+' '+(r.uf||'')+' '+(r.modalidade||'')+' '+(r.detalhe||'')).toLowerCase().includes(q));
+  if(!rows.length)return '';
+  return `<div class="pkgroup tabcli"><span class="material-symbols-rounded">request_quote</span>${esc(tabCliNome())}<span class="pkgcount">${rows.length}</span></div>`+
+    rows.map(r=>`<div class="pkrow"><button class="pkitem" onclick="tabCliAdd('${blk}','${r.id}')"><span class="pknm">${r.item?('<b class="pkitn">'+esc(r.item)+'</b>'):''}${esc(tabCliLabel(r))}</span><span class="pkcusto tabcli">preço ${fmt(r.valor)}/${esc(r.unidade||'UND')}</span></button></div>`).join('');
+}
+function tabCliAdd(blk,id){
+  const r=(TABCLI[S&&S.contratanteId]||[]).find(x=>x.id===id); if(!r)return;
+  const v=num(r.valor), und=r.unidade||UND_DFLT[blk];
+  if(PICK_TARGET){                                  // TROCA: mantém a posição e a quantidade
+    const ln=S[blk].find(x=>x.id===PICK_TARGET);
+    if(ln){ ln.desc=tabCliLabel(r); ln.detalhe=tabCliDetalhe(r); ln.catId=null;
+            ln.custoBase=v; ln.custoAlt=v; ln.usarBase=true; ln.und=und; ln.margem=0;
+            if('marca' in ln) ln.marca=''; delete ln.composicao; }   // sem composição: preço acordado não leva fator de abrangência
+    save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick(); return;
+  }
+  const nr=rowSvc(tabCliLabel(r),1,und,v,0,null,'');
+  nr.detalhe=tabCliDetalhe(r);
+  S[blk].push(nr);
+  const _fan=PICK_LOTE&&isLoteBase();
+  save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
+  if(_fan) loteAddLinha(blk,nr);
+}
 let CATEGORIAS={servicos:[],equip:[],despesas:[],materiais:[]};
 async function carregarCategorias(){
   try{ const {data,error}=await SB.from('orc_categorias').select('nome,tipo,ordem').eq('ativo',true).is('deleted_at',null).order('ordem');
@@ -1548,7 +1621,7 @@ async function initOrc(){
       try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
       USER_ID=session.user.id;
       try{ const p=await SB.from('perfis').select('nome,email,telefone,colaborador_id').eq('user_id',session.user.id).limit(1); if(p.data&&p.data[0]){ USER_NOME=p.data[0].nome||''; USER_EMAIL=p.data[0].email||''; USER_TELEFONE=p.data[0].telefone||''; USER_COLAB_ID=p.data[0].colaborador_id||null; } }catch(_){}
-      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarOfertas(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia(); await carregarDiariaBase(); await carregarModelos();
+      await carregarCatalogo(); await carregarMateriaisEstoque(); await carregarCategorias(); await carregarOfertas(); await carregarClientes(); await carregarUsuarios(); await carregarEmpresaCanal(); await carregarMaoObra(); await carregarAbrangencia(); await carregarDiariaBase(); await carregarTabelasCliente(); await carregarModelos();
       await carregarOrc(); CLOUD=true; cloudMsg('nuvem ✓');
       respDoLogin();   // responsável em branco → assume o COLABORADOR do login (regra do dono 06/10: quem responde pela proposta é quem está logado no comercial)
       MANUAL = !!ORC_ID;   // já existia ao abrir → alterações exigem clicar Salvar; nova (ORC_ID null) → auto até nascer
@@ -1732,6 +1805,9 @@ function adicPrecoTotal(){ return ['servicos','materiais','despesas','equip'].re
 function adicAbatidoTotal(){ return ['servicos','materiais','despesas','equip'].reduce(function(a,k){ if(!blocoAtivo(k))return a; return a+(S[k]||[]).reduce(function(b,r){ if(r&&r.adic&&!r.adicCobrar){ r._blk=k; return b+linePreco(r); } return b; },0); },0); }   // só os adicionais marcados ABATIDO entram no desconto comercial
 function setAdicCobrar(blk,id){ var r=(S[blk]||[]).find(function(x){return x.id===id;}); if(!r)return; r.adicCobrar=!r.adicCobrar; save(); try{ renderBlk(BLKS.find(function(b){return b.key===blk;})); }catch(_){} recalc(); cloudMsg(r.adicCobrar?'adicional COBRADO do cliente':'adicional ABATIDO pelo desconto comercial'); }
 function toggleDescontoAdic(){ S.descontoAdic=!S.descontoAdic; save(); recalc(); }
+/* Impostos inclusos: o preço acordado JÁ carrega o tributo (tabela de contrato do cliente).
+   Ligada → o imposto não soma ao total e passa a sair da margem, porque quem paga é a eX. */
+function toggleImpostoIncluso(){ if(typeof loteCfgBloqueia==='function' && loteCfgBloqueia())return; S.impostoIncluso=!S.impostoIncluso; save(); recalc(); }
 /* DESCONTO com chave %/R$ (dono 21/09): entra por percentual OU valor; canônico = descontoPct (o combo e a proposta usam o %); descontoVal é a entrada em R$, convertida pelo último subtotal (_lastBruto) — evita dependência circular no modo combo. */
 var _lastBruto=0;
 function setDescontoModo(m){ if(loteCfgBloqueia())return; S.descontoModo=(m==='val')?'val':'pct';
@@ -2123,6 +2199,7 @@ function sanitize(){
   if(S.abrIdx===undefined)S.abrIdx=0;
   if(S.kmManual===undefined)S.kmManual=0;   // km rodado sobrescrito (0 = usa o automático base→cidade)
   if(S.abrSnap===undefined)S.abrSnap=null;   // congelamento da abrangência (null = calcula ao vivo)
+  if(S.impostoIncluso===undefined)S.impostoIncluso=false;   // chave "Impostos inclusos": padrão desligada = imposto soma por cima (comportamento de sempre)
   if(!S.macro||typeof S.macro!=='object')S.macro={estruturas:[]};   // macro do lote (estrutura/frota + rota)
   if(!Array.isArray(S.macro.estruturas))S.macro.estruturas=[];
   if(S.macro.rkm===undefined)S.macro.rkm=0;         // R$/km da rota macro
@@ -2890,17 +2967,24 @@ function openPick(blk,target){
   const avLabel = cfg.mat ? 'Material genérico / avulso (sem preço fixo)' : ('+ Novo '+cfg.sing+((isCat&&CLOUD)?' (cadastrar no catálogo)':' (fora do cadastro)'));
   const avulso = `<button class="pkitem avulso" onclick="${avAction}"><span class="material-symbols-rounded">${(isCat&&CLOUD)?'note_add':'edit_note'}</span>${avLabel}</button>`;
   document.getElementById('pickTitle').textContent=(PICK_TARGET?'Trocar '+cfg.sing+' (mantém a posição)':'Adicionar '+cfg.sing);
-  const srch = cad.length>6 ? `<div class="hpsrch"><span class="material-symbols-rounded">search</span><input id="pkq" placeholder="Buscar ${esc(cfg.sing)}…" oninput="pickFilter(this.value)"></div>` : '';
-  document.getElementById('pickBody').innerHTML=srch+'<div id="pkList">'+(cad.length?pickListHTML(blk,''):'<div style="color:var(--tx3);padding:12px;font-size:12px">Cadastro vazio.</div>')+'</div>'+avulso;
+  const nTab=tabCliRows(blk).length;
+  const srch = (cad.length+nTab)>6 ? `<div class="hpsrch"><span class="material-symbols-rounded">search</span><input id="pkq" placeholder="Buscar ${esc(cfg.sing)}…" oninput="pickFilter(this.value)"></div>` : '';
+  document.getElementById('pickBody').innerHTML=srch+'<div id="pkList">'+pickBodyHTML(blk,'')+'</div>'+avulso;
   document.getElementById('pickModal').classList.add('open');
   if(srch) setTimeout(()=>{const q=document.getElementById('pkq');if(q)q.focus();},40);
+}
+// corpo do seletor: tabela do cliente (preço contratado) em cima, catálogo embaixo
+function pickBodyHTML(blk,q){
+  const t=tabCliListHTML(blk,q), c=pickListHTML(blk,q);
+  if(t||c) return t+c;
+  return '<div style="color:var(--tx3);padding:12px;font-size:12px">'+((q||'').trim()?'Nada encontrado.':'Cadastro vazio.')+'</div>';
 }
 // lista do seletor AGRUPADA POR CATEGORIA (padrão do sistema p/ facilitar a inserção)
 function pickListHTML(blk,q){
   q=(q||'').toLowerCase().trim();
   let cad=catFor(blk);
   if(q) cad=cad.filter(c=>((c.nome||'')+' '+(c.marca||'')+' '+(c.categoria||'')).toLowerCase().includes(q));
-  if(!cad.length) return '<div style="color:var(--tx3);padding:12px;font-size:12px">Nada encontrado.</div>';
+  if(!cad.length) return '';
   const groups={}, order=[];
   cad.forEach(c=>{ const g=(c.categoria&&String(c.categoria).trim())||'— Sem categoria'; if(!groups[g]){groups[g]=[];order.push(g);} groups[g].push(c); });
   order.sort((a,b)=> a==='— Sem categoria'?1 : b==='— Sem categoria'?-1 : a.localeCompare(b));
@@ -2944,7 +3028,7 @@ function pickDelete(blk,catId){
     SB.from('orc_catalogo').update({deleted_at:new Date().toISOString()}).eq('id',catId).then(({error})=>{ if(error){ console.error(error); alert('Erro ao excluir: '+error.message); return; } done(); });
   } else done();
 }
-function pickFilter(q){ const el=document.getElementById('pkList'); if(el&&_PICK_BLK) el.innerHTML=pickListHTML(_PICK_BLK,q); }
+function pickFilter(q){ const el=document.getElementById('pkList'); if(el&&_PICK_BLK) el.innerHTML=pickBodyHTML(_PICK_BLK,q); }
 function closePick(){ document.getElementById('pickModal').classList.remove('open'); PICK_TARGET=null; _PICK_BLK=null; PICK_LOTE=false; }
 function pickCad(blk,cid){
   const c=catFor(blk).find(x=>x.id===cid); if(!c)return;
@@ -6470,10 +6554,11 @@ function recalc(){
   const adicP=adicPrecoTotal(), descAd=S.descontoAdic?adicAbatidoTotal():0;   // desconto comercial que abate os ADICIONAIS (a loja volta ao valor combinado; custo real mantido → lucro cai no valor absorvido)
   const liquido=bruto-desc-descAd;                          // valor antes do imposto
   { const l=document.getElementById('ln_descad'); if(l) l.style.display=S.descontoAdic?'':'none'; const sd=document.getElementById('s_descad'); if(sd) sd.textContent=S.descontoAdic?('− '+fmt(descAd)):'não aplicado'; const bt=document.getElementById('descad_tog'); if(bt){ bt.textContent=S.descontoAdic?'abatido ✓':'abater'; bt.style.background=S.descontoAdic?'#e6f5ec':'var(--surf)'; bt.style.color=S.descontoAdic?'#17693f':''; } }   // retirada: linha "Desconto comercial" só aparece se o abatimento antigo estiver ligado (migrado usa o campo Desconto)
+  const impInc=!!S.impostoIncluso;                          // chave "Impostos inclusos": o preço acordado JÁ tem o tributo dentro (tabela de contrato)
   const imp=liquido*num(S.impostoPct)/100;
-  const total=liquido+imp;                                  // imposto SOMA ao total (repasse ao cliente)
+  const total=impInc?liquido:(liquido+imp);                 // por cima = repasse ao cliente · incluso = o preço já é o total
   const custo=cst.servicos+cst.equip+cst.despesas+cst.materiais+diaC+ratCusto;   // custo real (auto) — inclui o rateio do macro (é custo com ou sem valor combinado)
-  const lucro=liquido-custo;                                // imposto é repasse — NÃO reduz o lucro
+  const lucro=impInc?(liquido-imp-custo):(liquido-custo);   // por cima: imposto é repasse, não reduz o lucro · incluso: quem paga o tributo é a eX, então sai da margem
   const marg=liquido?lucro/liquido*100:0;
   const set=(id,v)=>{const e=document.getElementById(id);if(e)e.textContent=v;};
   set('s_serv',fmt(preco.servicos)); set('s_equip',fmt(preco.equip));
@@ -6487,7 +6572,11 @@ function recalc(){
     if(du) du.style.display=(_dModo==='val')?'none':''; if(dpfx) dpfx.style.display=(_dModo==='val')?'':'none';
     if(deq){ const _ep=(bruto>0?desc/bruto*100:0); deq.textContent=(desc>0)?((_dModo==='val')?('= '+_d1(_ep)+'%'):('= '+fmt(desc))):''; } }
   set('s_total',fmt(total)); set('s_preco',fmt(total));
-  set('s_imp','+ '+fmt(imp)); set('s_desc_pc','('+_d1(num(S.descontoPct))+'%)'); set('s_imp_pc','('+_d1(num(S.impostoPct))+'%)'); set('s_custo',fmt(custo));
+  set('s_imp', impInc?'inclusos':('+ '+fmt(imp))); set('s_desc_pc','('+_d1(num(S.descontoPct))+'%)'); set('s_imp_pc', impInc?'':('('+_d1(num(S.impostoPct))+'%)')); set('s_custo',fmt(custo));
+  { const si=document.getElementById('s_imp'); if(si) si.classList.toggle('inctag', impInc);   // chave "Impostos inclusos": chave, LED e a linha interna do tributo que sai do nosso
+    const sw=document.getElementById('impinc_sw'), ld=document.getElementById('impinc_led'), li=document.getElementById('ln_impint'), sii=document.getElementById('s_impint');
+    if(sw) sw.classList.toggle('on', impInc); if(ld) ld.classList.toggle('on', impInc);
+    if(li) li.style.display=impInc?'':'none'; if(sii) sii.textContent='− '+fmt(imp); }
   const lu=document.getElementById('s_lucro'), mg=document.getElementById('s_marg');
   if(lu)lu.textContent=fmt(lucro); if(mg)mg.textContent=marg.toLocaleString('pt-BR',{minimumFractionDigits:1,maximumFractionDigits:1})+'%';
   const neg=(lucro<0);
