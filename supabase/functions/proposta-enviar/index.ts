@@ -27,7 +27,20 @@ Deno.serve(async (req) => {
 
   const key = Deno.env.get("RESEND_API_KEY");
   const body = await req.json().catch(() => ({}));
-  if (body?.ping) return json({ ready: !!key, from: FROM, bcc: BCC, reply_to: REPLY_TO });
+  if (body?.ping) {
+    // diag: confere se as chaves do Resend ainda valem (NUNCA devolve o valor da chave)
+    let chaves: Record<string, unknown> | undefined;
+    if (body?.diag) {
+      const prova = async (k?: string) => {
+        if (!k) return { configurada: false };
+        const t = await fetch("https://api.resend.com/domains", { headers: { Authorization: `Bearer ${k}` } });
+        const j: any = await t.json().catch(() => ({}));
+        return { configurada: true, tamanho: k.length, prefixo_ok: k.startsWith("re_"), valida: t.ok, status: t.status, motivo: t.ok ? null : (j?.message || t.statusText) };
+      };
+      chaves = { envio: await prova(key), leitura: await prova(Deno.env.get("RESEND_READ_KEY")) };
+    }
+    return json({ ready: !!key, from: FROM, bcc: BCC, reply_to: REPLY_TO, chaves });
+  }
   if (!key) return json({ error: "O envio pelo sistema ainda não foi configurado (falta a chave do Resend)." }, 503);
 
   const url = Deno.env.get("SUPABASE_URL")!;
@@ -70,7 +83,11 @@ Deno.serve(async (req) => {
   });
   const rj = await r.json().catch(() => ({}));
   if (!r.ok || !rj?.id) {
-    return json({ error: `O Resend recusou o envio: ${rj?.message || r.statusText}`, detalhe: rj }, 502);
+    const invalida = r.status === 401 || r.status === 403 || /api key/i.test(String(rj?.message || ""));
+    const msg = invalida
+      ? "A chave do Resend nao vale mais (apagada, trocada ou sem permissao de envio). Gere uma chave nova em resend.com/api-keys (acesso de envio) e salve em Supabase -> Edge Functions -> Secrets, no RESEND_API_KEY."
+      : `O Resend recusou o envio: ${rj?.message || r.statusText}`;
+    return json({ error: msg, detalhe: rj }, 502);
   }
 
   // a partir daqui o e-mail SAIU: registra (se algo falhar, devolve ok com aviso para não reenviar)
@@ -82,17 +99,17 @@ Deno.serve(async (req) => {
   if (sub.error) avisos.push("revisões anteriores: " + sub.error.message);
 
   const anexos = [{ nome: pdfNome, path: "anexos:" + pdfPath, tipo: "application/pdf", tamanho: bytes.length }];
-  const msg = await admin.from("email_mensagens").insert({
+  const msg2 = await admin.from("email_mensagens").insert({
     empresa_id: v.empresa_id, direcao: "saida", provedor_id: rj.id, de: FROM, para, cc, bcc: BCC, reply_to: REPLY_TO,
     assunto: v.assunto, texto: corpo, anexos, orcamento_id: v.orcamento_id, oportunidade_id: v.oportunidade_id,
     versao_id: v.id, revisao: v.revisao, vinculo: "envio", entrega: "enviado",
   }).select("id").single();
-  if (msg.error) avisos.push("registro do e-mail: " + msg.error.message);
+  if (msg2.error) avisos.push("registro do e-mail: " + msg2.error.message);
 
   const ev = await admin.from("orcamento_eventos").insert({
     empresa_id: v.empresa_id, orcamento_id: v.orcamento_id, oportunidade_id: v.oportunidade_id, versao_id: v.id, revisao: v.revisao,
     tipo: "envio", canal: "sistema", titulo: `R${v.revisao} enviada pelo sistema para ${para.join(", ")}`,
-    texto: v.assunto, mensagem_id: msg.data?.id || null, anexos, criado_por: u.user.id, criado_por_nome: nome,
+    texto: v.assunto, mensagem_id: msg2.data?.id || null, anexos, criado_por: u.user.id, criado_por_nome: nome,
   });
   if (ev.error) avisos.push("linha do tempo: " + ev.error.message);
 
