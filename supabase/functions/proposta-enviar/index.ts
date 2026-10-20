@@ -37,7 +37,19 @@ Deno.serve(async (req) => {
         const j: any = await t.json().catch(() => ({}));
         return { configurada: true, tamanho: k.length, prefixo_ok: k.startsWith("re_"), valida: t.ok, status: t.status, motivo: t.ok ? null : (j?.message || t.statusText) };
       };
-      chaves = { envio: await prova(key), leitura: await prova(Deno.env.get("RESEND_READ_KEY")) };
+      // que TIPO de valor foi colado em cada segredo (sem mostrar o valor)
+      const tipo = (k?: string) => !k ? "vazio"
+        : k.startsWith("re_") ? "chave do Resend (re_)"
+        : k.startsWith("whsec_") ? "segredo de webhook (whsec_)"
+        : k.startsWith("eyJ") ? "token JWT (eyJ)"
+        : k.startsWith("sb_") ? "chave do Supabase (sb_)"
+        : "outro";
+      const wh = Deno.env.get("RESEND_WEBHOOK_SECRET");
+      chaves = {
+        envio: { ...await prova(key), tipo: tipo(key) },
+        leitura: { ...await prova(Deno.env.get("RESEND_READ_KEY")), tipo: tipo(Deno.env.get("RESEND_READ_KEY")) },
+        webhook: { configurada: !!wh, tamanho: wh?.length || 0, tipo: tipo(wh) },
+      };
     }
     return json({ ready: !!key, from: FROM, bcc: BCC, reply_to: REPLY_TO, chaves });
   }
