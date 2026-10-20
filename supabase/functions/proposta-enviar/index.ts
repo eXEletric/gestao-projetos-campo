@@ -35,7 +35,9 @@ Deno.serve(async (req) => {
         if (!k) return { configurada: false };
         const t = await fetch("https://api.resend.com/domains", { headers: { Authorization: `Bearer ${k}` } });
         const j: any = await t.json().catch(() => ({}));
-        return { configurada: true, tamanho: k.length, prefixo_ok: k.startsWith("re_"), valida: t.ok, status: t.status, motivo: t.ok ? null : (j?.message || t.statusText) };
+        // chave SÓ de envio não pode listar domínios: o 401 "restricted" PROVA que a chave é boa
+        const restrita = t.status === 401 && /restricted/i.test(String(j?.message || ""));
+        return { configurada: true, tamanho: k.length, prefixo_ok: k.startsWith("re_"), valida: t.ok || restrita, so_envio: restrita, status: t.status, motivo: (t.ok || restrita) ? null : (j?.message || t.statusText) };
       };
       // que TIPO de valor foi colado em cada segredo (sem mostrar o valor)
       const tipo = (k?: string) => !k ? "vazio"
