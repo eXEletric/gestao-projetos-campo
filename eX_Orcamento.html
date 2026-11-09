@@ -1461,13 +1461,31 @@ function stampNovo(){ // orçamento novo: data de hoje + criador (usuário logad
 // número automático e ÚNICO: ORÇ-<ano>-<sequência>, tomando o maior nº já usado no ano
 /* NUMERAÇÃO (regra do dono, 15/09): a sequência ORÇ-AAAA-NNNN é da PROPOSTA (avulsa ou base do lote).
    Loja de lote NÃO consome a sequência: recebe o código do lote + sufixo — ORÇ-2026-9831-01, -02, … */
-function ehCodigoLoja(n){ return /^OR[ÇC]-\d{4}-\d{3,}-\d+$/.test(String(n||'').trim()); }
+/* CÓDIGO DA LOJA DO LOTE (09/11, dono: "as demais lojas podem ter um número derivado, ex. orç-2026-0011_(numero da loja no cadastro)").
+   O código passa a dizer QUAL loja é, em vez de uma ordem sem significado: ORÇ-2026-0012_902.
+   Loja sem número de cadastro (25 das 125 hoje — o Economart inteiro) cai no sequencial _01, _02.
+   Os dois formatos convivem: o antigo com hífen (ORÇ-2026-9832-01) continua válido e reconhecido. */
+function ehCodigoLoja(n){ return /^OR[ÇC]-\d{4}-\d{3,}[-_][A-Za-z0-9]+$/.test(String(n||'').trim()); }
+function lojaNumCad(l){   // nº de cadastro aproveitável: só dígitos. Vazio e placeholder ("XXX") não contam
+  if(typeof l==='string') l=(LOJAS||[]).find(function(x){ return x.id===l; });
+  if(l && l.id && !l.numero){ var f=(LOJAS||[]).find(function(x){ return x.id===l.id; }); if(f) l=f; }
+  var v=String((l&&l.numero)||'').trim();
+  return /^\d+$/.test(v) ? v : ''; }
 function loteBaseNumero(){ var b=(isLoteBase()?S:BASE_DADOS)||{}; return String(b.numero||'').trim(); }
-function loteProxCodigo(numBase,usados){
+function loteProxCodigo(numBase,usados,loja){
   numBase=String(numBase||'').trim(); if(!numBase) return '';
-  var mx=0; (usados||[]).forEach(function(n){ n=String(n||'').trim();
-    if(n.indexOf(numBase+'-')!==0) return; var m=n.match(/-(\d+)$/); if(m){ var v=+m[1]; if(v>mx)mx=v; } });
-  return numBase+'-'+String(mx+1).padStart(2,'0'); }
+  var pre=numBase+'_', preAnt=numBase+'-';
+  var tem=function(cod){ return (usados||[]).some(function(n){ return String(n||'').trim()===cod; }); };
+  var nc=lojaNumCad(loja);
+  if(nc){
+    if(!tem(pre+nc)) return pre+nc;
+    for(var k=0;k<25;k++){ var alt=pre+nc+String.fromCharCode(98+k); if(!tem(alt)) return alt; }   // mesmo nº repetido dentro do lote: 902b, 902c…
+  }
+  /* sem nº de cadastro: primeira posição livre. Procura por disponibilidade em vez de "maior + 1",
+     senão um código de loja como _902 empurraria o próximo sequencial para _903. */
+  for(var i=1;i<=999;i++){ var s=String(i).padStart(2,'0');
+    if(!tem(pre+s) && !tem(preAnt+s)) return pre+s; }
+  return pre+Date.now().toString(36).slice(-4); }
 function loteCodigosUsados(){ return (LOTE_UNITS||[]).map(function(u){ return u.numero; }); }
 /* NUMERAÇÃO (19/10) — o número é EMITIDO por um contador próprio (orc_contador), não mais deduzido do histórico.
    Antes era "maior número existente + 1": em 08/09 entraram lojas de lote com número sorteado (7875, 9501, 2507...),
@@ -3525,7 +3543,7 @@ async function loteGerar(){ if(!loteExigeSalvo('Gerar propostas'))return;
       if((LOTE_UNITS||[]).some(u=>((u.dados&&u.dados.lojaId)===l.id)||((u.cliente_final||'')===(l.nome||'')))){ continue; }   // já existe unidade dessa loja → não duplica
       const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:LOTE_ROW?LOTE_ROW.contratante_id:null,contemplado_id:l.id,objeto:(LOTE_ROW?LOTE_ROW.nome:'Lote')+' — '+l.nome,lote_id:LOTE_ID}).select('id').limit(1);
       if(opp.error||!opp.data[0]) continue; const oppId=opp.data[0].id;
-      const numero=loteProxCodigo(loteBaseNumero(),_codUsados)||(await proximoNumero()); _codUsados.push(numero);   /* loja de lote: código do lote, não a sequência */
+      const numero=loteProxCodigo(loteBaseNumero(),_codUsados,l)||(await proximoNumero()); _codUsados.push(numero);   /* loja de lote: código do lote, não a sequência */
       const _cn=(LOTE_ROW&&LOTE_ROW.contratante_id?((contratantes().find(c=>c.id===LOTE_ROW.contratante_id)||{}).nome||''):'');
       const _escId=(l._esc||((loteEscs()[0]||{}).id)||'v1'); const dados=BASE_DADOS?dadosLojaDaBase(BASE_DADOS,_escId):{}; dados.variacaoId=_escId; delete dados._base; delete dados.macro; dados.abrSnap=null; dados.finNome=l.nome; dados.lojaId=l.id; dados.numero=numero;
       if(LOTE_ROW&&LOTE_ROW.contratante_id){ dados.contratanteId=LOTE_ROW.contratante_id; dados.cliNome=_cn; }
@@ -3871,7 +3889,7 @@ async function loteAddLojaNow(idArg){ if(!loteExigeSalvo('Adicionar loja'))retur
   try{
     const opp=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:(LOTE_ROW?LOTE_ROW.contratante_id:S.contratanteId)||null,contemplado_id:lojaId,objeto:(LOTE_ROW&&LOTE_ROW.nome?LOTE_ROW.nome:(S.cliNome||'Lote'))+' — '+l.nome,lote_id:LOTE_ID}).select('id').limit(1);
     if(opp.error||!opp.data[0]) throw (opp.error||new Error('sem oportunidade')); const oppId=opp.data[0].id;
-    const numero=loteProxCodigo(loteBaseNumero(),loteCodigosUsados())||(await proximoNumero());   /* loja de lote: código do lote */
+    const numero=loteProxCodigo(loteBaseNumero(),loteCodigosUsados(),l)||(await proximoNumero());   /* loja de lote: código do lote */
     const dados=dadosLojaDaBase(S||{},(S&&S.varAtiva)||null); delete dados._base; delete dados.macro; dados.abrSnap=null; dados.finNome=l.nome; dados.lojaId=l.id; dados.numero=numero;   // loja nova segue a variação aberta
     await SB.from('orcamentos').insert({empresa_id:EMPRESA_ID,oportunidade_id:oppId,lote_id:LOTE_ID,herda_base:true,numero,status:'rascunho',cliente_final:l.nome,cliente_contratante:S.cliNome||'',dados,total:num(S._total)||0});
     await loteReload();
@@ -5284,7 +5302,7 @@ async function glGerar(){
       const oi=await SB.from('oportunidades').insert({empresa_id:EMPRESA_ID,contratante_id:(LOTE_ROW&&LOTE_ROW.contratante_id)||null,contemplado_id:lojaId,
         objeto:((LOTE_ROW&&LOTE_ROW.nome)||'Lote')+' — '+x.nome,lote_id:S_LOTE_ID}).select('id').single();
       if(oi.error) throw oi.error;
-      var numero=loteProxCodigo(loteBaseNumero(),_codUsados)||(await proximoNumero()); _codUsados.push(numero);   /* loja de lote: código do lote */
+      var numero=loteProxCodigo(loteBaseNumero(),_codUsados,lojaId)||(await proximoNumero()); _codUsados.push(numero);   /* loja de lote: código do lote */
       var dados=dadosLojaDaBase(S,escId);
       delete dados._base; delete dados.macro; dados.abrSnap=null;
       dados.finNome=x.nome; dados.lojaId=lojaId; dados.numero=numero; dados.variacaoId=escId;
