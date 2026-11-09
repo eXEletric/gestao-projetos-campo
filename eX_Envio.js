@@ -100,11 +100,15 @@ function faixaLeitura(){
   const u=ultimaEnviada(), n=revTrab();
   f.innerHTML=`<span class="elb">${ms('lock')}<b>Somente leitura</b> — ${aprovada()?'proposta aprovada':'R'+((u&&u.revisao)||n)+' enviada'}${u&&u.enviado_em?' em '+br(u.enviado_em):''}.`
     +` Você vê tudo o que foi montado; para alterar, a R${n+1} nasce como cópia desta.</span>`
-    +`<button class="envbtn" onclick="setMode('view')" title="O documento exatamente como o cliente recebeu">${ms('description')}Como o cliente recebeu</button>`
+    +`<button class="envbtn" onclick="setMode('view')" title="O documento montado a partir desta proposta">${ms('description')}Ver o documento</button>`
+    +(u?`<button class="envbtn" onclick="EXENV.abrirAnexo('${pdfDaRevisao(u)}')" title="O arquivo exato que foi anexado no e-mail — não é re-gerado">${ms('picture_as_pdf')}PDF da R${u.revisao}</button>`:'')
     +(nVersoes()?`<button class="envbtn" onclick="EXENV.historico()" title="Revisões enviadas">${ms('history')}Histórico</button>`:'')
     +`<button class="envbtn pri" onclick="EXENV.criarRevisao()">${ms('edit_document')}Criar R${n+1}</button>`;
 }
 function nVersoes(){ return (ENV.versoes||[]).length; }   /* nome próprio: dentro de decorar() existe um const hist local */
+/* caminho do PDF congelado da revisão — o arquivo que FOI anexado no e-mail, não um PDF re-gerado agora.
+   Mesmo padrão usado na hora de enviar (safeKey troca o Ç do número). */
+function pdfDaRevisao(v){ return 'anexos:propostas/'+ORC_ID+'/'+safeKey(v.codigo||codigoFull())+'_R'+v.revisao+'.pdf'; }
 let _avisoSave=0;
 window.save=function(){
   if(travada()){ if(Date.now()-_avisoSave>4000){ _avisoSave=Date.now(); toast('Esta revisão já foi <b>enviada</b> e está travada. Para alterar, crie a próxima revisão.'); } return; }

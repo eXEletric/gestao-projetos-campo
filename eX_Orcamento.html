@@ -5183,7 +5183,7 @@ var DOC_MENU=[
   {sec:'lote.escopo',nm:'Escopo consolidado (Σ serviços)'},
   {sec:'mat.global',nm:'Materiais aplicados (Σ lote)'},
   {sec:'mat.base',nm:'Material do modelo'},
-  {sec:'lote.global',nm:'Resumo de valores',pts:[['res:serv','Serviços'],['res:mat','Material'],['res:desp','Despesas'],['res:desl','Deslocamento'],['res:equip','Locações'],['res:adic','Adicionais'],['res:desc','Desconto comercial'],['indicadores','Valor e prazo médios']]},
+  {sec:'lote.global',nm:'Resumo de valores',pts:[['res:serv','Serviços'],['res:mat','Material'],['res:desp','Despesas'],['res:desl','Deslocamento'],['res:log','Logística do lote (rateada)'],['res:equip','Locações'],['res:adic','Adicionais'],['res:desc','Desconto comercial'],['indicadores','Valor e prazo médios']]},
   {sec:'lote.cond',nm:'Condições comerciais e responsável'}
 ];
 function docMenuHtml(){
@@ -5228,9 +5228,19 @@ function docPreset(t){
 function docTotaisHtml(_secTit){ var us=LOTE_UNITS||[]; if(!us.length)return ''; var t={serv:0,mat:0,desp:0,desl:0,equip:0,adic:0,adicCheio:0,descCom:0,descAd:0};
   us.forEach(function(u){ var p=precoDe(dadosLojaCalc(u)); if(!p)return; Object.keys(t).forEach(function(k){ t[k]+=p[k]; }); });
   var tot=us.reduce(function(a,u){return a+num(u.total);},0)+macroPendente();   // + logística do lote ainda fora das lojas (com imposto)
-  var ln=function(l,v,s,k){ return '<div data-pt="'+(k||'')+'" style="display:flex;justify-content:space-between;gap:12px;padding:8px 14px;border-bottom:1px solid #efecf7;font-size:13px"><span>'+l+(s?' <span style="font-size:11px;color:#7d7799">'+s+'</span>':'')+'</span><b style="font-variant-numeric:tabular-nums">'+fmt(v)+'</b></div>'; };
+  /* LOGÍSTICA NO RESUMO (09/11, dono: "não aparece os detalhes de deslocamento... seria interessante ter na
+     visualização do corpo da proposta"). A logística do lote vive na MACRO e era mostrada só numa seção à parte,
+     enquanto o resumo exibia "Deslocamento R$ 0,00" — documento se contradizendo. Com valor combinado os serviços
+     absorvem a macro, então aqui ela é DESTACADA da linha de serviços: a soma continua fechando no mesmo total.
+     Linha zerada não entra: "Deslocamento R$ 0,00" não informa nada e, ao lado da logística, informa errado. */
+  var _fI=1+num(S.impostoPct)/100, _macro=macroTotal()*_fI;
+  var _macroNosServ=comboActive()?_macro:0;   // sem valor combinado a macro entra pelo macroPendente(), fora dos serviços
+  var _serv=t.serv-_macroNosServ;
+  var ln=function(l,v,s,k,sempre){ if(!sempre && !(Math.abs(num(v))>0.005)) return '';
+    return '<div data-pt="'+(k||'')+'" style="display:flex;justify-content:space-between;gap:12px;padding:8px 14px;border-bottom:1px solid #efecf7;font-size:13px"><span>'+l+(s?' <span style="font-size:11px;color:#7d7799">'+s+'</span>':'')+'</span><b style="font-variant-numeric:tabular-nums">'+fmt(v)+'</b></div>'; };
   return '<div style="'+_secTit+'">Resumo de valores do lote</div><div style="border:1px solid #e3ddf6;border-radius:12px;overflow:hidden;max-width:620px">'
-    +ln('Valor total de serviços',t.serv,'','res:serv')+ln('Valor total de material',t.mat,'','res:mat')+ln('Valor total de despesas',t.desp,'rateadas','res:desp')+ln('Deslocamento',t.desl,'','res:desl')+ln('Locações',t.equip,'','res:equip')
+    +ln('Valor total de serviços',_serv,'','res:serv',true)+ln('Valor total de material',t.mat,'','res:mat')+ln('Valor total de despesas',t.desp,'rateadas','res:desp')+ln('Deslocamento',t.desl,'','res:desl')+ln('Locações',t.equip,'','res:equip')
+    +ln('Logística do lote',_macro,'rateada nas '+us.length+' unidades','res:log')
     +(t.adicCheio>0.5?'<div data-pt="res:adic" style="display:flex;justify-content:space-between;gap:12px;padding:8px 14px;border-bottom:1px solid #efecf7;font-size:12.5px;color:#c77b12;background:#fff8ec"><span>Adicionais <span style="font-size:11px">(escopo além do padrão · inclusos no valor)</span></span><b style="font-variant-numeric:tabular-nums">'+fmt(t.adicCheio)+'</b></div>':'')+(t.descCom>0.5?'<div data-pt="res:desc" style="display:flex;justify-content:space-between;gap:12px;padding:8px 14px;border-bottom:1px solid #efecf7;font-size:13px;color:#17693f;background:#eefaf2"><span>Desconto <span style="font-size:11px">(adicionais inclusos no valor)</span></span><b style="font-variant-numeric:tabular-nums">− '+fmt(t.descCom)+'</b></div>':'')
     +'<div style="display:flex;justify-content:space-between;gap:12px;padding:13px 14px;background:#f6f4fc;font-size:15px;font-weight:800;color:#3f2c8f"><span>Total do lote</span><span style="font-variant-numeric:tabular-nums">'+fmt(tot)+'</span></div></div>'; }
 function varDocHtml(_secTit,_th,_td,_matSecDoc){   // seção "Variações" do documento do lote: lojas + serviços Σ + material Σ de cada variação
