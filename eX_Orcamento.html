@@ -5052,9 +5052,30 @@ function docLojasHtml(_secTit,_th,_td){ var us=LOTE_UNITS||[]; if(!us.length)ret
 function docMacroHtml(_secTit,_td){ var mt=macroTotal(); if(!(mt>0))return ''; var n=(LOTE_UNITS||[]).length||1; var est=((S.macro&&S.macro.estruturas)||[]); var rc=macroRotaCusto(); var fI=1+num(S.impostoPct)/100;   // documento do cliente: valores COM imposto
   var linhas=est.map(function(e){return '<tr><td style="'+_td+'">'+esc(e.nome)+'</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(num(e.custo)*fI)+'</td></tr>';}).join('')+(rc>0?'<tr><td style="'+_td+'">Deslocamento do circuito ('+_d1(macroRotaKm())+' km)</td><td style="'+_td+';text-align:right;font-variant-numeric:tabular-nums">'+fmt(rc*fI)+'</td></tr>':'');
   return '<div style="'+_secTit+'">Despesa macro do lote (rateada)</div><table style="width:100%;max-width:560px;border-collapse:collapse;font-size:12.5px"><tbody>'+linhas+'<tr style="background:#f6f4fc"><td style="padding:10px 13px;font-weight:800;color:#3f2c8f">Total macro · rateado em '+n+' unidades</td><td style="padding:10px 13px;text-align:right;font-weight:800;color:#3f2c8f;font-variant-numeric:tabular-nums">'+fmt(mt*fI)+' <span style="font-weight:600;color:#7d7799;font-size:11.5px">('+fmt(mt*fI/n)+'/unidade)</span></td></tr></tbody></table><div style="font-size:11.5px;color:#7d7799;margin-top:5px">Valores com impostos. Já incluída no valor de cada unidade.</div>'; }
+/* NOME DO ARQUIVO AO IMPRIMIR (09/11, dono: "quando for salvar a proposta... é importante ela vir com o número
+   do orçamento, conforme aparece na lista, e de preferência o nome do cliente e cliente contemplado").
+   No "Salvar como PDF" o navegador sugere o nome a partir do document.title — que era sempre "eX Orçamento".
+   Trocamos o título só durante a impressão e devolvemos depois. */
+function nomeDocumento(){
+  var p=[], num=String(S.numero||'').trim();
+  if(num) p.push(num);
+  if(S.cliNome) p.push(S.cliNome);
+  var alvo=S.finNome || S.finRede || (typeof LOTE_ROW!=='undefined' && LOTE_ROW && LOTE_ROW.nome) || S.solTitulo || '';
+  alvo=String(alvo).replace(/^\[BASE\]\s*/,'').trim();
+  if(alvo) p.push(alvo);
+  return p.join(' - ').replace(/[\\\/:*?"<>|]/g,'-').replace(/\s+/g,' ').trim() || 'Proposta';
+}
+function imprimirComNome(){
+  var orig=document.title, devolvido=false;
+  var devolve=function(){ if(devolvido)return; devolvido=true; document.title=orig; window.removeEventListener('afterprint',devolve); };
+  document.title=nomeDocumento();
+  window.addEventListener('afterprint',devolve);
+  setTimeout(function(){ try{ window.print(); }catch(e){ devolve(); } },60);
+  setTimeout(devolve,120000);   // rede de segurança: navegador que não dispara afterprint
+}
 function imprimirProposta(){   // lote: abre o DOCUMENTO DO LOTE e passa pelo PAINEL PRÉ-ENVIO antes de imprimir; demais propostas: impressão normal
   if(isLoteBase() && (LOTE_UNITS||[]).length){ verComoClienteLote(); setTimeout(preEnvioAbrir,300); return; }
-  window.print(); }
+  imprimirComNome(); }
 /* ===== FASE 2 (junta 15/09): PAINEL DE CONTROLE PRÉ-ENVIO do lote — bloqueia o PDF com erro, avisa o que merece olhar ===== */
 var PRE_JUST={};   // justificativas desta impressão (margem negativa liberada)
 function lojaMgServ(u){ var keep=S; try{ S=_deep(dadosLojaCalc(u)); sanitize(); return comboActive()?comboMgBlk('servicos'):null; }catch(_){ return null; } finally{ S=keep; } }
@@ -5128,7 +5149,7 @@ function preEnvioRender(){ var el=document.getElementById('preEnvio'); if(!el)re
     +(r.A.length?('<div style="font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:#8a5a12;margin:12px 0 6px">Avisos (pode gerar)</div>'+r.A.map(function(x){ return item(x,{b:'#ecd3a0',bg:'#fff8ec',c:'#c77b12'},'warning'); }).join('')):'')
     +'</div><div style="display:flex;gap:8px;justify-content:flex-end;padding:12px 18px;border-top:1px solid #eee;flex-wrap:wrap">'
     +'<button onclick="closePreEnvio()" style="border:1px solid #ccc;background:#fff;color:#333;border-radius:9px;padding:9px 15px;font:700 13px inherit;cursor:pointer">Voltar e corrigir</button>'
-    +'<button '+(pode?'':'disabled ')+'onclick="closePreEnvio();if(!document.getElementById(\'vcOverlay\'))verComoClienteLote();setTimeout(function(){window.print();},250)" style="border:none;background:'+(pode?'#533ab7':'#c9c4dd')+';color:#fff;border-radius:9px;padding:9px 16px;font:700 13px inherit;cursor:'+(pode?'pointer':'not-allowed')+'"><span class="material-symbols-rounded" style="vertical-align:-5px;font-size:18px">print</span> '+(pode?(r.A.length?'Gerar PDF mesmo com avisos':'Gerar PDF'):'Resolva os bloqueios')+'</button></div></div></div>';
+    +'<button '+(pode?'':'disabled ')+'onclick="closePreEnvio();if(!document.getElementById(\'vcOverlay\'))verComoClienteLote();setTimeout(function(){imprimirComNome();},250)" style="border:none;background:'+(pode?'#533ab7':'#c9c4dd')+';color:#fff;border-radius:9px;padding:9px 16px;font:700 13px inherit;cursor:'+(pode?'pointer':'not-allowed')+'"><span class="material-symbols-rounded" style="vertical-align:-5px;font-size:18px">print</span> '+(pode?(r.A.length?'Gerar PDF mesmo com avisos':'Gerar PDF'):'Resolva os bloqueios')+'</button></div></div></div>';
   if(foco){ var inp=el.querySelectorAll('.pejust')[foco[1]]; if(inp){ inp.focus(); inp.setSelectionRange(foco[0],foco[0]); } }
 }
 function docCabHtml(){   // cabeçalho completo — os mesmos dados do cabeçalho da proposta
@@ -5700,7 +5721,7 @@ function relRender(){ var ov=document.getElementById('relOv');
     +'<div class="relwrap" id="relDoc">'+corpo+'</div>';
   ov.querySelectorAll('[data-modo]').forEach(function(b){ b.onclick=function(){ REL_CTX.modo=b.dataset.modo; relRender(); }; });
   ov.querySelector('#relX').onclick=relFechar;
-  ov.querySelector('#relImp').onclick=function(){ window.print(); };
+  ov.querySelector('#relImp').onclick=function(){ imprimirComNome(); };
   ov.querySelector('#relPdf').onclick=relPdfSalvar; }
 function relNomeArq(){ var base=(REL_CTX.tipo==='loja')?('Relatorio_'+REL_CTX.num):'Relatorio_grupo';
   return base+'_'+(REL_CTX.modo==='interno'?'interno':'cliente')+'_'+new Date().toISOString().slice(0,10)+'.pdf'; }
