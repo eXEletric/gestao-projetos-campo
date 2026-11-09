@@ -82,10 +82,29 @@ function travada(){ if(!S)return false; if(aprovada())return true; const v=vAtua
 /* ---------- ganchos na folha (sem editar o arquivo principal) ---------- */
 const _renderBanner=window.renderBanner, _setMode=window.setMode, _save=window.save;
 window.renderBanner=function(){ _renderBanner.apply(this,arguments); try{ decorar(); }catch(e){ console.error('envio banner',e); } };
+/* 09/11 (dono): "quando abro a proposta fechada não consigo ter visibilidade do que foi feito por completo...
+   não tenho um botão de voltar para a proposta, só a opção de criar uma revisão 3".
+   Causa: além da gravação, o próprio setMode('edit') era bloqueado — a proposta enviada prendia o usuário no
+   DOCUMENTO, sem deixar nem OLHAR a montagem (escopos, lojas, composição, custos). Agora a montagem abre em
+   SOMENTE LEITURA: quem protege é o window.save (já travado), e a faixa abaixo diz o estado e dá as saídas. */
 window.setMode=function(m){
-  if(m==='edit' && travada()){ _setMode('view'); avisoTravada(); return; }
   _setMode(m);
+  try{ faixaLeitura(); }catch(e){}
 };
+function faixaLeitura(){
+  const trv=travada(), montagem=document.body.classList.contains('editing');
+  let f=$('envLeitura');
+  if(!(trv&&montagem)){ if(f) f.remove(); return; }
+  if(!f){ f=document.createElement('div'); f.id='envLeitura'; f.className='noprint';
+    document.body.insertBefore(f,document.body.firstChild); }
+  const u=ultimaEnviada(), n=revTrab();
+  f.innerHTML=`<span class="elb">${ms('lock')}<b>Somente leitura</b> — ${aprovada()?'proposta aprovada':'R'+((u&&u.revisao)||n)+' enviada'}${u&&u.enviado_em?' em '+br(u.enviado_em):''}.`
+    +` Você vê tudo o que foi montado; para alterar, a R${n+1} nasce como cópia desta.</span>`
+    +`<button class="envbtn" onclick="setMode('view')" title="O documento exatamente como o cliente recebeu">${ms('description')}Como o cliente recebeu</button>`
+    +(hist()?`<button class="envbtn" onclick="EXENV.historico()" title="Revisões enviadas">${ms('history')}Histórico</button>`:'')
+    +`<button class="envbtn pri" onclick="EXENV.criarRevisao()">${ms('edit_document')}Criar R${n+1}</button>`;
+}
+function hist(){ return (ENV.versoes||[]).length; }
 let _avisoSave=0;
 window.save=function(){
   if(travada()){ if(Date.now()-_avisoSave>4000){ _avisoSave=Date.now(); toast('Esta revisão já foi <b>enviada</b> e está travada. Para alterar, crie a próxima revisão.'); } return; }
@@ -129,9 +148,14 @@ function decorar(){
   try{ const volta=document.querySelector('#oppBanner .oppbar > .btn.btn-s[onclick*="voltarFunil"]');
     const bts=[...document.querySelectorAll('.env-irfunil')], bf=bts.pop(); bts.forEach(b=>b.remove());   // nunca duplica
     if(volta && bf && bf.nextElementSibling!==volta) volta.parentElement.insertBefore(bf, volta); }catch(e){}
-  // proposta travada: "Voltar a editar" seria mentira (editar = criar a próxima revisão) — some; a ação real fica no banner
+  /* proposta travada: o botão continua, mas com o nome certo. "Voltar a editar" era mentira (editar = criar revisão);
+     esconder era pior ainda — prendia o dono no documento sem ver a montagem (relato 09/11). */
   try{ const pvEd=[...document.querySelectorAll('#previewBar .pv-btn')].find(b=>/setMode\(.edit.\)/.test(b.getAttribute('onclick')||''));
-    if(pvEd) pvEd.style.display = trv ? 'none' : ''; }catch(e){}
+    if(pvEd){ pvEd.style.display='';
+      if(!pvEd.dataset.orig) pvEd.dataset.orig=pvEd.innerHTML;
+      pvEd.innerHTML = trv ? `${ms('tune')}Ver a montagem` : pvEd.dataset.orig;
+      pvEd.title = trv ? 'Abre a proposta montada (escopos, lojas, valores) em somente leitura' : ''; } }catch(e){}
+  try{ faixaLeitura(); }catch(e){}
   const lbl=document.querySelector('#previewBar .pv-lbl');
   if(lbl){ if(!lbl.dataset.orig) lbl.dataset.orig=lbl.innerHTML;
     lbl.innerHTML=trv?`${ms('lock')}${aprovada()?'Proposta aprovada':'Proposta enviada'} · travada · é assim que o cliente recebeu`:lbl.dataset.orig; }
@@ -911,6 +935,12 @@ Object.assign(ENV,{abrirEnvio,preparar,confirmar,descartar,retomar,criarRevisao,
 
 /* ---------- estilos ---------- */
 const css=document.createElement('style'); css.textContent=`
+#envLeitura{position:sticky;top:0;z-index:60;display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:9px 16px;background:#3a2f1a;color:#f7e6c4;font-size:12.5px;margin-bottom:12px;border-bottom:1px solid #5c4a28}
+#envLeitura .elb{display:inline-flex;align-items:center;gap:6px;margin-right:auto}
+#envLeitura .elb .material-symbols-rounded{font-size:17px}
+#envLeitura .envbtn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.3);color:#fff}
+#envLeitura .envbtn.pri{background:#d4a24a;border-color:#d4a24a;color:#2b2210}
+@media print{#envLeitura{display:none!important}}
 .envbtn{display:inline-flex;align-items:center;gap:5px;font:600 12px/1.2 inherit;padding:6px 11px;border-radius:8px;border:1px solid var(--line2,#ccc);background:var(--surf,#fff);color:var(--tx2,#555);cursor:pointer;text-decoration:none;white-space:nowrap}
 .envbtn .material-symbols-rounded{font-size:16px}
 .envbtn:hover{background:var(--surf2,#f1efe8)}
