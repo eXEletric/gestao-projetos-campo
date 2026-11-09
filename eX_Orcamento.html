@@ -1643,6 +1643,7 @@ async function carregarOrc(){
     if(S_LOTE_ID && !S._base && data[0].numero) S.numero=data[0].numero; _REV0=revDe(S); }   // loja do lote: o nº OFICIAL é o da coluna (nunca o herdado da base)
   else { ORC_ID=null; S=orcVazio(); S.numero=await proximoNumero(); stampNovo(); }   // orçamento novo nasce EM BRANCO + número automático único
   sanitize();
+  try{ tituloAba(); }catch(_){}   // a aba já nasce com o nome do documento — e o "Salvar como" aproveita
 }
 async function initOrc(){
   if(NOVA){ await initNova(); return; }   // ?nova → bifurcação Única × Lote (PRÉVIA)
@@ -5065,14 +5066,13 @@ function nomeDocumento(){
   if(alvo) p.push(alvo);
   return p.join(' - ').replace(/[\\\/:*?"<>|]/g,'-').replace(/\s+/g,' ').trim() || 'Proposta';
 }
-function imprimirComNome(){
-  var orig=document.title, devolvido=false;
-  var devolve=function(){ if(devolvido)return; devolvido=true; document.title=orig; window.removeEventListener('afterprint',devolve); };
-  document.title=nomeDocumento();
-  window.addEventListener('afterprint',devolve);
-  setTimeout(function(){ try{ window.print(); }catch(e){ devolve(); } },60);
-  setTimeout(devolve,120000);   // rede de segurança: navegador que não dispara afterprint
-}
+/* O título NÃO volta atrás depois de imprimir (corrigido 09/11, 2ª tentativa).
+   A 1ª versão devolvia "eX Orçamento" no evento afterprint — só que o Chrome dispara esse evento ao FECHAR a
+   pré-visualização, que é exatamente quando o diálogo "Salvar como" vai ler o título. Resultado: o arquivo
+   continuava saindo como "eX Orçamento". Agora o título da aba passa a ser o nome do documento e fica assim
+   (ainda ajuda a diferenciar abas), então o nome está correto seja qual for o momento em que o navegador o lê. */
+function tituloAba(){ try{ var n=nomeDocumento(); document.title=(n&&n!=='Proposta')?n:'eX Orçamento'; }catch(e){} }
+function imprimirComNome(){ tituloAba(); setTimeout(function(){ try{ window.print(); }catch(e){} },60); }
 function imprimirProposta(){   // lote: abre o DOCUMENTO DO LOTE e passa pelo PAINEL PRÉ-ENVIO antes de imprimir; demais propostas: impressão normal
   if(isLoteBase() && (LOTE_UNITS||[]).length){ verComoClienteLote(); setTimeout(preEnvioAbrir,300); return; }
   imprimirComNome(); }
