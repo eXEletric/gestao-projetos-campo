@@ -81,6 +81,12 @@ select.fi{appearance:auto;cursor:pointer}
 .temp.frio{background:#e7f0fa;color:var(--blue)}.temp.morno{background:#faeeda;color:var(--amber)}.temp.quente{background:#fcebeb;color:var(--red)}
 .orcb{font-size:10.5px;font-weight:600;padding:3px 8px;border-radius:8px;display:inline-flex;align-items:center;gap:4px;margin-top:6px;text-transform:capitalize}
 .orcb .material-symbols-rounded{font-size:13px}
+/* fase e atalho na linha da loja, dentro do detalhe do lote */
+.lufase{font-size:10.5px;font-weight:700;border:1px solid var(--line2);border-radius:20px;padding:2px 8px;color:var(--tx2);background:var(--surf)}
+.luprop{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:1px solid var(--line2);background:#fff;border-radius:7px;cursor:pointer;color:var(--tx2);padding:0}
+.luprop .material-symbols-rounded{font-size:16px}
+.luprop:hover{border-color:var(--pri);color:var(--pri)}
+.lu:hover{border-color:var(--pri)}
 /* card de LOTE (agrupado) */
 .kcard.lote{border:1.5px solid var(--pri);background:var(--pri-bg,#efeafc)}
 .lote-tag{display:inline-flex;align-items:center;gap:4px;font-size:9px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:var(--pri);border-radius:20px;padding:2px 8px;margin-bottom:6px}
@@ -1296,10 +1302,14 @@ function moveOpp(id,dir){ const o=S.oportunidades.find(x=>x.id===id); if(!o)retu
   o.colId=destId; save(); cUp('oportunidades',mOpp(o)); render(); }
 let SEL_LOTE=null;
 function selOpp(id){ SELO=id; SEL_LOTE=null; render(); const d=document.getElementById('oppDetail'); if(d)d.scrollIntoView({behavior:'smooth',block:'nearest'}); }
-function selLote(id){
-  const l=(S.lotes||[]).find(x=>x.id===id); const b=l&&baseOppOf(l); const isLev=!!(b&&colPapel(b.colId)==='visita');
-  if(l && l.baseOppId && !isLev){ abrirLoteBaseById(id); return; }   // fase proposta+ → abre a MESTRA (gerenciamento das unidades); levantamento mantém o painel
-  SEL_LOTE=id; SELO=null; render(); const d=document.getElementById('oppDetail'); if(d)d.scrollIntoView({behavior:'smooth',block:'nearest'}); }
+/* 11/11: o card do lote abre a TELA DO CARD, como qualquer oportunidade.
+   Antes, fora do levantamento, o clique pulava direto para a proposta-mestra: o lote nunca mostrava
+   fase, formulário nem "Mover card para fase" — era a reclamação do dono. A mestra continua a um
+   clique, no botão "Abrir a mestra" do cabeçalho do detalhe. */
+function selLote(id){ selLoteDetalhe(id); }
+function selLoteDetalhe(id){
+  SEL_LOTE=id; SELO=null; render();
+  const d=document.getElementById('oppDetail'); if(d)d.scrollIntoView({behavior:'smooth',block:'nearest'}); }
 function toggleMaster(){ MASTER=!MASTER;
   const sw=document.getElementById('msw'), led=document.getElementById('mled'), lb=document.getElementById('mlb');
   if(sw)sw.classList.toggle('on',MASTER); if(led)led.classList.toggle('on',MASTER); if(lb)lb.textContent=MASTER?'Master':'Operador';
@@ -1389,8 +1399,16 @@ function renderOppDetail(){
   const di=(l,v)=>`<div class="di"><span class="l">${l}</span><span class="v ${v?'':'empty'}">${v?esc(v):'—'}</span></div>`;
   // AÇÕES conforme o PAPEL da fase (base Pipefy) — a ação nasce na fase certa
   const papel=colPapel(o.colId), cap=PAPEL_DEF[papel]||{};
-  let acts=`<button class="btn btn-s" onclick="openOpp('${o.id}')"><span class="material-symbols-rounded">edit</span>Editar</button>`;
-  if(ts==='barramento'){
+  // LOJA DE LOTE (11/11): a unidade não tinha tela nenhuma — o clique na lista do lote ia direto para a
+  // proposta, então ela não tinha fase própria, formulário, tratativa, aprovação nem "Mover card para fase".
+  // Agora usa esta mesma tela; o que muda é a volta pro lote e a proposta virar botão em vez de ser o clique.
+  const _lt = o.loteId && (S.lotes||[]).find(x=>x.id===o.loteId);
+  let acts = _lt ? `<button class="btn btn-s" onclick="selLoteDetalhe('${_lt.id}')"><span class="material-symbols-rounded">arrow_back</span>Voltar ao lote</button>` : '';
+  acts += `<button class="btn btn-s" onclick="openOpp('${o.id}')"><span class="material-symbols-rounded">edit</span>Editar</button>`;
+  if(_lt){
+    acts+=`<button class="btn btn-s btn-p" onclick="abrirOrcNoShell('?opp=${o.id}')"><span class="material-symbols-rounded">request_quote</span>Abrir a proposta da loja</button>`;
+    if(cap.obra && oc) acts+=`<button class="btn btn-s" onclick="gerarObra('${o.id}')" title="Cria a obra no Cronograma com os serviços do orçamento virando tarefas"><span class="material-symbols-rounded">engineering</span>Gerar obra</button>`;
+  } else if(ts==='barramento'){
     if(cap.orc) acts+=`<button class="btn btn-s btn-p" onclick="gerarOrcBarramento('${o.id}')" title="Esteira de Fabricação"><span class="material-symbols-rounded">bolt</span>${oc?'Abrir':'Gerar'} orçamento de barramento</button>`;
   } else {
     if(cap.orc===true) acts+=`<button class="btn btn-s btn-p" onclick="gerarOrcamento('${o.id}')"><span class="material-symbols-rounded">request_quote</span>${oc?'Abrir orçamento':'Gerar orçamento'}</button>`;
@@ -1402,8 +1420,8 @@ function renderOppDetail(){
   el.innerHTML=`<div class="detail">
     <div class="dhead">
       <div class="davatar">${ini(ct?ct.nome:'?')}</div>
-      <div class="dt"><h2>${esc(titulo(o))}</h2><div class="sub">Oportunidade · fase <b>${esc(colNome(o.colId))}</b> <span style="color:var(--tx3)">· ${esc((PAPEL_DEF[papel]||{}).nome||papel)}</span></div>
-        <div class="chiprow"><span class="temp ${tc}">${esc(o.temperatura||'Morno')}</span>${ts?`<span class="temp" style="background:var(--pri-bg);color:var(--pri)">${esc(TSL[ts]||ts)}</span>`:''}</div></div>
+      <div class="dt"><h2>${esc(titulo(o))}</h2><div class="sub">${_lt?`Loja do lote <b>${esc((_lt.nome||'Lote').replace(/^\[BASE\]\s*/,''))}</b>`:'Oportunidade'} · fase <b>${esc(colNome(o.colId))}</b> <span style="color:var(--tx3)">· ${esc((PAPEL_DEF[papel]||{}).nome||papel)}</span></div>
+        <div class="chiprow">${_lt?'<span class="temp" style="background:var(--pri);color:#fff">Loja do lote</span>':''}<span class="temp ${tc}">${esc(o.temperatura||'Morno')}</span>${ts?`<span class="temp" style="background:var(--pri-bg);color:var(--pri)">${esc(TSL[ts]||ts)}</span>`:''}</div></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap">${acts}</div>
     </div>
     <div class="detail-grid">
@@ -1445,16 +1463,26 @@ function renderLoteDetail(){
   if(isLev){
     main = renderLevMain(l,b,lev);
   } else {
+    // cada loja mostra a FASE em que está (ela anda sozinha agora) e abre a tela de card dela
+    const foraDeFase = b ? us.filter(u=>u.colId!==b.colId) : [];
     const unidades = us.length
-      ? us.map(u=>`<a class="lu" onclick="abrirOrcNoShell('?opp=${u.id}')" style="cursor:pointer;display:flex;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;margin-bottom:6px;text-decoration:none;color:var(--tx)"><span style="display:flex;align-items:center;gap:7px;min-width:0"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">store</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</span></span><span style="font-weight:700;white-space:nowrap;font-variant-numeric:tabular-nums">${idx[u.id]?fmtBRL(idx[u.id].total):'—'}</span></a>`).join('')
+      ? us.map(u=>{ const dif=b&&u.colId!==b.colId;
+          return `<div class="lu" onclick="selOpp('${u.id}')" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 11px;border:1px solid var(--line);border-radius:9px;margin-bottom:6px;color:var(--tx)" title="abrir a tela desta loja">
+            <span style="display:flex;align-items:center;gap:7px;min-width:0"><span class="material-symbols-rounded" style="font-size:16px;color:var(--pri)">store</span><span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc((contempl(u.contempladoId)&&contempl(u.contempladoId).nome)||u.objeto||'unidade')}</span></span>
+            <span style="display:flex;align-items:center;gap:9px;white-space:nowrap">
+              <span class="lufase" style="${dif?'background:var(--pri);color:#fff;border-color:var(--pri)':''}">${esc(colNome(u.colId))}</span>
+              <span style="font-weight:700;font-variant-numeric:tabular-nums">${idx[u.id]?fmtBRL(idx[u.id].total):'—'}</span>
+              <button class="luprop" onclick="event.stopPropagation();abrirOrcNoShell('?opp=${u.id}')" title="Abrir direto a proposta desta loja"><span class="material-symbols-rounded">request_quote</span></button>
+            </span></div>`; }).join('')
       : '<div class="dmv-empty">Nenhuma unidade ainda — gere a partir do levantamento ou adicione na mestra.</div>';
+    const avisoFase = foraDeFase.length ? `<div class="dmv-hint"><span class="material-symbols-rounded">alt_route</span><b>${foraDeFase.length}</b> loja(s) em fase diferente da do lote. O quadro mostra o lote pela fase da mestra — a loja só aparece aqui dentro.</div>` : '';
     const gerar = pend>0 ? `<div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">bolt</span>Levantamento pronto</div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--pri-bg,#efeafc);border:1px solid var(--line2);border-radius:10px;padding:11px 12px;font-size:12.5px;color:var(--tx2)"><span><b>${pend}</b> candidata(s) do levantamento ainda não viraram unidade.</span><button class="btn btn-s btn-p" style="margin-left:auto" onclick="openGerarLev('${l.id}')"><span class="material-symbols-rounded">rocket_launch</span>Selecionar e gerar unidades</button></div></div>` : '';
     main = `<div class="dinfo">${di('Contratante',ct?ct.nome:'')}${di('Total do lote',fmtBRL(tot))}${di('Unidades',us.length+' loja(s)')}</div>
       ${b?aprovDetalheHTML(b):''}
       ${b?oppFormHTML(b):''}
       ${gerar}
-      <div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">store</span>Unidades do lote <span style="color:var(--tx3);font-weight:500">— clique numa loja p/ abrir a proposta dela</span></div>${unidades}</div>`;
+      <div class="dsec"><div class="dsec-t"><span class="material-symbols-rounded">store</span>Unidades do lote <span style="color:var(--tx3);font-weight:500">— clique numa loja p/ abrir a tela dela</span></div>${unidades}${avisoFase}</div>`;
   }
   el.innerHTML=`<div class="detail">
     <div class="dhead">
