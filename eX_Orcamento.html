@@ -1621,6 +1621,11 @@ function togLinhaOff(blk,id){
   const r=(S[blk]||[]).find(x=>x.id===id); if(!r)return;
   r.off=!r.off;
   if(!r.off && !(num(r.qtd)>0)) r.qtd=1;   // voltou pra proposta: qtd 1, pra não entrar valendo zero sem ninguém ver
+  // bloco fora do cálculo + linha voltando pra proposta = item que o cliente vê e não paga. Liga o bloco junto.
+  if(!r.off && typeof blocoAtivo==="function" && !blocoAtivo(blk)){
+    S.blocoOn=S.blocoOn||{}; S.blocoOn[blk]=true;
+    try{ cloudMsg("o bloco \"" + (((BLKS.find(b=>b.key===blk)||{}).titulo)||blk) + "\" voltou a somar no total"); }catch(_){}
+  }
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc();
 }
 /* A UF da proposta, para não trazer deslocamento de estado errado.
