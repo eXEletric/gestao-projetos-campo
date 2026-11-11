@@ -79,6 +79,58 @@ function vAtual(){ const r=revTrab(); return vivas().find(v=>v.revisao===r)||nul
 function ultimaEnviada(){ return vivas().filter(v=>['enviada','aprovada','substituida'].includes(v.status)).sort((a,b)=>b.revisao-a.revisao)[0]||null; }
 function travada(){ if(!S)return false; if(aprovada())return true; const v=vAtual(); return !!v && v.status!=='descartada'; }   // preparada/enviada/aprovada → não edita
 
+/* ---------- corpo vivo × revisão congelada ----------
+   A folha trava save() numa revisão enviada, mas o corpo pode ser alterado por fora
+   (SQL, importação, script). Aí a tela diria "é assim que o cliente recebeu" sem ser verdade.
+   Aqui o snapshot congelado é comparado com o que está na tela, e o banner avisa. */
+const _n2=v=>Math.round((num(v)||0)*100)/100;
+const _txt=v=>(v===null||v===undefined)?'':String(v);
+const _unit=l=>_n2(l&&l.usarBase===false?l.custoAlt:l.custoBase);
+// só o que o cliente vê: cada linha dos blocos + os campos do documento. Nada de _total/_rev/envio*.
+function assinaturaCorpo(o){
+  if(!o) return '';
+  const linha=l=>[_txt(l.desc),_txt(l.detalhe),_txt(l.und),_txt(l.marca),_n2(l.qtd),_unit(l),_n2(l.margem)].join('\u0001');
+  const blocos=BLKS.map(b=>{
+    const on=!(o.blocoOn && o.blocoOn[b.key]===false);
+    return b.key+':'+(on?(o[b.key]||[]).map(linha).join('\u0002'):'off');
+  }).join('\u0003');
+  const campos=[_txt(o.solTitulo),_txt(o.descGeral),o.descGeralOn!==false,_n2(o.impostoPct),!!o.impostoIncluso,
+                _n2(o.descontoPct),_n2(o.descontoVal),_txt(o.validadeISO),_txt(o.prazoDias),_n2(o.valorCombinado)].join('\u0001');
+  return blocos+'\u0004'+campos;
+}
+async function carregarSnap(){
+  const v=vAtual(); if(!v) return;
+  ENV._snapId=v.id; ENV._snap=null; ENV._snapAssin=null;
+  try{ const {data,error}=await SB.from('orcamento_versoes').select('dados').eq('id',v.id).single();
+    if(error) throw error;
+    ENV._snap=(data&&data.dados)||null; ENV._snapAssin=ENV._snap?assinaturaCorpo(ENV._snap):null;
+  }catch(e){ console.error('snapshot da revisão',e); }
+}
+// true = o corpo na tela não é mais o que foi congelado nesta revisão
+function divergiu(){ try{ return !!(ENV._snapAssin && S && assinaturaCorpo(S)!==ENV._snapAssin); }catch(e){ return false; } }
+// soma de um bloco como o cliente vê (null = bloco desligado)
+function _somaBloco(o,k){ if(!o) return null; if(o.blocoOn && o.blocoOn[k]===false) return null;
+  return (o[k]||[]).reduce((a,l)=>a+(num(l.qtd)||0)*_unit(l),0); }
+function verDivergencia(){
+  const v=vAtual(), snap=ENV._snap; if(!v||!snap){ fechar(); return; }
+  const cel=x=>x===null?'<i>desligado</i>':fmt(_n2(x));
+  const rows=BLKS.map(b=>{ const a=_somaBloco(snap,b.key), c=_somaBloco(S,b.key);
+    if(a===c) return '';
+    return `<tr><td>${esc(b.titulo)}</td><td>${cel(a)}</td><td class="difv">${cel(c)}</td></tr>`; }).join('');
+  const CAMPOS=[['solTitulo','Título da solução'],['descGeral','Escopo e premissas'],['impostoPct','Imposto (%)'],
+    ['impostoIncluso','Impostos inclusos'],['descontoPct','Desconto (%)'],['descontoVal','Desconto (R$)'],
+    ['validadeISO','Validade'],['prazoDias','Prazo de execução']];
+  const fr=CAMPOS.filter(c=>_txt(snap[c[0]])!==_txt(S[c[0]]))
+    .map(c=>`<tr><td>${esc(c[1])}</td><td colspan="2" class="difv">alterado</td></tr>`).join('');
+  const prox=maxRev()+1;
+  modal(`<div class="envh">${ms('report')}O corpo mudou depois do envio da R${v.revisao}<button class="envx" onclick="EXENV.fechar()">${ms('close')}</button></div>
+    <p class="envp">A <b>R${v.revisao}</b> continua guardada no histórico exatamente como o cliente recebeu, com o PDF. O que está na tela é alteração posterior e <b>ninguém recebeu ainda</b>.</p>
+    <table class="envdif"><thead><tr><th>O que</th><th>Na R${v.revisao} enviada</th><th>Na tela agora</th></tr></thead>
+      <tbody>${rows}${fr}<tr class="tot"><td>Total</td><td>${fmt(_n2(v.total))}</td><td class="difv">${fmt(_n2(totalEnvio()))}</td></tr></tbody></table>
+    <p class="envp">Para o cliente receber isto, crie a <b>R${prox}</b>: ela nasce com o corpo que está aqui — <b>nada se perde</b>.</p>
+    <div class="envact"><button class="envbtn" onclick="EXENV.fechar()">Fechar</button><button class="envbtn pri" onclick="EXENV.criarRevisao(true)">${ms('edit_document')}Criar R${prox}</button></div>`,true);
+}
+
 /* ---------- ganchos na folha (sem editar o arquivo principal) ---------- */
 const _renderBanner=window.renderBanner, _setMode=window.setMode, _save=window.save;
 window.renderBanner=function(){ _renderBanner.apply(this,arguments); try{ decorar(); }catch(e){ console.error('envio banner',e); } };
@@ -121,6 +173,12 @@ function decorar(){
   if(CLOUD && ORC_ID && !ENV.carregado && !ENV.carregando){
     carregarVersoes().then(()=>{ if(S && S.envioRev==null && maxRev()) S.envioRev=maxRev(); window.renderBanner(); if(travada()) _setMode('view'); });
   }
+  // snapshot da revisão em trabalho: é o que diz se o corpo na tela ainda é o que o cliente recebeu
+  if(CLOUD && ORC_ID && ENV.carregado && !ENV._snapCarregando){ const vs=vAtual();
+    if(vs && ENV._snapId!==vs.id){ ENV._snapCarregando=true;
+      carregarSnap().then(()=>{ ENV._snapCarregando=false; window.renderBanner(); },
+                          ()=>{ ENV._snapCarregando=false; }); }
+  }
   const n=revTrab(), v=vAtual(), ult=ultimaEnviada(), hist=ENV.versoes.length;
   let h='';
   if(aprovada()){
@@ -142,6 +200,8 @@ function decorar(){
   if(OPP && CLOUD) h+=`<button class="btn btn-s env-irfunil" onclick="EXENV.irFunil()" title="Abrir o card desta oportunidade no funil">${ms('view_kanban')}Abrir no funil</button>`;
   const pend=pendentes().length;
   if(pend) h=`<button class="envchip newr" onclick="EXENV.irTrat()" title="Classificar nas tratativas">${ms('mark_email_unread')}${pend} resposta${pend>1?'s':''} do cliente</button>`+h;
+  // o corpo foi alterado por fora depois de congelar: a tela não é mais o que o cliente recebeu
+  if(divergiu()) h=`<button class="envchip dif" onclick="EXENV.verDivergencia()" title="O corpo na tela não é o que foi congelado na R${n}. Clique para ver o que mudou.">${ms('report')}corpo alterado depois do envio</button>`+h;
   box.innerHTML=h;
   // proposta já enviada pelo sistema mas oportunidade parada antes de "negociação" (ex.: enviada antes desta regra): avança uma vez
   if(CLOUD && ORC_ID && ENV.carregado && !ENV._faseOk && !ehLote()){ const u=ultimaEnviada();
@@ -162,7 +222,9 @@ function decorar(){
   try{ faixaLeitura(); }catch(e){}
   const lbl=document.querySelector('#previewBar .pv-lbl');
   if(lbl){ if(!lbl.dataset.orig) lbl.dataset.orig=lbl.innerHTML;
-    lbl.innerHTML=trv?`${ms('lock')}${aprovada()?'Proposta aprovada':'Proposta enviada'} · travada · é assim que o cliente recebeu`:lbl.dataset.orig; }
+    lbl.innerHTML=trv?(divergiu()
+      ?`${ms('report')}${aprovada()?'Proposta aprovada':'Proposta enviada'} · travada · <b>alterada depois do envio: não é o que o cliente recebeu</b>`
+      :`${ms('lock')}${aprovada()?'Proposta aprovada':'Proposta enviada'} · travada · é assim que o cliente recebeu`):lbl.dataset.orig; }
   if(CLOUD && ORC_ID && !ENV.evCarregado && !ENV.evCarregando){ ENV.evCarregando=true; carregarEventos().finally(()=>{ ENV.evCarregando=false; ENV.evCarregado=true; renderTrat(); const b=document.querySelector('#oppBanner .ob-st'); if(b&&pendentes().length) decorar(); }); }
   renderTrat();
 }
@@ -935,6 +997,7 @@ ENV.irFunil=function(){
 /* ---------- API p/ os onclick ---------- */
 Object.assign(ENV,{abrirEnvio,preparar,confirmar,descartar,retomar,criarRevisao,
   historico,fechar,setF,fix,fixValidade,abrirEmail,baixarPDF,copiarTexto,ck,travada,revTrab,carregarVersoes,
+  verDivergencia,divergiu,assinaturaCorpo,
   modoManual,enviarSistema,checarSistema,carregarEventos,renderTrat,irTrat,classificar,revDoAjuste,contatoUI,salvarContato,anular,abrirAnexo,verEmail,verPDF,abrirPDFPrep,gerarPDF});
 
 /* ---------- estilos ---------- */
@@ -956,6 +1019,13 @@ const css=document.createElement('style'); css.textContent=`
 .envchip{display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:8px;background:var(--surf2,#f1efe8);color:var(--tx2,#555);white-space:nowrap}
 .envchip .material-symbols-rounded{font-size:15px}
 .envchip.sent{background:#e7f0fa;color:var(--blue,#185fa5)}.envchip.warn{background:#faeeda;color:var(--amber,#ba7517)}.envchip.okc{background:#e9f2dd;color:var(--green,#3b6d11)}.envchip.off{opacity:.7}
+.envchip.dif{background:var(--red,#b3261e);color:#fff;border:none;cursor:pointer}
+.envdif{width:100%;border-collapse:collapse;margin:10px 0;font-size:12.5px}
+.envdif th{text-align:left;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--tx2,#666);padding:6px 8px;border-bottom:1px solid var(--bd,#ddd)}
+.envdif td{padding:6px 8px;border-bottom:1px solid var(--bd2,#eee)}
+.envdif th:not(:first-child),.envdif td:not(:first-child){text-align:right;white-space:nowrap}
+.envdif .difv{font-weight:800;color:var(--red,#b3261e)}
+.envdif tr.tot td{border-top:2px solid var(--bd,#ddd);border-bottom:none;font-weight:800}
 #oppBanner .ob-st{display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 #envOv{position:fixed;inset:0;z-index:900;background:rgba(20,14,40,.55);display:none;overflow:auto;padding:24px 14px}
 #envOv.on{display:block}

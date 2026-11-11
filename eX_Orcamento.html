@@ -6895,6 +6895,6 @@ initOrc();
 (function(){ var marca=function(root){ (root.querySelectorAll?root.querySelectorAll('.material-symbols-rounded'):[]).forEach(function(el){ var t=(el.textContent||'').trim(); el.classList.toggle('cad',t==='lock'); el.classList.toggle('cad-aberto',t==='lock_open'); }); };
   try{ marca(document); new MutationObserver(function(ms){ ms.forEach(function(m){ if(m.type==='characterData'){ var p=m.target.parentElement; if(p) marca(p.parentElement||p); } else m.addedNodes.forEach(function(n){ if(n.nodeType===1){ marca(n); if(n.classList&&n.classList.contains('material-symbols-rounded')) marca(n.parentElement||n); } else if(n.nodeType===3&&n.parentElement){ marca(n.parentElement.parentElement||n.parentElement); } }); }); }).observe(document.body,{childList:true,subtree:true,characterData:true}); }catch(e){} })();
 </script>
-<script src="eX_Envio.js?v=20261109a"></script><!-- envio (o ?v= sobe a cada mudança NESTE arquivo: sem ele o navegador serve a cópia em cache depois do deploy) --><!-- envio da proposta por e-mail + revisões congeladas (módulo à parte; ver eX_Envio.js) -->
+<script src="eX_Envio.js?v=20261111a"></script><!-- envio (o ?v= sobe a cada mudança NESTE arquivo: sem ele o navegador serve a cópia em cache depois do deploy) --><!-- envio da proposta por e-mail + revisões congeladas (módulo à parte; ver eX_Envio.js) -->
 </body>
 </html>
