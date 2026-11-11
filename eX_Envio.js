@@ -32,6 +32,14 @@ const emailOk=s=>/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+$/.test(String(s||'').trim());
 const listaEmails=s=>String(s||'').split(/[,;\s]+/).map(x=>x.trim()).filter(Boolean);
 const ms=(i,st)=>`<span class="material-symbols-rounded"${st?` style="${st}"`:''}>${i}</span>`;
 const safeKey=s=>String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').replace(/[^A-Za-z0-9_.-]+/g,'-');
+// NOME QUE A PESSOA VE ao salvar o PDF e no anexo do e-mail (11/11, dono: "no salvamento nao vao
+// os detalhes do nome"). Mesma fonte do nome da impressao, para nao haver dois nomes para a mesma coisa.
+// ATENCAO: o CAMINHO no storage nao usa isto -- pdfDaRevisao() reconstroi pelo codigo, entao mexer la
+// quebraria o link dos PDFs ja gravados. Aqui e so rotulo.
+function nomeArqPDF(sufixo){
+  try{ if(typeof nomeDocumento==='function'){ const n=nomeDocumento(sufixo); if(n) return n+'.pdf'; } }catch(e){}
+  return codigoFull()+(sufixo?'_'+sufixo:'')+'.pdf';
+}
 function codigoFull(){ let c=S.numero||''; if(S.ofertaSigla){ c+='-'+S.ofertaSigla; if(S.ofertaSeq) c+='-'+String(S.ofertaSeq).padStart(2,'0'); } return c; }
 // lote (15/09): a BASE do lote é a proposta que vai ao cliente (documento do lote, valor = soma das lojas); a LOJA não é enviada sozinha
 function ehLote(){ try{ return typeof isLoteUnit==='function'&&isLoteUnit(); }catch(e){ return false; } }
@@ -454,7 +462,7 @@ async function gerarPDF(nome){
 }
 // pré-visualizar o PDF sem congelar nada (botão na tela de envio)
 async function verPDF(){ const b=$('envVerPdf'); if(b){ b.disabled=true; b.innerHTML=ms('hourglass_top')+'Gerando…'; }
-  try{ try{ recalc(); }catch(_){} const blob=await gerarPDF(codigoFull()+'_previa.pdf'); const u=URL.createObjectURL(blob); window.open(u,'_blank'); setTimeout(()=>URL.revokeObjectURL(u),120000); }
+  try{ try{ recalc(); }catch(_){} const blob=await gerarPDF(nomeArqPDF('previa')); const u=URL.createObjectURL(blob); window.open(u,'_blank'); setTimeout(()=>URL.revokeObjectURL(u),120000); }
   catch(e){ console.error('prévia PDF',e); toast('Não consegui gerar a prévia: '+esc(e.message||e)); }
   finally{ const b2=$('envVerPdf'); if(b2){ b2.disabled=false; b2.innerHTML=ms('picture_as_pdf')+'Ver o PDF antes'; } } }
 function abrirPDFPrep(){ const p=ENV.prep; if(!p) return; if(p.blob){ const u=URL.createObjectURL(p.blob); window.open(u,'_blank'); setTimeout(()=>URL.revokeObjectURL(u),120000); } else if(p.url) window.open(p.url,'_blank'); }
@@ -470,7 +478,7 @@ async function preparar(){
     try{ recalc(); }catch(e){}
     S.envioRev=n;
     progresso('Gerando o PDF…');
-    const pdfNome=`${cod}_R${n}.pdf`;
+    const pdfNome=nomeArqPDF('R'+n);
     const blob=await gerarPDF(pdfNome);
     progresso('Congelando a R'+n+'…');
     await SB.from('orcamento_versoes').update({status:'descartada'}).eq('orcamento_id',ORC_ID).eq('status','preparada');   // tentativa anterior abandonada
@@ -607,7 +615,7 @@ async function retomar(){   // voltou depois (recarregou a página): reconstrói
   await checarSistema();
   if(!ENV.prep){ ENV.manual=!ENV.sistema; const v=vAtual(); if(!v||v.status!=='preparada') return;
     let url=null; if(v.pdf_path&&v.pdf_path.indexOf('anexos:')===0){ try{ const {data}=await SB.storage.from('anexos').createSignedUrl(v.pdf_path.slice(7),3600); url=data&&data.signedUrl; }catch(e){} }
-    ENV.prep={id:v.id,n:v.revisao,cod:v.codigo||codigoFull(),f:{para:v.para||'',cc:v.cc||'',assunto:v.assunto||'',corpo:v.corpo||''},pdfNome:`${v.codigo||codigoFull()}_R${v.revisao}.pdf`,blob:null,url,abrNova:false}; }
+    ENV.prep={id:v.id,n:v.revisao,cod:v.codigo||codigoFull(),f:{para:v.para||'',cc:v.cc||'',assunto:v.assunto||'',corpo:v.corpo||''},pdfNome:nomeArqPDF('R'+v.revisao),blob:null,url,abrNova:false}; }
   renderPasso2();
 }
 async function confirmar(){ const p=ENV.prep; if(!p||!(p.ck1&&p.ck2)) return;
@@ -996,7 +1004,7 @@ ENV.irFunil=function(){
 
 /* ---------- API p/ os onclick ---------- */
 Object.assign(ENV,{abrirEnvio,preparar,confirmar,descartar,retomar,criarRevisao,
-  historico,fechar,setF,fix,fixValidade,abrirEmail,baixarPDF,copiarTexto,ck,travada,revTrab,carregarVersoes,
+  historico,fechar,setF,fix,fixValidade,abrirEmail,baixarPDF,copiarTexto,ck,travada,revTrab,carregarVersoes,nomeArqPDF,
   verDivergencia,divergiu,assinaturaCorpo,
   modoManual,enviarSistema,checarSistema,carregarEventos,renderTrat,irTrat,classificar,revDoAjuste,contatoUI,salvarContato,anular,abrirAnexo,verEmail,verPDF,abrirPDFPrep,gerarPDF});
 

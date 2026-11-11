@@ -253,7 +253,7 @@ body.viewing .cjhint{display:none}
       <button id="mEdit" class="on" onclick="setMode('edit')"><span class="material-symbols-rounded">edit</span>Editar</button>
     </div>
     <button class="btn" onclick="window.open('eX_Barramento_Precos.html','_blank')" title="Tabela de preços-padrão (admin)"><span class="material-symbols-rounded">tune</span>Preços</button>
-    <button class="btn" onclick="window.print()"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
+    <button class="btn" onclick="imprimirBarr()"><span class="material-symbols-rounded">print</span>Imprimir / PDF</button>
     <button class="btn" onclick="resetDemo()" title="Recarregar o exemplo"><span class="material-symbols-rounded">restart_alt</span>Recarregar exemplo</button>
   </div>
   <div class="sub">Folha de cotação de <b>confecção de barramentos de cobre</b> — cadastro CopperBarras. O custo do cobre é calculado por peso (kg/m × comprimento) sobre o <b>preço de mercado</b> que você define abaixo.</div>
@@ -904,6 +904,10 @@ function recalc(){
 }
 
 /* ---------- modo ver/editar ---------- */
+// o nome sugerido ao salvar vinha do <title> fixo; agora leva o numero do orcamento
+function imprimirBarr(){ try{ var n=(S&&S.numero&&S.numero.trim())||'';
+    document.title=(n?n+' - ':'')+'Barramentos'; }catch(e){}
+  window.print(); }
 function setMode(m){
   document.body.classList.toggle('viewing',m==='view');
   document.body.classList.toggle('editing',m==='edit');

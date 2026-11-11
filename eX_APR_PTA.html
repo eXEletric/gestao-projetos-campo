@@ -639,7 +639,13 @@ function showDoc(t){
   document.getElementById('tbHint').textContent="kit por obra · documento ativo: "+t;
   document.querySelectorAll('.doc.active textarea').forEach(autoGrow);
 }
-function printActive(){ document.querySelectorAll('.doc.active textarea').forEach(autoGrow); window.print(); }
+function printActive(){ document.querySelectorAll('.doc.active textarea').forEach(autoGrow);
+  // o navegador sugere o nome pelo titulo da aba: sem isto todo PDF saia "eX · SST — Kit de documentos por obra"
+  try{ var o=(CTX&&CTX.obra)||{};
+    var n=[curDoc||'SST', o.contemplado||o.filial||CTX.obraId||'obra', new Date().toISOString().slice(0,10)]
+      .filter(Boolean).join(' - ').replace(/[\\\/:*?"<>|]/g,'-').replace(/\s+/g,' ').trim();
+    if(n) document.title=n.slice(0,120); }catch(e){}
+  window.print(); }
 
 /* ---------- coleta / persistência ---------- */
 function collect(){

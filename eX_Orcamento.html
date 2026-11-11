@@ -5061,14 +5061,19 @@ function docMacroHtml(_secTit,_td){ var mt=macroTotal(); if(!(mt>0))return ''; v
    do orçamento, conforme aparece na lista, e de preferência o nome do cliente e cliente contemplado").
    No "Salvar como PDF" o navegador sugere o nome a partir do document.title — que era sempre "eX Orçamento".
    Trocamos o título só durante a impressão e devolvemos depois. */
-function nomeDocumento(){
-  var p=[], num=String(S.numero||'').trim();
-  if(num) p.push(num);
+function nomeDocumento(sufixo){
+  var p=[];
+  // o codigo completo (numero + oferta/sequencia) e o que aparece na lista; cai no numero cru se ainda nao montou
+  var cod=((document.getElementById('codigoFull')||{}).textContent||'').trim();
+  if(!cod||cod==='—') cod=String(S.numero||'').trim();
+  if(cod) p.push(cod+(sufixo?'_'+sufixo:''));
   if(S.cliNome) p.push(S.cliNome);
   var alvo=S.finNome || S.finRede || (typeof LOTE_ROW!=='undefined' && LOTE_ROW && LOTE_ROW.nome) || S.solTitulo || '';
   alvo=String(alvo).replace(/^\[BASE\]\s*/,'').trim();
   if(alvo) p.push(alvo);
-  return p.join(' - ').replace(/[\\\/:*?"<>|]/g,'-').replace(/\s+/g,' ').trim() || 'Proposta';
+  var n=p.join(' - ').replace(/[\\\/:*?"<>|]/g,'-').replace(/\s+/g,' ').trim();
+  if(n.length>120) n=n.slice(0,120).replace(/[\s-]+$/,'');   // nome de arquivo nao pode estourar
+  return n || (sufixo?('Proposta_'+sufixo):'Proposta');
 }
 /* O título NÃO volta atrás depois de imprimir (corrigido 09/11, 2ª tentativa).
    A 1ª versão devolvia "eX Orçamento" no evento afterprint — só que o Chrome dispara esse evento ao FECHAR a
@@ -5737,8 +5742,15 @@ function relRender(){ var ov=document.getElementById('relOv');
   ov.querySelector('#relX').onclick=relFechar;
   ov.querySelector('#relImp').onclick=function(){ imprimirComNome(); };
   ov.querySelector('#relPdf').onclick=relPdfSalvar; }
-function relNomeArq(){ var base=(REL_CTX.tipo==='loja')?('Relatorio_'+REL_CTX.num):'Relatorio_grupo';
-  return base+'_'+(REL_CTX.modo==='interno'?'interno':'cliente')+'_'+new Date().toISOString().slice(0,10)+'.pdf'; }
+function relNomeArq(){
+  var p=[(REL_CTX.tipo==='loja')?('Relatorio '+REL_CTX.num):'Relatorio do grupo'];
+  if(S.cliNome) p.push(S.cliNome);
+  var lote=(typeof LOTE_ROW!=='undefined' && LOTE_ROW && LOTE_ROW.nome)||'';
+  lote=String(lote).replace(/^\[BASE\]\s*/,'').trim(); if(lote) p.push(lote);
+  p.push(REL_CTX.modo==='interno'?'interno':'cliente');
+  p.push(new Date().toISOString().slice(0,10));
+  var n=p.join(' - ').replace(/[\\\/:*?"<>|]/g,'-').replace(/\s+/g,' ').trim();
+  return (n.length>120?n.slice(0,120).replace(/[\s-]+$/,''):n)+'.pdf'; }
 async function relPdfSalvar(){ var doc=document.getElementById('relDoc'); if(!doc)return;
   var b=document.getElementById('relPdf'); if(b){ b.disabled=true; b.textContent='gerando…'; }
   try{ if(!window.html2pdf){ await new Promise(function(res,rej){ var s=document.createElement('script'); s.src='https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js'; s.onload=res; s.onerror=rej; document.head.appendChild(s); }); }
@@ -6912,6 +6924,6 @@ initOrc();
 (function(){ var marca=function(root){ (root.querySelectorAll?root.querySelectorAll('.material-symbols-rounded'):[]).forEach(function(el){ var t=(el.textContent||'').trim(); el.classList.toggle('cad',t==='lock'); el.classList.toggle('cad-aberto',t==='lock_open'); }); };
   try{ marca(document); new MutationObserver(function(ms){ ms.forEach(function(m){ if(m.type==='characterData'){ var p=m.target.parentElement; if(p) marca(p.parentElement||p); } else m.addedNodes.forEach(function(n){ if(n.nodeType===1){ marca(n); if(n.classList&&n.classList.contains('material-symbols-rounded')) marca(n.parentElement||n); } else if(n.nodeType===3&&n.parentElement){ marca(n.parentElement.parentElement||n.parentElement); } }); }); }).observe(document.body,{childList:true,subtree:true,characterData:true}); }catch(e){} })();
 </script>
-<script src="eX_Envio.js?v=20261111a"></script><!-- envio (o ?v= sobe a cada mudança NESTE arquivo: sem ele o navegador serve a cópia em cache depois do deploy) --><!-- envio da proposta por e-mail + revisões congeladas (módulo à parte; ver eX_Envio.js) -->
+<script src="eX_Envio.js?v=20261111b"></script><!-- envio (o ?v= sobe a cada mudança NESTE arquivo: sem ele o navegador serve a cópia em cache depois do deploy) --><!-- envio da proposta por e-mail + revisões congeladas (módulo à parte; ver eX_Envio.js) -->
 </body>
 </html>

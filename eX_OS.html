@@ -68,7 +68,7 @@ async function carregar(){
 }
 function render(){ const o=OS, e=o.escopo||{};
   const itens=(a,t)=>a&&a.length?`<div class="sec">${t}</div><table><tr><th>Descrição</th><th style="text-align:right">Qtd</th></tr>${a.map(x=>`<tr><td>${esc(x.desc)}</td><td class="q">${esc(x.qtd)} ${esc(x.und)}</td></tr>`).join('')}</table>`:'';
-  document.title=o.numero+' · eX Eletric';
+  document.title=[o.numero,o.contratante_nome,o.loja_nome||o.titulo].filter(Boolean).join(' - ').replace(/[\\\/:*?"<>|]/g,'-').replace(/\s+/g,' ').trim().slice(0,120)||(o.numero+' · eX Eletric');
   document.getElementById('app').innerHTML=`<div class="doc">
     <div class="hd"><div><div class="logo">e<b>X</b> Eletric</div><div style="font-size:11.5px;color:var(--tx3)">Ordem de serviço interna</div></div>
       <div><h1>ORDEM DE SERVIÇO</h1><div class="n">${esc(o.numero)}</div><div style="text-align:right;margin-top:3px"><span class="st ${o.status}">${o.status==='emitida'?'aguardando assinatura':o.status}</span></div></div></div>
