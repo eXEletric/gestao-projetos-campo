@@ -1001,9 +1001,10 @@ body.viewing .in::placeholder,body.viewing .cin::placeholder,body.viewing .pin::
 tr.lnoff{opacity:.55}
 tr.lnoff .svc input.cin,tr.lnoff .svc .svcnm{text-decoration:line-through;color:var(--tx3)}
 tr.lnoff .money,tr.lnoff .preco{color:var(--tx3)}
-.lnvis{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:1px solid var(--line2);background:var(--surf);border-radius:7px;cursor:pointer;color:#3a3550;padding:0}
-.lnvis .material-symbols-rounded{font-size:16px}
-.lnvis.off{border-style:dashed;color:#8b86a1;background:transparent}
+.lnvis{display:inline-flex;align-items:center;gap:3px;border:1px solid var(--line2);background:var(--surf);border-radius:20px;cursor:pointer;color:#8b86a1;padding:1px 6px;margin-left:6px;font:inherit;font-size:10px;font-weight:700;vertical-align:middle;opacity:.45}
+.lnvis .material-symbols-rounded{font-size:14px}
+.lnvis:hover{opacity:1;border-color:var(--pri);color:var(--pri)}
+.lnvis.off{opacity:1;border-style:dashed;border-color:var(--amber);color:#8a5a00;background:transparent}
 .tcbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 6px;padding:7px 10px;border:1px dashed var(--line2);border-radius:10px;background:var(--surf);font-size:11.5px;color:var(--tx2)}
 .tcbar b{color:var(--tx1);font-size:12px}
 .tcbar .tcic{font-size:16px;color:var(--pri)}
@@ -1614,7 +1615,7 @@ function rfqShow(blk){ return !!(S.listaShow && S.listaShow[blk]); }
 function toggleRfqShow(blk){ S.listaShow=S.listaShow||{}; S.listaShow[blk]=!S.listaShow[blk]; save(); renderBlk(BLKS.find(b=>b.key===blk)); }
 function lnVisBtn(blk,r){
   const on=!r.off;
-  return '<button class="lnvis'+(on?'':' off')+'" onclick="togLinhaOff(\''+blk+'\',\''+r.id+'\')" title="'+(on?'Na proposta — clique para ocultar (sai do PDF e do total)':'Oculta — clique para incluir na proposta')+'"><span class="material-symbols-rounded">'+(on?'visibility':'visibility_off')+'</span></button>';
+  return '<button class="lnvis'+(on?'':' off')+'" onclick="togLinhaOff(\''+blk+'\',\''+r.id+'\')" title="'+(on?'Está na proposta — clique para ocultar (sai do PDF e do total)':'Oculta — clique para incluir na proposta')+'"><span class="material-symbols-rounded">'+(on?'visibility':'visibility_off')+'</span>'+(on?'':'incluir')+'</button>';
 }
 function togLinhaOff(blk,id){
   const r=(S[blk]||[]).find(x=>x.id===id); if(!r)return;
@@ -1637,14 +1638,15 @@ function tabCliCarregarTudo(blk){
   });
   S.listaShow=S.listaShow||{}; S.listaShow[blk]=true;
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc();
-  cloudMsg(faltam.length+' item(ns) da '+tabCliNome()+' disponíveis neste bloco');
+  cloudMsg('Trouxe '+(faltam.length===1?'1 item':faltam.length+' itens')+' da tabela — ficam ocultos até você usar');
 }
 function tabCliBarra(blk){
   const tot=tabCliRows(blk).length; if(!tot) return '';
   const falt=tabCliFaltantes(blk).length, oc=(S[blk]||[]).filter(r=>r&&r.off).length, mostra=rfqShow(blk);
-  let h='<div class="tcbar noprint"><span class="material-symbols-rounded tcic">request_quote</span><b>'+esc(tabCliNome())+'</b><span class="tccnt">'+tot+' item(ns) na tabela</span>';
-  if(falt) h+='<button class="tcbtn" onclick="tabCliCarregarTudo(\''+blk+'\')" title="Traz os itens da tabela para dentro deste bloco, ocultos e com quantidade 0"><span class="material-symbols-rounded">playlist_add</span>Trazer '+falt+' que falta'+(falt>1?'m':'')+'</button>';
-  if(oc) h+='<button class="tcbtn" onclick="toggleRfqShow(\''+blk+'\')"><span class="material-symbols-rounded">'+(mostra?'visibility_off':'visibility')+'</span>'+(mostra?'recolher os '+oc+' ocultos':'mostrar os '+oc+' ocultos')+'</button>';
+  const pl=(n,um,muitos)=>n+' '+(n===1?um:muitos);
+  let h='<div class="tcbar noprint"><span class="material-symbols-rounded tcic">request_quote</span><b>'+esc(tabCliNome())+'</b><span class="tccnt">'+pl(tot,'item','itens')+' na tabela</span>';
+  if(falt) h+='<button class="tcbtn" onclick="tabCliCarregarTudo(\''+blk+'\')" title="Traz os itens da tabela para dentro deste bloco, ocultos e com quantidade 0"><span class="material-symbols-rounded">playlist_add</span>Trazer '+pl(falt,'o que falta','os que faltam')+'</button>';
+  if(oc) h+='<button class="tcbtn" onclick="toggleRfqShow(\''+blk+'\')"><span class="material-symbols-rounded">'+(mostra?'visibility_off':'visibility')+'</span>'+(mostra?'recolher ':'mostrar ')+(oc===1?'o oculto':'os '+oc+' ocultos')+'</button>';
   else if(!falt) h+='<span class="tccnt ok">lista inteira em uso</span>';
   return h+'</div>';
 }
@@ -2599,7 +2601,7 @@ function renderBlk(cfg){
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}"${r.off?' class="lnoff"':''}>
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
-        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${detLinha(cfg,r)}${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}${adicChipHtml(cfg,r)}</td>
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}${lnVisBtn(cfg.key,r)}</div>${detLinha(cfg,r)}${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}${adicChipHtml(cfg,r)}</td>
         ${cfg.key==='servicos'?`<td class="cat" style="font-size:12px;color:var(--tx2)">${esc(svcCatOf(r))}</td>`:''}
         ${marcaCell}
         ${cfg.key==='servicos'
@@ -2613,7 +2615,7 @@ function renderBlk(cfg){
         <td class="r pint"><span class="mgimp" id="tm_${r.id}">${fmtMg(margImpl)}</span></td>
         <td class="r">${soT?`<span class="incl printonly">incluso</span>`:''}<span class="rsw${soT?' noprint':''}"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
-        <td class="pint rowact">${lnVisBtn(cfg.key,r)}${editCad}<button class="swp" onclick="dupRow('${cfg.key}','${r.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+        <td class="pint rowact">${editCad}<button class="swp" onclick="dupRow('${cfg.key}','${r.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }),(cfg.mat?11:10));
     if(!rows.length) body=`<tr><td colspan="${(cfg.mat?11:10)}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
@@ -2636,7 +2638,7 @@ function renderBlk(cfg){
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
       return `<tr data-id="${r.id}"${r.off?' class="lnoff"':''}>
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
-        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${detLinha(cfg,r)}${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}${adicChipHtml(cfg,r)}</td>
+        <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}${lnVisBtn(cfg.key,r)}</div>${detLinha(cfg,r)}${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}${adicChipHtml(cfg,r)}</td>
         ${cfg.key==='servicos'?`<td class="cat" style="font-size:12px;color:var(--tx2)">${esc(svcCatOf(r))}</td>`:''}
         ${marcaCell}
         ${cfg.key==='servicos'
@@ -2651,7 +2653,7 @@ function renderBlk(cfg){
         <td class="r money custot pint" id="tc_${r.id}">${fmt(custo)}</td>
         <td class="r money unit" id="tu_${r.id}">${fmt(unit)}</td>
         <td class="r money preco" id="tp_${r.id}"><b>${fmt(preco)}</b></td>
-        <td class="pint rowact">${lnVisBtn(cfg.key,r)}${editCad}<button class="swp" onclick="dupRow('${cfg.key}','${r.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+        <td class="pint rowact">${editCad}<button class="swp" onclick="dupRow('${cfg.key}','${r.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }),(cfg.mat?12:11));
     if(!rows.length) body=`<tr><td colspan="${(cfg.mat?12:11)}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
