@@ -997,6 +997,22 @@ body.viewing .in::placeholder,body.viewing .cin::placeholder,body.viewing .pin::
 .blktog.on .blktog-sw i{left:16px}
 .blktog.off{background:#b3261e;border-color:#b3261e;color:#fff}.blktog.off .blktog-lb{color:#fff}.blktog.off .blktog-sw{background:rgba(255,255,255,.35)}
 .blktog .blktog-ic{font-size:15px}
+/* linha da lista do cliente que está OCULTA: existe na edição, fora do total e fora do PDF */
+tr.lnoff{opacity:.55}
+tr.lnoff .svc input.cin,tr.lnoff .svc .svcnm{text-decoration:line-through;color:var(--tx3)}
+tr.lnoff .money,tr.lnoff .preco{color:var(--tx3)}
+.lnvis{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border:1px solid var(--line2);background:var(--surf);border-radius:7px;cursor:pointer;color:#3a3550;padding:0}
+.lnvis .material-symbols-rounded{font-size:16px}
+.lnvis.off{border-style:dashed;color:#8b86a1;background:transparent}
+.tcbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 6px;padding:7px 10px;border:1px dashed var(--line2);border-radius:10px;background:var(--surf);font-size:11.5px;color:var(--tx2)}
+.tcbar b{color:var(--tx1);font-size:12px}
+.tcbar .tcic{font-size:16px;color:var(--pri)}
+.tcbar .tccnt{color:var(--tx3)}
+.tcbar .tccnt.ok{color:var(--green)}
+.tcbtn{display:inline-flex;align-items:center;gap:4px;border:1px solid var(--line2);background:#fff;border-radius:20px;padding:3px 10px;cursor:pointer;font:inherit;font-size:11px;font-weight:700;color:#3a3550}
+.tcbtn .material-symbols-rounded{font-size:15px}
+.tcbtn:hover{border-color:var(--pri);color:var(--pri)}
+@media print{tr.lnoff{display:none!important}.tcbar{display:none!important}.lnvis{display:none!important}}
 .olhotog{display:inline-flex;align-items:center;gap:5px;border:1px solid var(--line2);background:var(--surf);border-radius:20px;padding:3px 10px;cursor:pointer;font:inherit;font-size:11px;font-weight:700;color:#3a3550;flex:0 0 auto}.olhotog .material-symbols-rounded{font-size:15px}.olhotog.off{border-style:dashed;color:#8b86a1;background:transparent}
 /* bloco desligado: some o conteúdo na tela (cabeçalho/chave ficam p/ religar); some inteiro na impressão */
 .blk-off{opacity:.72}
@@ -1573,17 +1589,64 @@ function tabCliAdd(blk,id){
   const v=num(r.valor), und=r.unidade||UND_DFLT[blk];
   if(PICK_TARGET){                                  // TROCA: mantém a posição e a quantidade
     const ln=S[blk].find(x=>x.id===PICK_TARGET);
-    if(ln){ ln.desc=tabCliLabel(r); ln.detalhe=tabCliDetalhe(r); ln.catId=null;
+    if(ln){ ln.desc=tabCliLabel(r); ln.detalhe=tabCliDetalhe(r); ln.catId=null; ln.tabItem=r.id; ln.off=false;
             ln.custoBase=v; ln.custoAlt=v; ln.usarBase=true; ln.und=und; ln.margem=0;
             if('marca' in ln) ln.marca=''; delete ln.composicao; }   // sem composição: preço acordado não leva fator de abrangência
     save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick(); return;
   }
   const nr=rowSvc(tabCliLabel(r),1,und,v,0,null,'');
-  nr.detalhe=tabCliDetalhe(r);
+  nr.detalhe=tabCliDetalhe(r); nr.tabItem=r.id;
   S[blk].push(nr);
   const _fan=PICK_LOTE&&isLoteBase();
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); closePick();
   if(_fan) loteAddLinha(blk,nr);
+}
+/* ---------- A LISTA DA TABELA DENTRO DA PROPOSTA (11/11, pedido do dono) ----------
+   "deixar uma lista padrão de itens conforme a RFQ sempre disponível nestas propostas,
+   onde eu posso ocultar ou excluir."
+   Como funciona: "Trazer a lista" joga os itens da tabela do cliente dentro do bloco já
+   OCULTOS e com quantidade 0 — não mexem em um centavo da proposta. Dali você:
+     · liga o olho (ou só digita a quantidade) no que vai cobrar;
+     · exclui no X o que nunca vai usar nesta proposta.
+   A linha oculta não soma (linePreco/lineCusto = 0) e nunca sai no PDF (tr.lnoff).
+   A mesa de trabalho continua limpa: as ocultas ficam recolhidas atrás de "mostrar os ocultos". */
+function rfqShow(blk){ return !!(S.listaShow && S.listaShow[blk]); }
+function toggleRfqShow(blk){ S.listaShow=S.listaShow||{}; S.listaShow[blk]=!S.listaShow[blk]; save(); renderBlk(BLKS.find(b=>b.key===blk)); }
+function lnVisBtn(blk,r){
+  const on=!r.off;
+  return '<button class="lnvis'+(on?'':' off')+'" onclick="togLinhaOff(\''+blk+'\',\''+r.id+'\')" title="'+(on?'Na proposta — clique para ocultar (sai do PDF e do total)':'Oculta — clique para incluir na proposta')+'"><span class="material-symbols-rounded">'+(on?'visibility':'visibility_off')+'</span></button>';
+}
+function togLinhaOff(blk,id){
+  const r=(S[blk]||[]).find(x=>x.id===id); if(!r)return;
+  r.off=!r.off;
+  if(!r.off && !(num(r.qtd)>0)) r.qtd=1;   // voltou pra proposta: qtd 1, pra não entrar valendo zero sem ninguém ver
+  save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc();
+}
+function tabCliFaltantes(blk){
+  const tem={}; (S[blk]||[]).forEach(r=>{ if(r&&r.tabItem) tem[String(r.tabItem)]=1; });
+  return tabCliRows(blk).filter(r=>!tem[String(r.id)]);
+}
+function tabCliCarregarTudo(blk){
+  const faltam=tabCliFaltantes(blk);
+  if(!faltam.length){ cloudMsg('a lista da '+tabCliNome()+' já está inteira neste bloco'); return; }
+  if(!confirm('Trazer '+faltam.length+' item(ns) da '+tabCliNome()+' para este bloco?\n\nEntram OCULTOS e com quantidade 0 — não mudam o valor da proposta.\n\nVocê liga o olho (ou digita a quantidade) no que vai cobrar e exclui no X o que não serve.')) return;
+  faltam.forEach(r=>{
+    const nr=rowSvc(tabCliLabel(r),0,(r.unidade||UND_DFLT[blk]),num(r.valor),0,null,'');
+    nr.detalhe=tabCliDetalhe(r); nr.tabItem=r.id; nr.off=true;
+    S[blk].push(nr);
+  });
+  S.listaShow=S.listaShow||{}; S.listaShow[blk]=true;
+  save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc();
+  cloudMsg(faltam.length+' item(ns) da '+tabCliNome()+' disponíveis neste bloco');
+}
+function tabCliBarra(blk){
+  const tot=tabCliRows(blk).length; if(!tot) return '';
+  const falt=tabCliFaltantes(blk).length, oc=(S[blk]||[]).filter(r=>r&&r.off).length, mostra=rfqShow(blk);
+  let h='<div class="tcbar noprint"><span class="material-symbols-rounded tcic">request_quote</span><b>'+esc(tabCliNome())+'</b><span class="tccnt">'+tot+' item(ns) na tabela</span>';
+  if(falt) h+='<button class="tcbtn" onclick="tabCliCarregarTudo(\''+blk+'\')" title="Traz os itens da tabela para dentro deste bloco, ocultos e com quantidade 0"><span class="material-symbols-rounded">playlist_add</span>Trazer '+falt+' que falta'+(falt>1?'m':'')+'</button>';
+  if(oc) h+='<button class="tcbtn" onclick="toggleRfqShow(\''+blk+'\')"><span class="material-symbols-rounded">'+(mostra?'visibility_off':'visibility')+'</span>'+(mostra?'recolher os '+oc+' ocultos':'mostrar os '+oc+' ocultos')+'</button>';
+  else if(!falt) h+='<span class="tccnt ok">lista inteira em uso</span>';
+  return h+'</div>';
 }
 let CATEGORIAS={servicos:[],equip:[],despesas:[],materiais:[]};
 async function carregarCategorias(){
@@ -1810,7 +1873,10 @@ function fillUnd(sel,val){ if(!sel)return; const cur=String(val||'').trim(); con
 /* formata o campo de valor ao sair (padrão financeiro) */
 function moneyBlur(el,blk,id,field){ const v=el.value.trim(); el.value=(v===''?'':fmtN(Math.max(0,num(v)))); upd(blk,id,field,el.value); }
 function moneyBlurBloco(el,blk){ const v=el.value.trim(); el.value=(v===''?'':fmtN(Math.max(0,num(v)))); updBloco(blk,el.value); }
-function qtBlur(el,blk,id){ const n=Math.max(0,num(el.value)); el.value=String(n).replace('.',','); upd(blk,id,'qtd',el.value); }
+function qtBlur(el,blk,id){ const n=Math.max(0,num(el.value)); el.value=String(n).replace('.',','); upd(blk,id,'qtd',el.value);
+  // digitou quantidade numa linha oculta: ela volta pra proposta sozinha — senão o valor ficaria cobrado e invisível
+  const r=(S[blk]||[]).find(x=>x.id===id);
+  if(r&&r.off&&n>0){ r.off=false; save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); cloudMsg('"'+String(r.desc||'item').slice(0,40)+'" entrou na proposta'); } }
 function mgBlur(el,blk,id){ const v=el.value.trim(); if(v===''){ upd(blk,id,'margem',''); } else { el.value=String(Math.max(0,num(v))).replace('.',','); upd(blk,id,'margem',el.value); } renderBlk(BLKS.find(b=>b.key===blk)); }   // re-renderiza p/ acender/apagar o sinal de margem própria
 function resetMargem(blk,id){ const r=(S[blk]||[]).find(x=>x.id===id); if(!r)return; r.margem=''; save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }   // volta esta linha à margem base
 function zerarMargens(blk){ const own=(S[blk]||[]).filter(r=>!(r.margem===''||r.margem==null)).length; if(!own)return; if(!confirm('Voltar TODAS as margens à base? ('+own+' linha(s) com margem própria)'))return; (S[blk]||[]).forEach(r=>{ r.margem=''; }); save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc(); }
@@ -2050,10 +2116,12 @@ function rateioRowHtml(){ const r=ratioUnit(); if(r<=0) return '';
 const qtyOf=r=> (r.gatilho&&r.gatilho!=='fixo') ? despMult(r) : (isTotal(r)?1:(escUnificado()&&r&&r.qtdEsc?num(escQtd(r,escAtivo())||0):num(r.qtd)));   // base com biblioteca única: a qtd é a do escopo aberto
 // MARGEM MANDA: o preço é SEMPRE custo × margem (acabou o "valor geral" que zerava). "Só o total" = só apresentação.
 function linePreco(r){
+  if(r&&r.off) return 0;   // linha da lista do cliente que está OCULTA: existe na proposta, mas não vale nada
   if(isCusto(r)) return qtyOf(r)*custoEf(r)*(1+mgOf(r)/100);
   return qtyOf(r)*num(r.vunit)*(1+num(r.markup)/100);
 }
 function lineCusto(r){
+  if(r&&r.off) return 0;
   if(isCusto(r)) return qtyOf(r)*custoEf(r);
   return qtyOf(r)*num(r.vunit)*(1+num(r.markup)/100);
 }
@@ -2501,7 +2569,9 @@ function renderBlk(cfg){
   const modo=S.modos[cfg.key]||'unit';
   const soT = !!(S.soTotal && S.soTotal[cfg.key]);   // "só o total" = apresentação (agrupar na proposta), independente do modo
   (S[cfg.key]||[]).forEach(r=>r._blk=cfg.key);   // marca o bloco (p/ margem base certa)
-  const rows=S[cfg.key], sub=blkSub(cfg.key);
+  // LINHA OCULTA (r.off): fica guardada na proposta, não soma, não sai no PDF e só aparece aqui quando você manda mostrar
+  const _mostraOff=rfqShow(cfg.key);
+  const rows=(S[cfg.key]||[]).filter(r=>!(r&&r.off)||_mostraOff), sub=blkSub(cfg.key);
   // divisão PADRÃO × ADICIONAIS (loja de lote): adicionais descem pro fim do bloco, com subtotais separados
   const _adicSplit=(typeof isLoteUnit==='function'&&isLoteUnit())&&(cfg.key==='servicos'||cfg.key==='materiais')&&rows.some(r=>r&&r.adic);
   const _pad=_adicSplit?rows.filter(r=>!(r&&r.adic)):rows, _adi=_adicSplit?rows.filter(r=>r&&r.adic):[];
@@ -2527,7 +2597,7 @@ function renderBlk(cfg){
       const editCad = (cfg.key==='servicos')
         ? `<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Definir o serviço: nome, unidade e receita (equipe × tempo)"><span class="material-symbols-rounded">precision_manufacturing</span></button>`
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
-      return `<tr data-id="${r.id}">
+      return `<tr data-id="${r.id}"${r.off?' class="lnoff"':''}>
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${detLinha(cfg,r)}${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}${adicChipHtml(cfg,r)}</td>
         ${cfg.key==='servicos'?`<td class="cat" style="font-size:12px;color:var(--tx2)">${esc(svcCatOf(r))}</td>`:''}
@@ -2543,7 +2613,7 @@ function renderBlk(cfg){
         <td class="r pint"><span class="mgimp" id="tm_${r.id}">${fmtMg(margImpl)}</span></td>
         <td class="r">${soT?`<span class="incl printonly">incluso</span>`:''}<span class="rsw${soT?' noprint':''}"><span class="rsl">R$</span><input class="cin num" value="${moneyVal(r.geral)}" inputmode="decimal" onfocus="this.select()" onblur="moneyBlur(this,'${cfg.key}','${r.id}','geral')" oninput="upd('${cfg.key}','${r.id}','geral',this.value)"></span></td>
         <td class="r money lucro pint" id="tl_${r.id}">${fmt(lucro)}</td>
-        <td class="pint rowact">${editCad}<button class="swp" onclick="dupRow('${cfg.key}','${r.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+        <td class="pint rowact">${lnVisBtn(cfg.key,r)}${editCad}<button class="swp" onclick="dupRow('${cfg.key}','${r.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }),(cfg.mat?11:10));
     if(!rows.length) body=`<tr><td colspan="${(cfg.mat?11:10)}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
@@ -2564,7 +2634,7 @@ function renderBlk(cfg){
       const editCad = (cfg.key==='servicos')
         ? `<button class="swp" onclick="openComp('${cfg.key}','${r.id}')" title="Definir o serviço: nome, unidade e receita (equipe × tempo)"><span class="material-symbols-rounded">precision_manufacturing</span></button>`
         : ((r.catId && !cfg.mat)?`<button class="swp edcad" onclick="openEditCat('${cfg.key}','${r.id}')" title="Editar / cadastrar o valor padrão deste item no catálogo"><span class="material-symbols-rounded">edit_note</span></button>`:'');
-      return `<tr data-id="${r.id}">
+      return `<tr data-id="${r.id}"${r.off?' class="lnoff"':''}>
         <td class="idx dgrab" draggable="true" ondragstart="dragStart(event,'${cfg.key}','${r.id}')" title="Arraste para reordenar"><span class="material-symbols-rounded gg">drag_indicator</span><span class="ixn">${i+1}</span></td>
         <td class="svc">${r.catId?`<div class="svcnm">${esc(r.desc)}</div>`:`<input class="cin" value="${esc(r.desc)}" oninput="upd('${cfg.key}','${r.id}','desc',this.value)">`}<div class="bs"><span class="material-symbols-rounded">database</span>base: <b id="bsv_${r.id}">${fmt(r.custoBase)}</b>${r.catId?'':' · avulso'}</div>${detLinha(cfg,r)}${despGatCtrl(cfg,r)}${cfg.mat?ownChipHtml(cfg,r):''}${adicChipHtml(cfg,r)}</td>
         ${cfg.key==='servicos'?`<td class="cat" style="font-size:12px;color:var(--tx2)">${esc(svcCatOf(r))}</td>`:''}
@@ -2581,7 +2651,7 @@ function renderBlk(cfg){
         <td class="r money custot pint" id="tc_${r.id}">${fmt(custo)}</td>
         <td class="r money unit" id="tu_${r.id}">${fmt(unit)}</td>
         <td class="r money preco" id="tp_${r.id}"><b>${fmt(preco)}</b></td>
-        <td class="pint rowact">${editCad}<button class="swp" onclick="dupRow('${cfg.key}','${r.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
+        <td class="pint rowact">${lnVisBtn(cfg.key,r)}${editCad}<button class="swp" onclick="dupRow('${cfg.key}','${r.id}')" title="Duplicar / clonar"><span class="material-symbols-rounded">content_copy</span></button><button class="swp" onclick="openPick('${cfg.key}','${r.id}')" title="Trocar por outro item do cadastro (mantém a posição)"><span class="material-symbols-rounded">swap_horiz</span></button><button class="del" onclick="delRow('${cfg.key}','${r.id}')" title="Remover"><span class="material-symbols-rounded">close</span></button></td>
       </tr>`;
     }),(cfg.mat?12:11));
     if(!rows.length) body=`<tr><td colspan="${(cfg.mat?12:11)}" style="color:var(--tx3);padding:10px 6px;font-size:12px">Nenhum item. Clique em “Adicionar ${cfg.sing}” abaixo.</td></tr>`;
@@ -2611,6 +2681,7 @@ function renderBlk(cfg){
     <div class="scroll"><table class="tbl"><thead><tr>${cols}</tr></thead><tbody ondragover="dragOver(event)" ondrop="dragDrop(event,'${cfg.key}')">${body}</tbody>${foot}</table></div>
     <div class="blkfoot">${blkMargemCtrl(cfg)}${soT?'':`<span class="st" id="st_${cfg.key}">Subtotal <b>${fmt(blkSubDisp(cfg.key))}</b></span>`}</div>
     <div class="addrow"><button onclick="openPick('${cfg.key}')"><span class="material-symbols-rounded">add</span>Adicionar ${cfg.sing}</button>${(isLoteBase()&&(cfg.key==='servicos'||cfg.key==='materiais'))?`<button onclick="loteAddPick('${cfg.key}')" title="Adiciona este item na base e em TODAS as lojas do lote (com confirmação)" style="margin-left:8px;border-style:solid;border-color:var(--pri);color:var(--pri)"><span class="material-symbols-rounded">hub</span>Adicionar ao lote</button>`:''}</div>
+    ${tabCliBarra(cfg.key)}
     ${cfg.key==='servicos'?('<div id="svcTopPanels"><div id="fatoresPanel">'+fatoresObraHtml()+'</div><div id="maoObraPanel">'+efetivoHtml()+'</div></div><div class="clientonly" id="equipePrint">'+equipePrintHtml()+'</div>'):''}
     ${obsHtml}`;
 }
@@ -6924,6 +6995,6 @@ initOrc();
 (function(){ var marca=function(root){ (root.querySelectorAll?root.querySelectorAll('.material-symbols-rounded'):[]).forEach(function(el){ var t=(el.textContent||'').trim(); el.classList.toggle('cad',t==='lock'); el.classList.toggle('cad-aberto',t==='lock_open'); }); };
   try{ marca(document); new MutationObserver(function(ms){ ms.forEach(function(m){ if(m.type==='characterData'){ var p=m.target.parentElement; if(p) marca(p.parentElement||p); } else m.addedNodes.forEach(function(n){ if(n.nodeType===1){ marca(n); if(n.classList&&n.classList.contains('material-symbols-rounded')) marca(n.parentElement||n); } else if(n.nodeType===3&&n.parentElement){ marca(n.parentElement.parentElement||n.parentElement); } }); }); }).observe(document.body,{childList:true,subtree:true,characterData:true}); }catch(e){} })();
 </script>
-<script src="eX_Envio.js?v=20261111b"></script><!-- envio (o ?v= sobe a cada mudança NESTE arquivo: sem ele o navegador serve a cópia em cache depois do deploy) --><!-- envio da proposta por e-mail + revisões congeladas (módulo à parte; ver eX_Envio.js) -->
+<script src="eX_Envio.js?v=20261111c"></script><!-- envio (o ?v= sobe a cada mudança NESTE arquivo: sem ele o navegador serve a cópia em cache depois do deploy) --><!-- envio da proposta por e-mail + revisões congeladas (módulo à parte; ver eX_Envio.js) -->
 </body>
 </html>

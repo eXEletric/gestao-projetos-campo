@@ -100,7 +100,8 @@ function assinaturaCorpo(o){
   const linha=l=>[_txt(l.desc),_txt(l.detalhe),_txt(l.und),_txt(l.marca),_n2(l.qtd),_unit(l),_n2(l.margem)].join('\u0001');
   const blocos=BLKS.map(b=>{
     const on=!(o.blocoOn && o.blocoOn[b.key]===false);
-    return b.key+':'+(on?(o[b.key]||[]).map(linha).join('\u0002'):'off');
+    // linha oculta (lista do cliente) não entra: ela não mudou NADA do que o cliente recebeu
+    return b.key+':'+(on?(o[b.key]||[]).filter(l=>!(l&&l.off)).map(linha).join('\u0002'):'off');
   }).join('\u0003');
   const campos=[_txt(o.solTitulo),_txt(o.descGeral),o.descGeralOn!==false,_n2(o.impostoPct),!!o.impostoIncluso,
                 _n2(o.descontoPct),_n2(o.descontoVal),_txt(o.validadeISO),_txt(o.prazoDias),_n2(o.valorCombinado)].join('\u0001');
@@ -118,7 +119,7 @@ async function carregarSnap(){
 function divergiu(){ try{ return !!(ENV._snapAssin && S && assinaturaCorpo(S)!==ENV._snapAssin); }catch(e){ return false; } }
 // soma de um bloco como o cliente vê (null = bloco desligado)
 function _somaBloco(o,k){ if(!o) return null; if(o.blocoOn && o.blocoOn[k]===false) return null;
-  return (o[k]||[]).reduce((a,l)=>a+(num(l.qtd)||0)*_unit(l),0); }
+  return (o[k]||[]).reduce((a,l)=>a+((l&&l.off)?0:(num(l.qtd)||0)*_unit(l)),0); }
 function verDivergencia(){
   const v=vAtual(), snap=ENV._snap; if(!v||!snap){ fechar(); return; }
   const cel=x=>x===null?'<i>desligado</i>':fmt(_n2(x));
