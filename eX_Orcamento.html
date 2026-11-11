@@ -6724,10 +6724,13 @@ function setMode(m){
   // e numa proposta travada não há "Voltar a editar" — ficava sem saída nenhuma.
   if(m==='view'){
     try{
+      const doFunil=(new URLSearchParams(location.search)).get('from')==='funil';
       const tx=document.getElementById('pvVoltarTx');
-      if(tx) tx.textContent=(new URLSearchParams(location.search)).get('from')==='funil'?'Funil':'Orçamentos';
+      if(tx) tx.textContent=doFunil?'Funil':'Orçamentos';
+      // o atalho do card só aparece vindo da LISTA: vindo do funil, o botão de voltar já leva lá
+      // (os dois ficariam rotulados "Funil", lado a lado, com destinos diferentes)
       const bf=document.getElementById('pvFunil');
-      if(bf) bf.style.display=(typeof OPP!=='undefined'&&OPP&&window.EXENV&&typeof EXENV.irFunil==='function')?'':'none';
+      if(bf) bf.style.display=(!doFunil&&typeof OPP!=='undefined'&&OPP&&window.EXENV&&typeof EXENV.irFunil==='function')?'':'none';
     }catch(e){}
   }
 }
