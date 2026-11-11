@@ -948,6 +948,8 @@ body.viewing #previewBar{display:flex;align-items:center;gap:10px;position:stick
 #previewBar .pv-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.08);color:#fff;border-radius:8px;padding:7px 12px;font:inherit;font-size:12.5px;font-weight:600;cursor:pointer}
 #previewBar .pv-btn:hover{background:rgba(255,255,255,.18)}
 #previewBar .pv-print{background:#fff;color:#2b2440;border-color:#fff}
+#previewBar #pvVoltar{background:rgba(255,255,255,.16)}
+@media(max-width:640px){#previewBar .pv-lbl{order:3;flex-basis:100%}}
 @media print{#previewBar{display:none!important}}
 /* não vaza pro cliente (achado no envio, 11/09): margem do bloco ("Margem 30%", "custo + imposto") e o rótulo "c/ margem" das colunas */
 @media print{.blkmg,.thsub{display:none!important}}
@@ -1157,6 +1159,8 @@ body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{backgrou
 </head>
 <body class="editing">
 <div id="previewBar">
+  <button class="pv-btn" id="pvVoltar" onclick="voltarFunil()" title="Voltar à lista"><span class="material-symbols-rounded">arrow_back</span><span id="pvVoltarTx">Orçamentos</span></button>
+  <button class="pv-btn" id="pvFunil" style="display:none" onclick="EXENV.irFunil()" title="Abrir esta oportunidade no funil"><span class="material-symbols-rounded">view_kanban</span>Funil</button>
   <span class="pv-lbl"><span class="material-symbols-rounded">visibility</span>Prévia — é assim que o cliente recebe</span>
   <span style="flex:1"></span>
   <button class="pv-btn" onclick="setMode('edit')"><span class="material-symbols-rounded">edit</span>Voltar a editar</button>
@@ -6716,6 +6720,16 @@ function setMode(m){
   document.body.classList.toggle('editing',m==='edit');
   document.getElementById('mView').classList.toggle('on',m==='view');
   document.getElementById('mEdit').classList.toggle('on',m==='edit');
+  // a barra fixa precisa levar de volta: rolando a proposta, o bloco da oportunidade sai da tela
+  // e numa proposta travada não há "Voltar a editar" — ficava sem saída nenhuma.
+  if(m==='view'){
+    try{
+      const tx=document.getElementById('pvVoltarTx');
+      if(tx) tx.textContent=(new URLSearchParams(location.search)).get('from')==='funil'?'Funil':'Orçamentos';
+      const bf=document.getElementById('pvFunil');
+      if(bf) bf.style.display=(typeof OPP!=='undefined'&&OPP&&window.EXENV&&typeof EXENV.irFunil==='function')?'':'none';
+    }catch(e){}
+  }
 }
 
 /* ---------- ponte com o CRM: pré-preenche o cabeçalho vindo de uma oportunidade ---------- */
