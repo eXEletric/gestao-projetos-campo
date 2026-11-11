@@ -1623,9 +1623,29 @@ function togLinhaOff(blk,id){
   if(!r.off && !(num(r.qtd)>0)) r.qtd=1;   // voltou pra proposta: qtd 1, pra não entrar valendo zero sem ninguém ver
   save(); renderBlk(BLKS.find(b=>b.key===blk)); recalc();
 }
+/* A UF da proposta, para não trazer deslocamento de estado errado.
+   A tabela da RFQ tem 37 linhas de deslocamento, uma por UF e modalidade: despejar todas numa
+   proposta de Fortaleza é entulho. Fonte da UF, em ordem: a cidade da abrangência (o app calcula),
+   o nome da loja e o endereço. Sem UF identificada, não filtra nada. */
+const _UFS=['AC','AL','AM','AP','BA','CE','DF','ES','GO','MA','MG','MS','MT','PA','PB','PE','PI','PR','RJ','RN','RO','RR','RS','SC','SE','SP','TO'];
+function tabCliUF(){
+  try{
+    const fontes=[(S&&S.abrSnap&&S.abrSnap.cidade)||'', (S&&S.finNome)||'', (S&&S.finEnd)||''];
+    for(const f of fontes){
+      const toks=String(f).toUpperCase().match(/\b[A-Z]{2}\b/g)||[];
+      for(let i=toks.length-1;i>=0;i--) if(_UFS.indexOf(toks[i])>=0) return toks[i];
+    }
+  }catch(e){}
+  return '';
+}
+// o que a tabela do cliente oferece PARA ESTA proposta (o seletor continua mostrando tudo, com busca)
+function tabCliAplicaveis(blk){
+  const uf=tabCliUF();
+  return tabCliRows(blk).filter(r=>!r.uf || !uf || String(r.uf).toUpperCase()===uf);
+}
 function tabCliFaltantes(blk){
   const tem={}; (S[blk]||[]).forEach(r=>{ if(r&&r.tabItem) tem[String(r.tabItem)]=1; });
-  return tabCliRows(blk).filter(r=>!tem[String(r.id)]);
+  return tabCliAplicaveis(blk).filter(r=>!tem[String(r.id)]);
 }
 function tabCliCarregarTudo(blk){
   const faltam=tabCliFaltantes(blk);
@@ -1641,11 +1661,12 @@ function tabCliCarregarTudo(blk){
   cloudMsg('Trouxe '+(faltam.length===1?'1 item':faltam.length+' itens')+' da tabela — ficam ocultos até você usar');
 }
 function tabCliBarra(blk){
-  const tot=tabCliRows(blk).length; if(!tot) return '';
+  const tot=tabCliAplicaveis(blk).length, _fora=tabCliRows(blk).length-tot, _uf=tabCliUF();
+  if(!tot && !_fora) return '';
   const falt=tabCliFaltantes(blk).length, oc=(S[blk]||[]).filter(r=>r&&r.off).length, mostra=rfqShow(blk);
   const pl=(n,um,muitos)=>n+' '+(n===1?um:muitos);
-  let h='<div class="tcbar noprint"><span class="material-symbols-rounded tcic">request_quote</span><b>'+esc(tabCliNome())+'</b><span class="tccnt">'+pl(tot,'item','itens')+' na tabela</span>';
-  if(falt) h+='<button class="tcbtn" onclick="tabCliCarregarTudo(\''+blk+'\')" title="Traz os itens da tabela para dentro deste bloco, ocultos e com quantidade 0"><span class="material-symbols-rounded">playlist_add</span>Trazer '+pl(falt,'o que falta','os que faltam')+'</button>';
+  let h='<div class="tcbar noprint"><span class="material-symbols-rounded tcic">request_quote</span><b>'+esc(tabCliNome())+'</b><span class="tccnt">'+pl(tot,'item','itens')+' na tabela'+(_fora?(' · '+_fora+' de outras UFs fora'+(_uf?' (esta é '+esc(_uf)+')':'')):'')+'</span>';
+  if(falt) h+='<button class="tcbtn" onclick="tabCliCarregarTudo(\''+blk+'\')" title="Traz os itens da tabela para dentro deste bloco, ocultos e com quantidade 0"><span class="material-symbols-rounded">playlist_add</span>Trazer '+(falt===1?'o item que falta':'os '+falt+' que faltam')+'</button>';
   if(oc) h+='<button class="tcbtn" onclick="toggleRfqShow(\''+blk+'\')"><span class="material-symbols-rounded">'+(mostra?'visibility_off':'visibility')+'</span>'+(mostra?'recolher ':'mostrar ')+(oc===1?'o oculto':'os '+oc+' ocultos')+'</button>';
   else if(!falt) h+='<span class="tccnt ok">lista inteira em uso</span>';
   return h+'</div>';
