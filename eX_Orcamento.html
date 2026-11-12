@@ -1275,6 +1275,9 @@ body.fxon [data-fx="mat.base"]>div,body.fxon [data-fx="mat.global"]>div{backgrou
       <div class="blk" id="blk_equip"></div>
       <div class="blk" id="blk_despesas"></div>
       <div class="blk" id="blk_materiais"></div>
+      <!-- Condições comerciais na folha (12/11): o texto existia só no painel interno do lote, que é .noprint —
+           numa proposta avulsa ficava gravado e NÃO saía no PDF. Aqui ele entra no documento, como no lote. -->
+      <div class="panel condprint" id="condPrint" style="display:none"></div>
     </div>
 
     <!-- ===== COLUNA DIREITA: RESUMO ===== -->
@@ -3805,8 +3808,40 @@ function injectLoteBasePanel(){
     const ta=_lg('descGeralTa'); const anchor=ta?(ta.closest('.card')||ta.closest('section')||ta.parentElement):null;
     if(anchor&&anchor.parentElement){ anchor.parentElement.insertBefore(p,anchor); } else { document.body.appendChild(p); } }
   p.className='noprint';   // painel de gestão do lote é interno — não entra na impressão da proposta
-  p.innerHTML=renderLoteBaseHtml();
-  updateRedeUnidades();   // reflete as unidades no cabeçalho (campo "Unidades")
+  /* 12/11 (dono): "não deveria aparecer registros referentes a lote em propostas singelas".
+     A função não tinha guarda: qualquer chamador (renderBlk, margem, escopo…) montava o painel inteiro —
+     Rede & lojas, Global do lote, Lista de lojas, Macro — numa proposta avulsa, sempre com 0 loja.
+     Fora do lote sobra só o que é da PROPOSTA: condições comerciais e partes. */
+  p.innerHTML = isLoteBase() ? renderLoteBaseHtml() : condPropostaHtml();
+  if(isLoteBase()) updateRedeUnidades();   // reflete as unidades no cabeçalho (campo "Unidades")
+  try{ renderCondPrint(); }catch(_){}
+}
+/* a folha (impressa) recebe as condições comerciais — ver #condPrint */
+function renderCondPrint(){
+  var el=_lg('condPrint'); if(!el)return;
+  var t=(condComerciais()||'').trim();
+  if(!t || isLoteBase()){ el.style.display='none'; el.innerHTML=''; return; }   // no lote quem imprime é o documento do lote
+  el.style.display='';
+  el.innerHTML='<div class="phead"><span class="material-symbols-rounded">gavel</span><h2>Condições comerciais</h2></div>'
+    +'<div style="font-size:13px;color:var(--tx2);white-space:pre-wrap;line-height:1.6;padding:2px 0 4px">'+esc(t)+'</div>';
+}
+/* Proposta avulsa: só "Condições comerciais & partes" — mesmos campos do lote, sem as palavras "do lote"
+   e sem prazo por soma de lojas (aqui não há lojas). */
+function condPropostaHtml(){
+  var cnpjC=''; try{ cnpjC=fmtCnpj(contratanteCnpj()); }catch(_){}   /* mesma fonte do lote */
+  var inp='width:100%;box-sizing:border-box;margin-top:3px;padding:7px 9px;border:1px solid var(--line2);border-radius:7px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx)';
+  return '<div style="background:var(--surf);border:1px solid #e3dcfa;border-radius:12px;overflow:hidden">'
+    +'<div style="padding:12px 14px;background:#faf9ff">'
+    +'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px"><span class="material-symbols-rounded" style="color:var(--pri);font-size:18px">gavel</span><b style="font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--pri)">Condições comerciais &amp; partes</b><span style="font-size:11.5px;color:var(--tx3)">— sai na proposta, abaixo dos itens</span></div>'
+    +'<textarea onchange="setCond(&quot;condComerciais&quot;,this.value)" rows="2" style="width:100%;box-sizing:border-box;padding:8px 10px;border:1px solid var(--line2);border-radius:8px;font:inherit;font-size:13px;background:var(--surf);color:var(--tx);resize:vertical" placeholder="Condições de pagamento, prazo, garantia…">'+esc(condComerciais())+'</textarea>'
+    +'<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--tx3)">'
+    +'<div style="flex:1;min-width:180px">CNPJ eX (contratada)<div style="margin-top:6px;font-size:13px;color:var(--tx)">'+(empresaCnpj()?esc(empresaCnpj()):'<span style="color:var(--tx3)">— do cadastro da empresa —</span>')+'</div></div>'
+    +'<div style="flex:1;min-width:180px">CNPJ contratante<div style="margin-top:6px;font-size:13px;color:var(--tx)">'+(cnpjC?esc(cnpjC):'<span style="color:var(--tx3)">— do cadastro do cliente —</span>')+'</div></div>'
+    +'</div>'
+    +'<div style="display:flex;gap:14px;flex-wrap:wrap;margin-top:8px;font-size:12px;color:var(--tx3)">'
+    +'<label style="flex:1;min-width:130px">Início<input type="date" value="'+esc(S.dataInicio||'')+'" onchange="setCond(&quot;dataInicio&quot;,this.value)" style="'+inp+'"></label>'
+    +'<label style="flex:1;min-width:130px">Fim<input type="date" value="'+esc(S.dataFim||'')+'" onchange="setCond(&quot;dataFim&quot;,this.value)" style="'+inp+'"></label>'
+    +'</div></div></div>';
 }
 function relabelRede(){ // no base do lote, o "cliente final / destino" representa a REDE (lojas ficam no painel abaixo)
   document.querySelectorAll('.ph-cap').forEach(cap=>{ cap.childNodes.forEach(n=>{ if(n.nodeType===3 && /cliente final/i.test(n.nodeValue||'')) n.nodeValue='Rede / lojas do lote '; }); });
@@ -5727,7 +5762,7 @@ function setMatModoDoc(v){ S.matModo=v; save(); try{ verComoClienteLote(); }catc
 // loteSeedBaseFromSomado (o "Trazer somado → base" que quebrava o combo — escala-lote na base 42.000). Nada disso tinha chamador vivo.
 var DEFAULT_COND='Pagamento: 50% do total do lote na entrada; saldo pago a cada loja concluída, mediante emissão da nota fiscal — unidade a unidade.';   // 2.4
 function condComerciais(){ return (S.condComerciais!==undefined && S.condComerciais!==null)?S.condComerciais:DEFAULT_COND; }
-function setCond(k,v){ S[k]=v; save(); }
+function setCond(k,v){ S[k]=v; save(); try{ renderCondPrint(); }catch(_){} }   /* o texto vai pra folha na hora */
 function contratanteCnpj(){ const id=S.contratanteId||(LOTE_ROW&&LOTE_ROW.contratante_id); const c=(CLIENTES||[]).find(function(x){return x.id===id;}); return (c&&c.cnpj)||''; }
 /* ===== RELATÓRIOS DA LOJA E DO GRUPO (página do sistema; PDF sob demanda, guardado em levantamento_arquivos) =====
    Cliente = escopo, quantidades, prazo, equipe e valor. Interno = tudo isso + custo/margem/lucro, divergências com o
