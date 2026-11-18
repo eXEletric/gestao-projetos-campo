@@ -59,6 +59,12 @@ td input{min-height:34px;padding:4px 6px;font-size:14px;width:80px;text-align:ri
 .b.p{background:var(--acdk);color:#fff;border-color:var(--acdk)}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:50}
 #des svg{width:100%;height:auto;display:block}
+.etapas{background:var(--chip);border-radius:8px;padding:8px 10px;display:grid;gap:4px}
+.et{display:flex;justify-content:space-between;gap:8px;font-size:13px;border-top:1px solid var(--line);padding-top:4px}
+.et b{font-family:var(--f-mono);white-space:nowrap}
+.terms{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tm{font:inherit;font-size:13px;font-weight:600;min-height:40px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);cursor:pointer}
+.tm.on{background:var(--acdk);color:#fff;border-color:var(--acdk)}.tm:disabled{opacity:.4}
 .passo{display:flex;gap:10px;align-items:flex-start;font-size:14px}.passo i{font-style:normal;font-weight:800;background:var(--acdk);color:#fff;border-radius:50%;min-width:24px;height:24px;display:grid;place-items:center;font-size:13px}
 @media print{header,.aval,.tools,.add,.noprint{display:none!important}body{background:#fff}.box,.porta{break-inside:avoid}}
 </style></head><body>
@@ -73,19 +79,20 @@ td input{min-height:34px;padding:4px 6px;font-size:14px;width:80px;text-align:ri
 /* ---- siglas da legenda (Base do Sistema · categoria Rede RS485) ---- */
 const SIG=[
  ["Medidores","MM-SV1","Multimedidor · Salão de vendas 1"],["Medidores","MM-SV2","Multimedidor · Salão de vendas 2"],["Medidores","MM-SV3","Multimedidor · Salão de vendas 3"],
- ["Medidores","MM-D&D","Multimedidor · Docas e Depósito"],["Medidores","MM-QGBT","Multimedidor · QGBT"],["Medidores","MM-SPL","Multimedidor · Splitões (QFAC)"],
+ ["Medidores","MM-D&D","Multimedidor · Docas e Depósito"],["Medidores","MM-QGBT","Multimedidor · QGBT"],["Medidores","MM-QGBT2","Multimedidor · QGBT 2 (loja com 2 QGBTs)"],["Medidores","MM-SPL","Multimedidor · Splitões (QFAC)"],
  ["Medidores","MM-CH","Multimedidor · Chiller (QD-CAG)"],["Medidores","MM-FC","Multimedidor · Fancoils (QD-CAG)"],
  ["Controladores","IPG215D-IL-SV1","iPro Genius · Iluminação SV1"],["Controladores","IPG215D-IL-SV2","iPro Genius · Iluminação SV2"],["Controladores","IPG215D-IL-SV3","iPro Genius · Iluminação SV3"],
  ["Controladores","IPG215D-IL-D&D","iPro Genius · Iluminação Docas e Depósito"],["Controladores","IPG215D-SPL","iPro Genius · Splitão"],["Controladores","IPX215D-SPL","Expansão · Splitão convencional"],
  ["Controladores","IPG215D-CH","iPro Genius · Chiller"],["Controladores","IPX215D-CH","Expansão · Chiller"],
- ["Termostatos e conversores","AC60101","Conversor p/ termostatos Modbus (splitão)"],["Termostatos e conversores","TERM-RS485","Termostato Modbus (RS485)"]];
-const REPETE=new Set(["AC60101","TERM-RS485"]);
+ ["Conversores","AC60101","Conversor p/ termostatos Modbus · leva os termostatos junto"]];
+const REPETE=new Set(["AC60101"]);const MAXT=10;
 const DESC=Object.fromEntries(SIG.map(s=>[s[1],s[2]]));
 /* ---- tempos padrão (base, editáveis) ---- */
-const TP0=[["inf_baixa","Infra nova baixa",3,"min/m"],["inf_alta","Infra nova alta",6,"min/m"],["inf_alta_tr","Infra alta · posicionar plataforma",30,"min/trecho"],["lanc","Lançamento do cabo",2,"min/m"],["exist","Trecho existente · checagem",10,"min/trecho"],["lig","Interligação no ponto (entrada + saída)",15,"min/ponto"],["end","Endereçamento do dispositivo",15,"min/ponto"],["com","Comissionamento do barramento",120,"min/obra"],["val","Validação Copeland",30,"min/obra"]];
+const TP0=[["inf_baixa","Infra nova baixa",3,"min/m"],["inf_alta","Infra nova alta",6,"min/m"],["inf_alta_tr","Infra alta · posicionar plataforma",30,"min/trecho"],["lanc","Lançamento do cabo",2,"min/m"],["exist","Trecho existente · checagem",10,"min/trecho"],["lig","Ponto · 1. Ligação do cabo no dispositivo (entrada + saída)",15,"min/ponto"],["end","Ponto · 2. Endereçamento",15,"min/ponto"],["vint","Ponto · 3. Validação interna eX",10,"min/ponto"],["com","Comissionamento do barramento",120,"min/rede"],["val","Validação Copeland",30,"min/rede"]];
 const K="ex_rs485_aval_v1";
 let S;try{S=JSON.parse(localStorage.getItem(K)||"null")}catch(_){S=null}
 if(!S)S={loja:"935 · Aparecida de Goiânia · Vera Cruz",lider:"",p:{1:[],2:[]},tp:Object.fromEntries(TP0.map(x=>[x[0],x[2]]))};
+TP0.forEach(x=>{if(S.tp[x[0]]==null)S.tp[x[0]]=x[2]});[1,2].forEach(p=>S.p[p]=S.p[p].filter(x=>(x.base||x.sig)!=="TERM-RS485"));
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const n=v=>Math.max(0,+String(v??"").replace(",",".")||0);
@@ -97,7 +104,7 @@ const orig=(p,i)=>i===0?`X-WEB P${p}`:S.p[p][i-1].sig;
 /* ---- cálculos ---- */
 function tempoTrecho(t){const T=S.tp;if(t.existe)return T.exist;let m=n(t.baixa)*T.inf_baixa+n(t.alta)*T.inf_alta+(n(t.alta)>0?T.inf_alta_tr:0)+n(t.cabo)*T.lanc;return m}
 function totais(){let o={pontos:0,trechos:0,cabo:0,iex:0,ib:0,ia:0,min:0};
- [1,2].forEach(p=>S.p[p].forEach(x=>{o.pontos++;o.trechos++;o.cabo+=n(x.cabo);o.iex+=n(x.iex);o.ib+=n(x.baixa);o.ia+=n(x.alta);o.min+=tempoTrecho(x)+S.tp.lig+S.tp.end}));
+ [1,2].forEach(p=>S.p[p].forEach(x=>{o.pontos++;o.trechos++;o.cabo+=n(x.cabo);o.iex+=n(x.iex);o.ib+=n(x.baixa);o.ia+=n(x.alta);o.min+=tempoTrecho(x)+S.tp.lig+S.tp.end+S.tp.vint;o.terms=(o.terms||0)+(x.terms||[]).length}));
  if(o.pontos)o.min+=S.tp.com+S.tp.val;return o}
 const fmtH=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return h?`${h}h${String(r).padStart(2,"0")}`:`${r} min`};
 function avisos(p,i){const t=S.p[p][i],a=[];
@@ -110,7 +117,8 @@ function render(){
  let h=`<div class="aval">⚠ MODO AVALIAÇÃO — os dados ficam salvos só neste aparelho. Nada vai para o eX Controller ainda.</div>
  <section class="box"><div class="passo"><i>1</i><span>Em cada porta do X-WEB, toque em <b>“+ ADICIONAR PRÓXIMO PONTO”</b> e escolha a sigla da lista.</span></div>
  <div class="passo"><i>2</i><span>O cabo entre dois pontos é criado sozinho e já numerado (P1-01, P1-02…). Preencha as metragens de cada trecho.</span></div>
- <div class="passo"><i>3</i><span>No fim da página saem o <b>resumo</b>, o <b>tempo previsto</b> e o <b>desenho</b> com os cabos numerados.</span></div></section>
+ <div class="passo"><i>3</i><span>Termostato não é ponto da rede: escolha o conversor <b>AC60101</b> e marque nele os termostatos que ele atende.</span></div>
+ <div class="passo"><i>4</i><span>No fim da página saem o <b>resumo</b>, o <b>tempo previsto</b> e o <b>desenho</b> com os cabos numerados.</span></div></section>
  <section class="box"><label class="lbl">Loja<input data-s="loja" value="${esc(S.loja)}"></label><label class="lbl">Quem está levantando<input data-s="lider" value="${esc(S.lider)}" placeholder="nome do líder"></label></section>`;
  [1,2].forEach(p=>{const L=S.p[p],cab=L.reduce((a,x)=>a+n(x.cabo),0);
   h+=`<section class="porta"><div class="ph"><span class="t">Porta ${p} do X-WEB</span><span class="mini" style="border:0;background:transparent;color:var(--acfg)">${L.length} ponto${L.length===1?"":"s"} · ${cab} m</span><span class="s">Saída RS485-${p} · dentro do QA do Ar</span></div>
@@ -130,11 +138,18 @@ function render(){
    </div>
    <div class="pt" data-p="${p}" data-i="${i}"><div class="ptrow"><div><span class="n">${esc(t.sig)}</span><div class="d">${esc(DESC[t.base||t.sig]||"")}</div></div>
     <label class="lbl">Endereço<input inputmode="numeric" data-f="endr" value="${esc(t.endr)}" placeholder="nº"></label></div>
+    ${(t.base||t.sig)==="AC60101"?termHTML(t):""}
+    <div class="etapas"><div class="lbl" style="margin-bottom:2px">Etapas deste ponto</div>
+     <div class="et"><span>1. Ligação do cabo no dispositivo <span class="sub">(entrada + saída)</span></span><b>${S.tp.lig} min</b></div>
+     <div class="et"><span>2. Endereçamento</span><b>${S.tp.end} min</b></div>
+     <div class="et"><span>3. Validação interna eX <span class="sub">(supervisório enxerga o dispositivo)</span></span><b>${S.tp.vint} min</b></div>
+     <div class="sub">O status de cada etapa é marcado no apontamento de campo, na execução.</div></div>
     <div class="tools"><button type="button" class="mini" data-mv="-1" ${i===0?"disabled":""}>↑ Subir</button><button type="button" class="mini" data-mv="1" ${i===L.length-1?"disabled":""}>↓ Descer</button><button type="button" class="mini" data-troca="1">Trocar sigla</button><button type="button" class="mini del" data-del="1">Remover</button></div></div>`});
   h+=`<button type="button" class="add" data-add="${p}">+ ADICIONAR PRÓXIMO PONTO NA PORTA ${p}</button></section>`});
  h+=`<section class="box"><div style="font-weight:800">RESUMO DA REDE</div><div class="tot">
   <div class="k"><span>Pontos</span><b>${o.pontos}</b></div><div class="k"><span>Trechos (cabos)</span><b>${o.trechos}</b></div>
   <div class="k"><span>Cabo total</span><b>${o.cabo} m</b></div><div class="k"><span>Infra existente</span><b>${o.iex} m</b></div>
+  <div class="k"><span>Termostatos (via conversor)</span><b>${o.terms||0}</b></div><div class="k"><span>Validação interna</span><b>${o.pontos} pontos</b></div>
   <div class="k"><span>Infra nova baixa</span><b>${o.ib} m</b></div><div class="k"><span>Infra nova alta</span><b>${o.ia} m</b></div>
   <div class="k" style="grid-column:1/-1;background:var(--acbg)"><span>Tempo previsto da rede</span><b>${fmtH(o.min)}</b></div></div></section>
  <section class="box"><div style="font-weight:800">DESENHO DA REDE · CABOS NUMERADOS</div><div id="des">${desenho()}</div>
@@ -146,6 +161,8 @@ function render(){
  $("#main").innerHTML=h;
  if(keep){let sel=keep.s?`[data-s="${keep.s}"]`:keep.tp?`[data-tp="${keep.tp}"]`:`[data-p="${keep.p}"][data-i="${keep.i}"] [data-f="${keep.f}"]`;const e=document.querySelector(sel);if(e){e.focus();try{e.setSelectionRange(keep.pos,keep.pos)}catch(_){}}}
 }
+function termHTML(t){const em=new Set([1,2].flatMap(q=>S.p[q]).filter(x=>x!==t).flatMap(x=>x.terms||[]));const sel=new Set(t.terms||[]);
+ return `<div class="lbl">Termostatos que este conversor atende <span class="sub" style="text-transform:none">(toque para marcar)</span></div><div class="terms">${Array.from({length:MAXT},(_,k)=>k+1).map(k=>`<button type="button" class="tm ${sel.has(k)?"on":""}" data-term="${k}" ${em.has(k)?"disabled":""}>Termostato ${k}${em.has(k)?" · outro conversor":""}</button>`).join("")}</div>${sel.size?"":'<div class="av w">Marque pelo menos um termostato</div>'}`}
 function desenho(){
  const L1=S.p[1],L2=S.p[2],rows=Math.max(L1.length,L2.length,1),H=150+rows*110+20;
  const col=(p,L,cx)=>{let s="";L.forEach((t,i)=>{const y=190+i*110,y0=i===0?140:y-54;
@@ -154,7 +171,7 @@ function desenho(){
    <text x="${cx+12}" y="${y-15}" font-size="11" fill="#534AB7">${t.existe?"existente":n(t.cabo)+" m"}</text>
    <rect x="${cx-95}" y="${y}" width="190" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
    <text x="${cx}" y="${y+24}" text-anchor="middle" font-size="14" font-weight="700" font-family="ui-monospace,monospace" fill="#26215C">${esc(t.sig)}</text>
-   <text x="${cx}" y="${y+42}" text-anchor="middle" font-size="11" fill="#534AB7">end. ${esc(t.endr||"?")}</text>`});
+   <text x="${cx}" y="${y+42}" text-anchor="middle" font-size="11" fill="#534AB7">end. ${esc(t.endr||"?")}${(t.terms||[]).length?" · Term. "+t.terms.slice().sort((a,b)=>a-b).join(", "):""}</text>`});
   if(!L.length)s+=`<text x="${cx}" y="180" text-anchor="middle" font-size="12" fill="#888">sem pontos</text>`;return s};
  return `<svg viewBox="0 0 680 ${H}" role="img" aria-label="Desenho da rede RS485"><rect x="240" y="20" width="200" height="50" rx="8" fill="#26215C"/><text x="340" y="42" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">X-WEB</text><text x="340" y="60" text-anchor="middle" font-size="11" fill="#CECBF6">QA do Ar</text>
  <path d="M300 70 L300 88 L170 88 L170 108" fill="none" stroke="#7F77DD" stroke-width="2"/><path d="M380 70 L380 88 L490 88 L490 108" fill="none" stroke="#7F77DD" stroke-width="2"/>
@@ -170,8 +187,8 @@ $("#sheet").addEventListener("click",e=>{if(e.target.id==="sheet"||e.target.clos
  const o=e.target.closest("[data-sig]");if(!o||!ESC)return;let base=o.dataset.sig,sig=base;
  if(REPETE.has(base)){const c=[1,2].flatMap(q=>S.p[q]).filter(x=>(x.base||x.sig)===base).length;sig=`${base}-${c+1}`}
  else if([1,2].flatMap(q=>S.p[q]).some(x=>x.sig===base)){toast(base+" já está na rede");return}
- if(ESC.i==null){S.p[ESC.p].push({id:uid(),sig,base,endr:"",existe:false,iex:"",baixa:"",alta:"",cabo:"",obs:""});toast(`Ponto ${sig} e cabo ${num(ESC.p,S.p[ESC.p].length-1)} criados`)}
- else{const t=S.p[ESC.p][ESC.i];t.sig=sig;t.base=base;toast("Sigla trocada")}
+ if(ESC.i==null){S.p[ESC.p].push({id:uid(),sig,base,endr:"",existe:false,iex:"",baixa:"",alta:"",cabo:"",obs:"",terms:[]});toast(`Ponto ${sig} e cabo ${num(ESC.p,S.p[ESC.p].length-1)} criados`)}
+ else{const t=S.p[ESC.p][ESC.i];t.sig=sig;t.base=base;if(base!=="AC60101")t.terms=[];toast("Sigla trocada")}
  $("#sheet").hidden=true;salvar();render();
  const last=document.querySelectorAll(`.tr[data-p="${ESC.p}"]`);const el=ESC.i==null?last[last.length-1]:null;if(el)el.scrollIntoView({block:"center",behavior:"smooth"})});
 /* ---- eventos ---- */
@@ -179,6 +196,7 @@ $("#main").addEventListener("click",e=>{
  const ad=e.target.closest("[data-add]");if(ad){escolher(+ad.dataset.add,null);return}
  if(e.target.closest("[data-zerar]")){$("#sheetc").innerHTML=`<h3>Apagar o cadastro?</h3><div>Isso apaga todos os pontos e trechos salvos neste aparelho.</div><button type="button" class="b p" id="zok" style="background:var(--bad);border-color:var(--bad)">Apagar tudo</button><button type="button" class="b" data-fecha="1">Cancelar</button>`;$("#sheet").hidden=false;$("#zok").onclick=()=>{S.p={1:[],2:[]};salvar();$("#sheet").hidden=true;render();toast("Cadastro apagado")};return}
  const box=e.target.closest("[data-p][data-i]");if(!box)return;const p=+box.dataset.p,i=+box.dataset.i,L=S.p[p],t=L[i];
+ const tm=e.target.closest("[data-term]");if(tm){const k=+tm.dataset.term;t.terms=t.terms||[];const ix=t.terms.indexOf(k);if(ix>=0)t.terms.splice(ix,1);else t.terms.push(k);salvar();render();return}
  const ex=e.target.closest("[data-ex]");if(ex){t.existe=ex.dataset.ex==="1";salvar();render();return}
  const mv=e.target.closest("[data-mv]");if(mv){const j=i+(+mv.dataset.mv);if(j<0||j>=L.length)return;[L[i],L[j]]=[L[j],L[i]];salvar();render();toast("Ordem alterada · confira as metragens dos cabos");return}
  if(e.target.closest("[data-troca]")){escolher(p,i);return}
