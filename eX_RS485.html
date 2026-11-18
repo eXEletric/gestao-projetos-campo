@@ -122,14 +122,14 @@ function totais(){let o={pontos:0,trechos:0,cabo:0,ieb:0,iea:0,ib:0,ia:0,min:0};
 const fmtH=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return h?`${h}h${String(r).padStart(2,"0")}`:`${r} min`};
 function avisos(p,i){const t=S.p[p][i],a=[];
  if(!t.existe){const inf=n(t.iexb)+n(t.iexa)+n(t.baixa)+n(t.alta);if(!n(t.cabo))a.push(["w","Falta a metragem total do cabo"]);else if(inf>n(t.cabo))a.push(["b",`Infra (${inf} m) maior que o cabo (${n(t.cabo)} m). Confira.`]);else if(inf<n(t.cabo))a.push(["w",`${(n(t.cabo)-inf).toFixed(1).replace(".0","")} m de cabo sem infra informada`])}
- const ad=addrOf(t);if(ad===""){a.push(["w","Sigla sem endereço padrão na base"])}else{const dup=[1,2].flatMap(q=>S.p[q]).filter(x=>x!==t&&String(addrOf(x))===String(ad)).length;if(dup)a.push(["b",`Endereço ${ad} repetido na rede · ajuste a tabela de endereços`])}
+ const ad=addrOf(t);if(ad===""){a.push(["w","Sigla sem endereço bus RS485 na tabela do lote"])}else{const dup=[1,2].flatMap(q=>S.p[q]).filter(x=>x!==t&&String(addrOf(x))===String(ad)).length;if(dup)a.push(["b",`Endereço bus RS485 ${ad} repetido na rede · ajuste a tabela do lote`])}
  return a}
 /* ---- render ---- */
 function render(){
  const o=totais();$("#hsub").textContent=`${S.loja} · ${o.pontos} pontos · ${o.cabo} m de cabo`;
  let h=`<div class="aval">⚠ MODO AVALIAÇÃO — os dados ficam salvos só neste aparelho. Nada vai para o eX Controller ainda.</div>
  <section class="box"><div class="passo"><i>1</i><span>Em cada porta do X-WEB, toque em <b>“+ ADICIONAR PRÓXIMO PONTO”</b> e escolha a sigla da lista.</span></div>
- <div class="passo"><i>2</i><span>O cabo entre dois pontos é criado sozinho e já numerado (P1-01, P1-02…), e o endereço do dispositivo vem automático pela sigla. Preencha só as metragens de cada trecho.</span></div>
+ <div class="passo"><i>2</i><span>O cabo entre dois pontos é criado sozinho e já numerado (P1-01, P1-02…), e o <b>endereço bus RS485</b> do dispositivo vem da tabela padrão do lote, pela sigla. Preencha só as metragens de cada trecho.</span></div>
  <div class="passo"><i>3</i><span>Termostato não é ponto da rede: escolha o conversor <b>AC60101</b> e marque nele os termostatos que ele atende.</span></div>
  <div class="passo"><i>4</i><span>No fim da página saem o <b>resumo</b>, o <b>tempo previsto</b> e o <b>desenho</b> com os cabos numerados.</span></div></section>
  <section class="box"><label class="lbl">Loja<input data-s="loja" value="${esc(S.loja)}"></label><label class="lbl">Quem está levantando<input data-s="lider" value="${esc(S.lider)}" placeholder="nome do líder"></label></section>`;
@@ -152,7 +152,7 @@ function render(){
     <div class="sub">Tempo previsto do trecho: <b>${fmtH(tempoTrecho(t))}</b></div>
    </div>
    <div class="pt" data-p="${p}" data-i="${i}"><div class="ptrow"><div><span class="n">${esc(t.sig)}</span><div class="d">${esc(DESC[t.base||t.sig]||"")}</div></div>
-    <div class="addr"><span>Endereço</span><b>${addrOf(t)||"—"}</b><span>automático</span></div></div>
+    <div class="addr"><span>Endereço bus RS485</span><b>${addrOf(t)||"—"}</b></div></div>
     ${(t.base||t.sig)==="AC60101"?termHTML(t):""}
     <div class="etapas"><div class="lbl" style="margin-bottom:2px">Etapas deste ponto</div>
      <div class="et"><span>1. Ligação do cabo no dispositivo <span class="sub">(entrada + saída)</span></span><b>${S.tp.lig} min</b></div>
@@ -171,9 +171,9 @@ function render(){
   <button type="button" class="b noprint" onclick="window.print()">Imprimir / salvar PDF</button></section>
  <section class="box noprint"><div style="font-weight:800">TEMPOS PADRÃO DA BASE <span class="sub">(editáveis)</span></div>
   <table><tr><th>Etapa</th><th class="r">Tempo</th><th>Unid.</th></tr>${TP0.map(x=>`<tr><td>${x[1]}</td><td class="r"><input inputmode="numeric" data-tp="${x[0]}" value="${S.tp[x[0]]}"></td><td>${x[3]}</td></tr>`).join("")}</table>
-  </section><section class="box noprint"><div style="font-weight:800">ENDEREÇAMENTO PADRÃO DA REDE <span class="sub">(editável · vale para todas as lojas)</span></div>
+  </section><section class="box noprint"><div style="font-weight:800">ENDEREÇO BUS RS485 · PADRÃO DO LOTE <span class="sub">(editável · vale para todas as lojas)</span></div>
   <div class="sub">Tabela usada nas unidades do lote anterior. O endereço de cada ponto sai desta tabela pela sigla; siglas em branco ainda não têm endereço definido. Conversores AC60101 recebem o endereço base + a sequência (AC60101-1 = base, -2 = base+1…).</div>
-  <table><tr><th>Sigla</th><th class="r">Endereço</th></tr>${SIG.map(x=>`<tr><td><b style="font-family:var(--f-mono)">${x[1]}</b> <span class="sub">${x[2]}</span></td><td class="r"><input inputmode="numeric" data-ed="${x[1]}" value="${S.end[x[1]]??""}"></td></tr>`).join("")}</table>
+  <table><tr><th>Sigla</th><th class="r">Endereço bus RS485</th></tr>${SIG.map(x=>`<tr><td><b style="font-family:var(--f-mono)">${x[1]}</b> <span class="sub">${x[2]}</span></td><td class="r"><input inputmode="numeric" data-ed="${x[1]}" value="${S.end[x[1]]??""}"></td></tr>`).join("")}</table>
   <button type="button" class="mini del" data-zerar="1">Apagar todo o cadastro deste aparelho</button></section>`;
  const a=document.activeElement,keep=a&&a.dataset&&(a.dataset.f||a.dataset.s||a.dataset.tp||a.dataset.ed)?{f:a.dataset.f,s:a.dataset.s,tp:a.dataset.tp,ed:a.dataset.ed,p:a.closest("[data-p]")&&a.closest("[data-p]").dataset.p,i:a.closest("[data-i]")&&a.closest("[data-i]").dataset.i,pos:a.selectionStart}:null;
  $("#main").innerHTML=h;
@@ -189,7 +189,7 @@ function desenho(){
    <text x="${cx+12}" y="${y-15}" font-size="11" fill="#534AB7">${t.existe?"existente":n(t.cabo)+" m"}</text>
    <rect x="${cx-95}" y="${y}" width="190" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
    <text x="${cx}" y="${y+24}" text-anchor="middle" font-size="14" font-weight="700" font-family="ui-monospace,monospace" fill="#26215C">${esc(t.sig)}</text>
-   <text x="${cx}" y="${y+42}" text-anchor="middle" font-size="11" fill="#534AB7">end. ${addrOf(t)||"?"}${(t.terms||[]).length?" · Term. "+t.terms.slice().sort((a,b)=>a-b).join(", "):""}</text>`});
+   <text x="${cx}" y="${y+42}" text-anchor="middle" font-size="11" fill="#534AB7">bus ${addrOf(t)||"?"}${(t.terms||[]).length?" · Term. "+t.terms.slice().sort((a,b)=>a-b).join(", "):""}</text>`});
   if(!L.length)s+=`<text x="${cx}" y="180" text-anchor="middle" font-size="12" fill="#888">sem pontos</text>`;return s};
  return `<svg viewBox="0 0 680 ${H}" role="img" aria-label="Desenho da rede RS485"><rect x="240" y="20" width="200" height="50" rx="8" fill="#26215C"/><text x="340" y="42" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">X-WEB</text><text x="340" y="60" text-anchor="middle" font-size="11" fill="#CECBF6">QA do Ar</text>
  <path d="M300 70 L300 88 L170 88 L170 108" fill="none" stroke="#7F77DD" stroke-width="2"/><path d="M380 70 L380 88 L490 88 L490 108" fill="none" stroke="#7F77DD" stroke-width="2"/>
