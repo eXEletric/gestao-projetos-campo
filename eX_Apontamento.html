@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>eX · Apontamento de Campo</title>
+<link rel="icon" href="icon.svg">
+<style>
+:root{--bg:#f3f5f7;--panel:#fff;--fg:#1b2530;--muted:#5d6b78;--line:#d5dce3;--chip:#eef1f4;--accent:#c4561b;--accent-fg:#fff;
+--ok:#1f7a43;--ok-bg:#d9f2e2;--pend:#8a6a00;--pend-bg:#fbefc8;--div:#b3261e;--div-bg:#fadcd9;--na-bg:#e6eaee;
+--f-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;--f-mono:ui-monospace,SFMono-Regular,Menlo,monospace;color-scheme:light}
+@media (prefers-color-scheme:dark){:root{--bg:#12171c;--panel:#1a2128;--fg:#e4e9ee;--muted:#9aa7b3;--line:#2e3943;--chip:#242d36;--accent:#e0743a;--accent-fg:#1a1208;
+--ok:#7fd6a0;--ok-bg:#173826;--pend:#f0cf6b;--pend-bg:#3a3115;--div:#ff9a8f;--div-bg:#43201d;--na-bg:#26303a;color-scheme:dark}}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:16px;line-height:1.35;padding-bottom:calc(30px + env(safe-area-inset-bottom,0px))}
+.wrap{padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px));max-width:860px;margin:0 auto}
+header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+header .wrap{padding-top:10px;padding-bottom:10px;display:grid;gap:6px}
+.row1{display:flex;align-items:center;gap:8px}
+h1{font-size:16px;margin:0;font-weight:700;flex:1;min-width:0}
+.live{font-family:var(--f-mono);font-size:11px;color:var(--muted)}.live b{color:var(--ok)}
+.obra{font-size:13px;color:var(--muted)}
+.tot{display:flex;align-items:center;gap:10px}
+.tot .big{font-family:var(--f-mono);font-size:26px;font-weight:700;min-width:84px}
+.bar{flex:1;height:12px;border-radius:6px;background:var(--na-bg);overflow:hidden;display:block}.bar span{display:block;height:100%;background:var(--accent)}
+.sub{font-size:12px;color:var(--muted)}
+main.wrap{padding-top:12px;display:grid;gap:12px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+.dia{padding:12px;display:grid;gap:10px}
+.dia label{display:grid;gap:3px;font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+.dia input,.dia textarea,.dia select,.t input,.t select,.t textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:44px;width:100%;text-transform:none;letter-spacing:0;font-weight:400}
+.dia textarea,.t textarea{min-height:60px;resize:vertical}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.t{padding:12px;display:grid;gap:10px}
+.t .nm{font-weight:700;font-size:17px}
+.t .meta{font-size:12px;color:var(--muted);font-family:var(--f-mono)}
+.sts{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.sts button{font:inherit;font-size:14px;font-weight:600;min-height:48px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--muted);cursor:pointer;padding:4px}
+.sts button.on.a_fazer{background:var(--na-bg);color:var(--fg);border-color:var(--muted)}
+.sts button.on.em_andamento{background:var(--pend-bg);color:var(--pend);border-color:var(--pend)}
+.sts button.on.concluida{background:var(--ok-bg);color:var(--ok);border-color:var(--ok)}
+.sts button.on.congelada{background:var(--div-bg);color:var(--div);border-color:var(--div)}
+.fl{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:8px}
+.fl label{display:grid;gap:3px;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+.stp{display:grid;grid-template-columns:48px 1fr 48px;gap:4px}
+.stp button{font:inherit;font-size:22px;font-weight:700;border:1px solid var(--line);border-radius:8px;background:var(--chip);color:var(--fg);cursor:pointer}
+.stp input{text-align:center;font-family:var(--f-mono)}
+.fotos{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.fotos img{width:72px;height:72px;object-fit:cover;border-radius:6px;border:1px solid var(--line)}
+.fotos label.b{display:inline-flex;align-items:center;justify-content:center;min-height:48px;padding:0 16px;border:1px dashed var(--accent);color:var(--accent);border-radius:8px;font-size:15px;font-weight:600;cursor:pointer}
+.b{font:inherit;font-weight:600;padding:10px 16px;border-radius:8px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer;min-height:44px}
+.b.p{background:var(--accent);border-color:var(--accent);color:var(--accent-fg)}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:30;max-width:90vw}
+.empty{padding:40px 24px;text-align:center;color:var(--muted)}
+.warn{background:var(--pend-bg);color:var(--pend);padding:10px 12px;border-radius:8px;font-size:14px}
+.nav{display:flex;align-items:center;gap:8px}
+.nav .back{font:inherit;font-weight:600;font-size:15px;min-height:44px;padding:0 14px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);cursor:pointer;white-space:nowrap}
+.nav .ttl{font-weight:700;font-size:15px;flex:1;min-width:0}
+.menu{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}
+.tile{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:8px;cursor:pointer;text-align:left;font:inherit;color:var(--fg);min-height:122px;align-content:space-between}
+.tile:active,.card:active{transform:scale(.98)}
+.tile .tn{font-weight:700;font-size:15px;line-height:1.2}
+.tile .tp{font-family:var(--f-mono);font-size:22px;font-weight:700}
+.tile .ts{font-size:12px;color:var(--muted)}
+.tile.dia{border-color:var(--accent)}
+.tile.full{grid-column:1/-1;min-height:0}
+.cards{display:grid;gap:8px}
+.card{background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--na-bg);border-radius:10px;padding:11px 12px;display:grid;grid-template-columns:1fr auto;gap:4px 10px;cursor:pointer;font:inherit;color:var(--fg);text-align:left;width:100%}
+.card.em_andamento{border-left-color:var(--pend)}.card.concluida{border-left-color:var(--ok)}.card.congelada{border-left-color:var(--div)}
+.card .cn{font-weight:600;font-size:15px}
+.card .cm{font-size:12px;color:var(--muted);font-family:var(--f-mono);grid-column:1/-1}
+.chip{font-size:12px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--na-bg);white-space:nowrap;align-self:start}
+.chip.em_andamento{background:var(--pend-bg);color:var(--pend)}.chip.concluida{background:var(--ok-bg);color:var(--ok)}.chip.congelada{background:var(--div-bg);color:var(--div)}
+.card .cb{grid-column:1/-1;height:6px;border-radius:3px;background:var(--na-bg);overflow:hidden}.card .cb span{display:block;height:100%;background:var(--accent)}
+.hj{color:var(--accent);font-weight:700}
+.nxt{display:flex;gap:8px;justify-content:space-between;padding:0 12px 12px}
+.saving{opacity:.6;pointer-events:none}
+</style></head><body>
+<header><div class="wrap">
+  <div class="row1"><h1>eX · Apontamento de Campo</h1><span class="live" id="live">conectando…</span></div>
+  <div class="obra" id="obra"></div>
+  <div class="tot"><span class="big" id="tot">—</span><span class="bar"><span id="totbar" style="width:0"></span></span></div>
+  <div class="sub" id="totsub">Avanço pelo tempo padrão.</div>
+</div></header>
+<main class="wrap" id="main"><div class="empty">Carregando…</div></main>
+<div class="toast" id="toast" hidden></div>
+<script>
+const FN="https://djguxdgaobtminatxkdr.supabase.co/functions/v1/apontamento-campo";
+const qs=new URLSearchParams(location.search);const P=qs.get("p")||"",K=qs.get("k")||"";
+const ST=[["a_fazer","Não iniciada"],["em_andamento","Em andamento"],["concluida","Concluída"],["congelada","Impedida"]];
+const STL=Object.fromEntries(ST);
+let PJ=null,GR=[],TS=[],DIA=null,HOJE=new Set(),DATA="",busy=0;
+let vw="menu",vg="",vt="";
+const $=s=>document.querySelector(s);
+function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
+function toast(m,ms){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,ms||1800)}
+function fmtH(h){const m=Math.round(h*60);const H=Math.floor(m/60),r=m%60;return H?`${H}h${String(r).padStart(2,"0")}`:`${r} min`}
+function pct(x){return (Math.round(x*10)/10).toFixed(1).replace(".",",")+"%"}
+function dBR(d){return String(d||"").split("-").reverse().join("/")}
+/* ---- cálculo (igual ao cronograma: qtd × tempo × progresso) ---- */
+const isM=t=>String(t.unidade||"").toLowerCase()==="m";
+const prev=t=>(+t.quantidade||0)*(+t.tempo_atual||0);
+const frac=t=>Math.max(0,Math.min(1,(+t.progresso||0)/100));
+function soma(l){let p=0,d=0;l.forEach(t=>{const v=prev(t);p+=v;d+=v*frac(t)});return{p,d,pc:p?d/p*100:0}}
+function contavel(t){return !isM(t)&&(+t.quantidade||0)>1}
+function feito(t){return Math.round(frac(t)*(+t.quantidade||0))}
+function varIdx(t){const v=t.variacoes||[];if(v.length<2)return -1;let b=0,bd=1e9;v.forEach((x,i)=>{const d=Math.abs((+x[1]||0)-(+t.tempo_atual||0));if(d<bd){bd=d;b=i}});return b}
+const byG=g=>TS.filter(t=>t.grupo_id===g).sort((a,b)=>(a.ordem||0)-(b.ordem||0));
+/* ---- api ---- */
+async function api(body){const r=await fetch(FN,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({p:P,k:K,data:DATA,...body})});const d=await r.json().catch(()=>({error:"resposta inválida"}));if(!r.ok||d.error)throw new Error(d.error||("erro "+r.status));return d}
+async function carregar(){
+  if(!P||!K){$("#main").innerHTML='<div class="empty">Link incompleto. Peça o link da obra ao André.</div>';$("#live").textContent="";return}
+  try{const r=await fetch(`${FN}?p=${encodeURIComponent(P)}&k=${encodeURIComponent(K)}`);const d=await r.json();
+    if(!r.ok||d.error){$("#main").innerHTML=`<div class="empty">${r.status===401?"Este link não é válido ou foi desligado.":"Não consegui carregar: "+esc(d.error||r.status)}</div>`;$("#live").textContent="";return}
+    PJ=d.projeto;GR=d.grupos;TS=d.tarefas;DIA=d.dia;HOJE=new Set(d.hoje||[]);DATA=d.data;
+    $("#live").innerHTML="<b>●</b> online";render();
+  }catch(e){$("#live").textContent="sem internet";if(!PJ)$("#main").innerHTML='<div class="empty">Sem conexão. Verifique a internet e toque para tentar de novo.<br><br><button class="b p" onclick="carregar()">Tentar de novo</button></div>';}
+}
+async function salvar(t,patch,msg){
+  const antes={...t};Object.assign(t,patch);HOJE.add(t.id);render();busy++;
+  try{const body={action:"tarefa",id:t.id,patch:{}};["status","progresso","quantidade","notas"].forEach(k=>{if(k in patch)body.patch[k]=patch[k]});if("_var" in patch)body.patch.variacao=patch._var;
+    const d=await api(body);if(d.tarefa)Object.assign(t,d.tarefa);delete t._var;toast(msg||"Salvo")}
+  catch(e){Object.assign(t,antes);toast("Não salvou: "+e.message,3500)}
+  finally{busy--;render()}
+}
+/* ---- render ---- */
+function header(){
+  $("#obra").textContent=PJ?(PJ.contemplado||PJ.nome)+" · "+dBR(DATA):"";
+  const s=soma(TS);$("#tot").textContent=s.p?pct(s.pc):"—";$("#totbar").style.width=s.pc+"%";
+  $("#totsub").textContent=s.p?`${fmtH(s.d)} executados de ${fmtH(s.p)} previstos · avanço pelo tempo padrão`:"Avanço pelo tempo padrão.";
+}
+function navHTML(ttl,back){return `<div class="nav"><button type="button" class="back" data-back="1">← ${esc(back)}</button><div class="ttl">${esc(ttl)}</div></div>`}
+function cardHTML(t){const st=t.status||"a_fazer",q=+t.quantidade||0;
+  const meta=[contavel(t)?`${feito(t)}/${q} ${esc(t.unidade)}`:isM(t)?(q?`${q} m`:"medir metros"):"",fmtH(prev(t)),(t.fotos&&t.fotos.length)?`📷 ${t.fotos.length}`:"",t.notas?"💬":"",HOJE.has(t.id)?'<span class="hj">● hoje</span>':""].filter(Boolean).join(" · ");
+  return `<button type="button" class="card ${st}" data-open="${esc(t.id)}"><span class="cn">${esc(t.nome)}</span><span class="chip ${st}">${STL[st]||st}</span><span class="cm">${meta}</span>${contavel(t)&&st!=="concluida"&&frac(t)>0?`<span class="cb"><span style="width:${frac(t)*100}%"></span></span>`:""}</button>`}
+function tarefaHTML(t){const q=+t.quantidade||0,vi=varIdx(t),st=t.status||"a_fazer";
+  const meta=[contavel(t)?`${q} ${esc(t.unidade)}`:"",isM(t)?`${fmtH(+t.tempo_atual||0)} por metro`:"",`${fmtH(prev(t))} previstos`].filter(Boolean).join(" · ");
+  return `<div class="t" data-id="${esc(t.id)}">
+   <div class="nm">${esc(t.nome)}</div><div class="meta">${meta}</div>
+   <div class="sts">${ST.map(([k,l])=>`<button type="button" class="${k} ${st===k?"on":""}" data-st="${k}">${l}</button>`).join("")}</div>
+   ${(contavel(t)||isM(t)||vi>=0)?`<div class="fl">
+     ${contavel(t)?`<label>Feito (de ${q})<div class="stp"><button type="button" data-inc="-1">−</button><input type="number" inputmode="numeric" min="0" max="${q}" data-f="feito" value="${feito(t)}"><button type="button" data-inc="1">+</button></div></label>`:""}
+     ${vi>=0?`<label>Condição<select data-f="var">${t.variacoes.map((v,i)=>`<option value="${i}" ${i===vi?"selected":""}>${esc(v[0])}</option>`).join("")}</select></label>`:""}
+     ${isM(t)?`<label>Metros (total)<input type="number" inputmode="decimal" min="0" step="0.5" data-f="metros" value="${q||""}" placeholder="medir"></label>`:""}
+   </div>`:""}
+   <label style="display:grid;gap:3px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted)">${st==="congelada"?"Motivo do impedimento":"Observação"}<textarea data-f="notas" placeholder="${st==="congelada"?"O que está travando":"Opcional"}">${esc(t.notas)}</textarea></label>
+   <div class="fotos">${(t.fotos||[]).map(f=>f.url?`<a href="${esc(f.url)}" target="_blank" rel="noopener"><img src="${esc(f.url)}" alt="foto" loading="lazy"></a>`:"").join("")}<label class="b">📷 Foto<input type="file" accept="image/*" capture="environment" data-up="1" hidden></label></div>
+  </div>`}
+function diaHTML(){const c=(DIA&&DIA.campo)||{};
+  return `<section class="box"><div class="dia">
+   <div class="g2"><label>Líder<input data-d="lider" value="${esc(c.lider)}" placeholder="seu nome"></label><label>Equipe presente<input data-d="equipe" value="${esc(c.equipe)}" placeholder="nomes"></label></div>
+   <div class="g2"><label>Entrada<input type="time" data-d="entrada" value="${esc(c.entrada)}"></label><label>Saída<input type="time" data-d="saida" value="${esc(c.saida)}"></label></div>
+   <label>Termostatos agrupados em caixa? (splitão)<select data-d="termostatos_em_caixa">${["","Sim","Não"].map(v=>`<option ${v===(c.termostatos_em_caixa||"")?"selected":""}>${v}</option>`).join("")}</select></label>
+   ${c.termostatos_em_caixa==="Não"?'<div class="warn">⚠ Termostatos fora de caixa: avisar o André — pode exigir adequação.</div>':""}
+   <label>Impedimentos do dia<textarea data-d="impedimentos" placeholder="O que travou o serviço hoje">${esc(c.impedimentos)}</textarea></label>
+   <label>Resumo do dia<textarea data-d="resumo" placeholder="O que foi feito">${esc(c.resumo)}</textarea></label>
+   <button type="button" class="b p" data-diasave="1">Salvar dia</button>
+  </div></section>`}
+function render(){
+  if(!PJ)return;header();let h="";
+  const g=GR.find(x=>x.id===vg),t=TS.find(x=>x.id===vt);
+  if(vw==="g"&&g){const ts=byG(g.id),s=soma(ts);
+    h=navHTML(g.nome,"Menu")+`<div class="sub">${pct(s.pc)} · ${ts.filter(x=>x.status==="concluida").length} de ${ts.length} concluídas · toque numa atividade</div><div class="cards">${ts.map(cardHTML).join("")}</div>`;
+  }else if(vw==="t"&&t){const ts=byG(t.grupo_id),i=ts.indexOf(t),gn=(GR.find(x=>x.id===t.grupo_id)||{}).nome||"";
+    h=navHTML(gn,"Atividades")+`<section class="box">${tarefaHTML(t)}<div class="nxt">${i>0?`<button type="button" class="b" data-open="${esc(ts[i-1].id)}" data-rep="1">‹ Anterior</button>`:"<span></span>"}${i<ts.length-1?`<button type="button" class="b p" data-open="${esc(ts[i+1].id)}" data-rep="1">Próxima ›</button>`:`<button type="button" class="b p" data-back="1">Voltar ao grupo</button>`}</div></section>`;
+  }else if(vw==="dia"){h=navHTML("Dia de trabalho · "+dBR(DATA),"Menu")+diaHTML();
+  }else{vw="menu";const c=(DIA&&DIA.campo)||{};
+    h=`<div class="menu"><button type="button" class="tile dia full" data-view="dia"><span class="tn">📋 Dia de trabalho · ${dBR(DATA)}</span><span class="ts">${c.lider?"Líder: "+esc(c.lider)+(c.impedimentos?' · <b style="color:var(--div)">com impedimento</b>':""):"Toque para preencher líder, equipe e horários"}</span></button>`;
+    GR.forEach(g=>{const ts=byG(g.id),s=soma(ts),imp=ts.filter(x=>x.status==="congelada").length,hj=ts.filter(x=>HOJE.has(x.id)).length;
+      h+=`<button type="button" class="tile" data-grp="${esc(g.id)}"><span class="tn">${esc(g.nome)}</span><span class="tp">${pct(s.pc)}</span><span class="bar"><span style="width:${s.pc}%"></span></span><span class="ts">${ts.filter(x=>x.status==="concluida").length}/${ts.length} concluídas${imp?` · <b style="color:var(--div)">${imp} impedida${imp>1?"s":""}</b>`:""}${hj?` · <span class="hj">${hj} hoje</span>`:""}</span></button>`});
+    h+=`</div>`;
+  }
+  const a=document.activeElement;if(a&&a.closest&&a.closest("#main")&&a.matches("input,textarea"))return; // não atrapalha quem está digitando
+  $("#main").innerHTML=h;
+}
+/* ---- navegação ---- */
+function go(v,g,t,push=true){vw=v;vg=g||"";vt=t||"";try{history[push?"pushState":"replaceState"]({vw,vg,vt},"")}catch(_){}render();window.scrollTo(0,0)}
+window.addEventListener("popstate",e=>{const s=e.state||{vw:"menu"};vw=s.vw||"menu";vg=s.vg||"";vt=s.vt||"";render()});
+try{history.replaceState({vw:"menu"},"")}catch(_){}
+/* ---- eventos ---- */
+const cur=el=>{const c=el.closest(".t");return c&&TS.find(x=>x.id===c.dataset.id)};
+$("#main").addEventListener("click",async e=>{
+  if(e.target.closest("[data-back]")){if(vw==="t"){const t=TS.find(x=>x.id===vt);go("g",t&&t.grupo_id,"",false)}else go("menu","","",false);return}
+  const gr=e.target.closest("[data-grp]");if(gr){go("g",gr.dataset.grp);return}
+  const op=e.target.closest("[data-open]");if(op){const t=TS.find(x=>x.id===op.dataset.open);if(t)go("t",t.grupo_id,t.id,!op.dataset.rep);return}
+  const vv=e.target.closest("[data-view]");if(vv){go(vv.dataset.view);return}
+  if(e.target.closest("[data-diasave]")){salvarDia(true);return}
+  const t=cur(e.target);if(!t)return;
+  const st=e.target.closest("[data-st]");if(st){const v=st.dataset.st;if(v===t.status)return;const p={status:v};
+    if(v==="a_fazer")p.progresso=0;else if(v==="concluida")p.progresso=100;else if(v==="em_andamento"&&!(t.progresso>0&&t.progresso<100))p.progresso=contavel(t)&&feito(t)>0?t.progresso:50;
+    if(v==="congelada")toast("Escreva o motivo do impedimento abaixo",2500);
+    salvar(t,p,STL[v]);return}
+  const inc=e.target.closest("[data-inc]");if(inc){const q=+t.quantidade||0;const v=Math.max(0,Math.min(q,feito(t)+(+inc.dataset.inc)));if(v===feito(t))return;setFeito(t,v);return}
+});
+function setFeito(t,v){const q=+t.quantidade||0;const p={progresso:Math.round(v/q*100)};p.status=v>=q?"concluida":v>0?(t.status==="congelada"?"congelada":"em_andamento"):"a_fazer";if(v>=q)p.progresso=100;salvar(t,p,`Feito ${v}/${q}`)}
+$("#main").addEventListener("change",async e=>{const el=e.target;
+  if(el.dataset.d){DIA=DIA||{};DIA.campo={...(DIA.campo||{}),[el.dataset.d]:el.value};if(el.dataset.d==="termostatos_em_caixa"){render()}salvarDia(false);return}
+  const t=cur(el);if(!t)return;
+  if(el.dataset.up&&el.files&&el.files[0]){foto(t,el.files[0]);return}
+  const f=el.dataset.f;
+  if(f==="feito"){const q=+t.quantidade||0;setFeito(t,Math.max(0,Math.min(q,Math.round(+el.value||0))));return}
+  if(f==="var"){const i=+el.value;salvar(t,{_var:i,tempo_atual:+t.variacoes[i][1]||0},"Condição salva");return}
+  if(f==="metros"){const v=el.value===""?0:Math.max(0,+el.value||0);salvar(t,{quantidade:v},"Metros salvos");return}
+  if(f==="notas"){if((t.notas||"")===el.value)return;salvar(t,{notas:el.value},"Observação salva");return}
+});
+let diaT=null;
+function salvarDia(now){clearTimeout(diaT);diaT=setTimeout(async()=>{try{await api({action:"dia",campo:(DIA&&DIA.campo)||{}});toast("Dia salvo")}catch(e){toast("Dia não salvou: "+e.message,3500)}},now?0:900)}
+document.addEventListener("focusout",()=>setTimeout(()=>{const a=document.activeElement;if(!a||!a.closest||!a.closest("#main")||!a.matches("input,textarea"))render()},250));
+/* ---- foto: reduz no aparelho antes de enviar ---- */
+function reduzir(file){return new Promise((res,rej)=>{const img=new Image();const u=URL.createObjectURL(file);img.onload=()=>{const M=1600,s=Math.min(1,M/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",.8))};img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("não li a foto"))};img.src=u})}
+async function foto(t,file){toast("Enviando foto…",10000);busy++;
+  try{const b64=await reduzir(file);const d=await api({action:"foto",id:t.id,base64:b64});t.fotos=d.fotos;HOJE.add(t.id);toast("Foto salva")}
+  catch(e){toast("Foto não enviada: "+e.message,3500)}finally{busy--;render()}}
+/* ---- atualiza sozinho a cada 60 s (outro líder pode ter apontado) ---- */
+setInterval(()=>{if(!busy&&document.visibilityState==="visible"){const a=document.activeElement;if(!(a&&a.matches&&a.matches("input,textarea,select")))carregar()}},60000);
+carregar();
+</script>
+</body></html>
