@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>eX · Configuração do lote e das lojas</title>
+<link rel="icon" href="icon.svg">
+<style>
+:root{--bg:#f3f5f7;--panel:#fff;--fg:#1b2530;--muted:#5d6b78;--line:#d5dce3;--chip:#eef1f4;--ac2:#7F77DD;--acbg:#EEEDFE;--acdk:#26215C;--acfg:#3C3489;
+--warn:#8a6a00;--warnbg:#fbefc8;--bad:#b3261e;--badbg:#fadcd9;--ok:#1f7a43;--okbg:#d9f2e2;
+--f-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;--f-mono:ui-monospace,SFMono-Regular,Menlo,monospace;color-scheme:light}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:16px;line-height:1.35;padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
+.wrap{padding:0 max(12px,env(safe-area-inset-left,0px));max-width:760px;margin:0 auto}
+header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+header .wrap{padding-top:8px;padding-bottom:8px;display:grid;gap:6px}
+.crumb{display:flex;gap:6px;flex-wrap:wrap;align-items:center;font-size:13px}
+.crumb button{font:inherit;font-weight:700;border:0;background:var(--chip);border-radius:6px;padding:6px 10px;cursor:pointer;color:var(--fg)}
+.crumb .sep{color:var(--muted)}
+h1{font-size:18px;margin:0}
+.sub{font-size:12px;color:var(--muted)}
+.aval{background:var(--warnbg);color:var(--warn);border-radius:8px;padding:8px 10px;font-size:13px;font-weight:600}
+main{display:grid;gap:14px;padding-top:12px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px}
+.bt{font-weight:800;font-size:14px;letter-spacing:.03em}
+.lbl{display:grid;gap:3px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+input,select{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:44px;width:100%}
+textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:56px;width:100%;resize:vertical}
+.b{font:inherit;font-weight:800;min-height:50px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer;padding:0 14px}
+.b.p{background:var(--acdk);color:#fff;border-color:var(--acdk)}
+.mini{font:inherit;font-size:13px;font-weight:700;min-height:38px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);cursor:pointer}
+.mini.del{color:var(--bad);border-color:var(--badbg)}
+.tile{font:inherit;text-align:left;display:grid;gap:4px;width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer;min-height:76px}
+.tile b{font-size:16px}.tile .go{font-size:12px;font-weight:800;color:var(--acfg);letter-spacing:.04em}
+.tile.off{opacity:.45;cursor:default}
+.disc{border-radius:12px;padding:14px;display:grid;gap:4px;text-align:left;font:inherit;border:0;cursor:pointer;width:100%;min-height:84px}
+.disc b{font-size:17px;text-transform:uppercase;letter-spacing:.03em}
+.disc.rs{background:#EEEDFE;color:#3C3489}.disc.il{background:#FAEEDA;color:#633806}.disc.ar{background:#E6F1FB;color:#0C447C}.disc.mm{background:#E1F5EE;color:#085041}.disc.et{background:#F1EFE8;color:#444441}
+.disc.off{opacity:.5;cursor:default}
+.passos{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.passo{font:inherit;text-align:left;border:2px solid var(--line);border-radius:12px;background:var(--panel);padding:10px;cursor:pointer;display:grid;gap:2px;color:var(--fg)}
+.passo.on{border-color:var(--acdk);background:var(--acbg)}
+.passo i{font-style:normal;font-weight:800;font-size:12px;color:var(--acfg)}.passo b{font-size:14px}
+.dv{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:10px;padding:10px;background:var(--panel)}
+.dv.on{border-color:var(--ac2);background:var(--acbg)}
+.dv .sg{font-family:var(--f-mono);font-weight:800}
+.dv .ds{font-size:12px;color:var(--muted)}
+.ck{width:28px;height:28px;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center;font-weight:900;color:#fff;background:var(--panel)}
+.dv.on .ck{background:var(--acdk);border-color:var(--acdk)}
+.qty{display:grid;grid-template-columns:40px 44px 40px;gap:4px}.qty button{font:inherit;font-size:20px;font-weight:800;border:1px solid var(--line);border-radius:8px;background:var(--chip);cursor:pointer}.qty span{display:grid;place-items:center;font-family:var(--f-mono);font-weight:800}
+.gt{font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);margin-top:4px}
+.terms{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.tm{font:inherit;font-size:13px;font-weight:700;min-height:40px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);cursor:pointer}
+.tm.on{background:var(--acdk);color:#fff;border-color:var(--acdk)}.tm:disabled{opacity:.35}
+/* montagem em blocos */
+.lane{border-radius:14px;padding:10px;display:grid;gap:0;min-height:90px}
+.lane.p1,.lane.p2{background:var(--acbg)}
+.lane.disp{background:var(--chip);border:2px dashed var(--line)}
+.lh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.lh b{font-size:15px;text-transform:uppercase;letter-spacing:.03em;color:var(--acfg)}.lane.disp .lh b{color:var(--muted)}
+.org{background:var(--acdk);color:#fff;border-radius:10px;padding:8px 12px;font-family:var(--f-mono);font-weight:800}
+.blk{display:grid;grid-template-columns:36px 1fr auto;gap:8px;align-items:center;background:var(--panel);border:2px solid var(--ac2);border-radius:10px;padding:8px;touch-action:none;user-select:none}
+.lane.disp .blk{border-color:var(--line);margin-bottom:6px}
+.hd{display:grid;place-items:center;height:40px;border-radius:8px;background:var(--chip);font-size:20px;cursor:grab;color:var(--muted)}
+.blk .sg{font-family:var(--f-mono);font-weight:800;font-size:15px}
+.blk .ds{font-size:11px;color:var(--muted)}
+.bus{font-family:var(--f-mono);font-weight:800;font-size:12px;background:var(--acbg);color:var(--acfg);border-radius:6px;padding:4px 7px;text-align:center;line-height:1.1}
+.bus small{display:block;font-size:9px;font-family:var(--f-ui)}
+.cab{margin:0 0 0 18px;border-left:4px solid var(--ac2);padding:6px 0 6px 12px}
+.cab button{font:inherit;text-align:left;width:100%;display:grid;gap:2px;border:1px solid var(--line);border-radius:8px;background:var(--panel);padding:6px 10px;cursor:pointer;color:var(--fg)}
+.num{font-family:var(--f-mono);font-weight:800;background:var(--acdk);color:#fff;padding:2px 8px;border-radius:6px;font-size:13px;justify-self:start}
+.cs{font-size:12px;color:var(--muted)}.cs.w{color:var(--warn)}
+.drop{height:6px;border-radius:3px;margin:2px 0}
+.drop.hot{background:var(--acdk);height:10px}
+.ghost{position:fixed;z-index:60;pointer-events:none;opacity:.9;box-shadow:0 8px 24px rgba(0,0,0,.25);width:min(320px,80vw)}
+.dragging{opacity:.3}
+.grp{border-radius:10px;padding:10px;display:grid;gap:8px;border:1px solid var(--line)}
+.grp .gh{display:flex;justify-content:space-between;font-size:12px;font-weight:800;letter-spacing:.03em}
+.grp.inf{background:#FAEEDA;border-color:#EF9F27}.grp.inf .gh{color:#633806}
+.grp.cbx{background:#E6F1FB;border-color:#85B7EB}.grp.cbx .gh{color:#0C447C}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:15px;font-weight:700;min-height:42px;border:0;background:var(--panel);color:var(--muted);cursor:pointer}.seg button.on{background:var(--acdk);color:#fff}
+.av{font-size:12px;border-radius:6px;padding:6px 8px}.av.w{background:var(--warnbg);color:var(--warn)}.av.b{background:var(--badbg);color:var(--bad)}
+.tot{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.k{background:var(--chip);border-radius:8px;padding:8px 10px}.k b{display:block;font-family:var(--f-mono);font-size:18px}.k span{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left;vertical-align:middle}td.r,th.r{text-align:right}
+td input{min-height:34px;padding:4px 6px;font-size:14px}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet>div{background:var(--panel);width:100%;max-width:560px;max-height:88vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 14px calc(18px + env(safe-area-inset-bottom,0px));display:grid;gap:10px}
+.sheet h3{margin:0;font-size:18px}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:70}
+#des svg{width:100%;height:auto;display:block}
+.dica{background:var(--warnbg);border-radius:10px;padding:10px 12px;font-size:14px}
+@media print{header,.aval,.noprint{display:none!important}body{background:#fff}}
+</style></head><body>
+<header><div class="wrap"><div class="crumb" id="crumb"></div><h1 id="ttl">eX · Configuração</h1></div></header>
+<main class="wrap" id="main"></main>
+<div class="sheet" id="sheet" hidden><div id="sheetc"></div></div>
+<div class="toast" id="toast" hidden></div>
+<script>
+/* ================= BASE DO LOTE (padrão inicial) ================= */
+const DEV0=[
+ ["Medidores","MM-QGBT","Multimedidor · QGBT (Medidor geral 01)","IMS160",61],["Medidores","MM-QGBT2","Multimedidor · QGBT 2 (Medidor geral 02)","IMS160",66],
+ ["Medidores","MM-SV1","Multimedidor · Iluminação SV1","IMS160",62],["Medidores","MM-SV2","Multimedidor · Iluminação SV2","IMS160",67],["Medidores","MM-SV3","Multimedidor · Iluminação SV3","",""],
+ ["Medidores","MM-D&D","Multimedidor · Iluminação Docas","IMS160",63],["Medidores","MM-SPL","Multimedidor · Splitões (QFAC)","",""],["Medidores","MM-CH","Multimedidor · Ar cond. Chiller","IMS160",65],["Medidores","MM-FC","Multimedidor · Ar cond. Fancoil","IMS160",64],
+ ["Controladores","IPG215D-IL-SV1","Controlador · Iluminação SV1","iPro",51],["Controladores","IPG215D-IL-SV2","Controlador · Iluminação SV2","iPro",60],["Controladores","IPG215D-IL-SV3","Controlador · Iluminação SV3","iPro",""],["Controladores","IPG215D-IL-D&D","Controlador · Iluminação Docas","iPro",52],
+ ["Controladores","IPG215D-SPL","Controlador · Ar Split","iPro",41],["Controladores","IPX215D-SPL","Expansão · Splitão convencional","iPro",""],["Controladores","IPG215D-CH","Controlador · Ar CAG","iPro",41],["Controladores","IPX215D-CH","Expansão · Chiller","iPro",""],["Controladores","CHILLER-CARRIER","Chiller Carrier · comunicação direta","Carrier",42],
+ ["Conversores","AC60101","Conversor p/ termostatos Modbus","",""]].map(d=>({grupo:d[0],sig:d[1],desc:d[2],modelo:d[3],end:d[4]}));
+const MULTI=new Set(["AC60101"]);const MAXT=10;
+const TP0=[["inf_baixa","Infra nova baixa","min/m",3],["inf_alta","Infra nova alta","min/m",6],["plat","Trecho em altura · posicionar plataforma","min/trecho",30],["lanc","Lançamento do cabo","min/m",2],["exist","Trecho existente · checagem","min/trecho",10],
+ ["lig","Ponto · ligação do cabo (entrada + saída)","min/ponto",15],["end","Ponto · endereçamento","min/ponto",15],["vint","Ponto · validação interna eX","min/ponto",10],["com","Comissionamento do barramento","min/rede",120],["val","Validação Copeland","min/rede",30]];
+/* ================= ESTADO (modo avaliação: localStorage) ================= */
+const K="ex_config_aval_v1";
+let S;try{S=JSON.parse(localStorage.getItem(K)||"null")}catch(_){S=null}
+if(!S)S={lote:"Copeland BRPROJ Onda 2 · Lote 1",base:{rs485:{devs:DEV0,tp:Object.fromEntries(TP0.map(x=>[x[0],x[3]]))}},lojas:[{id:"935",nome:"935 · Aparecida de Goiânia · Vera Cruz",rs485:{sel:{},terms:{},p1:[],p2:[],tr:{}}}]};
+const salvar=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(_){}};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const n=v=>Math.max(0,+String(v??"").replace(",",".")||0);
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,1900)}
+const B=()=>S.base.rs485, dev=sig=>B().devs.find(d=>d.sig===sig);
+/* ================= NAVEGAÇÃO ================= */
+let R={v:"home"}; // home | base | loja | rs1 | rs2
+function go(r,push=true){R=r;try{history[push?"pushState":"replaceState"](r,"")}catch(_){}render();window.scrollTo(0,0)}
+window.addEventListener("popstate",e=>{R=e.state||{v:"home"};fechar();render()});
+try{history.replaceState(R,"")}catch(_){}
+const L=()=>S.lojas.find(l=>l.id===R.l);
+/* ================= RS485 · lógica ================= */
+function instancias(lj){const r=lj.rs485,out=[];B().devs.forEach(d=>{const q=+r.sel[d.sig]||0;if(!q)return;if(MULTI.has(d.sig))for(let k=1;k<=q;k++)out.push({id:`${d.sig}-${k}`,base:d.sig,k});else out.push({id:d.sig,base:d.sig,k:1})});return out}
+function busOf(it){const d=dev(it.base);if(!d||d.end===""||d.end==null)return "";return (+d.end)+(MULTI.has(it.base)?it.k-1:0)}
+function sincroniza(lj){const ids=new Set(instancias(lj).map(i=>i.id)),r=lj.rs485;r.p1=r.p1.filter(x=>ids.has(x));r.p2=r.p2.filter(x=>ids.has(x));Object.keys(r.terms).forEach(k=>{if(!ids.has(k))delete r.terms[k]})}
+const numC=(p,i)=>`P${p}-${String(i+1).padStart(2,"0")}`;
+const trK=id=>id; // trecho = cabo que CHEGA no ponto
+/* ================= RENDER ================= */
+function crumb(){const c=[`<button data-go="home">Início</button>`];
+ if(R.v==="base")c.push(`<span class="sep">›</span><span>Base do lote · RS485</span>`);
+ if(R.l){const lj=L();c.push(`<span class="sep">›</span><button data-go="loja">${esc(lj?lj.id:"")}</button>`);if(R.v==="rs1"||R.v==="rs2")c.push(`<span class="sep">›</span><span>Rede RS485</span>`)}
+ $("#crumb").innerHTML=c.join("")}
+function render(){crumb();let h=`<div class="aval">⚠ MODO AVALIAÇÃO — tudo fica salvo só neste aparelho. Nada vai para o eX Controller ainda.</div>`,t="eX · Configuração";
+ if(R.v==="home"){t=S.lote;h+=homeHTML()}
+ else if(R.v==="base"){t="Base do lote · Rede RS485";h+=baseHTML()}
+ else if(R.v==="loja"){const lj=L();t="Loja "+lj.nome;h+=lojaHTML(lj)}
+ else if(R.v==="rs1"||R.v==="rs2"){const lj=L();sincroniza(lj);t="Rede RS485 · "+lj.id;h+=passosHTML()+(R.v==="rs1"?disHTML(lj):redeHTML(lj))}
+ $("#ttl").textContent=t;
+ const a=document.activeElement,keep=a&&a.dataset&&(a.dataset.bf||a.dataset.tp||a.dataset.nm)?{sel:a.dataset.bf?`[data-bf="${a.dataset.bf}"][data-i="${a.dataset.i}"]`:a.dataset.tp?`[data-tp="${a.dataset.tp}"]`:`[data-nm]`,pos:a.selectionStart}:null;
+ $("#main").innerHTML=h;
+ if(keep){const e=document.querySelector(keep.sel);if(e){e.focus();try{e.setSelectionRange(keep.pos,keep.pos)}catch(_){}}}}
+function homeHTML(){return `<section class="box"><div class="bt">1 · BASE DO LOTE <span class="sub">(vale para todas as lojas)</span></div>
+ <div class="sub">Dispositivos, endereço bus RS485 e tempos padrão. Materiais, projetos dos quadros e as outras disciplinas entram aqui depois.</div>
+ <button class="tile" data-go="base"><b>Rede RS485 · dispositivos, endereços bus e tempos</b><span class="go">ABRIR ›</span></button>
+ <button class="tile off" disabled><b>Iluminação · Ar · Medidores · Ethernet · Materiais</b><span class="sub">próximas etapas, no mesmo molde</span></button></section>
+ <section class="box"><div class="bt">2 · LOJAS DO LOTE</div><div class="sub">Cada loja é configurada por disciplina, puxando da base do lote.</div>
+ ${S.lojas.map(l=>`<button class="tile" data-loja="${esc(l.id)}"><b>${esc(l.nome)}</b><span class="sub">${instancias(l).length} dispositivos na RS485 · ${l.rs485.p1.length+l.rs485.p2.length} na rede</span><span class="go">CONFIGURAR LOJA ›</span></button>`).join("")}
+ <button class="b" data-novaloja="1">+ ADICIONAR LOJA</button></section>`}
+function lojaHTML(lj){const r=lj.rs485,ni=instancias(lj).length,nr=r.p1.length+r.p2.length;
+ return `<section class="box"><label class="lbl">Nome da loja<input data-nm="1" value="${esc(lj.nome)}"></label></section>
+ <section class="box"><div class="bt">DISCIPLINAS DA LOJA</div><div class="dica">👇 Toque numa disciplina para configurar o que existe nela. Cada uma segue os mesmos passos: <b>1. dispositivos</b> → <b>2. montar em blocos</b>.</div>
+ <button class="disc rs" data-go="rs1"><b>Rede RS485</b><span>${ni} dispositivos marcados · ${nr} ligados na rede</span><span style="font-weight:800;font-size:12px">ABRIR ›</span></button>
+ <button class="disc il off" disabled><b>Iluminação</b><span>em breve · mesmo molde</span></button>
+ <button class="disc ar off" disabled><b>Ar condicionado</b><span>em breve</span></button>
+ <button class="disc mm off" disabled><b>Medidores</b><span>em breve</span></button>
+ <button class="disc et off" disabled><b>Rede Ethernet</b><span>em breve</span></button></section>`}
+function passosHTML(){return `<div class="passos"><button class="passo ${R.v==="rs1"?"on":""}" data-go="rs1"><i>PASSO 1</i><b>Dispositivos da loja</b></button><button class="passo ${R.v==="rs2"?"on":""}" data-go="rs2"><i>PASSO 2</i><b>Montar a rede em blocos</b></button></div>`}
+function disHTML(lj){const r=lj.rs485;let g="",h=`<div class="dica">Marque os dispositivos que <b>existem nesta loja</b>. A lista vem da base do lote. O endereço bus RS485 já vem da tabela do lote.</div><section class="box">`;
+ B().devs.forEach(d=>{if(d.grupo!==g){g=d.grupo;h+=`<div class="gt">${esc(g)}</div>`}const q=+r.sel[d.sig]||0,on=q>0;
+  h+=`<div class="dv ${on?"on":""}">${MULTI.has(d.sig)?`<span class="ck">${q||""}</span>`:`<button type="button" class="ck" data-tg="${esc(d.sig)}" style="cursor:pointer">${on?"✓":""}</button>`}
+   <div><div class="sg">${esc(d.sig)}</div><div class="ds">${esc(d.desc)}${d.modelo?" · "+esc(d.modelo):""} · bus ${d.end===""?"<b style='color:var(--warn)'>sem endereço</b>":d.end}</div></div>
+   ${MULTI.has(d.sig)?`<div class="qty"><button type="button" data-q="${esc(d.sig)}" data-d="-1">−</button><span>${q}</span><button type="button" data-q="${esc(d.sig)}" data-d="1">+</button></div>`:`<span></span>`}</div>`;
+  if(MULTI.has(d.sig)&&q){for(let k=1;k<=q;k++){const id=`${d.sig}-${k}`,sel=new Set(r.terms[id]||[]),em=new Set(Object.entries(r.terms).filter(([x])=>x!==id).flatMap(([,v])=>v));
+   h+=`<div style="margin-left:14px;display:grid;gap:6px"><div class="lbl">${esc(id)} · termostatos que atende</div><div class="terms">${Array.from({length:MAXT},(_,j)=>j+1).map(j=>`<button type="button" class="tm ${sel.has(j)?"on":""}" data-term="${j}" data-cv="${esc(id)}" ${em.has(j)?"disabled":""}>Termostato ${j}</button>`).join("")}</div>${sel.size?"":'<div class="av w">Marque pelo menos um termostato</div>'}</div>`}}});
+ h+=`</section><button class="b p" data-go="rs2">PRÓXIMO: MONTAR A REDE EM BLOCOS ›</button>`;return h}
+function blocoHTML(it,lj){const d=dev(it.base),bus=busOf(it),t=lj.rs485.terms[it.id];
+ return `<div class="blk" data-blk="${esc(it.id)}"><div class="hd" data-hd="1" title="Arrastar">⠿</div><div><div class="sg">${esc(it.id)}</div><div class="ds">${esc(d?d.desc:"")}${t&&t.length?" · Term. "+t.slice().sort((a,b)=>a-b).join(", "):""}</div></div><div class="bus"><small>bus RS485</small>${bus===""?"—":bus}</div></div>`}
+function cabHTML(lj,p,i,id){const tr=lj.rs485.tr[id]||{},inf=n(tr.iexb)+n(tr.iexa)+n(tr.baixa)+n(tr.alta),ar=[1,2].flatMap(q=>lj.rs485["p"+q]);
+ const de=i===0?`X-WEB P${p}`:lj.rs485["p"+p][i-1];const txt=tr.existe?"rede existente":`cabo ${n(tr.cabo)||"—"} m · infra ${inf} m`;const fal=!tr.existe&&!n(tr.cabo);
+ return `<div class="cab"><button type="button" data-cab="${esc(id)}"><span class="num">${numC(p,i)}</span><span class="cs">${esc(de)} → ${esc(id)}</span><span class="cs ${fal?"w":""}">${txt}${fal?" · toque para medir":""}</span></button></div>`}
+function redeHTML(lj){const r=lj.rs485,its=instancias(lj),map=Object.fromEntries(its.map(i=>[i.id,i])),usados=new Set([...r.p1,...r.p2]),disp=its.filter(i=>!usados.has(i.id));
+ const dup=(()=>{const c={};[...r.p1,...r.p2].forEach(id=>{const b=busOf(map[id]);if(b!=="")c[b]=(c[b]||0)+1});return Object.entries(c).filter(([,v])=>v>1).map(([k])=>k)})();
+ let h=`<div class="dica">✋ <b>Arraste pelo ⠿</b> cada bloco para a <b>Porta 1</b> ou <b>Porta 2</b>, na ordem em que o cabo passa. Ao soltar, a corrente se reorganiza e os cabos se renumeram. Sem arrastar? Toque no bloco e escolha a posição.</div>`;
+ if(!its.length)h+=`<div class="av w">Nenhum dispositivo marcado. Volte ao passo 1.</div>`;
+ if(dup.length)h+=`<div class="av b">Endereço bus RS485 repetido na rede: ${dup.join(", ")}. Ajuste na base do lote.</div>`;
+ [1,2].forEach(p=>{h+=`<section class="lane p${p}" data-lane="${p}"><div class="lh"><b>Porta ${p} do X-WEB</b><span class="sub">${r["p"+p].length} pontos · ${r["p"+p].reduce((a,id)=>a+n((r.tr[id]||{}).cabo),0)} m de cabo</span></div><div class="org">X-WEB · P${p}</div>`;
+  r["p"+p].forEach((id,i)=>{h+=`<div class="drop" data-drop="${p}" data-at="${i}"></div>`+cabHTML(lj,p,i,id)+blocoHTML(map[id],lj)});
+  h+=`<div class="drop" data-drop="${p}" data-at="${r["p"+p].length}" style="height:40px;border:2px dashed var(--ac2);display:grid;place-items:center;font-size:12px;color:var(--acfg);font-weight:700">solte aqui para colocar no fim</div></section>`});
+ h+=`<section class="lane disp" data-lane="0"><div class="lh"><b>Disponíveis (fora da rede)</b><span class="sub">${disp.length}</span></div>${disp.map(i=>blocoHTML(i,lj)).join("")||'<div class="sub">Todos os dispositivos estão na rede ✓</div>'}<div class="drop" data-drop="0" data-at="0"></div></section>`;
+ const o={p:0,cabo:0,ieb:0,iea:0,ib:0,ia:0};[...r.p1,...r.p2].forEach(id=>{const t=r.tr[id]||{};o.p++;o.cabo+=n(t.cabo);o.ieb+=n(t.iexb);o.iea+=n(t.iexa);o.ib+=n(t.baixa);o.ia+=n(t.alta)});
+ h+=`<section class="box"><div class="bt">RESUMO DO LEVANTAMENTO</div><div class="tot"><div class="k"><span>Pontos na rede</span><b>${o.p}</b></div><div class="k"><span>Cabo total</span><b>${o.cabo} m</b></div>
+  <div class="k"><span>Infra existente baixa</span><b>${o.ieb} m</b></div><div class="k"><span>Infra existente alta</span><b>${o.iea} m</b></div><div class="k"><span>Infra nova baixa</span><b>${o.ib} m</b></div><div class="k"><span>Infra nova alta</span><b>${o.ia} m</b></div></div>
+  <div class="sub">Tempos e etapas não aparecem aqui: saem da base do lote e vão para o cronograma.</div></section>
+ <section class="box"><div class="bt">DESENHO DA REDE · CABOS NUMERADOS</div><div id="des">${desenho(lj,map)}</div><button class="b noprint" onclick="window.print()">Imprimir / salvar PDF</button></section>`;return h}
+function desenho(lj,map){const r=lj.rs485,rows=Math.max(r.p1.length,r.p2.length,1),H=150+rows*110+20;
+ const col=(p,Lx,cx)=>{let s="";Lx.forEach((id,i)=>{const y=190+i*110,y0=i===0?140:y-54,t=r.tr[id]||{},tm=r.terms[id];
+   s+=`<line x1="${cx}" y1="${y0}" x2="${cx}" y2="${y-2}" stroke="#7F77DD" stroke-width="3"/><text x="${cx+12}" y="${y-30}" font-size="12" font-family="ui-monospace,monospace" font-weight="700" fill="#26215C">${numC(p,i)}</text><text x="${cx+12}" y="${y-15}" font-size="11" fill="#534AB7">${t.existe?"existente":n(t.cabo)+" m"}</text>
+   <rect x="${cx-100}" y="${y}" width="200" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7"/><text x="${cx}" y="${y+24}" text-anchor="middle" font-size="14" font-weight="700" font-family="ui-monospace,monospace" fill="#26215C">${esc(id)}</text>
+   <text x="${cx}" y="${y+42}" text-anchor="middle" font-size="11" fill="#534AB7">bus ${busOf(map[id])||"?"}${tm&&tm.length?" · Term. "+tm.slice().sort((a,b)=>a-b).join(", "):""}</text>`});return s};
+ return `<svg viewBox="0 0 680 ${H}" role="img" aria-label="Desenho da rede RS485"><rect x="240" y="20" width="200" height="50" rx="8" fill="#26215C"/><text x="340" y="42" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">X-WEB</text><text x="340" y="60" text-anchor="middle" font-size="11" fill="#CECBF6">QA do Ar</text>
+ <path d="M300 70 L300 88 L170 88 L170 108" fill="none" stroke="#7F77DD" stroke-width="2"/><path d="M380 70 L380 88 L490 88 L490 108" fill="none" stroke="#7F77DD" stroke-width="2"/>
+ <rect x="110" y="110" width="120" height="30" rx="6" fill="#CECBF6"/><text x="170" y="130" text-anchor="middle" font-size="13" font-weight="700" fill="#26215C">Porta 1</text><rect x="430" y="110" width="120" height="30" rx="6" fill="#CECBF6"/><text x="490" y="130" text-anchor="middle" font-size="13" font-weight="700" fill="#26215C">Porta 2</text>${col(1,r.p1,170)}${col(2,r.p2,490)}</svg>`}
+function baseHTML(){const b=B();let g="",h=`<section class="box"><div class="bt">DISPOSITIVOS DA REDE RS485 · ENDEREÇO BUS PADRÃO DO LOTE</div><div class="sub">Tabela do lote anterior. Siglas sem endereço ficam em branco até definir. Vale para todas as lojas.</div><table><tr><th>Sigla</th><th>Modelo</th><th class="r">Bus RS485</th></tr>`;
+ b.devs.forEach((d,i)=>{if(d.grupo!==g){g=d.grupo;h+=`<tr><td colspan="3" class="gt">${esc(g)}</td></tr>`}h+=`<tr><td><b style="font-family:var(--f-mono)">${esc(d.sig)}</b><div class="sub">${esc(d.desc)}</div></td><td><input data-bf="modelo" data-i="${i}" value="${esc(d.modelo)}" style="width:90px"></td><td class="r"><input inputmode="numeric" data-bf="end" data-i="${i}" value="${esc(d.end)}" style="width:70px;text-align:right"></td></tr>`});
+ h+=`</table></section><section class="box"><div class="bt">TEMPOS PADRÃO DA RS485 <span class="sub">(vão para o cronograma, não para o levantamento)</span></div><table>${TP0.map(x=>`<tr><td>${x[1]}</td><td class="r"><input inputmode="numeric" data-tp="${x[0]}" value="${b.tp[x[0]]}" style="width:70px;text-align:right"></td><td>${x[2]}</td></tr>`).join("")}</table></section>
+ <section class="box noprint"><button class="mini del" data-zerar="1">Apagar todos os dados de avaliação deste aparelho</button></section>`;return h}
+/* ================= SHEETS ================= */
+function abrir(h){$("#sheetc").innerHTML=h;$("#sheet").hidden=false}
+function fechar(){$("#sheet").hidden=true}
+$("#sheet").addEventListener("click",e=>{if(e.target.id==="sheet"||e.target.closest("[data-fecha]"))fechar()});
+function trechoSheet(id){const lj=L(),r=lj.rs485;const p=r.p1.includes(id)?1:2,i=r["p"+p].indexOf(id);const t=r.tr[id]=r.tr[id]||{existe:false};
+ const de=i===0?`X-WEB P${p}`:r["p"+p][i-1];
+ const draw=()=>{const inf=n(t.iexb)+n(t.iexa)+n(t.baixa)+n(t.alta),w=[];if(!t.existe){if(!n(t.cabo))w.push(["w","Falta a metragem total do cabo"]);else if(inf>n(t.cabo))w.push(["b",`Infra (${inf} m) maior que o cabo (${n(t.cabo)} m)`]);else if(inf<n(t.cabo))w.push(["w",`${+(n(t.cabo)-inf).toFixed(1)} m de cabo sem infra informada`])}
+  abrir(`<h3><span class="num">${numC(p,i)}</span> ${esc(de)} → ${esc(id)}</h3>
+  <label class="lbl">Rede já existe neste trecho?<div class="seg"><button type="button" data-tex="1" class="${t.existe?"on":""}">Sim</button><button type="button" data-tex="0" class="${!t.existe?"on":""}">Não</button></div></label>
+  ${t.existe?"":`<div class="grp inf"><div class="gh">🔧 INFRA DO TRECHO <span>${inf} m</span></div><div class="g2"><label class="lbl">Existente · baixa (m)<input inputmode="decimal" data-tf="iexb" value="${esc(t.iexb)}" placeholder="0"></label><label class="lbl">Existente · alta (m)<input inputmode="decimal" data-tf="iexa" value="${esc(t.iexa)}" placeholder="0"></label><label class="lbl">Nova · baixa (m)<input inputmode="decimal" data-tf="baixa" value="${esc(t.baixa)}" placeholder="0"></label><label class="lbl">Nova · alta (m)<input inputmode="decimal" data-tf="alta" value="${esc(t.alta)}" placeholder="0"></label></div></div>
+  <div class="grp cbx"><div class="gh">〰 CABO RS485 DO TRECHO <span>${n(t.cabo)} m</span></div><label class="lbl">Metragem total do cabo (m)<input inputmode="decimal" data-tf="cabo" value="${esc(t.cabo)}" placeholder="medir"></label></div>`}
+  <label class="lbl">Observação<textarea data-tf="obs" placeholder="por onde passa, forro, plataforma…">${esc(t.obs)}</textarea></label>
+  <div id="tw">${w.map(x=>`<div class="av ${x[0]}">${esc(x[1])}</div>`).join("")}</div>
+  <button class="b p" data-fecha="1">OK · FECHAR</button>`)};draw();
+ $("#sheetc").onclick=e=>{const b=e.target.closest("[data-tex]");if(b){t.existe=b.dataset.tex==="1";salvar();draw();render()}};
+ $("#sheetc").oninput=e=>{const f=e.target.dataset.tf;if(!f)return;t[f]=e.target.value;salvar();clearTimeout(window._tr);window._tr=setTimeout(()=>{render();const gs=$("#sheetc").querySelectorAll(".gh span");const inf=n(t.iexb)+n(t.iexa)+n(t.baixa)+n(t.alta);if(gs[0])gs[0].textContent=inf+" m";if(gs[1])gs[1].textContent=n(t.cabo)+" m";const tw=$("#tw");if(tw){const w=[];if(!t.existe){if(!n(t.cabo))w.push(["w","Falta a metragem total do cabo"]);else if(inf>n(t.cabo))w.push(["b",`Infra (${inf} m) maior que o cabo (${n(t.cabo)} m)`]);else if(inf<n(t.cabo))w.push(["w",`${+(n(t.cabo)-inf).toFixed(1)} m de cabo sem infra informada`])}tw.innerHTML=w.map(x=>`<div class="av ${x[0]}">${esc(x[1])}</div>`).join("")}},500)}}
+function moverSheet(id){const lj=L(),r=lj.rs485;let h=`<h3>Mover ${esc(id)}</h3><div class="sub">Escolha onde este bloco fica na rede.</div>`;
+ [1,2].forEach(p=>{const Lx=r["p"+p].filter(x=>x!==id);h+=`<div class="gt">Porta ${p}</div>`;for(let i=0;i<=Lx.length;i++)h+=`<button class="b" style="text-align:left" data-mvp="${p}" data-mvi="${i}">${i===0?`Logo após o X-WEB P${p}`:`Depois de ${esc(Lx[i-1])}`}</button>`});
+ if(r.p1.includes(id)||r.p2.includes(id))h+=`<button class="b" data-mvp="0" data-mvi="0" style="color:var(--bad)">Tirar da rede (volta para Disponíveis)</button>`;
+ h+=`<button class="b" data-fecha="1">Cancelar</button>`;abrir(h);
+ $("#sheetc").onclick=e=>{const b=e.target.closest("[data-mvp]");if(!b)return;mover(id,+b.dataset.mvp,+b.dataset.mvi);fechar()}}
+function mover(id,p,i){const r=L().rs485;r.p1=r.p1.filter(x=>x!==id);r.p2=r.p2.filter(x=>x!==id);if(p)r["p"+p].splice(Math.min(i,r["p"+p].length),0,id);salvar();render();toast(p?`${id} na porta ${p} · cabos renumerados`:`${id} fora da rede`)}
+/* ================= ARRASTAR (dedo ou mouse) ================= */
+let DG=null;
+document.addEventListener("pointerdown",e=>{const hd=e.target.closest("[data-hd]");if(!hd)return;const blk=hd.closest("[data-blk]");e.preventDefault();
+ const g=blk.cloneNode(true);g.classList.add("ghost");document.body.appendChild(g);blk.classList.add("dragging");DG={id:blk.dataset.blk,g,blk,tgt:null};mvG(e)});
+function mvG(e){if(!DG)return;DG.g.style.left=(e.clientX-30)+"px";DG.g.style.top=(e.clientY-25)+"px";
+ document.querySelectorAll(".drop.hot").forEach(x=>x.classList.remove("hot"));
+ const el=document.elementFromPoint(e.clientX,e.clientY);let d=el&&el.closest("[data-drop]");
+ if(!d&&el){const lane=el.closest("[data-lane]");if(lane){const ds=[...lane.querySelectorAll("[data-drop]")];let best=null,bd=1e9;ds.forEach(x=>{const rc=x.getBoundingClientRect(),dd=Math.abs(rc.top+rc.height/2-e.clientY);if(dd<bd){bd=dd;best=x}});d=best}}
+ DG.tgt=d;if(d)d.classList.add("hot");
+ if(e.clientY<70)window.scrollBy(0,-12);if(e.clientY>innerHeight-70)window.scrollBy(0,12)}
+document.addEventListener("pointermove",e=>{if(DG){e.preventDefault();mvG(e)}},{passive:false});
+document.addEventListener("pointerup",()=>{if(!DG)return;const {id,g,blk,tgt}=DG;DG=null;g.remove();blk.classList.remove("dragging");
+ if(tgt){const p=+tgt.dataset.drop;let i=+tgt.dataset.at;const r=L().rs485;if(p&&r["p"+p].indexOf(id)>-1&&r["p"+p].indexOf(id)<i)i--;mover(id,p,i)}else render()});
+/* ================= CLIQUES E CAMPOS ================= */
+document.addEventListener("click",e=>{
+ const gb=e.target.closest("[data-go]");if(gb){const v=gb.dataset.go;if(v==="home")go({v:"home"});else if(v==="base")go({v:"base"});else go({v,l:R.l});return}
+ const lb=e.target.closest("[data-loja]");if(lb){go({v:"loja",l:lb.dataset.loja});return}
+ if(e.target.closest("[data-novaloja]")){const id=String(Date.now()).slice(-4);S.lojas.push({id,nome:"Nova loja "+id,rs485:{sel:{},terms:{},p1:[],p2:[],tr:{}}});salvar();go({v:"loja",l:id});return}
+ if(e.target.closest("[data-zerar]")){abrir(`<h3>Apagar dados de avaliação?</h3><div>Apaga a base e todas as lojas deste aparelho e volta ao padrão.</div><button class="b p" id="zok" style="background:var(--bad);border-color:var(--bad)">Apagar tudo</button><button class="b" data-fecha="1">Cancelar</button>`);$("#zok").onclick=()=>{localStorage.removeItem(K);location.reload()};return}
+ if(!R.l||!$("#sheet").hidden)return;const lj=L();if(!lj)return;const r=lj.rs485;
+ const tg=e.target.closest("[data-tg]");if(tg){const s=tg.dataset.tg;r.sel[s]=r.sel[s]?0:1;salvar();render();return}
+ const qb=e.target.closest("[data-q]");if(qb){const s=qb.dataset.q;r.sel[s]=Math.max(0,Math.min(MAXT,(+r.sel[s]||0)+(+qb.dataset.d)));salvar();render();return}
+ const tm=e.target.closest("[data-term]");if(tm){const cv=tm.dataset.cv,k=+tm.dataset.term;r.terms[cv]=r.terms[cv]||[];const ix=r.terms[cv].indexOf(k);if(ix>=0)r.terms[cv].splice(ix,1);else r.terms[cv].push(k);salvar();render();return}
+ const cb=e.target.closest("[data-cab]");if(cb){trechoSheet(cb.dataset.cab);return}
+ const bk=e.target.closest("[data-blk]");if(bk&&!e.target.closest("[data-hd]")){moverSheet(bk.dataset.blk);return}
+});
+document.addEventListener("input",e=>{const el=e.target;
+ if(el.dataset.nm){L().nome=el.value;salvar();return}
+ if(el.dataset.bf){const d=B().devs[+el.dataset.i];d[el.dataset.bf]=el.dataset.bf==="end"?(el.value===""?"":n(el.value)):el.value;salvar();return}
+ if(el.dataset.tp){B().tp[el.dataset.tp]=n(el.value);salvar();return}});
+render();
+</script>
+</body></html>
