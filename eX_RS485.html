@@ -59,6 +59,10 @@ td input{min-height:34px;padding:4px 6px;font-size:14px;width:80px;text-align:ri
 .b.p{background:var(--acdk);color:#fff;border-color:var(--acdk)}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:50}
 #des svg{width:100%;height:auto;display:block}
+.grp{border-radius:10px;padding:10px;display:grid;gap:8px;border:1px solid var(--line)}
+.grp .gh{display:flex;justify-content:space-between;font-size:12px;font-weight:800;letter-spacing:.03em}.grp .gh span{font-family:var(--f-mono)}
+.grp.inf{background:#FAEEDA;border-color:#EF9F27}.grp.inf .gh{color:#633806}
+.grp.cab{background:#E6F1FB;border-color:#85B7EB}.grp.cab .gh{color:#0C447C}
 .etapas{background:var(--chip);border-radius:8px;padding:8px 10px;display:grid;gap:4px}
 .et{display:flex;justify-content:space-between;gap:8px;font-size:13px;border-top:1px solid var(--line);padding-top:4px}
 .et b{font-family:var(--f-mono);white-space:nowrap}
@@ -127,11 +131,12 @@ function render(){
    h+=`<div class="tr" data-p="${p}" data-i="${i}">
     <div class="trh"><span class="num">${num(p,i)}</span><span class="de">${esc(orig(p,i))} → ${esc(t.sig)}</span></div>
     <label class="lbl">Rede já existe neste trecho?<div class="seg"><button type="button" data-ex="1" class="${t.existe?"on":""}">Sim</button><button type="button" data-ex="0" class="${!t.existe?"on":""}">Não</button></div></label>
-    ${t.existe?`<div class="av o">Trecho existente: conta só a checagem (${S.tp.exist} min).</div>`:`<div class="g2">
+    ${t.existe?`<div class="av o">Trecho existente: conta só a checagem (${S.tp.exist} min).</div>`:`<div class="grp inf"><div class="gh">🔧 INFRA DO TRECHO <span>${n(t.iex)+n(t.baixa)+n(t.alta)} m</span></div>
      <label class="lbl">Infra existente (m)<input inputmode="decimal" data-f="iex" value="${esc(t.iex)}" placeholder="0"></label>
-     <label class="lbl">Cabo total (m)<input inputmode="decimal" data-f="cabo" value="${esc(t.cabo)}" placeholder="medir"></label>
-     <label class="lbl">Infra nova · baixa (m)<input inputmode="decimal" data-f="baixa" value="${esc(t.baixa)}" placeholder="0"></label>
-     <label class="lbl">Infra nova · alta (m)<input inputmode="decimal" data-f="alta" value="${esc(t.alta)}" placeholder="0"></label></div>`}
+     <div class="g2"><label class="lbl">Infra nova · baixa (m)<input inputmode="decimal" data-f="baixa" value="${esc(t.baixa)}" placeholder="0"></label>
+     <label class="lbl">Infra nova · alta (m)<input inputmode="decimal" data-f="alta" value="${esc(t.alta)}" placeholder="0"></label></div></div>
+     <div class="grp cab"><div class="gh">〰 CABO RS485 DO TRECHO <span>${n(t.cabo)} m</span></div>
+     <label class="lbl">Metragem total do cabo (m)<input inputmode="decimal" data-f="cabo" value="${esc(t.cabo)}" placeholder="medir"></label></div>`}
     <label class="lbl">Observação do trecho<textarea data-f="obs" placeholder="por onde passa, dificuldade, forro, plataforma…">${esc(t.obs)}</textarea></label>
     ${av.map(x=>`<div class="av ${x[0]}">${esc(x[1])}</div>`).join("")}
     <div class="sub">Tempo previsto do trecho: <b>${fmtH(tempoTrecho(t))}</b></div>
