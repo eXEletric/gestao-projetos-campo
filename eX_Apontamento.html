@@ -108,6 +108,21 @@ main.wrap{padding-top:12px;display:grid;gap:12px}
 .dica{background:var(--pend-bg);color:var(--fg);border-radius:10px;padding:10px 12px;font-size:14px}
 .subg .sp{font-family:var(--f-mono);font-size:13px}.subg .bar{grid-column:1/-1;height:6px}
 .card.fora{opacity:.6;border-left-style:dashed}
+.disc{border-radius:14px;padding:12px;display:grid;gap:10px}
+.disc.amb{background:#FAEEDA;--dc:#BA7517;--dt:#633806}.disc.blu{background:#E6F1FB;--dc:#378ADD;--dt:#0C447C}.disc.tea{background:#E1F5EE;--dc:#1D9E75;--dt:#085041}.disc.pur{background:#EEEDFE;--dc:#7F77DD;--dt:#3C3489}.disc.gra{background:#F1EFE8;--dc:#888780;--dt:#444441}
+@media (prefers-color-scheme:dark){.disc.amb{background:#412402}.disc.blu{background:#042C53}.disc.tea{background:#04342C}.disc.pur{background:#26215C}.disc.gra{background:#2C2C2A}.disc.amb,.disc.blu,.disc.tea,.disc.pur,.disc.gra{--dt:#f1efe8}.dbar{background:rgba(0,0,0,.35)}}
+.dh{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center}
+.dn{font-weight:800;font-size:16px;color:var(--dt);text-transform:uppercase;letter-spacing:.03em}
+.dp{font-family:var(--f-mono);font-weight:700;font-size:18px;color:var(--dt)}
+.dbar{grid-column:1/-1;height:12px;border-radius:6px;background:rgba(255,255,255,.7);overflow:hidden;display:block;border:1px solid rgba(0,0,0,.06)}.dbar span{display:block;height:100%;background:var(--dc)}
+.dgr{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.dev{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;gap:6px;text-align:left;font:inherit;color:var(--fg);cursor:pointer;min-height:118px;align-content:space-between}
+.dev:active{transform:scale(.98)}
+.dev .vn{font-weight:700;font-size:15px;line-height:1.2}
+.dev .vp{font-family:var(--f-mono);font-size:20px;font-weight:700}
+.dev .bar{height:8px}.dev .bar span{background:var(--dc)}
+.dev .vs{font-size:12px;color:var(--muted)}
+.dev .va{font-size:12px;font-weight:800;color:var(--dt);letter-spacing:.04em}
 .okmsg{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);background:var(--ok);color:#fff;padding:18px 26px;border-radius:14px;font-size:18px;font-weight:700;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.25);text-align:center}
 </style></head><body>
 <header><div class="wrap">
@@ -128,7 +143,7 @@ const STL=Object.fromEntries(ST);
 let PJ=null,GR=[],TS=[],DIA=null,HOJE=new Set(),DATA="",busy=0,HIST={};
 const LS={get:k=>{try{return localStorage.getItem(k)||""}catch(_){return ""}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(_){}}};
 let AUTOR=LS.get("ex_apont_nome"),DISP=LS.get("ex_apont_disp");if(!DISP){DISP=Math.random().toString(36).slice(2,10);LS.set("ex_apont_disp",DISP)}
-let vw="menu",vg="",vt="";
+let vw="menu",vg="",vt="",vd="";
 const $=s=>document.querySelector(s);
 function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
 function toast(m,ms){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,ms||1800)}
@@ -149,6 +164,9 @@ const byG=g=>TS.filter(t=>t.grupo_id===g).sort((a,b)=>(a.ordem||0)-(b.ordem||0))
 const real=g=>byG(g).filter(t=>!t.is_header);
 const REAL=()=>TS.filter(t=>!t.is_header);
 const ativas=l=>l.filter(t=>!t.is_header&&!fora(t));
+function devs(gid){const l=byG(gid),out=[];let cur=null;for(const x of l){if(x.is_header){cur={id:x.id,nome:x.nome,gid,ts:[]};out.push(cur)}else{if(!cur){cur={id:"g:"+gid,nome:(GR.find(g=>g.id===gid)||{}).nome||"",gid,ts:[]};out.push(cur)}cur.ts.push(x)}}return out}
+function devOf(t){for(const d of devs(t.grupo_id))if(d.ts.includes(t))return d;return null}
+function corG(n){n=String(n||"").toLowerCase();if(n.includes("ilumin"))return "amb";if(/(^|\s)ar(\s|$)/.test(n))return "blu";if(n.includes("medi"))return "tea";if(n.includes("rede"))return "pur";return "gra"}
 function subOf(t){const l=byG(t.grupo_id);let h=null;for(const x of l){if(x.is_header)h=x;if(x.id===t.id)return h}return null}
 function statusDe(t,v){if(t.status==="congelada"&&v<100)return "congelada";return v<=0?"a_fazer":v>=100?"concluida":"em_andamento"}
 /* ---- api ---- */
@@ -240,36 +258,36 @@ function diaHTML(){const c=(DIA&&DIA.campo)||{};
   </div></section>`}
 function render(){
   if(!PJ)return;header();let h="";
-  const g=GR.find(x=>x.id===vg),t=TS.find(x=>x.id===vt);
-  if(vw==="g"&&g){const all=byG(g.id),ts=ativas(all),s=soma(ts);
-    let c="",i=0;while(i<all.length){const x=all[i];if(x.is_header){const ch=[];let j=i+1;while(j<all.length&&!all[j].is_header){ch.push(all[j]);j++}const ss=soma(ch);
-        const ab=!!ABERTO[x.id],at=ativas(ch),cc=at.filter(y=>y.status==="concluida").length,im=at.filter(y=>y.status==="congelada").length;
-        c+=`<div class="sgw ${ab?"ab":""}"><button type="button" class="subg" data-sub="${esc(x.id)}" aria-expanded="${ab}"><span class="sn">${esc(x.nome)}</span><span class="sp">${pct(ss.pc)}</span><span class="bar"><span style="width:${ss.pc}%"></span></span><span class="sc">${cc}/${at.length} concluídas${im?` · <b style="color:var(--div)">${im} impedida${im>1?"s":""}</b>`:""}${ch.some(y=>HOJE.has(y.id))?' · <span class="hj">● hoje</span>':""}</span><span class="tog">${ab?"▲&nbsp; FECHAR ATIVIDADES":`▼&nbsp; VER ${ch.length} ${ch.length===1?"ATIVIDADE":"ATIVIDADES"}`}</span></button>${ab?`<div class="subc">${ch.map(cardHTML).join("")}<button type="button" class="tog2" data-sub="${esc(x.id)}">▲&nbsp; FECHAR ${esc(x.nome)}</button></div>`:""}</div>`;i=j}else{c+=cardHTML(x);i++}}
-    const temSub=all.some(x=>x.is_header);
-    h=navHTML(g.nome,"Menu")+`<div class="sub">${pct(s.pc)} · ${ts.filter(x=>x.status==="concluida").length} de ${ts.length} concluídas</div>${temSub?'<div class="dica">👇 Cada quadro abaixo é um equipamento. <b>Toque em “VER ATIVIDADES”</b> para abrir a lista e apontar.</div>':'<div class="sub">Toque numa atividade para apontar.</div>'}<div class="cards">${c}</div>`;
-  }else if(vw==="t"&&t&&!t.is_header){const ts=real(t.grupo_id),i=ts.indexOf(t),gn=(GR.find(x=>x.id===t.grupo_id)||{}).nome||"";
-    h=navHTML(gn,"Atividades")+`<section class="box">${tarefaHTML(t)}<div class="nxt">${i>0?`<button type="button" class="b" data-open="${esc(ts[i-1].id)}" data-rep="1">‹ Anterior</button>`:"<span></span>"}${i<ts.length-1?`<button type="button" class="b p" data-open="${esc(ts[i+1].id)}" data-rep="1">Próxima ›</button>`:`<button type="button" class="b p" data-back="1">Voltar ao grupo</button>`}</div></section>`;
+  const t=TS.find(x=>x.id===vt);
+  const dv=vw==="d"?GR.flatMap(x=>devs(x.id)).find(d=>d.id===vd):null;
+  if(vw==="d"&&dv){const at=ativas(dv.ts),sd=soma(at),gn=(GR.find(x=>x.id===dv.gid)||{}).nome||"";
+    h=navHTML(dv.nome,"Menu")+`<div class="disc ${corG(gn)}" style="padding:10px 12px"><div class="dh"><span class="dn">${esc(gn)} · ${esc(dv.nome)}</span><span class="dp">${pct(sd.pc)}</span><span class="dbar"><span style="width:${sd.pc}%"></span></span></div><div class="sub" style="margin-top:6px">${at.filter(x=>x.status==="concluida").length} de ${at.length} concluídas · toque numa atividade para apontar</div></div><div class="cards">${dv.ts.map(cardHTML).join("")}</div>`;
+  }else if(vw==="t"&&t&&!t.is_header){const dd=devOf(t),ts=dd?dd.ts:real(t.grupo_id),i=ts.indexOf(t),gn=(GR.find(x=>x.id===t.grupo_id)||{}).nome||"";
+    h=navHTML(gn,dd?dd.nome:"Atividades")+`<section class="box">${tarefaHTML(t)}<div class="nxt">${i>0?`<button type="button" class="b" data-open="${esc(ts[i-1].id)}" data-rep="1">‹ Anterior</button>`:"<span></span>"}${i<ts.length-1?`<button type="button" class="b p" data-open="${esc(ts[i+1].id)}" data-rep="1">Próxima ›</button>`:`<button type="button" class="b p" data-back="1">Voltar ao grupo</button>`}</div></section>`;
   }else if(vw==="dia"){h=navHTML("Dia de trabalho · "+dBR(DATA),"Menu")+diaHTML();
   }else{vw="menu";const c=(DIA&&DIA.campo)||{};
-    h=`<div class="menu"><button type="button" class="tile dia full" data-view="dia"><span class="tn">📋 Dia de trabalho · ${dBR(DATA)}</span><span class="ts">${c.lider?"Líder: "+esc(c.lider)+(c.impedimentos?' · <b style="color:var(--div)">com impedimento</b>':""):"Toque para preencher líder, equipe e horários"}</span></button>`;
-    GR.forEach(g=>{const ts=ativas(byG(g.id)),s=soma(ts),imp=ts.filter(x=>x.status==="congelada").length,hj=ts.filter(x=>HOJE.has(x.id)).length;
-      h+=`<button type="button" class="tile" data-grp="${esc(g.id)}"><span class="tn">${esc(g.nome)}</span><span class="tp">${pct(s.pc)}</span><span class="bar"><span style="width:${s.pc}%"></span></span><span class="ts">${ts.filter(x=>x.status==="concluida").length}/${ts.length} concluídas${imp?` · <b style="color:var(--div)">${imp} impedida${imp>1?"s":""}</b>`:""}${hj?` · <span class="hj">${hj} hoje</span>`:""}</span></button>`});
-    h+=`</div>`;
+    h=`<button type="button" class="tile dia full" data-view="dia"><span class="tn">📋 Dia de trabalho · ${dBR(DATA)}</span><span class="ts">${c.lider?"Líder: "+esc(c.lider)+(c.impedimentos?' · <b style="color:var(--div)">com impedimento</b>':""):"Toque para preencher líder, equipe e horários"}</span></button>`;
+    GR.forEach(g=>{const s2=soma(ativas(byG(g.id))),cz=corG(g.nome);
+      h+=`<section class="disc ${cz}"><div class="dh"><span class="dn">${esc(g.nome)}</span><span class="dp">${pct(s2.pc)}</span><span class="dbar"><span style="width:${s2.pc}%"></span></span></div><div class="dgr">`;
+      devs(g.id).forEach(d=>{const at=ativas(d.ts),sd=soma(at),cc=at.filter(x=>x.status==="concluida").length,im=at.filter(x=>x.status==="congelada").length,hj=d.ts.some(x=>HOJE.has(x.id));
+        h+=`<button type="button" class="dev" data-dev="${esc(d.id)}"><span class="vn">${esc(d.nome)}</span><span class="vp">${pct(sd.pc)}</span><span class="bar"><span style="width:${sd.pc}%"></span></span><span class="vs">${cc}/${at.length} concluídas${im?` · <b style="color:var(--div)">${im} impedida${im>1?"s":""}</b>`:""}${hj?' · <span class="hj">● hoje</span>':""}</span><span class="va">ABRIR ›</span></button>`});
+      h+=`</div></section>`});
   }
   const a=document.activeElement;if(a&&a.closest&&a.closest("#main")&&a.matches("input,textarea"))return; // não atrapalha quem está digitando
   $("#main").innerHTML=h;
 }
 /* ---- navegação ---- */
-function go(v,g,t,push=true){vw=v;vg=g||"";vt=t||"";try{history[push?"pushState":"replaceState"]({vw,vg,vt},"")}catch(_){}render();window.scrollTo(0,0)}
-window.addEventListener("popstate",e=>{fecharSheet();const s=e.state||{vw:"menu"};vw=s.vw||"menu";vg=s.vg||"";vt=s.vt||"";render()});
+function go(v,g,t,push=true,d){vw=v;vg=g||"";vt=t||"";if(d!==undefined)vd=d;try{history[push?"pushState":"replaceState"]({vw,vg,vt,vd},"")}catch(_){}render();window.scrollTo(0,0)}
+window.addEventListener("popstate",e=>{fecharSheet();const s=e.state||{vw:"menu"};vw=s.vw||"menu";vg=s.vg||"";vt=s.vt||"";vd=s.vd||"";render()});
 try{history.replaceState({vw:"menu"},"")}catch(_){}
 /* ---- eventos ---- */
 const cur=el=>{const c=el.closest(".t");return c&&TS.find(x=>x.id===c.dataset.id)};
 $("#main").addEventListener("click",async e=>{
-  if(e.target.closest("[data-back]")){if(vw==="t"){const t=TS.find(x=>x.id===vt);go("g",t&&t.grupo_id,"",false)}else go("menu","","",false);return}
+  if(e.target.closest("[data-back]")){if(vw==="t"){const t=TS.find(x=>x.id===vt),dd=t&&devOf(t);go("d","","",false,dd?dd.id:"")}else go("menu","","",false,"");return}
+  const dvb=e.target.closest("[data-dev]");if(dvb){go("d","","",true,dvb.dataset.dev);return}
   const sbt=e.target.closest("[data-sub]");if(sbt){const k=sbt.dataset.sub;ABERTO[k]=!ABERTO[k];try{sessionStorage.setItem("ex_apont_sub",JSON.stringify(ABERTO))}catch(_){}render();const el=document.querySelector(`.subg[data-sub="${k}"]`);if(el&&el.scrollIntoView)el.scrollIntoView({block:"start",behavior:"smooth"});return}
   const gr=e.target.closest("[data-grp]");if(gr){go("g",gr.dataset.grp);return}
-  const op=e.target.closest("[data-open]");if(op){const t=TS.find(x=>x.id===op.dataset.open);if(t){const sb=subOf(t);if(sb){ABERTO[sb.id]=true;try{sessionStorage.setItem("ex_apont_sub",JSON.stringify(ABERTO))}catch(_){}}go("t",t.grupo_id,t.id,!op.dataset.rep)}return}
+  const op=e.target.closest("[data-open]");if(op){const t=TS.find(x=>x.id===op.dataset.open);if(t){const dd=devOf(t);go("t",t.grupo_id,t.id,!op.dataset.rep,dd?dd.id:"")}return}
   const vv=e.target.closest("[data-view]");if(vv){go(vv.dataset.view);return}
   if(e.target.closest("[data-diasave]")){salvarDia(true);return}
   const t=cur(e.target);if(!t)return;
