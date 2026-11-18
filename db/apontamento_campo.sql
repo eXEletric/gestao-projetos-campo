@@ -16,3 +16,22 @@ comment on column diario_dias.campo is 'Dados do dia enviados pelo apontamento d
 --   update projetos set campo_token = encode(gen_random_bytes(9),'base64') where id = '<projeto_id>';
 -- Desligar o link:
 --   update projetos set campo_token = null where id = '<projeto_id>';
+
+-- ---------- Histórico do apontamento (18/11/2026) ----------
+create table if not exists apontamento_historico (
+  id          uuid primary key default gen_random_uuid(),
+  projeto_id  uuid not null references projetos(id) on delete cascade,
+  tarefa_id   uuid references tarefas(id) on delete cascade,
+  campo       text not null,
+  de          text,
+  para        text,
+  autor_nome  text,
+  dispositivo text,
+  data        date not null default current_date,
+  created_at  timestamptz not null default now()
+);
+create index if not exists ix_apont_hist_tarefa on apontamento_historico(tarefa_id, created_at desc);
+create index if not exists ix_apont_hist_proj on apontamento_historico(projeto_id, created_at desc);
+alter table apontamento_historico enable row level security;
+-- leitura no app logado segue o acesso da obra; gravação só pela função (service role)
+-- create policy ah_sel on apontamento_historico for select to authenticated using (pode_ver_projeto(projeto_id));

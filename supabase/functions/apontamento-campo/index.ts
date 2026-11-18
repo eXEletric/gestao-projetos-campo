@@ -14,6 +14,9 @@ const STATUS = ['a_fazer', 'em_andamento', 'concluida', 'congelada'];
 const hoje = () => new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10); // America/Sao_Paulo
 const isData = (s: any) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ''));
 const txt = (s: any, n = 2000) => (s == null ? null : String(s).slice(0, n));
+const STL: Record<string, string> = { a_fazer: 'Não iniciada', em_andamento: 'Em andamento', concluida: 'Concluída', congelada: 'Impedida' };
+function varNome(vars: any, h: any) { if (!Array.isArray(vars) || vars.length < 2) return null; let b = vars[0], bd = 1e9; for (const v of vars) { const d = Math.abs((Number(v[1]) || 0) - (Number(h) || 0)); if (d < bd) { bd = d; b = v; } } return b[0]; }
+async function hist(db: any, rows: any[]) { if (rows.length) { const { error } = await db.from('apontamento_historico').insert(rows); if (error) console.error('historico', error.message); } }
 
 async function projeto(db: any, p: string, k: string) {
   if (!p || !k) return null;
@@ -61,6 +64,11 @@ Deno.serve(async (req: Request) => {
     if (!pj) return json({ error: 'link invalido ou desligado' }, 401);
 
     if (req.method === 'GET') {
+      const h = url.searchParams.get('h');
+      if (h) {
+        const { data: hs } = await db.from('apontamento_historico').select('campo,de,para,autor_nome,created_at').eq('projeto_id', pj.id).eq('tarefa_id', h).order('created_at', { ascending: false }).limit(100);
+        return json({ historico: hs || [] });
+      }
       const data = isData(url.searchParams.get('d')) ? url.searchParams.get('d')! : hoje();
       const { data: grupos } = await db.from('grupos').select('id,nome,ordem').eq('projeto_id', pj.id).is('deleted_at', null).order('ordem');
       const { data: tarefas } = await db.from('tarefas')
@@ -77,9 +85,10 @@ Deno.serve(async (req: Request) => {
     if (req.method !== 'POST') return json({ error: 'metodo invalido' }, 405);
     const action = body.action;
     const data = isData(body.data) ? body.data : hoje();
+    const quem = { autor_nome: txt(body.autor, 80), dispositivo: txt(body.disp, 40), projeto_id: pj.id, data };
 
     if (action === 'tarefa') {
-      const { data: t } = await db.from('tarefas').select('id,projeto_id,status,progresso,quantidade,variacoes,tempo_atual,data_inicio_real,data_fim_real').eq('id', body.id).is('deleted_at', null).maybeSingle();
+      const { data: t } = await db.from('tarefas').select('id,projeto_id,status,progresso,quantidade,unidade,variacoes,tempo_atual,notas,data_inicio_real,data_fim_real').eq('id', body.id).is('deleted_at', null).maybeSingle();
       if (!t || t.projeto_id !== pj.id) return json({ error: 'tarefa nao encontrada' }, 404);
       const inp = body.patch || {};
       const patch: any = {};
@@ -100,6 +109,14 @@ Deno.serve(async (req: Request) => {
       if (!Object.keys(patch).length) return json({ ok: true });
       const { data: up, error } = await db.from('tarefas').update(patch).eq('id', t.id).select('id,quantidade,tempo_atual,progresso,status,notas,data_inicio_real,data_fim_real').single();
       if (error) throw error;
+      const H: any[] = [];
+      const add = (campo: string, de: any, para: any) => { if (String(de ?? '') !== String(para ?? '')) H.push({ ...quem, tarefa_id: t.id, campo, de: de == null ? null : String(de), para: para == null ? null : String(para) }); };
+      add('Status', STL[t.status] || t.status, STL[up.status] || up.status);
+      add('Progresso', (t.progresso ?? 0) + '%', (up.progresso ?? 0) + '%');
+      add(String(t.unidade || '').toLowerCase() === 'm' ? 'Metros' : 'Quantidade', t.quantidade, up.quantidade);
+      add('Condição', varNome(t.variacoes, t.tempo_atual), varNome(t.variacoes, up.tempo_atual));
+      add('Observação', t.notas, up.notas);
+      await hist(db, H);
       await marcar(db, pj.id, data, t.id);
       return json({ ok: true, tarefa: up });
     }
@@ -117,6 +134,7 @@ Deno.serve(async (req: Request) => {
       const fotos = (Array.isArray(t.fotos) ? t.fotos : []).concat([{ path, nome: 'campo ' + data, data, origem: 'apontamento' }]);
       const { error } = await db.from('tarefas').update({ fotos }).eq('id', t.id);
       if (error) throw error;
+      await hist(db, [{ ...quem, tarefa_id: t.id, campo: 'Foto', de: null, para: 'foto ' + fotos.length + ' adicionada' }]);
       await marcar(db, pj.id, data, t.id);
       return json({ ok: true, fotos: await assinar(db, fotos) });
     }
@@ -137,6 +155,7 @@ Deno.serve(async (req: Request) => {
       const mood = campo.impedimentos ? 'warn' : '';
       const { error } = await db.from('diario_dias').update({ campo, observacoes: linhas.join('\n') || null, mood }).eq('id', did);
       if (error) throw error;
+      await hist(db, [{ ...quem, tarefa_id: null, campo: 'Dia de trabalho', de: null, para: linhas.join(' · ').slice(0, 500) || '(vazio)' }]);
       return json({ ok: true });
     }
 

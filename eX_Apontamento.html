@@ -82,6 +82,11 @@ main.wrap{padding-top:12px;display:grid;gap:12px}
 .sheet ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:15px}
 .sheet .bt{display:grid;gap:8px}
 .sheet .b{min-height:50px;font-size:16px}
+.hist{border-top:1px dashed var(--line);padding-top:10px;display:grid;gap:6px}
+.hist .ht{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--muted)}
+.hist .hi{display:grid;gap:1px;font-size:13px;padding-bottom:6px;border-bottom:1px solid var(--line)}
+.hist .hi:last-child{border-bottom:0}
+.hist .hd{font-size:11px;color:var(--muted);font-family:var(--f-mono)}
 .okmsg{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);background:var(--ok);color:#fff;padding:18px 26px;border-radius:14px;font-size:18px;font-weight:700;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.25);text-align:center}
 </style></head><body>
 <header><div class="wrap">
@@ -99,7 +104,9 @@ const FN="https://djguxdgaobtminatxkdr.supabase.co/functions/v1/apontamento-camp
 const qs=new URLSearchParams(location.search);const P=qs.get("p")||"",K=qs.get("k")||"";
 const ST=[["a_fazer","Não iniciada"],["em_andamento","Em andamento"],["concluida","Concluída"],["congelada","Impedida"]];
 const STL=Object.fromEntries(ST);
-let PJ=null,GR=[],TS=[],DIA=null,HOJE=new Set(),DATA="",busy=0;
+let PJ=null,GR=[],TS=[],DIA=null,HOJE=new Set(),DATA="",busy=0,HIST={};
+const LS={get:k=>{try{return localStorage.getItem(k)||""}catch(_){return ""}},set:(k,v)=>{try{localStorage.setItem(k,v)}catch(_){}}};
+let AUTOR=LS.get("ex_apont_nome"),DISP=LS.get("ex_apont_disp");if(!DISP){DISP=Math.random().toString(36).slice(2,10);LS.set("ex_apont_disp",DISP)}
 let vw="menu",vg="",vt="";
 const $=s=>document.querySelector(s);
 function esc(s){return String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]))}
@@ -117,19 +124,23 @@ function feito(t){return Math.round(frac(t)*(+t.quantidade||0))}
 function varIdx(t){const v=t.variacoes||[];if(v.length<2)return -1;let b=0,bd=1e9;v.forEach((x,i)=>{const d=Math.abs((+x[1]||0)-(+t.tempo_atual||0));if(d<bd){bd=d;b=i}});return b}
 const byG=g=>TS.filter(t=>t.grupo_id===g).sort((a,b)=>(a.ordem||0)-(b.ordem||0));
 /* ---- api ---- */
-async function api(body){const r=await fetch(FN,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({p:P,k:K,data:DATA,...body})});const d=await r.json().catch(()=>({error:"resposta inválida"}));if(!r.ok||d.error)throw new Error(d.error||("erro "+r.status));return d}
+async function api(body){const r=await fetch(FN,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({p:P,k:K,data:DATA,autor:AUTOR,disp:DISP,...body})});const d=await r.json().catch(()=>({error:"resposta inválida"}));if(!r.ok||d.error)throw new Error(d.error||("erro "+r.status));return d}
 async function carregar(){
   if(!P||!K){$("#main").innerHTML='<div class="empty">Link incompleto. Peça o link da obra ao André.</div>';$("#live").textContent="";return}
   try{const r=await fetch(`${FN}?p=${encodeURIComponent(P)}&k=${encodeURIComponent(K)}`);const d=await r.json();
     if(!r.ok||d.error){$("#main").innerHTML=`<div class="empty">${r.status===401?"Este link não é válido ou foi desligado.":"Não consegui carregar: "+esc(d.error||r.status)}</div>`;$("#live").textContent="";return}
     PJ=d.projeto;GR=d.grupos;TS=d.tarefas;DIA=d.dia;HOJE=new Set(d.hoje||[]);DATA=d.data;
-    $("#live").innerHTML="<b>●</b> online";render();
+    $("#live").innerHTML="<b>●</b> online";render();if(!AUTOR&&$("#sheet").hidden)pedirNome();
   }catch(e){$("#live").textContent="sem internet";if(!PJ)$("#main").innerHTML='<div class="empty">Sem conexão. Verifique a internet e toque para tentar de novo.<br><br><button class="b p" onclick="carregar()">Tentar de novo</button></div>';}
 }
+function pedirNome(depois){sheet(`<h3>Quem está apontando?</h3><div style="font-size:14px;color:var(--muted)">Seu nome fica no histórico de cada alteração. Pergunto só uma vez neste celular.</div><input id="nomeap" style="font:inherit;font-size:17px;min-height:48px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)" placeholder="Nome e sobrenome" value="${esc(AUTOR||((DIA&&DIA.campo&&DIA.campo.lider)||""))}"><div class="bt"><button type="button" class="b p" id="nomeok">Continuar</button><button type="button" class="b" data-sh="x">Cancelar</button></div>`);
+  const i=$("#nomeap"),b=$("#nomeok");const chk=()=>b.disabled=i.value.trim().length<3;chk();i.addEventListener("input",chk);i.focus();
+  b.addEventListener("click",()=>{AUTOR=i.value.trim();LS.set("ex_apont_nome",AUTOR);fecharSheet();header();if(depois)depois()})}
 async function salvar(t,patch){
+  if(!AUTOR){return new Promise(res=>pedirNome(async()=>res(await salvar(t,patch))))}
   busy++;
   try{const body={action:"tarefa",id:t.id,patch:{}};["status","progresso","quantidade","notas"].forEach(k=>{if(k in patch)body.patch[k]=patch[k]});if("_var" in patch)body.patch.variacao=patch._var;
-    const d=await api(body);Object.assign(t,patch,d.tarefa||{});delete t._var;HOJE.add(t.id);return true}
+    const d=await api(body);Object.assign(t,patch,d.tarefa||{});delete t._var;HOJE.add(t.id);delete HIST[t.id];return true}
   catch(e){toast("Não salvou: "+e.message,4000);return false}
   finally{busy--}
 }
@@ -147,11 +158,12 @@ async function confirmar(){if(!PST)return;const {t,p}=PST;const m=$("#motivo");i
   $("#sheetc").classList.add("saving");const ok=await salvar(t,p);$("#sheetc").classList.remove("saving");fecharSheet();
   if(ok)okMsg("✓ "+STL[p.status]+" salvo<br><span style='font-size:14px;font-weight:500'>"+esc(t.nome)+"</span>");render()}
 async function auto(t,p,msg){const ok=await salvar(t,p);if(ok)toast("✓ "+msg);render()}
+document.addEventListener("click",e=>{if(e.target.closest("#quem")){e.preventDefault();pedirNome()}});
 $("#sheet").addEventListener("click",e=>{const b=e.target.closest("[data-sh]");if(!b){if(e.target.id==="sheet")fecharSheet();return}
   if(b.dataset.sh==="ok")confirmar();else{fecharSheet();toast("Nada foi alterado")}});
 /* ---- render ---- */
 function header(){
-  $("#obra").textContent=PJ?(PJ.contemplado||PJ.nome)+" · "+dBR(DATA):"";
+  $("#obra").innerHTML=PJ?esc((PJ.contemplado||PJ.nome)+" · "+dBR(DATA))+` · <a href="#" id="quem" style="color:var(--accent)">${AUTOR?"👤 "+esc(AUTOR):"👤 informar nome"}</a>`:"";
   const s=soma(TS);$("#tot").textContent=s.p?pct(s.pc):"—";$("#totbar").style.width=s.pc+"%";
   $("#totsub").textContent=s.p?`${fmtH(s.d)} executados de ${fmtH(s.p)} previstos · avanço pelo tempo padrão`:"Avanço pelo tempo padrão.";
 }
@@ -171,7 +183,14 @@ function tarefaHTML(t){const q=+t.quantidade||0,vi=varIdx(t),st=t.status||"a_faz
    </div>`:""}
    <label style="display:grid;gap:3px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted)">${st==="congelada"?"Motivo do impedimento":"Observação"}<textarea data-f="notas" placeholder="${st==="congelada"?"O que está travando":"Opcional"}">${esc(t.notas)}</textarea></label>
    <div class="fotos">${(t.fotos||[]).map(f=>f.url?`<a href="${esc(f.url)}" target="_blank" rel="noopener"><img src="${esc(f.url)}" alt="foto" loading="lazy"></a>`:"").join("")}<label class="b">📷 Foto<input type="file" accept="image/*" capture="environment" data-up="1" hidden></label></div>
+   <div class="hist"><div class="ht">Histórico</div>${histHTML(t.id)}</div>
   </div>`}
+function histHTML(id){const h=HIST[id];if(h===undefined){carregarHist(id);return '<div class="hi">carregando…</div>'}
+  if(h===null)return '<div class="hi">não consegui carregar o histórico</div>';if(!h.length)return '<div class="hi">Nenhuma alteração registrada ainda.</div>';
+  return h.map(x=>{const d=new Date(x.created_at);const dt=d.toLocaleDateString("pt-BR",{day:"2-digit",month:"2-digit"})+" "+d.toLocaleTimeString("pt-BR",{hour:"2-digit",minute:"2-digit"});
+    return `<div class="hi"><span class="hd">${dt} · <b>${esc(x.autor_nome||"sem nome")}</b></span><span>${esc(x.campo)}: ${x.de!=null?esc(x.de)+" → ":""}<b>${esc(x.para??"(vazio)")}</b></span></div>`}).join("")}
+let HLOAD={};
+async function carregarHist(id){if(HLOAD[id])return;HLOAD[id]=1;try{const r=await fetch(`${FN}?p=${encodeURIComponent(P)}&k=${encodeURIComponent(K)}&h=${encodeURIComponent(id)}`);const d=await r.json();HIST[id]=r.ok&&d.historico?d.historico:null}catch(_){HIST[id]=null}finally{HLOAD[id]=0;if(vw==="t"&&vt===id)render()}}
 function diaHTML(){const c=(DIA&&DIA.campo)||{};
   return `<section class="box"><div class="dia">
    <div class="g2"><label>Líder<input data-d="lider" value="${esc(c.lider)}" placeholder="seu nome"></label><label>Equipe presente<input data-d="equipe" value="${esc(c.equipe)}" placeholder="nomes"></label></div>
@@ -229,15 +248,15 @@ $("#main").addEventListener("change",async e=>{const el=e.target;
   if(f==="notas"){if((t.notas||"")===el.value)return;auto(t,{notas:el.value},"Observação salva");return}
 });
 let diaT=null;
-function salvarDia(now){clearTimeout(diaT);diaT=setTimeout(async()=>{try{await api({action:"dia",campo:(DIA&&DIA.campo)||{}});toast("Dia salvo")}catch(e){toast("Dia não salvou: "+e.message,3500)}},now?0:900)}
+function salvarDia(now){if(!AUTOR){pedirNome(()=>salvarDia(true));return}clearTimeout(diaT);diaT=setTimeout(async()=>{try{await api({action:"dia",campo:(DIA&&DIA.campo)||{}});toast("Dia salvo")}catch(e){toast("Dia não salvou: "+e.message,3500)}},now?0:900)}
 document.addEventListener("focusout",()=>setTimeout(()=>{const a=document.activeElement;if(!a||!a.closest||!a.closest("#main")||!a.matches("input,textarea"))render()},250));
 /* ---- foto: reduz no aparelho antes de enviar ---- */
 function reduzir(file){return new Promise((res,rej)=>{const img=new Image();const u=URL.createObjectURL(file);img.onload=()=>{const M=1600,s=Math.min(1,M/Math.max(img.width,img.height));const c=document.createElement("canvas");c.width=Math.round(img.width*s);c.height=Math.round(img.height*s);c.getContext("2d").drawImage(img,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",.8))};img.onerror=()=>{URL.revokeObjectURL(u);rej(new Error("não li a foto"))};img.src=u})}
-async function foto(t,file){toast("Enviando foto…",10000);busy++;
-  try{const b64=await reduzir(file);const d=await api({action:"foto",id:t.id,base64:b64});t.fotos=d.fotos;HOJE.add(t.id);toast("Foto salva")}
+async function foto(t,file){if(!AUTOR){pedirNome(()=>foto(t,file));return}toast("Enviando foto…",10000);busy++;
+  try{const b64=await reduzir(file);const d=await api({action:"foto",id:t.id,base64:b64});t.fotos=d.fotos;HOJE.add(t.id);delete HIST[t.id];toast("Foto salva")}
   catch(e){toast("Foto não enviada: "+e.message,3500)}finally{busy--;render()}}
 /* ---- atualiza sozinho a cada 60 s (outro líder pode ter apontado) ---- */
-setInterval(()=>{if(!busy&&$("#sheet").hidden&&document.visibilityState==="visible"){const a=document.activeElement;if(!(a&&a.matches&&a.matches("input,textarea,select")))carregar()}},60000);
+setInterval(()=>{if(!busy&&$("#sheet").hidden&&document.visibilityState==="visible"){const a=document.activeElement;if(!(a&&a.matches&&a.matches("input,textarea,select")))delete HIST[vt];carregar()}},60000);
 carregar();
 </script>
 </body></html>
