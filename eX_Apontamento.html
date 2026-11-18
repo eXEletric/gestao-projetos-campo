@@ -94,7 +94,11 @@ main.wrap{padding-top:12px;display:grid;gap:12px}
 .vol .vt{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted)}
 .vol input[type=range]{width:100%;height:36px;accent-color:var(--accent);min-height:0;padding:0;border:0;background:transparent}
 .vol .vl{font-family:var(--f-mono);font-size:20px;font-weight:700;text-align:right}
-.subg{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;margin-top:8px;padding:8px 2px 2px;font-weight:700;font-size:14px;color:var(--accent);border-top:2px solid var(--line)}
+.subg{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;width:100%;text-align:left;font:inherit;cursor:pointer;background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:10px;padding:12px;font-weight:700;font-size:15px;color:var(--fg);min-height:64px}
+.subg.ab{border-bottom-left-radius:0;border-bottom-right-radius:0}
+.subg .sn{display:flex;gap:8px;align-items:center}.subg .chev{color:var(--accent);font-size:16px;width:14px}
+.subg .sc{grid-column:1/-1;font-size:12px;font-weight:500;color:var(--muted)}
+.subc{display:grid;gap:6px;padding:8px 0 4px 12px;border-left:3px solid var(--line);margin-left:6px}
 .subg .sp{font-family:var(--f-mono);font-size:13px}.subg .bar{grid-column:1/-1;height:6px}
 .card.fora{opacity:.6;border-left-style:dashed}
 .okmsg{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);background:var(--ok);color:#fff;padding:18px 26px;border-radius:14px;font-size:18px;font-weight:700;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.25);text-align:center}
@@ -166,6 +170,7 @@ function sheet(html){$("#sheetc").innerHTML=html;$("#sheet").hidden=false}
 function fecharSheet(){$("#sheet").hidden=true;PST=null}
 function okMsg(m){const o=$("#okmsg");o.innerHTML=m;o.hidden=false;clearTimeout(o._h);o._h=setTimeout(()=>o.hidden=true,1700)}
 let PST=null; // {t,p}
+let ABERTO={};try{ABERTO=JSON.parse(sessionStorage.getItem("ex_apont_sub")||"{}")}catch(_){}
 function pedirStatus(t,p){PST={t,p};const imp=p.status==="congelada"&&t.status!=="congelada";const L=[];
   if("escopo" in p&&p.escopo!==(t.escopo||"fazer"))L.push(`Escopo: ${ESL[t.escopo||"fazer"]} → <b>${ESL[p.escopo]}</b>${p.escopo!=="fazer"?" <span style='color:var(--muted)'>(sai do tempo da obra)</span>":""}`);
   if("status" in p&&p.status!==t.status)L.push(`Status: ${STL[t.status]||t.status} → <b>${STL[p.status]}</b>`);
@@ -231,7 +236,8 @@ function render(){
   const g=GR.find(x=>x.id===vg),t=TS.find(x=>x.id===vt);
   if(vw==="g"&&g){const all=byG(g.id),ts=ativas(all),s=soma(ts);
     let c="",i=0;while(i<all.length){const x=all[i];if(x.is_header){const ch=[];let j=i+1;while(j<all.length&&!all[j].is_header){ch.push(all[j]);j++}const ss=soma(ch);
-        c+=`<div class="subg"><span>${esc(x.nome)}</span><span class="sp">${pct(ss.pc)}</span><span class="bar"><span style="width:${ss.pc}%"></span></span></div>`+ch.map(cardHTML).join("");i=j}else{c+=cardHTML(x);i++}}
+        const ab=!!ABERTO[x.id],at=ativas(ch),cc=at.filter(y=>y.status==="concluida").length,im=at.filter(y=>y.status==="congelada").length;
+        c+=`<button type="button" class="subg ${ab?"ab":""}" data-sub="${esc(x.id)}" aria-expanded="${ab}"><span class="sn"><span class="chev">${ab?"▾":"▸"}</span>${esc(x.name||x.nome)}</span><span class="sp">${pct(ss.pc)}</span><span class="bar"><span style="width:${ss.pc}%"></span></span><span class="sc">${cc}/${at.length} concluídas${im?` · <b style="color:var(--div)">${im} impedida${im>1?"s":""}</b>`:""}${ch.some(y=>HOJE.has(y.id))?' · <span class="hj">● hoje</span>':""}</span></button>`+(ab?`<div class="subc">${ch.map(cardHTML).join("")}</div>`:"");i=j}else{c+=cardHTML(x);i++}}
     h=navHTML(g.nome,"Menu")+`<div class="sub">${pct(s.pc)} · ${ts.filter(x=>x.status==="concluida").length} de ${ts.length} concluídas · toque numa atividade</div><div class="cards">${c}</div>`;
   }else if(vw==="t"&&t&&!t.is_header){const ts=real(t.grupo_id),i=ts.indexOf(t),gn=(GR.find(x=>x.id===t.grupo_id)||{}).nome||"";
     h=navHTML(gn,"Atividades")+`<section class="box">${tarefaHTML(t)}<div class="nxt">${i>0?`<button type="button" class="b" data-open="${esc(ts[i-1].id)}" data-rep="1">‹ Anterior</button>`:"<span></span>"}${i<ts.length-1?`<button type="button" class="b p" data-open="${esc(ts[i+1].id)}" data-rep="1">Próxima ›</button>`:`<button type="button" class="b p" data-back="1">Voltar ao grupo</button>`}</div></section>`;
@@ -253,8 +259,9 @@ try{history.replaceState({vw:"menu"},"")}catch(_){}
 const cur=el=>{const c=el.closest(".t");return c&&TS.find(x=>x.id===c.dataset.id)};
 $("#main").addEventListener("click",async e=>{
   if(e.target.closest("[data-back]")){if(vw==="t"){const t=TS.find(x=>x.id===vt);go("g",t&&t.grupo_id,"",false)}else go("menu","","",false);return}
+  const sbt=e.target.closest("[data-sub]");if(sbt){const k=sbt.dataset.sub;ABERTO[k]=!ABERTO[k];try{sessionStorage.setItem("ex_apont_sub",JSON.stringify(ABERTO))}catch(_){}render();return}
   const gr=e.target.closest("[data-grp]");if(gr){go("g",gr.dataset.grp);return}
-  const op=e.target.closest("[data-open]");if(op){const t=TS.find(x=>x.id===op.dataset.open);if(t)go("t",t.grupo_id,t.id,!op.dataset.rep);return}
+  const op=e.target.closest("[data-open]");if(op){const t=TS.find(x=>x.id===op.dataset.open);if(t){const sb=subOf(t);if(sb){ABERTO[sb.id]=true;try{sessionStorage.setItem("ex_apont_sub",JSON.stringify(ABERTO))}catch(_){}}go("t",t.grupo_id,t.id,!op.dataset.rep)}return}
   const vv=e.target.closest("[data-view]");if(vv){go(vv.dataset.view);return}
   if(e.target.closest("[data-diasave]")){salvarDia(true);return}
   const t=cur(e.target);if(!t)return;
