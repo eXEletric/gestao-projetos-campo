@@ -92,11 +92,11 @@ const SIG=[
 const REPETE=new Set(["AC60101"]);const MAXT=10;
 const DESC=Object.fromEntries(SIG.map(s=>[s[1],s[2]]));
 /* ---- tempos padrão (base, editáveis) ---- */
-const TP0=[["inf_baixa","Infra nova baixa",3,"min/m"],["inf_alta","Infra nova alta",6,"min/m"],["inf_alta_tr","Infra alta · posicionar plataforma",30,"min/trecho"],["lanc","Lançamento do cabo",2,"min/m"],["exist","Trecho existente · checagem",10,"min/trecho"],["lig","Ponto · 1. Ligação do cabo no dispositivo (entrada + saída)",15,"min/ponto"],["end","Ponto · 2. Endereçamento",15,"min/ponto"],["vint","Ponto · 3. Validação interna eX",10,"min/ponto"],["com","Comissionamento do barramento",120,"min/rede"],["val","Validação Copeland",30,"min/rede"]];
+const TP0=[["inf_baixa","Infra nova baixa",3,"min/m"],["inf_alta","Infra nova alta",6,"min/m"],["inf_alta_tr","Trecho em altura (infra nova ou existente) · posicionar plataforma",30,"min/trecho"],["lanc","Lançamento do cabo",2,"min/m"],["exist","Trecho existente · checagem",10,"min/trecho"],["lig","Ponto · 1. Ligação do cabo no dispositivo (entrada + saída)",15,"min/ponto"],["end","Ponto · 2. Endereçamento",15,"min/ponto"],["vint","Ponto · 3. Validação interna eX",10,"min/ponto"],["com","Comissionamento do barramento",120,"min/rede"],["val","Validação Copeland",30,"min/rede"]];
 const K="ex_rs485_aval_v1";
 let S;try{S=JSON.parse(localStorage.getItem(K)||"null")}catch(_){S=null}
 if(!S)S={loja:"935 · Aparecida de Goiânia · Vera Cruz",lider:"",p:{1:[],2:[]},tp:Object.fromEntries(TP0.map(x=>[x[0],x[2]]))};
-TP0.forEach(x=>{if(S.tp[x[0]]==null)S.tp[x[0]]=x[2]});[1,2].forEach(p=>S.p[p]=S.p[p].filter(x=>(x.base||x.sig)!=="TERM-RS485"));
+TP0.forEach(x=>{if(S.tp[x[0]]==null)S.tp[x[0]]=x[2]});[1,2].forEach(p=>S.p[p].forEach(x=>{if(x.iex!=null&&x.iexb==null){x.iexb=x.iex;x.iexa=""}delete x.iex}));[1,2].forEach(p=>S.p[p]=S.p[p].filter(x=>(x.base||x.sig)!=="TERM-RS485"));
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const n=v=>Math.max(0,+String(v??"").replace(",",".")||0);
@@ -106,13 +106,13 @@ const uid=()=>Math.random().toString(36).slice(2,9);
 const num=(p,i)=>`P${p}-${String(i+1).padStart(2,"0")}`;
 const orig=(p,i)=>i===0?`X-WEB P${p}`:S.p[p][i-1].sig;
 /* ---- cálculos ---- */
-function tempoTrecho(t){const T=S.tp;if(t.existe)return T.exist;let m=n(t.baixa)*T.inf_baixa+n(t.alta)*T.inf_alta+(n(t.alta)>0?T.inf_alta_tr:0)+n(t.cabo)*T.lanc;return m}
-function totais(){let o={pontos:0,trechos:0,cabo:0,iex:0,ib:0,ia:0,min:0};
- [1,2].forEach(p=>S.p[p].forEach(x=>{o.pontos++;o.trechos++;o.cabo+=n(x.cabo);o.iex+=n(x.iex);o.ib+=n(x.baixa);o.ia+=n(x.alta);o.min+=tempoTrecho(x)+S.tp.lig+S.tp.end+S.tp.vint;o.terms=(o.terms||0)+(x.terms||[]).length}));
+function tempoTrecho(t){const T=S.tp;if(t.existe)return T.exist;let m=n(t.baixa)*T.inf_baixa+n(t.alta)*T.inf_alta+((n(t.alta)+n(t.iexa))>0?T.inf_alta_tr:0)+n(t.cabo)*T.lanc;return m}
+function totais(){let o={pontos:0,trechos:0,cabo:0,ieb:0,iea:0,ib:0,ia:0,min:0};
+ [1,2].forEach(p=>S.p[p].forEach(x=>{o.pontos++;o.trechos++;o.cabo+=n(x.cabo);o.ieb+=n(x.iexb);o.iea+=n(x.iexa);o.ib+=n(x.baixa);o.ia+=n(x.alta);o.min+=tempoTrecho(x)+S.tp.lig+S.tp.end+S.tp.vint;o.terms=(o.terms||0)+(x.terms||[]).length}));
  if(o.pontos)o.min+=S.tp.com+S.tp.val;return o}
 const fmtH=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return h?`${h}h${String(r).padStart(2,"0")}`:`${r} min`};
 function avisos(p,i){const t=S.p[p][i],a=[];
- if(!t.existe){const inf=n(t.iex)+n(t.baixa)+n(t.alta);if(!n(t.cabo))a.push(["w","Falta a metragem total do cabo"]);else if(inf>n(t.cabo))a.push(["b",`Infra (${inf} m) maior que o cabo (${n(t.cabo)} m). Confira.`]);else if(inf<n(t.cabo))a.push(["w",`${(n(t.cabo)-inf).toFixed(1).replace(".0","")} m de cabo sem infra informada`])}
+ if(!t.existe){const inf=n(t.iexb)+n(t.iexa)+n(t.baixa)+n(t.alta);if(!n(t.cabo))a.push(["w","Falta a metragem total do cabo"]);else if(inf>n(t.cabo))a.push(["b",`Infra (${inf} m) maior que o cabo (${n(t.cabo)} m). Confira.`]);else if(inf<n(t.cabo))a.push(["w",`${(n(t.cabo)-inf).toFixed(1).replace(".0","")} m de cabo sem infra informada`])}
  if(t.endr!==""&&t.endr!=null){const dup=[1,2].flatMap(q=>S.p[q]).filter(x=>x!==t&&String(x.endr)===String(t.endr)).length;if(dup)a.push(["b",`Endereço ${t.endr} repetido na rede`])}else a.push(["w","Falta o endereço Modbus"]);
  return a}
 /* ---- render ---- */
@@ -131,8 +131,9 @@ function render(){
    h+=`<div class="tr" data-p="${p}" data-i="${i}">
     <div class="trh"><span class="num">${num(p,i)}</span><span class="de">${esc(orig(p,i))} → ${esc(t.sig)}</span></div>
     <label class="lbl">Rede já existe neste trecho?<div class="seg"><button type="button" data-ex="1" class="${t.existe?"on":""}">Sim</button><button type="button" data-ex="0" class="${!t.existe?"on":""}">Não</button></div></label>
-    ${t.existe?`<div class="av o">Trecho existente: conta só a checagem (${S.tp.exist} min).</div>`:`<div class="grp inf"><div class="gh">🔧 INFRA DO TRECHO <span>${n(t.iex)+n(t.baixa)+n(t.alta)} m</span></div>
-     <label class="lbl">Infra existente (m)<input inputmode="decimal" data-f="iex" value="${esc(t.iex)}" placeholder="0"></label>
+    ${t.existe?`<div class="av o">Trecho existente: conta só a checagem (${S.tp.exist} min).</div>`:`<div class="grp inf"><div class="gh">🔧 INFRA DO TRECHO <span>${n(t.iexb)+n(t.iexa)+n(t.baixa)+n(t.alta)} m</span></div>
+     <div class="g2"><label class="lbl">Infra existente · baixa (m)<input inputmode="decimal" data-f="iexb" value="${esc(t.iexb)}" placeholder="0"></label>
+     <label class="lbl">Infra existente · alta (m)<input inputmode="decimal" data-f="iexa" value="${esc(t.iexa)}" placeholder="0"></label></div>
      <div class="g2"><label class="lbl">Infra nova · baixa (m)<input inputmode="decimal" data-f="baixa" value="${esc(t.baixa)}" placeholder="0"></label>
      <label class="lbl">Infra nova · alta (m)<input inputmode="decimal" data-f="alta" value="${esc(t.alta)}" placeholder="0"></label></div></div>
      <div class="grp cab"><div class="gh">〰 CABO RS485 DO TRECHO <span>${n(t.cabo)} m</span></div>
@@ -153,7 +154,7 @@ function render(){
   h+=`<button type="button" class="add" data-add="${p}">+ ADICIONAR PRÓXIMO PONTO NA PORTA ${p}</button></section>`});
  h+=`<section class="box"><div style="font-weight:800">RESUMO DA REDE</div><div class="tot">
   <div class="k"><span>Pontos</span><b>${o.pontos}</b></div><div class="k"><span>Trechos (cabos)</span><b>${o.trechos}</b></div>
-  <div class="k"><span>Cabo total</span><b>${o.cabo} m</b></div><div class="k"><span>Infra existente</span><b>${o.iex} m</b></div>
+  <div class="k"><span>Cabo total</span><b>${o.cabo} m</b></div><div class="k"><span>Infra existente baixa</span><b>${o.ieb} m</b></div><div class="k"><span>Infra existente alta</span><b>${o.iea} m</b></div>
   <div class="k"><span>Termostatos (via conversor)</span><b>${o.terms||0}</b></div><div class="k"><span>Validação interna</span><b>${o.pontos} pontos</b></div>
   <div class="k"><span>Infra nova baixa</span><b>${o.ib} m</b></div><div class="k"><span>Infra nova alta</span><b>${o.ia} m</b></div>
   <div class="k" style="grid-column:1/-1;background:var(--acbg)"><span>Tempo previsto da rede</span><b>${fmtH(o.min)}</b></div></div></section>
@@ -192,7 +193,7 @@ $("#sheet").addEventListener("click",e=>{if(e.target.id==="sheet"||e.target.clos
  const o=e.target.closest("[data-sig]");if(!o||!ESC)return;let base=o.dataset.sig,sig=base;
  if(REPETE.has(base)){const c=[1,2].flatMap(q=>S.p[q]).filter(x=>(x.base||x.sig)===base).length;sig=`${base}-${c+1}`}
  else if([1,2].flatMap(q=>S.p[q]).some(x=>x.sig===base)){toast(base+" já está na rede");return}
- if(ESC.i==null){S.p[ESC.p].push({id:uid(),sig,base,endr:"",existe:false,iex:"",baixa:"",alta:"",cabo:"",obs:"",terms:[]});toast(`Ponto ${sig} e cabo ${num(ESC.p,S.p[ESC.p].length-1)} criados`)}
+ if(ESC.i==null){S.p[ESC.p].push({id:uid(),sig,base,endr:"",existe:false,iexb:"",iexa:"",baixa:"",alta:"",cabo:"",obs:"",terms:[]});toast(`Ponto ${sig} e cabo ${num(ESC.p,S.p[ESC.p].length-1)} criados`)}
  else{const t=S.p[ESC.p][ESC.i];t.sig=sig;t.base=base;if(base!=="AC60101")t.terms=[];toast("Sigla trocada")}
  $("#sheet").hidden=true;salvar();render();
  const last=document.querySelectorAll(`.tr[data-p="${ESC.p}"]`);const el=ESC.i==null?last[last.length-1]:null;if(el)el.scrollIntoView({block:"center",behavior:"smooth"})});
