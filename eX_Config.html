@@ -91,7 +91,7 @@ td input{min-height:34px;padding:4px 6px;font-size:14px}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:70}
 #des svg{width:100%;height:auto;display:block}
 .dica{background:var(--warnbg);border-radius:10px;padding:10px 12px;font-size:14px}
-@media print{header,.aval,.noprint{display:none!important}body{background:#fff}}
+@media print{header,.aval,.noprint,.dica,.passos,.lane,#cron{display:none!important}body{background:#fff}.box{border:0}}
 </style></head><body>
 <header><div class="wrap"><div class="crumb" id="crumb"></div><h1 id="ttl">eX · Configuração</h1></div></header>
 <main class="wrap" id="main"></main>
@@ -131,6 +131,47 @@ function busOf(it){const d=dev(it.base);if(!d||d.end===""||d.end==null)return ""
 function sincroniza(lj){const ids=new Set(instancias(lj).map(i=>i.id)),r=lj.rs485;r.p1=r.p1.filter(x=>ids.has(x));r.p2=r.p2.filter(x=>ids.has(x));Object.keys(r.terms).forEach(k=>{if(!ids.has(k))delete r.terms[k]})}
 const numC=(p,i)=>`P${p}-${String(i+1).padStart(2,"0")}`;
 const trK=id=>id; // trecho = cabo que CHEGA no ponto
+/* ================= CRONOGRAMA (gerado da configuração + tempos da base) ================= */
+function atividades(lj){const r=lj.rs485,T=B().tp,A=[];const add=(k,grp,nome,min,ref)=>A.push({k,grp,nome,min:Math.round(min),ref});
+ [1,2].forEach(p=>r["p"+p].forEach((id,i)=>{const t=r.tr[id]||{},c=numC(p,i),de=i===0?`X-WEB P${p}`:r["p"+p][i-1];const g=`Cabo ${c} · ${de} → ${id}`;
+  if(t.existe){add(`tr:${id}:chk`,g,"Checagem do trecho existente",T.exist,c);return}
+  if(n(t.baixa))add(`tr:${id}:infb`,g,`Infra nova baixa · ${n(t.baixa)} m`,n(t.baixa)*T.inf_baixa,c);
+  if(n(t.alta))add(`tr:${id}:infa`,g,`Infra nova alta · ${n(t.alta)} m (inclui plataforma)`,n(t.alta)*T.inf_alta+T.plat,c);
+  const platL=!n(t.alta)&&n(t.iexa)?T.plat:0;
+  add(`tr:${id}:lanc`,g,`Lançamento do cabo · ${n(t.cabo)||"?"} m${platL?" (trecho em altura: inclui plataforma)":""}`,n(t.cabo)*T.lanc+platL,c)}));
+ [1,2].forEach(p=>r["p"+p].forEach(id=>{const g=`Ponto ${id}`;add(`pt:${id}:lig`,g,"Ligação do cabo (entrada + saída)",T.lig,id);add(`pt:${id}:end`,g,"Endereçamento",T.end,id);add(`pt:${id}:vint`,g,"Validação interna eX",T.vint,id)}));
+ if(r.p1.length+r.p2.length){add("rede:com","Rede RS485","Comissionamento do barramento",T.com,"rede");add("rede:val","Rede RS485","Validação Copeland",T.val,"rede")}
+ return A}
+function diff(lj){const cron=lj.rs485.cron,novo=atividades(lj),old=cron?cron.ativ:{};const nk=new Set(novo.map(a=>a.k));
+ const entra=novo.filter(a=>!old[a.k]||!old[a.k].ativo),sai=Object.entries(old).filter(([k,v])=>v.ativo&&!nk.has(k)).map(([k,v])=>({k,...v})),
+ muda=novo.filter(a=>old[a.k]&&old[a.k].ativo&&(old[a.k].min!==a.min||old[a.k].nome!==a.nome||old[a.k].grp!==a.grp)).map(a=>({...a,de:old[a.k]}));return {novo,entra,sai,muda}}
+function aplicar(lj){const r=lj.rs485,{novo}=diff(lj);r.cron=r.cron||{ativ:{}};const nk=new Set(novo.map(a=>a.k));
+ novo.forEach(a=>{const o=r.cron.ativ[a.k];r.cron.ativ[a.k]={...a,status:o?o.status:"a_fazer",ativo:true}});
+ Object.keys(r.cron.ativ).forEach(k=>{if(!nk.has(k))r.cron.ativ[k].ativo=false});r.cron.em=new Date().toISOString();salvar()}
+function cronSheet(){const lj=L(),r=lj.rs485,ger=!!r.cron,d=diff(lj);
+ if(!d.novo.length){toast("Monte a rede antes de gerar o cronograma");return}
+ const li=(a,ex)=>`<li>${esc(a.grp)} — ${esc(a.nome)} <b>${fmtH(a.min)}</b>${ex||""}</li>`;
+ if(!ger){abrir(`<h3>Gerar cronograma da RS485?</h3><div>Serão criadas <b>${d.novo.length} atividades</b>, somando <b>${fmtH(d.novo.reduce((s,a)=>s+a.min,0))}</b>, com os tempos padrão da base do lote.</div><ul style="font-size:13px;max-height:40vh;overflow:auto">${d.novo.map(a=>li(a)).join("")}</ul><button class="b p" id="cok">GERAR CRONOGRAMA</button><button class="b" data-fecha="1">Cancelar</button>`)}
+ else{if(!d.entra.length&&!d.sai.length&&!d.muda.length){abrir(`<h3>Nada mudou</h3><div>A configuração atual é igual à do cronograma gerado.</div><button class="b" data-fecha="1">OK</button>`);return}
+  abrir(`<h3>Alterar configuração base?</h3><div class="sub">Confira o que muda no cronograma. O andamento e o histórico do que já foi apontado são mantidos.</div>
+  ${d.entra.length?`<div class="gt" style="color:var(--ok)">ENTRA (${d.entra.length})</div><ul style="font-size:13px">${d.entra.map(a=>li(a)).join("")}</ul>`:""}
+  ${d.muda.length?`<div class="gt" style="color:var(--warn)">MUDA (${d.muda.length})</div><ul style="font-size:13px">${d.muda.map(a=>li(a,a.de.min!==a.min?` <span class="sub">(antes ${fmtH(a.de.min)})</span>`:a.de.grp!==a.grp?` <span class="sub">(antes: ${esc(a.de.grp)})</span>`:"")).join("")}</ul>`:""}
+  ${d.sai.length?`<div class="gt" style="color:var(--bad)">SAI (${d.sai.length}) · fica desativada, não apagada</div><ul style="font-size:13px">${d.sai.map(a=>li(a)).join("")}</ul>`:""}
+  <button class="b p" id="cok">CONFIRMAR ALTERAÇÃO</button><button class="b" data-fecha="1">Cancelar</button>`)}
+ $("#cok").onclick=()=>{aplicar(lj);fechar();render();toast(ger?"Configuração base alterada · cronograma atualizado":"Cronograma gerado");const el=document.getElementById("cron");if(el)el.scrollIntoView({behavior:"smooth"})}}
+const fmtH=m=>{m=Math.round(m);const h=Math.floor(m/60),x=m%60;return h?`${h}h${String(x).padStart(2,"0")}`:`${x} min`};
+function cronHTML(lj){const r=lj.rs485,ger=!!r.cron,d=diff(lj),pend=ger&&(d.entra.length+d.sai.length+d.muda.length);
+ let h=`<section class="box" id="cron"><div class="bt">CRONOGRAMA DA RS485</div>`;
+ if(!ger)h+=`<div class="sub">Quando a rede estiver montada e medida, gere o cronograma. Ele cria as atividades com os tempos padrão da base do lote.</div><button class="b p" data-cron="1">GERAR CRONOGRAMA ›</button>`;
+ else{const at=Object.values(r.cron.ativ).filter(a=>a.ativo),tot=at.reduce((s,a)=>s+a.min,0);
+  h+=`<div class="sub">Gerado/atualizado em ${new Date(r.cron.em).toLocaleString("pt-BR")} · ${at.length} atividades · <b>${fmtH(tot)}</b> previstos</div>
+  ${pend?`<div class="av w">A configuração mudou depois da geração (${d.entra.length} entram · ${d.muda.length} mudam · ${d.sai.length} saem). Toque em "Alterar configuração base" para aplicar.</div>`:""}
+  <button class="b ${pend?"p":""}" data-cron="1">ALTERAR CONFIGURAÇÃO BASE</button>`;
+  let g="";h+=`<table>`;at.forEach(a=>{if(a.grp!==g){g=a.grp;h+=`<tr><td colspan="2" class="gt">${esc(g)}</td></tr>`}h+=`<tr><td>${esc(a.nome)}</td><td class="r"><b>${fmtH(a.min)}</b></td></tr>`});h+=`</table>
+  <div class="sub">Na versão ligada ao eX Controller, estas atividades vão para o cronograma da obra e aparecem no apontamento de campo do líder.</div>`}
+ return h+`</section>`}
+function baixarSVG(){const sv=document.querySelector("#des svg");if(!sv)return;const src='<?xml version="1.0" encoding="UTF-8"?>'+sv.outerHTML.replace("<svg ",'<svg xmlns="http://www.w3.org/2000/svg" style="background:#fff" ');
+ const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([src],{type:"image/svg+xml"}));a.download=`rede-rs485-${L().id}.svg`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 /* ================= RENDER ================= */
 function crumb(){const c=[`<button data-go="home">Início</button>`];
  if(R.v==="base")c.push(`<span class="sep">›</span><span>Base do lote · RS485</span>`);
@@ -187,7 +228,7 @@ function redeHTML(lj){const r=lj.rs485,its=instancias(lj),map=Object.fromEntries
  h+=`<section class="box"><div class="bt">RESUMO DO LEVANTAMENTO</div><div class="tot"><div class="k"><span>Pontos na rede</span><b>${o.p}</b></div><div class="k"><span>Cabo total</span><b>${o.cabo} m</b></div>
   <div class="k"><span>Infra existente baixa</span><b>${o.ieb} m</b></div><div class="k"><span>Infra existente alta</span><b>${o.iea} m</b></div><div class="k"><span>Infra nova baixa</span><b>${o.ib} m</b></div><div class="k"><span>Infra nova alta</span><b>${o.ia} m</b></div></div>
   <div class="sub">Tempos e etapas não aparecem aqui: saem da base do lote e vão para o cronograma.</div></section>
- <section class="box"><div class="bt">DESENHO DA REDE · CABOS NUMERADOS</div><div id="des">${desenho(lj,map)}</div><button class="b noprint" onclick="window.print()">Imprimir / salvar PDF</button></section>`;return h}
+ <section class="box"><div class="bt">DESENHO DA REDE · CABOS NUMERADOS</div><div id="des">${desenho(lj,map)}</div><div class="g2 noprint"><button class="b" data-svg="1">Baixar desenho</button><button class="b" onclick="window.print()">Imprimir / PDF</button></div></section>${cronHTML(lj)}`;return h}
 function desenho(lj,map){const r=lj.rs485,rows=Math.max(r.p1.length,r.p2.length,1),H=150+rows*110+20;
  const col=(p,Lx,cx)=>{let s="";Lx.forEach((id,i)=>{const y=190+i*110,y0=i===0?140:y-54,t=r.tr[id]||{},tm=r.terms[id];
    s+=`<line x1="${cx}" y1="${y0}" x2="${cx}" y2="${y-2}" stroke="#7F77DD" stroke-width="3"/><text x="${cx+12}" y="${y-30}" font-size="12" font-family="ui-monospace,monospace" font-weight="700" fill="#26215C">${numC(p,i)}</text><text x="${cx+12}" y="${y-15}" font-size="11" fill="#534AB7">${t.existe?"existente":n(t.cabo)+" m"}</text>
@@ -245,6 +286,8 @@ document.addEventListener("click",e=>{
  const tg=e.target.closest("[data-tg]");if(tg){const s=tg.dataset.tg;r.sel[s]=r.sel[s]?0:1;salvar();render();return}
  const qb=e.target.closest("[data-q]");if(qb){const s=qb.dataset.q;r.sel[s]=Math.max(0,Math.min(MAXT,(+r.sel[s]||0)+(+qb.dataset.d)));salvar();render();return}
  const tm=e.target.closest("[data-term]");if(tm){const cv=tm.dataset.cv,k=+tm.dataset.term;r.terms[cv]=r.terms[cv]||[];const ix=r.terms[cv].indexOf(k);if(ix>=0)r.terms[cv].splice(ix,1);else r.terms[cv].push(k);salvar();render();return}
+ if(e.target.closest("[data-cron]")){cronSheet();return}
+ if(e.target.closest("[data-svg]")){baixarSVG();return}
  const cb=e.target.closest("[data-cab]");if(cb){trechoSheet(cb.dataset.cab);return}
  const bk=e.target.closest("[data-blk]");if(bk&&!e.target.closest("[data-hd]")){moverSheet(bk.dataset.blk);return}
 });
