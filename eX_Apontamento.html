@@ -74,6 +74,19 @@ main.wrap{padding-top:12px;display:grid;gap:12px}
 .hj{color:var(--accent);font-weight:700}
 .nxt{display:flex;gap:8px;justify-content:space-between;padding:0 12px 12px}
 .saving{opacity:.6;pointer-events:none}
+.sts button:not(.on){opacity:.35}
+.sts button.on{box-shadow:0 0 0 2px currentColor inset}
+.savebar{position:sticky;bottom:calc(8px + env(safe-area-inset-bottom,0px));display:grid;grid-template-columns:1fr 2fr;gap:8px;padding:10px 12px;background:var(--panel);border-top:1px solid var(--line)}
+.savebar .msg{grid-column:1/-1;font-size:13px;font-weight:600;color:var(--pend)}
+.savebar .b{min-height:50px;font-size:16px}
+.savebar .b.p:disabled{opacity:.4}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet>div{background:var(--panel);color:var(--fg);width:100%;max-width:560px;border-radius:16px 16px 0 0;padding:18px 16px calc(18px + env(safe-area-inset-bottom,0px));display:grid;gap:12px}
+.sheet h3{margin:0;font-size:18px}
+.sheet ul{margin:0;padding-left:18px;display:grid;gap:4px;font-size:15px}
+.sheet .bt{display:grid;gap:8px}
+.sheet .b{min-height:50px;font-size:16px}
+.okmsg{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);background:var(--ok);color:#fff;padding:18px 26px;border-radius:14px;font-size:18px;font-weight:700;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.25);text-align:center}
 </style></head><body>
 <header><div class="wrap">
   <div class="row1"><h1>eX · Apontamento de Campo</h1><span class="live" id="live">conectando…</span></div>
@@ -83,6 +96,8 @@ main.wrap{padding-top:12px;display:grid;gap:12px}
 </div></header>
 <main class="wrap" id="main"><div class="empty">Carregando…</div></main>
 <div class="toast" id="toast" hidden></div>
+<div class="sheet" id="sheet" hidden><div id="sheetc"></div></div>
+<div class="okmsg" id="okmsg" hidden></div>
 <script>
 const FN="https://djguxdgaobtminatxkdr.supabase.co/functions/v1/apontamento-campo";
 const qs=new URLSearchParams(location.search);const P=qs.get("p")||"",K=qs.get("k")||"";
@@ -115,13 +130,43 @@ async function carregar(){
     $("#live").innerHTML="<b>●</b> online";render();
   }catch(e){$("#live").textContent="sem internet";if(!PJ)$("#main").innerHTML='<div class="empty">Sem conexão. Verifique a internet e toque para tentar de novo.<br><br><button class="b p" onclick="carregar()">Tentar de novo</button></div>';}
 }
-async function salvar(t,patch,msg){
-  const antes={...t};Object.assign(t,patch);HOJE.add(t.id);render();busy++;
+async function salvar(t,patch){
+  busy++;
   try{const body={action:"tarefa",id:t.id,patch:{}};["status","progresso","quantidade","notas"].forEach(k=>{if(k in patch)body.patch[k]=patch[k]});if("_var" in patch)body.patch.variacao=patch._var;
-    const d=await api(body);if(d.tarefa)Object.assign(t,d.tarefa);delete t._var;toast(msg||"Salvo")}
-  catch(e){Object.assign(t,antes);toast("Não salvou: "+e.message,3500)}
-  finally{busy--;render()}
+    const d=await api(body);Object.assign(t,patch,d.tarefa||{});delete t._var;HOJE.add(t.id);return true}
+  catch(e){toast("Não salvou: "+e.message,4000);return false}
+  finally{busy--}
 }
+/* ---- rascunho: nada grava até tocar em Salvar ---- */
+let DR={id:"",p:{}};
+const dirty=()=>!!DR.id&&Object.keys(DR.p).length>0;
+const vista=t=>DR.id===t.id?{...t,...DR.p}:t;
+function rasc(t,p){if(DR.id!==t.id)DR={id:t.id,p:{}};Object.assign(DR.p,p);render()}
+function descartar(){DR={id:"",p:{}}}
+function mudancas(t){const v=vista(t),L=[];
+  if(v.status!==t.status)L.push(`Status: ${STL[t.status]||t.status} → <b>${STL[v.status]}</b>`);
+  if(contavel(t)&&feito(v)!==feito(t))L.push(`Feito: ${feito(t)} → <b>${feito(v)}</b> de ${+t.quantidade||0}`);
+  else if(!contavel(t)&&v.progresso!==t.progresso&&v.status===t.status)L.push(`Progresso: ${t.progresso||0}% → <b>${v.progresso}%</b>`);
+  if("_var" in DR.p&&DR.id===t.id){const vi=varIdx(t);if(vi!==DR.p._var)L.push(`Condição: ${esc((t.variacoes[vi]||[])[0])} → <b>${esc(t.variacoes[DR.p._var][0])}</b>`)}
+  if(isM(t)&&(+v.quantidade||0)!==(+t.quantidade||0))L.push(`Metros: ${+t.quantidade||0} → <b>${+v.quantidade||0}</b>`);
+  if((v.notas||"")!==(t.notas||""))L.push(`Observação: <b>${esc(v.notas||"(apagada)")}</b>`);
+  return L}
+function sheet(html){$("#sheetc").innerHTML=html;$("#sheet").hidden=false}
+function fecharSheet(){$("#sheet").hidden=true}
+function okMsg(m){const o=$("#okmsg");o.innerHTML=m;o.hidden=false;clearTimeout(o._h);o._h=setTimeout(()=>o.hidden=true,1700)}
+function pedirSalvar(){const t=TS.find(x=>x.id===DR.id);if(!t||!dirty())return;const L=mudancas(t);
+  if(!L.length){descartar();render();return}
+  const v=vista(t);const aviso=v.status==="congelada"&&!(v.notas||"").trim()?'<div class="warn">Escreva o motivo do impedimento na observação.</div>':"";
+  sheet(`<h3>Salvar alteração?</h3><div style="font-weight:600">${esc(t.nome)}</div><ul>${L.map(x=>`<li>${x}</li>`).join("")}</ul>${aviso}<div class="bt"><button type="button" class="b p" data-sh="ok" ${aviso?"disabled":""}>Confirmar e salvar</button><button type="button" class="b" data-sh="x">Voltar e revisar</button></div>`)}
+async function confirmar(){const t=TS.find(x=>x.id===DR.id);if(!t)return;const p={...DR.p};
+  $("#sheetc").classList.add("saving");const ok=await salvar(t,p);$("#sheetc").classList.remove("saving");fecharSheet();
+  if(ok){descartar();okMsg("✓ Alteração salva<br><span style='font-size:14px;font-weight:500'>"+esc(t.nome)+"</span>");if(PEND){const f=PEND;PEND=null;f();return}}
+  render()}
+let PEND=null;
+function guardar(fn){if(!dirty()){descartar();fn();return}PEND=fn;
+  sheet(`<h3>Alteração não salva</h3><div>Você mudou <b>${esc((TS.find(x=>x.id===DR.id)||{}).nome)}</b> e ainda não salvou.</div><div class="bt"><button type="button" class="b p" data-sh="salvar">Salvar agora</button><button type="button" class="b" data-sh="descartar">Descartar alteração</button><button type="button" class="b" data-sh="x">Continuar editando</button></div>`)}
+$("#sheet").addEventListener("click",e=>{const b=e.target.closest("[data-sh]");if(!b){if(e.target.id==="sheet"){PEND=null;fecharSheet()}return}
+  const a=b.dataset.sh;if(a==="ok")confirmar();else if(a==="salvar"){fecharSheet();pedirSalvar()}else if(a==="descartar"){descartar();fecharSheet();const f=PEND;PEND=null;f?f():render()}else{PEND=null;fecharSheet()}});
 /* ---- render ---- */
 function header(){
   $("#obra").textContent=PJ?(PJ.contemplado||PJ.nome)+" · "+dBR(DATA):"";
@@ -132,7 +177,7 @@ function navHTML(ttl,back){return `<div class="nav"><button type="button" class=
 function cardHTML(t){const st=t.status||"a_fazer",q=+t.quantidade||0;
   const meta=[contavel(t)?`${feito(t)}/${q} ${esc(t.unidade)}`:isM(t)?(q?`${q} m`:"medir metros"):"",fmtH(prev(t)),(t.fotos&&t.fotos.length)?`📷 ${t.fotos.length}`:"",t.notas?"💬":"",HOJE.has(t.id)?'<span class="hj">● hoje</span>':""].filter(Boolean).join(" · ");
   return `<button type="button" class="card ${st}" data-open="${esc(t.id)}"><span class="cn">${esc(t.nome)}</span><span class="chip ${st}">${STL[st]||st}</span><span class="cm">${meta}</span>${contavel(t)&&st!=="concluida"&&frac(t)>0?`<span class="cb"><span style="width:${frac(t)*100}%"></span></span>`:""}</button>`}
-function tarefaHTML(t){const q=+t.quantidade||0,vi=varIdx(t),st=t.status||"a_fazer";
+function tarefaHTML(t0){const t=vista(t0),q=+t.quantidade||0,vi=("_var" in DR.p&&DR.id===t0.id)?DR.p._var:varIdx(t0),st=t.status||"a_fazer";
   const meta=[contavel(t)?`${q} ${esc(t.unidade)}`:"",isM(t)?`${fmtH(+t.tempo_atual||0)} por metro`:"",`${fmtH(prev(t))} previstos`].filter(Boolean).join(" · ");
   return `<div class="t" data-id="${esc(t.id)}">
    <div class="nm">${esc(t.nome)}</div><div class="meta">${meta}</div>
@@ -144,7 +189,8 @@ function tarefaHTML(t){const q=+t.quantidade||0,vi=varIdx(t),st=t.status||"a_faz
    </div>`:""}
    <label style="display:grid;gap:3px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted)">${st==="congelada"?"Motivo do impedimento":"Observação"}<textarea data-f="notas" placeholder="${st==="congelada"?"O que está travando":"Opcional"}">${esc(t.notas)}</textarea></label>
    <div class="fotos">${(t.fotos||[]).map(f=>f.url?`<a href="${esc(f.url)}" target="_blank" rel="noopener"><img src="${esc(f.url)}" alt="foto" loading="lazy"></a>`:"").join("")}<label class="b">📷 Foto<input type="file" accept="image/*" capture="environment" data-up="1" hidden></label></div>
-  </div>`}
+  </div>
+  <div class="savebar">${dirty()&&DR.id===t0.id?'<div class="msg">● Alteração ainda não salva</div>':""}<button type="button" class="b" data-sv="x" ${dirty()&&DR.id===t0.id?"":"disabled"}>Descartar</button><button type="button" class="b p" data-sv="ok" ${dirty()&&DR.id===t0.id?"":"disabled"}>Salvar</button></div>`}
 function diaHTML(){const c=(DIA&&DIA.campo)||{};
   return `<section class="box"><div class="dia">
    <div class="g2"><label>Líder<input data-d="lider" value="${esc(c.lider)}" placeholder="seu nome"></label><label>Equipe presente<input data-d="equipe" value="${esc(c.equipe)}" placeholder="nomes"></label></div>
@@ -174,34 +220,40 @@ function render(){
 }
 /* ---- navegação ---- */
 function go(v,g,t,push=true){vw=v;vg=g||"";vt=t||"";try{history[push?"pushState":"replaceState"]({vw,vg,vt},"")}catch(_){}render();window.scrollTo(0,0)}
-window.addEventListener("popstate",e=>{const s=e.state||{vw:"menu"};vw=s.vw||"menu";vg=s.vg||"";vt=s.vt||"";render()});
+window.addEventListener("popstate",e=>{const s=e.state||{vw:"menu"};const aplica=()=>{vw=s.vw||"menu";vg=s.vg||"";vt=s.vt||"";render()};
+  if(dirty()){try{history.pushState({vw,vg,vt},"")}catch(_){}guardar(()=>{try{history.replaceState(s,"")}catch(_){}aplica()})}else aplica()});
+window.addEventListener("beforeunload",e=>{if(dirty()){e.preventDefault();e.returnValue=""}});
 try{history.replaceState({vw:"menu"},"")}catch(_){}
 /* ---- eventos ---- */
 const cur=el=>{const c=el.closest(".t");return c&&TS.find(x=>x.id===c.dataset.id)};
 $("#main").addEventListener("click",async e=>{
-  if(e.target.closest("[data-back]")){if(vw==="t"){const t=TS.find(x=>x.id===vt);go("g",t&&t.grupo_id,"",false)}else go("menu","","",false);return}
+  const sv=e.target.closest("[data-sv]");if(sv){if(sv.dataset.sv==="ok")pedirSalvar();else{descartar();render();toast("Alteração descartada")}return}
+  if(e.target.closest("[data-back]")){guardar(()=>{if(vw==="t"){const t=TS.find(x=>x.id===vt);go("g",t&&t.grupo_id,"",false)}else go("menu","","",false)});return}
   const gr=e.target.closest("[data-grp]");if(gr){go("g",gr.dataset.grp);return}
-  const op=e.target.closest("[data-open]");if(op){const t=TS.find(x=>x.id===op.dataset.open);if(t)go("t",t.grupo_id,t.id,!op.dataset.rep);return}
+  const op=e.target.closest("[data-open]");if(op){const t=TS.find(x=>x.id===op.dataset.open);if(t)guardar(()=>go("t",t.grupo_id,t.id,!op.dataset.rep));return}
   const vv=e.target.closest("[data-view]");if(vv){go(vv.dataset.view);return}
   if(e.target.closest("[data-diasave]")){salvarDia(true);return}
   const t=cur(e.target);if(!t)return;
-  const st=e.target.closest("[data-st]");if(st){const v=st.dataset.st;if(v===t.status)return;const p={status:v};
-    if(v==="a_fazer")p.progresso=0;else if(v==="concluida")p.progresso=100;else if(v==="em_andamento"&&!(t.progresso>0&&t.progresso<100))p.progresso=contavel(t)&&feito(t)>0?t.progresso:50;
-    if(v==="congelada")toast("Escreva o motivo do impedimento abaixo",2500);
-    salvar(t,p,STL[v]);return}
-  const inc=e.target.closest("[data-inc]");if(inc){const q=+t.quantidade||0;const v=Math.max(0,Math.min(q,feito(t)+(+inc.dataset.inc)));if(v===feito(t))return;setFeito(t,v);return}
+  const st=e.target.closest("[data-st]");if(st){const v=st.dataset.st,w=vista(t);if(v===w.status)return;
+    if(v===t.status){const p={status:v,progresso:t.progresso};rasc(t,p);return}
+    const p={status:v};if(v==="a_fazer")p.progresso=0;else if(v==="concluida")p.progresso=100;else if(v==="em_andamento")p.progresso=(t.progresso>0&&t.progresso<100)?t.progresso:(contavel(t)?Math.round(100/(+t.quantidade||1)):50);else p.progresso=t.progresso;
+    if(v==="congelada")toast("Escreva o motivo do impedimento na observação",2500);
+    rasc(t,p);return}
+  const inc=e.target.closest("[data-inc]");if(inc){const q=+t.quantidade||0,w=vista(t);const v=Math.max(0,Math.min(q,feito(w)+(+inc.dataset.inc)));if(v===feito(w))return;setFeito(t,v);return}
 });
-function setFeito(t,v){const q=+t.quantidade||0;const p={progresso:Math.round(v/q*100)};p.status=v>=q?"concluida":v>0?(t.status==="congelada"?"congelada":"em_andamento"):"a_fazer";if(v>=q)p.progresso=100;salvar(t,p,`Feito ${v}/${q}`)}
+function setFeito(t,v){const q=+t.quantidade||0,w=vista(t);const p={progresso:Math.round(v/q*100)};p.status=v>=q?"concluida":v>0?(w.status==="congelada"?"congelada":"em_andamento"):"a_fazer";if(v>=q)p.progresso=100;rasc(t,p)}
 $("#main").addEventListener("change",async e=>{const el=e.target;
   if(el.dataset.d){DIA=DIA||{};DIA.campo={...(DIA.campo||{}),[el.dataset.d]:el.value};if(el.dataset.d==="termostatos_em_caixa"){render()}salvarDia(false);return}
   const t=cur(el);if(!t)return;
   if(el.dataset.up&&el.files&&el.files[0]){foto(t,el.files[0]);return}
   const f=el.dataset.f;
   if(f==="feito"){const q=+t.quantidade||0;setFeito(t,Math.max(0,Math.min(q,Math.round(+el.value||0))));return}
-  if(f==="var"){const i=+el.value;salvar(t,{_var:i,tempo_atual:+t.variacoes[i][1]||0},"Condição salva");return}
-  if(f==="metros"){const v=el.value===""?0:Math.max(0,+el.value||0);salvar(t,{quantidade:v},"Metros salvos");return}
-  if(f==="notas"){if((t.notas||"")===el.value)return;salvar(t,{notas:el.value},"Observação salva");return}
+  if(f==="var"){const i=+el.value;rasc(t,{_var:i,tempo_atual:+t.variacoes[i][1]||0});return}
+  if(f==="metros"){const v=el.value===""?0:Math.max(0,+el.value||0);rasc(t,{quantidade:v});return}
+  if(f==="notas"){if(DR.id!==t.id)DR={id:t.id,p:{}};DR.p.notas=el.value;return}
 });
+$("#main").addEventListener("input",e=>{const el=e.target;if(el.dataset.f!=="notas")return;const t=cur(el);if(!t)return;if(DR.id!==t.id)DR={id:t.id,p:{}};DR.p.notas=el.value;
+  document.querySelectorAll("[data-sv]").forEach(b=>b.disabled=false);const sb=document.querySelector(".savebar");if(sb&&!sb.querySelector(".msg"))sb.insertAdjacentHTML("afterbegin",'<div class="msg">● Alteração ainda não salva</div>')});
 let diaT=null;
 function salvarDia(now){clearTimeout(diaT);diaT=setTimeout(async()=>{try{await api({action:"dia",campo:(DIA&&DIA.campo)||{}});toast("Dia salvo")}catch(e){toast("Dia não salvou: "+e.message,3500)}},now?0:900)}
 document.addEventListener("focusout",()=>setTimeout(()=>{const a=document.activeElement;if(!a||!a.closest||!a.closest("#main")||!a.matches("input,textarea"))render()},250));
@@ -211,7 +263,7 @@ async function foto(t,file){toast("Enviando foto…",10000);busy++;
   try{const b64=await reduzir(file);const d=await api({action:"foto",id:t.id,base64:b64});t.fotos=d.fotos;HOJE.add(t.id);toast("Foto salva")}
   catch(e){toast("Foto não enviada: "+e.message,3500)}finally{busy--;render()}}
 /* ---- atualiza sozinho a cada 60 s (outro líder pode ter apontado) ---- */
-setInterval(()=>{if(!busy&&document.visibilityState==="visible"){const a=document.activeElement;if(!(a&&a.matches&&a.matches("input,textarea,select")))carregar()}},60000);
+setInterval(()=>{if(!busy&&!dirty()&&$("#sheet").hidden&&document.visibilityState==="visible"){const a=document.activeElement;if(!(a&&a.matches&&a.matches("input,textarea,select")))carregar()}},60000);
 carregar();
 </script>
 </body></html>
