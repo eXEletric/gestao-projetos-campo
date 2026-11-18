@@ -91,6 +91,34 @@ td input{min-height:34px;padding:4px 6px;font-size:14px}
 .toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:70}
 #des svg{width:100%;height:auto;display:block}
 .dica{background:var(--warnbg);border-radius:10px;padding:10px 12px;font-size:14px}
+.swt{position:relative;width:50px;height:25px;border-radius:13px;cursor:pointer;flex-shrink:0;border:0;background:linear-gradient(#bbbeb7,#9a9d95);box-shadow:inset 0 2px 4px rgba(0,0,0,.38);font:800 8px ui-monospace,monospace;padding:0;justify-self:center}
+.swt.on{background:linear-gradient(#2fcf88,#0f8f5b)}.swt .lb{position:absolute;top:0;height:100%;display:flex;align-items:center;color:#fff}.swt .lb.off{right:7px;color:#5a5a50}.swt.on .lb.off{display:none}.swt .lb.onx{left:8px;display:none}.swt.on .lb.onx{display:flex}
+.swt .kb{position:absolute;top:3px;left:3px;width:20px;height:19px;border-radius:10px;transition:.16s;background:linear-gradient(#fff,#d4d4cf);box-shadow:0 2px 2px rgba(0,0,0,.4)}.swt.on .kb{left:27px}
+.led{width:14px;height:14px;border-radius:50%;background:radial-gradient(circle at 35% 30%,#fff,#eef1ef 72%);border:1.5px solid #d9dcd9;flex-shrink:0}.led.on{background:radial-gradient(circle at 35% 30%,#c4ffdd,#22d27f 52%,#08a457);border-color:#08a457;box-shadow:0 0 6px rgba(34,210,127,.8)}
+.atv{border:1px solid var(--line);border-radius:10px;padding:10px;display:grid;gap:8px}.atv.off{opacity:.5}
+.arow{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px}.arow2{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.swl{display:flex;gap:6px;align-items:center;font-size:12px;font-weight:700;color:var(--muted)}
+.sm2{font-size:11px;color:var(--muted)}
+.tyb{font-size:10px;font-weight:800;padding:2px 6px;border-radius:5px;text-transform:uppercase;letter-spacing:.03em;white-space:nowrap}.tex{background:#EEEDFE;color:#3C3489}.tte{background:#FAEEDA;color:#633806}.tva{background:#EAF3DE;color:#27500A}.tsu{background:#FAECE7;color:#712B13}
+.perf{border:1px solid var(--line);border-radius:10px;padding:8px;display:grid;gap:4px}.ph2{font-weight:800;font-size:13px;color:var(--acfg)}
+.prow{display:grid;grid-template-columns:30px 1fr 64px 54px 54px;gap:6px;align-items:center;border-top:1px solid var(--line);padding-top:6px;font-size:13px}.prow.h{border-top:0;font-size:10px;font-weight:800;color:var(--muted);text-transform:uppercase}.prow.off{opacity:.45}
+.mv{display:grid;gap:2px}.mv button{font:inherit;font-size:10px;border:1px solid var(--line);border-radius:4px;background:var(--panel);cursor:pointer;padding:1px}
+.xrm{font:inherit;font-size:11px;border:0;background:transparent;color:var(--bad);cursor:pointer;margin-left:4px}
+.vrow{display:grid;grid-template-columns:1fr 70px auto auto;gap:6px;align-items:center}.mini.on{background:var(--acdk);color:#fff}
+.tbtn{grid-column:2/-1;justify-self:start;font:inherit;font-size:12px;font-weight:800;border:1px solid var(--acfg);color:var(--acfg);background:var(--acbg);border-radius:6px;padding:5px 10px;cursor:pointer}
+.irow{display:grid;grid-template-columns:16px 1fr auto;gap:10px;align-items:center;border-top:1px solid var(--line);padding-top:8px}.irow.off{opacity:.55}
+.vq{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}.vbt{font:inherit;font-size:12px;font-weight:700;border:1px solid var(--line);border-radius:6px;background:var(--panel);padding:6px 8px;cursor:pointer}.vbt.on{background:var(--acdk);color:#fff;border-color:var(--acdk)}
+.disc.su{background:#FAECE7;color:#712B13}
+.tot1{display:flex;align-items:center;gap:10px}.tot1 b{font-family:var(--f-mono);font-size:24px}
+.barx{flex:1;height:10px;border-radius:5px;background:rgba(0,0,0,.08);overflow:hidden;display:block}.barx span{display:block;height:100%;background:var(--acdk)}
+.fase{border-radius:14px;padding:12px;display:grid;gap:8px}.fsup{background:#FAECE7}.ff1{background:#EEEDFE}.ff2{background:#E1F5EE}.frd{background:#F1EFE8}
+.fh2{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:center}.fh2 b{text-transform:uppercase;letter-spacing:.03em}.fh2 .barx{grid-column:1/-1}
+.fsup .barx span{background:#D85A30}.ff2 .barx span{background:#1D9E75}.frd .barx span{background:#888780}
+.crd{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:8px 10px;display:grid;gap:6px}
+.crd.f1{border-left:5px solid #7F77DD}.crd.f2{border-left:5px solid #1D9E75}.crd.sup{border-left:5px solid #D85A30}.crd.rede{border-left:5px solid #888780}
+.arw{font:inherit;text-align:left;display:grid;grid-template-columns:1fr auto;gap:8px;align-items:center;border:0;border-top:1px solid var(--line);background:transparent;padding:7px 0 2px;cursor:pointer;color:var(--fg)}
+.stc{font-size:11px;font-weight:800;padding:3px 8px;border-radius:6px;white-space:nowrap;background:var(--chip)}.stc.em_andamento{background:var(--warnbg);color:var(--warn)}.stc.concluida{background:var(--okbg);color:var(--ok)}.stc.congelada{background:var(--badbg);color:var(--bad)}.stc.lk{background:#FAECE7;color:#712B13}
+.ops{display:grid;grid-template-columns:1fr 1fr;gap:8px}
 @media print{header,.aval,.noprint,.dica,.passos,.lane,#cron{display:none!important}body{background:#fff}.box{border:0}}
 </style></head><body>
 <header><div class="wrap"><div class="crumb" id="crumb"></div><h1 id="ttl">eX · Configuração</h1></div></header>
@@ -109,16 +137,39 @@ const DEV0=[
 const MULTI=new Set(["AC60101"]);const MAXT=10;
 const TP0=[["inf_baixa","Infra nova baixa","min/m",3],["inf_alta","Infra nova alta","min/m",6],["plat","Trecho em altura · posicionar plataforma","min/trecho",30],["lanc","Lançamento do cabo","min/m",2],["exist","Trecho existente · checagem","min/trecho",10],
  ["lig","Ponto · ligação do cabo (entrada + saída)","min/ponto",15],["end","Ponto · endereçamento","min/ponto",15],["vint","Ponto · validação interna eX","min/ponto",10],["com","Comissionamento do barramento","min/rede",120],["val","Validação Copeland","min/rede",30]];
+/* catálogo de atividades (serviços) · un: m | trecho | ponto | rede | loja · qm: de onde vem a metragem · sup: depende do supervisório */
+const ATV0=[
+ {id:"infb",nome:"Infra nova baixa",tipo:"execução",un:"m",qm:"baixa",min:3},
+ {id:"infa",nome:"Infra nova alta",tipo:"execução",un:"m",qm:"alta",min:6},
+ {id:"plat",nome:"Posicionar plataforma (trecho em altura)",tipo:"execução",un:"trecho",cond:"altura",min:30},
+ {id:"lanc",nome:"Lançamento do cabo",tipo:"execução",un:"m",qm:"cabo",min:2},
+ {id:"fech",nome:"Fechamento das pontas",tipo:"execução",un:"trecho",min:15},
+ {id:"chk",nome:"Checagem de trecho existente",tipo:"teste",un:"trecho",min:10},
+ {id:"cfg",nome:"Configuração do endereço bus",tipo:"execução",un:"ponto",min:15},
+ {id:"csup",nome:"Comunicação no supervisório",tipo:"teste",un:"ponto",min:10,sup:true},
+ {id:"vint",nome:"Validação interna eX",tipo:"validação",un:"ponto",min:10,sup:true},
+ {id:"cbar",nome:"Comissionamento do barramento",tipo:"teste",un:"rede",min:120,sup:true},
+ {id:"vcop",nome:"Validação Copeland",tipo:"validação",un:"rede",min:30,sup:true},
+ {id:"lenv",nome:"Levantamento detalhado enviado à Copeland",tipo:"execução",un:"loja",min:0,resp:"eX"},
+ {id:"baut",nome:"Base da automação criada (Copeland)",tipo:"execução",un:"loja",min:0,resp:"Copeland"},
+ {id:"cond",nome:"Condicionamento do supervisório (Copeland)",tipo:"validação",un:"loja",min:0,resp:"Copeland"}];
+const PERF0={tr:["infb","infa","plat","lanc","fech"],pt:["cfg","csup","vint"],rede:["cbar","vcop"],sup:["lenv","baut","cond"]};
+const PERFN={tr:"Trecho de cabo (fase 1 · rede física)",pt:"Dispositivo na rede (fase 2)",rede:"Fechamento da rede",sup:"Supervisório (libera as validações)"};
+const UNN={m:"por metro",trecho:"por trecho",ponto:"por ponto",rede:"por rede",loja:"por loja"};
 /* ================= ESTADO (modo avaliação: localStorage) ================= */
 const K="ex_config_aval_v1";
 let S;try{S=JSON.parse(localStorage.getItem(K)||"null")}catch(_){S=null}
 if(!S)S={lote:"Copeland BRPROJ Onda 2 · Lote 1",base:{rs485:{devs:DEV0,tp:Object.fromEntries(TP0.map(x=>[x[0],x[3]]))}},lojas:[{id:"935",nome:"935 · Aparecida de Goiânia · Vera Cruz",rs485:{sel:{},terms:{},p1:[],p2:[],tr:{}}}]};
+(function migra(){const b=S.base.rs485;if(!b.ativ){const tp=b.tp||{};const mp={inf_baixa:"infb",inf_alta:"infa",plat:"plat",lanc:"lanc",exist:"chk",lig:"fech",end:"cfg",vint:"vint",com:"cbar",val:"vcop"};
+  b.ativ=ATV0.map(a=>({...a,vars:[],ativo:true}));Object.entries(mp).forEach(([o,nw])=>{if(tp[o]!=null){const a=b.ativ.find(x=>x.id===nw);if(a)a.min=+tp[o]}});}
+ if(!b.perf)b.perf=Object.fromEntries(Object.entries(PERF0).map(([k,v])=>[k,v.map(a=>({a,acomp:true,foto:false}))]));
+ S.lojas.forEach(l=>{const r=l.rs485;r.off=r.off||{};r.var=r.var||{}})})();
 const salvar=()=>{try{localStorage.setItem(K,JSON.stringify(S))}catch(_){}};
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const n=v=>Math.max(0,+String(v??"").replace(",",".")||0);
 function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,1900)}
-const B=()=>S.base.rs485, dev=sig=>B().devs.find(d=>d.sig===sig);
+const B=()=>S.base.rs485, dev=sig=>B().devs.find(d=>d.sig===sig), ATV=id=>B().ativ.find(a=>a.id===id);
 /* ================= NAVEGAÇÃO ================= */
 let R={v:"home"}; // home | base | loja | rs1 | rs2
 function go(r,push=true){R=r;try{history[push?"pushState":"replaceState"](r,"")}catch(_){}render();window.scrollTo(0,0)}
@@ -132,21 +183,24 @@ function sincroniza(lj){const ids=new Set(instancias(lj).map(i=>i.id)),r=lj.rs48
 const numC=(p,i)=>`P${p}-${String(i+1).padStart(2,"0")}`;
 const trK=id=>id; // trecho = cabo que CHEGA no ponto
 /* ================= CRONOGRAMA (gerado da configuração + tempos da base) ================= */
-function atividades(lj){const r=lj.rs485,T=B().tp,A=[];const add=(k,grp,nome,min,ref)=>A.push({k,grp,nome,min:Math.round(min),ref});
- [1,2].forEach(p=>r["p"+p].forEach((id,i)=>{const t=r.tr[id]||{},c=numC(p,i),de=i===0?`X-WEB P${p}`:r["p"+p][i-1];const g=`Cabo ${c} · ${de} → ${id}`;
-  if(t.existe){add(`tr:${id}:chk`,g,"Checagem do trecho existente",T.exist,c);return}
-  if(n(t.baixa))add(`tr:${id}:infb`,g,`Infra nova baixa · ${n(t.baixa)} m`,n(t.baixa)*T.inf_baixa,c);
-  if(n(t.alta))add(`tr:${id}:infa`,g,`Infra nova alta · ${n(t.alta)} m (inclui plataforma)`,n(t.alta)*T.inf_alta+T.plat,c);
-  const platL=!n(t.alta)&&n(t.iexa)?T.plat:0;
-  add(`tr:${id}:lanc`,g,`Lançamento do cabo · ${n(t.cabo)||"?"} m${platL?" (trecho em altura: inclui plataforma)":""}`,n(t.cabo)*T.lanc+platL,c)}));
- [1,2].forEach(p=>r["p"+p].forEach(id=>{const g=`Ponto ${id}`;add(`pt:${id}:lig`,g,"Ligação do cabo (entrada + saída)",T.lig,id);add(`pt:${id}:end`,g,"Endereçamento",T.end,id);add(`pt:${id}:vint`,g,"Validação interna eX",T.vint,id)}));
- if(r.p1.length+r.p2.length){add("rede:com","Rede RS485","Comissionamento do barramento",T.com,"rede");add("rede:val","Rede RS485","Validação Copeland",T.val,"rede")}
+function minAtv(a,key){const r=L()?L().rs485:null;if(a.vars&&a.vars.length){const vi=r&&r.var[key+":"+a.id];const i=vi!=null?vi:(a.pad||0);return +(a.vars[i]||a.vars[0]).min||0}return +a.min||0}
+function varNome(a,key){if(!(a.vars&&a.vars.length))return "";const r=L().rs485,vi=r.var[key+":"+a.id];const i=vi!=null?vi:(a.pad||0);return (a.vars[i]||{}).n||""}
+function perfAtivo(tipo,key,lj){const off=new Set(lj.rs485.off[key]||[]);return (B().perf[tipo]||[]).filter(x=>x.acomp&&!off.has(x.a)).map(x=>({...x,at:ATV(x.a)})).filter(x=>x.at&&x.at.ativo!==false)}
+function atividades(lj){const r=lj.rs485,A=[];const add=(k,fase,item,grp,a,nome,min,extra)=>A.push({k,fase,item,grp,nome,min:Math.round(min),tipo:a.tipo,sup:!!a.sup,foto:!!extra.foto,resp:a.resp||"eX",un:a.un});
+ if(r.p1.length+r.p2.length){perfAtivo("sup","sup",lj).forEach(x=>add(`sup:${x.a}`,"sup","sup","Supervisório",x.at,x.at.nome,minAtv(x.at,"sup"),x))}
+ [1,2].forEach(p=>r["p"+p].forEach((id,i)=>{const t=r.tr[id]||{},c=numC(p,i),de=i===0?`X-WEB P${p}`:r["p"+p][i-1],key="tr:"+id,g=`${c} · ${de} → ${id}`;
+  if(t.existe){const a=ATV("chk");if(a)add(`${key}:chk`,"f1",key,g,a,a.nome,minAtv(a,key),{});return}
+  const alt=n(t.alta)+n(t.iexa)>0;
+  perfAtivo("tr",key,lj).forEach(x=>{const a=x.at;if(a.cond==="altura"&&!alt)return;let q=1,lab="";if(a.un==="m"){q=n(t[a.qm||"cabo"]);if(!q)return;lab=` · ${q} m`}const vn=varNome(a,key);
+   add(`${key}:${a.id}`,"f1",key,g,a,a.nome+lab+(vn?` · ${vn}`:""),minAtv(a,key)*q,x)})}));
+ [1,2].forEach(p=>r["p"+p].forEach(id=>{const key="pt:"+id;perfAtivo("pt",key,lj).forEach(x=>{const vn=varNome(x.at,key);add(`${key}:${x.a}`,"f2",key,id,x.at,x.at.nome+(vn?` · ${vn}`:""),minAtv(x.at,key),x)})}));
+ if(r.p1.length+r.p2.length)perfAtivo("rede","rede",lj).forEach(x=>add(`rede:${x.a}`,"rede","rede","Rede RS485",x.at,x.at.nome,minAtv(x.at,"rede"),x));
  return A}
 function diff(lj){const cron=lj.rs485.cron,novo=atividades(lj),old=cron?cron.ativ:{};const nk=new Set(novo.map(a=>a.k));
  const entra=novo.filter(a=>!old[a.k]||!old[a.k].ativo),sai=Object.entries(old).filter(([k,v])=>v.ativo&&!nk.has(k)).map(([k,v])=>({k,...v})),
- muda=novo.filter(a=>old[a.k]&&old[a.k].ativo&&(old[a.k].min!==a.min||old[a.k].nome!==a.nome||old[a.k].grp!==a.grp)).map(a=>({...a,de:old[a.k]}));return {novo,entra,sai,muda}}
+ muda=novo.filter(a=>old[a.k]&&old[a.k].ativo&&(old[a.k].min!==a.min||old[a.k].nome!==a.nome||old[a.k].grp!==a.grp||!!old[a.k].sup!==a.sup)).map(a=>({...a,de:old[a.k]}));return {novo,entra,sai,muda}}
 function aplicar(lj){const r=lj.rs485,{novo}=diff(lj);r.cron=r.cron||{ativ:{}};const nk=new Set(novo.map(a=>a.k));
- novo.forEach(a=>{const o=r.cron.ativ[a.k];r.cron.ativ[a.k]={...a,status:o?o.status:"a_fazer",ativo:true}});
+ novo.forEach(a=>{const o=r.cron.ativ[a.k];r.cron.ativ[a.k]={...a,status:o?o.status:"a_fazer",res:o?o.res:null,hist:o?o.hist||[]:[],ativo:true}});
  Object.keys(r.cron.ativ).forEach(k=>{if(!nk.has(k))r.cron.ativ[k].ativo=false});r.cron.em=new Date().toISOString();salvar()}
 function cronSheet(){const lj=L(),r=lj.rs485,ger=!!r.cron,d=diff(lj);
  if(!d.novo.length){toast("Monte a rede antes de gerar o cronograma");return}
@@ -166,7 +220,7 @@ function cronHTML(lj){const r=lj.rs485,ger=!!r.cron,d=diff(lj),pend=ger&&(d.entr
  else{const at=Object.values(r.cron.ativ).filter(a=>a.ativo),tot=at.reduce((s,a)=>s+a.min,0);
   h+=`<div class="sub">Gerado/atualizado em ${new Date(r.cron.em).toLocaleString("pt-BR")} · ${at.length} atividades · <b>${fmtH(tot)}</b> previstos</div>
   ${pend?`<div class="av w">A configuração mudou depois da geração (${d.entra.length} entram · ${d.muda.length} mudam · ${d.sai.length} saem). Toque em "Alterar configuração base" para aplicar.</div>`:""}
-  <button class="b ${pend?"p":""}" data-cron="1">ALTERAR CONFIGURAÇÃO BASE</button>`;
+  <div class="g2"><button class="b ${pend?"p":""}" data-cron="1">ALTERAR CONFIGURAÇÃO BASE</button><button class="b p" data-go="ap">ABRIR APONTAMENTO ›</button></div>`;
   let g="";h+=`<table>`;at.forEach(a=>{if(a.grp!==g){g=a.grp;h+=`<tr><td colspan="2" class="gt">${esc(g)}</td></tr>`}h+=`<tr><td>${esc(a.nome)}</td><td class="r"><b>${fmtH(a.min)}</b></td></tr>`});h+=`</table>
   <div class="sub">Na versão ligada ao eX Controller, estas atividades vão para o cronograma da obra e aparecem no apontamento de campo do líder.</div>`}
  return h+`</section>`}
@@ -175,20 +229,21 @@ function baixarSVG(){const sv=document.querySelector("#des svg");if(!sv)return;c
 /* ================= RENDER ================= */
 function crumb(){const c=[`<button data-go="home">Início</button>`];
  if(R.v==="base")c.push(`<span class="sep">›</span><span>Base do lote · RS485</span>`);
- if(R.l){const lj=L();c.push(`<span class="sep">›</span><button data-go="loja">${esc(lj?lj.id:"")}</button>`);if(R.v==="rs1"||R.v==="rs2")c.push(`<span class="sep">›</span><span>Rede RS485</span>`)}
+ if(R.l){const lj=L();c.push(`<span class="sep">›</span><button data-go="loja">${esc(lj?lj.id:"")}</button>`);if(R.v==="rs1"||R.v==="rs2")c.push(`<span class="sep">›</span><span>Rede RS485</span>`);if(R.v==="ap")c.push(`<span class="sep">›</span><span>Apontamento</span>`)}
  $("#crumb").innerHTML=c.join("")}
 function render(){crumb();let h=`<div class="aval">⚠ MODO AVALIAÇÃO — tudo fica salvo só neste aparelho. Nada vai para o eX Controller ainda.</div>`,t="eX · Configuração";
  if(R.v==="home"){t=S.lote;h+=homeHTML()}
  else if(R.v==="base"){t="Base do lote · Rede RS485";h+=baseHTML()}
  else if(R.v==="loja"){const lj=L();t="Loja "+lj.nome;h+=lojaHTML(lj)}
+ else if(R.v==="ap"){const lj=L();t="Apontamento · RS485 · "+lj.id;h+=apHTML(lj)}
  else if(R.v==="rs1"||R.v==="rs2"){const lj=L();sincroniza(lj);t="Rede RS485 · "+lj.id;h+=passosHTML()+(R.v==="rs1"?disHTML(lj):redeHTML(lj))}
  $("#ttl").textContent=t;
- const a=document.activeElement,keep=a&&a.dataset&&(a.dataset.bf||a.dataset.tp||a.dataset.nm)?{sel:a.dataset.bf?`[data-bf="${a.dataset.bf}"][data-i="${a.dataset.i}"]`:a.dataset.tp?`[data-tp="${a.dataset.tp}"]`:`[data-nm]`,pos:a.selectionStart}:null;
+ const a=document.activeElement,keep=a&&a.dataset&&(a.dataset.bf||a.dataset.af||a.dataset.nm)&&a.tagName==="INPUT"?{sel:a.dataset.bf?`[data-bf="${a.dataset.bf}"][data-i="${a.dataset.i}"]`:a.dataset.af?`[data-af="${a.dataset.af}"][data-ai="${a.dataset.ai}"]`:`[data-nm]`,pos:a.selectionStart}:null;
  $("#main").innerHTML=h;
  if(keep){const e=document.querySelector(keep.sel);if(e){e.focus();try{e.setSelectionRange(keep.pos,keep.pos)}catch(_){}}}}
 function homeHTML(){return `<section class="box"><div class="bt">1 · BASE DO LOTE <span class="sub">(vale para todas as lojas)</span></div>
  <div class="sub">Dispositivos, endereço bus RS485 e tempos padrão. Materiais, projetos dos quadros e as outras disciplinas entram aqui depois.</div>
- <button class="tile" data-go="base"><b>Rede RS485 · dispositivos, endereços bus e tempos</b><span class="go">ABRIR ›</span></button>
+ <button class="tile" data-go="base"><b>Rede RS485 · dispositivos, endereço bus, atividades (tempos e variações) e o que será acompanhado</b><span class="go">ABRIR ›</span></button>
  <button class="tile off" disabled><b>Iluminação · Ar · Medidores · Ethernet · Materiais</b><span class="sub">próximas etapas, no mesmo molde</span></button></section>
  <section class="box"><div class="bt">2 · LOJAS DO LOTE</div><div class="sub">Cada loja é configurada por disciplina, puxando da base do lote.</div>
  ${S.lojas.map(l=>`<button class="tile" data-loja="${esc(l.id)}"><b>${esc(l.nome)}</b><span class="sub">${instancias(l).length} dispositivos na RS485 · ${l.rs485.p1.length+l.rs485.p2.length} na rede</span><span class="go">CONFIGURAR LOJA ›</span></button>`).join("")}
@@ -200,7 +255,9 @@ function lojaHTML(lj){const r=lj.rs485,ni=instancias(lj).length,nr=r.p1.length+r
  <button class="disc il off" disabled><b>Iluminação</b><span>em breve · mesmo molde</span></button>
  <button class="disc ar off" disabled><b>Ar condicionado</b><span>em breve</span></button>
  <button class="disc mm off" disabled><b>Medidores</b><span>em breve</span></button>
- <button class="disc et off" disabled><b>Rede Ethernet</b><span>em breve</span></button></section>`}
+ <button class="disc et off" disabled><b>Rede Ethernet</b><span>em breve</span></button>
+ <button class="disc su" data-go="ap"><b>Supervisório</b><span>${r.cron?(supBloq(lj)?"🔒 aguardando condicionamento · trava as validações":"✓ condicionado · validações liberadas"):"entra no cronograma ao gerar a RS485"}</span><span style="font-weight:800;font-size:12px">${r.cron?"ACOMPANHAR ›":""}</span></button></section>
+ ${r.cron?`<button class="b p" data-go="ap">ABRIR APONTAMENTO DE CAMPO (PRÉVIA) ›</button>`:""}`}
 function passosHTML(){return `<div class="passos"><button class="passo ${R.v==="rs1"?"on":""}" data-go="rs1"><i>PASSO 1</i><b>Dispositivos da loja</b></button><button class="passo ${R.v==="rs2"?"on":""}" data-go="rs2"><i>PASSO 2</i><b>Montar a rede em blocos</b></button></div>`}
 function disHTML(lj){const r=lj.rs485;let g="",h=`<div class="dica">Marque os dispositivos que <b>existem nesta loja</b>. A lista vem da base do lote. O endereço bus RS485 já vem da tabela do lote.</div><section class="box">`;
  B().devs.forEach(d=>{if(d.grupo!==g){g=d.grupo;h+=`<div class="gt">${esc(g)}</div>`}const q=+r.sel[d.sig]||0,on=q>0;
@@ -211,7 +268,8 @@ function disHTML(lj){const r=lj.rs485;let g="",h=`<div class="dica">Marque os di
    h+=`<div style="margin-left:14px;display:grid;gap:6px"><div class="lbl">${esc(id)} · termostatos que atende</div><div class="terms">${Array.from({length:MAXT},(_,j)=>j+1).map(j=>`<button type="button" class="tm ${sel.has(j)?"on":""}" data-term="${j}" data-cv="${esc(id)}" ${em.has(j)?"disabled":""}>Termostato ${j}</button>`).join("")}</div>${sel.size?"":'<div class="av w">Marque pelo menos um termostato</div>'}</div>`}}});
  h+=`</section><button class="b p" data-go="rs2">PRÓXIMO: MONTAR A REDE EM BLOCOS ›</button>`;return h}
 function blocoHTML(it,lj){const d=dev(it.base),bus=busOf(it),t=lj.rs485.terms[it.id];
- return `<div class="blk" data-blk="${esc(it.id)}"><div class="hd" data-hd="1" title="Arrastar">⠿</div><div><div class="sg">${esc(it.id)}</div><div class="ds">${esc(d?d.desc:"")}${t&&t.length?" · Term. "+t.slice().sort((a,b)=>a-b).join(", "):""}</div></div><div class="bus"><small>bus RS485</small>${bus===""?"—":bus}</div></div>`}
+ const na=(lj.rs485.p1.includes(it.id)||lj.rs485.p2.includes(it.id))?`<button type="button" class="tbtn" data-tst="${esc(it.id)}">⚙ Testes · ${perfAtivo("pt","pt:"+it.id,lj).length} de ${(B().perf.pt||[]).filter(x=>x.acomp).length}</button>`:"";
+ return `<div class="blk" data-blk="${esc(it.id)}"><div class="hd" data-hd="1" title="Arrastar">⠿</div><div><div class="sg">${esc(it.id)}</div><div class="ds">${esc(d?d.desc:"")}${t&&t.length?" · Term. "+t.slice().sort((a,b)=>a-b).join(", "):""}</div></div><div class="bus"><small>bus RS485</small>${bus===""?"—":bus}</div>${na}</div>`}
 function cabHTML(lj,p,i,id){const tr=lj.rs485.tr[id]||{},inf=n(tr.iexb)+n(tr.iexa)+n(tr.baixa)+n(tr.alta),ar=[1,2].flatMap(q=>lj.rs485["p"+q]);
  const de=i===0?`X-WEB P${p}`:lj.rs485["p"+p][i-1];const txt=tr.existe?"rede existente":`cabo ${n(tr.cabo)||"—"} m · infra ${inf} m`;const fal=!tr.existe&&!n(tr.cabo);
  return `<div class="cab"><button type="button" data-cab="${esc(id)}"><span class="num">${numC(p,i)}</span><span class="cs">${esc(de)} → ${esc(id)}</span><span class="cs ${fal?"w":""}">${txt}${fal?" · toque para medir":""}</span></button></div>`}
@@ -237,10 +295,63 @@ function desenho(lj,map){const r=lj.rs485,rows=Math.max(r.p1.length,r.p2.length,
  return `<svg viewBox="0 0 680 ${H}" role="img" aria-label="Desenho da rede RS485"><rect x="240" y="20" width="200" height="50" rx="8" fill="#26215C"/><text x="340" y="42" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">X-WEB</text><text x="340" y="60" text-anchor="middle" font-size="11" fill="#CECBF6">QA do Ar</text>
  <path d="M300 70 L300 88 L170 88 L170 108" fill="none" stroke="#7F77DD" stroke-width="2"/><path d="M380 70 L380 88 L490 88 L490 108" fill="none" stroke="#7F77DD" stroke-width="2"/>
  <rect x="110" y="110" width="120" height="30" rx="6" fill="#CECBF6"/><text x="170" y="130" text-anchor="middle" font-size="13" font-weight="700" fill="#26215C">Porta 1</text><rect x="430" y="110" width="120" height="30" rx="6" fill="#CECBF6"/><text x="490" y="130" text-anchor="middle" font-size="13" font-weight="700" fill="#26215C">Porta 2</text>${col(1,r.p1,170)}${col(2,r.p2,490)}</svg>`}
-function baseHTML(){const b=B();let g="",h=`<section class="box"><div class="bt">DISPOSITIVOS DA REDE RS485 · ENDEREÇO BUS PADRÃO DO LOTE</div><div class="sub">Tabela do lote anterior. Siglas sem endereço ficam em branco até definir. Vale para todas as lojas.</div><table><tr><th>Sigla</th><th>Modelo</th><th class="r">Bus RS485</th></tr>`;
+const sw=(on,attrs)=>`<button type="button" class="swt ${on?"on":""}" ${attrs}><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"></span></button>`;
+const TIPC={"execução":"tex","teste":"tte","validação":"tva"};
+function baseHTML(){const b=B();let g="",h=`<div class="dica">Tudo aqui vale para <b>todas as lojas do lote</b>. Nada se apaga: o que sai fica desativado.</div>
+ <section class="box"><div class="bt">1 · DISPOSITIVOS DA REDE RS485 · ENDEREÇO BUS DO LOTE</div><table><tr><th>Sigla</th><th>Modelo</th><th class="r">Bus RS485</th></tr>`;
  b.devs.forEach((d,i)=>{if(d.grupo!==g){g=d.grupo;h+=`<tr><td colspan="3" class="gt">${esc(g)}</td></tr>`}h+=`<tr><td><b style="font-family:var(--f-mono)">${esc(d.sig)}</b><div class="sub">${esc(d.desc)}</div></td><td><input data-bf="modelo" data-i="${i}" value="${esc(d.modelo)}" style="width:90px"></td><td class="r"><input inputmode="numeric" data-bf="end" data-i="${i}" value="${esc(d.end)}" style="width:70px;text-align:right"></td></tr>`});
- h+=`</table></section><section class="box"><div class="bt">TEMPOS PADRÃO DA RS485 <span class="sub">(vão para o cronograma, não para o levantamento)</span></div><table>${TP0.map(x=>`<tr><td>${x[1]}</td><td class="r"><input inputmode="numeric" data-tp="${x[0]}" value="${b.tp[x[0]]}" style="width:70px;text-align:right"></td><td>${x[2]}</td></tr>`).join("")}</table></section>
- <section class="box noprint"><button class="mini del" data-zerar="1">Apagar todos os dados de avaliação deste aparelho</button></section>`;return h}
+ h+=`</table></section>
+ <section class="box"><div class="bt">2 · ATIVIDADES (SERVIÇOS) · TEMPO, UNIDADE E VARIAÇÕES</div><div class="sub">O tempo fica só aqui. Se a atividade tem variações, a loja escolhe a variação e o tempo vem dela.</div>
+ ${b.ativ.map((a,i)=>`<div class="atv ${a.ativo===false?"off":""}"><div class="g2" style="grid-template-columns:1fr auto"><input data-af="nome" data-ai="${i}" value="${esc(a.nome)}"><span class="tyb ${TIPC[a.tipo]||""}">${esc(a.tipo)}</span></div>
+  <div class="arow"><label class="lbl">Tipo<select data-af="tipo" data-ai="${i}">${["execução","teste","validação"].map(t=>`<option ${a.tipo===t?"selected":""}>${t}</option>`).join("")}</select></label>
+  <label class="lbl">Unidade<select data-af="un" data-ai="${i}">${Object.entries(UNN).map(([k,v])=>`<option value="${k}" ${a.un===k?"selected":""}>${v}</option>`).join("")}</select></label>
+  <label class="lbl">Tempo (min)${a.vars&&a.vars.length?`<span class="sm2">pelas variações</span>`:`<input inputmode="numeric" data-af="min" data-ai="${i}" value="${esc(a.min)}">`}</label></div>
+  <div class="arow2"><button type="button" class="mini" data-vars="${i}">Variações (${(a.vars||[]).length})</button><span class="swl">Depende do supervisório ${sw(a.sup,`data-asw="sup" data-ai="${i}"`)}</span><span class="swl">Ativa ${sw(a.ativo!==false,`data-asw="ativo" data-ai="${i}"`)}</span></div></div>`).join("")}
+ <button class="b" data-novaatv="1">+ NOVA ATIVIDADE</button></section>
+ <section class="box"><div class="bt">3 · ETAPAS DE CADA ITEM · O QUE SERÁ ACOMPANHADO</div><div class="sub">Cada item da RS485 usa estas atividades, nesta ordem. "Acompanhar" desligado = não vai para o cronograma. Na loja dá para desligar exceções.</div>`;
+ Object.entries(PERFN).forEach(([k,nm])=>{const L2=b.perf[k]||[];h+=`<div class="perf"><div class="ph2">${nm}</div><div class="prow h"><span></span><span>Atividade</span><span>Tempo</span><span>Acomp.</span><span>Foto</span></div>`;
+  L2.forEach((x,j)=>{const a=ATV(x.a);if(!a)return;h+=`<div class="prow ${a.ativo===false?"off":""}"><span class="mv"><button type="button" data-pmv="-1" data-pk="${k}" data-pi="${j}" ${j===0?"disabled":""}>▲</button><button type="button" data-pmv="1" data-pk="${k}" data-pi="${j}" ${j===L2.length-1?"disabled":""}>▼</button></span>
+   <span>${esc(a.nome)} <span class="tyb ${TIPC[a.tipo]||""}">${esc(a.tipo)}</span>${a.sup?' <span class="tyb tsu">supervisório</span>':""}<button type="button" class="xrm" data-prm="1" data-pk="${k}" data-pi="${j}" title="Tirar desta lista">✕</button></span>
+   <span class="sm2">${a.vars&&a.vars.length?"variações":a.min+" min"}<br>${UNN[a.un]||""}</span>${sw(x.acomp,`data-psw="acomp" data-pk="${k}" data-pi="${j}"`)}${sw(x.foto,`data-psw="foto" data-pk="${k}" data-pi="${j}"`)}</div>`});
+  const fora=b.ativ.filter(a=>!L2.some(x=>x.a===a.id)&&a.ativo!==false);
+  h+=`<select data-padd="${k}"><option value="">+ adicionar atividade do catálogo…</option>${fora.map(a=>`<option value="${a.id}">${esc(a.nome)}</option>`).join("")}</select></div>`});
+ h+=`</section><section class="box noprint"><button class="mini del" data-zerar="1">Apagar todos os dados de avaliação deste aparelho</button></section>`;return h}
+function varsSheet(i){const a=B().ativ[i];a.vars=a.vars||[];const draw=()=>{abrir(`<h3>Variações · ${esc(a.nome)}</h3><div class="sub">Cada variação tem o seu tempo (${UNN[a.un]||""}). A marcada como padrão já vem escolhida na loja. Sem variações, vale o tempo único da atividade.</div>
+ ${a.vars.map((v,j)=>`<div class="vrow"><input data-vn="${j}" value="${esc(v.n)}" placeholder="nome da variação"><input inputmode="numeric" data-vm="${j}" value="${esc(v.min)}" style="width:70px;text-align:right"><button type="button" class="mini ${(a.pad||0)===j?"on":""}" data-vp="${j}">${(a.pad||0)===j?"✓ padrão":"padrão"}</button><button type="button" class="mini del" data-vx="${j}">✕</button></div>`).join("")||'<div class="sub">Nenhuma variação. Esta atividade usa um tempo único.</div>'}
+ <button class="b" data-vadd="1">+ ADICIONAR VARIAÇÃO</button><button class="b p" data-fecha="1">OK · FECHAR</button>`)};draw();
+ $("#sheetc").onclick=e=>{const t=e.target;if(t.dataset.vadd){a.vars.push({n:"",min:0});salvar();draw()}else if(t.dataset.vp!=null){a.pad=+t.dataset.vp;salvar();draw()}else if(t.dataset.vx!=null){a.vars.splice(+t.dataset.vx,1);if((a.pad||0)>=a.vars.length)a.pad=0;salvar();draw()}};
+ $("#sheetc").oninput=e=>{const t=e.target;if(t.dataset.vn!=null)a.vars[+t.dataset.vn].n=t.value;if(t.dataset.vm!=null)a.vars[+t.dataset.vm].min=n(t.value);salvar()};
+ $("#sheet").addEventListener("click",function f(e){if(e.target.closest("[data-fecha]")||e.target.id==="sheet"){render();$("#sheet").removeEventListener("click",f)}})}
+/* ================= APONTAMENTO (prévia do que o líder vê) ================= */
+const STN={a_fazer:"Não iniciada",em_andamento:"Em andamento",concluida:"Concluída",congelada:"Impedida"};
+function supBloq(lj){const c=lj.rs485.cron;const a=c&&c.ativ["sup:cond"];return !!(a&&a.ativo&&a.status!=="concluida")}
+function redeFechada(lj,ptId){const c=lj.rs485.cron.ativ;const f=c[`tr:${ptId}:fech`],k=c[`tr:${ptId}:chk`];if(f&&f.ativo)return f.status==="concluida";if(k&&k.ativo)return k.status==="concluida";return true}
+function frac(a){return a.status==="concluida"?1:a.status==="em_andamento"?.5:0}
+function pctL(L2){const t=L2.reduce((s,a)=>s+(a.min||0),0);if(t)return L2.reduce((s,a)=>s+(a.min||0)*frac(a),0)/t*100;return L2.length?L2.filter(a=>a.status==="concluida").length/L2.length*100:0}
+function apHTML(lj){const r=lj.rs485;if(!r.cron)return `<div class="av w">O cronograma ainda não foi gerado.</div><button class="b p" data-go="rs2">IR PARA A MONTAGEM DA REDE ›</button>`;
+ const ordem=atividades(lj).map(a=>a.k),C=r.cron.ativ,ks=[...ordem.filter(k=>C[k]&&C[k].ativo),...Object.keys(C).filter(k=>C[k].ativo&&!ordem.includes(k))];
+ const all=ks.map(k=>({k,...C[k]})),bloq=supBloq(lj);
+ const fases=[["sup","Supervisório","fsup","Levantamento enviado, base da automação e condicionamento. Libera as validações."],["f1","Fase 1 · Rede física","ff1","Infra, lançamento e fechamento das pontas, trecho a trecho"],["f2","Fase 2 · Dispositivos","ff2","Com a rede ligada: configurar e validar cada dispositivo"],["rede","Fechamento da rede","frd","Comissionamento do barramento e validação Copeland"]];
+ let h=`<div class="dica">Esta é a <b>prévia do apontamento de campo</b>: é assim que o líder vai ver e marcar a RS485. Toque numa atividade para mudar o status.</div>`;
+ const tot=pctL(all.filter(a=>a.fase!=="sup"));h+=`<section class="box"><div class="bt">RS485 · ${esc(lj.nome)}</div><div class="tot1"><b>${tot.toFixed(1).replace(".",",")}%</b><span class="barx"><span style="width:${tot}%"></span></span></div>${bloq?'<div class="av w">🔒 Validações travadas: aguardando o <b>condicionamento do supervisório</b> (Copeland).</div>':""}</section>`;
+ fases.forEach(([f,nm,cl,ds])=>{const L2=all.filter(a=>a.fase===f);if(!L2.length)return;const pc=pctL(L2);
+  h+=`<section class="fase ${cl}"><div class="fh2"><b>${nm}</b><span>${pc.toFixed(0)}%</span><span class="barx"><span style="width:${pc}%"></span></span></div><div class="sub">${ds}</div>`;
+  const items=[...new Set(L2.map(a=>a.item))];items.forEach(it=>{const A2=L2.filter(a=>a.item===it);const g=A2[0].grp;const ptId=it.startsWith("pt:")?it.slice(3):null;
+   h+=`<div class="crd ${f}"><div class="ct">${f==="f1"?`<span class="num">${esc(g.split(" · ")[0])}</span> <span class="sub">${esc(g.split(" · ").slice(1).join(" · "))}</span>`:`<b class="sg">${esc(g)}</b>`}</div>`;
+   if(ptId&&!redeFechada(lj,ptId))h+=`<div class="av w">⚠ A rede até este ponto ainda não está fechada (trecho que chega aqui).</div>`;
+   A2.forEach(a=>{const lk=a.sup&&bloq;h+=`<button type="button" class="arw" data-ak="${esc(a.k)}"><span>${esc(a.nome)}<br><span class="sub">${a.min?fmtH(a.min):""}${a.resp&&a.resp!=="eX"?" · responsável: "+esc(a.resp):""}</span></span><span class="stc ${lk?"lk":a.status}">${lk?"🔒 aguardando supervisório":(a.res==="falhou"?"✗ Falhou":a.res==="ok"?"✓ OK":STN[a.status])}</span></button>`});
+   h+=`</div>`});h+=`</section>`});
+ return h}
+function actSheet(k){const lj=L(),C=lj.rs485.cron.ativ,a=C[k];if(!a)return;const bloq=a.sup&&supBloq(lj),teste=a.tipo!=="execução";
+ const ptId=a.item&&a.item.startsWith("pt:")?a.item.slice(3):null,aviso=ptId&&!redeFechada(lj,ptId)?'<div class="av w">⚠ A rede até este ponto ainda não está fechada. Você pode marcar, mas o dispositivo não vai comunicar sem a rede.</div>':"";
+ if(bloq){abrir(`<h3>${esc(a.nome)}</h3><div class="av b">🔒 Travada até o <b>condicionamento do supervisório</b> (Copeland) ser concluído. Marque esse item na caixa Supervisório.</div><button class="b" data-fecha="1">Entendi</button>`);return}
+ const ops=teste?[["a_fazer",null,"Não iniciado"],["em_andamento",null,"Em andamento"],["concluida","ok","✓ OK"],["congelada","falhou","✗ Falhou"]]:[["a_fazer",null,"Não iniciada"],["em_andamento",null,"Em andamento"],["concluida",null,"Concluída"],["congelada",null,"Impedida"]];
+ const atual=a.res==="ok"?"✓ OK":a.res==="falhou"?"✗ Falhou":STN[a.status];
+ abrir(`<h3>${esc(a.nome)}</h3><div class="sub">${esc(a.grp)} · ${esc(a.tipo)}${a.min?" · "+fmtH(a.min):""}</div>${aviso}<div class="sub">Atual: <b>${atual}</b></div><div class="ops">${ops.map(o=>`<button type="button" class="b ${a.status===o[0]&&(a.res||null)===o[1]?"p":""}" data-st="${o[0]}" data-res="${o[1]||""}">${o[2]}</button>`).join("")}</div>
+ <div class="sub">Histórico: ${(a.hist||[]).slice(-3).reverse().map(x=>`${new Date(x.ts).toLocaleString("pt-BR",{day:"2-digit",month:"2-digit",hour:"2-digit",minute:"2-digit"})} ${esc(x.de)} → ${esc(x.para)}`).join(" · ")||"sem registros"}</div><button class="b" data-fecha="1">Cancelar</button>`);
+ $("#sheetc").onclick=e=>{const b=e.target.closest("[data-st]");if(!b)return;const st=b.dataset.st,res=b.dataset.res||null,para=b.textContent;
+  abrir(`<h3>Salvar alteração?</h3><div>${esc(a.nome)}</div><ul><li>${esc(atual)} → <b>${esc(para)}</b></li></ul>${aviso}<button class="b p" id="aok">CONFIRMAR E SALVAR</button><button class="b" data-fecha="1">Cancelar</button>`);
+  $("#aok").onclick=()=>{a.hist=a.hist||[];a.hist.push({ts:Date.now(),de:atual,para});a.status=st;a.res=res;salvar();fechar();render();toast("✓ "+para+" salvo")}}}
 /* ================= SHEETS ================= */
 function abrir(h){$("#sheetc").innerHTML=h;$("#sheet").hidden=false}
 function fechar(){$("#sheet").hidden=true}
@@ -254,9 +365,15 @@ function trechoSheet(id){const lj=L(),r=lj.rs485;const p=r.p1.includes(id)?1:2,i
   <div class="grp cbx"><div class="gh">〰 CABO RS485 DO TRECHO <span>${n(t.cabo)} m</span></div><label class="lbl">Metragem total do cabo (m)<input inputmode="decimal" data-tf="cabo" value="${esc(t.cabo)}" placeholder="medir"></label></div>`}
   <label class="lbl">Observação<textarea data-tf="obs" placeholder="por onde passa, forro, plataforma…">${esc(t.obs)}</textarea></label>
   <div id="tw">${w.map(x=>`<div class="av ${x[0]}">${esc(x[1])}</div>`).join("")}</div>
-  <button class="b p" data-fecha="1">OK · FECHAR</button>`)};draw();
- $("#sheetc").onclick=e=>{const b=e.target.closest("[data-tex]");if(b){t.existe=b.dataset.tex==="1";salvar();draw();render()}};
+  ${t.existe?"":`<button class="b" data-trat="1">⚙ Atividades deste trecho</button>`}<button class="b p" data-fecha="1">OK · FECHAR</button>`)};draw();
+ $("#sheetc").onclick=e=>{if(e.target.closest("[data-trat]")){itemSheet("tr","tr:"+id,`Atividades do trecho ${numC(p,i)}`);return}const b=e.target.closest("[data-tex]");if(b){t.existe=b.dataset.tex==="1";salvar();draw();render()}};
  $("#sheetc").oninput=e=>{const f=e.target.dataset.tf;if(!f)return;t[f]=e.target.value;salvar();clearTimeout(window._tr);window._tr=setTimeout(()=>{render();const gs=$("#sheetc").querySelectorAll(".gh span");const inf=n(t.iexb)+n(t.iexa)+n(t.baixa)+n(t.alta);if(gs[0])gs[0].textContent=inf+" m";if(gs[1])gs[1].textContent=n(t.cabo)+" m";const tw=$("#tw");if(tw){const w=[];if(!t.existe){if(!n(t.cabo))w.push(["w","Falta a metragem total do cabo"]);else if(inf>n(t.cabo))w.push(["b",`Infra (${inf} m) maior que o cabo (${n(t.cabo)} m)`]);else if(inf<n(t.cabo))w.push(["w",`${+(n(t.cabo)-inf).toFixed(1)} m de cabo sem infra informada`])}tw.innerHTML=w.map(x=>`<div class="av ${x[0]}">${esc(x[1])}</div>`).join("")}},500)}}
+function itemSheet(tipo,key,titulo){const lj=L(),r=lj.rs485;const draw=()=>{const off=new Set(r.off[key]||[]);const L2=(B().perf[tipo]||[]).filter(x=>x.acomp).map(x=>({...x,at:ATV(x.a)})).filter(x=>x.at&&x.at.ativo!==false);
+ abrir(`<h3>${esc(titulo)}</h3><div class="sub">Lista herdada da base do lote. Desligar aqui vale só para esta loja.</div>
+ ${L2.map(x=>{const a=x.at,on=!off.has(a.id),vi=r.var[key+":"+a.id]??(a.pad||0);return `<div class="irow ${on?"":"off"}"><span class="led ${on?"on":""}"></span><div><div>${esc(a.nome)} <span class="tyb ${TIPC[a.tipo]||""}">${esc(a.tipo)}</span></div>${on?"":'<div class="sub">desligado nesta loja</div>'}
+  ${on&&a.vars&&a.vars.length?`<div class="vq">${a.vars.map((v,j)=>`<button type="button" class="vbt ${vi===j?"on":""}" data-iv="${a.id}" data-ivi="${j}">${esc(v.n||"variação "+(j+1))}</button>`).join("")}</div>`:""}</div>${sw(on,`data-ion="${a.id}"`)}</div>`}).join("")}
+ <button class="b p" data-fecha="1">OK · FECHAR</button>`)};draw();
+ $("#sheetc").onclick=e=>{const t=e.target.closest("[data-ion],[data-iv]");if(!t)return;if(t.dataset.ion){const a=t.dataset.ion;const o=new Set(r.off[key]||[]);o.has(a)?o.delete(a):o.add(a);r.off[key]=[...o]}else{r.var[key+":"+t.dataset.iv]=+t.dataset.ivi}salvar();draw();render()}}
 function moverSheet(id){const lj=L(),r=lj.rs485;let h=`<h3>Mover ${esc(id)}</h3><div class="sub">Escolha onde este bloco fica na rede.</div>`;
  [1,2].forEach(p=>{const Lx=r["p"+p].filter(x=>x!==id);h+=`<div class="gt">Porta ${p}</div>`;for(let i=0;i<=Lx.length;i++)h+=`<button class="b" style="text-align:left" data-mvp="${p}" data-mvi="${i}">${i===0?`Logo após o X-WEB P${p}`:`Depois de ${esc(Lx[i-1])}`}</button>`});
  if(r.p1.includes(id)||r.p2.includes(id))h+=`<button class="b" data-mvp="0" data-mvi="0" style="color:var(--bad)">Tirar da rede (volta para Disponíveis)</button>`;
@@ -282,7 +399,16 @@ document.addEventListener("click",e=>{
  const lb=e.target.closest("[data-loja]");if(lb){go({v:"loja",l:lb.dataset.loja});return}
  if(e.target.closest("[data-novaloja]")){const id=String(Date.now()).slice(-4);S.lojas.push({id,nome:"Nova loja "+id,rs485:{sel:{},terms:{},p1:[],p2:[],tr:{}}});salvar();go({v:"loja",l:id});return}
  if(e.target.closest("[data-zerar]")){abrir(`<h3>Apagar dados de avaliação?</h3><div>Apaga a base e todas as lojas deste aparelho e volta ao padrão.</div><button class="b p" id="zok" style="background:var(--bad);border-color:var(--bad)">Apagar tudo</button><button class="b" data-fecha="1">Cancelar</button>`);$("#zok").onclick=()=>{localStorage.removeItem(K);location.reload()};return}
+ if(R.v==="base"&&$("#sheet").hidden){const b=B();
+  const vb=e.target.closest("[data-vars]");if(vb){varsSheet(+vb.dataset.vars);return}
+  if(e.target.closest("[data-novaatv]")){b.ativ.push({id:"a"+Date.now().toString(36),nome:"Nova atividade",tipo:"execução",un:"ponto",min:0,vars:[],ativo:true});salvar();render();toast("Atividade criada · edite o nome e o tempo");return}
+  const as=e.target.closest("[data-asw]");if(as){const a=b.ativ[+as.dataset.ai];const f=as.dataset.asw;a[f]=f==="ativo"?a.ativo===false:!a[f];salvar();render();return}
+  const ps=e.target.closest("[data-psw]");if(ps){const x=b.perf[ps.dataset.pk][+ps.dataset.pi];x[ps.dataset.psw]=!x[ps.dataset.psw];salvar();render();return}
+  const pm=e.target.closest("[data-pmv]");if(pm){const Lx=b.perf[pm.dataset.pk],i=+pm.dataset.pi,j=i+(+pm.dataset.pmv);if(j<0||j>=Lx.length)return;[Lx[i],Lx[j]]=[Lx[j],Lx[i]];salvar();render();return}
+  const pr=e.target.closest("[data-prm]");if(pr){b.perf[pr.dataset.pk].splice(+pr.dataset.pi,1);salvar();render();toast("Atividade tirada desta lista (continua no catálogo)");return}}
  if(!R.l||!$("#sheet").hidden)return;const lj=L();if(!lj)return;const r=lj.rs485;
+ const ak=e.target.closest("[data-ak]");if(ak){actSheet(ak.dataset.ak);return}
+ const ts=e.target.closest("[data-tst]");if(ts){itemSheet("pt","pt:"+ts.dataset.tst,`Testes de ${ts.dataset.tst} nesta loja`);return}
  const tg=e.target.closest("[data-tg]");if(tg){const s=tg.dataset.tg;r.sel[s]=r.sel[s]?0:1;salvar();render();return}
  const qb=e.target.closest("[data-q]");if(qb){const s=qb.dataset.q;r.sel[s]=Math.max(0,Math.min(MAXT,(+r.sel[s]||0)+(+qb.dataset.d)));salvar();render();return}
  const tm=e.target.closest("[data-term]");if(tm){const cv=tm.dataset.cv,k=+tm.dataset.term;r.terms[cv]=r.terms[cv]||[];const ix=r.terms[cv].indexOf(k);if(ix>=0)r.terms[cv].splice(ix,1);else r.terms[cv].push(k);salvar();render();return}
@@ -294,7 +420,8 @@ document.addEventListener("click",e=>{
 document.addEventListener("input",e=>{const el=e.target;
  if(el.dataset.nm){L().nome=el.value;salvar();return}
  if(el.dataset.bf){const d=B().devs[+el.dataset.i];d[el.dataset.bf]=el.dataset.bf==="end"?(el.value===""?"":n(el.value)):el.value;salvar();return}
- if(el.dataset.tp){B().tp[el.dataset.tp]=n(el.value);salvar();return}});
+ if(el.dataset.af){const a=B().ativ[+el.dataset.ai];a[el.dataset.af]=el.dataset.af==="min"?n(el.value):el.value;salvar();if(el.tagName==="SELECT")render();return}});
+document.addEventListener("change",e=>{const el=e.target;if(el.dataset.padd!=null&&el.value){B().perf[el.dataset.padd].push({a:el.value,acomp:true,foto:false});salvar();render();toast("Atividade adicionada à lista")}});
 render();
 </script>
 </body></html>
