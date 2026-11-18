@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>eX · Cadastro da Rede RS485</title>
+<link rel="icon" href="icon.svg">
+<style>
+:root{--bg:#f3f5f7;--panel:#fff;--fg:#1b2530;--muted:#5d6b78;--line:#d5dce3;--chip:#eef1f4;--ac:#534AB7;--ac2:#7F77DD;--acbg:#EEEDFE;--acdk:#26215C;--acfg:#3C3489;
+--ok:#1f7a43;--okbg:#d9f2e2;--warn:#8a6a00;--warnbg:#fbefc8;--bad:#b3261e;--badbg:#fadcd9;
+--f-ui:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif;--f-mono:ui-monospace,SFMono-Regular,Menlo,monospace;color-scheme:light}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}[hidden]{display:none!important}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--f-ui);font-size:16px;line-height:1.35;padding-bottom:calc(40px + env(safe-area-inset-bottom,0px))}
+.wrap{padding:0 max(12px,env(safe-area-inset-left,0px));max-width:760px;margin:0 auto}
+header{position:sticky;top:0;z-index:5;background:var(--panel);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top,0px)}
+header .wrap{padding-top:10px;padding-bottom:10px;display:grid;gap:6px}
+h1{font-size:17px;margin:0}
+.sub{font-size:12px;color:var(--muted)}
+.aval{background:var(--warnbg);color:var(--warn);border-radius:8px;padding:8px 10px;font-size:13px;font-weight:600}
+main{display:grid;gap:14px;padding-top:12px}
+.box{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;display:grid;gap:10px}
+.lbl{display:grid;gap:3px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+input,select,textarea{font:inherit;font-size:16px;color:var(--fg);background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:9px 10px;min-height:44px;width:100%;text-transform:none;letter-spacing:0;font-weight:400}
+textarea{min-height:56px;resize:vertical}
+.porta{border-radius:14px;background:var(--acbg);padding:12px;display:grid;gap:0}
+.ph{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;margin-bottom:10px}
+.ph .t{font-weight:800;font-size:17px;color:var(--acfg);text-transform:uppercase;letter-spacing:.03em}
+.ph .s{grid-column:1/-1;font-size:12px;color:var(--acfg)}
+.pt{background:var(--panel);border:2px solid var(--ac2);border-radius:12px;padding:10px 12px;display:grid;gap:8px}
+.pt.org{border-style:solid;background:var(--acdk);color:#fff;border-color:var(--acdk)}
+.pt .n{font-family:var(--f-mono);font-weight:700;font-size:16px}
+.pt .d{font-size:12px;color:var(--muted)}.pt.org .d{color:#CECBF6}
+.ptrow{display:grid;grid-template-columns:1fr 110px;gap:8px}
+.tools{display:flex;gap:6px;flex-wrap:wrap}
+.mini{font:inherit;font-size:13px;font-weight:600;min-height:38px;padding:0 12px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);cursor:pointer}
+.mini.del{color:var(--bad);border-color:var(--badbg)}
+.tr{margin-left:20px;border-left:4px solid var(--ac2);padding:12px 0 12px 14px;display:grid;gap:8px}
+.trh{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.num{font-family:var(--f-mono);font-weight:700;background:var(--acdk);color:#fff;padding:3px 9px;border-radius:6px;font-size:14px}
+.de{font-size:13px;font-weight:600;color:var(--acfg)}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:15px;font-weight:600;min-height:42px;border:0;background:var(--panel);color:var(--muted);cursor:pointer}
+.seg button.on{background:var(--acdk);color:#fff}
+.av{font-size:12px;border-radius:6px;padding:6px 8px}
+.av.w{background:var(--warnbg);color:var(--warn)}.av.b{background:var(--badbg);color:var(--bad)}.av.o{background:var(--okbg);color:var(--ok)}
+.add{font:inherit;font-weight:800;font-size:15px;min-height:52px;margin-top:12px;border:2px dashed var(--ac2);border-radius:12px;background:transparent;color:var(--acfg);cursor:pointer;letter-spacing:.02em}
+.tot{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.k{background:var(--chip);border-radius:8px;padding:8px 10px}.k b{display:block;font-family:var(--f-mono);font-size:18px}.k span{font-size:11px;color:var(--muted);text-transform:uppercase;font-weight:700}
+table{width:100%;border-collapse:collapse;font-size:13px}td,th{padding:6px 4px;border-bottom:1px solid var(--line);text-align:left}td.r,th.r{text-align:right}
+td input{min-height:34px;padding:4px 6px;font-size:14px;width:80px;text-align:right}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;display:flex;align-items:flex-end;justify-content:center}
+.sheet>div{background:var(--panel);width:100%;max-width:560px;max-height:85vh;overflow:auto;border-radius:16px 16px 0 0;padding:16px 14px calc(18px + env(safe-area-inset-bottom,0px));display:grid;gap:10px}
+.sheet h3{margin:0;font-size:18px}
+.opt{font:inherit;text-align:left;display:grid;gap:2px;width:100%;min-height:52px;padding:8px 12px;border:1px solid var(--line);border-radius:10px;background:var(--panel);color:var(--fg);cursor:pointer}
+.opt b{font-family:var(--f-mono)}.opt span{font-size:12px;color:var(--muted)}
+.opt.used{opacity:.45}
+.gt{font-size:11px;font-weight:800;text-transform:uppercase;color:var(--muted);margin-top:6px}
+.b{font:inherit;font-weight:700;min-height:48px;border-radius:10px;border:1px solid var(--line);background:var(--panel);color:var(--fg);cursor:pointer}
+.b.p{background:var(--acdk);color:#fff;border-color:var(--acdk)}
+.toast{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 16px;border-radius:8px;font-size:14px;z-index:50}
+#des svg{width:100%;height:auto;display:block}
+.passo{display:flex;gap:10px;align-items:flex-start;font-size:14px}.passo i{font-style:normal;font-weight:800;background:var(--acdk);color:#fff;border-radius:50%;min-width:24px;height:24px;display:grid;place-items:center;font-size:13px}
+@media print{header,.aval,.tools,.add,.noprint{display:none!important}body{background:#fff}.box,.porta{break-inside:avoid}}
+</style></head><body>
+<header><div class="wrap">
+ <h1>eX · Cadastro da Rede RS485</h1>
+ <div class="sub" id="hsub">Levantamento ponto a ponto a partir do X-WEB</div>
+</div></header>
+<main class="wrap" id="main"></main>
+<div class="sheet" id="sheet" hidden><div id="sheetc"></div></div>
+<div class="toast" id="toast" hidden></div>
+<script>
+/* ---- siglas da legenda (Base do Sistema · categoria Rede RS485) ---- */
+const SIG=[
+ ["Medidores","MM-SV1","Multimedidor · Salão de vendas 1"],["Medidores","MM-SV2","Multimedidor · Salão de vendas 2"],["Medidores","MM-SV3","Multimedidor · Salão de vendas 3"],
+ ["Medidores","MM-D&D","Multimedidor · Docas e Depósito"],["Medidores","MM-QGBT","Multimedidor · QGBT"],["Medidores","MM-SPL","Multimedidor · Splitões (QFAC)"],
+ ["Medidores","MM-CH","Multimedidor · Chiller (QD-CAG)"],["Medidores","MM-FC","Multimedidor · Fancoils (QD-CAG)"],
+ ["Controladores","IPG215D-IL-SV1","iPro Genius · Iluminação SV1"],["Controladores","IPG215D-IL-SV2","iPro Genius · Iluminação SV2"],["Controladores","IPG215D-IL-SV3","iPro Genius · Iluminação SV3"],
+ ["Controladores","IPG215D-IL-D&D","iPro Genius · Iluminação Docas e Depósito"],["Controladores","IPG215D-SPL","iPro Genius · Splitão"],["Controladores","IPX215D-SPL","Expansão · Splitão convencional"],
+ ["Controladores","IPG215D-CH","iPro Genius · Chiller"],["Controladores","IPX215D-CH","Expansão · Chiller"],
+ ["Termostatos e conversores","AC60101","Conversor p/ termostatos Modbus (splitão)"],["Termostatos e conversores","TERM-RS485","Termostato Modbus (RS485)"]];
+const REPETE=new Set(["AC60101","TERM-RS485"]);
+const DESC=Object.fromEntries(SIG.map(s=>[s[1],s[2]]));
+/* ---- tempos padrão (base, editáveis) ---- */
+const TP0=[["inf_baixa","Infra nova baixa",3,"min/m"],["inf_alta","Infra nova alta",6,"min/m"],["inf_alta_tr","Infra alta · posicionar plataforma",30,"min/trecho"],["lanc","Lançamento do cabo",2,"min/m"],["exist","Trecho existente · checagem",10,"min/trecho"],["lig","Interligação no ponto (entrada + saída)",15,"min/ponto"],["end","Endereçamento do dispositivo",15,"min/ponto"],["com","Comissionamento do barramento",120,"min/obra"],["val","Validação Copeland",30,"min/obra"]];
+const K="ex_rs485_aval_v1";
+let S;try{S=JSON.parse(localStorage.getItem(K)||"null")}catch(_){S=null}
+if(!S)S={loja:"935 · Aparecida de Goiânia · Vera Cruz",lider:"",p:{1:[],2:[]},tp:Object.fromEntries(TP0.map(x=>[x[0],x[2]]))};
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const n=v=>Math.max(0,+String(v??"").replace(",",".")||0);
+function salvar(){try{localStorage.setItem(K,JSON.stringify(S))}catch(_){}}
+function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,1800)}
+const uid=()=>Math.random().toString(36).slice(2,9);
+const num=(p,i)=>`P${p}-${String(i+1).padStart(2,"0")}`;
+const orig=(p,i)=>i===0?`X-WEB P${p}`:S.p[p][i-1].sig;
+/* ---- cálculos ---- */
+function tempoTrecho(t){const T=S.tp;if(t.existe)return T.exist;let m=n(t.baixa)*T.inf_baixa+n(t.alta)*T.inf_alta+(n(t.alta)>0?T.inf_alta_tr:0)+n(t.cabo)*T.lanc;return m}
+function totais(){let o={pontos:0,trechos:0,cabo:0,iex:0,ib:0,ia:0,min:0};
+ [1,2].forEach(p=>S.p[p].forEach(x=>{o.pontos++;o.trechos++;o.cabo+=n(x.cabo);o.iex+=n(x.iex);o.ib+=n(x.baixa);o.ia+=n(x.alta);o.min+=tempoTrecho(x)+S.tp.lig+S.tp.end}));
+ if(o.pontos)o.min+=S.tp.com+S.tp.val;return o}
+const fmtH=m=>{m=Math.round(m);const h=Math.floor(m/60),r=m%60;return h?`${h}h${String(r).padStart(2,"0")}`:`${r} min`};
+function avisos(p,i){const t=S.p[p][i],a=[];
+ if(!t.existe){const inf=n(t.iex)+n(t.baixa)+n(t.alta);if(!n(t.cabo))a.push(["w","Falta a metragem total do cabo"]);else if(inf>n(t.cabo))a.push(["b",`Infra (${inf} m) maior que o cabo (${n(t.cabo)} m). Confira.`]);else if(inf<n(t.cabo))a.push(["w",`${(n(t.cabo)-inf).toFixed(1).replace(".0","")} m de cabo sem infra informada`])}
+ if(t.endr!==""&&t.endr!=null){const dup=[1,2].flatMap(q=>S.p[q]).filter(x=>x!==t&&String(x.endr)===String(t.endr)).length;if(dup)a.push(["b",`Endereço ${t.endr} repetido na rede`])}else a.push(["w","Falta o endereço Modbus"]);
+ return a}
+/* ---- render ---- */
+function render(){
+ const o=totais();$("#hsub").textContent=`${S.loja} · ${o.pontos} pontos · ${o.cabo} m de cabo`;
+ let h=`<div class="aval">⚠ MODO AVALIAÇÃO — os dados ficam salvos só neste aparelho. Nada vai para o eX Controller ainda.</div>
+ <section class="box"><div class="passo"><i>1</i><span>Em cada porta do X-WEB, toque em <b>“+ ADICIONAR PRÓXIMO PONTO”</b> e escolha a sigla da lista.</span></div>
+ <div class="passo"><i>2</i><span>O cabo entre dois pontos é criado sozinho e já numerado (P1-01, P1-02…). Preencha as metragens de cada trecho.</span></div>
+ <div class="passo"><i>3</i><span>No fim da página saem o <b>resumo</b>, o <b>tempo previsto</b> e o <b>desenho</b> com os cabos numerados.</span></div></section>
+ <section class="box"><label class="lbl">Loja<input data-s="loja" value="${esc(S.loja)}"></label><label class="lbl">Quem está levantando<input data-s="lider" value="${esc(S.lider)}" placeholder="nome do líder"></label></section>`;
+ [1,2].forEach(p=>{const L=S.p[p],cab=L.reduce((a,x)=>a+n(x.cabo),0);
+  h+=`<section class="porta"><div class="ph"><span class="t">Porta ${p} do X-WEB</span><span class="mini" style="border:0;background:transparent;color:var(--acfg)">${L.length} ponto${L.length===1?"":"s"} · ${cab} m</span><span class="s">Saída RS485-${p} · dentro do QA do Ar</span></div>
+  <div class="pt org"><span class="n">X-WEB · P${p}</span><span class="d">Origem da rede · Supervisório XWEB500D</span></div>`;
+  L.forEach((t,i)=>{const av=avisos(p,i);
+   h+=`<div class="tr" data-p="${p}" data-i="${i}">
+    <div class="trh"><span class="num">${num(p,i)}</span><span class="de">${esc(orig(p,i))} → ${esc(t.sig)}</span></div>
+    <label class="lbl">Rede já existe neste trecho?<div class="seg"><button type="button" data-ex="1" class="${t.existe?"on":""}">Sim</button><button type="button" data-ex="0" class="${!t.existe?"on":""}">Não</button></div></label>
+    ${t.existe?`<div class="av o">Trecho existente: conta só a checagem (${S.tp.exist} min).</div>`:`<div class="g2">
+     <label class="lbl">Infra existente (m)<input inputmode="decimal" data-f="iex" value="${esc(t.iex)}" placeholder="0"></label>
+     <label class="lbl">Cabo total (m)<input inputmode="decimal" data-f="cabo" value="${esc(t.cabo)}" placeholder="medir"></label>
+     <label class="lbl">Infra nova · baixa (m)<input inputmode="decimal" data-f="baixa" value="${esc(t.baixa)}" placeholder="0"></label>
+     <label class="lbl">Infra nova · alta (m)<input inputmode="decimal" data-f="alta" value="${esc(t.alta)}" placeholder="0"></label></div>`}
+    <label class="lbl">Observação do trecho<textarea data-f="obs" placeholder="por onde passa, dificuldade, forro, plataforma…">${esc(t.obs)}</textarea></label>
+    ${av.map(x=>`<div class="av ${x[0]}">${esc(x[1])}</div>`).join("")}
+    <div class="sub">Tempo previsto do trecho: <b>${fmtH(tempoTrecho(t))}</b></div>
+   </div>
+   <div class="pt" data-p="${p}" data-i="${i}"><div class="ptrow"><div><span class="n">${esc(t.sig)}</span><div class="d">${esc(DESC[t.base||t.sig]||"")}</div></div>
+    <label class="lbl">Endereço<input inputmode="numeric" data-f="endr" value="${esc(t.endr)}" placeholder="nº"></label></div>
+    <div class="tools"><button type="button" class="mini" data-mv="-1" ${i===0?"disabled":""}>↑ Subir</button><button type="button" class="mini" data-mv="1" ${i===L.length-1?"disabled":""}>↓ Descer</button><button type="button" class="mini" data-troca="1">Trocar sigla</button><button type="button" class="mini del" data-del="1">Remover</button></div></div>`});
+  h+=`<button type="button" class="add" data-add="${p}">+ ADICIONAR PRÓXIMO PONTO NA PORTA ${p}</button></section>`});
+ h+=`<section class="box"><div style="font-weight:800">RESUMO DA REDE</div><div class="tot">
+  <div class="k"><span>Pontos</span><b>${o.pontos}</b></div><div class="k"><span>Trechos (cabos)</span><b>${o.trechos}</b></div>
+  <div class="k"><span>Cabo total</span><b>${o.cabo} m</b></div><div class="k"><span>Infra existente</span><b>${o.iex} m</b></div>
+  <div class="k"><span>Infra nova baixa</span><b>${o.ib} m</b></div><div class="k"><span>Infra nova alta</span><b>${o.ia} m</b></div>
+  <div class="k" style="grid-column:1/-1;background:var(--acbg)"><span>Tempo previsto da rede</span><b>${fmtH(o.min)}</b></div></div></section>
+ <section class="box"><div style="font-weight:800">DESENHO DA REDE · CABOS NUMERADOS</div><div id="des">${desenho()}</div>
+  <button type="button" class="b noprint" onclick="window.print()">Imprimir / salvar PDF</button></section>
+ <section class="box noprint"><div style="font-weight:800">TEMPOS PADRÃO DA BASE <span class="sub">(editáveis)</span></div>
+  <table><tr><th>Etapa</th><th class="r">Tempo</th><th>Unid.</th></tr>${TP0.map(x=>`<tr><td>${x[1]}</td><td class="r"><input inputmode="numeric" data-tp="${x[0]}" value="${S.tp[x[0]]}"></td><td>${x[3]}</td></tr>`).join("")}</table>
+  <button type="button" class="mini del" data-zerar="1">Apagar todo o cadastro deste aparelho</button></section>`;
+ const a=document.activeElement,keep=a&&a.dataset&&(a.dataset.f||a.dataset.s||a.dataset.tp)?{f:a.dataset.f,s:a.dataset.s,tp:a.dataset.tp,p:a.closest("[data-p]")&&a.closest("[data-p]").dataset.p,i:a.closest("[data-i]")&&a.closest("[data-i]").dataset.i,pos:a.selectionStart}:null;
+ $("#main").innerHTML=h;
+ if(keep){let sel=keep.s?`[data-s="${keep.s}"]`:keep.tp?`[data-tp="${keep.tp}"]`:`[data-p="${keep.p}"][data-i="${keep.i}"] [data-f="${keep.f}"]`;const e=document.querySelector(sel);if(e){e.focus();try{e.setSelectionRange(keep.pos,keep.pos)}catch(_){}}}
+}
+function desenho(){
+ const L1=S.p[1],L2=S.p[2],rows=Math.max(L1.length,L2.length,1),H=150+rows*110+20;
+ const col=(p,L,cx)=>{let s="";L.forEach((t,i)=>{const y=190+i*110,y0=i===0?140:y-54;
+   s+=`<line x1="${cx}" y1="${y0}" x2="${cx}" y2="${y-2}" stroke="#7F77DD" stroke-width="3"/>
+   <text x="${cx+12}" y="${y-30}" font-size="12" font-family="ui-monospace,monospace" font-weight="700" fill="#26215C">${num(p,i)}</text>
+   <text x="${cx+12}" y="${y-15}" font-size="11" fill="#534AB7">${t.existe?"existente":n(t.cabo)+" m"}</text>
+   <rect x="${cx-95}" y="${y}" width="190" height="56" rx="8" fill="#EEEDFE" stroke="#534AB7" stroke-width="1"/>
+   <text x="${cx}" y="${y+24}" text-anchor="middle" font-size="14" font-weight="700" font-family="ui-monospace,monospace" fill="#26215C">${esc(t.sig)}</text>
+   <text x="${cx}" y="${y+42}" text-anchor="middle" font-size="11" fill="#534AB7">end. ${esc(t.endr||"?")}</text>`});
+  if(!L.length)s+=`<text x="${cx}" y="180" text-anchor="middle" font-size="12" fill="#888">sem pontos</text>`;return s};
+ return `<svg viewBox="0 0 680 ${H}" role="img" aria-label="Desenho da rede RS485"><rect x="240" y="20" width="200" height="50" rx="8" fill="#26215C"/><text x="340" y="42" text-anchor="middle" font-size="15" font-weight="700" fill="#fff">X-WEB</text><text x="340" y="60" text-anchor="middle" font-size="11" fill="#CECBF6">QA do Ar</text>
+ <path d="M300 70 L300 88 L170 88 L170 108" fill="none" stroke="#7F77DD" stroke-width="2"/><path d="M380 70 L380 88 L490 88 L490 108" fill="none" stroke="#7F77DD" stroke-width="2"/>
+ <rect x="110" y="110" width="120" height="30" rx="6" fill="#CECBF6"/><text x="170" y="130" text-anchor="middle" font-size="13" font-weight="700" fill="#26215C">Porta 1</text>
+ <rect x="430" y="110" width="120" height="30" rx="6" fill="#CECBF6"/><text x="490" y="130" text-anchor="middle" font-size="13" font-weight="700" fill="#26215C">Porta 2</text>
+ ${col(1,L1,170)}${col(2,L2,490)}</svg>`}
+/* ---- escolha de sigla ---- */
+let ESC=null;
+function escolher(p,i){ESC={p,i};const usados=new Set([1,2].flatMap(q=>S.p[q]).map(x=>x.base||x.sig));let g="",h=`<h3>${i==null?`Próximo ponto da porta ${p}`:"Trocar sigla do ponto"}</h3><div class="sub">Escolha o dispositivo. Siglas da legenda da Base do Sistema.</div>`;
+ SIG.forEach(s=>{if(s[0]!==g){g=s[0];h+=`<div class="gt">${g}</div>`}const u=usados.has(s[1])&&!REPETE.has(s[1]);h+=`<button type="button" class="opt ${u?"used":""}" data-sig="${s[1]}"><b>${s[1]}</b><span>${s[2]}${u?" · já está na rede":""}</span></button>`});
+ h+=`<button type="button" class="b" data-fecha="1">Cancelar</button>`;$("#sheetc").innerHTML=h;$("#sheet").hidden=false}
+$("#sheet").addEventListener("click",e=>{if(e.target.id==="sheet"||e.target.closest("[data-fecha]")){$("#sheet").hidden=true;return}
+ const o=e.target.closest("[data-sig]");if(!o||!ESC)return;let base=o.dataset.sig,sig=base;
+ if(REPETE.has(base)){const c=[1,2].flatMap(q=>S.p[q]).filter(x=>(x.base||x.sig)===base).length;sig=`${base}-${c+1}`}
+ else if([1,2].flatMap(q=>S.p[q]).some(x=>x.sig===base)){toast(base+" já está na rede");return}
+ if(ESC.i==null){S.p[ESC.p].push({id:uid(),sig,base,endr:"",existe:false,iex:"",baixa:"",alta:"",cabo:"",obs:""});toast(`Ponto ${sig} e cabo ${num(ESC.p,S.p[ESC.p].length-1)} criados`)}
+ else{const t=S.p[ESC.p][ESC.i];t.sig=sig;t.base=base;toast("Sigla trocada")}
+ $("#sheet").hidden=true;salvar();render();
+ const last=document.querySelectorAll(`.tr[data-p="${ESC.p}"]`);const el=ESC.i==null?last[last.length-1]:null;if(el)el.scrollIntoView({block:"center",behavior:"smooth"})});
+/* ---- eventos ---- */
+$("#main").addEventListener("click",e=>{
+ const ad=e.target.closest("[data-add]");if(ad){escolher(+ad.dataset.add,null);return}
+ if(e.target.closest("[data-zerar]")){$("#sheetc").innerHTML=`<h3>Apagar o cadastro?</h3><div>Isso apaga todos os pontos e trechos salvos neste aparelho.</div><button type="button" class="b p" id="zok" style="background:var(--bad);border-color:var(--bad)">Apagar tudo</button><button type="button" class="b" data-fecha="1">Cancelar</button>`;$("#sheet").hidden=false;$("#zok").onclick=()=>{S.p={1:[],2:[]};salvar();$("#sheet").hidden=true;render();toast("Cadastro apagado")};return}
+ const box=e.target.closest("[data-p][data-i]");if(!box)return;const p=+box.dataset.p,i=+box.dataset.i,L=S.p[p],t=L[i];
+ const ex=e.target.closest("[data-ex]");if(ex){t.existe=ex.dataset.ex==="1";salvar();render();return}
+ const mv=e.target.closest("[data-mv]");if(mv){const j=i+(+mv.dataset.mv);if(j<0||j>=L.length)return;[L[i],L[j]]=[L[j],L[i]];salvar();render();toast("Ordem alterada · confira as metragens dos cabos");return}
+ if(e.target.closest("[data-troca]")){escolher(p,i);return}
+ if(e.target.closest("[data-del]")){$("#sheetc").innerHTML=`<h3>Remover ${esc(t.sig)}?</h3><div>O ponto e o cabo ${num(p,i)} que chega nele saem da rede. Os cabos seguintes são renumerados.</div><button type="button" class="b p" id="dok" style="background:var(--bad);border-color:var(--bad)">Remover</button><button type="button" class="b" data-fecha="1">Cancelar</button>`;$("#sheet").hidden=false;$("#dok").onclick=()=>{L.splice(i,1);salvar();$("#sheet").hidden=true;render();toast("Ponto removido")};return}
+});
+$("#main").addEventListener("input",e=>{const el=e.target;
+ if(el.dataset.s){S[el.dataset.s]=el.value;salvar();$("#hsub").textContent=S.loja;return}
+ if(el.dataset.tp){S.tp[el.dataset.tp]=n(el.value);salvar();clearTimeout(window._rt);window._rt=setTimeout(render,600);return}
+ const box=el.closest("[data-p][data-i]");if(!box||!el.dataset.f)return;const t=S.p[+box.dataset.p][+box.dataset.i];t[el.dataset.f]=el.value;salvar();
+ if(el.dataset.f!=="obs"){clearTimeout(window._rt);window._rt=setTimeout(render,700)}});
+render();
+</script>
+</body></html>
