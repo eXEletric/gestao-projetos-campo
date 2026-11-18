@@ -94,11 +94,18 @@ main.wrap{padding-top:12px;display:grid;gap:12px}
 .vol .vt{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted)}
 .vol input[type=range]{width:100%;height:36px;accent-color:var(--accent);min-height:0;padding:0;border:0;background:transparent}
 .vol .vl{font-family:var(--f-mono);font-size:20px;font-weight:700;text-align:right}
-.subg{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;width:100%;text-align:left;font:inherit;cursor:pointer;background:var(--panel);border:1px solid var(--line);border-left:6px solid var(--accent);border-radius:10px;padding:12px;font-weight:700;font-size:15px;color:var(--fg);min-height:64px}
-.subg.ab{border-bottom-left-radius:0;border-bottom-right-radius:0}
-.subg .sn{display:flex;gap:8px;align-items:center}.subg .chev{color:var(--accent);font-size:16px;width:14px}
-.subg .sc{grid-column:1/-1;font-size:12px;font-weight:500;color:var(--muted)}
-.subc{display:grid;gap:6px;padding:8px 0 4px 12px;border-left:3px solid var(--line);margin-left:6px}
+.sgw{border:2px solid var(--line);border-radius:12px;overflow:hidden;background:var(--panel)}
+.sgw.ab{border-color:var(--accent);box-shadow:0 2px 10px rgba(0,0,0,.08)}
+.subg{display:grid;grid-template-columns:1fr auto;gap:6px 10px;align-items:center;width:100%;text-align:left;font:inherit;cursor:pointer;background:var(--panel);border:0;padding:14px 12px 0;color:var(--fg)}
+.subg .sn{font-weight:800;font-size:17px}
+.subg .sp{font-family:var(--f-mono);font-size:15px;font-weight:700}
+.subg .bar{grid-column:1/-1;height:8px}
+.subg .sc{grid-column:1/-1;font-size:12px;color:var(--muted)}
+.subg .tog{grid-column:1/-1;margin:4px -12px 0;padding:13px 12px;text-align:center;font-weight:800;font-size:14px;letter-spacing:.04em;background:var(--accent);color:var(--accent-fg)}
+.sgw.ab .subg .tog{background:var(--chip);color:var(--fg);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+.subc{display:grid;gap:8px;padding:10px;background:var(--bg)}
+.tog2{font:inherit;font-weight:800;font-size:14px;letter-spacing:.04em;min-height:48px;border:1px solid var(--line);border-radius:8px;background:var(--panel);color:var(--fg);cursor:pointer}
+.dica{background:var(--pend-bg);color:var(--fg);border-radius:10px;padding:10px 12px;font-size:14px}
 .subg .sp{font-family:var(--f-mono);font-size:13px}.subg .bar{grid-column:1/-1;height:6px}
 .card.fora{opacity:.6;border-left-style:dashed}
 .okmsg{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);background:var(--ok);color:#fff;padding:18px 26px;border-radius:14px;font-size:18px;font-weight:700;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.25);text-align:center}
@@ -237,8 +244,9 @@ function render(){
   if(vw==="g"&&g){const all=byG(g.id),ts=ativas(all),s=soma(ts);
     let c="",i=0;while(i<all.length){const x=all[i];if(x.is_header){const ch=[];let j=i+1;while(j<all.length&&!all[j].is_header){ch.push(all[j]);j++}const ss=soma(ch);
         const ab=!!ABERTO[x.id],at=ativas(ch),cc=at.filter(y=>y.status==="concluida").length,im=at.filter(y=>y.status==="congelada").length;
-        c+=`<button type="button" class="subg ${ab?"ab":""}" data-sub="${esc(x.id)}" aria-expanded="${ab}"><span class="sn"><span class="chev">${ab?"▾":"▸"}</span>${esc(x.name||x.nome)}</span><span class="sp">${pct(ss.pc)}</span><span class="bar"><span style="width:${ss.pc}%"></span></span><span class="sc">${cc}/${at.length} concluídas${im?` · <b style="color:var(--div)">${im} impedida${im>1?"s":""}</b>`:""}${ch.some(y=>HOJE.has(y.id))?' · <span class="hj">● hoje</span>':""}</span></button>`+(ab?`<div class="subc">${ch.map(cardHTML).join("")}</div>`:"");i=j}else{c+=cardHTML(x);i++}}
-    h=navHTML(g.nome,"Menu")+`<div class="sub">${pct(s.pc)} · ${ts.filter(x=>x.status==="concluida").length} de ${ts.length} concluídas · toque numa atividade</div><div class="cards">${c}</div>`;
+        c+=`<div class="sgw ${ab?"ab":""}"><button type="button" class="subg" data-sub="${esc(x.id)}" aria-expanded="${ab}"><span class="sn">${esc(x.nome)}</span><span class="sp">${pct(ss.pc)}</span><span class="bar"><span style="width:${ss.pc}%"></span></span><span class="sc">${cc}/${at.length} concluídas${im?` · <b style="color:var(--div)">${im} impedida${im>1?"s":""}</b>`:""}${ch.some(y=>HOJE.has(y.id))?' · <span class="hj">● hoje</span>':""}</span><span class="tog">${ab?"▲&nbsp; FECHAR ATIVIDADES":`▼&nbsp; VER ${ch.length} ${ch.length===1?"ATIVIDADE":"ATIVIDADES"}`}</span></button>${ab?`<div class="subc">${ch.map(cardHTML).join("")}<button type="button" class="tog2" data-sub="${esc(x.id)}">▲&nbsp; FECHAR ${esc(x.nome)}</button></div>`:""}</div>`;i=j}else{c+=cardHTML(x);i++}}
+    const temSub=all.some(x=>x.is_header);
+    h=navHTML(g.nome,"Menu")+`<div class="sub">${pct(s.pc)} · ${ts.filter(x=>x.status==="concluida").length} de ${ts.length} concluídas</div>${temSub?'<div class="dica">👇 Cada quadro abaixo é um equipamento. <b>Toque em “VER ATIVIDADES”</b> para abrir a lista e apontar.</div>':'<div class="sub">Toque numa atividade para apontar.</div>'}<div class="cards">${c}</div>`;
   }else if(vw==="t"&&t&&!t.is_header){const ts=real(t.grupo_id),i=ts.indexOf(t),gn=(GR.find(x=>x.id===t.grupo_id)||{}).nome||"";
     h=navHTML(gn,"Atividades")+`<section class="box">${tarefaHTML(t)}<div class="nxt">${i>0?`<button type="button" class="b" data-open="${esc(ts[i-1].id)}" data-rep="1">‹ Anterior</button>`:"<span></span>"}${i<ts.length-1?`<button type="button" class="b p" data-open="${esc(ts[i+1].id)}" data-rep="1">Próxima ›</button>`:`<button type="button" class="b p" data-back="1">Voltar ao grupo</button>`}</div></section>`;
   }else if(vw==="dia"){h=navHTML("Dia de trabalho · "+dBR(DATA),"Menu")+diaHTML();
@@ -259,7 +267,7 @@ try{history.replaceState({vw:"menu"},"")}catch(_){}
 const cur=el=>{const c=el.closest(".t");return c&&TS.find(x=>x.id===c.dataset.id)};
 $("#main").addEventListener("click",async e=>{
   if(e.target.closest("[data-back]")){if(vw==="t"){const t=TS.find(x=>x.id===vt);go("g",t&&t.grupo_id,"",false)}else go("menu","","",false);return}
-  const sbt=e.target.closest("[data-sub]");if(sbt){const k=sbt.dataset.sub;ABERTO[k]=!ABERTO[k];try{sessionStorage.setItem("ex_apont_sub",JSON.stringify(ABERTO))}catch(_){}render();return}
+  const sbt=e.target.closest("[data-sub]");if(sbt){const k=sbt.dataset.sub;ABERTO[k]=!ABERTO[k];try{sessionStorage.setItem("ex_apont_sub",JSON.stringify(ABERTO))}catch(_){}render();const el=document.querySelector(`.subg[data-sub="${k}"]`);if(el&&el.scrollIntoView)el.scrollIntoView({block:"start",behavior:"smooth"});return}
   const gr=e.target.closest("[data-grp]");if(gr){go("g",gr.dataset.grp);return}
   const op=e.target.closest("[data-open]");if(op){const t=TS.find(x=>x.id===op.dataset.open);if(t){const sb=subOf(t);if(sb){ABERTO[sb.id]=true;try{sessionStorage.setItem("ex_apont_sub",JSON.stringify(ABERTO))}catch(_){}}go("t",t.grupo_id,t.id,!op.dataset.rep)}return}
   const vv=e.target.closest("[data-view]");if(vv){go(vv.dataset.view);return}
