@@ -83,30 +83,35 @@ td input{min-height:34px;padding:4px 6px;font-size:14px;width:80px;text-align:ri
 <script>
 /* ---- siglas da legenda (Base do Sistema · categoria Rede RS485) ---- */
 const SIG=[
- ["Medidores","MM-SV1","Multimedidor · Salão de vendas 1"],["Medidores","MM-SV2","Multimedidor · Salão de vendas 2"],["Medidores","MM-SV3","Multimedidor · Salão de vendas 3"],
- ["Medidores","MM-D&D","Multimedidor · Docas e Depósito"],["Medidores","MM-QGBT","Multimedidor · QGBT"],["Medidores","MM-QGBT2","Multimedidor · QGBT 2 (loja com 2 QGBTs)"],["Medidores","MM-SPL","Multimedidor · Splitões (QFAC)"],
- ["Medidores","MM-CH","Multimedidor · Chiller (QD-CAG)"],["Medidores","MM-FC","Multimedidor · Fancoils (QD-CAG)"],
+ ["Medidores","MM-SV1","Multimedidor · Iluminação SV1 · IMS160"],["Medidores","MM-SV2","Multimedidor · Iluminação SV2 · IMS160"],["Medidores","MM-SV3","Multimedidor · Salão de vendas 3"],
+ ["Medidores","MM-D&D","Multimedidor · Iluminação Docas · IMS160"],["Medidores","MM-QGBT","Multimedidor · QGBT (Medidor geral 01) · IMS160"],["Medidores","MM-QGBT2","Multimedidor · QGBT 2 (Medidor geral 02) · IMS160"],["Medidores","MM-SPL","Multimedidor · Splitões (QFAC)"],
+ ["Medidores","MM-CH","Multimedidor · Ar cond. Chiller · IMS160"],["Medidores","MM-FC","Multimedidor · Ar cond. Fancoil · IMS160"],
  ["Controladores","IPG215D-IL-SV1","iPro Genius · Iluminação SV1"],["Controladores","IPG215D-IL-SV2","iPro Genius · Iluminação SV2"],["Controladores","IPG215D-IL-SV3","iPro Genius · Iluminação SV3"],
  ["Controladores","IPG215D-IL-D&D","iPro Genius · Iluminação Docas e Depósito"],["Controladores","IPG215D-SPL","iPro Genius · Splitão"],["Controladores","IPX215D-SPL","Expansão · Splitão convencional"],
- ["Controladores","IPG215D-CH","iPro Genius · Chiller"],["Controladores","IPX215D-CH","Expansão · Chiller"],
+ ["Controladores","IPG215D-CH","iPro Genius · Chiller (CAG)"],["Controladores","CHILLER-CARRIER","Chiller Carrier · comunicação direta"],["Controladores","IPX215D-CH","Expansão · Chiller"],
  ["Conversores","AC60101","Conversor p/ termostatos Modbus · leva os termostatos junto"]];
 const REPETE=new Set(["AC60101"]);const MAXT=10;
 /* endereçamento padrão por sigla (sugestão inicial — ajustar na base) */
-const END0={"MM-QGBT":1,"MM-QGBT2":2,"MM-SPL":3,"MM-CH":4,"MM-FC":5,"MM-SV1":11,"MM-SV2":12,"MM-SV3":13,"MM-D&D":14,"IPG215D-IL-SV1":21,"IPG215D-IL-SV2":22,"IPG215D-IL-SV3":23,"IPG215D-IL-D&D":24,"IPG215D-SPL":31,"IPX215D-SPL":32,"IPG215D-CH":33,"IPX215D-CH":34,"AC60101":41};
+/* Tabela de endereçamento usada nas unidades do lote anterior (PDF enviado pelo André em 18/11/2026).
+   Siglas sem endereço na tabela ficam vazias até definição. */
+const END0={"IPG215D-SPL":41,"IPG215D-CH":41,"CHILLER-CARRIER":42,"IPG215D-IL-SV1":51,"IPG215D-IL-D&D":52,"IPG215D-IL-SV2":60,
+ "MM-QGBT":61,"MM-SV1":62,"MM-D&D":63,"MM-FC":64,"MM-CH":65,"MM-QGBT2":66,"MM-SV2":67,
+ "MM-SV3":"","MM-SPL":"","IPG215D-IL-SV3":"","IPX215D-SPL":"","IPX215D-CH":"","AC60101":""};
+const ENDV=2;
 const DESC=Object.fromEntries(SIG.map(s=>[s[1],s[2]]));
 /* ---- tempos padrão (base, editáveis) ---- */
 const TP0=[["inf_baixa","Infra nova baixa",3,"min/m"],["inf_alta","Infra nova alta",6,"min/m"],["inf_alta_tr","Trecho em altura (infra nova ou existente) · posicionar plataforma",30,"min/trecho"],["lanc","Lançamento do cabo",2,"min/m"],["exist","Trecho existente · checagem",10,"min/trecho"],["lig","Ponto · 1. Ligação do cabo no dispositivo (entrada + saída)",15,"min/ponto"],["end","Ponto · 2. Endereçamento",15,"min/ponto"],["vint","Ponto · 3. Validação interna eX",10,"min/ponto"],["com","Comissionamento do barramento",120,"min/rede"],["val","Validação Copeland",30,"min/rede"]];
 const K="ex_rs485_aval_v1";
 let S;try{S=JSON.parse(localStorage.getItem(K)||"null")}catch(_){S=null}
 if(!S)S={loja:"935 · Aparecida de Goiânia · Vera Cruz",lider:"",p:{1:[],2:[]},tp:Object.fromEntries(TP0.map(x=>[x[0],x[2]]))};
-S.end=Object.assign({},END0,S.end||{});TP0.forEach(x=>{if(S.tp[x[0]]==null)S.tp[x[0]]=x[2]});[1,2].forEach(p=>S.p[p].forEach(x=>{if(x.iex!=null&&x.iexb==null){x.iexb=x.iex;x.iexa=""}delete x.iex}));[1,2].forEach(p=>S.p[p]=S.p[p].filter(x=>(x.base||x.sig)!=="TERM-RS485"));
+if(S.endv!==ENDV){S.end={...END0};S.endv=ENDV}else S.end=Object.assign({},END0,S.end||{});TP0.forEach(x=>{if(S.tp[x[0]]==null)S.tp[x[0]]=x[2]});[1,2].forEach(p=>S.p[p].forEach(x=>{if(x.iex!=null&&x.iexb==null){x.iexb=x.iex;x.iexa=""}delete x.iex}));[1,2].forEach(p=>S.p[p]=S.p[p].filter(x=>(x.base||x.sig)!=="TERM-RS485"));
 const $=s=>document.querySelector(s);
 const esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const n=v=>Math.max(0,+String(v??"").replace(",",".")||0);
 function salvar(){try{localStorage.setItem(K,JSON.stringify(S))}catch(_){}}
 function toast(m){const t=$("#toast");t.textContent=m;t.hidden=false;clearTimeout(t._h);t._h=setTimeout(()=>t.hidden=true,1800)}
 const uid=()=>Math.random().toString(36).slice(2,9);
-function addrOf(t){const b=t.base||t.sig,a=+S.end[b]||0;if(!a)return "";if(REPETE.has(b)){const k=+(String(t.sig).split("-").pop())||1;return a+k-1}return a}
+function addrOf(t){const b=t.base||t.sig,a=+(S.end[b]||0);if(!a)return "";if(REPETE.has(b)){const k=+(String(t.sig).split("-").pop())||1;return a+k-1}return a}
 const num=(p,i)=>`P${p}-${String(i+1).padStart(2,"0")}`;
 const orig=(p,i)=>i===0?`X-WEB P${p}`:S.p[p][i-1].sig;
 /* ---- cálculos ---- */
@@ -167,7 +172,7 @@ function render(){
  <section class="box noprint"><div style="font-weight:800">TEMPOS PADRÃO DA BASE <span class="sub">(editáveis)</span></div>
   <table><tr><th>Etapa</th><th class="r">Tempo</th><th>Unid.</th></tr>${TP0.map(x=>`<tr><td>${x[1]}</td><td class="r"><input inputmode="numeric" data-tp="${x[0]}" value="${S.tp[x[0]]}"></td><td>${x[3]}</td></tr>`).join("")}</table>
   </section><section class="box noprint"><div style="font-weight:800">ENDEREÇAMENTO PADRÃO DA REDE <span class="sub">(editável · vale para todas as lojas)</span></div>
-  <div class="sub">O endereço de cada ponto sai desta tabela pela sigla. Conversores AC60101 recebem o endereço base + a sequência (AC60101-1 = base, -2 = base+1…).</div>
+  <div class="sub">Tabela usada nas unidades do lote anterior. O endereço de cada ponto sai desta tabela pela sigla; siglas em branco ainda não têm endereço definido. Conversores AC60101 recebem o endereço base + a sequência (AC60101-1 = base, -2 = base+1…).</div>
   <table><tr><th>Sigla</th><th class="r">Endereço</th></tr>${SIG.map(x=>`<tr><td><b style="font-family:var(--f-mono)">${x[1]}</b> <span class="sub">${x[2]}</span></td><td class="r"><input inputmode="numeric" data-ed="${x[1]}" value="${S.end[x[1]]??""}"></td></tr>`).join("")}</table>
   <button type="button" class="mini del" data-zerar="1">Apagar todo o cadastro deste aparelho</button></section>`;
  const a=document.activeElement,keep=a&&a.dataset&&(a.dataset.f||a.dataset.s||a.dataset.tp||a.dataset.ed)?{f:a.dataset.f,s:a.dataset.s,tp:a.dataset.tp,ed:a.dataset.ed,p:a.closest("[data-p]")&&a.closest("[data-p]").dataset.p,i:a.closest("[data-i]")&&a.closest("[data-i]").dataset.i,pos:a.selectionStart}:null;
