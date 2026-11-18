@@ -87,6 +87,16 @@ main.wrap{padding-top:12px;display:grid;gap:12px}
 .hist .hi{display:grid;gap:1px;font-size:13px;padding-bottom:6px;border-bottom:1px solid var(--line)}
 .hist .hi:last-child{border-bottom:0}
 .hist .hd{font-size:11px;color:var(--muted);font-family:var(--f-mono)}
+.escb{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;background:var(--chip);padding:4px;border-radius:10px}
+.escb button{font:inherit;font-size:13px;font-weight:600;min-height:40px;border:0;border-radius:7px;background:transparent;color:var(--muted);cursor:pointer}
+.escb button.on{background:var(--panel);color:var(--fg);box-shadow:0 1px 3px rgba(0,0,0,.15)}
+.vol{display:grid;grid-template-columns:auto 1fr 58px;gap:10px;align-items:center;background:var(--chip);border-radius:10px;padding:10px 12px}
+.vol .vt{font-size:11px;font-weight:700;text-transform:uppercase;color:var(--muted)}
+.vol input[type=range]{width:100%;height:36px;accent-color:var(--accent);min-height:0;padding:0;border:0;background:transparent}
+.vol .vl{font-family:var(--f-mono);font-size:20px;font-weight:700;text-align:right}
+.subg{display:grid;grid-template-columns:1fr auto;gap:4px 10px;align-items:center;margin-top:8px;padding:8px 2px 2px;font-weight:700;font-size:14px;color:var(--accent);border-top:2px solid var(--line)}
+.subg .sp{font-family:var(--f-mono);font-size:13px}.subg .bar{grid-column:1/-1;height:6px}
+.card.fora{opacity:.6;border-left-style:dashed}
 .okmsg{position:fixed;left:50%;top:40%;transform:translate(-50%,-50%);background:var(--ok);color:#fff;padding:18px 26px;border-radius:14px;font-size:18px;font-weight:700;z-index:50;box-shadow:0 8px 30px rgba(0,0,0,.25);text-align:center}
 </style></head><body>
 <header><div class="wrap">
@@ -116,13 +126,20 @@ function pct(x){return (Math.round(x*10)/10).toFixed(1).replace(".",",")+"%"}
 function dBR(d){return String(d||"").split("-").reverse().join("/")}
 /* ---- cálculo (igual ao cronograma: qtd × tempo × progresso) ---- */
 const isM=t=>String(t.unidade||"").toLowerCase()==="m";
-const prev=t=>(+t.quantidade||0)*(+t.tempo_atual||0);
+const ESC=[["fazer","A fazer"],["existente","Já existe"],["na","Não se aplica"]];const ESL=Object.fromEntries(ESC);
+const fora=t=>(t.escopo||"fazer")!=="fazer";
+const prev=t=>t.is_header||fora(t)?0:(+t.quantidade||0)*(+t.tempo_atual||0);
 const frac=t=>Math.max(0,Math.min(1,(+t.progresso||0)/100));
-function soma(l){let p=0,d=0;l.forEach(t=>{const v=prev(t);p+=v;d+=v*frac(t)});return{p,d,pc:p?d/p*100:0}}
-function contavel(t){return !isM(t)&&(+t.quantidade||0)>1}
+function soma(l){let p=0,d=0;l.filter(t=>!t.is_header).forEach(t=>{const v=prev(t);p+=v;d+=v*frac(t)});return{p,d,pc:p?d/p*100:0}}
+function contavel(t){return !isM(t)&&(+t.quantidade||0)>1&&String(t.unidade||"").toLowerCase()!=="pernas"}
 function feito(t){return Math.round(frac(t)*(+t.quantidade||0))}
 function varIdx(t){const v=t.variacoes||[];if(v.length<2)return -1;let b=0,bd=1e9;v.forEach((x,i)=>{const d=Math.abs((+x[1]||0)-(+t.tempo_atual||0));if(d<bd){bd=d;b=i}});return b}
 const byG=g=>TS.filter(t=>t.grupo_id===g).sort((a,b)=>(a.ordem||0)-(b.ordem||0));
+const real=g=>byG(g).filter(t=>!t.is_header);
+const REAL=()=>TS.filter(t=>!t.is_header);
+const ativas=l=>l.filter(t=>!t.is_header&&!fora(t));
+function subOf(t){const l=byG(t.grupo_id);let h=null;for(const x of l){if(x.is_header)h=x;if(x.id===t.id)return h}return null}
+function statusDe(t,v){if(t.status==="congelada"&&v<100)return "congelada";return v<=0?"a_fazer":v>=100?"concluida":"em_andamento"}
 /* ---- api ---- */
 async function api(body){const r=await fetch(FN,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({p:P,k:K,data:DATA,autor:AUTOR,disp:DISP,...body})});const d=await r.json().catch(()=>({error:"resposta inválida"}));if(!r.ok||d.error)throw new Error(d.error||("erro "+r.status));return d}
 async function carregar(){
@@ -139,7 +156,7 @@ function pedirNome(depois){sheet(`<h3>Quem está apontando?</h3><div style="font
 async function salvar(t,patch){
   if(!AUTOR){return new Promise(res=>pedirNome(async()=>res(await salvar(t,patch))))}
   busy++;
-  try{const body={action:"tarefa",id:t.id,patch:{}};["status","progresso","quantidade","notas"].forEach(k=>{if(k in patch)body.patch[k]=patch[k]});if("_var" in patch)body.patch.variacao=patch._var;
+  try{const body={action:"tarefa",id:t.id,patch:{}};["status","progresso","quantidade","notas","escopo"].forEach(k=>{if(k in patch)body.patch[k]=patch[k]});if("_var" in patch)body.patch.variacao=patch._var;
     const d=await api(body);Object.assign(t,patch,d.tarefa||{});delete t._var;HOJE.add(t.id);delete HIST[t.id];return true}
   catch(e){toast("Não salvou: "+e.message,4000);return false}
   finally{busy--}
@@ -149,38 +166,46 @@ function sheet(html){$("#sheetc").innerHTML=html;$("#sheet").hidden=false}
 function fecharSheet(){$("#sheet").hidden=true;PST=null}
 function okMsg(m){const o=$("#okmsg");o.innerHTML=m;o.hidden=false;clearTimeout(o._h);o._h=setTimeout(()=>o.hidden=true,1700)}
 let PST=null; // {t,p}
-function pedirStatus(t,p){PST={t,p};const imp=p.status==="congelada";
-  sheet(`<h3>Salvar alteração?</h3><div style="font-weight:600">${esc(t.nome)}</div><ul><li>Status: ${STL[t.status]||t.status} → <b>${STL[p.status]}</b></li>${contavel(t)&&p.progresso!==t.progresso?`<li>Feito: ${feito(t)} → <b>${Math.round(p.progresso/100*(+t.quantidade||0))}</b> de ${+t.quantidade||0}</li>`:""}</ul>
+function pedirStatus(t,p){PST={t,p};const imp=p.status==="congelada"&&t.status!=="congelada";const L=[];
+  if("escopo" in p&&p.escopo!==(t.escopo||"fazer"))L.push(`Escopo: ${ESL[t.escopo||"fazer"]} → <b>${ESL[p.escopo]}</b>${p.escopo!=="fazer"?" <span style='color:var(--muted)'>(sai do tempo da obra)</span>":""}`);
+  if("status" in p&&p.status!==t.status)L.push(`Status: ${STL[t.status]||t.status} → <b>${STL[p.status]}</b>`);
+  if("progresso" in p&&p.progresso!==(t.progresso||0))L.push(contavel(t)?`Feito: ${feito(t)} → <b>${Math.round(p.progresso/100*(+t.quantidade||0))}</b> de ${+t.quantidade||0} (${p.progresso}%)`:`Progresso: ${t.progresso||0}% → <b>${p.progresso}%</b>`);
+  sheet(`<h3>Salvar alteração?</h3><div style="font-weight:600">${esc(t.nome)}</div><ul>${L.map(x=>`<li>${x}</li>`).join("")}</ul>
    ${imp?`<label style="display:grid;gap:4px;font-size:13px;font-weight:600">Motivo do impedimento<textarea id="motivo" style="font:inherit;font-size:16px;min-height:70px;padding:9px 10px;border:1px solid var(--line);border-radius:8px;background:var(--bg);color:var(--fg)" placeholder="O que está travando">${esc(t.notas)}</textarea></label>`:""}
    <div class="bt"><button type="button" class="b p" data-sh="ok" ${imp&&!(t.notas||"").trim()?"disabled":""}>Confirmar e salvar</button><button type="button" class="b" data-sh="x">Cancelar</button></div>`);
   const m=$("#motivo");if(m)m.addEventListener("input",()=>{$('[data-sh="ok"]').disabled=!m.value.trim()})}
 async function confirmar(){if(!PST)return;const {t,p}=PST;const m=$("#motivo");if(m)p.notas=m.value.trim();
   $("#sheetc").classList.add("saving");const ok=await salvar(t,p);$("#sheetc").classList.remove("saving");fecharSheet();
-  if(ok)okMsg("✓ "+STL[p.status]+" salvo<br><span style='font-size:14px;font-weight:500'>"+esc(t.nome)+"</span>");render()}
+  if(ok)okMsg("✓ Alteração salva<br><span style='font-size:14px;font-weight:500'>"+esc(t.nome)+"</span>");render()}
 async function auto(t,p,msg){const ok=await salvar(t,p);if(ok)toast("✓ "+msg);render()}
 document.addEventListener("click",e=>{if(e.target.closest("#quem")){e.preventDefault();pedirNome()}});
 $("#sheet").addEventListener("click",e=>{const b=e.target.closest("[data-sh]");if(!b){if(e.target.id==="sheet")fecharSheet();return}
-  if(b.dataset.sh==="ok")confirmar();else{fecharSheet();toast("Nada foi alterado")}});
+  if(b.dataset.sh==="ok")confirmar();else{fecharSheet();render();toast("Nada foi alterado")}});
 /* ---- render ---- */
 function header(){
   $("#obra").innerHTML=PJ?esc((PJ.contemplado||PJ.nome)+" · "+dBR(DATA))+` · <a href="#" id="quem" style="color:var(--accent)">${AUTOR?"👤 "+esc(AUTOR):"👤 informar nome"}</a>`:"";
-  const s=soma(TS);$("#tot").textContent=s.p?pct(s.pc):"—";$("#totbar").style.width=s.pc+"%";
+  const s=soma(REAL());$("#tot").textContent=s.p?pct(s.pc):"—";$("#totbar").style.width=s.pc+"%";
   $("#totsub").textContent=s.p?`${fmtH(s.d)} executados de ${fmtH(s.p)} previstos · avanço pelo tempo padrão`:"Avanço pelo tempo padrão.";
 }
 function navHTML(ttl,back){return `<div class="nav"><button type="button" class="back" data-back="1">← ${esc(back)}</button><div class="ttl">${esc(ttl)}</div></div>`}
-function cardHTML(t){const st=t.status||"a_fazer",q=+t.quantidade||0;
+function cardHTML(t){if(fora(t))return `<button type="button" class="card fora" data-open="${esc(t.id)}"><span class="cn">${esc(t.nome)}</span><span class="chip">${ESL[t.escopo]}</span><span class="cm">não conta no tempo${t.notas?" · 💬":""}${HOJE.has(t.id)?' · <span class="hj">● hoje</span>':""}</span></button>`;
+  const st=t.status||"a_fazer",q=+t.quantidade||0;
   const meta=[contavel(t)?`${feito(t)}/${q} ${esc(t.unidade)}`:isM(t)?(q?`${q} m`:"medir metros"):"",fmtH(prev(t)),(t.fotos&&t.fotos.length)?`📷 ${t.fotos.length}`:"",t.notas?"💬":"",HOJE.has(t.id)?'<span class="hj">● hoje</span>':""].filter(Boolean).join(" · ");
-  return `<button type="button" class="card ${st}" data-open="${esc(t.id)}"><span class="cn">${esc(t.nome)}</span><span class="chip ${st}">${STL[st]||st}</span><span class="cm">${meta}</span>${contavel(t)&&st!=="concluida"&&frac(t)>0?`<span class="cb"><span style="width:${frac(t)*100}%"></span></span>`:""}</button>`}
+  return `<button type="button" class="card ${st}" data-open="${esc(t.id)}"><span class="cn">${esc(t.nome)}</span><span class="chip ${st}">${STL[st]||st}</span><span class="cm">${frac(t)>0&&st!=="concluida"?Math.round(frac(t)*100)+"% · ":""}${meta}</span>${st!=="concluida"&&frac(t)>0?`<span class="cb"><span style="width:${frac(t)*100}%"></span></span>`:""}</button>`}
 function tarefaHTML(t){const q=+t.quantidade||0,vi=varIdx(t),st=t.status||"a_fazer";
   const meta=[contavel(t)?`${q} ${esc(t.unidade)}`:"",isM(t)?`${fmtH(+t.tempo_atual||0)} por metro`:"",`${fmtH(prev(t))} previstos`].filter(Boolean).join(" · ");
+  const sb=subOf(t),es=t.escopo||"fazer",pg=Math.round(+t.progresso||0);
   return `<div class="t" data-id="${esc(t.id)}">
-   <div class="nm">${esc(t.nome)}</div><div class="meta">${meta}</div>
+   ${sb?`<div class="meta" style="font-weight:700;color:var(--accent)">${esc(sb.nome)}</div>`:""}<div class="nm">${esc(t.nome)}</div><div class="meta">${fora(t)?"não conta no tempo da obra":meta}</div>
+   <div class="escb">${ESC.map(([k,l])=>`<button type="button" class="${es===k?"on":""}" data-esc="${k}">${l}</button>`).join("")}</div>
+   ${fora(t)?`<div class="sub">Marcado como <b>${ESL[es]}</b> no levantamento. Para voltar ao escopo da eX, toque em "A fazer".</div>`:`
    <div class="sts">${ST.map(([k,l])=>`<button type="button" class="${k} ${st===k?"on":""}" data-st="${k}">${l}</button>`).join("")}</div>
+   <div class="vol"><span class="vt">Progresso</span><input type="range" min="0" max="100" step="5" value="${pg}" data-f="prog" aria-label="Progresso"><span class="vl" id="vl">${pg}%</span></div>
    ${(contavel(t)||isM(t)||vi>=0)?`<div class="fl">
      ${contavel(t)?`<label>Feito (de ${q})<div class="stp"><button type="button" data-inc="-1">−</button><input type="number" inputmode="numeric" min="0" max="${q}" data-f="feito" value="${feito(t)}"><button type="button" data-inc="1">+</button></div></label>`:""}
      ${vi>=0?`<label>Condição<select data-f="var">${t.variacoes.map((v,i)=>`<option value="${i}" ${i===vi?"selected":""}>${esc(v[0])}</option>`).join("")}</select></label>`:""}
      ${isM(t)?`<label>Metros (total)<input type="number" inputmode="decimal" min="0" step="0.5" data-f="metros" value="${q||""}" placeholder="medir"></label>`:""}
-   </div>`:""}
+   </div>`:""}`}
    <label style="display:grid;gap:3px;font-size:11px;font-weight:600;text-transform:uppercase;color:var(--muted)">${st==="congelada"?"Motivo do impedimento":"Observação"}<textarea data-f="notas" placeholder="${st==="congelada"?"O que está travando":"Opcional"}">${esc(t.notas)}</textarea></label>
    <div class="fotos">${(t.fotos||[]).map(f=>f.url?`<a href="${esc(f.url)}" target="_blank" rel="noopener"><img src="${esc(f.url)}" alt="foto" loading="lazy"></a>`:"").join("")}<label class="b">📷 Foto<input type="file" accept="image/*" capture="environment" data-up="1" hidden></label></div>
    <div class="hist"><div class="ht">Histórico</div>${histHTML(t.id)}</div>
@@ -204,14 +229,16 @@ function diaHTML(){const c=(DIA&&DIA.campo)||{};
 function render(){
   if(!PJ)return;header();let h="";
   const g=GR.find(x=>x.id===vg),t=TS.find(x=>x.id===vt);
-  if(vw==="g"&&g){const ts=byG(g.id),s=soma(ts);
-    h=navHTML(g.nome,"Menu")+`<div class="sub">${pct(s.pc)} · ${ts.filter(x=>x.status==="concluida").length} de ${ts.length} concluídas · toque numa atividade</div><div class="cards">${ts.map(cardHTML).join("")}</div>`;
-  }else if(vw==="t"&&t){const ts=byG(t.grupo_id),i=ts.indexOf(t),gn=(GR.find(x=>x.id===t.grupo_id)||{}).nome||"";
+  if(vw==="g"&&g){const all=byG(g.id),ts=ativas(all),s=soma(ts);
+    let c="",i=0;while(i<all.length){const x=all[i];if(x.is_header){const ch=[];let j=i+1;while(j<all.length&&!all[j].is_header){ch.push(all[j]);j++}const ss=soma(ch);
+        c+=`<div class="subg"><span>${esc(x.nome)}</span><span class="sp">${pct(ss.pc)}</span><span class="bar"><span style="width:${ss.pc}%"></span></span></div>`+ch.map(cardHTML).join("");i=j}else{c+=cardHTML(x);i++}}
+    h=navHTML(g.nome,"Menu")+`<div class="sub">${pct(s.pc)} · ${ts.filter(x=>x.status==="concluida").length} de ${ts.length} concluídas · toque numa atividade</div><div class="cards">${c}</div>`;
+  }else if(vw==="t"&&t&&!t.is_header){const ts=real(t.grupo_id),i=ts.indexOf(t),gn=(GR.find(x=>x.id===t.grupo_id)||{}).nome||"";
     h=navHTML(gn,"Atividades")+`<section class="box">${tarefaHTML(t)}<div class="nxt">${i>0?`<button type="button" class="b" data-open="${esc(ts[i-1].id)}" data-rep="1">‹ Anterior</button>`:"<span></span>"}${i<ts.length-1?`<button type="button" class="b p" data-open="${esc(ts[i+1].id)}" data-rep="1">Próxima ›</button>`:`<button type="button" class="b p" data-back="1">Voltar ao grupo</button>`}</div></section>`;
   }else if(vw==="dia"){h=navHTML("Dia de trabalho · "+dBR(DATA),"Menu")+diaHTML();
   }else{vw="menu";const c=(DIA&&DIA.campo)||{};
     h=`<div class="menu"><button type="button" class="tile dia full" data-view="dia"><span class="tn">📋 Dia de trabalho · ${dBR(DATA)}</span><span class="ts">${c.lider?"Líder: "+esc(c.lider)+(c.impedimentos?' · <b style="color:var(--div)">com impedimento</b>':""):"Toque para preencher líder, equipe e horários"}</span></button>`;
-    GR.forEach(g=>{const ts=byG(g.id),s=soma(ts),imp=ts.filter(x=>x.status==="congelada").length,hj=ts.filter(x=>HOJE.has(x.id)).length;
+    GR.forEach(g=>{const ts=ativas(byG(g.id)),s=soma(ts),imp=ts.filter(x=>x.status==="congelada").length,hj=ts.filter(x=>HOJE.has(x.id)).length;
       h+=`<button type="button" class="tile" data-grp="${esc(g.id)}"><span class="tn">${esc(g.nome)}</span><span class="tp">${pct(s.pc)}</span><span class="bar"><span style="width:${s.pc}%"></span></span><span class="ts">${ts.filter(x=>x.status==="concluida").length}/${ts.length} concluídas${imp?` · <b style="color:var(--div)">${imp} impedida${imp>1?"s":""}</b>`:""}${hj?` · <span class="hj">${hj} hoje</span>`:""}</span></button>`});
     h+=`</div>`;
   }
@@ -231,6 +258,7 @@ $("#main").addEventListener("click",async e=>{
   const vv=e.target.closest("[data-view]");if(vv){go(vv.dataset.view);return}
   if(e.target.closest("[data-diasave]")){salvarDia(true);return}
   const t=cur(e.target);if(!t)return;
+  const eb=e.target.closest("[data-esc]");if(eb){const v=eb.dataset.esc;if(v===(t.escopo||"fazer"))return;pedirStatus(t,{escopo:v});return}
   const st=e.target.closest("[data-st]");if(st){const v=st.dataset.st;if(v===t.status)return;
     const p={status:v};if(v==="a_fazer")p.progresso=0;else if(v==="concluida")p.progresso=100;else if(v==="em_andamento")p.progresso=(t.progresso>0&&t.progresso<100)?t.progresso:(contavel(t)?Math.round(100/(+t.quantidade||1)):50);else p.progresso=t.progresso;
     pedirStatus(t,p);return}
@@ -242,11 +270,13 @@ $("#main").addEventListener("change",async e=>{const el=e.target;
   const t=cur(el);if(!t)return;
   if(el.dataset.up&&el.files&&el.files[0]){foto(t,el.files[0]);return}
   const f=el.dataset.f;
+  if(f==="prog"){const v=Math.round(+el.value||0);if(v===Math.round(+t.progresso||0))return;pedirStatus(t,{progresso:v,status:statusDe(t,v)});return}
   if(f==="feito"){const q=+t.quantidade||0;setFeito(t,Math.max(0,Math.min(q,Math.round(+el.value||0))));return}
   if(f==="var"){const i=+el.value;auto(t,{_var:i,tempo_atual:+t.variacoes[i][1]||0},"Condição salva");return}
   if(f==="metros"){const v=el.value===""?0:Math.max(0,+el.value||0);auto(t,{quantidade:v},"Metros salvos");return}
   if(f==="notas"){if((t.notas||"")===el.value)return;auto(t,{notas:el.value},"Observação salva");return}
 });
+$("#main").addEventListener("input",e=>{if(e.target.dataset.f==="prog"){const l=$("#vl");if(l)l.textContent=e.target.value+"%"}});
 let diaT=null;
 function salvarDia(now){if(!AUTOR){pedirNome(()=>salvarDia(true));return}clearTimeout(diaT);diaT=setTimeout(async()=>{try{await api({action:"dia",campo:(DIA&&DIA.campo)||{}});toast("Dia salvo")}catch(e){toast("Dia não salvou: "+e.message,3500)}},now?0:900)}
 document.addEventListener("focusout",()=>setTimeout(()=>{const a=document.activeElement;if(!a||!a.closest||!a.closest("#main")||!a.matches("input,textarea"))render()},250));

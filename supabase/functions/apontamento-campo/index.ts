@@ -14,6 +14,7 @@ const STATUS = ['a_fazer', 'em_andamento', 'concluida', 'congelada'];
 const hoje = () => new Date(Date.now() - 3 * 3600e3).toISOString().slice(0, 10); // America/Sao_Paulo
 const isData = (s: any) => /^\d{4}-\d{2}-\d{2}$/.test(String(s || ''));
 const txt = (s: any, n = 2000) => (s == null ? null : String(s).slice(0, n));
+const ESC: Record<string, string> = { fazer: 'A fazer', existente: 'Já existe', na: 'Não se aplica' };
 const STL: Record<string, string> = { a_fazer: 'Não iniciada', em_andamento: 'Em andamento', concluida: 'Concluída', congelada: 'Impedida' };
 function varNome(vars: any, h: any) { if (!Array.isArray(vars) || vars.length < 2) return null; let b = vars[0], bd = 1e9; for (const v of vars) { const d = Math.abs((Number(v[1]) || 0) - (Number(h) || 0)); if (d < bd) { bd = d; b = v; } } return b[0]; }
 async function hist(db: any, rows: any[]) { if (rows.length) { const { error } = await db.from('apontamento_historico').insert(rows); if (error) console.error('historico', error.message); } }
@@ -72,10 +73,10 @@ Deno.serve(async (req: Request) => {
       const data = isData(url.searchParams.get('d')) ? url.searchParams.get('d')! : hoje();
       const { data: grupos } = await db.from('grupos').select('id,nome,ordem').eq('projeto_id', pj.id).is('deleted_at', null).order('ordem');
       const { data: tarefas } = await db.from('tarefas')
-        .select('id,grupo_id,nome,quantidade,unidade,tempo_atual,tempo_previsto,progresso,status,variacoes,notas,fotos,ordem,is_header,nivel,data_inicio_real,data_fim_real,updated_at')
+        .select('id,grupo_id,nome,quantidade,unidade,tempo_atual,tempo_previsto,progresso,status,escopo,variacoes,notas,fotos,ordem,is_header,nivel,data_inicio_real,data_fim_real,updated_at')
         .eq('projeto_id', pj.id).is('deleted_at', null).order('ordem');
       const ts = [];
-      for (const t of (tarefas || []).filter((t: any) => !t.is_header)) ts.push({ ...t, fotos: await assinar(db, t.fotos) });
+      for (const t of (tarefas || [])) ts.push({ ...t, fotos: await assinar(db, t.fotos) });
       const { data: dia } = await db.from('diario_dias').select('id,data,campo,observacoes,mood').eq('projeto_id', pj.id).eq('data', data).maybeSingle();
       let hojeIds: string[] = [];
       if (dia) { const { data: ls } = await db.from('diario_lancamentos').select('tarefa_id').eq('diario_id', dia.id).eq('marcada', true); hojeIds = (ls || []).map((l: any) => l.tarefa_id); }
@@ -88,9 +89,10 @@ Deno.serve(async (req: Request) => {
     const quem = { autor_nome: txt(body.autor, 80), dispositivo: txt(body.disp, 40), projeto_id: pj.id, data };
 
     if (action === 'tarefa') {
-      const { data: t } = await db.from('tarefas').select('id,projeto_id,status,progresso,quantidade,unidade,variacoes,tempo_atual,notas,data_inicio_real,data_fim_real').eq('id', body.id).is('deleted_at', null).maybeSingle();
-      if (!t || t.projeto_id !== pj.id) return json({ error: 'tarefa nao encontrada' }, 404);
+      const { data: t } = await db.from('tarefas').select('id,projeto_id,is_header,status,progresso,escopo,quantidade,unidade,variacoes,tempo_atual,notas,data_inicio_real,data_fim_real').eq('id', body.id).is('deleted_at', null).maybeSingle();
+      if (!t || t.projeto_id !== pj.id || t.is_header) return json({ error: 'tarefa nao encontrada' }, 404);
       const inp = body.patch || {};
+      if (inp.escopo != null) { if (!ESC[inp.escopo]) return json({ error: 'escopo invalido' }, 400); }
       const patch: any = {};
       if (inp.status != null) { if (!STATUS.includes(inp.status)) return json({ error: 'status invalido' }, 400); patch.status = inp.status; }
       if (inp.progresso != null) patch.progresso = Math.max(0, Math.min(100, Math.round(Number(inp.progresso) || 0)));
@@ -101,16 +103,18 @@ Deno.serve(async (req: Request) => {
         patch.tempo_atual = Number(v[1]) || 0;
       }
       if (inp.notas !== undefined) patch.notas = txt(inp.notas);
+      if (inp.escopo != null) patch.escopo = inp.escopo;
       const st = patch.status || t.status;
       if (patch.status === 'concluida' && patch.progresso == null) patch.progresso = 100;
       if ((st === 'em_andamento' || st === 'concluida') && !t.data_inicio_real) patch.data_inicio_real = data;
       if (st === 'concluida' && !t.data_fim_real) patch.data_fim_real = data;
       if (patch.status && patch.status !== 'concluida' && t.data_fim_real) patch.data_fim_real = null;
       if (!Object.keys(patch).length) return json({ ok: true });
-      const { data: up, error } = await db.from('tarefas').update(patch).eq('id', t.id).select('id,quantidade,tempo_atual,progresso,status,notas,data_inicio_real,data_fim_real').single();
+      const { data: up, error } = await db.from('tarefas').update(patch).eq('id', t.id).select('id,quantidade,tempo_atual,progresso,status,escopo,notas,data_inicio_real,data_fim_real').single();
       if (error) throw error;
       const H: any[] = [];
       const add = (campo: string, de: any, para: any) => { if (String(de ?? '') !== String(para ?? '')) H.push({ ...quem, tarefa_id: t.id, campo, de: de == null ? null : String(de), para: para == null ? null : String(para) }); };
+      add('Escopo', ESC[t.escopo] || t.escopo, ESC[up.escopo] || up.escopo);
       add('Status', STL[t.status] || t.status, STL[up.status] || up.status);
       add('Progresso', (t.progresso ?? 0) + '%', (up.progresso ?? 0) + '%');
       add(String(t.unidade || '').toLowerCase() === 'm' ? 'Metros' : 'Quantidade', t.quantidade, up.quantidade);

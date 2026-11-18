@@ -35,3 +35,8 @@ create index if not exists ix_apont_hist_proj on apontamento_historico(projeto_i
 alter table apontamento_historico enable row level security;
 -- leitura no app logado segue o acesso da obra; gravação só pela função (service role)
 -- create policy ah_sel on apontamento_historico for select to authenticated using (pode_ver_projeto(projeto_id));
+
+-- ---------- Escopo por atividade: levantamento junto com a evolução (18/11/2026) ----------
+alter table tarefas add column if not exists escopo text not null default 'fazer';
+-- alter table tarefas add constraint tarefas_escopo_ck check (escopo in ('fazer','existente','na'));
+-- fazer = escopo da eX (conta no tempo) · existente = já existe na loja · na = não se aplica
