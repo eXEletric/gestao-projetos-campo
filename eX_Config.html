@@ -129,12 +129,16 @@ td input{min-height:34px;padding:4px 6px;font-size:14px}
 tr.cenr td{border-top:0;padding-top:0}.mtx{width:100%;border-collapse:collapse;font-size:12px}.mtx td,.mtx th{border-top:1px solid var(--line);padding:5px 4px;text-align:left;vertical-align:top}.mtx td.r,.mtx th.r{text-align:right;width:44px}.cfl{background:var(--badbg);color:var(--bad);font-weight:700}
 .tctag{font-size:11px;font-weight:800;padding:2px 7px;border-radius:6px;white-space:nowrap}.tctag.tr{background:#E6F1FB;color:#0C447C}.tctag.fx{background:#FAEEDA;color:#633806}.tctag.nd{background:var(--chip);color:var(--muted)}
 .mrow .tcsel{grid-column:1/-1;font:inherit;font-size:12px;padding:3px}
+.mrow{grid-template-columns:1fr auto}.macts{grid-column:1/-1;display:flex;gap:6px}.mini.xr,.b.xr2{color:var(--bad);border-color:var(--bad)}.b.xr2{background:var(--badbg)}
+.doc{display:grid;grid-template-columns:48px 1fr;gap:10px;align-items:center;border-top:1px solid var(--line);padding-top:8px}.dic{width:48px;height:48px;border-radius:8px;background:var(--chip);display:flex;align-items:center;justify-content:center;font-size:22px;overflow:hidden}.dic img{width:100%;height:100%;object-fit:cover}
+.dbt{grid-column:1/-1;display:flex;gap:6px;flex-wrap:wrap}.dvin{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}.vin{font-size:11px;font-weight:700;padding:2px 6px;border-radius:5px}.vin.m{background:#EEEDFE;color:#3C3489}.vin.s{background:#E1F5EE;color:#085041}.vin.n{background:var(--chip);color:var(--muted)}
 @media print{header,.aval,.noprint,.dica,.passos,.lane,#cron{display:none!important}body{background:#fff}.box{border:0}}
 </style></head><body>
 <header><div class="wrap"><div class="crumb" id="crumb"></div><h1 id="ttl">eX · Configuração</h1></div></header>
 <main class="wrap" id="main"></main>
 <div class="sheet" id="sheet" hidden><div id="sheetc"></div></div>
 <div class="toast" id="toast" hidden></div>
+<input type="file" id="fdoc" multiple accept="image/*,application/pdf,.pdf,.doc,.docx,.xls,.xlsx,.txt,.dwg" hidden>
 <script>
 /* ================= BASE DO LOTE (padrão inicial) ================= */
 /* tabela de endereços do lote (fechada com o André em 19/11): sigla genérica = função; modelo vem da lista por tipo */
@@ -268,7 +272,7 @@ function render(){crumb();let h=`<div class="aval">⚠ MODO AVALIAÇÃO — tudo
  else if(R.v==="rs1"||R.v==="rs2"){const lj=L();sincroniza(lj);t="Rede RS485 · "+lj.id;h+=passosHTML()+(R.v==="rs1"?disHTML(lj):redeHTML(lj))}
  $("#ttl").textContent=t;
  const a=document.activeElement,keep=a&&a.dataset&&(a.dataset.bf||a.dataset.af||a.dataset.nm||a.dataset.mn||a.dataset.mbi)&&a.tagName==="INPUT"?{sel:a.dataset.mn?`[data-mn="${a.dataset.mn}"][data-mj="${a.dataset.mj}"]`:a.dataset.mbi?`[data-mbi="${a.dataset.mbi}"]`:a.dataset.bf?`[data-bf="${a.dataset.bf}"][data-i="${a.dataset.i}"]`:a.dataset.af?`[data-af="${a.dataset.af}"][data-ai="${a.dataset.ai}"]`:`[data-nm]`,pos:a.selectionStart}:null;
- $("#main").innerHTML=h;
+ $("#main").innerHTML=h;if(R.v==="base"&&typeof thumbs==="function")thumbs($("#main"));
  if(keep){const e=document.querySelector(keep.sel);if(e){e.focus();try{e.setSelectionRange(keep.pos,keep.pos)}catch(_){}}}}
 function homeHTML(){return `<section class="box"><div class="bt">1 · BASE DO LOTE <span class="sub">(vale para todas as lojas)</span></div>
  <div class="sub">Dispositivos, endereço bus RS485 e tempos padrão. Materiais, projetos dos quadros e as outras disciplinas entram aqui depois.</div>
@@ -293,7 +297,7 @@ function disHTML(lj){const r=lj.rs485;let g="",h=`<section class="box"><div clas
  B().devs.forEach(d=>{if(d.ativo===false||!naLoja(d,lj))return;if(d.grupo!==g){g=d.grupo;h+=`<div class="gt">${esc(g)}</div>`}const q=+r.sel[d.sig]||0,on=q>0;
   h+=`<div class="dv ${on?"on":""}">${MULTI.has(d.sig)?`<span class="ck">${q||""}</span>`:`<button type="button" class="ck" data-tg="${esc(d.sig)}" style="cursor:pointer">${on?"✓":""}</button>`}
    <div><div class="sg">${esc(d.sig)}</div><div class="ds">${esc(d.desc)} · bus ${d.end===""?"<b style='color:var(--warn)'>sem endereço</b>":d.end}</div>
-    ${on?`<div class="mdl"><span>Modelo</span><select data-lmod="${esc(d.sig)}">${(B().mods[d.tipo]||[]).filter(m=>m.ativo!==false||m.n===modOf(d.sig,lj)).map(m=>`<option ${m.n===modOf(d.sig,lj)?"selected":""}>${esc(m.n)}</option>`).join("")}</select>${r.mod[d.sig]&&r.mod[d.sig]!==(d.modelo||modPad(d.tipo))?'<b class="dif">diferente do padrão</b>':""}${tcTag(modOf(d.sig,lj))}</div>
+    ${on?`<div class="mdl"><span>Modelo</span><select data-lmod="${esc(d.sig)}">${(B().mods[d.tipo]||[]).filter(m=>m.ativo!==false||m.n===modOf(d.sig,lj)).map(m=>`<option ${m.n===modOf(d.sig,lj)?"selected":""}>${esc(m.n)}</option>`).join("")}</select>${r.mod[d.sig]&&r.mod[d.sig]!==(d.modelo||modPad(d.tipo))?'<b class="dif">diferente do padrão</b>':""}${tcTag(modOf(d.sig,lj))}<button type="button" class="mini" data-ldoc="${esc(d.sig)}">${nDocs({sig:d.sig,mod:modOf(d.sig,lj)})}</button></div>
      ${d.exp?`<div class="mdl"><span>Expansão IPX no quadro</span>${sw(temExp(d.sig,lj),`data-lexp="${esc(d.sig)}"`)}</div>${temExp(d.sig,lj)?`<div class="mdl"><span>Modelo da expansão</span><select data-lmodx="${esc(d.sig)}">${(B().mods.expansao||[]).filter(m=>m.ativo!==false).map(m=>`<option ${m.n===((r.mod[d.sig+"#x"])||modPad("expansao"))?"selected":""}>${esc(m.n)}</option>`).join("")}</select></div>`:""}`:""}`:""}</div>
    ${MULTI.has(d.sig)?`<div class="qty"><button type="button" data-q="${esc(d.sig)}" data-d="-1">−</button><span>${q}</span><button type="button" data-q="${esc(d.sig)}" data-d="1">+</button></div>`:`<span></span>`}</div>`;
   if(d.sig==="GW-SPL"&&q){h+=`<div class="qint" style="margin-left:14px">Endereços: ${Array.from({length:q},(_,k)=>`GW-SPL-${k+1} → <b>${(+d.end||1)+k}</b>`).join(" · ")} · máximo ${MAXGW} (limite do projeto)</div>`}
@@ -302,7 +306,7 @@ function disHTML(lj){const r=lj.rs485;let g="",h=`<section class="box"><div clas
  h+=`</section><button class="b p" data-go="rs2">PRÓXIMO: MONTAR A REDE EM BLOCOS ›</button>`;return h}
 function blocoHTML(it,lj){const d=dev(it.base),bus=busOf(it),t=lj.rs485.terms[it.id];
  const na=(lj.rs485.p1.includes(it.id)||lj.rs485.p2.includes(it.id))?`<button type="button" class="tbtn" data-tst="${esc(it.id)}">⚙ Testes · ${perfAtivo("pt","pt:"+it.id,lj).length} de ${(B().perf.pt||[]).filter(x=>x.acomp).length}</button>`:"";
- return `<div class="blk" data-blk="${esc(it.id)}"><div class="hd" data-hd="1" title="Arrastar">⠿</div><div><div class="sg">${esc(it.id)}</div><div class="ds">${esc(d?d.desc:"")}${t&&t.length?" · Term. "+t.slice().sort((a,b)=>a-b).join(", "):""}</div></div><div class="bus"><small>bus RS485</small>${bus===""?"—":bus}</div>${d?`<div class="bmod">Modelo: <b>${esc(modOf(it.base,lj))}</b> ${tcTag(modOf(it.base,lj))}${d.exp&&temExp(it.base,lj)?`<div class="qint">Dentro do quadro (rede Modbus interna): controlador <b>${esc(B().mbi.ipg)}</b> · expansão ${esc(lj.rs485.mod[it.base+"#x"]||modPad("expansao"))} <b>${esc(B().mbi.ipx)}</b></div>`:""}</div>`:""}${na}</div>`}
+ return `<div class="blk" data-blk="${esc(it.id)}"><div class="hd" data-hd="1" title="Arrastar">⠿</div><div><div class="sg">${esc(it.id)}</div><div class="ds">${esc(d?d.desc:"")}${t&&t.length?" · Term. "+t.slice().sort((a,b)=>a-b).join(", "):""}</div></div><div class="bus"><small>bus RS485</small>${bus===""?"—":bus}</div>${d?`<div class="bmod">Modelo: <b>${esc(modOf(it.base,lj))}</b> ${tcTag(modOf(it.base,lj))} <button type="button" class="mini" data-ldoc="${esc(it.base)}">${nDocs({sig:it.base,mod:modOf(it.base,lj)})}</button>${d.exp&&temExp(it.base,lj)?`<div class="qint">Dentro do quadro (rede Modbus interna): controlador <b>${esc(B().mbi.ipg)}</b> · expansão ${esc(lj.rs485.mod[it.base+"#x"]||modPad("expansao"))} <b>${esc(B().mbi.ipx)}</b></div>`:""}</div>`:""}${na}</div>`}
 function cabHTML(lj,p,i,id){const tr=lj.rs485.tr[id]||{},inf=n(tr.iexb)+n(tr.iexa)+n(tr.baixa)+n(tr.alta),ar=[1,2].flatMap(q=>lj.rs485["p"+q]);
  const de=i===0?`X-WEB P${p}`:lj.rs485["p"+p][i-1];const txt=tr.existe?"rede existente":`cabo ${n(tr.cabo)||"—"} m · infra ${inf} m`;const fal=!tr.existe&&!n(tr.cabo);
  return `<div class="cab"><button type="button" data-cab="${esc(id)}"><span class="num">${numC(p,i)}</span><span class="cs">${esc(de)} → ${esc(id)}</span><span class="cs ${fal?"w":""}">${txt}${fal?" · toque para medir":""}</span></button></div>`}
@@ -336,11 +340,13 @@ function matrizHTML(){const b=B(),ks=Object.keys(CEN),rows={};b.devs.filter(d=>d
  const sem=b.devs.filter(d=>d.ativo!==false&&(d.end===""||d.end==null)).map(d=>d.sig);return h+`</table>${sem.length?`<div class="av w">Sem endereço: ${sem.map(esc).join(", ")}</div>`:""}`}
 function baseHTML(){const b=B();let g="",h=`<div class="dica">Tudo aqui vale para <b>todas as lojas do lote</b>. Nada se apaga: o que sai fica desativado.</div>
  <section class="box"><div class="bt">1 · MODELOS CADASTRADOS POR TIPO</div><div class="sub">O primeiro ativo da lista é o padrão. Desligar = desativar (não apaga).</div>
- <div class="mgrid">${Object.keys(TIPOS).map(t=>`<div class="mcol"><b>${TIPOS[t]}</b>${(b.mods[t]||[]).map((m,j)=>`<div class="mrow ${m.ativo===false?"off":""}"><input data-mn="${t}" data-mj="${j}" value="${esc(m.n)}">${sw(m.ativo!==false,`data-msw="${t}" data-mj="${j}"`)}${t==="medidor"?`<select class="tcsel" data-mtc="${j}">${Object.entries(TCN).map(([k,v])=>`<option value="${k}" ${(m.tc||"")===k?"selected":""}>${v}</option>`).join("")}</select>`:""}</div>`).join("")}<button type="button" class="mini" data-mnovo="${t}">+ novo modelo</button></div>`).join("")}</div></section>
+ <div class="mgrid">${Object.keys(TIPOS).map(t=>`<div class="mcol"><b>${TIPOS[t]}</b>${(b.mods[t]||[]).map((m,j)=>`<div class="mrow ${m.ativo===false?"off":""}"><input data-mn="${t}" data-mj="${j}" value="${esc(m.n)}">${sw(m.ativo!==false,`data-msw="${t}" data-mj="${j}"`)}<div class="macts"><button type="button" class="mini" data-mdoc="${t}" data-mj="${j}">${nDocs({mod:m.n})}</button><button type="button" class="mini xr" data-mdel="${t}" data-mj="${j}">Excluir</button></div>${t==="medidor"?`<select class="tcsel" data-mtc="${j}">${Object.entries(TCN).map(([k,v])=>`<option value="${k}" ${(m.tc||"")===k?"selected":""}>${v}</option>`).join("")}</select>`:""}</div>`).join("")}<button type="button" class="mini" data-mnovo="${t}">+ novo modelo</button></div>`).join("")}</div></section>
  <section class="box"><div class="bt">2 · DISPOSITIVOS DA REDE RS485 · ENDEREÇO BUS DO LOTE</div><table><tr><th>Sigla</th><th>Modelo padrão</th><th class="r">Bus RS485</th></tr>`;
- b.devs.forEach((d,i)=>{if(d.grupo!==g){g=d.grupo;h+=`<tr><td colspan="3" class="gt">${esc(g)}</td></tr>`}const pad=d.modelo||modPad(d.tipo);h+=`<tr><td><b style="font-family:var(--f-mono)">${esc(d.sig)}</b><div class="sub">${esc(d.desc)} · ${esc(TIPOS[d.tipo]||"")}</div></td><td><select data-dmod="${i}" style="max-width:150px">${(b.mods[d.tipo]||[]).filter(m=>m.ativo!==false||m.n===pad).map(m=>`<option ${m.n===pad?"selected":""}>${esc(m.n)}</option>`).join("")}</select></td><td class="r"><input inputmode="numeric" data-bf="end" data-i="${i}" value="${esc(d.end)}" placeholder="—" style="width:70px;text-align:right"></td></tr><tr class="cenr"><td colspan="3"><span class="sm2">Vale em:</span> ${Object.keys(CEN).map(k=>`<button type="button" class="cenx ${CENC[k]} ${cenOf(d).includes(k)?"on":""}" data-dcen="${i}" data-c="${k}">${cenOf(d).includes(k)?"✓ ":""}${CEN[k]}</button>`).join("")}</td></tr>`;
+ b.devs.forEach((d,i)=>{if(d.grupo!==g){g=d.grupo;h+=`<tr><td colspan="3" class="gt">${esc(g)}</td></tr>`}const pad=d.modelo||modPad(d.tipo);h+=`<tr><td><b style="font-family:var(--f-mono)">${esc(d.sig)}</b><div class="sub">${esc(d.desc)} · ${esc(TIPOS[d.tipo]||"")}</div><button type="button" class="mini" data-ddoc="${esc(d.sig)}">${nDocs({sig:d.sig,mod:pad})}</button></td><td><select data-dmod="${i}" style="max-width:150px">${(b.mods[d.tipo]||[]).filter(m=>m.ativo!==false||m.n===pad).map(m=>`<option ${m.n===pad?"selected":""}>${esc(m.n)}</option>`).join("")}</select></td><td class="r"><input inputmode="numeric" data-bf="end" data-i="${i}" value="${esc(d.end)}" placeholder="—" style="width:70px;text-align:right"></td></tr><tr class="cenr"><td colspan="3"><span class="sm2">Vale em:</span> ${Object.keys(CEN).map(k=>`<button type="button" class="cenx ${CENC[k]} ${cenOf(d).includes(k)?"on":""}" data-dcen="${i}" data-c="${k}">${cenOf(d).includes(k)?"✓ ":""}${CEN[k]}</button>`).join("")}</td></tr>`;
   if(d.exp)h+=`<tr><td colspan="3"><div class="qint">Quadro de automação do ar: controlador + expansão (rede Modbus interna) · controlador <input inputmode="numeric" data-mbi="ipg" value="${esc(b.mbi.ipg)}" style="width:50px"> · expansão <input inputmode="numeric" data-mbi="ipx" value="${esc(b.mbi.ipx)}" style="width:50px"></div></td></tr>`});
  h+=`</table><div class="sub">Iluminação: controladores adicionais seguem a numeração a partir de 53. Gateways Carrier: faixa 1 a ${MAXGW} (o gateway só aceita 1 a 16).</div></section>
+ <section class="box"><div class="bt">📎 BIBLIOTECA DE DOCUMENTOS (${DOCS().length})</div><div class="sub">Todos os arquivos num lugar só. Cada um fica ligado a modelos e/ou dispositivos; ao abrir um dispositivo você vê os arquivos dele.</div>
+ ${DOCS().length?DOCS().slice().sort((a,b)=>b.ts-a.ts).map(docCard).join(""):'<div class="av">Nenhum arquivo ainda.</div>'}<button class="b p" data-danx="1">+ ANEXAR DOCUMENTO OU FOTO</button><div class="sub">Modo avaliação: os arquivos ficam guardados só neste aparelho.</div></section>
  <section class="box"><div class="bt">MATRIZ DE ENDEREÇOS POR CENÁRIO</div><div class="sub">Gerada da lista acima. Vermelho = dois dispositivos com o mesmo número no mesmo cenário.</div>${matrizHTML()}</section>
  <section class="box"><div class="bt">3 · ATIVIDADES (SERVIÇOS) · TEMPO, UNIDADE E VARIAÇÕES</div><div class="sub">O tempo fica só aqui. Se a atividade tem variações, a loja escolhe a variação e o tempo vem dela.</div>
  ${b.ativ.map((a,i)=>`<div class="atv ${a.ativo===false?"off":""}"><div class="g2" style="grid-template-columns:1fr auto"><input data-af="nome" data-ai="${i}" value="${esc(a.nome)}"><span class="tyb ${TIPC[a.tipo]||""}">${esc(a.tipo)}</span></div>
@@ -393,6 +399,41 @@ function actSheet(k){const lj=L(),C=lj.rs485.cron.ativ,a=C[k];if(!a)return;const
  $("#sheetc").onclick=e=>{const b=e.target.closest("[data-st]");if(!b)return;const st=b.dataset.st,res=b.dataset.res||null,para=b.textContent;
   abrir(`<h3>Salvar alteração?</h3><div>${esc(a.nome)}</div><ul><li>${esc(atual)} → <b>${esc(para)}</b></li></ul>${aviso}<button class="b p" id="aok">CONFIRMAR E SALVAR</button><button class="b" data-fecha="1">Cancelar</button>`);
   $("#aok").onclick=()=>{a.hist=a.hist||[];a.hist.push({ts:Date.now(),de:atual,para});a.status=st;a.res=res;salvar();fechar();render();toast("✓ "+para+" salvo")}}}
+/* ================= BIBLIOTECA DE DOCUMENTOS (modo avaliação: arquivos guardados no aparelho, IndexedDB) ================= */
+const DB={mem:new Map(),db:null,open(){return new Promise(res=>{if(this.db||!window.indexedDB)return res(this.db);try{const q=indexedDB.open("ex_config_docs",1);q.onupgradeneeded=()=>q.result.createObjectStore("f");q.onsuccess=()=>{this.db=q.result;res(this.db)};q.onerror=()=>res(null)}catch(_){res(null)}})},
+ async put(id,blob){const d=await this.open();if(!d){this.mem.set(id,blob);return}return new Promise(r=>{const t=d.transaction("f","readwrite");t.objectStore("f").put(blob,id);t.oncomplete=r;t.onerror=r})},
+ async get(id){const d=await this.open();if(!d)return this.mem.get(id);return new Promise(r=>{const q=d.transaction("f").objectStore("f").get(id);q.onsuccess=()=>r(q.result);q.onerror=()=>r(null)})},
+ async del(id){const d=await this.open();if(!d){this.mem.delete(id);return}return new Promise(r=>{const t=d.transaction("f","readwrite");t.objectStore("f").delete(id);t.oncomplete=r;t.onerror=r})}};
+const DOCS=()=>(S.docs=S.docs||[]);
+const kb=b=>b>1048576?(b/1048576).toFixed(1).replace(".",",")+" MB":Math.max(1,Math.round(b/1024))+" KB";
+const isImg=t=>/^image\//.test(t||"");
+function docsDe(alvo){/* alvo: {sig?, mod?} */return DOCS().filter(x=>(alvo.sig&&x.sigs.includes(alvo.sig))||(alvo.mod&&x.mods.includes(alvo.mod)))}
+function docCard(x){return `<div class="doc"><div class="dic" data-dth="${x.id}">${isImg(x.tipo)?"🖼":"📄"}</div><div><b>${esc(x.nome)}</b><div class="sub">${kb(x.tam)} · ${new Date(x.ts).toLocaleDateString("pt-BR")}</div><div class="dvin">${x.mods.map(m=>`<span class="vin m">${esc(m)}</span>`).join("")}${x.sigs.map(g=>`<span class="vin s">${esc(g)}</span>`).join("")}${x.mods.length+x.sigs.length?"":'<span class="vin n">sem vínculo</span>'}</div></div>
+ <div class="dbt"><button type="button" class="mini" data-dab="${x.id}">Abrir</button><button type="button" class="mini" data-dvi="${x.id}">Vínculos</button><button type="button" class="mini xr" data-dex="${x.id}">Excluir</button></div></div>`}
+async function thumbs(root){for(const el of (root||document).querySelectorAll("[data-dth]")){const x=DOCS().find(d=>d.id===el.dataset.dth);if(!x||!isImg(x.tipo))continue;const b=await DB.get(x.id);if(b){el.innerHTML=`<img src="${URL.createObjectURL(b)}" alt="">`}}}
+let docAlvo=null,docVolta=null;
+function anexar(alvo,volta){docAlvo=alvo||{};docVolta=volta||null;const f=$("#fdoc");f.value="";f.click()}
+$("#fdoc").addEventListener("change",async e=>{const fs=[...e.target.files];if(!fs.length)return;const novos=[];
+ for(const f of fs){const id="d"+Date.now().toString(36)+Math.random().toString(36).slice(2,6);await DB.put(id,f);const x={id,nome:f.name,tipo:f.type,tam:f.size,ts:Date.now(),mods:docAlvo.mod?[docAlvo.mod]:[],sigs:docAlvo.sig?[docAlvo.sig]:[]};DOCS().push(x);novos.push(x)}
+ salvar();toast(`✓ ${novos.length} arquivo(s) anexado(s)`);if(novos.length===1&&!docAlvo.mod&&!docAlvo.sig)vinSheet(novos[0].id);else if(docVolta)docVolta();else render()});
+async function abrirDoc(id){const x=DOCS().find(d=>d.id===id),b=await DB.get(id);if(!b){toast("Arquivo não está neste aparelho");return}const u=URL.createObjectURL(b);
+ if(isImg(x.tipo)){abrir(`<h3>${esc(x.nome)}</h3><img src="${u}" style="max-width:100%;border-radius:8px" alt=""><a class="b" href="${u}" download="${esc(x.nome)}">BAIXAR</a><button class="b p" data-fecha="1">FECHAR</button>`)}else{const a=document.createElement("a");a.href=u;a.target="_blank";a.rel="noopener";if(!/pdf/.test(x.tipo))a.download=x.nome;document.body.appendChild(a);a.click();a.remove()}}
+function vinSheet(id,volta){const x=DOCS().find(d=>d.id===id);if(!x)return;const b=B();const draw=()=>{
+ abrir(`<h3>Vínculos do documento</h3><label class="lbl">Nome<input id="dnm" value="${esc(x.nome)}"></label>
+ <div class="sub">Marque a quais <b>modelos</b> (vale para toda loja que usar o modelo) e a quais <b>dispositivos</b> (sigla) este arquivo pertence.</div>
+ ${Object.keys(TIPOS).map(t=>(b.mods[t]||[]).length?`<div class="lbl">Modelos · ${TIPOS[t]}</div><div class="terms">${b.mods[t].map(m=>`<button type="button" class="tm ${x.mods.includes(m.n)?"on":""}" data-vm2="${esc(m.n)}">${esc(m.n)}</button>`).join("")}</div>`:"").join("")}
+ <div class="lbl">Dispositivos (sigla)</div><div class="terms">${b.devs.map(d=>`<button type="button" class="tm ${x.sigs.includes(d.sig)?"on":""}" data-vs2="${esc(d.sig)}">${esc(d.sig)}</button>`).join("")}</div>
+ <button class="b p" id="vok">OK · SALVAR</button>`);
+ $("#dnm").oninput=e=>{x.nome=e.target.value;salvar()};$("#vok").onclick=()=>{fechar();volta?volta():render()}};draw();
+ $("#sheetc").onclick=e=>{const m=e.target.closest("[data-vm2]"),g=e.target.closest("[data-vs2]");if(!m&&!g)return;const L2=m?x.mods:x.sigs,v=m?m.dataset.vm2:g.dataset.vs2,i=L2.indexOf(v);i>=0?L2.splice(i,1):L2.push(v);salvar();const nm=$("#dnm").value;draw();$("#dnm").value=nm}}
+function excluirDoc(id,volta){const x=DOCS().find(d=>d.id===id);if(!x)return;abrir(`<h3>Excluir documento?</h3><div><b>${esc(x.nome)}</b></div><div class="av w">O arquivo sai da biblioteca e de todos os vínculos. Não dá para desfazer.</div><button class="b xr2" id="dxok">EXCLUIR</button><button class="b" data-fecha="1">Cancelar</button>`);
+ $("#dxok").onclick=async()=>{await DB.del(id);S.docs=DOCS().filter(d=>d.id!==id);salvar();fechar();toast("Documento excluído");volta?volta():render()}}
+function bibSheet(alvo,titulo){const draw=()=>{const L2=docsDe(alvo);abrir(`<h3>📎 ${esc(titulo)}</h3><div class="sub">${alvo.sig&&alvo.mod?`Arquivos do dispositivo <b>${esc(alvo.sig)}</b> e do modelo <b>${esc(alvo.mod)}</b>.`:alvo.mod?`Arquivos do modelo <b>${esc(alvo.mod)}</b> (valem para toda loja que usa este modelo).`:`Arquivos do dispositivo <b>${esc(alvo.sig)}</b>.`}</div>
+ ${L2.length?L2.map(docCard).join(""):'<div class="av">Nenhum arquivo ainda.</div>'}
+ <button class="b p" id="banx">+ ANEXAR DOCUMENTO OU FOTO</button><button class="b" data-fecha="1">FECHAR</button>`);thumbs($("#sheetc"));
+ $("#banx").onclick=()=>anexar(alvo.mod&&!alvo.sig?{mod:alvo.mod}:{sig:alvo.sig},draw)};draw();
+ $("#sheetc").onclick=e=>{const a=e.target.closest("[data-dab]"),v=e.target.closest("[data-dvi]"),x=e.target.closest("[data-dex]");if(a)abrirDoc(a.dataset.dab);else if(v)vinSheet(v.dataset.dvi,()=>bibSheet(alvo,titulo));else if(x)excluirDoc(x.dataset.dex,()=>bibSheet(alvo,titulo))}}
+function nDocs(alvo){const k=docsDe(alvo).length;return `📎 ${k?k+" doc"+(k>1?"s":""):"Docs"}`}
 /* ================= SHEETS ================= */
 function abrir(h){$("#sheetc").innerHTML=h;$("#sheet").hidden=false}
 function fechar(){$("#sheet").hidden=true}
@@ -444,6 +485,17 @@ document.addEventListener("click",e=>{
   const vb=e.target.closest("[data-vars]");if(vb){varsSheet(+vb.dataset.vars);return}
   const mn=e.target.closest("[data-mnovo]");if(mn){b.mods[mn.dataset.mnovo].push(mn.dataset.mnovo==="medidor"?{n:"Novo modelo",ativo:true,tc:""}:{n:"Novo modelo",ativo:true});salvar();render();toast("Modelo criado · edite o nome");return}
   const dc=e.target.closest("[data-dcen]");if(dc){const d=b.devs[+dc.dataset.dcen],c=dc.dataset.c,L2=cenOf(d).slice(),ix=L2.indexOf(c);if(ix>=0){if(L2.length===1){toast("Precisa valer em pelo menos um cenário");return}L2.splice(ix,1)}else L2.push(c);d.cen=L2;salvar();render();return}
+  const md=e.target.closest("[data-mdoc]");if(md){const m=b.mods[md.dataset.mdoc][+md.dataset.mj];bibSheet({mod:m.n},"Documentos · "+m.n);return}
+  const dd=e.target.closest("[data-ddoc]");if(dd){const d=dev(dd.dataset.ddoc);bibSheet({sig:d.sig,mod:d.modelo||modPad(d.tipo)},"Documentos · "+d.sig);return}
+  if(e.target.closest("[data-danx]")){anexar({});return}
+  const da=e.target.closest("[data-dab]");if(da){abrirDoc(da.dataset.dab);return}
+  const dv=e.target.closest("[data-dvi]");if(dv){vinSheet(dv.dataset.dvi);return}
+  const dx=e.target.closest("[data-dex]");if(dx){excluirDoc(dx.dataset.dex);return}
+  const mdl=e.target.closest("[data-mdel]");if(mdl){const t=mdl.dataset.mdel,j=+mdl.dataset.mj,m=b.mods[t][j];
+   const uso=[...b.devs.filter(d=>d.modelo===m.n||(!d.modelo&&d.tipo===t&&modPad(t)===m.n)).map(d=>"padrão de "+d.sig),...S.lojas.flatMap(l=>Object.entries(l.rs485.mod||{}).filter(([,v])=>v===m.n).map(([k])=>`loja ${l.id} · ${k.replace("#x"," (expansão)")}`)),...DOCS().filter(x=>x.mods.includes(m.n)).map(x=>"documento "+x.nome)];
+   if(uso.length){abrir(`<h3>Não dá para excluir ${esc(m.n)}</h3><div>Este modelo está em uso:</div><ul>${uso.map(u=>`<li>${esc(u)}</li>`).join("")}</ul><div class="sub">Troque o modelo nesses lugares, ou use a chave para <b>desativar</b> (some das escolhas novas e não apaga nada).</div><button class="b p" data-fecha="1">ENTENDI</button>`);return}
+   abrir(`<h3>Excluir o modelo?</h3><div><b>${esc(m.n)}</b> · ${esc(TIPOS[t])}</div><div class="av w">Não dá para desfazer.</div><button class="b xr2" id="mxok">EXCLUIR</button><button class="b" data-fecha="1">Cancelar</button>`);
+   $("#mxok").onclick=()=>{b.mods[t].splice(j,1);salvar();fechar();render();toast("Modelo excluído")};return}
   const ms=e.target.closest("[data-msw]");if(ms){const m=b.mods[ms.dataset.msw][+ms.dataset.mj];m.ativo=m.ativo===false;salvar();render();return}
   if(e.target.closest("[data-novaatv]")){b.ativ.push({id:"a"+Date.now().toString(36),nome:"Nova atividade",tipo:"execução",un:"ponto",min:0,vars:[],ativo:true});salvar();render();toast("Atividade criada · edite o nome e o tempo");return}
   const as=e.target.closest("[data-asw]");if(as){const a=b.ativ[+as.dataset.ai];const f=as.dataset.asw;a[f]=f==="ativo"?a.ativo===false:!a[f];salvar();render();return}
@@ -451,6 +503,7 @@ document.addEventListener("click",e=>{
   const pm=e.target.closest("[data-pmv]");if(pm){const Lx=b.perf[pm.dataset.pk],i=+pm.dataset.pi,j=i+(+pm.dataset.pmv);if(j<0||j>=Lx.length)return;[Lx[i],Lx[j]]=[Lx[j],Lx[i]];salvar();render();return}
   const pr=e.target.closest("[data-prm]");if(pr){b.perf[pr.dataset.pk].splice(+pr.dataset.pi,1);salvar();render();toast("Atividade tirada desta lista (continua no catálogo)");return}}
  if(!R.l||!$("#sheet").hidden)return;const lj=L();if(!lj)return;const r=lj.rs485;
+ const ld=e.target.closest("[data-ldoc]");if(ld){const s2=ld.dataset.ldoc;bibSheet({sig:s2,mod:modOf(s2,lj)},"Documentos · "+s2);return}
  const lx=e.target.closest("[data-lexp]");if(lx){r.exp[lx.dataset.lexp]=!temExp(lx.dataset.lexp,lj);salvar();render();return}
  const ak=e.target.closest("[data-ak]");if(ak){actSheet(ak.dataset.ak);return}
  const ts=e.target.closest("[data-tst]");if(ts){itemSheet("pt","pt:"+ts.dataset.tst,`Testes de ${ts.dataset.tst} nesta loja`);return}
