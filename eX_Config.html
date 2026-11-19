@@ -147,7 +147,7 @@ const DEV0=[
  ["Gateways Modbus","GW-SPL","Gateway AC60101 · 1 por splitão, atende o termostato dele (endereço 1 a 10, DIP 1–4)","gateway",1]].map(d=>({grupo:d[0],sig:d[1],desc:d[2],tipo:d[3],end:d[4],ativo:true,...(d[1]==="CTRL-AR"?{exp:true}:{})}));
 const CEN={ch:"Loja com Chiller",sp:"Loja com Splitão",spm:"Splitão com termostato Modbus"};const CENC={ch:"cch",sp:"csp",spm:"csm"};const CEN0={"CHILLER":["ch"],"MM-CH":["ch"],"MM-FC":["ch"],"MM-SPL":["sp","spm"],"GW-SPL":["spm"]};const MAXGW=10;
 const TIPOS={gateway:"Gateway Modbus",medidor:"Medidor de energia",controlador:"Controlador",expansao:"Expansão do controlador",chiller:"Chiller"};
-const TCN={tr:"TC tradicional 0–5 A",fx:"TC flexível próprio (ROG4K)","":"tipo de TC a definir"};const TC0={"IMS160":"","EM210-72D.AV5 (Carlos Gavazzi)":"tr","EM210-72D.MV5 (Carlos Gavazzi)":"fx"};
+const TCN={tr:"TC tradicional X/5 A (secundário 5 A)",fx:"TC flexível próprio (ROG4K)","":"tipo de TC a definir"};const TC0={"IMS160":"","EM210-72D.AV5 (Carlos Gavazzi)":"tr","EM210-72D.MV5 (Carlos Gavazzi)":"fx"};
 const MOD0={medidor:["IMS160","EM210-72D.AV5 (Carlos Gavazzi)","EM210-72D.MV5 (Carlos Gavazzi)"],controlador:["IPG215D (iPro)"],expansao:["IPX215D (iPro)"],chiller:["Carrier"],conversor:["AC60101"],gateway:["AC60101 (Gateway Carrier EcoSplit K35402026)"]};
 const MBI0={ipg:10,ipx:11};
 const RENOME={"IPG215D-SPL":"CTRL-AR","IPG215D-CH":"CTRL-AR","CHILLER-CARRIER":"CHILLER","IPG215D-IL-SV1":"CTRL-IL-SV1","IPG215D-IL-SV2":"CTRL-IL-SV2","IPG215D-IL-SV3":"CTRL-IL-SV3","IPG215D-IL-D&D":"CTRL-IL-D&D"};
