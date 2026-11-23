@@ -143,6 +143,8 @@ details.lgc>summary{list-style:none;display:flex;align-items:center;gap:8px;curs
 .btb{width:100%;border-collapse:collapse;font-size:12px;table-layout:fixed}.btb th{font-size:10px;text-transform:uppercase;color:var(--muted);text-align:left;padding:2px}.btb td{padding:2px;border-top:1px solid var(--line)}.btb input,.btb select{width:100%;font:inherit;font-size:12px;padding:4px;min-width:0}
 .gp{font-size:11px;font-weight:800;padding:2px 7px;border-radius:6px;white-space:nowrap}.g1{background:#FAECE7;color:#712B13}.g2{background:#E6F1FB;color:#0C447C}.g2b{background:#E1F5EE;color:#085041}.g3{background:#EAF3DE;color:#27500A}.g4{background:#F1EFE8;color:#444441}.g5{background:#FAEEDA;color:#633806}.g6{background:#FBEAF0;color:#72243E}.g7{background:#EEEDFE;color:#3C3489}
 .mcard>input{font:inherit;font-size:13px;padding:6px;min-width:0}.tcpl textarea{background:#FAEEDA}
+.ctb{width:100%;border-collapse:collapse;font-size:12px}.ctb th{font-size:10px;text-transform:uppercase;color:var(--muted);text-align:left;padding:4px}.ctb td{padding:5px 4px;border-top:1px solid var(--line);vertical-align:top}.ctb tr.nok td{background:var(--badbg)}
+.jp{background:var(--acbg);color:var(--acfg);border-radius:8px;padding:8px 10px;font-size:13px;display:grid;gap:3px}.jrow{display:grid;grid-template-columns:1fr auto 1fr 28px;gap:6px;align-items:center}.jrow select{font:inherit;font-size:12px;padding:4px;min-width:0}
 @media print{header,.aval,.noprint,.dica,.passos,.lane,#cron{display:none!important}body{background:#fff}.box{border:0}}
 </style></head><body>
 <header><div class="wrap"><div class="crumb" id="crumb"></div><h1 id="ttl">eX · Configuração</h1></div></header>
@@ -241,6 +243,15 @@ function migra(){const b=S.base.rs485;if(!b.ativ){const tp=b.tp||{};const mp={in
   const mk=L2=>L2.map(([nn,man,g,f])=>({n:nn,man,f:fid(g,f)}));
   S.eq.forEach(e=>{if(e.cod==="IMS160"&&!e.tc)e.tc="tr";if(e.bornes)return;if(e.cod==="IMS160")e.bornes=mk(BRN0.IMS160);else if(/^EM210/.test(e.cod))e.bornes=mk(BRN0.EM210);if(e.cod==="EM210-72D.MV5"&&!e.tcp)e.tcp="ROG4K (bobina Rogowski): fio K branco → borne IN, fio L marrom → borne OUT. Cabo próprio de 2 m. Ct Prin 1,00k / 2,00k / 4,00k. Seta do fecho no sentido da corrente; conferir bobina × fase. Não é cadastrado como TC separado."});
   [100,200,400].forEach(a=>{const cod=`TC ${a}/5 A`;if(!S.eq.some(e=>e.cod===cod)){const e={id:"e"+Math.random().toString(36).slice(2,9),cod,fab:"",desc:"TC de janela",tipo:"tc",rs:false,ativo:true,obs:"",legs:["TC"],tpri:a,tsec:5,tcls:"",tjan:"",bornes:mk(BRN0.TC)};e.n=eqN(e);S.eq.push(e)}});S.fbv=1}
+ if(!b.lig&&S.fb){const fid=(g,n)=>(S.fb.find(f=>f.g===g&&f.n===n)||{}).id;const C=(g,n)=>fid(g,n);
+  b.lig=[{id:"lmm",nome:"Medidor de energia",tipo:"medidor",obs:"Padrão Onda 2 (aba 4 da planilha de ligação). Neutro sem disjuntor, via borne azul. S2 dos TCs não aterrado.",
+   cabos:[{tag:"CABO-MM-TC",tipo:"PP 6 vias",bit:"1,5 mm²",cond:"Sempre com TC convencional. ROG4K no mesmo quadro: não usa"},{tag:"CABO-MM-TP",tipo:"PP 4 vias",bit:"1,5 mm²",cond:"Sempre"}],
+   pernas:[["M1","CABO-MM-TC","Marrom","TC fase A · S1 (k)","Conector 1 · ponteira","Medição de corrente","Fase A · S1","1"],["M2","CABO-MM-TC","Vermelho","TC fase A · S2 (l)","Conector 1 · ponteira","Medição de corrente","Fase A · S2","2"],
+    ["M3","CABO-MM-TC","Preto","TC fase B · S1 (k)","Conector 2 · ponteira","Medição de corrente","Fase B · S1","3"],["M4","CABO-MM-TC","Azul escuro","TC fase B · S2 (l)","Conector 2 · ponteira","Medição de corrente","Fase B · S2","4"],
+    ["M5","CABO-MM-TC","Branco","TC fase C · S1 (k)","Conector 3 · ponteira","Medição de corrente","Fase C · S1","5"],["M6","CABO-MM-TC","Verde","TC fase C · S2 (l)","Conector 3 · ponteira","Medição de corrente","Fase C · S2","6"],
+    ["M7","CABO-MM-TP","Azul escuro","Borne N azul (junto aos DJ)","Ponteira","Medição de tensão","Neutro de medição","7"],["M8","CABO-MM-TP","Marrom","DJ exQ2 10 A (R)","Ponteira","Medição de tensão","Fase A","8"],
+    ["M9","CABO-MM-TP","Preto","DJ exQ3 10 A (S)","Ponteira","Medição de tensão","Fase B","9"],["M10","CABO-MM-TP","Branco","DJ exQ4 10 A (T)","Ponteira","Medição de tensão","Fase C","10"]].map(([an,cabo,cor,orig,con,g,fn,qa])=>({an,cabo,cor,orig,con,f:C(g,fn),qa})),
+   jump:[{de:C("Medição de tensão","Fase A"),para:C("Alimentação","Fase (L)")},{de:C("Medição de tensão","Neutro de medição"),para:C("Alimentação","Neutro (N)")}]}]}
  S.lojas.forEach(l=>{const r=l.rs485;r.off=r.off||{};r.var=r.var||{};r.mod=r.mod||{};r.exp=r.exp||{};r.tcs=r.tcs||{}})}
 const PROJ0={id:"o2l1",nome:"Onda 2 · Lote 1",cliente:"Copeland",obs:"BRPROJ Onda 2"};
 if(S.eq){const vis=new Set();S.eq=S.eq.filter(e=>{if(vis.has(e.n))return false;vis.add(e.n);return true})}
@@ -310,19 +321,21 @@ function baixarSVG(){const sv=document.querySelector("#des svg");if(!sv)return;c
  const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([src],{type:"image/svg+xml"}));a.download=`rede-rs485-${L().id}.svg`;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 /* ================= RENDER ================= */
 function crumb(){const c=[`<button data-go="home">Início</button>`];if(R.p&&R.v!=="home"&&R.v!=="eq"){c.push(`<span class="sep">›</span><button data-go="proj">${esc(P().nome)}</button>`)}
- if(R.v==="base")c.push(`<span class="sep">›</span><span>Configuração · RS485</span>`);if(R.v==="eq")c.push(`<span class="sep">›</span><span>Equipamentos e dispositivos</span>`);
+ if(R.v==="base")c.push(`<span class="sep">›</span><span>Configuração · RS485</span>`);if(R.v==="lig")c.push(`<span class="sep">›</span><span>Ligações</span>`);if(R.v==="lige")c.push(`<span class="sep">›</span><button data-go="lig">Ligações</button><span class="sep">›</span><span>${esc((LIGS()[R.i]||{}).nome||"")}</span>`);if(R.v==="eq")c.push(`<span class="sep">›</span><span>Equipamentos e dispositivos</span>`);
  if(R.l){const lj=L();c.push(`<span class="sep">›</span><button data-go="loja">${esc(lj?lj.id:"")}</button>`);if(R.v==="rs1"||R.v==="rs2")c.push(`<span class="sep">›</span><span>Rede RS485</span>`);if(R.v==="ap")c.push(`<span class="sep">›</span><span>Apontamento</span>`)}
  $("#crumb").innerHTML=c.join("")}
 function render(){crumb();let h=`<div class="aval">⚠ MODO AVALIAÇÃO — tudo fica salvo só neste aparelho. Nada vai para o eX Controller ainda.</div>`,t="eX · Configuração";
  if(R.v==="home"){t="eX · Projetos e cadastro geral";h+=inicioHTML()}
  else if(R.v==="proj"){t=P().nome;h+=homeHTML()}
+ else if(R.v==="lig"){t=P().nome+" · Ligações";h+=ligHTML()}
+ else if(R.v==="lige"){t=P().nome+" · "+(LIGS()[R.i]||{}).nome;h+=ligEdHTML(R.i)}
  else if(R.v==="eq"){t="Equipamentos e dispositivos";h+=eqHTML()}
  else if(R.v==="base"){t=P().nome+" · Configuração RS485";h+=baseHTML()}
  else if(R.v==="loja"){const lj=L();t="Loja "+lj.nome;h+=lojaHTML(lj)}
  else if(R.v==="ap"){const lj=L();t="Apontamento · RS485 · "+lj.id;h+=apHTML(lj)}
  else if(R.v==="rs1"||R.v==="rs2"){const lj=L();sincroniza(lj);t="Rede RS485 · "+lj.id;h+=passosHTML()+(R.v==="rs1"?disHTML(lj):redeHTML(lj))}
  $("#ttl").textContent=t;
- const a=document.activeElement,keep=a&&a.dataset&&(a.dataset.bf||a.dataset.af||a.dataset.nm||a.dataset.mn||a.dataset.mbi||a.dataset.fbn)&&a.tagName==="INPUT"?{sel:a.dataset.fbn?`[data-fbn="${a.dataset.fbn}"]`:a.dataset.mn?`[data-mn="${a.dataset.mn}"][data-mj="${a.dataset.mj}"]`:a.dataset.mbi?`[data-mbi="${a.dataset.mbi}"]`:a.dataset.bf?`[data-bf="${a.dataset.bf}"][data-i="${a.dataset.i}"]`:a.dataset.af?`[data-af="${a.dataset.af}"][data-ai="${a.dataset.ai}"]`:`[data-nm]`,pos:a.selectionStart}:null;
+ const a=document.activeElement,keep=a&&a.dataset&&(a.dataset.bf||a.dataset.af||a.dataset.nm||a.dataset.mn||a.dataset.mbi||a.dataset.fbn||a.dataset.lp||a.dataset.lc)&&a.tagName==="INPUT"?{sel:a.dataset.lp?`[data-lp="${a.dataset.lp}"][data-k="${a.dataset.k}"]`:a.dataset.lc?`[data-lc="${a.dataset.lc}"][data-k="${a.dataset.k}"]`:a.dataset.fbn?`[data-fbn="${a.dataset.fbn}"]`:a.dataset.mn?`[data-mn="${a.dataset.mn}"][data-mj="${a.dataset.mj}"]`:a.dataset.mbi?`[data-mbi="${a.dataset.mbi}"]`:a.dataset.bf?`[data-bf="${a.dataset.bf}"][data-i="${a.dataset.i}"]`:a.dataset.af?`[data-af="${a.dataset.af}"][data-ai="${a.dataset.ai}"]`:`[data-nm]`,pos:a.selectionStart}:null;
  $("#main").innerHTML=h;if((R.v==="base"||R.v==="eq")&&typeof thumbs==="function")thumbs($("#main"));
  if(keep){const e=document.querySelector(keep.sel);if(e){e.focus();try{e.setSelectionRange(keep.pos,keep.pos)}catch(_){}}}}
 const modsDe=sg=>EQS().filter(e=>(e.legs||[]).includes(sg));
@@ -350,6 +363,22 @@ function eqHTML(){const L0=EQS(),LG=LEGS();let h=`<div class="dica">Cadastro ger
  return h+`<section class="box"><div class="bt">📎 BIBLIOTECA DE DOCUMENTOS (${DOCS().length})</div><div class="sub">Todos os arquivos num lugar só. Cada um fica ligado a modelos e/ou dispositivos; ao abrir um dispositivo você vê os arquivos dele.</div>
  ${DOCS().length?DOCS().slice().sort((a,b)=>b.ts-a.ts).map(docCard).join(""):'<div class="av">Nenhum arquivo ainda.</div>'}<button class="b p" data-danx="1">+ ANEXAR DOCUMENTO OU FOTO</button><div class="sub">Modo avaliação: os arquivos ficam guardados só neste aparelho.</div></section>
  `}
+function ligHTML(){const L2=LIGS();return `<div class="dica">A <b>receita de ligação</b> é deste projeto: cabos, anilhas, cores, de onde sai cada perna e a <b>função</b> do borne de destino. O número do borne vem do modelo escolhido na loja.</div>
+ ${L2.map((lg,i)=>`<button class="tile" data-lgo="${i}"><b>${esc(lg.nome)}</b><span class="sub">${(lg.pernas||[]).length} pernas · ${(lg.cabos||[]).length} cabos · ${(lg.jump||[]).length} jumpers</span><span class="go">ABRIR ›</span></button>`).join("")||'<div class="sub">Nenhuma receita ainda.</div>'}
+ <div class="sub">Próximas receitas: QA do chiller, QA de iluminação, splitão.</div>`}
+function ligEdHTML(i){const lg=LIGS()[i];const mods=EQS().filter(e=>e.tipo===lg.tipo&&e.ativo!==false);const pm=R.pm&&EQS().find(e=>e.id===R.pm)||mods[0];
+ const fo=sel=>`<option value="">— função —</option>${FBG.map(g=>`<optgroup label="${esc(g)}">${FBS().filter(f=>f.g===g&&(f.ativo!==false||f.id===sel)).map(f=>`<option value="${f.id}" ${f.id===sel?"selected":""}>${esc(g)} · ${esc(f.n)}</option>`).join("")}</optgroup>`).join("")}`;
+ return `<section class="box"><label class="lbl">Nome da receita<input data-lgn="${i}" value="${esc(lg.nome)}"></label><label class="lbl">Observações<textarea data-lgobs="${i}" rows="2">${esc(lg.obs||"")}</textarea></label></section>
+ <section class="box"><div class="bt">CABOS</div><table class="btb"><tr><th>Tag</th><th>Tipo</th><th>Bitola</th><th>Quando entra</th><th style="width:28px"></th></tr>${(lg.cabos||[]).map((c,j)=>`<tr><td><input data-lc="${j}" data-k="tag" value="${esc(c.tag)}"></td><td><input data-lc="${j}" data-k="tipo" value="${esc(c.tipo)}"></td><td><input data-lc="${j}" data-k="bit" value="${esc(c.bit)}"></td><td><input data-lc="${j}" data-k="cond" value="${esc(c.cond||"")}"></td><td><button type="button" class="xrm" data-lcdel="${j}" aria-label="Remover cabo">✕</button></td></tr>`).join("")}</table><button class="b" data-lcadd="1">+ ADICIONAR CABO</button></section>
+ <section class="box"><div class="bt">PERNAS · uma linha por perna</div><div class="sub">O destino é a <b>função</b> do borne (tabela de referência), não o número.</div>
+ <table class="btb"><tr><th style="width:9%">Anilha</th><th style="width:15%">Cabo</th><th style="width:11%">Cor</th><th>Sai de</th><th style="width:15%">Conector</th><th style="width:26%">Entra na função</th><th style="width:7%">QA -X3</th><th style="width:28px"></th></tr>
+ ${(lg.pernas||[]).map((pn,j)=>`<tr><td><input data-lp="${j}" data-k="an" value="${esc(pn.an)}"></td><td><select data-lp="${j}" data-k="cabo">${(lg.cabos||[]).map(c=>`<option ${c.tag===pn.cabo?"selected":""}>${esc(c.tag)}</option>`).join("")}</select></td><td><input data-lp="${j}" data-k="cor" value="${esc(pn.cor||"")}"></td><td><input data-lp="${j}" data-k="orig" value="${esc(pn.orig||"")}"></td><td><input data-lp="${j}" data-k="con" value="${esc(pn.con||"")}"></td><td><select data-lp="${j}" data-k="f">${fo(pn.f)}</select></td><td><input data-lp="${j}" data-k="qa" value="${esc(pn.qa||"")}"></td><td><button type="button" class="xrm" data-lpdel="${j}" aria-label="Remover perna">✕</button></td></tr>`).join("")}</table>
+ <button class="b" data-lpadd="1">+ ADICIONAR PERNA</button></section>
+ <section class="box"><div class="bt">JUMPERS NO PRÓPRIO DISPOSITIVO</div><div class="sub">Só valem nos modelos que têm as duas funções (ex.: IMS160 se alimenta pela tensão).</div>
+ ${(lg.jump||[]).map((j,k)=>`<div class="jrow"><select data-lj="${k}" data-k="de">${fo(j.de)}</select><span>→</span><select data-lj="${k}" data-k="para">${fo(j.para)}</select><button type="button" class="xrm" data-ljdel="${k}" aria-label="Remover jumper">✕</button></div>`).join("")}<button class="b" data-ljadd="1">+ ADICIONAR JUMPER</button></section>
+ <section class="box"><div class="bt">PRÉVIA · COMO O TÉCNICO VÊ</div><div class="sub">Escolha o modelo: os bornes saem da ficha dele.</div>
+ <div class="cens" style="grid-template-columns:repeat(auto-fit,minmax(150px,1fr))">${mods.map(e=>`<button type="button" class="cenb csm ${pm&&pm.id===e.id?"on":""}" data-lpm="${e.id}">${pm&&pm.id===e.id?"✓ ":""}${esc(e.cod)}</button>`).join("")}</div>
+ ${pm?correlHTML(lg,pm,{qa:true}):'<div class="sub">Nenhum modelo deste tipo.</div>'}</section>`}
 function inicioHTML(){return `<section class="box"><div class="bt">1 · CADASTRO GERAL <span class="sub">(vale para todos os projetos)</span></div>
  <button class="tile" data-go="eq"><b>Equipamentos e dispositivos · códigos, modelos e documentos</b><span class="sub">${LEGS().length} códigos · ${EQS().length} modelos · ${DOCS().length} documentos</span><span class="go">ABRIR ›</span></button>
  <button class="tile off" disabled><b>Bornes e receita de ligação dos modelos · materiais</b><span class="sub">próxima etapa (medidor já definido na planilha)</span></button></section>
@@ -364,6 +393,7 @@ function novoProj(){abrir(`<h3>Novo projeto</h3><label class="lbl">Nome do proje
 function homeHTML(){const pj=P();return `<section class="box"><label class="lbl">Nome do projeto<input data-pnm="1" value="${esc(pj.nome)}"></label><label class="lbl">Cliente<input data-pcl="1" value="${esc(pj.cliente||"")}"></label></section>
  <section class="box"><div class="bt">1 · CONFIGURAÇÃO DO PROJETO <span class="sub">(vale para todas as lojas deste projeto)</span></div>
  <div class="sub">Funções, endereço bus, cenários, modelo padrão, atividades e o que será acompanhado. Os equipamentos vêm do cadastro geral.</div>
+ <button class="tile" data-go="lig"><b>Ligações · receita de pernas (cabos, anilhas, cores, origem e função do borne)</b><span class="sub">${LIGS().length} receita(s)</span><span class="go">ABRIR ›</span></button>
  <button class="tile" data-go="base"><b>Rede RS485 · funções, endereço bus, cenários, atividades (tempos e variações) e o que será acompanhado</b><span class="go">ABRIR ›</span></button>
  <button class="tile off" disabled><b>Iluminação · Ar · Medidores · Ethernet</b><span class="sub">próximas etapas, no mesmo molde</span></button></section>
  <section class="box"><div class="bt">2 · LOJAS DO PROJETO</div><div class="sub">Cada loja é configurada por disciplina, puxando da configuração do projeto.</div>
@@ -386,7 +416,7 @@ function disHTML(lj){const r=lj.rs485;let g="",h=`<section class="box"><div clas
   h+=`<div class="dv ${on?"on":""}">${MULTI.has(d.sig)?`<span class="ck">${q||""}</span>`:`<button type="button" class="ck" data-tg="${esc(d.sig)}" style="cursor:pointer">${on?"✓":""}</button>`}
    <div><div class="sg">${esc(d.sig)}</div><div class="ds">${esc(d.desc)} · bus ${d.end===""?"<b style='color:var(--warn)'>sem endereço</b>":d.end}</div>
     ${on?`<div class="mdl"><span>Equipamento</span><select data-lmod="${esc(d.sig)}">${(MODS()[d.tipo]||[]).filter(m=>m.ativo!==false||m.n===modOf(d.sig,lj)).map(m=>`<option ${m.n===modOf(d.sig,lj)?"selected":""}>${esc(m.n)}</option>`).join("")}</select>${r.mod[d.sig]&&r.mod[d.sig]!==(d.modelo||modPad(d.tipo))?'<b class="dif">diferente do padrão</b>':""}<button type="button" class="mini" data-ldoc="${esc(d.sig)}">${nDocs({sig:d.sig,mod:modOf(d.sig,lj)})}</button></div>
-     ${d.tipo==="medidor"?(()=>{const mm=EQn(modOf(d.sig,lj));if(mm&&mm.tc==="fx")return `<div class="mdl"><span>TC</span><b class="sm2">próprio do medidor (${esc((mm.tcp||"").split(" ")[0]||"ver ficha")})</b></div>`;const tcs=EQS().filter(q=>q.tipo==="tc"&&(q.ativo!==false||q.n===r.tcs[d.sig]));return `<div class="mdl"><span>TC deste circuito</span><select data-ltc="${esc(d.sig)}"><option value="">— escolher a relação —</option>${tcs.map(q=>`<option ${q.n===r.tcs[d.sig]?"selected":""}>${esc(q.n)}</option>`).join("")}</select>${r.tcs[d.sig]?"":'<b class="dif">falta escolher</b>'}</div>`})():""}
+     ${d.tipo==="medidor"?(()=>{const mm=EQn(modOf(d.sig,lj));if(mm&&mm.tc==="fx")return `<div class="mdl"><button type="button" class="mini" data-vlig="${esc(d.sig)}">🔌 Ver ligação</button></div><div class="mdl"><span>TC</span><b class="sm2">próprio do medidor (${esc((mm.tcp||"").split(" ")[0]||"ver ficha")})</b></div><div class="mdl"><span>Medidor no mesmo quadro da bobina?</span>${sw(!!(r.mq||{})[d.sig],`data-lmq="${esc(d.sig)}"`)}<span class="sm2">${(r.mq||{})[d.sig]?"sim · liga direto, sem PP 6":"não · vai pelo PP 6"}</span></div>`;const tcs=EQS().filter(q=>q.tipo==="tc"&&(q.ativo!==false||q.n===r.tcs[d.sig]));return `<div class="mdl"><button type="button" class="mini" data-vlig="${esc(d.sig)}">🔌 Ver ligação</button></div><div class="mdl"><span>TC deste circuito</span><select data-ltc="${esc(d.sig)}"><option value="">— escolher a relação —</option>${tcs.map(q=>`<option ${q.n===r.tcs[d.sig]?"selected":""}>${esc(q.n)}</option>`).join("")}</select>${r.tcs[d.sig]?"":'<b class="dif">falta escolher</b>'}</div>`})():""}
      ${d.exp?`<div class="mdl"><span>Expansão IPX no quadro</span>${sw(temExp(d.sig,lj),`data-lexp="${esc(d.sig)}"`)}</div>${temExp(d.sig,lj)?`<div class="mdl"><span>Modelo da expansão</span><select data-lmodx="${esc(d.sig)}">${(MODS().expansao||[]).filter(m=>m.ativo!==false).map(m=>`<option ${m.n===((r.mod[d.sig+"#x"])||modPad("expansao"))?"selected":""}>${esc(m.n)}</option>`).join("")}</select></div>`:""}`:""}`:""}</div>
    ${MULTI.has(d.sig)?`<div class="qty"><button type="button" data-q="${esc(d.sig)}" data-d="-1">−</button><span>${q}</span><button type="button" data-q="${esc(d.sig)}" data-d="1">+</button></div>`:`<span></span>`}</div>`;
   if(d.sig==="GW-SPL"&&q){h+=`<div class="qint" style="margin-left:14px">Endereços: ${Array.from({length:q},(_,k)=>`GW-SPL-${k+1} → <b>${(+d.end||1)+k}</b>`).join(" · ")} · máximo ${MAXGW} (limite do projeto)</div>`}
@@ -570,6 +600,20 @@ function fichaEq(id,volta){const x=EQS().find(q=>q.id===id);if(!x)return;x.legs=
   abrir(`<h3>Excluir o equipamento?</h3><div><b>${esc(x.cod)}</b> · ${esc(TIPOS[x.tipo]||"")}</div><div class="av w">Não dá para desfazer.</div><button class="b xr2" id="fxok">EXCLUIR</button><button class="b" id="fvolta">Cancelar</button>`);$("#fvolta").onclick=draw;
   $("#fxok").onclick=()=>{S.eq=EQS().filter(q=>q.id!==x.id);salvar();if(volta)volta();else{fechar();render()}toast("Modelo excluído")}}};draw();
  $("#sheetc").onclick=e=>{const bd=e.target.closest("[data-bdel]");if(bd){if(!pg())return;x.bornes.splice(+bd.dataset.bdel,1);salvar();draw();return}const lg=e.target.closest("[data-elg]");if(lg){if(!pg())return;const v=lg.dataset.elg,i=x.legs.indexOf(v);i>=0?x.legs.splice(i,1):x.legs.push(v);salvar();draw();return}const a=e.target.closest("[data-dab]"),v=e.target.closest("[data-dvi]"),z=e.target.closest("[data-dex]");if(a)abrirDoc(a.dataset.dab);else if(v)vinSheet(v.dataset.dvi,draw);else if(z)excluirDoc(z.dataset.dex,draw)}}
+const LIGS=()=>(B().lig=B().lig||[]);
+function bornePor(eq,f){return (eq&&eq.bornes||[]).find(b=>b.f===f)}
+function correl(lg,eq,opt){opt=opt||{};const fx=eq&&eq.tc==="fx";const out=[];
+ (lg.pernas||[]).forEach(pn=>{const f=FBS().find(x=>x.id===pn.f);const corr=f&&f.g==="Medição de corrente";
+  if(fx&&corr&&opt.mesmoQuadro)return;
+  const b=bornePor(eq,pn.f);let orig=pn.orig;
+  if(fx&&corr&&f){const m=/Fase ([ABC]) · (S[12])/.exec(f.n);if(m)orig=`ROG4K fase ${m[1]} · ${m[2]==="S1"?"fio K (branco)":"fio L (marrom)"}`}
+  out.push({an:pn.an,cabo:pn.cabo,cor:pn.cor,orig,con:fx&&corr?"conector (bobina em outro quadro) · ponteira":pn.con,fun:f?f.g+" · "+f.n:"—",borne:b?`${b.n} (${b.man||""})`:null,qa:pn.qa})});
+ const jp=(lg.jump||[]).map(j=>{const a=bornePor(eq,j.de),c=bornePor(eq,j.para);return a&&c?{de:`${a.n} (${a.man||""})`,para:`${c.n} (${c.man||""})`,fd:fbN(j.de),fp:fbN(j.para)}:null}).filter(Boolean);
+ return {out,jp}}
+function correlHTML(lg,eq,opt){const {out,jp}=correl(lg,eq,opt);const falta=out.filter(o=>!o.borne);
+ return `<table class="ctb"><tr><th>Anilha</th><th>Cabo · cor</th><th>Sai de</th><th>Entra no borne</th>${opt&&opt.qa?"<th>QA -X3</th>":""}</tr>${out.map(o=>`<tr class="${o.borne?"":"nok"}"><td><b>${esc(o.an)}</b></td><td>${esc(o.cabo)}<br><span class="sm2">${esc(o.cor||"")}</span></td><td>${esc(o.orig)}<br><span class="sm2">${esc(o.con||"")}</span></td><td><b>${o.borne?esc(o.borne):"— sem borne"}</b><br><span class="sm2">${esc(o.fun)}</span></td>${opt&&opt.qa?`<td>${esc(o.qa||"")}</td>`:""}</tr>`).join("")}</table>
+ ${jp.length?`<div class="jp"><b>Jumpers no próprio medidor</b>${jp.map(j=>`<div>${esc(j.de)} → ${esc(j.para)} <span class="sm2">(${esc(j.fd)} → ${esc(j.fp)})</span></div>`).join("")}</div>`:""}
+ ${falta.length?`<div class="av w">⚠ ${falta.length} perna(s) sem borne correspondente no modelo ${esc(eq?eq.cod:"")}: confira os bornes na ficha do modelo.</div>`:""}`}
 function nDocs(alvo){const k=docsDe(alvo).length;return `📎 ${k?k+" doc"+(k>1?"s":""):"Docs"}`}
 /* ================= SHEETS ================= */
 function abrir(h){$("#sheetc").innerHTML=h;$("#sheet").hidden=false}
@@ -614,7 +658,14 @@ document.addEventListener("pointerup",()=>{if(!DG)return;const {id,g,blk,tgt}=DG
  if(tgt){const p=+tgt.dataset.drop;let i=+tgt.dataset.at;const r=L().rs485;if(p&&r["p"+p].indexOf(id)>-1&&r["p"+p].indexOf(id)<i)i--;mover(id,p,i)}else render()});
 /* ================= CLIQUES E CAMPOS ================= */
 document.addEventListener("click",e=>{
- const gb=e.target.closest("[data-go]");if(gb){const v=gb.dataset.go;if(v==="home")go({v:"home"});else if(v==="eq")go({v:"eq"});else if(v==="proj")go({v:"proj",p:R.p});else if(v==="base")go({v:"base",p:R.p});else go({v,p:R.p,l:R.l});return}
+ const gb=e.target.closest("[data-go]");if(gb){const v=gb.dataset.go;if(v==="home")go({v:"home"});else if(v==="eq")go({v:"eq"});else if(v==="proj")go({v:"proj",p:R.p});else if(v==="base")go({v:"base",p:R.p});else if(v==="lig")go({v:"lig",p:R.p});else go({v,p:R.p,l:R.l});return}
+ const lgo=e.target.closest("[data-lgo]");if(lgo){go({v:"lige",p:R.p,i:+lgo.dataset.lgo});return}
+ if(R.v==="lige"&&$("#sheet").hidden){const lg=LIGS()[R.i];
+  const pm=e.target.closest("[data-lpm]");if(pm){R.pm=pm.dataset.lpm;render();return}
+  if(e.target.closest("[data-lcadd]")){lg.cabos.push({tag:"NOVO-CABO",tipo:"",bit:"",cond:""});salvar();render();return}
+  if(e.target.closest("[data-lpadd]")){lg.pernas.push({an:"",cabo:(lg.cabos[0]||{}).tag||"",cor:"",orig:"",con:"",f:"",qa:""});salvar();render();return}
+  if(e.target.closest("[data-ljadd]")){lg.jump=lg.jump||[];lg.jump.push({de:"",para:""});salvar();render();return}
+  const dl=e.target.closest("[data-lcdel],[data-lpdel],[data-ljdel]");if(dl){const k=dl.dataset.lcdel!=null?["cabos",dl.dataset.lcdel]:dl.dataset.lpdel!=null?["pernas",dl.dataset.lpdel]:["jump",dl.dataset.ljdel];lg[k[0]].splice(+k[1],1);salvar();render();return}}
  const pb=e.target.closest("[data-proj]");if(pb){go({v:"proj",p:pb.dataset.proj});return}
  if(e.target.closest("[data-novoproj]")){novoProj();return}
  const lb=e.target.closest("[data-loja]");if(lb){go({v:"loja",p:R.p,l:lb.dataset.loja});return}
@@ -651,6 +702,9 @@ document.addEventListener("click",e=>{
   const pm=e.target.closest("[data-pmv]");if(pm){const Lx=b.perf[pm.dataset.pk],i=+pm.dataset.pi,j=i+(+pm.dataset.pmv);if(j<0||j>=Lx.length)return;[Lx[i],Lx[j]]=[Lx[j],Lx[i]];salvar();render();return}
   const pr=e.target.closest("[data-prm]");if(pr){b.perf[pr.dataset.pk].splice(+pr.dataset.pi,1);salvar();render();toast("Atividade tirada desta lista (continua no catálogo)");return}}
  if(!R.l||!$("#sheet").hidden)return;const lj=L();if(!lj)return;const r=lj.rs485;
+ const vl=e.target.closest("[data-vlig]");if(vl){const sg=vl.dataset.vlig,eq=EQn(modOf(sg,lj)),lg=LIGS().find(x=>x.tipo==="medidor");if(!lg){toast("Sem receita de medidor no projeto");return}
+  abrir(`<h3>🔌 Ligação · ${esc(sg)}</h3><div class="sub">Modelo <b>${esc(eq?eq.cod:"?")}</b>${r.tcs&&r.tcs[sg]?" · TC "+esc(r.tcs[sg]):""} · receita "${esc(lg.nome)}" do projeto</div>${correlHTML(lg,eq,{qa:true,mesmoQuadro:!!(r.mq||{})[sg]})}<button class="b p" data-fecha="1">FECHAR</button>`);return}
+ const mq=e.target.closest("[data-lmq]");if(mq){r.mq=r.mq||{};r.mq[mq.dataset.lmq]=!r.mq[mq.dataset.lmq];salvar();render();return}
  const ld=e.target.closest("[data-ldoc]");if(ld){const s2=ld.dataset.ldoc;bibSheet({sig:s2,mod:modOf(s2,lj)},"Documentos · "+s2);return}
  const lx=e.target.closest("[data-lexp]");if(lx){r.exp[lx.dataset.lexp]=!temExp(lx.dataset.lexp,lj);salvar();render();return}
  const ak=e.target.closest("[data-ak]");if(ak){actSheet(ak.dataset.ak);return}
@@ -669,11 +723,15 @@ document.addEventListener("input",e=>{const el=e.target;
  if(el.dataset.pnm){P().nome=el.value;salvar();$("#ttl").textContent=el.value;return}
  if(el.dataset.pcl){P().cliente=el.value;salvar();return}
  if(el.dataset.bf){const d=B().devs[+el.dataset.i];d[el.dataset.bf]=el.dataset.bf==="end"?(el.value===""?"":n(el.value)):el.value;salvar();return}
+ if(R.v==="lige"){const lg=LIGS()[R.i];if(el.dataset.lgn!=null){lg.nome=el.value;salvar();return}if(el.dataset.lgobs!=null){lg.obs=el.value;salvar();return}
+  if(el.dataset.lc!=null){lg.cabos[+el.dataset.lc][el.dataset.k]=el.value;salvar();return}
+  if(el.dataset.lp!=null&&el.tagName==="INPUT"){lg.pernas[+el.dataset.lp][el.dataset.k]=el.value;salvar();return}}
  if(el.dataset.fbn){FBS().find(x=>x.id===el.dataset.fbn).n=el.value;salvar();return}
  if(el.dataset.mn){MODS()[el.dataset.mn][+el.dataset.mj].n=el.value;salvar();return}
  if(el.dataset.mbi){B().mbi[el.dataset.mbi]=n(el.value);salvar();return}
  if(el.dataset.af){const a=B().ativ[+el.dataset.ai];a[el.dataset.af]=el.dataset.af==="min"?n(el.value):el.value;salvar();if(el.tagName==="SELECT")render();return}});
 document.addEventListener("change",e=>{const el=e.target;
+ if(R.v==="lige"&&el.tagName==="SELECT"){const lg=LIGS()[R.i];if(el.dataset.lp!=null){lg.pernas[+el.dataset.lp][el.dataset.k]=el.value;salvar();render();return}if(el.dataset.lj!=null){lg.jump[+el.dataset.lj][el.dataset.k]=el.value;salvar();render();return}}
  if(el.dataset.mtc!=null){MODS().medidor[+el.dataset.mtc].tc=el.value;salvar();render();toast("Tipo de TC salvo");return}
  if(el.dataset.dmod!=null){B().devs[+el.dataset.dmod].modelo=el.value;salvar();render();toast("Modelo padrão alterado");return}
  if(el.dataset.lmod){const lj=L(),d=dev(el.dataset.lmod);if(el.value===(d.modelo||modPad(d.tipo)))delete lj.rs485.mod[el.dataset.lmod];else lj.rs485.mod[el.dataset.lmod]=el.value;salvar();render();toast("Modelo desta loja: "+el.value);return}
