@@ -1,0 +1,591 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>eX Serviços</title>
+<meta name="theme-color" content="#533ab7">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,500,1,0" rel="stylesheet">
+<style>
+:root{--bg:#faf9f5;--surf:#fff;--surf2:#f1efe8;--line:rgba(0,0,0,.12);--line2:rgba(0,0,0,.22);--tx:#1a1a18;--tx2:#5f5e5a;--tx3:#888780;--pri:#533ab7;--pri-bg:#eeedfe;--blue:#185fa5;--blue-bg:#e6f0fa;--green:#0f8f5b;--green-bg:#e7f6ee;--amber:#ba7517;--amber-bg:#fbf0dd;--red:#a32d2d;--red-bg:#fcebeb}
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif}
+body{background:var(--bg);color:var(--tx);font-size:14px;line-height:1.45}
+.msr{font-family:'Material Symbols Rounded';line-height:1;vertical-align:middle;font-size:20px;font-weight:normal;font-style:normal}
+.app{max-width:1100px;margin:0 auto;padding:16px 18px 60px}
+.appbar{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:4px}
+.logo{font-size:22px;font-weight:800;letter-spacing:-.5px;color:var(--pri)}.logo b{color:var(--tx)}
+.modtag{font-size:12px;font-weight:600;color:var(--tx2);background:var(--surf2);padding:4px 11px;border-radius:20px;display:inline-flex;align-items:center;gap:5px}
+.modtag .msr{font-size:16px;color:var(--pri)}
+.spacer{flex:1}
+.sub{font-size:12px;color:var(--tx2);margin:2px 0 12px}
+.btn{font-size:13px;padding:8px 13px;border-radius:8px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.btn:hover{background:var(--surf2)}.btn .msr{font-size:18px}
+.btn-p{background:var(--pri);color:#fff;border-color:var(--pri)}.btn-p:hover{background:#472f9e}
+.btn-g{background:var(--green);color:#fff;border-color:var(--green)}.btn-g:hover{background:#0b7449}
+.btn-r{color:var(--red);border-color:#e3b5b5}.btn-r:hover{background:var(--red-bg)}
+.btn-big{font-size:14.5px;padding:11px 16px;font-weight:700}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:14px}
+.tab{padding:9px 14px;font-size:13px;font-weight:600;color:var(--tx2);cursor:pointer;border:none;background:none;border-bottom:2px solid transparent;display:inline-flex;align-items:center;gap:6px}
+.tab.on{color:var(--pri);border-bottom-color:var(--pri)}.tab .msr{font-size:18px}
+.fi{padding:9px 11px;border:1px solid var(--line2);border-radius:7px;background:var(--surf);font-size:13px;color:var(--tx);width:100%}
+.fi:focus{outline:none;border-color:var(--pri)}
+textarea.fi{min-height:70px;resize:vertical}
+.fl{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--tx3);margin-bottom:5px;display:block}
+.fg{margin-bottom:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:720px){.grid2,.grid3{grid-template-columns:1fr}}
+.hint{font-size:11.5px;color:var(--tx3);margin-top:4px}
+.empty{padding:30px;text-align:center;color:var(--tx3);font-size:13px;background:var(--surf);border:1px dashed var(--line2);border-radius:12px}
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.chips{display:flex;gap:6px;flex-wrap:wrap}
+.chip{font-size:12px;font-weight:600;padding:6px 11px;border-radius:20px;border:1px solid var(--line2);background:var(--surf);color:var(--tx2);cursor:pointer;display:inline-flex;align-items:center;gap:5px}
+.chip.on{background:var(--pri);border-color:var(--pri);color:#fff}
+.chip .n{font-size:11px;opacity:.75}
+/* cards */
+.cards{display:grid;gap:10px}
+.card{background:var(--surf);border:1px solid var(--line);border-radius:12px;padding:12px 14px;display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:center;cursor:pointer}
+.card:hover{border-color:var(--pri);box-shadow:0 2px 10px rgba(83,58,183,.08)}
+.mico{width:40px;height:40px;border-radius:10px;background:var(--pri-bg);color:var(--pri);display:flex;align-items:center;justify-content:center}
+.card .t1{font-weight:700;font-size:14px}.card .t2{font-size:12px;color:var(--tx2);margin-top:2px}
+.num{font-size:11.5px;font-weight:700;color:var(--pri);font-variant-numeric:tabular-nums}
+.badge{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;padding:3px 8px;border-radius:6px;display:inline-block;white-space:nowrap}
+.b-et{background:var(--blue-bg);color:var(--blue)}
+.b-ok{background:var(--green-bg);color:var(--green)}
+.b-wa{background:var(--amber-bg);color:var(--amber)}
+.b-cr{background:var(--red-bg);color:var(--red)}
+.b-mu{background:var(--surf2);color:var(--tx2)}
+.right{text-align:right;display:flex;flex-direction:column;gap:5px;align-items:flex-end}
+/* modal */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.4);display:none;align-items:flex-start;justify-content:center;padding:24px 14px;z-index:60;overflow:auto}
+.modal-bg.show{display:flex}
+.modal{background:var(--surf);border-radius:14px;width:620px;max-width:100%;box-shadow:0 12px 40px rgba(0,0,0,.25);overflow:hidden}
+.modal.wide{width:900px}
+.mh{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:8px}
+.mh b{font-size:15px;font-weight:700}.mh .x{cursor:pointer;color:var(--tx3);background:none;border:none;display:flex}
+.mb{padding:16px 18px}
+.mf{padding:12px 18px;border-top:1px solid var(--line);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+/* opção grande (didática) */
+.opts{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.opts.c3{grid-template-columns:repeat(3,1fr)}
+@media(max-width:720px){.opts,.opts.c3{grid-template-columns:1fr 1fr}}
+.opt{border:2px solid var(--line);border-radius:11px;padding:11px 10px;cursor:pointer;background:var(--surf);text-align:left;display:flex;flex-direction:column;gap:4px}
+.opt:hover{border-color:var(--pri)}
+.opt.on{border-color:var(--pri);background:var(--pri-bg)}
+.opt.dis{opacity:.45;cursor:not-allowed}
+.opt .msr{color:var(--pri);font-size:22px}
+.opt b{font-size:13px}.opt small{font-size:11px;color:var(--tx2);line-height:1.3}
+/* etapas */
+.steps{display:flex;gap:0;margin:4px 0 14px;overflow-x:auto;padding-bottom:4px}
+.st{flex:1;min-width:92px;text-align:center;position:relative;font-size:10.5px;color:var(--tx3);font-weight:600;padding-top:30px}
+.st:before{content:'';position:absolute;top:12px;left:0;right:0;height:3px;background:var(--line)}
+.st:first-child:before{left:50%}.st:last-child:before{right:50%}
+.st .dot{position:absolute;top:2px;left:50%;transform:translateX(-50%);width:23px;height:23px;border-radius:50%;background:var(--surf);border:2px solid var(--line2);display:flex;align-items:center;justify-content:center;z-index:1}
+.st .dot .msr{font-size:14px}
+.st.done{color:var(--green)}.st.done:before{background:var(--green)}.st.done .dot{background:var(--green);border-color:var(--green);color:#fff}
+.st.cur{color:var(--pri);font-weight:800}.st.cur .dot{background:var(--pri);border-color:var(--pri);color:#fff;box-shadow:0 0 0 4px var(--pri-bg)}
+.nextbox{display:flex;align-items:center;gap:12px;background:var(--pri-bg);border:1px solid #d8d2f6;border-radius:11px;padding:11px 14px;margin-bottom:14px;flex-wrap:wrap}
+.nextbox .msr{color:var(--pri);font-size:26px}
+.nextbox .tx{flex:1;min-width:200px;font-size:13px}.nextbox .tx b{display:block;font-size:14px}
+.sec{border:1px solid var(--line);border-radius:12px;margin-bottom:12px;overflow:hidden}
+.sec>h4{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--tx2);background:var(--surf2);padding:9px 13px;display:flex;align-items:center;gap:7px}
+.sec>h4 .msr{color:var(--pri);font-size:18px}
+.sec .in{padding:13px}
+.warn{display:flex;align-items:flex-start;gap:8px;background:var(--amber-bg);border:1px solid #e6c98f;color:#8a5a08;border-radius:8px;padding:9px 12px;font-size:12px;margin:8px 0}
+.warn .msr{font-size:18px}
+.ok{display:flex;align-items:flex-start;gap:8px;background:var(--green-bg);border:1px solid #b5dfc8;color:#0b6a43;border-radius:8px;padding:9px 12px;font-size:12px;margin:8px 0}
+.kv{display:grid;grid-template-columns:150px 1fr;gap:6px 12px;font-size:13px}.kv span:nth-child(odd){color:var(--tx3)}
+.tl{list-style:none}
+.tl li{display:flex;gap:10px;padding:8px 0;border-bottom:1px solid var(--line);font-size:12.5px}
+.tl li:last-child{border-bottom:none}
+.tl .when{color:var(--tx3);font-size:11px;min-width:110px;font-variant-numeric:tabular-nums}
+.link{color:var(--pri);text-decoration:none;font-weight:600}.link:hover{text-decoration:underline}
+/* lista simples (contratos/config) */
+.list{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surf)}
+.row{display:flex;align-items:center;gap:10px;padding:11px 13px;border-bottom:1px solid var(--line)}
+.row:last-child{border-bottom:none}.row:hover{background:var(--surf2)}
+.row .nm{flex:1;min-width:0;font-weight:600}.row .nm small{display:block;font-weight:400;color:var(--tx3);font-size:11.5px}
+.iconb{width:30px;height:30px;border:1px solid var(--line);border-radius:7px;background:var(--surf);color:var(--tx3);cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+.iconb:hover{background:var(--pri-bg);border-color:var(--pri);color:var(--pri)}.iconb .msr{font-size:17px}
+/* padrão eX: chave + sinaleira */
+.ex-led{width:15px;height:15px;border-radius:50%;flex-shrink:0;transition:.16s;background:radial-gradient(circle at 35% 30%,#ffffff,#eef1ef 72%);box-shadow:inset 0 1px 1px rgba(0,0,0,.12),0 1px 0 rgba(255,255,255,.6);border:1.5px solid #d9dcd9}
+.ex-led.on{background:radial-gradient(circle at 35% 30%,#c4ffdd,#22d27f 52%,#08a457);box-shadow:inset 0 1px 2px rgba(255,255,255,.6),0 0 8px rgba(34,210,127,.85),0 0 2px rgba(34,210,127,.95);border-color:#08a457}
+.ex-switch{position:relative;width:50px;height:25px;border-radius:13px;cursor:pointer;flex-shrink:0;background:linear-gradient(#bbbeb7,#9a9d95);box-shadow:inset 0 2px 4px rgba(0,0,0,.38),inset 0 -1px 1px rgba(255,255,255,.35);transition:.16s;font:800 8px ui-monospace,monospace;letter-spacing:.3px}
+.ex-switch.on{background:linear-gradient(#2fcf88,#0f8f5b);box-shadow:inset 0 2px 4px rgba(0,0,0,.3)}
+.ex-switch .lb{position:absolute;top:0;height:100%;display:flex;align-items:center;color:#fff}
+.ex-switch .lb.off{right:8px;color:#5a5a50}.ex-switch.on .lb.off{display:none}
+.ex-switch .lb.onx{left:8px;display:none}.ex-switch.on .lb.onx{display:flex}
+.ex-switch .kb{position:absolute;top:3px;left:3px;width:20px;height:19px;border-radius:10px;transition:.16s;background:linear-gradient(#ffffff,#d4d4cf);box-shadow:0 2px 2px rgba(0,0,0,.4),inset 0 1px 0 rgba(255,255,255,.95),inset 0 -1px 2px rgba(0,0,0,.1);display:flex;align-items:center;justify-content:center}
+.ex-switch.on .kb{left:27px}
+.ex-switch .pin{width:3px;height:11px;border-radius:2px;background:linear-gradient(#9a9a92,#565650);box-shadow:0 1px 1px rgba(0,0,0,.5),inset 0 1px 0 rgba(255,255,255,.5)}
+.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#26232f;color:#fff;padding:10px 16px;border-radius:9px;font-size:13px;z-index:99;display:none;max-width:90%}
+.toast.err{background:var(--red)}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="appbar">
+    <span class="logo"><b>e</b>X</span>
+    <span class="modtag"><span class="msr">handyman</span>Serviços</span>
+    <span id="cloudb" style="font-size:11px;color:var(--tx3)"></span>
+    <span class="spacer"></span>
+    <button class="btn btn-p btn-big" id="btnNovo" onclick="abrirNovo()"><span class="msr">add_circle</span>Novo atendimento</button>
+  </div>
+  <div class="sub">Atendimentos pontuais: <b>corretiva</b>, <b>preventiva</b>, <b>visita técnica</b> e <b>serviço avulso</b>. Cada atendimento vai da abertura até o fechamento, com visita, relatório, proposta e execução.</div>
+
+  <div class="tabs">
+    <button class="tab on" data-t="at" onclick="aba('at')"><span class="msr">assignment</span>Atendimentos</button>
+    <button class="tab" data-t="ct" onclick="aba('ct')"><span class="msr">contract</span>Contratos</button>
+    <button class="tab" data-t="cfg" onclick="aba('cfg')"><span class="msr">settings</span>Configurações</button>
+  </div>
+
+  <!-- ATENDIMENTOS -->
+  <div id="p-at">
+    <div class="toolbar">
+      <input class="fi" id="busca" placeholder="Buscar por número, cliente, loja, título…" style="max-width:340px" oninput="renderLista()">
+      <div class="chips" id="chipsStatus"></div>
+    </div>
+    <div class="cards" id="lista"><div class="empty">Carregando…</div></div>
+  </div>
+
+  <!-- CONTRATOS -->
+  <div id="p-ct" style="display:none">
+    <div class="toolbar"><span class="sub" style="margin:0;flex:1">Contratos de manutenção por cliente. <b>Visita sem custo só é possível com contrato ativo</b>; a preventiva também nasce daqui.</span>
+      <button class="btn btn-p" onclick="abrirContrato()"><span class="msr">add</span>Novo contrato</button></div>
+    <div class="list" id="listaCt"></div>
+  </div>
+
+  <!-- CONFIGURAÇÕES -->
+  <div id="p-cfg" style="display:none">
+    <div class="sub">Modalidades de atendimento. Desligue a chave para esconder uma modalidade dos novos atendimentos (os antigos continuam com ela).</div>
+    <div class="toolbar"><input class="fi" id="novaMod" placeholder="Nova modalidade… (ex.: Instalação)" style="max-width:340px" onkeydown="if(event.key==='Enter')addModalidade()"><button class="btn btn-p" onclick="addModalidade()"><span class="msr">add</span>Adicionar</button></div>
+    <div class="list" id="listaMod"></div>
+  </div>
+</div>
+
+<!-- MODAL: novo atendimento -->
+<div class="modal-bg" id="mNovo">
+  <div class="modal wide">
+    <div class="mh"><b>Novo atendimento</b><button class="x" onclick="fechar('mNovo')"><span class="msr">close</span></button></div>
+    <div class="mb">
+      <div class="fg"><span class="fl">1 · Qual é o tipo do atendimento?</span><div class="opts" id="nModal"></div></div>
+      <div class="grid2">
+        <div class="fg"><span class="fl">2 · Cliente (quem contrata)</span><select class="fi" id="nCli" onchange="onCliNovo()"></select></div>
+        <div class="fg"><span class="fl">3 · Loja / unidade</span><input class="fi" id="nLojaBusca" placeholder="Digite para filtrar…" oninput="fillLojas('nLoja',this.value)" style="margin-bottom:6px"><select class="fi" id="nLoja"></select></div>
+      </div>
+      <div class="fg"><span class="fl">4 · Título (o que o cliente pediu, em uma linha)</span><input class="fi" id="nTit" placeholder="Ex.: Ar-condicionado parado — troca de compressor"></div>
+      <div class="fg"><span class="fl">Descrição da solicitação</span><textarea class="fi" id="nSol" placeholder="Cole aqui o pedido do cliente (WhatsApp, e-mail)…"></textarea></div>
+      <div class="grid3">
+        <div class="fg"><span class="fl">Contato no local</span><input class="fi" id="nCont" placeholder="Nome"></div>
+        <div class="fg"><span class="fl">Telefone</span><input class="fi" id="nFone"></div>
+        <div class="fg"><span class="fl">Nº do chamado do cliente</span><input class="fi" id="nCham" placeholder="Opcional"></div>
+      </div>
+      <div class="grid3">
+        <div class="fg"><span class="fl">Prioridade</span><select class="fi" id="nPri"><option value="baixa">Baixa</option><option value="media" selected>Média</option><option value="alta">Alta</option><option value="urgente">Urgente</option></select></div>
+        <div class="fg"><span class="fl">Chegou por</span><select class="fi" id="nOri"><option>WhatsApp</option><option>E-mail</option><option>Telefone</option><option>Portal do cliente</option><option>Presencial</option></select></div>
+        <div class="fg"><span class="fl">Equipamento</span><input class="fi" id="nEq" placeholder="Opcional"></div>
+      </div>
+      <div class="fg"><span class="fl">5 · Como fica a visita?</span><div class="opts c3" id="nCob"></div>
+        <div id="nCobExtra"></div></div>
+    </div>
+    <div class="mf"><button class="btn" onclick="fechar('mNovo')">Cancelar</button><span class="spacer"></span><button class="btn btn-p btn-big" onclick="salvarNovo()"><span class="msr">check</span>Abrir atendimento</button></div>
+  </div>
+</div>
+
+<!-- MODAL: detalhe -->
+<div class="modal-bg" id="mDet">
+  <div class="modal wide">
+    <div class="mh"><b id="dTit">Atendimento</b><button class="x" onclick="fechar('mDet')"><span class="msr">close</span></button></div>
+    <div class="mb" id="dBody"></div>
+  </div>
+</div>
+
+<!-- MODAL: contrato -->
+<div class="modal-bg" id="mCt">
+  <div class="modal">
+    <div class="mh"><b id="ctTit">Novo contrato</b><button class="x" onclick="fechar('mCt')"><span class="msr">close</span></button></div>
+    <div class="mb">
+      <div class="fg"><span class="fl">Cliente</span><select class="fi" id="cCli"></select></div>
+      <div class="fg"><span class="fl">Título do contrato</span><input class="fi" id="cTit" placeholder="Ex.: Manutenção preventiva — ar-condicionado das lojas GO"></div>
+      <div class="grid2">
+        <div class="fg"><span class="fl">Início da vigência</span><input class="fi" type="date" id="cIni"></div>
+        <div class="fg"><span class="fl">Fim da vigência</span><input class="fi" type="date" id="cFim"></div>
+      </div>
+      <div class="grid2">
+        <div class="fg"><span class="fl">Frequência das visitas</span><select class="fi" id="cFreq"><option value="semanal">Semanal</option><option value="quinzenal">Quinzenal</option><option value="mensal" selected>Mensal</option><option value="bimestral">Bimestral</option><option value="trimestral">Trimestral</option><option value="semestral">Semestral</option><option value="anual">Anual</option><option value="sob_demanda">Sob demanda</option></select></div>
+        <div class="fg"><span class="fl">Valor mensal (R$)</span><input class="fi" type="number" step="0.01" id="cVal"></div>
+      </div>
+      <div class="fg"><span class="fl">Nº do contrato no cliente</span><input class="fi" id="cNum" placeholder="Opcional"></div>
+      <div class="fg" style="display:flex;align-items:center;gap:11px"><span class="ex-led on" id="cCobLed"></span><span style="flex:1">Cobre as visitas (visita sem custo para o cliente)</span><div class="ex-switch on" id="cCob" onclick="this.classList.toggle('on');document.getElementById('cCobLed').classList.toggle('on')"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="pin"></span></span></div></div>
+      <div class="fg"><span class="fl">Observações</span><textarea class="fi" id="cObs"></textarea></div>
+    </div>
+    <div class="mf"><button class="btn" onclick="fechar('mCt')">Cancelar</button><span class="spacer"></span><button class="btn btn-p" onclick="salvarContrato()"><span class="msr">check</span>Salvar contrato</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+const SB_URL='https://djguxdgaobtminatxkdr.supabase.co';
+const SB_KEY='sb_publishable_ERMLJI78W6ps_5Ppi9V0hg_OCAZwoIf';
+const SB=(window.supabase&&SB_URL)?window.supabase.createClient(SB_URL,SB_KEY):null;
+const esc=s=>String(s??'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+const brl=v=>(v==null||v==='')?'—':Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL'});
+const dtBR=s=>{ if(!s)return'—'; const d=new Date(s); return isNaN(d)?'—':d.toLocaleDateString('pt-BR')+(String(s).length>10?' '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}):''); };
+const num=v=>{ if(v===''||v==null)return null; const n=Number(String(v).replace(',','.')); return isNaN(n)?null:n; };
+const val=id=>{ const e=document.getElementById(id); return e?e.value.trim():''; };
+
+let EMPRESA_ID=null, USER_NOME='';
+let MODS=[], CLIS=[], LOJAS=[], CTS=[], ATS=[], OPPS=[], ORCS=[], FASES=[];
+let FILTRO='abertos', NOVO={mod:null,cob:'cortesia'}, CUR=null;
+
+// etapas do atendimento: rótulo, ícone e o "próximo passo" (texto do botão)
+const ETAPAS=[
+  {k:'aberto',              l:'Aberto',             ic:'inbox',          prox:'Agendar a visita',            dica:'Combine data e hora com o cliente e registre quem vai.'},
+  {k:'visita_agendada',     l:'Visita agendada',    ic:'event',          prox:'Registrar que a visita foi feita', dica:'Depois da visita, anexe o relatório técnico e as fotos.'},
+  {k:'visita_feita',        l:'Visita feita',       ic:'fact_check',     prox:'Montar o orçamento',          dica:'Vincule (ou crie) a oportunidade no funil e monte a proposta.'},
+  {k:'orcamento',           l:'Orçamento',          ic:'request_quote',  prox:'Marcar proposta enviada',     dica:'Envie a proposta pelo módulo de Propostas.'},
+  {k:'aguardando_aprovacao',l:'Aguard. aprovação',  ic:'hourglass_top',  prox:'Cliente aprovou',             dica:'Registre o valor aprovado.'},
+  {k:'aprovado',            l:'Aprovado',           ic:'thumb_up',       prox:'Iniciar a execução',          dica:'Defina parceiro/equipe e as datas.'},
+  {k:'em_execucao',         l:'Em execução',        ic:'construction',   prox:'Concluir o serviço',          dica:'Ao concluir, registre o fechamento.'},
+  {k:'concluido',           l:'Concluído',          ic:'task_alt',       prox:null,                          dica:'Atendimento encerrado.'}
+];
+const ETX=k=>ETAPAS.find(e=>e.k===k)||{k:k,l:k==='cancelado'?'Cancelado':k,ic:'block'};
+const COBS=[
+  {k:'contrato',l:'Coberta por contrato',ic:'contract',d:'Sem custo — exige contrato ativo do cliente.'},
+  {k:'cortesia',l:'Cortesia p/ orçamento',ic:'volunteer_activism',d:'Sem custo para o cliente; a eX registra o custo real.'},
+  {k:'cobrada', l:'Visita cobrada',ic:'payments',d:'O cliente paga a visita, com valor definido.'}
+];
+const PRI={baixa:['Baixa','b-mu'],media:['Média','b-et'],alta:['Alta','b-wa'],urgente:['Urgente','b-cr']};
+
+function toast(t,err){ const e=document.getElementById('toast'); e.textContent=t; e.className='toast'+(err?' err':''); e.style.display='block'; clearTimeout(e._t); e._t=setTimeout(()=>e.style.display='none',err?6000:2600); }
+function cloudMsg(t){ document.getElementById('cloudb').textContent=t; }
+function abrir(id){ document.getElementById(id).classList.add('show'); }
+function fechar(id){ document.getElementById(id).classList.remove('show'); if(id==='mDet'){ CUR=null; try{history.replaceState(null,'',location.pathname);}catch(_){} } }
+function aba(t){ document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t)); ['at','ct','cfg'].forEach(x=>document.getElementById('p-'+x).style.display=(x===t?'':'none')); document.getElementById('btnNovo').style.display=(t==='at'?'':'none'); if(t==='ct')renderContratos(); if(t==='cfg')renderMods(); }
+
+const cliNome=id=>{ const c=CLIS.find(x=>x.id===id); return c?c.nome:'—'; };
+const lojaNome=id=>{ const l=LOJAS.find(x=>x.id===id); return l?l.nome:''; };
+const modOf=id=>MODS.find(x=>x.id===id)||{nome:'—',icone:'help'};
+
+// ---------- carga ----------
+async function init(){
+  if(!SB){ cloudMsg('sem conexão'); return; }
+  const {data:{session}}=await SB.auth.getSession();
+  if(!session){ document.getElementById('lista').innerHTML='<div class="empty">Abra pelo eX Controller logado para ver os atendimentos.</div>'; cloudMsg('não logado'); return; }
+  try{ const e=await SB.rpc('empresa_atual'); EMPRESA_ID=(e&&e.data)||null; }catch(_){}
+  USER_NOME=(session.user.user_metadata&&(session.user.user_metadata.nome||session.user.user_metadata.full_name))||session.user.email||'';
+  await carregarTudo();
+  const q=new URLSearchParams(location.search).get('at'); if(q) abrirDet(q);
+}
+async function carregarTudo(){
+  cloudMsg('carregando…');
+  const r=await Promise.all([
+    SB.from('atendimento_modalidades').select('*').is('deleted_at',null).order('ordem'),
+    SB.from('clientes').select('id,nome,tipo,cnpj').is('deleted_at',null).order('nome'),
+    SB.from('lojas').select('id,nome,grupo,endereco,contato,fone').is('deleted_at',null).order('nome'),
+    SB.from('servico_contratos').select('*').is('deleted_at',null).order('created_at',{ascending:false}),
+    SB.from('atendimentos').select('*').is('deleted_at',null).order('aberto_em',{ascending:false}),
+    SB.from('crm_fases').select('id,nome,papel,ordem').is('deleted_at',null).order('ordem')
+  ]);
+  const err=r.find(x=>x.error); if(err){ cloudMsg(''); document.getElementById('lista').innerHTML='<div class="empty"><b>Erro ao carregar.</b><br>'+esc(err.error.message)+'<br><br>Falta rodar a migração <b>db/servicos_atendimentos.sql</b>?</div>'; return; }
+  [MODS,CLIS,LOJAS,CTS,ATS,FASES]=r.map(x=>x.data||[]);
+  CLIS=CLIS.filter(c=>c.tipo!=='contemplado');
+  await carregarVinculos();
+  cloudMsg('☁ sincronizado'); renderChips(); renderLista();
+}
+async function carregarVinculos(){
+  const ids=[...new Set(ATS.map(a=>a.oportunidade_id).filter(Boolean))];
+  if(!ids.length){ OPPS=[]; ORCS=[]; return; }
+  const [o,c]=await Promise.all([
+    SB.from('oportunidades').select('id,objeto,fase_id,contratante_id').in('id',ids),
+    SB.from('orcamentos').select('id,numero,status,total,oportunidade_id,updated_at').in('oportunidade_id',ids).is('deleted_at',null)
+  ]);
+  OPPS=o.data||[]; ORCS=c.data||[];
+}
+
+// ---------- lista ----------
+const GRUPOS=[
+  {k:'abertos',l:'Em andamento',f:a=>!['concluido','cancelado'].includes(a.status)},
+  {k:'visita',l:'Visita',f:a=>['aberto','visita_agendada'].includes(a.status)},
+  {k:'comercial',l:'Orçamento / aprovação',f:a=>['visita_feita','orcamento','aguardando_aprovacao'].includes(a.status)},
+  {k:'execucao',l:'Execução',f:a=>['aprovado','em_execucao'].includes(a.status)},
+  {k:'concluido',l:'Concluídos',f:a=>a.status==='concluido'},
+  {k:'cancelado',l:'Cancelados',f:a=>a.status==='cancelado'},
+  {k:'todos',l:'Todos',f:a=>true}
+];
+function renderChips(){
+  document.getElementById('chipsStatus').innerHTML=GRUPOS.map(g=>'<button class="chip'+(FILTRO===g.k?' on':'')+'" onclick="FILTRO=\''+g.k+'\';renderChips();renderLista()">'+g.l+' <span class="n">'+ATS.filter(g.f).length+'</span></button>').join('');
+}
+function badgeEtapa(s){ const e=ETX(s); const cls=s==='concluido'?'b-ok':s==='cancelado'?'b-cr':['aguardando_aprovacao','orcamento'].includes(s)?'b-wa':'b-et'; return '<span class="badge '+cls+'">'+esc(e.l)+'</span>'; }
+function badgeCob(a){ const c=COBS.find(x=>x.k===a.visita_cobranca); if(!c)return''; const cls=a.visita_cobranca==='cobrada'?'b-ok':a.visita_cobranca==='contrato'?'b-et':'b-mu'; return '<span class="badge '+cls+'">Visita: '+(a.visita_cobranca==='cobrada'?'cobrada '+brl(a.visita_valor):a.visita_cobranca==='contrato'?'contrato':'cortesia')+'</span>'; }
+function renderLista(){
+  const g=GRUPOS.find(x=>x.k===FILTRO); const q=(val('busca')||'').toLowerCase();
+  const arr=ATS.filter(g.f).filter(a=>!q||[a.numero,a.titulo,cliNome(a.cliente_id),lojaNome(a.loja_id),a.chamado_cliente].join(' ').toLowerCase().includes(q));
+  const el=document.getElementById('lista');
+  if(!arr.length){ el.innerHTML='<div class="empty">'+(ATS.length?'Nenhum atendimento neste filtro.':'Nenhum atendimento ainda. Toque em <b>Novo atendimento</b> para abrir o primeiro.')+'</div>'; return; }
+  el.innerHTML=arr.map(a=>{ const m=modOf(a.modalidade_id); const p=PRI[a.prioridade]||PRI.media;
+    return '<div class="card" onclick="abrirDet(\''+a.id+'\')"><div class="mico"><span class="msr">'+esc(m.icone||'handyman')+'</span></div>'
+      +'<div style="min-width:0"><div class="num">'+esc(a.numero||'')+' · '+esc(m.nome)+'</div><div class="t1">'+esc(a.titulo)+'</div><div class="t2">'+esc(cliNome(a.cliente_id))+(a.loja_id?' · '+esc(lojaNome(a.loja_id)):'')+' · aberto em '+dtBR(a.aberto_em).split(' ')[0]+'</div></div>'
+      +'<div class="right">'+badgeEtapa(a.status)+badgeCob(a)+(a.prioridade!=='media'?'<span class="badge '+p[1]+'">'+p[0]+'</span>':'')+'</div></div>'; }).join('');
+}
+
+// ---------- selects ----------
+function fillClientes(id,sel){ document.getElementById(id).innerHTML='<option value="">— escolha o cliente —</option>'+CLIS.map(c=>'<option value="'+c.id+'"'+(c.id===sel?' selected':'')+'>'+esc(c.nome)+'</option>').join(''); }
+function fillLojas(id,q,sel){ q=(q||'').toLowerCase(); const arr=LOJAS.filter(l=>!q||(l.nome+' '+(l.grupo||'')+' '+(l.endereco||'')).toLowerCase().includes(q)).slice(0,300);
+  document.getElementById(id).innerHTML='<option value="">— sem loja / unidade —</option>'+arr.map(l=>'<option value="'+l.id+'"'+(l.id===sel?' selected':'')+'>'+esc(l.nome)+'</option>').join(''); }
+function contratosDo(cli){ const hoje=new Date().toISOString().slice(0,10); return CTS.filter(c=>c.cliente_id===cli&&c.ativo&&(!c.vigencia_fim||c.vigencia_fim>=hoje)); }
+
+// ---------- novo ----------
+function abrirNovo(){
+  const ativas=MODS.filter(m=>m.ativo); NOVO={mod:(ativas[0]||{}).id||null,cob:'cortesia'};
+  ['nTit','nSol','nCont','nFone','nCham','nEq','nLojaBusca'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('nPri').value='media';
+  fillClientes('nCli',''); fillLojas('nLoja','');
+  renderNovoOpts(); abrir('mNovo');
+}
+function renderNovoOpts(){
+  document.getElementById('nModal').innerHTML=MODS.filter(m=>m.ativo).map(m=>'<div class="opt'+(NOVO.mod===m.id?' on':'')+'" onclick="NOVO.mod=\''+m.id+'\';renderNovoOpts()"><span class="msr">'+esc(m.icone||'handyman')+'</span><b>'+esc(m.nome)+'</b><small>'+esc(m.descricao||'')+'</small></div>').join('');
+  const cli=val('nCli'); const temCt=cli&&contratosDo(cli).length>0;
+  if(NOVO.cob==='contrato'&&!temCt) NOVO.cob='cortesia';
+  document.getElementById('nCob').innerHTML=COBS.map(c=>{ const dis=c.k==='contrato'&&!temCt;
+    return '<div class="opt'+(NOVO.cob===c.k?' on':'')+(dis?' dis':'')+'" onclick="'+(dis?'toast(\'Este cliente não tem contrato ativo. Cadastre na aba Contratos ou escolha cortesia/cobrada.\',1)':'NOVO.cob=\''+c.k+'\';renderNovoOpts()')+'"><span class="msr">'+c.ic+'</span><b>'+c.l+'</b><small>'+(dis?'Cliente sem contrato ativo':c.d)+'</small></div>'; }).join('');
+  let ex='';
+  if(NOVO.cob==='contrato') ex='<div class="fg" style="margin-top:10px"><span class="fl">Contrato</span><select class="fi" id="nCt">'+contratosDo(cli).map(c=>'<option value="'+c.id+'">'+esc(c.titulo)+'</option>').join('')+'</select></div>';
+  if(NOVO.cob==='cobrada') ex='<div class="fg" style="margin-top:10px;max-width:220px"><span class="fl">Valor da visita (R$)</span><input class="fi" type="number" step="0.01" id="nVal"></div>';
+  if(NOVO.cob==='cortesia') ex='<div class="hint" style="margin-top:8px">Depois da visita, registre o custo real (km, horas, valor) para saber quanto a eX gastou com orçamentos.</div>';
+  document.getElementById('nCobExtra').innerHTML=ex;
+}
+function onCliNovo(){ renderNovoOpts(); }
+async function salvarNovo(){
+  const row={empresa_id:EMPRESA_ID,modalidade_id:NOVO.mod,cliente_id:val('nCli')||null,loja_id:val('nLoja')||null,titulo:val('nTit'),solicitacao:val('nSol')||null,
+    contato_nome:val('nCont')||null,contato_fone:val('nFone')||null,chamado_cliente:val('nCham')||null,prioridade:val('nPri'),origem:val('nOri'),equipamento:val('nEq')||null,
+    visita_cobranca:NOVO.cob,contrato_id:NOVO.cob==='contrato'?val('nCt')||null:null,visita_valor:NOVO.cob==='cobrada'?num(val('nVal')):null};
+  if(!row.modalidade_id) return toast('Escolha o tipo do atendimento',1);
+  if(!row.cliente_id) return toast('Escolha o cliente',1);
+  if(!row.titulo) return toast('Escreva o título do atendimento',1);
+  if(!row.empresa_id) delete row.empresa_id;
+  const {data,error}=await SB.from('atendimentos').insert(row).select().single();
+  if(error) return toast('Erro: '+error.message,1);
+  ATS.unshift(data); fechar('mNovo'); renderChips(); renderLista(); toast('Atendimento '+data.numero+' aberto'); abrirDet(data.id);
+}
+
+// ---------- detalhe ----------
+async function abrirDet(id){
+  const a=ATS.find(x=>x.id===id); if(!a) return; CUR=a;
+  try{ history.replaceState(null,'','?at='+id); }catch(_){}
+  document.getElementById('dTit').innerHTML=esc(a.numero)+' · '+esc(a.titulo);
+  renderDet(); abrir('mDet');
+  const {data}=await SB.from('atendimento_eventos').select('*').eq('atendimento_id',id).order('created_at',{ascending:false});
+  if(CUR&&CUR.id===id){ CUR._ev=data||[]; renderHist(); }
+}
+function stepper(a){
+  if(a.status==='cancelado') return '<div class="warn"><span class="msr">block</span><div><b>Atendimento cancelado</b> em '+dtBR(a.cancelado_em)+'. Motivo: '+esc(a.cancelado_motivo||'—')+'</div></div>';
+  const i=ETAPAS.findIndex(e=>e.k===a.status);
+  return '<div class="steps">'+ETAPAS.map((e,k)=>'<div class="st'+(k<i?' done':k===i?' cur':'')+'"><span class="dot"><span class="msr">'+(k<i?'check':e.ic)+'</span></span>'+e.l+'</div>').join('')+'</div>';
+}
+function inp(id,v,type,ph){ return '<input class="fi" id="'+id+'" '+(type?'type="'+type+'" ':'')+'value="'+esc(v??'')+'"'+(ph?' placeholder="'+esc(ph)+'"':'')+'>'; }
+function renderDet(){
+  const a=CUR; if(!a) return; const m=modOf(a.modalidade_id); const e=ETX(a.status); const i=ETAPAS.findIndex(x=>x.k===a.status);
+  const opp=OPPS.find(o=>o.id===a.oportunidade_id); const orcs=ORCS.filter(o=>o.oportunidade_id===a.oportunidade_id);
+  const fase=opp?FASES.find(f=>f.id===opp.fase_id):null;
+  const vdt=a.visita_data?new Date(a.visita_data):null; const vdtv=vdt?new Date(vdt.getTime()-vdt.getTimezoneOffset()*60000).toISOString().slice(0,16):'';
+  let h=stepper(a);
+  if(a.status!=='cancelado'&&e.prox){
+    h+='<div class="nextbox"><span class="msr">'+e.ic+'</span><div class="tx"><b>Próximo passo: '+esc(e.prox)+'</b>'+esc(e.dica||'')+'</div><button class="btn btn-p btn-big" onclick="avancar()"><span class="msr">arrow_forward</span>'+esc(e.prox)+'</button></div>';
+  } else if(a.status==='concluido'){ h+='<div class="ok"><span class="msr">task_alt</span><div><b>Concluído</b> em '+dtBR(a.concluido_em)+'.</div></div>'; }
+
+  // resumo
+  h+='<div class="sec"><h4><span class="msr">info</span>Resumo</h4><div class="in"><div class="kv">'
+    +'<span>Tipo</span><span><b>'+esc(m.nome)+'</b></span>'
+    +'<span>Cliente</span><span>'+esc(cliNome(a.cliente_id))+'</span>'
+    +'<span>Loja / unidade</span><span>'+esc(lojaNome(a.loja_id)||'—')+'</span>'
+    +'<span>Aberto em</span><span>'+dtBR(a.aberto_em)+(a.origem?' · via '+esc(a.origem):'')+'</span>'
+    +'<span>Chamado do cliente</span><span>'+esc(a.chamado_cliente||'—')+'</span>'
+    +'<span>Contato</span><span>'+esc([a.contato_nome,a.contato_fone].filter(Boolean).join(' · ')||'—')+'</span>'
+    +'<span>Equipamento</span><span>'+esc(a.equipamento||'—')+'</span>'
+    +'<span>Prioridade</span><span>'+(PRI[a.prioridade]||PRI.media)[0]+'</span>'
+    +'</div>'+(a.solicitacao?'<div class="hint" style="margin-top:10px;white-space:pre-wrap;color:var(--tx2)">'+esc(a.solicitacao)+'</div>':'')+'</div></div>';
+
+  // visita
+  const temCt=a.cliente_id&&contratosDo(a.cliente_id).length>0;
+  h+='<div class="sec"><h4><span class="msr">location_on</span>Visita</h4><div class="in">'
+    +'<div class="opts c3" style="margin-bottom:10px">'+COBS.map(c=>{ const dis=c.k==='contrato'&&!temCt&&a.visita_cobranca!=='contrato'; return '<div class="opt'+(a.visita_cobranca===c.k?' on':'')+(dis?' dis':'')+'" onclick="'+(dis?'toast(\'Cliente sem contrato ativo — cadastre na aba Contratos.\',1)':'setCob(\''+c.k+'\')')+'"><span class="msr">'+c.ic+'</span><b>'+c.l+'</b><small>'+(dis?'Cliente sem contrato ativo':c.d)+'</small></div>'; }).join('')+'</div>';
+  if(a.visita_cobranca==='contrato') h+='<div class="fg"><span class="fl">Contrato</span><select class="fi" id="dCt">'+contratosDo(a.cliente_id).map(c=>'<option value="'+c.id+'"'+(c.id===a.contrato_id?' selected':'')+'>'+esc(c.titulo)+'</option>').join('')+'</select></div>';
+  if(a.visita_cobranca==='cobrada') h+='<div class="fg" style="max-width:220px"><span class="fl">Valor da visita (R$)</span>'+inp('dVval',a.visita_valor,'number')+'</div>';
+  h+='<div class="grid2"><div class="fg"><span class="fl">Data e hora da visita</span><input class="fi" type="datetime-local" id="dVdata" value="'+vdtv+'"></div>'
+    +'<div class="fg"><span class="fl">Quem vai / foi</span>'+inp('dVresp',a.visita_responsavel,'','Nome')+'</div></div>';
+  if(a.visita_cobranca==='cortesia') h+='<div class="fl" style="margin-top:4px">Custo real da visita (cortesia)</div><div class="grid3"><div class="fg"><span class="fl">Km rodados</span>'+inp('dVkm',a.visita_custo_km,'number')+'</div><div class="fg"><span class="fl">Horas</span>'+inp('dVh',a.visita_custo_horas,'number')+'</div><div class="fg"><span class="fl">Custo total (R$)</span>'+inp('dVc',a.visita_custo_valor,'number')+'</div></div>';
+  h+='<div class="fg"><span class="fl">Relatório técnico da visita (link)</span><div style="display:flex;gap:8px">'+inp('dRel',a.relatorio_url,'','Cole o link do relatório')+(a.relatorio_url?'<a class="btn" href="'+esc(a.relatorio_url)+'" target="_blank" rel="noopener"><span class="msr">open_in_new</span>Abrir</a>':'')+'</div></div>'
+    +'<button class="btn btn-p" onclick="salvarVisita()"><span class="msr">save</span>Salvar visita</button></div></div>';
+
+  // comercial
+  h+='<div class="sec"><h4><span class="msr">request_quote</span>Orçamento e proposta</h4><div class="in">';
+  if(opp){
+    h+='<div class="kv"><span>Oportunidade</span><span>'+esc(opp.objeto||'—')+'</span><span>Fase no funil</span><span>'+esc(fase?fase.nome:'—')+'</span></div>';
+    h+=orcs.length?'<div style="margin-top:10px" class="list">'+orcs.map(o=>'<div class="row"><span class="msr" style="color:var(--pri)">description</span><span class="nm">'+esc(o.numero||'Orçamento')+'<small>'+esc(o.status)+' · '+brl(o.total)+'</small></span></div>').join('')+'</div>':'<div class="hint" style="margin-top:8px">Ainda não há orçamento nesta oportunidade.</div>';
+    h+='<div style="margin-top:10px;display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-p" onclick="abrirProposta()"><span class="msr">open_in_new</span>'+(orcs.length?'Abrir a proposta':'Montar a proposta')+'</button><button class="btn" onclick="desvincularOpp()"><span class="msr">link_off</span>Desvincular</button></div>';
+  } else {
+    h+='<div class="hint" style="margin-bottom:10px">A proposta é montada no módulo de Propostas a partir de uma oportunidade do funil.</div>'
+      +'<div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center"><button class="btn btn-p" onclick="criarOpp()"><span class="msr">add_link</span>Criar oportunidade no funil</button><span class="hint" style="margin:0">ou vincular uma existente:</span><select class="fi" id="dOpp" style="max-width:320px"><option value="">carregando…</option></select><button class="btn" onclick="vincularOpp()"><span class="msr">link</span>Vincular</button></div>';
+    setTimeout(carregarOppsCliente,0);
+  }
+  h+='</div></div>';
+
+  // execução
+  h+='<div class="sec"><h4><span class="msr">construction</span>Execução</h4><div class="in"><div class="grid2">'
+    +'<div class="fg"><span class="fl">Parceiro / equipe</span>'+inp('dParc',a.parceiro_nome,'','Quem executa')+'</div>'
+    +'<div class="fg"><span class="fl">Valor aprovado (R$)</span>'+inp('dVap',a.valor_aprovado,'number')+'</div>'
+    +'<div class="fg"><span class="fl">Início</span>'+inp('dIni',a.execucao_inicio,'date')+'</div>'
+    +'<div class="fg"><span class="fl">Fim</span>'+inp('dFim',a.execucao_fim,'date')+'</div></div>'
+    +'<div class="fg"><span class="fl">Observações internas</span><textarea class="fi" id="dObs">'+esc(a.obs||'')+'</textarea></div>'
+    +'<button class="btn btn-p" onclick="salvarExec()"><span class="msr">save</span>Salvar execução</button></div></div>';
+
+  // histórico
+  h+='<div class="sec"><h4><span class="msr">history</span>Histórico</h4><div class="in"><div style="display:flex;gap:8px;margin-bottom:8px"><input class="fi" id="dNota" placeholder="Adicionar uma anotação…" onkeydown="if(event.key===\'Enter\')addNota()"><button class="btn" onclick="addNota()"><span class="msr">add</span>Anotar</button></div><ul class="tl" id="dHist"><li class="hint">Carregando…</li></ul></div></div>';
+
+  // ações
+  h+='<div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px"><span class="fl" style="align-self:center;margin:0">Mudar etapa manualmente:</span><select class="fi" id="dEtapa" style="max-width:220px">'+ETAPAS.map(x=>'<option value="'+x.k+'"'+(x.k===a.status?' selected':'')+'>'+x.l+'</option>').join('')+'</select><button class="btn" onclick="mudarEtapa(val(\'dEtapa\'))">Aplicar</button><span class="spacer"></span>'
+    +(a.status!=='cancelado'&&a.status!=='concluido'?'<button class="btn btn-r" onclick="cancelar()"><span class="msr">block</span>Cancelar atendimento</button>':'')+'</div>';
+  document.getElementById('dBody').innerHTML=h;
+  if(CUR._ev) renderHist();
+}
+function renderHist(){
+  const el=document.getElementById('dHist'); if(!el||!CUR) return; const ev=CUR._ev||[];
+  el.innerHTML=ev.length?ev.map(e=>{ let t=e.tipo==='etapa'?'Etapa: <b>'+esc(ETX(e.de).l)+'</b> → <b>'+esc(ETX(e.para).l)+'</b>':e.tipo==='criado'?'<b>Atendimento aberto</b>':e.tipo==='cancelado'?'<b>Cancelado</b>: '+esc(e.texto||''):esc(e.texto||'');
+    return '<li><span class="when">'+dtBR(e.created_at)+'</span><span style="flex:1">'+t+(e.autor_nome?' <span class="hint">· '+esc(e.autor_nome)+'</span>':'')+'</span></li>'; }).join(''):'<li class="hint">Sem registros.</li>';
+}
+async function upd(patch,msg){
+  const {data,error}=await SB.from('atendimentos').update(patch).eq('id',CUR.id).select().single();
+  if(error){ toast('Erro: '+error.message,1); return false; }
+  const ev=CUR._ev; Object.assign(CUR,data); CUR._ev=ev; const k=ATS.findIndex(x=>x.id===CUR.id); if(k>=0) ATS[k]=CUR;
+  renderChips(); renderLista(); renderDet(); if(msg) toast(msg);
+  const r=await SB.from('atendimento_eventos').select('*').eq('atendimento_id',CUR.id).order('created_at',{ascending:false}); CUR._ev=r.data||[]; renderHist();
+  return true;
+}
+function avancar(){
+  const a=CUR; const i=ETAPAS.findIndex(e=>e.k===a.status); const prox=ETAPAS[i+1]; if(!prox) return;
+  if(prox.k==='visita_agendada'&&!val('dVdata')) return toast('Preencha a data e hora da visita (seção Visita) antes de agendar',1);
+  if(prox.k==='orcamento'&&!a.oportunidade_id) toast('Dica: crie ou vincule a oportunidade para montar a proposta');
+  const patch={status:prox.k};
+  if(prox.k==='visita_agendada'||prox.k==='visita_feita'){ Object.assign(patch,visitaPatch()); }
+  if(prox.k==='aprovado'){ const v=num(val('dVap')); if(v==null) return toast('Informe o valor aprovado (seção Execução)',1); patch.valor_aprovado=v; }
+  upd(patch,'Etapa: '+prox.l);
+}
+function mudarEtapa(k){ if(!k||k===CUR.status) return; if(k==='cancelado') return cancelar(); upd({status:k},'Etapa: '+ETX(k).l); }
+function cancelar(){ const m=prompt('Motivo do cancelamento:'); if(!m||!m.trim()) return; upd({status:'cancelado',cancelado_motivo:m.trim()},'Atendimento cancelado'); }
+function visitaPatch(){
+  const p={visita_responsavel:val('dVresp')||null,relatorio_url:val('dRel')||null};
+  const d=val('dVdata'); p.visita_data=d?new Date(d).toISOString():null;
+  if(CUR.visita_cobranca==='contrato') p.contrato_id=val('dCt')||null;
+  if(CUR.visita_cobranca==='cobrada') p.visita_valor=num(val('dVval'));
+  if(CUR.visita_cobranca==='cortesia'){ p.visita_custo_km=num(val('dVkm')); p.visita_custo_horas=num(val('dVh')); p.visita_custo_valor=num(val('dVc')); }
+  return p;
+}
+function salvarVisita(){ upd(visitaPatch(),'Visita salva'); }
+function setCob(k){
+  if(k===CUR.visita_cobranca) return;
+  const p={visita_cobranca:k};
+  if(k==='contrato'){ const c=contratosDo(CUR.cliente_id)[0]; p.contrato_id=c?c.id:null; }
+  if(k==='cobrada'){ const v=num(prompt('Valor da visita (R$):',CUR.visita_valor||'')); if(v==null||v<=0) return toast('Visita cobrada precisa de valor',1); p.visita_valor=v; }
+  upd(p,'Cobrança da visita atualizada');
+}
+function salvarExec(){ upd({parceiro_nome:val('dParc')||null,valor_aprovado:num(val('dVap')),execucao_inicio:val('dIni')||null,execucao_fim:val('dFim')||null,obs:val('dObs')||null},'Execução salva'); }
+async function addNota(){
+  const t=val('dNota'); if(!t) return;
+  const row={atendimento_id:CUR.id,tipo:'nota',texto:t,autor_nome:USER_NOME||null}; if(EMPRESA_ID) row.empresa_id=EMPRESA_ID; else row.empresa_id=CUR.empresa_id;
+  const {data,error}=await SB.from('atendimento_eventos').insert(row).select().single();
+  if(error) return toast('Erro: '+error.message,1);
+  CUR._ev=[data].concat(CUR._ev||[]); document.getElementById('dNota').value=''; renderHist();
+}
+// comercial
+async function carregarOppsCliente(){
+  const el=document.getElementById('dOpp'); if(!el||!CUR) return;
+  let q=SB.from('oportunidades').select('id,objeto').is('deleted_at',null).order('created_at',{ascending:false}).limit(200);
+  if(CUR.cliente_id) q=q.eq('contratante_id',CUR.cliente_id);
+  const {data}=await q; el.innerHTML='<option value="">— escolha —</option>'+(data||[]).map(o=>'<option value="'+o.id+'">'+esc((o.objeto||'(sem objeto)').slice(0,110))+'</option>').join('');
+}
+async function vincularOpp(){ const id=val('dOpp'); if(!id) return toast('Escolha a oportunidade',1); if(await upd({oportunidade_id:id},'Oportunidade vinculada')){ await carregarVinculos(); renderDet(); } }
+async function desvincularOpp(){ if(!confirm('Desvincular a oportunidade deste atendimento? (a oportunidade continua no funil)')) return; upd({oportunidade_id:null},'Desvinculado'); }
+async function criarOpp(){
+  const a=CUR; if(!a.cliente_id) return toast('Defina o cliente do atendimento primeiro',1);
+  const papel=['aberto','visita_agendada'].includes(a.status)?'visita':'proposta';
+  const fase=FASES.find(f=>f.papel===papel)||FASES[0];
+  const objeto=(lojaNome(a.loja_id)?lojaNome(a.loja_id)+' — ':'')+a.titulo;
+  const row={contratante_id:a.cliente_id,fase_id:fase?fase.id:null,objeto:objeto,temperatura:'Quente',obs:'Criada a partir do atendimento '+a.numero+'.',contato_nome:a.contato_nome,contato_fone:a.contato_fone};
+  row.empresa_id=EMPRESA_ID||a.empresa_id;
+  const {data,error}=await SB.from('oportunidades').insert(row).select('id').single();
+  if(error) return toast('Erro ao criar oportunidade: '+error.message,1);
+  if(await upd({oportunidade_id:data.id},'Oportunidade criada no funil')){ await carregarVinculos(); renderDet(); }
+}
+function abrirProposta(){
+  if(!CUR||!CUR.oportunidade_id) return;
+  const qs='?opp='+CUR.oportunidade_id;
+  if(window.parent&&window.parent!==window){ window.parent.postMessage({type:'exNav',view:'orcamento',qs:qs},'*'); }
+  else location.href='eX_Orcamento.html'+qs;
+}
+
+// ---------- contratos ----------
+let CT_EDIT=null;
+function renderContratos(){
+  const el=document.getElementById('listaCt'); const hoje=new Date().toISOString().slice(0,10);
+  if(!CTS.length){ el.innerHTML='<div class="empty" style="border:none">Nenhum contrato ainda.</div>'; return; }
+  el.innerHTML=CTS.map(c=>{ const venc=c.vigencia_fim&&c.vigencia_fim<hoje; const on=c.ativo&&!venc;
+    return '<div class="row"><span class="ex-led'+(on?' on':'')+'"></span><span class="nm">'+esc(c.titulo)+'<small>'+esc(cliNome(c.cliente_id))+' · '+esc(c.frequencia.replace('_',' '))+' · '+brl(c.valor_mensal)+'/mês · vigência '+(c.vigencia_inicio?dtBR(c.vigencia_inicio):'—')+' a '+(c.vigencia_fim?dtBR(c.vigencia_fim):'indeterminado')+(venc?' · <b style="color:var(--red)">vencido</b>':'')+'</small></span>'
+      +'<div class="ex-switch'+(c.ativo?' on':'')+'" title="Ativo" onclick="toggleCt(\''+c.id+'\')"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="pin"></span></span></div>'
+      +'<button class="iconb" onclick="abrirContrato(\''+c.id+'\')"><span class="msr">edit</span></button></div>'; }).join('');
+}
+function abrirContrato(id){
+  CT_EDIT=id||null; const c=CTS.find(x=>x.id===id)||{frequencia:'mensal',cobre_visitas:true};
+  document.getElementById('ctTit').textContent=id?'Editar contrato':'Novo contrato';
+  fillClientes('cCli',c.cliente_id||'');
+  document.getElementById('cTit').value=c.titulo||''; document.getElementById('cIni').value=c.vigencia_inicio||''; document.getElementById('cFim').value=c.vigencia_fim||'';
+  document.getElementById('cFreq').value=c.frequencia||'mensal'; document.getElementById('cVal').value=c.valor_mensal??''; document.getElementById('cNum').value=c.numero_cliente||''; document.getElementById('cObs').value=c.obs||'';
+  document.getElementById('cCob').classList.toggle('on',c.cobre_visitas!==false); document.getElementById('cCobLed').classList.toggle('on',c.cobre_visitas!==false);
+  abrir('mCt');
+}
+async function salvarContrato(){
+  const row={cliente_id:val('cCli')||null,titulo:val('cTit'),vigencia_inicio:val('cIni')||null,vigencia_fim:val('cFim')||null,frequencia:val('cFreq'),valor_mensal:num(val('cVal')),numero_cliente:val('cNum')||null,obs:val('cObs')||null,cobre_visitas:document.getElementById('cCob').classList.contains('on')};
+  if(!row.cliente_id) return toast('Escolha o cliente',1); if(!row.titulo) return toast('Dê um título ao contrato',1);
+  let r; if(CT_EDIT) r=await SB.from('servico_contratos').update(row).eq('id',CT_EDIT).select().single();
+  else { row.ativo=true; row.empresa_id=EMPRESA_ID; if(!row.empresa_id) delete row.empresa_id; r=await SB.from('servico_contratos').insert(row).select().single(); }
+  if(r.error) return toast('Erro: '+r.error.message,1);
+  if(CT_EDIT){ const k=CTS.findIndex(x=>x.id===CT_EDIT); CTS[k]=r.data; } else CTS.unshift(r.data);
+  fechar('mCt'); renderContratos(); toast('Contrato salvo');
+}
+async function toggleCt(id){ const c=CTS.find(x=>x.id===id); const {error}=await SB.from('servico_contratos').update({ativo:!c.ativo}).eq('id',id); if(error) return toast('Erro: '+error.message,1); c.ativo=!c.ativo; renderContratos(); }
+
+// ---------- configurações (modalidades) ----------
+function renderMods(){
+  const el=document.getElementById('listaMod');
+  el.innerHTML=MODS.map((m,k)=>'<div class="row"><span class="ex-led'+(m.ativo?' on':'')+'"></span><span class="msr" style="color:var(--pri)">'+esc(m.icone||'handyman')+'</span><span class="nm">'+esc(m.nome)+(m.sigla?' <span class="badge b-mu">'+esc(m.sigla)+'</span>':'')+'<small>'+esc(m.descricao||'')+'</small></span>'
+    +'<button class="iconb" title="Subir" onclick="moverMod('+k+',-1)"'+(k===0?' disabled':'')+'><span class="msr">arrow_upward</span></button>'
+    +'<button class="iconb" title="Editar" onclick="editMod(\''+m.id+'\')"><span class="msr">edit</span></button>'
+    +'<div class="ex-switch'+(m.ativo?' on':'')+'" onclick="toggleMod(\''+m.id+'\')"><span class="lb off">OFF</span><span class="lb onx">ON</span><span class="kb"><span class="pin"></span></span></div></div>').join('')||'<div class="empty" style="border:none">Nenhuma modalidade.</div>';
+}
+async function addModalidade(){
+  const nome=val('novaMod'); if(!nome) return;
+  const row={nome,sigla:nome.normalize('NFD').replace(/[^A-Za-z]/g,'').slice(0,3).toUpperCase(),icone:'handyman',ordem:MODS.length+1}; if(EMPRESA_ID) row.empresa_id=EMPRESA_ID;
+  const {data,error}=await SB.from('atendimento_modalidades').insert(row).select().single();
+  if(error) return toast('Erro: '+error.message,1);
+  MODS.push(data); document.getElementById('novaMod').value=''; renderMods();
+}
+async function toggleMod(id){ const m=MODS.find(x=>x.id===id); const {error}=await SB.from('atendimento_modalidades').update({ativo:!m.ativo}).eq('id',id); if(error) return toast('Erro: '+error.message,1); m.ativo=!m.ativo; renderMods(); }
+async function editMod(id){
+  const m=MODS.find(x=>x.id===id); const nome=prompt('Nome da modalidade:',m.nome); if(nome==null) return;
+  const desc=prompt('Descrição curta (aparece no botão de escolha):',m.descricao||''); if(desc==null) return;
+  const ic=prompt('Ícone (nome do Material Symbols, ex.: build, event_repeat, location_on):',m.icone||'handyman'); if(ic==null) return;
+  const patch={nome:nome.trim()||m.nome,descricao:desc.trim()||null,icone:ic.trim()||'handyman'};
+  const {error}=await SB.from('atendimento_modalidades').update(patch).eq('id',id); if(error) return toast('Erro: '+error.message,1);
+  Object.assign(m,patch); renderMods(); renderLista();
+}
+async function moverMod(k,d){ const j=k+d; if(j<0||j>=MODS.length) return; [MODS[k],MODS[j]]=[MODS[j],MODS[k]];
+  MODS.forEach((m,i)=>{ if(m.ordem!==i+1){ m.ordem=i+1; SB.from('atendimento_modalidades').update({ordem:i+1}).eq('id',m.id).then(()=>{}); } }); renderMods(); }
+
+document.addEventListener('keydown',e=>{ if(e.key==='Escape') ['mNovo','mDet','mCt'].forEach(id=>{ if(document.getElementById(id).classList.contains('show')) fechar(id); }); });
+init();
+</script>
+</body>
+</html>
